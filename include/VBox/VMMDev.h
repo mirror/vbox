@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -140,6 +140,7 @@ typedef enum
     VMMDevReq_ReportGuestInfo            = 50,
     VMMDevReq_ReportGuestInfo2           = 58, /* since version 3.2.0 */
     VMMDevReq_ReportGuestStatus          = 59, /* since version 3.2.8 */
+    VMMDevReq_ReportGuestUserState       = 74, /* since version 4.3 */
     /**
      * Retrieve a display resize request sent by the host using
      * @a IDisplay:setVideoModeHint.  Deprecated.
@@ -798,6 +799,73 @@ typedef struct
     VBoxGuestStatus guestStatus;
 } VMMDevReportGuestStatus;
 AssertCompileSize(VMMDevReportGuestStatus, 24+12);
+
+
+/**
+ * The current status of specific guest user.
+ * This needs to be kept in sync with GuestUserState of the Main API!
+ */
+typedef enum VBoxGuestUserState
+{
+    VBoxGuestUserState_Unknown            = 0,
+    VBoxGuestUserState_LoggedIn           = 1,
+    VBoxGuestUserState_LoggedOut          = 2,
+    VBoxGuestUserState_Locked             = 3,
+    VBoxGuestUserState_Unlocked           = 4,
+    VBoxGuestUserState_Disabled           = 5,
+    VBoxGuestUserState_Idle               = 6,
+    VBoxGuestUserState_InUse              = 7,
+    VBoxGuestUserState_Created            = 8,
+    VBoxGuestUserState_Deleted            = 9,
+    VBoxGuestUserState_SessionChanged     = 10,
+    VBoxGuestUserState_CredentialsChanged = 11,
+    VBoxGuestUserState_RoleChanged        = 12,
+    VBoxGuestUserState_GroupAdded         = 13,
+    VBoxGuestUserState_GroupRemoved       = 14,
+    VBoxGuestUserState_Elevated           = 15,
+    VBoxGuestUserState_SizeHack           = 0x7fffffff
+} VBoxGuestUserState;
+AssertCompileSize(VBoxGuestUserState, 4);
+
+
+/**
+ * Guest user status updates.
+ */
+typedef struct VBoxGuestUserStatus
+{
+    /** The guest user state to send. */
+    VBoxGuestUserState  state;
+    /** Size (in bytes) of szUser. */
+    uint32_t            cbUser;
+    /** Size (in bytes) of szDomain. */
+    uint32_t            cbDomain;
+    /** Size (in bytes) of aDetails. */
+    uint32_t            cbDetails;
+    /** Note: Here begins the dynamically
+     *        allocated region. */
+    /** Guest user to report state for. */
+    char                szUser[1];
+    /** Domain the guest user is bound to. */
+    char                szDomain[1];
+    /** Optional details of the state. */
+    uint8_t             aDetails[1];
+} VBoxGuestUserStatus;
+AssertCompileSize(VBoxGuestUserStatus, 20);
+
+
+/**
+ * Guest user status structure.
+ *
+ * Used by VMMDevReq_ReportGuestUserStatus.
+ */
+typedef struct
+{
+    /** Header. */
+    VMMDevRequestHeader header;
+    /** Guest user status. */
+    VBoxGuestUserStatus status;
+} VMMDevReportGuestUserState;
+AssertCompileSize(VMMDevReportGuestUserState, 24+20);
 
 
 /**
@@ -1828,6 +1896,7 @@ AssertCompileSize(VMMDevHGCMCancel2, 24+4);
 
 /**
  * Inline helper to determine the request size for the given operation.
+ * Returns 0 if the given operation is not handled and/or supported.
  *
  * @returns Size.
  * @param   requestType     The VMMDev request type.
@@ -1863,6 +1932,8 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
             return sizeof(VMMDevReportGuestInfo2);
         case VMMDevReq_ReportGuestStatus:
             return sizeof(VMMDevReportGuestStatus);
+        case VMMDevReq_ReportGuestUserState:
+            return sizeof(VMMDevReportGuestUserState);
         case VMMDevReq_GetDisplayChangeRequest:
             return sizeof(VMMDevDisplayChangeRequest);
         case VMMDevReq_GetDisplayChangeRequest2:
@@ -1937,8 +2008,10 @@ DECLINLINE(size_t) vmmdevGetRequestSize(VMMDevRequestType requestType)
         case VMMDevReq_GetSessionId:
             return sizeof(VMMDevReqSessionId);
         default:
-            return 0;
+            break;
     }
+
+    return 0;
 }
 
 

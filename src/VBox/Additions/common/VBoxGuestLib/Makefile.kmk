@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -111,6 +111,7 @@ VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3LibCpuHotPlug.cpp \
 	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibEvent.cpp \
+	VBoxGuestR3LibGuestUser.cpp \
 	VBoxGuestR3LibGR.cpp \
 	VBoxGuestR3LibHostChannel.cpp \
 	VBoxGuestR3LibLog.cpp \

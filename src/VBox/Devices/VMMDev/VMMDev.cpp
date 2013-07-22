@@ -592,6 +592,7 @@ static PVMMDEVFACILITYSTATUSENTRY vmmdevGetFacilityStatusEntry(PVMMDEV pThis, ui
     return vmmdevAllocFacilityStatusEntry(pThis, uFacility, false /*fFixed*/, NULL);
 }
 
+
 /**
  * Handles VMMDevReq_ReportGuestStatus.
  *
@@ -641,12 +642,60 @@ static int vmmdevReqHandler_ReportGuestStatus(PVMMDEV pThis, VMMDevRequestHeader
         }
 
         pEntry->TimeSpecTS = Now;
-        pEntry->uStatus    = (uint16_t)pStatus->status;
+        pEntry->uStatus    = (uint16_t)pStatus->status; /** @todo r=andy uint16_t vs. 32-bit enum. */
         pEntry->fFlags     = pStatus->flags;
     }
 
     if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestStatus)
         pThis->pDrv->pfnUpdateGuestStatus(pThis->pDrv, pStatus->facility, pStatus->status, pStatus->flags, &Now);
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Handles VMMDevReq_ReportGuestUserState.
+ *
+ * @returns VBox status code that the guest should see.
+ * @param   pThis           The VMMDev instance data.
+ * @param   pReqHdr         The header of the request to handle.
+ */
+static int vmmdevReqHandler_ReportGuestUserState(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr)
+{
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(pReqHdr->size >= sizeof(VMMDevReportGuestUserState), ("%u\n", pReqHdr->size), VERR_INVALID_PARAMETER);
+    VBoxGuestUserStatus *pStatus = &((VMMDevReportGuestUserState *)pReqHdr)->status;
+
+    if (   pThis->pDrv
+        && pThis->pDrv->pfnUpdateGuestUserState)
+    {
+        AssertPtr(pStatus);
+
+        if (   pReqHdr->size      > _2K
+            || pStatus->cbUser    > 256
+            || pStatus->cbDomain  > 256
+            || pStatus->cbDetails > _1K) /* Play safe. */
+        {
+            return VERR_INVALID_PARAMETER;
+        }
+
+        pThis->pDrv->pfnUpdateGuestUserState(pThis->pDrv,
+                                             /* User name */
+                                             (const char *)pStatus->szUser,
+                                             /* Domain */
+                                               pStatus->cbDomain
+                                             ? (const char *)pStatus->szUser[pStatus->cbUser]
+                                             : NULL,
+                                             /* State */
+                                             (uint32_t)pStatus->state,
+                                             /* State details */
+                                               pStatus->cbDetails
+                                             ? (uint8_t *)pStatus->szUser[pStatus->cbUser + pStatus->cbDomain]
+                                             : NULL,
+                                             pStatus->cbDetails);
+    }
 
     return VINF_SUCCESS;
 }
@@ -2216,6 +2265,10 @@ static int vmmdevReqDispatcher(PVMMDEV pThis, VMMDevRequestHeader *pReqHdr, RTGC
 
         case VMMDevReq_ReportGuestStatus:
             pReqHdr->rc = vmmdevReqHandler_ReportGuestStatus(pThis, pReqHdr);
+            break;
+
+        case VMMDevReq_ReportGuestUserState:
+            pReqHdr->rc = vmmdevReqHandler_ReportGuestUserState(pThis, pReqHdr);
             break;
 
         case VMMDevReq_ReportGuestCapabilities:

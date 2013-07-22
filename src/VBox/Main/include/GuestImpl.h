@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -129,6 +129,7 @@ public:
     bool facilityIsActive(VBoxGuestFacilityType enmFacility);
     void facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
     void setAdditionsStatus(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilityStatus a_enmStatus, uint32_t a_fFlags, PCRTTIMESPEC a_pTimeSpecTS);
+    void onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState, uint8_t *puDetails, uint32_t cbDetails);
     void setSupportedFeatures(uint32_t aCaps);
     HRESULT setStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
     BOOL isPageFusionEnabled();
