@@ -3324,12 +3324,9 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
         if ((new_ss & 0xfffc) == 0) {
 #ifdef TARGET_X86_64
             /* NULL ss is allowed in long mode if cpl != 3*/
+# ifndef VBOX
             /* XXX: test CS64 ? */
             if ((env->hflags & HF_LMA_MASK) && rpl != 3) {
-# ifdef VBOX
-                if (!(e2 & DESC_A_MASK))
-                    e2 = set_segment_accessed(new_cs, e2);
-# endif
                 cpu_x86_load_seg_cache(env, R_SS, new_ss,
                                        0, 0xffffffff,
                                        DESC_G_MASK | DESC_B_MASK | DESC_P_MASK |
@@ -3337,6 +3334,16 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
                                        DESC_W_MASK | DESC_A_MASK);
                 ss_e2 = DESC_B_MASK; /* XXX: should not be needed ? */
             } else
+# else /* VBOX */
+            if ((env->hflags & HF_LMA_MASK) && rpl != 3 && (e2 & DESC_L_MASK)) {
+                if (!(e2 & DESC_A_MASK))
+                    e2 = set_segment_accessed(new_cs, e2);
+                cpu_x86_load_seg_cache(env, R_SS, new_ss,
+                                       0, 0xffffffff,
+                                       DESC_INTEL_UNUSABLE | (rpl << DESC_DPL_SHIFT) );
+                ss_e2 = DESC_B_MASK; /* not really used */
+            } else
+# endif
 #endif
             {
 #if defined(VBOX) && defined(DEBUG)
