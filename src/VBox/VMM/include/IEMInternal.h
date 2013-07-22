@@ -703,7 +703,7 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_locked,(PRTUINT128U *pu128Dst, PRTUI
 
 /** @name Memory ordering
  * @{ */
-typedef IEM_DECL_IMPL_DEF(void, FNIEMAIMPLMEMFENCE,(void));
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEMFENCE,(void));
 typedef FNIEMAIMPLMEMFENCE *PFNIEMAIMPLMEMFENCE;
 IEM_DECL_IMPL_DEF(void, iemAImpl_mfence,(void));
 IEM_DECL_IMPL_DEF(void, iemAImpl_sfence,(void));
