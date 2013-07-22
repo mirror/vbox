@@ -776,6 +776,8 @@ typedef union
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(a)                (((a) >> 49) & 1)
 /** Memory type that must be used for the VMCS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
+/** Whether the processor provides additional information for exits due to INS/OUTS. */
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
 /** @} */
 
 
