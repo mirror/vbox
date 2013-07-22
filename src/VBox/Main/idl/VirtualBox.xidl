@@ -9472,59 +9472,91 @@
     </const>
     <const name="LoggedIn"                value="1">
       <desc>A guest user has been successfully logged into
-        the guest OS.</desc>
+        the guest OS.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="LoggedOut"               value="2">
       <desc>A guest user has been successfully logged out
-        of the guest OS.</desc>
+        of the guest OS.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Locked"                  value="3">
       <desc>A guest user has locked its account. This might
         include running a password-protected screensaver
-        on the guest.</desc>
+        on the guest.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Unlocked"                value="4">
-      <desc>A guest user has unlocked its account.</desc>
+      <desc>A guest user has unlocked its account.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Disabled"                value="5">
-      <desc>A guest user has been disabled by the guest OS.</desc>
+      <desc>A guest user has been disabled by the guest OS.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Idle"                    value="6">
-      <desc>A guest user currently is not using the guest
-        OS.</desc>
+      <desc>
+        A guest user currently is not using the guest OS.
+        <note>Currently only available for Windows guests since 
+          Windows 2000 SP2.</note>
+        <note>On Windows guests this function currently only supports
+          reporting contiguous idle times up to 49.7 days per user.</note>
+      </desc>
     </const>
     <const name="InUse"                   value="7">
-      <desc>A guest user continued using the guest OS.</desc>
+      <desc>A guest user continued using the guest OS after 
+        being idle.</desc>
     </const>
     <const name="Created"                 value="8">
-      <desc>A guest user has been successfully created.</desc>
+      <desc>A guest user has been successfully created.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Deleted"                 value="9">
-      <desc>A guest user has been successfully deleted.</desc>
+      <desc>A guest user has been successfully deleted.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="SessionChanged"          value="10">
-      <desc>To guest OS has changed the session of a user.</desc>
+      <desc>To guest OS has changed the session of a user.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="CredentialsChanged"      value="11">
       <desc>To guest OS has changed the authentication
         credentials of a user. This might include changed passwords
-        and authentication types.</desc>
+        and authentication types.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="RoleChanged"             value="12">
       <desc>To guest OS has changed the role of a user permanently,
-        e.g. granting / denying administrative rights.</desc>
+        e.g. granting / denying administrative rights.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="GroupAdded"              value="13">
       <desc>To guest OS has added a user to a specific
-        user group.</desc>
+        user group.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="GroupRemoved"            value="14">
       <desc>To guest OS has removed a user from a specific
-        user group.</desc>
+        user group.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
     <const name="Elevated"                value="15">
       <desc>To guest OS temporarily has elevated a user
-        to perform a certain task.</desc>
+        to perform a certain task.
+        <note>This property is not implemented yet!</note>
+      </desc>
     </const>
   </enum>
 
@@ -21380,7 +21412,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
     <attribute name="state" type="GuestUserState" readonly="yes">
       <desc>
-        What was changed for this guest user.
+        What was changed for this guest user. See <link to="GuestUserState"/> for
+        more information.
       </desc>
     </attribute>
     <attribute name="stateDetails" type="wstring" readonly="yes">
