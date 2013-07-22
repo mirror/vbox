@@ -34,7 +34,7 @@
  */
 VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR7(PVM pVM)
 {
-    RTGCUINTREG uDr7 = X86_DR7_GD | X86_DR7_GE | X86_DR7_LE | X86_DR7_MB1_MASK;
+    RTGCUINTREG uDr7 = X86_DR7_GD | X86_DR7_GE | X86_DR7_LE | X86_DR7_RA1_MASK;
     PDBGFBP     pBp = &pVM->dbgf.s.aHwBreakpoints[0];
     unsigned    cLeft = RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints);
     while (cLeft-- > 0)

@@ -3659,19 +3659,28 @@ void helper_movl_drN_T0(int reg, target_ulong t0)
 # ifndef VBOX
     } else if (reg == 7) {
 # else
-    } else if (reg == 7 || reg == 5) {
+    } else if (reg == 7 || reg == 5) {  /* (DR5 is an alias for DR7.) */
+        if (t0 & X86_DR7_MBZ_MASK)
+            raise_exception_err(EXCP0D_GPF, 0);
+        t0 |= X86_DR7_RA1_MASK;
+        t0 &= ~X86_DR7_RAZ_MASK;
 # endif
         for (i = 0; i < 4; i++)
             hw_breakpoint_remove(env, i);
         env->dr[7] = t0;
         for (i = 0; i < 4; i++)
             hw_breakpoint_insert(env, i);
-    } else
+    } else {
 # ifndef VBOX
         env->dr[reg] = t0;
 # else
-        env->dr[6] = (t0 & ~RT_BIT_32(12)) | UINT32_C(0xffff0ff0); /* 4 is an alias for 6. */
+        if (t0 & X86_DR6_MBZ_MASK)
+            raise_exception_err(EXCP0D_GPF, 0);
+        t0 |= X86_DR6_RA1_MASK;
+        t0 &= ~X86_DR6_RAZ_MASK;
+        env->dr[6] = t0;                /* (DR4 is an alias for DR6.) */
 # endif
+    }
 }
 #endif
 

@@ -3258,10 +3258,9 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Validate. Intel spec. 26.3.1.1 "Checks on Guest Controls Registers, Debug Registers, MSRs" */
     if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
     {
-        Assert(!(pMixedCtx->dr[7] >> 32));                        /* upper 32 bits are reserved (MBZ). */
         /* Validate. Intel spec. 17.2 "Debug Registers", recompiler paranoia checks. */
-        Assert((pMixedCtx->dr[7] & 0xd800) == 0);                 /* bits 15, 14, 12, 11 are reserved (MBZ). */
-        Assert((pMixedCtx->dr[7] & 0x400) == 0x400);              /* bit 10 is reserved (MB1). */
+        Assert((pMixedCtx->dr[7] & (X86_DR7_MBZ_MASK | X86_DR7_RAZ_MASK)) == 0);  /* bits 63:32, 15, 14, 12, 11 are reserved. */
+        Assert((pMixedCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK); /* bit 10 is reserved (RA1). */
     }
 #endif
 

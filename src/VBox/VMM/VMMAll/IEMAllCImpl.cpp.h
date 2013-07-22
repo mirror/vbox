@@ -3835,14 +3835,14 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
         case 6:
         case 4:
             drX = pCtx->dr[6];
-            drX &= ~RT_BIT_32(12);
-            drX |= UINT32_C(0xffff0ff0);
+            drX |= X86_DR6_RA1_MASK;
+            drX &= ~X86_DR6_RAZ_MASK;
             break;
         case 7:
         case 5:
             drX = pCtx->dr[7];
-            drX &= ~(RT_BIT_32(11) | RT_BIT_32(12) | RT_BIT_32(14) | RT_BIT_32(15));
-            drX |= RT_BIT_32(10);
+            drX |=X86_DR7_RA1_MASK;
+            drX &= ~X86_DR7_RAZ_MASK;
             break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* call checks */
     }
@@ -3874,11 +3874,14 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     Assert(!pCtx->eflags.Bits.u1VM);
 
-    if (   (iDrReg == 4 || iDrReg == 5)
-        && (pCtx->cr4 & X86_CR4_DE) )
+    if (iDrReg == 4 || iDrReg == 5)
     {
-        Log(("mov dr%u,r%u: CR4.DE=1 -> #GP(0)\n", iDrReg, iGReg));
-        return iemRaiseGeneralProtectionFault0(pIemCpu);
+        if (pCtx->cr4 & X86_CR4_DE)
+        {
+            Log(("mov dr%u,r%u: CR4.DE=1 -> #GP(0)\n", iDrReg, iGReg));
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+        }
+        iDrReg += 2;
     }
 
     /* Raise #DB if general access detect is enabled. */
@@ -3912,25 +3915,23 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
             break;
 
         case 6:
-        case 4:
-            if (uNewDrX & UINT64_C(0xffffffff00000000))
+            if (uNewDrX & X86_DR6_MBZ_MASK)
             {
                 Log(("mov dr%u,%#llx: DR6 high bits are not zero -> #GP(0)\n", iDrReg, uNewDrX));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
-            uNewDrX &= ~RT_BIT_32(12);
-            uNewDrX |= UINT32_C(0xffff0ff0);
+            uNewDrX |= X86_DR6_RA1_MASK;
+            uNewDrX &= ~X86_DR6_RAZ_MASK;
             break;
 
         case 7:
-        case 5:
-            if (uNewDrX & UINT64_C(0xffffffff00000000))
+            if (uNewDrX & X86_DR7_MBZ_MASK)
             {
                 Log(("mov dr%u,%#llx: DR7 high bits are not zero -> #GP(0)\n", iDrReg, uNewDrX));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
             }
-            uNewDrX &= ~(RT_BIT_32(11) | RT_BIT_32(12) | RT_BIT_32(14) | RT_BIT_32(15));
-            uNewDrX |= RT_BIT_32(10);
+            uNewDrX |= X86_DR7_RA1_MASK;
+            uNewDrX &= ~X86_DR7_RAZ_MASK;
             break;
 
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
