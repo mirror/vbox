@@ -5278,7 +5278,10 @@ FNIEMOP_DEF_1(iemOpCommonBswapGReg, uint8_t, iReg)
 FNIEMOP_DEF(iemOp_bswap_rAX_r8)
 {
     IEMOP_MNEMONIC("bswap rAX/r8");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xAX | pIemCpu->uRexReg);
+    /* Note! Intel manuals states that R8-R15 can be accessed by using a REX.X
+             prefix.  REX.B is the correct prefix it appears.  For a parallel
+             case, see iemOp_mov_AL_Ib and iemOp_mov_eAX_Iv. */
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xAX | pIemCpu->uRexB);
 }
 
 
@@ -5286,7 +5289,7 @@ FNIEMOP_DEF(iemOp_bswap_rAX_r8)
 FNIEMOP_DEF(iemOp_bswap_rCX_r9)
 {
     IEMOP_MNEMONIC("bswap rCX/r9");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xCX | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xCX | pIemCpu->uRexB);
 }
 
 
@@ -5294,7 +5297,7 @@ FNIEMOP_DEF(iemOp_bswap_rCX_r9)
 FNIEMOP_DEF(iemOp_bswap_rDX_r10)
 {
     IEMOP_MNEMONIC("bswap rDX/r9");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDX | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDX | pIemCpu->uRexB);
 }
 
 
@@ -5302,7 +5305,7 @@ FNIEMOP_DEF(iemOp_bswap_rDX_r10)
 FNIEMOP_DEF(iemOp_bswap_rBX_r11)
 {
     IEMOP_MNEMONIC("bswap rBX/r9");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBX | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBX | pIemCpu->uRexB);
 }
 
 
@@ -5310,7 +5313,7 @@ FNIEMOP_DEF(iemOp_bswap_rBX_r11)
 FNIEMOP_DEF(iemOp_bswap_rSP_r12)
 {
     IEMOP_MNEMONIC("bswap rSP/r12");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSP | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSP | pIemCpu->uRexB);
 }
 
 
@@ -5318,7 +5321,7 @@ FNIEMOP_DEF(iemOp_bswap_rSP_r12)
 FNIEMOP_DEF(iemOp_bswap_rBP_r13)
 {
     IEMOP_MNEMONIC("bswap rBP/r13");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBP | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xBP | pIemCpu->uRexB);
 }
 
 
@@ -5326,7 +5329,7 @@ FNIEMOP_DEF(iemOp_bswap_rBP_r13)
 FNIEMOP_DEF(iemOp_bswap_rSI_r14)
 {
     IEMOP_MNEMONIC("bswap rSI/r14");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSI | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xSI | pIemCpu->uRexB);
 }
 
 
@@ -5334,7 +5337,7 @@ FNIEMOP_DEF(iemOp_bswap_rSI_r14)
 FNIEMOP_DEF(iemOp_bswap_rDI_r15)
 {
     IEMOP_MNEMONIC("bswap rDI/r15");
-    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDI | pIemCpu->uRexReg);
+    return FNIEMOP_CALL_1(iemOpCommonBswapGReg, X86_GREG_xDI | pIemCpu->uRexB);
 }
 
 

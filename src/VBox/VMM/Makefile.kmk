@@ -705,6 +705,7 @@ endif
 #
 # Always optimize the interpreter.
 #
+ifn1of ($(USERNAME),bird)
 if1of ($(KBUILD_TARGET), win)
  # -noover is recognized despite the statement saying otherwise. It silences these warnings:
  # cl : Command line warning D9025 : overriding '/Od' with '/O2'
@@ -716,6 +717,7 @@ else
  #VMMAll/IEMAll.cpp_CXXFLAGS += -fno-reorder-blocks    # Saves one or two percent ... never mind.
  VMMAll/IEMAll.cpp_CXXFLAGS += -fomit-frame-pointer # Omitting the frame pointer results in larger code, but it might be worth it. (esp addressing vs ebp?)
 endif
+endif # bird wants good stacks
 
 include $(FILE_KBUILD_SUB_FOOTER)
 
