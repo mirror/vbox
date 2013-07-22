@@ -577,185 +577,185 @@ typedef union
  * @{
  */
 /** And-mask for setting reserved bits to zero */
-#define VMX_EFLAGS_RESERVED_0           (~0xffc08028)
+#define VMX_EFLAGS_RESERVED_0                                   (~0xffc08028)
 /** Or-mask for setting reserved bits to 1 */
-#define VMX_EFLAGS_RESERVED_1           0x00000002
+#define VMX_EFLAGS_RESERVED_1                                   0x00000002
 /** @} */
 
 /** @name VMX Basic Exit Reasons.
  * @{
  */
 /** -1 Invalid exit code */
-#define VMX_EXIT_INVALID            -1
+#define VMX_EXIT_INVALID                                        -1
 /** 0 Exception or non-maskable interrupt (NMI). */
-#define VMX_EXIT_XCPT_OR_NMI        0
+#define VMX_EXIT_XCPT_OR_NMI                                    0
 /** 1 External interrupt. */
-#define VMX_EXIT_EXT_INT            1
+#define VMX_EXIT_EXT_INT                                        1
 /** 2 Triple fault. */
-#define VMX_EXIT_TRIPLE_FAULT       2
+#define VMX_EXIT_TRIPLE_FAULT                                   2
 /** 3 INIT signal. */
-#define VMX_EXIT_INIT_SIGNAL        3
+#define VMX_EXIT_INIT_SIGNAL                                    3
 /** 4 Start-up IPI (SIPI). */
-#define VMX_EXIT_SIPI               4
+#define VMX_EXIT_SIPI                                           4
 /** 5 I/O system-management interrupt (SMI). */
-#define VMX_EXIT_IO_SMI             5
+#define VMX_EXIT_IO_SMI                                         5
 /** 6 Other SMI. */
-#define VMX_EXIT_SMI                6
+#define VMX_EXIT_SMI                                            6
 /** 7 Interrupt window exiting. */
-#define VMX_EXIT_INT_WINDOW         7
+#define VMX_EXIT_INT_WINDOW                                     7
 /** 8 NMI window exiting. */
-#define VMX_EXIT_NMI_WINDOW         8
+#define VMX_EXIT_NMI_WINDOW                                     8
 /** 9 Task switch. */
-#define VMX_EXIT_TASK_SWITCH        9
+#define VMX_EXIT_TASK_SWITCH                                    9
 /** 10 Guest software attempted to execute CPUID. */
-#define VMX_EXIT_CPUID              10
+#define VMX_EXIT_CPUID                                          10
 /** 10 Guest software attempted to execute GETSEC. */
-#define VMX_EXIT_GETSEC             11
+#define VMX_EXIT_GETSEC                                         11
 /** 12 Guest software attempted to execute HLT. */
-#define VMX_EXIT_HLT                12
+#define VMX_EXIT_HLT                                            12
 /** 13 Guest software attempted to execute INVD. */
-#define VMX_EXIT_INVD               13
+#define VMX_EXIT_INVD                                           13
 /** 14 Guest software attempted to execute INVLPG. */
-#define VMX_EXIT_INVLPG             14
+#define VMX_EXIT_INVLPG                                         14
 /** 15 Guest software attempted to execute RDPMC. */
-#define VMX_EXIT_RDPMC              15
+#define VMX_EXIT_RDPMC                                          15
 /** 16 Guest software attempted to execute RDTSC. */
-#define VMX_EXIT_RDTSC              16
+#define VMX_EXIT_RDTSC                                          16
 /** 17 Guest software attempted to execute RSM in SMM. */
-#define VMX_EXIT_RSM                17
+#define VMX_EXIT_RSM                                            17
 /** 18 Guest software executed VMCALL. */
-#define VMX_EXIT_VMCALL             18
+#define VMX_EXIT_VMCALL                                         18
 /** 19 Guest software executed VMCLEAR. */
-#define VMX_EXIT_VMCLEAR            19
+#define VMX_EXIT_VMCLEAR                                        19
 /** 20 Guest software executed VMLAUNCH. */
-#define VMX_EXIT_VMLAUNCH           20
+#define VMX_EXIT_VMLAUNCH                                       20
 /** 21 Guest software executed VMPTRLD. */
-#define VMX_EXIT_VMPTRLD            21
+#define VMX_EXIT_VMPTRLD                                        21
 /** 22 Guest software executed VMPTRST. */
-#define VMX_EXIT_VMPTRST            22
+#define VMX_EXIT_VMPTRST                                        22
 /** 23 Guest software executed VMREAD. */
-#define VMX_EXIT_VMREAD             23
+#define VMX_EXIT_VMREAD                                         23
 /** 24 Guest software executed VMRESUME. */
-#define VMX_EXIT_VMRESUME           24
+#define VMX_EXIT_VMRESUME                                       24
 /** 25 Guest software executed VMWRITE. */
-#define VMX_EXIT_VMWRITE            25
+#define VMX_EXIT_VMWRITE                                        25
 /** 26 Guest software executed VMXOFF. */
-#define VMX_EXIT_VMXOFF             26
+#define VMX_EXIT_VMXOFF                                         26
 /** 27 Guest software executed VMXON. */
-#define VMX_EXIT_VMXON              27
+#define VMX_EXIT_VMXON                                          27
 /** 28 Control-register accesses. */
-#define VMX_EXIT_MOV_CRX            28
+#define VMX_EXIT_MOV_CRX                                        28
 /** 29 Debug-register accesses. */
-#define VMX_EXIT_MOV_DRX            29
+#define VMX_EXIT_MOV_DRX                                        29
 /** 30 I/O instruction. */
-#define VMX_EXIT_IO_INSTR           30
+#define VMX_EXIT_IO_INSTR                                       30
 /** 31 RDMSR. Guest software attempted to execute RDMSR. */
-#define VMX_EXIT_RDMSR              31
+#define VMX_EXIT_RDMSR                                          31
 /** 32 WRMSR. Guest software attempted to execute WRMSR. */
-#define VMX_EXIT_WRMSR              32
+#define VMX_EXIT_WRMSR                                          32
 /** 33 VM-entry failure due to invalid guest state. */
-#define VMX_EXIT_ERR_INVALID_GUEST_STATE    33
+#define VMX_EXIT_ERR_INVALID_GUEST_STATE                        33
 /** 34 VM-entry failure due to MSR loading. */
-#define VMX_EXIT_ERR_MSR_LOAD       34
+#define VMX_EXIT_ERR_MSR_LOAD                                   34
 /** 36 Guest software executed MWAIT. */
-#define VMX_EXIT_MWAIT              36
+#define VMX_EXIT_MWAIT                                          36
 /** 37 VM exit due to monitor trap flag. */
-#define VMX_EXIT_MTF                37
+#define VMX_EXIT_MTF                                            37
 /** 39 Guest software attempted to execute MONITOR. */
-#define VMX_EXIT_MONITOR            39
+#define VMX_EXIT_MONITOR                                        39
 /** 40 Guest software attempted to execute PAUSE. */
-#define VMX_EXIT_PAUSE              40
+#define VMX_EXIT_PAUSE                                          40
 /** 41 VM-entry failure due to machine-check. */
-#define VMX_EXIT_ERR_MACHINE_CHECK  41
+#define VMX_EXIT_ERR_MACHINE_CHECK                              41
 /** 43 TPR below threshold. Guest software executed MOV to CR8. */
-#define VMX_EXIT_TPR_BELOW_THRESHOLD        43
+#define VMX_EXIT_TPR_BELOW_THRESHOLD                            43
 /** 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
-#define VMX_EXIT_APIC_ACCESS        44
+#define VMX_EXIT_APIC_ACCESS                                    44
 /** 46 Access to GDTR or IDTR. Guest software attempted to execute LGDT, LIDT, SGDT, or SIDT. */
-#define VMX_EXIT_XDTR_ACCESS        46
+#define VMX_EXIT_XDTR_ACCESS                                    46
 /** 47 Access to LDTR or TR. Guest software attempted to execute LLDT, LTR, SLDT, or STR. */
-#define VMX_EXIT_TR_ACCESS          47
+#define VMX_EXIT_TR_ACCESS                                      47
 /** 48 EPT violation. An attempt to access memory with a guest-physical address was disallowed by the configuration of the EPT paging structures. */
-#define VMX_EXIT_EPT_VIOLATION      48
+#define VMX_EXIT_EPT_VIOLATION                                  48
 /** 49 EPT misconfiguration. An attempt to access memory with a guest-physical address encountered a misconfigured EPT paging-structure entry. */
-#define VMX_EXIT_EPT_MISCONFIG      49
+#define VMX_EXIT_EPT_MISCONFIG                                  49
 /** 50 INVEPT. Guest software attempted to execute INVEPT. */
-#define VMX_EXIT_INVEPT             50
+#define VMX_EXIT_INVEPT                                         50
 /** 51 RDTSCP. Guest software attempted to execute RDTSCP. */
-#define VMX_EXIT_RDTSCP             51
+#define VMX_EXIT_RDTSCP                                         51
 /** 52 VMX-preemption timer expired. The preemption timer counted down to zero. */
-#define VMX_EXIT_PREEMPT_TIMER      52
+#define VMX_EXIT_PREEMPT_TIMER                                  52
 /** 53 INVVPID. Guest software attempted to execute INVVPID. */
-#define VMX_EXIT_INVVPID            53
+#define VMX_EXIT_INVVPID                                        53
 /** 54 WBINVD. Guest software attempted to execute WBINVD. */
-#define VMX_EXIT_WBINVD             54
+#define VMX_EXIT_WBINVD                                         54
 /** 55 XSETBV. Guest software attempted to execute XSETBV. */
-#define VMX_EXIT_XSETBV             55
+#define VMX_EXIT_XSETBV                                         55
 /** 57 RDRAND. Guest software attempted to execute RDRAND. */
-#define VMX_EXIT_RDRAND             57
+#define VMX_EXIT_RDRAND                                         57
 /** 58 INVPCID. Guest software attempted to execute INVPCID. */
-#define VMX_EXIT_INVPCID            58
+#define VMX_EXIT_INVPCID                                        58
 /** 59 VMFUNC. Guest software attempted to execute VMFUNC. */
-#define VMX_EXIT_VMFUNC             59
+#define VMX_EXIT_VMFUNC                                         59
 /** The maximum exit value (inclusive). */
-#define VMX_EXIT_MAX                (VMX_EXIT_VMFUNC)
+#define VMX_EXIT_MAX                                            (VMX_EXIT_VMFUNC)
 /** @} */
 
 
 /** @name VM Instruction Errors
  * @{
  */
-/** 1 VMCALL executed in VMX root operation. */
-#define VMX_ERROR_VMCALL                            1
-/** 2 VMCLEAR with invalid physical address. */
-#define VMX_ERROR_VMCLEAR_INVALID_PHYS_ADDR         2
-/** 3 VMCLEAR with VMXON pointer. */
-#define VMX_ERROR_VMCLEAR_INVALID_VMXON_PTR         3
-/** 4 VMLAUNCH with non-clear VMCS. */
-#define VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS            4
-/** 5 VMRESUME with non-launched VMCS. */
-#define VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS        5
-/** 6 VMRESUME with a corrupted VMCS (indicates corruption of the current VMCS). */
-#define VMX_ERROR_VMRESUME_CORRUPTED_VMCS           6
-/** 7 VM entry with invalid control field(s). */
-#define VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS    7
-/** 8 VM entry with invalid host-state field(s). */
-#define VMX_ERROR_VMENTRY_INVALID_HOST_STATE        8
-/** 9 VMPTRLD with invalid physical address. */
-#define VMX_ERROR_VMPTRLD_INVALID_PHYS_ADDR         9
-/** 10 VMPTRLD with VMXON pointer. */
-#define VMX_ERROR_VMPTRLD_VMXON_PTR                 10
-/** 11 VMPTRLD with incorrect VMCS revision identifier. */
-#define VMX_ERROR_VMPTRLD_WRONG_VMCS_REVISION       11
-/** 12 VMREAD/VMWRITE from/to unsupported VMCS component. */
-#define VMX_ERROR_VMREAD_INVALID_COMPONENT          12
-#define VMX_ERROR_VMWRITE_INVALID_COMPONENT         VMX_ERROR_VMREAD_INVALID_COMPONENT
-/** 13 VMWRITE to read-only VMCS component. */
-#define VMX_ERROR_VMWRITE_READONLY_COMPONENT        13
-/** 15 VMXON executed in VMX root operation. */
-#define VMX_ERROR_VMXON_IN_VMX_ROOT_OP              15
-/** 16 VM entry with invalid executive-VMCS pointer. */
-#define VMX_ERROR_VMENTRY_INVALID_VMCS_EXEC_PTR     16
-/** 17 VM entry with non-launched executive VMCS. */
-#define VMX_ERROR_VMENTRY_NON_LAUNCHED_EXEC_VMCS    17
-/** 18 VM entry with executive-VMCS pointer not VMXON pointer. */
-#define VMX_ERROR_VMENTRY_EXEC_VMCS_PTR             18
-/** 19 VMCALL with non-clear VMCS. */
-#define VMX_ERROR_VMCALL_NON_CLEAR_VMCS             19
-/** 20 VMCALL with invalid VM-exit control fields. */
-#define VMX_ERROR_VMCALL_INVALID_VMEXIT_FIELDS      20
-/** 22 VMCALL with incorrect MSEG revision identifier. */
-#define VMX_ERROR_VMCALL_INVALID_MSEG_REVISION      22
-/** 23 VMXOFF under dual-monitor treatment of SMIs and SMM. */
-#define VMX_ERROR_VMXOFF_DUAL_MONITOR               23
-/** 24 VMCALL with invalid SMM-monitor features. */
-#define VMX_ERROR_VMCALL_INVALID_SMM_MONITOR        24
-/** 25 VM entry with invalid VM-execution control fields in executive VMCS. */
-#define VMX_ERROR_VMENTRY_INVALID_VM_EXEC_CTRL      25
-/** 26 VM entry with events blocked by MOV SS. */
-#define VMX_ERROR_VMENTRY_MOV_SS                    26
-/** 26 Invalid operand to INVEPT/INVVPID. */
-#define VMX_ERROR_INVEPTVPID_INVALID_OPERAND        28
+/** VMCALL executed in VMX root operation. */
+#define VMX_ERROR_VMCALL                                        1
+/** VMCLEAR with invalid physical address. */
+#define VMX_ERROR_VMCLEAR_INVALID_PHYS_ADDR                     2
+/** VMCLEAR with VMXON pointer. */
+#define VMX_ERROR_VMCLEAR_INVALID_VMXON_PTR                     3
+/** VMLAUNCH with non-clear VMCS. */
+#define VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS                        4
+/** VMRESUME with non-launched VMCS. */
+#define VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS                    5
+/** VMRESUME with a corrupted VMCS (indicates corruption of the current VMCS). */
+#define VMX_ERROR_VMRESUME_CORRUPTED_VMCS                       6
+/** VM-entry with invalid control field(s). */
+#define VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS                7
+/** VM-entry with invalid host-state field(s). */
+#define VMX_ERROR_VMENTRY_INVALID_HOST_STATE                    8
+/** VMPTRLD with invalid physical address. */
+#define VMX_ERROR_VMPTRLD_INVALID_PHYS_ADDR                     9
+/** VMPTRLD with VMXON pointer. */
+#define VMX_ERROR_VMPTRLD_VMXON_PTR                             10
+/** VMPTRLD with incorrect VMCS revision identifier. */
+#define VMX_ERROR_VMPTRLD_WRONG_VMCS_REVISION                   11
+/** VMREAD/VMWRITE from/to unsupported VMCS component. */
+#define VMX_ERROR_VMREAD_INVALID_COMPONENT                      12
+#define VMX_ERROR_VMWRITE_INVALID_COMPONENT                     VMX_ERROR_VMREAD_INVALID_COMPONENT
+/** VMWRITE to read-only VMCS component. */
+#define VMX_ERROR_VMWRITE_READONLY_COMPONENT                    13
+/** VMXON executed in VMX root operation. */
+#define VMX_ERROR_VMXON_IN_VMX_ROOT_OP                          15
+/** VM entry with invalid executive-VMCS pointer. */
+#define VMX_ERROR_VMENTRY_INVALID_VMCS_EXEC_PTR                 16
+/** VM entry with non-launched executive VMCS. */
+#define VMX_ERROR_VMENTRY_NON_LAUNCHED_EXEC_VMCS                17
+/** VM entry with executive-VMCS pointer not VMXON pointer. */
+#define VMX_ERROR_VMENTRY_EXEC_VMCS_PTR                         18
+/** VMCALL with non-clear VMCS. */
+#define VMX_ERROR_VMCALL_NON_CLEAR_VMCS                         19
+/** VMCALL with invalid VM-exit control fields. */
+#define VMX_ERROR_VMCALL_INVALID_VMEXIT_FIELDS                  20
+/** VMCALL with incorrect MSEG revision identifier. */
+#define VMX_ERROR_VMCALL_INVALID_MSEG_REVISION                  22
+/** VMXOFF under dual-monitor treatment of SMIs and SMM. */
+#define VMX_ERROR_VMXOFF_DUAL_MONITOR                           23
+/** VMCALL with invalid SMM-monitor features. */
+#define VMX_ERROR_VMCALL_INVALID_SMM_MONITOR                    24
+/** VM entry with invalid VM-execution control fields in executive VMCS. */
+#define VMX_ERROR_VMENTRY_INVALID_VM_EXEC_CTRL                  25
+/** VM entry with events blocked by MOV SS. */
+#define VMX_ERROR_VMENTRY_MOV_SS                                26
+/** Invalid operand to INVEPT/INVVPID. */
+#define VMX_ERROR_INVEPTVPID_INVALID_OPERAND                    28
 
 /** @} */
 
@@ -816,31 +816,31 @@ typedef union
 /** @name MSR_IA32_VMX_EPT_VPID_CAPS; EPT capabilities MSR
  * @{
  */
-#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                                RT_BIT_64(0)
-#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY                                RT_BIT_64(1)
-#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY                               RT_BIT_64(2)
-#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS                               RT_BIT_64(3)
-#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS                               RT_BIT_64(4)
-#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS                               RT_BIT_64(5)
-#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS                               RT_BIT_64(6)
-#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS                               RT_BIT_64(7)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                                    RT_BIT_64(8)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC                                    RT_BIT_64(9)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT                                    RT_BIT_64(12)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP                                    RT_BIT_64(13)
-#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                                    RT_BIT_64(14)
-#define MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS                                RT_BIT_64(16)
-#define MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS                                RT_BIT_64(17)
-#define MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS                                RT_BIT_64(18)
-#define MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS                                RT_BIT_64(19)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                                    RT_BIT_64(20)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT                     RT_BIT_64(25)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS                       RT_BIT_64(26)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID                                   RT_BIT_64(32)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR                        RT_BIT_64(40)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT                    RT_BIT_64(41)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS                      RT_BIT_64(42)
-#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS     RT_BIT_64(43)
+#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_X_ONLY                             RT_BIT_64(0)
+#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_W_ONLY                             RT_BIT_64(1)
+#define MSR_IA32_VMX_EPT_VPID_CAP_RWX_WX_ONLY                            RT_BIT_64(2)
+#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_21_BITS                            RT_BIT_64(3)
+#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_30_BITS                            RT_BIT_64(4)
+#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_39_BITS                            RT_BIT_64(5)
+#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_48_BITS                            RT_BIT_64(6)
+#define MSR_IA32_VMX_EPT_VPID_CAP_GAW_57_BITS                            RT_BIT_64(7)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_UC                                 RT_BIT_64(8)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WC                                 RT_BIT_64(9)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WT                                 RT_BIT_64(12)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WP                                 RT_BIT_64(13)
+#define MSR_IA32_VMX_EPT_VPID_CAP_EMT_WB                                 RT_BIT_64(14)
+#define MSR_IA32_VMX_EPT_VPID_CAP_SP_21_BITS                             RT_BIT_64(16)
+#define MSR_IA32_VMX_EPT_VPID_CAP_SP_30_BITS                             RT_BIT_64(17)
+#define MSR_IA32_VMX_EPT_VPID_CAP_SP_39_BITS                             RT_BIT_64(18)
+#define MSR_IA32_VMX_EPT_VPID_CAP_SP_48_BITS                             RT_BIT_64(19)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT                                 RT_BIT_64(20)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_SINGLE_CONTEXT                  RT_BIT_64(25)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS                    RT_BIT_64(26)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID                                RT_BIT_64(32)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_INDIV_ADDR                     RT_BIT_64(40)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT                 RT_BIT_64(41)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_ALL_CONTEXTS                   RT_BIT_64(42)
+#define MSR_IA32_VMX_EPT_VPID_CAP_INVVPID_SINGLE_CONTEXT_RETAIN_GLOBALS  RT_BIT_64(43)
 
 /** @} */
 
@@ -848,106 +848,106 @@ typedef union
  * @{
  */
 /** Uncachable EPT paging structure memory type. */
-#define VMX_EPT_MEMTYPE_UC                                  0
+#define VMX_EPT_MEMTYPE_UC                                      0
 /** Write-back EPT paging structure memory type. */
-#define VMX_EPT_MEMTYPE_WB                                  6
+#define VMX_EPT_MEMTYPE_WB                                      6
 /** Shift value to get the EPT page walk length (bits 5-3) */
-#define VMX_EPT_PAGE_WALK_LENGTH_SHIFT                      3
+#define VMX_EPT_PAGE_WALK_LENGTH_SHIFT                          3
 /** Mask value to get the EPT page walk length (bits 5-3) */
-#define VMX_EPT_PAGE_WALK_LENGTH_MASK                       7
+#define VMX_EPT_PAGE_WALK_LENGTH_MASK                           7
 /** Default EPT page-walk length (1 less than the actual EPT page-walk
  *  length) */
-#define VMX_EPT_PAGE_WALK_LENGTH_DEFAULT                    3
+#define VMX_EPT_PAGE_WALK_LENGTH_DEFAULT                        3
 /** @} */
 
 
 /** @name VMCS field encoding - 16 bits guest fields
  * @{
  */
-#define VMX_VMCS16_GUEST_FIELD_VPID                               0x0
-#define VMX_VMCS16_GUEST_FIELD_ES                                 0x800
-#define VMX_VMCS16_GUEST_FIELD_CS                                 0x802
-#define VMX_VMCS16_GUEST_FIELD_SS                                 0x804
-#define VMX_VMCS16_GUEST_FIELD_DS                                 0x806
-#define VMX_VMCS16_GUEST_FIELD_FS                                 0x808
-#define VMX_VMCS16_GUEST_FIELD_GS                                 0x80A
-#define VMX_VMCS16_GUEST_FIELD_LDTR                               0x80C
-#define VMX_VMCS16_GUEST_FIELD_TR                                 0x80E
+#define VMX_VMCS16_GUEST_FIELD_VPID                             0x0
+#define VMX_VMCS16_GUEST_FIELD_ES                               0x800
+#define VMX_VMCS16_GUEST_FIELD_CS                               0x802
+#define VMX_VMCS16_GUEST_FIELD_SS                               0x804
+#define VMX_VMCS16_GUEST_FIELD_DS                               0x806
+#define VMX_VMCS16_GUEST_FIELD_FS                               0x808
+#define VMX_VMCS16_GUEST_FIELD_GS                               0x80A
+#define VMX_VMCS16_GUEST_FIELD_LDTR                             0x80C
+#define VMX_VMCS16_GUEST_FIELD_TR                               0x80E
 /** @} */
 
 /** @name VMCS field encoding - 16 bits host fields
  * @{
  */
-#define VMX_VMCS16_HOST_FIELD_ES                                  0xC00
-#define VMX_VMCS16_HOST_FIELD_CS                                  0xC02
-#define VMX_VMCS16_HOST_FIELD_SS                                  0xC04
-#define VMX_VMCS16_HOST_FIELD_DS                                  0xC06
-#define VMX_VMCS16_HOST_FIELD_FS                                  0xC08
-#define VMX_VMCS16_HOST_FIELD_GS                                  0xC0A
-#define VMX_VMCS16_HOST_FIELD_TR                                  0xC0C
+#define VMX_VMCS16_HOST_FIELD_ES                                0xC00
+#define VMX_VMCS16_HOST_FIELD_CS                                0xC02
+#define VMX_VMCS16_HOST_FIELD_SS                                0xC04
+#define VMX_VMCS16_HOST_FIELD_DS                                0xC06
+#define VMX_VMCS16_HOST_FIELD_FS                                0xC08
+#define VMX_VMCS16_HOST_FIELD_GS                                0xC0A
+#define VMX_VMCS16_HOST_FIELD_TR                                0xC0C
 /** @}          */
 
 /** @name VMCS field encoding - 64 bits host fields
  * @{
  */
-#define VMX_VMCS64_HOST_FIELD_PAT_FULL                            0x2C00
-#define VMX_VMCS64_HOST_FIELD_PAT_HIGH                            0x2C01
-#define VMX_VMCS64_HOST_FIELD_EFER_FULL                           0x2C02
-#define VMX_VMCS64_HOST_FIELD_EFER_HIGH                           0x2C03
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                     0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
-#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                     0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_FIELD_PAT_FULL                          0x2C00
+#define VMX_VMCS64_HOST_FIELD_PAT_HIGH                          0x2C01
+#define VMX_VMCS64_HOST_FIELD_EFER_FULL                         0x2C02
+#define VMX_VMCS64_HOST_FIELD_EFER_HIGH                         0x2C03
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_FULL                   0x2C04      /**< MSR IA32_PERF_GLOBAL_CTRL */
+#define VMX_VMCS64_HOST_PERF_GLOBAL_CTRL_HIGH                   0x2C05      /**< MSR IA32_PERF_GLOBAL_CTRL */
 /** @}          */
 
 
 /** @name VMCS field encoding - 64 Bits control fields
  * @{
  */
-#define VMX_VMCS64_CTRL_IO_BITMAP_A_FULL                          0x2000
-#define VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH                          0x2001
-#define VMX_VMCS64_CTRL_IO_BITMAP_B_FULL                          0x2002
-#define VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH                          0x2003
+#define VMX_VMCS64_CTRL_IO_BITMAP_A_FULL                        0x2000
+#define VMX_VMCS64_CTRL_IO_BITMAP_A_HIGH                        0x2001
+#define VMX_VMCS64_CTRL_IO_BITMAP_B_FULL                        0x2002
+#define VMX_VMCS64_CTRL_IO_BITMAP_B_HIGH                        0x2003
 
 /* Optional */
-#define VMX_VMCS64_CTRL_MSR_BITMAP_FULL                           0x2004
-#define VMX_VMCS64_CTRL_MSR_BITMAP_HIGH                           0x2005
+#define VMX_VMCS64_CTRL_MSR_BITMAP_FULL                         0x2004
+#define VMX_VMCS64_CTRL_MSR_BITMAP_HIGH                         0x2005
 
-#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL                       0x2006
-#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH                       0x2007
-#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL                        0x2008
-#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH                        0x2009
+#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_FULL                     0x2006
+#define VMX_VMCS64_CTRL_EXIT_MSR_STORE_HIGH                     0x2007
+#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_FULL                      0x2008
+#define VMX_VMCS64_CTRL_EXIT_MSR_LOAD_HIGH                      0x2009
 
-#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                       0x200A
-#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                       0x200B
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_FULL                     0x200A
+#define VMX_VMCS64_CTRL_ENTRY_MSR_LOAD_HIGH                     0x200B
 
-#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                        0x200C
-#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                        0x200D
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_FULL                      0x200C
+#define VMX_VMCS64_CTRL_EXEC_VMCS_PTR_HIGH                      0x200D
 
-#define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                           0x2010
-#define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                           0x2011
+#define VMX_VMCS64_CTRL_TSC_OFFSET_FULL                         0x2010
+#define VMX_VMCS64_CTRL_TSC_OFFSET_HIGH                         0x2011
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW) */
-#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                       0x2012
-#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                       0x2013
+#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_FULL                     0x2012
+#define VMX_VMCS64_CTRL_VAPIC_PAGEADDR_HIGH                     0x2013
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC) */
-#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL                      0x2014
-#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                      0x2015
+#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_FULL                    0x2014
+#define VMX_VMCS64_CTRL_APIC_ACCESSADDR_HIGH                    0x2015
 
 /** Optional (VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC) */
-#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                         0x2018
-#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                         0x2019
+#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_FULL                       0x2018
+#define VMX_VMCS64_CTRL_VMFUNC_CTRLS_HIGH                       0x2019
 
 /** Extended page table pointer. */
-#define VMX_VMCS64_CTRL_EPTP_FULL                                 0x201a
-#define VMX_VMCS64_CTRL_EPTP_HIGH                                 0x201b
+#define VMX_VMCS64_CTRL_EPTP_FULL                               0x201a
+#define VMX_VMCS64_CTRL_EPTP_HIGH                               0x201b
 
 /** Extended page table pointer lists. */
-#define VMX_VMCS64_CTRL_EPTP_LIST_FULL                            0x2024
-#define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                            0x2025
+#define VMX_VMCS64_CTRL_EPTP_LIST_FULL                          0x2024
+#define VMX_VMCS64_CTRL_EPTP_LIST_HIGH                          0x2025
 
 /** VM-exit guest phyiscal address. */
-#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                      0x2400
-#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                      0x2401
+#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_FULL                    0x2400
+#define VMX_VMCS64_EXIT_GUEST_PHYS_ADDR_HIGH                    0x2401
 /** @} */
 
 
@@ -1001,13 +1001,13 @@ typedef union
  * @{
  */
 /** External interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT            RT_BIT(0)
+#define VMX_VMCS_CTRL_PIN_EXEC_EXT_INT_EXIT                     RT_BIT(0)
 /** Non-maskable interrupts cause VM exits if set; otherwise dispatched through the guest's IDT. */
-#define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                RT_BIT(3)
+#define VMX_VMCS_CTRL_PIN_EXEC_NMI_EXIT                         RT_BIT(3)
 /** Virtual NMIs. */
-#define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI             RT_BIT(5)
+#define VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI                      RT_BIT(5)
 /** Activate VMX preemption timer. */
-#define VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER           RT_BIT(6)
+#define VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER                    RT_BIT(6)
 /* All other bits are reserved and must be set according to MSR IA32_VMX_PROCBASED_CTLS. */
 /** @} */
 
@@ -1015,45 +1015,45 @@ typedef union
  * @{
  */
 /** VM Exit as soon as RFLAGS.IF=1 and no blocking is active. */
-#define VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT        RT_BIT(2)
+#define VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT                 RT_BIT(2)
 /** Use timestamp counter offset. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING     RT_BIT(3)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_TSC_OFFSETTING              RT_BIT(3)
 /** VM Exit when executing the HLT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT               RT_BIT(7)
+#define VMX_VMCS_CTRL_PROC_EXEC_HLT_EXIT                        RT_BIT(7)
 /** VM Exit when executing the INVLPG instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT            RT_BIT(9)
+#define VMX_VMCS_CTRL_PROC_EXEC_INVLPG_EXIT                     RT_BIT(9)
 /** VM Exit when executing the MWAIT instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT             RT_BIT(10)
+#define VMX_VMCS_CTRL_PROC_EXEC_MWAIT_EXIT                      RT_BIT(10)
 /** VM Exit when executing the RDPMC instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT             RT_BIT(11)
+#define VMX_VMCS_CTRL_PROC_EXEC_RDPMC_EXIT                      RT_BIT(11)
 /** VM Exit when executing the RDTSC/RDTSCP instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT             RT_BIT(12)
+#define VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT                      RT_BIT(12)
 /** VM Exit when executing the MOV to CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT          RT_BIT(15)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR3_LOAD_EXIT                   RT_BIT(15)
 /** VM Exit when executing the MOV from CR3 instruction. (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT         RT_BIT(16)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR3_STORE_EXIT                  RT_BIT(16)
 /** VM Exit on CR8 loads. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT          RT_BIT(19)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT                   RT_BIT(19)
 /** VM Exit on CR8 stores. */
-#define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT         RT_BIT(20)
+#define VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT                  RT_BIT(20)
 /** Use TPR shadow. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW         RT_BIT(21)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW                  RT_BIT(21)
 /** VM Exit when virtual nmi blocking is disabled. */
-#define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT        RT_BIT(22)
+#define VMX_VMCS_CTRL_PROC_EXEC_NMI_WINDOW_EXIT                 RT_BIT(22)
 /** VM Exit when executing a MOV DRx instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT            RT_BIT(23)
+#define VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT                     RT_BIT(23)
 /** VM Exit when executing IO instructions. */
-#define VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT         RT_BIT(24)
+#define VMX_VMCS_CTRL_PROC_EXEC_UNCOND_IO_EXIT                  RT_BIT(24)
 /** Use IO bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_IO_BITMAPS         RT_BIT(25)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_IO_BITMAPS                  RT_BIT(25)
 /** Monitor trap flag. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG      RT_BIT(27)
+#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG               RT_BIT(27)
 /** Use MSR bitmaps. */
-#define VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS        RT_BIT(28)
+#define VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS                 RT_BIT(28)
 /** VM Exit when executing the MONITOR instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT           RT_BIT(29)
+#define VMX_VMCS_CTRL_PROC_EXEC_MONITOR_EXIT                    RT_BIT(29)
 /** VM Exit when executing the PAUSE instruction. */
-#define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT             RT_BIT(30)
+#define VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT                      RT_BIT(30)
 /** Determines whether the secondary processor based VM-execution controls are used. */
 #define VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL         RT_BIT(31)
 /** @} */
@@ -1092,19 +1092,19 @@ typedef union
  * @{
  */
 /** Load guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG                 RT_BIT(2)
+#define VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG                          RT_BIT(2)
 /** 64 bits guest mode. Must be 0 for CPUs that don't support AMD64. */
-#define VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST           RT_BIT(9)
+#define VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST                    RT_BIT(9)
 /** In SMM mode after VM-entry. */
-#define VMX_VMCS_CTRL_ENTRY_ENTRY_SMM                  RT_BIT(10)
+#define VMX_VMCS_CTRL_ENTRY_ENTRY_SMM                           RT_BIT(10)
 /** Disable dual treatment of SMI and SMM; must be zero for VM-entry outside of SMM. */
-#define VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON         RT_BIT(11)
-/** This control determines whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR        RT_BIT(13)
-/** This control determines whether the guest IA32_PAT MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR         RT_BIT(14)
-/** This control determines whether the guest IA32_EFER MSR is loaded on VM entry. */
-#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR        RT_BIT(15)
+#define VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON                  RT_BIT(11)
+/** Whether the guest IA32_PERF_GLOBAL_CTRL MSR is loaded on VM entry. */
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR                 RT_BIT(13)
+/** Whether the guest IA32_PAT MSR is loaded on VM entry. */
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR                  RT_BIT(14)
+/** Whether the guest IA32_EFER MSR is loaded on VM entry. */
+#define VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR                 RT_BIT(15)
 /** @} */
 
 
@@ -1112,24 +1112,23 @@ typedef union
  * @{
  */
 /** Save guest debug controls (dr7 & IA32_DEBUGCTL_MSR) (forced to 1 on the 'first' VT-x capable CPUs; this actually includes the newest Nehalem CPUs) */
-#define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                  RT_BIT(2)
+#define VMX_VMCS_CTRL_EXIT_SAVE_DEBUG                           RT_BIT(2)
 /** Return to long mode after a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE        RT_BIT(9)
-/** This control determines whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR               RT_BIT(12)
+#define VMX_VMCS_CTRL_EXIT_HOST_ADDR_SPACE_SIZE                 RT_BIT(9)
+/** Whether the IA32_PERF_GLOBAL_CTRL MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_LOAD_PERF_MSR                        RT_BIT(12)
 /** Acknowledge external interrupts with the irq controller if one caused a VM-exit. */
-#define VMX_VMCS_CTRL_EXIT_ACK_EXT_INT                 RT_BIT(15)
-/** This control determines whether the guest IA32_PAT MSR is saved on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR          RT_BIT(18)
-/** This control determines whether the host IA32_PAT MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR           RT_BIT(19)
-/** This control determines whether the guest IA32_EFER MSR is saved on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR         RT_BIT(20)
-/** This control determines whether the host IA32_EFER MSR is loaded on VM exit. */
-#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR          RT_BIT(21)
-/** This control determines whether the value of the VMX preemption timer is
- *  saved on every VM exit. */
-#define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER      RT_BIT(22)
+#define VMX_VMCS_CTRL_EXIT_ACK_EXT_INT                          RT_BIT(15)
+/** Whether the guest IA32_PAT MSR is saved on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_PAT_MSR                   RT_BIT(18)
+/** Whether the host IA32_PAT MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_PAT_MSR                    RT_BIT(19)
+/** Whether the guest IA32_EFER MSR is saved on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_SAVE_GUEST_EFER_MSR                  RT_BIT(20)
+/** Whether the host IA32_EFER MSR is loaded on VM exit. */
+#define VMX_VMCS_CTRL_EXIT_LOAD_HOST_EFER_MSR                   RT_BIT(21)
+/** Whether the value of the VMX preemption timer is saved on every VM exit. */
+#define VMX_VMCS_CTRL_EXIT_SAVE_VMX_PREEMPT_TIMER               RT_BIT(22)
 /** @} */
 
 
@@ -1255,8 +1254,7 @@ typedef union
 #define VMX_VMCS_GUEST_ACTIVITY_ACTIVE                           0x0
 /** The logical processor is inactive, because executed a HLT instruction. */
 #define VMX_VMCS_GUEST_ACTIVITY_HLT                              0x1
-/** The logical processor is inactive, because of a triple fault or other
- *  serious error. */
+/** The logical processor is inactive, because of a triple fault or other serious error. */
 #define VMX_VMCS_GUEST_ACTIVITY_SHUTDOWN                         0x2
 /** The logical processor is inactive, because it's waiting for a startup-IPI */
 #define VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT                        0x3
@@ -1309,23 +1307,23 @@ typedef union
  * @{
  */
 /** 0-2:  Debug register number */
-#define VMX_EXIT_QUALIFICATION_DRX_REGISTER(a)         (a & 7)
+#define VMX_EXIT_QUALIFICATION_DRX_REGISTER(a)                  (a & 7)
 /** 3:    Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES1(a)             ((a >> 3) & 1)
+#define VMX_EXIT_QUALIFICATION_DRX_RES1(a)                      ((a >> 3) & 1)
 /** 4:    Direction of move (0 = write, 1 = read) */
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION(a)        ((a >> 4) & 1)
+#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION(a)                 ((a >> 4) & 1)
 /** 5-7:  Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES2(a)             ((a >> 5) & 7)
+#define VMX_EXIT_QUALIFICATION_DRX_RES2(a)                      ((a >> 5) & 7)
 /** 8-11: General purpose register number. */
-#define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)           ((a >> 8) & 0xF)
+#define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)                    ((a >> 8) & 0xF)
 /** Rest: reserved. */
 /** @} */
 
 /** @name VMX_EXIT_QUALIFICATION_DRX_DIRECTION values
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE     0
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_READ      1
+#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_WRITE              0
+#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION_READ               1
 /** @} */
 
 
@@ -1334,44 +1332,44 @@ typedef union
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
-#define VMX_EXIT_QUALIFICATION_CRX_REGISTER(a)         (a & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_REGISTER(a)                  (a & 0xF)
 /** 4-5:   Access type. */
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS(a)           ((a >> 4) & 3)
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS(a)                    ((a >> 4) & 3)
 /** 6:     LMSW operand type */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_OP(a)          ((a >> 6) & 1)
+#define VMX_EXIT_QUALIFICATION_CRX_LMSW_OP(a)                   ((a >> 6) & 1)
 /** 7:     Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES1(a)             ((a >> 7) & 1)
+#define VMX_EXIT_QUALIFICATION_CRX_RES1(a)                      ((a >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */
-#define VMX_EXIT_QUALIFICATION_CRX_GENREG(a)           ((a >> 8) & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_GENREG(a)                    ((a >> 8) & 0xF)
 /** 12-15: Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES2(a)             ((a >> 12) & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_RES2(a)                      ((a >> 12) & 0xF)
 /** 16-31: LMSW source data (else 0). */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)        ((a >> 16) & 0xFFFF)
+#define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)                 ((a >> 16) & 0xFFFF)
 /** Rest: reserved. */
 /** @} */
 
 /** @name VMX_EXIT_QUALIFICATION_CRX_ACCESS
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE        0
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ         1
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS         2
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW         3
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_WRITE                 0
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_READ                  1
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_CLTS                  2
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS_LMSW                  3
 /** @} */
 
 /** @name VMX_EXIT_QUALIFICATION_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)  (a & 0xffff)
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)      ((a >> 30)& 0x3)
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)          (a & 0xffff)
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)              ((a >> 30)& 0x3)
 /** Task switch caused by a call instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_CALL    0
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_CALL            0
 /** Task switch caused by an iret instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IRET    1
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IRET            1
 /** Task switch caused by a jmp instruction. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_JMP     2
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_JMP             2
 /** Task switch caused by an interrupt gate. */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT     3
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_IDT             3
 /** @} */
 
 
@@ -1379,24 +1377,24 @@ typedef union
  * @{
  */
 /** Set if the violation was caused by a data read. */
-#define VMX_EXIT_QUALIFICATION_EPT_DATA_READ            RT_BIT(0)
+#define VMX_EXIT_QUALIFICATION_EPT_DATA_READ                    RT_BIT(0)
 /** Set if the violation was caused by a data write. */
-#define VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE           RT_BIT(1)
+#define VMX_EXIT_QUALIFICATION_EPT_DATA_WRITE                   RT_BIT(1)
 /** Set if the violation was caused by an insruction fetch. */
-#define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH          RT_BIT(2)
+#define VMX_EXIT_QUALIFICATION_EPT_INSTR_FETCH                  RT_BIT(2)
 /** AND of the present bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT        RT_BIT(3)
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_PRESENT                RT_BIT(3)
 /** AND of the write bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_WRITE          RT_BIT(4)
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_WRITE                  RT_BIT(4)
 /** AND of the execute bit of all EPT structures. */
-#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_EXECUTE        RT_BIT(5)
+#define VMX_EXIT_QUALIFICATION_EPT_ENTRY_EXECUTE                RT_BIT(5)
 /** Set if the guest linear address field contains the faulting address. */
-#define VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID     RT_BIT(7)
+#define VMX_EXIT_QUALIFICATION_EPT_GUEST_ADDR_VALID             RT_BIT(7)
 /** If bit 7 is one: (reserved otherwise)
  *  1 - violation due to physical address access.
  *  0 - violation caused by page walk or access/dirty bit updates
  */
-#define VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS    RT_BIT(8)
+#define VMX_EXIT_QUALIFICATION_EPT_TRANSLATED_ACCESS            RT_BIT(8)
 /** @} */
 
 
@@ -1404,42 +1402,42 @@ typedef union
  * @{
  */
 /** 0-2:   IO operation width. */
-#define VMX_EXIT_QUALIFICATION_IO_WIDTH(a)             (a & 7)
+#define VMX_EXIT_QUALIFICATION_IO_WIDTH(a)                      (a & 7)
 /** 3:     IO operation direction. */
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION(a)         ((a >> 3) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_DIRECTION(a)                  ((a >> 3) & 1)
 /** 4:     String IO operation. */
-#define VMX_EXIT_QUALIFICATION_IO_STRING(a)            ((a >> 4) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_STRING(a)                     ((a >> 4) & 1)
 /** 5:     Repeated IO operation. */
-#define VMX_EXIT_QUALIFICATION_IO_REP(a)               ((a >> 5) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_REP(a)                        ((a >> 5) & 1)
 /** 6:     Operand encoding. */
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING(a)          ((a >> 6) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_ENCODING(a)                   ((a >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUALIFICATION_IO_PORT(a)              ((a >> 16) & 0xffff)
+#define VMX_EXIT_QUALIFICATION_IO_PORT(a)                       ((a >> 16) & 0xffff)
 /* Rest reserved. */
 /** @} */
 
 /** @name VMX_EXIT_QUALIFICATION_IO_DIRECTION
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT        0
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_IN         1
+#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT                 0
+#define VMX_EXIT_QUALIFICATION_IO_DIRECTION_IN                  1
 /** @} */
 
 
 /** @name VMX_EXIT_QUALIFICATION_IO_ENCODING
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING_DX          0
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING_IMM         1
+#define VMX_EXIT_QUALIFICATION_IO_ENCODING_DX                   0
+#define VMX_EXIT_QUALIFICATION_IO_ENCODING_IMM                  1
 /** @} */
 
 /** @name VMX_EXIT_APIC_ACCESS
  * @{
  */
 /** 0-11:   If the APIC-access VM exit is due to a linear access, the offset of access within the APIC page. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)    ((a) & 0xfff)
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_OFFSET(a)            ((a) & 0xfff)
 /** 12-15:  Access type. */
-#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)      ((a) & 0xf000)
+#define VMX_EXIT_QUALIFICATION_APIC_ACCESS_TYPE(a)              ((a) & 0xf000)
 /* Rest reserved. */
 /** @} */
 
@@ -1448,17 +1446,17 @@ typedef union
  * @{
  */
 /** Linear read access. */
-#define VMX_APIC_ACCESS_TYPE_LINEAR_READ                0
+#define VMX_APIC_ACCESS_TYPE_LINEAR_READ                        0
 /** Linear write access. */
-#define VMX_APIC_ACCESS_TYPE_LINEAR_WRITE               1
+#define VMX_APIC_ACCESS_TYPE_LINEAR_WRITE                       1
 /** Linear instruction fetch access. */
-#define VMX_APIC_ACCESS_TYPE_LINEAR_INSTR_FETCH         2
+#define VMX_APIC_ACCESS_TYPE_LINEAR_INSTR_FETCH                 2
 /** Linear read/write access during event delivery. */
-#define VMX_APIC_ACCESS_TYPE_LINEAR_EVENT_DELIVERY      3
+#define VMX_APIC_ACCESS_TYPE_LINEAR_EVENT_DELIVERY              3
 /** Physical read/write access during event delivery. */
-#define VMX_APIC_ACCESS_TYPE_PHYSICAL_EVENT_DELIVERY    10
+#define VMX_APIC_ACCESS_TYPE_PHYSICAL_EVENT_DELIVERY            10
 /** Physical access for an instruction fetch or during instruction execution. */
-#define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR             15
+#define VMX_APIC_ACCESS_TYPE_PHYSICAL_INSTR                     15
 /** @} */
 
 /** @} */
