@@ -292,7 +292,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
                 break;
             }
 
-            PTSTRTR0THREADCTXDATA pCtxData = (PTSTRTR0THREADCTXDATA)RTMemAlloc(sizeof(*pCtxData));
+            PTSTRTR0THREADCTXDATA pCtxData = (PTSTRTR0THREADCTXDATA)RTMemAllocZ(sizeof(*pCtxData));
             AssertReturn(pCtxData, VERR_NO_MEMORY);
             pCtxData->u32Magic           = TSTRTR0THREADCTXDATA_MAGIC;
             pCtxData->hThreadCtx         = hThreadCtx;

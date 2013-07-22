@@ -120,14 +120,27 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
      * with preemption disabled. We allocate the context-hooks here and use 'fRegistered' to determine if we can
      * invoke the consumer's hook or not.
      */
-    installctx(curthread,
-               pThis,
-               rtThreadCtxHooksSolPreempting,
-               rtThreadCtxHooksSolResumed,
-               NULL,                            /* fork */
-               NULL,                            /* lwp_create */
-               NULL,                            /* exit */
-               NULL);                           /* free */
+    if (g_frtSolOldThreadCtx)
+    {
+        g_rtSolThreadCtx.Install.pfnSol_installctx_old(curthread,
+                                                       pThis,
+                                                       rtThreadCtxHooksSolPreempting,
+                                                       rtThreadCtxHooksSolResumed,
+                                                       NULL,                          /* fork */
+                                                       NULL,                          /* lwp_create */
+                                                       NULL);                         /* free */
+    }
+    else
+    {
+        g_rtSolThreadCtx.Install.pfnSol_installctx(curthread,
+                                                   pThis,
+                                                   rtThreadCtxHooksSolPreempting,
+                                                   rtThreadCtxHooksSolResumed,
+                                                   NULL,                              /* fork */
+                                                   NULL,                              /* lwp_create */
+                                                   NULL,                              /* exit */
+                                                   NULL);                             /* free */
+    }
 
     *phThreadCtx = pThis;
     return VINF_SUCCESS;
@@ -150,14 +163,28 @@ RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
     /*
      * Deregister the hook.
      */
-    int rc = removectx(curthread,
-                       pThis,
-                       rtThreadCtxHooksSolPreempting,
-                       rtThreadCtxHooksSolResumed,
-                       NULL,                            /* fork */
-                       NULL,                            /* lwp_create */
-                       NULL,                            /* exit */
-                       NULL);                           /* free */
+    int rc;
+    if (g_frtSolOldThreadCtx)
+    {
+        rc = g_rtSolThreadCtx.Remove.pfnSol_removectx_old(curthread,
+                                                          pThis,
+                                                          rtThreadCtxHooksSolPreempting,
+                                                          rtThreadCtxHooksSolResumed,
+                                                          NULL,                          /* fork */
+                                                          NULL,                          /* lwp_create */
+                                                          NULL);                         /* free */
+    }
+    else
+    {
+        rc = g_rtSolThreadCtx.Remove.pfnSol_removectx(curthread,
+                                                      pThis,
+                                                      rtThreadCtxHooksSolPreempting,
+                                                      rtThreadCtxHooksSolResumed,
+                                                      NULL,                              /* fork */
+                                                      NULL,                              /* lwp_create */
+                                                      NULL,                              /* exit */
+                                                      NULL);                             /* free */
+    }
     AssertMsg(rc, ("removectx failed. rc=%d\n", rc));
     NOREF(rc);
 

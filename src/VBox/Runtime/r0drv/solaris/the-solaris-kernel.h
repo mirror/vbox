@@ -147,6 +147,52 @@ extern RTR0FNSOLXCCALL          g_rtSolXcCall;
 extern bool                     g_frtSolOldIPI;
 extern bool                     g_frtSolOldIPIUlong;
 
+/*
+ * Thread-context hooks.
+ * Workarounds for older Solaris versions that did not have the exitctx() callback.
+ */
+typedef struct RTR0FNSOLTHREADCTX
+{
+    union
+    {
+        void *(*pfnSol_installctx)        (kthread_t *pThread, void *pvArg,
+                                           void (*pfnSave)(void *pvArg),
+                                           void (*pfnRestore)(void *pvArg),
+                                           void (*pfnFork)(void *pvThread, void *pvThreadFork),
+                                           void (*pfnLwpCreate)(void *pvThread, void *pvThreadCreate),
+                                           void (*pfnExit)(void *pvThread),
+                                           void (*pfnFree)(void *pvArg, int fIsExec));
+
+        void *(*pfnSol_installctx_old)    (kthread_t *pThread, void *pvArg,
+                                           void (*pfnSave)(void *pvArg),
+                                           void (*pfnRestore)(void *pvArg),
+                                           void (*pfnFork)(void *pvThread, void *pvThreadFork),
+                                           void (*pfnLwpCreate)(void *pvThread, void *pvThreadCreate),
+                                           void (*pfnFree)(void *pvArg, int fIsExec));
+    } Install;
+
+    union
+    {
+        int (*pfnSol_removectx)           (kthread_t *pThread, void *pvArg,
+                                           void (*pfnSave)(void *pvArg),
+                                           void (*pfnRestore)(void *pvArg),
+                                           void (*pfnFork)(void *pvThread, void *pvThreadFork),
+                                           void (*pfnLwpCreate)(void *pvThread, void *pvThreadCreate),
+                                           void (*pfnExit)(void *pvThread),
+                                           void (*pfnFree)(void *pvArg, int fIsExec));
+
+        int (*pfnSol_removectx_old)       (kthread_t *pThread, void *pvArg,
+                                           void (*pfnSave)(void *pvArg),
+                                           void (*pfnRestore)(void *pvArg),
+                                           void (*pfnFork)(void *pvThread, void *pvThreadFork),
+                                           void (*pfnLwpCreate)(void *pvThread, void *pvThreadCreate),
+                                           void (*pfnFree)(void *pvArg, int fIsExec));
+    } Remove;
+} RTR0FNSOLTHREADCTX;
+typedef RTR0FNSOLTHREADCTX *PRTR0FNSOLTHREADCTX;
+
+extern RTR0FNSOLTHREADCTX       g_rtSolThreadCtx;
+extern bool                     g_frtSolOldThreadCtx;
 
 /* Solaris globals. */
 extern uintptr_t                kernelbase;
