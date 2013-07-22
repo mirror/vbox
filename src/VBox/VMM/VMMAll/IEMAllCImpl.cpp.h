@@ -1850,7 +1850,7 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
 
     /* Calculate the intermediate RSP from RBP and the stack attributes. */
     RTUINT64U       NewRsp;
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         NewRsp.u = pCtx->rbp;
     else if (pCtx->ss.Attr.n.u1DefBig)
         NewRsp.u = pCtx->ebp;
@@ -2487,6 +2487,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)uFrame.pv, IEM_ACCESS_STACK_R); /* don't use iemMemStackPopCommitSpecial here. */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
+    Log2(("iretq stack: cs:rip=%04x:%016RX16 rflags=%016RX16 ss:rsp=%04x:%016RX16\n",
+          uNewCs, uNewRip, uNewFlags, uNewSs, uNewRsp));
 
     /*
      * Check stuff.
@@ -2662,6 +2664,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
         pCtx->ss.Attr.u     = X86DESCATTR_UNUSABLE | (uNewCpl << X86DESCATTR_DPL_SHIFT);
         pCtx->ss.u32Limit   = UINT32_MAX;
         pCtx->ss.u64Base    = 0;
+        Log2(("iretq new SS: NULL\n"));
     }
     else
     {
@@ -2669,6 +2672,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
         pCtx->ss.Attr.u     = X86DESC_GET_HID_ATTR(&DescSS.Legacy);
         pCtx->ss.u32Limit   = cbLimitSs;
         pCtx->ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
+        Log2(("iretq new SS: base=%#RX64 lim=%#x attr=%#x\n", pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u));
     }
 
     uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF

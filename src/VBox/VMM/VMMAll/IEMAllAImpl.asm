@@ -882,9 +882,9 @@ BEGINPROC_FASTCALL iemAImpl_cmpxchg_u64 %+ %2, 16
 %ifdef RT_ARCH_AMD64
         PROLOGUE_4_ARGS
         IEM_MAYBE_LOAD_FLAGS A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0 (eax)
-        mov     ax, [A1]
+        mov     rax, [A1]
         %1 cmpxchg [A0], A2
-        mov     [A1], ax
+        mov     [A1], rax
         IEM_SAVE_FLAGS       A3, (X86_EFL_ZF | X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_SF | X86_EFL_OF), 0 ; clobbers T0+T1 (eax, r11/edi)
         EPILOGUE_4_ARGS
 %else
