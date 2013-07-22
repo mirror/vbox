@@ -2285,11 +2285,16 @@ typedef struct PDMIVMMDEVCONNECTOR
      * Called in response to VMMDevReq_ReportGuestUserState.
      *
      * @param   pInterface          Pointer to this interface.
+     * @param   pszUser             Guest user name to update status for.
+     * @param   pszDomain           Domain the guest user is bound to. Optional.
+     * @param   uState              New guest user state to notify host about.
+     * @param   puDetails           Pointer to optional state data.
+     * @param   cbDetails           Size (in bytes) of optional state data.
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnUpdateGuestUserState,(PPDMIVMMDEVCONNECTOR pInterface, const char *pszUser, const char *pszDomain,
                                                         uint32_t uState,
-                                                        uint8_t *puDetails, uint32_t cbDetails));
+                                                        const uint8_t *puDetails, uint32_t cbDetails));
 
     /**
      * Reports the guest API and OS version.

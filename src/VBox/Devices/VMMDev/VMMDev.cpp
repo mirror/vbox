@@ -686,7 +686,7 @@ static int vmmdevReqHandler_ReportGuestUserState(PVMMDEV pThis, VMMDevRequestHea
         uint8_t *pvDynamic = (uint8_t *)pStatus + RT_OFFSETOF(VBoxGuestUserStatus, szUser);
         AssertPtr(pvDynamic);
 
-        if (!pStatus->cbUser)) /* User name is required. */
+        if (!pStatus->cbUser) /* User name is required. */
             return VERR_INVALID_PARAMETER;
         const char *pszUser = (const char *)pvDynamic;
         AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
