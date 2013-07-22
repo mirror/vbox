@@ -1157,7 +1157,7 @@ void Guest::facilityUpdate(VBoxGuestFacilityType a_enmFacility, VBoxGuestFacilit
  * @param   cbDetails           Size (in bytes) of state details. Pass 0 if not used.
  */
 void Guest::onUserStateChange(Bstr aUser, Bstr aDomain, VBoxGuestUserState enmState,
-                              uint8_t *puDetails, uint32_t cbDetails)
+                              const uint8_t *puDetails, uint32_t cbDetails)
 {
     LogFlowThisFunc(("\n"));
 
