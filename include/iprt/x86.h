@@ -3214,6 +3214,26 @@ AssertCompile((X86_SIB_SCALE_MASK >> X86_SIB_SCALE_SHIFT) == X86_SIB_SCALE_SMASK
 #define X86_SREG_COUNT          6
 
 
+/** @name X86_OP_XXX - Prefixes
+ * @{ */
+#define X86_OP_PRF_CS           UINT8_C(0x2e)
+#define X86_OP_PRF_SS           UINT8_C(0x36)
+#define X86_OP_PRF_DS           UINT8_C(0x3e)
+#define X86_OP_PRF_ES           UINT8_C(0x26)
+#define X86_OP_PRF_FS           UINT8_C(0x64)
+#define X86_OP_PRF_GS           UINT8_C(0x65)
+#define X86_OP_PRF_SIZE_OP      UINT8_C(0x66)
+#define X86_OP_PRF_SIZE_ADDR    UINT8_C(0x67)
+#define X86_OP_PRF_LOCK         UINT8_C(0xf0)
+#define X86_OP_PRF_REPZ         UINT8_C(0xf2)
+#define X86_OP_PRF_REPNZ        UINT8_C(0xf3)
+#define X86_OP_REX_B            UINT8_C(0x41)
+#define X86_OP_REX_X            UINT8_C(0x42)
+#define X86_OP_REX_R            UINT8_C(0x44)
+#define X86_OP_REX_W            UINT8_C(0x48)
+/** @} */
+
+
 /** @} */
 
 #endif
