@@ -258,6 +258,8 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                            [--directory] [--secure] [--tmpdir <directory>]\n"
                  "                            [--domain <domain>] [--mode <mode>] [--verbose]\n"
                  "\n"
+                 "                            list <all|sessions|processes> [--verbose]\n"
+                 "\n"
                  "                            stat\n"
                  "                            <file>... --username <name>\n"
                  "                            [--passwordfile <file> | --password <password>]\n"
@@ -2781,7 +2783,6 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-#ifdef DEBUG
 static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
@@ -2791,17 +2792,21 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
 
+    bool fListAll = false;
     bool fListSessions = false;
+    bool fListProcesses = false;
     if (!RTStrICmp(pArg->argv[0], "sessions"))
         fListSessions = true;
-    bool fListProcesses = false;
-    if (!RTStrICmp(pArg->argv[0], "all"))
-    {
-        fListSessions = true;
-        fListProcesses = true;
-    }
+    else if (!RTStrICmp(pArg->argv[0], "processes"))
+        fListSessions = fListProcesses = true; /* Showing processes implies showing sessions. */
+    else if (!RTStrICmp(pArg->argv[0], "all"))
+        fListAll = true;
 
-    if (fListSessions)
+    /** @todo Handle "--verbose" using RTGetOpt. */
+    /** @todo Do we need a machine-readable output here as well? */
+
+    if (   fListAll
+        || fListSessions)
     {
         RTPrintf("Active guest sessions:\n");
 
@@ -2827,7 +2832,8 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                     RTPrintf("\n\tSession #%zu: ID=%RU32, User=%ls, Name=%ls",
                              i, uID, strUser.raw(), strName.raw());
 
-                    if (fListProcesses)
+                    if (   fListAll
+                        || fListProcesses)
                     {
                         SafeIfaceArray <IGuestProcess> collProcesses;
                         CHECK_ERROR_BREAK(pCurSession, COMGETTER(Processes)(ComSafeArrayAsOutParam(collProcesses)));
@@ -2864,7 +2870,6 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     return rcExit;
 }
-#endif
 
 /**
  * Access the guest control store.
@@ -2914,12 +2919,8 @@ int handleGuestControl(HandlerArg *pArg)
         else if (   !strcmp(pArg->argv[1], "updateadditions")
                  || !strcmp(pArg->argv[1], "updateadds"))
             rcExit = handleCtrlUpdateAdditions(guest, &arg);
-#ifdef DEBUG
         else if (   !strcmp(pArg->argv[1], "list"))
             rcExit = handleCtrlList(guest, &arg);
-#endif
-        /** @todo Implement a "sessions list" command to list all opened
-         *        guest sessions along with their (friendly) names. */
         else
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
