@@ -809,18 +809,18 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
-    NOREF(pIemCpu);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_MNEMONIC("monitor");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_monitor, pIemCpu->iEffSeg);
 }
 
 
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
-    NOREF(pIemCpu);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_MNEMONIC("mwait");
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_mwait);
 }
 
 
