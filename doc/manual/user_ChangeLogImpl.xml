@@ -72,6 +72,11 @@
            power management (WDDM driver only; bug #11170)</para>
        </listitem>
 
+       <listitem>
+         <para>Windows guests: ability to track guest user idle times through
+           the newly introduced event IGuestUserStateChangedEvent.</para>
+       </listitem>
+
     </itemizedlist>
 
   </sect1>

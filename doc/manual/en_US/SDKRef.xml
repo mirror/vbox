@@ -3651,6 +3651,14 @@ AuthResult AUTHCALL AuthEntry(
           It now supports specifying optional command line arguments for the
           Guest Additions installer performing the actual update on the guest.
         </listitem>
+
+        <listitem>
+          <para>A new event <xref linkend="IGuestUserStateChangedEvent"
+          xreflabel="IGuestUserStateChangedEvent" /> was introduced to provide
+          guest user status updates to the host via event listeners. To use this
+          event there needs to be at least the 4.3 Guest Additions installed on 
+          the guest.</para>
+        </listitem>
       </itemizedlist>
     </sect1>
 
