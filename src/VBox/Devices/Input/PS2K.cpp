@@ -888,6 +888,7 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     unsigned int    i = 0;
     key_def const   *pKeyDef;
     uint8_t         abCodes[16];
+    uint8_t         u8MakeCode;
 
     LogFlowFunc(("key %s: 0x%02x (set %d)\n", fKeyDown ? "down" : "up", u8HidCode, pThis->u8ScanSet));
 
@@ -919,9 +920,11 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     if ((pKeyDef->keyFlags & KF_NL) && fKeyDown)
         pThis->fNumLockOn ^= true;
 
-    if (pThis->u8ScanSet == 2)
+    if (pThis->u8ScanSet == 1 || pThis->u8ScanSet == 2)
     {
-        /* Handle Scan Set 2 - used almost all the time. */
+        /* The basic scan set 1 and 2 logic is the same, only the scan codes differ.
+         * Since scan set 2 is used almost all the time, that case is handled first.
+         */
         abCodes[0] = 0;
         if (fKeyDown)
         {
@@ -930,33 +933,48 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             {
                 /* Pause/Break sends different data if either Ctrl is held. */
                 if (pThis->u8Modifiers & (MOD_LCTRL | MOD_RCTRL))
-                    strcpy((char *)abCodes, "\xE0\x7E\xE0\xF0\x7E");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE0\x7E\xE0\xF0\x7E" : "\xE0\x46\xE0\xC6");
                 else
-                    strcpy((char *)abCodes, "\xE1\x14\x77\xE1\xF0\x14\xF0\x77");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE1\x14\x77\xE1\xF0\x14\xF0\x77" : "\xE1\x1D\x45\xE1\x9D\xC5");
             }
             else if (pKeyDef->keyFlags & KF_PS)
             {
-                /* Print Screen depends on all Ctrl, Shift, *and* Alt! */
+                /* Print Screen depends on all of Ctrl, Shift, *and* Alt! */
                 if (pThis->u8Modifiers & (MOD_LALT | MOD_RALT))
-                    strcpy((char *)abCodes, "\x84");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\x84" : "\x54");
                 else if (pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT))
-                    strcpy((char *)abCodes, "\xE0\x7C");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE0\x7C" : "\xE0\x37");
                 else
-                    strcpy((char *)abCodes, "\xE0\x12\xE0\x7C");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE0\x12\xE0\x7C" : "\xE0\x2A\xE0\x37");
             }
-            else if (pKeyDef->keyFlags & KF_GK)
+            else if (pKeyDef->keyFlags & (KF_GK | KF_NS))
             {
-                if (pThis->fNumLockOn)
+                /* The numeric pad keys fake Shift presses or releases
+                 * depending on Num Lock and Shift key state. The '/'
+                 * key behaves in a similar manner but does not depend on
+                 * the Num Lock state.
+                 */
+                if (!pThis->fNumLockOn || (pKeyDef->keyFlags & KF_NS))
                 {
-                    if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
-                        strcpy((char *)abCodes, "\xE0\x12");
+                    if (pThis->u8Modifiers & MOD_LSHIFT)
+                        strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
+                               "\xE0\xF0\x12" : "\xE0\xAA");
+                    if (pThis->u8Modifiers & MOD_RSHIFT)
+                        strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
+                               "\xE0\xF0\x59" : "\xE0\xB6");
                 }
                 else
                 {
-                    if (pThis->u8Modifiers & MOD_LSHIFT)
-                        strcat((char *)abCodes, "\xE0\xF0\x12");
-                    if (pThis->u8Modifiers & MOD_RSHIFT)
-                        strcat((char *)abCodes, "\xE0\xF0\x59");
+                    Assert(pThis->fNumLockOn);  /* Not for KF_NS! */
+                    if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
+                        strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                               "\xE0\x12" : "\xE0\x2A");
+                    /* Else Shift cancels NumLock, so no prefix! */
                 }
             }
             /* Feed the bytes to the queue if there is room. */
@@ -966,11 +984,12 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             Assert(i < sizeof(abCodes));
 
             /* Standard processing for regular keys only. */
+            u8MakeCode = pThis->u8ScanSet == 2 ? pKeyDef->makeS2 : pKeyDef->makeS1;
             if (!(pKeyDef->keyFlags & (KF_PB | KF_PS)))
             {
                 if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
                     ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, u8MakeCode);
             }
         }
         else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB)))
@@ -982,34 +1001,46 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             {
                 /* Undo faked Print Screen state as needed. */
                 if (pThis->u8Modifiers & (MOD_LALT | MOD_RALT))
-                    strcpy((char *)abCodes, "\xF0\x84");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xF0\x84" : "\xD4");
                 else if (pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT))
-                    strcpy((char *)abCodes, "\xE0\xF0\x7C");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE0\xF0\x7C" : "\xE0\xB7");
                 else
-                    strcpy((char *)abCodes, "\xE0\xF0\x7C\xE0\xF0\x12");
+                    strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                           "\xE0\xF0\x7C\xE0\xF0\x12" : "\xE0\xB7\xE0\xAA");
             }
             else
             {
                 /* Process base scan code for less unusual keys. */
                 if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS))
                     ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+                if (pThis->u8ScanSet == 2) {
+                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xF0);
+                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS2);
+                } else {
+                    Assert(pThis->u8ScanSet == 1);
+                    ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS1 | 0x80);
+                }
 
                 /* Restore shift state for gray keys. */
-                if (pKeyDef->keyFlags & KF_GK)
+                if (pKeyDef->keyFlags & (KF_GK | KF_NS))
                 {
-                    if (pThis->fNumLockOn)
+                    if (!pThis->fNumLockOn || (pKeyDef->keyFlags & KF_NS))
                     {
-                        if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
-                            strcpy((char *)abCodes, "\xE0\xF0\x12");
+                        if (pThis->u8Modifiers & MOD_LSHIFT)
+                            strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
+                                   "\xE0\x12" : "\xE0\x2A");
+                        if (pThis->u8Modifiers & MOD_RSHIFT)
+                            strcat((char *)abCodes, pThis->u8ScanSet == 2 ?
+                                   "\xE0\x59" : "\xE0\x36");
                     }
                     else
                     {
-                        if (pThis->u8Modifiers & MOD_RSHIFT)
-                            strcat((char *)abCodes, "\xE0\x59");
-                        if (pThis->u8Modifiers & MOD_LSHIFT)
-                            strcat((char *)abCodes, "\xE0\x12");
+                        Assert(pThis->fNumLockOn);  /* Not for KF_NS! */
+                        if ((pThis->u8Modifiers & (MOD_LSHIFT | MOD_RSHIFT)) == 0)
+                            strcpy((char *)abCodes, pThis->u8ScanSet == 2 ?
+                                   "\xE0\xF0\x12" : "\xE0\xAA");
                     }
                 }
             }
@@ -1021,24 +1052,10 @@ static int psk2ProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
             Assert(i < sizeof(abCodes));
         }
     }
-    else if (pThis->u8ScanSet == 1)
-    {
-        /* Handle Scan Set 1 - similar in complexity to Set 2. */
-        if (fKeyDown)
-        {
-            if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS | KF_PS))
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-            ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS1);
-        }
-        else if (!(pKeyDef->keyFlags & (KF_NB | KF_PB))) {
-            if (pKeyDef->keyFlags & (KF_E0 | KF_GK | KF_NS | KF_PS))
-                ps2kInsertQueue((GeneriQ *)&pThis->keyQ, 0xE0);
-            ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS1 | 0x80);
-        }
-    }
     else
     {
         /* Handle Scan Set 3 - very straightforward. */
+        Assert(pThis->u8ScanSet == 3);
         if (fKeyDown)
         {
             ps2kInsertQueue((GeneriQ *)&pThis->keyQ, pKeyDef->makeS3);
