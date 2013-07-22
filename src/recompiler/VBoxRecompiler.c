@@ -84,6 +84,14 @@ ram_addr_t get_phys_page_offset(target_ulong addr);
 #define REM_USE_QEMU_SINGLE_STEP_FOR_LOGGING
 
 
+/** Selector flag shift between qemu and VBox.
+ * VBox shifts the qemu bits to the right. */
+#define SEL_FLAGS_SHIFT     (8)
+/** Mask applied to the shifted qemu selector flags to get the attributes VBox
+ * (VT-x) needs. */
+#define SEL_FLAGS_SMASK     UINT32_C(0x1F0FF)
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
@@ -1402,14 +1410,14 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         Ctx.tr.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.tr.u64Base     = env->tr.base;
         Ctx.tr.u32Limit    = env->tr.limit;
-        Ctx.tr.Attr.u      = (env->tr.flags >> 8) & 0xF0FF;
+        Ctx.tr.Attr.u      = (env->tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.ldtr.Sel       = env->ldt.selector;
         Ctx.ldtr.ValidSel  = env->ldt.selector;
         Ctx.ldtr.fFlags    = CPUMSELREG_FLAGS_VALID;
         Ctx.ldtr.u64Base   = env->ldt.base;
         Ctx.ldtr.u32Limit  = env->ldt.limit;
-        Ctx.ldtr.Attr.u    = (env->ldt.flags >> 8) & 0xF0FF;
+        Ctx.ldtr.Attr.u    = (env->ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.idtr.cbIdt     = env->idt.limit;
         Ctx.idtr.pIdt      = env->idt.base;
@@ -1427,42 +1435,42 @@ bool remR3CanExecuteRaw(CPUX86State *env, RTGCPTR eip, unsigned fFlags, int *piE
         Ctx.cs.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.cs.u64Base     = env->segs[R_CS].base;
         Ctx.cs.u32Limit    = env->segs[R_CS].limit;
-        Ctx.cs.Attr.u      = (env->segs[R_CS].flags >> 8) & 0xF0FF;
+        Ctx.cs.Attr.u      = (env->segs[R_CS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.ds.Sel         = env->segs[R_DS].selector;
         Ctx.ds.ValidSel    = env->segs[R_DS].selector;
         Ctx.ds.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.ds.u64Base     = env->segs[R_DS].base;
         Ctx.ds.u32Limit    = env->segs[R_DS].limit;
-        Ctx.ds.Attr.u      = (env->segs[R_DS].flags >> 8) & 0xF0FF;
+        Ctx.ds.Attr.u      = (env->segs[R_DS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.es.Sel         = env->segs[R_ES].selector;
         Ctx.es.ValidSel    = env->segs[R_ES].selector;
         Ctx.es.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.es.u64Base     = env->segs[R_ES].base;
         Ctx.es.u32Limit    = env->segs[R_ES].limit;
-        Ctx.es.Attr.u      = (env->segs[R_ES].flags >> 8) & 0xF0FF;
+        Ctx.es.Attr.u      = (env->segs[R_ES].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.fs.Sel         = env->segs[R_FS].selector;
         Ctx.fs.ValidSel    = env->segs[R_FS].selector;
         Ctx.fs.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.fs.u64Base     = env->segs[R_FS].base;
         Ctx.fs.u32Limit    = env->segs[R_FS].limit;
-        Ctx.fs.Attr.u      = (env->segs[R_FS].flags >> 8) & 0xF0FF;
+        Ctx.fs.Attr.u      = (env->segs[R_FS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.gs.Sel         = env->segs[R_GS].selector;
         Ctx.gs.ValidSel    = env->segs[R_GS].selector;
         Ctx.gs.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.gs.u64Base     = env->segs[R_GS].base;
         Ctx.gs.u32Limit    = env->segs[R_GS].limit;
-        Ctx.gs.Attr.u      = (env->segs[R_GS].flags >> 8) & 0xF0FF;
+        Ctx.gs.Attr.u      = (env->segs[R_GS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.ss.Sel         = env->segs[R_SS].selector;
         Ctx.ss.ValidSel    = env->segs[R_SS].selector;
         Ctx.ss.fFlags      = CPUMSELREG_FLAGS_VALID;
         Ctx.ss.u64Base     = env->segs[R_SS].base;
         Ctx.ss.u32Limit    = env->segs[R_SS].limit;
-        Ctx.ss.Attr.u      = (env->segs[R_SS].flags >> 8) & 0xF0FF;
+        Ctx.ss.Attr.u      = (env->segs[R_SS].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
 
         Ctx.msrEFER        = env->efer;
 
@@ -2316,7 +2324,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
                 pVM->rem.s.Env.ldt.fVBoxFlags  = pCtx->ldtr.fFlags;
                 pVM->rem.s.Env.ldt.base        = pCtx->ldtr.u64Base;
                 pVM->rem.s.Env.ldt.limit       = pCtx->ldtr.u32Limit;
-                pVM->rem.s.Env.ldt.flags       = (pCtx->ldtr.Attr.u << 8) & 0xFFFFFF;
+                pVM->rem.s.Env.ldt.flags       = (pCtx->ldtr.Attr.u & SEL_FLAGS_SMASK) << SEL_FLAGS_SHIFT;
             }
             else
             {
@@ -2349,8 +2357,8 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
     pVM->rem.s.Env.tr.fVBoxFlags  = pCtx->tr.fFlags;
     pVM->rem.s.Env.tr.base        = pCtx->tr.u64Base;
     pVM->rem.s.Env.tr.limit       = pCtx->tr.u32Limit;
-    pVM->rem.s.Env.tr.flags       = (pCtx->tr.Attr.u << 8) & 0xFFFFFF;
-    /* Note! do_interrupt will fault if the busy flag is still set... */
+    pVM->rem.s.Env.tr.flags       = (pCtx->tr.Attr.u & SEL_FLAGS_SMASK) << SEL_FLAGS_SHIFT;
+    /* Note! do_interrupt will fault if the busy flag is still set... */ /** @todo so fix do_interrupt then! */
     pVM->rem.s.Env.tr.flags      &= ~DESC_TSS_BUSY_MASK;
 
     /*
@@ -2374,7 +2382,7 @@ REMR3DECL(int)  REMR3State(PVM pVM, PVMCPU pVCpu)
                                        (a_pVBoxSReg)->Sel, \
                                        (a_pVBoxSReg)->u64Base, \
                                        (a_pVBoxSReg)->u32Limit, \
-                                       ((a_pVBoxSReg)->Attr.u << 8) & 0xFFFFFF); \
+                                       ((a_pVBoxSReg)->Attr.u & SEL_FLAGS_SMASK) << SEL_FLAGS_SHIFT); \
                 (a_pRemSReg)->fVBoxFlags = (a_pVBoxSReg)->fFlags; \
             } \
             /* This only-reload-if-changed stuff is the old approach, we should ditch it. */ \
@@ -2573,8 +2581,8 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
                 pCtx->a_sreg.fFlags   = CPUMSELREG_FLAGS_VALID; \
                 pCtx->a_sreg.u64Base  = pVM->rem.s.Env.segs[R_##a_SREG].base; \
                 pCtx->a_sreg.u32Limit = pVM->rem.s.Env.segs[R_##a_SREG].limit; \
-                /* Note! QEmu saves the 2nd dword of the descriptor; we should store the attribute word only! */ \
-                pCtx->a_sreg.Attr.u   = (pVM->rem.s.Env.segs[R_##a_SREG].flags >> 8) & 0xF0FF; \
+                /* Note! QEmu saves the 2nd dword of the descriptor; we (VT-x/AMD-V) keep only the attributes! */ \
+                pCtx->a_sreg.Attr.u   = (pVM->rem.s.Env.segs[R_##a_SREG].flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK; \
             } \
             else \
             { \
@@ -2636,7 +2644,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->ldtr.ValidSel != pVM->rem.s.Env.ldt.selector
         ||  pCtx->ldtr.u64Base  != pVM->rem.s.Env.ldt.base
         ||  pCtx->ldtr.u32Limit != pVM->rem.s.Env.ldt.limit
-        ||  pCtx->ldtr.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF)
+        ||  pCtx->ldtr.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK)
         ||  !(pCtx->ldtr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
     {
@@ -2645,7 +2653,7 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
         pCtx->ldtr.u64Base  = pVM->rem.s.Env.ldt.base;
         pCtx->ldtr.u32Limit = pVM->rem.s.Env.ldt.limit;
-        pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
+        pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
 #ifdef VBOX_WITH_RAW_MODE
         if (!HMIsEnabled(pVM))
@@ -2657,9 +2665,9 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->tr.ValidSel != pVM->rem.s.Env.tr.selector
         ||  pCtx->tr.u64Base  != pVM->rem.s.Env.tr.base
         ||  pCtx->tr.u32Limit != pVM->rem.s.Env.tr.limit
-            /* Qemu and AMD/Intel have different ideas about the busy flag ... */
-        ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
-                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+            /* Qemu and AMD/Intel have different ideas about the busy flag ... */ /** @todo just fix qemu! */
+        ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & (SEL_FLAGS_SMASK & ~DESC_INTEL_UNUSABLE)
+                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> SEL_FLAGS_SHIFT
                                   : 0)
         ||  !(pCtx->tr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
@@ -2667,15 +2675,16 @@ REMR3DECL(int) REMR3StateBack(PVM pVM, PVMCPU pVCpu)
         Log(("REM: TR changed! %#x{%#llx,%#x,%#x} -> %#x{%llx,%#x,%#x}\n",
              pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
              pVM->rem.s.Env.tr.selector, (uint64_t)pVM->rem.s.Env.tr.base, pVM->rem.s.Env.tr.limit,
-             (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8 : 0));
+             (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & (SEL_FLAGS_SMASK & ~DESC_INTEL_UNUSABLE)
+             ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> SEL_FLAGS_SHIFT : 0));
         pCtx->tr.Sel        = pVM->rem.s.Env.tr.selector;
         pCtx->tr.ValidSel   = pVM->rem.s.Env.tr.selector;
         pCtx->tr.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->tr.u64Base    = pVM->rem.s.Env.tr.base;
         pCtx->tr.u32Limit   = pVM->rem.s.Env.tr.limit;
-        pCtx->tr.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
-        if (pCtx->tr.Attr.u)
-            pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
+        pCtx->tr.Attr.u     = (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        if (pCtx->tr.Attr.u & ~DESC_INTEL_UNUSABLE)
+            pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> SEL_FLAGS_SHIFT;
         STAM_COUNTER_INC(&gStatREMTRChange);
 #ifdef VBOX_WITH_RAW_MODE
         if (!HMIsEnabled(pVM))
@@ -2876,7 +2885,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->ldtr.ValidSel != pVM->rem.s.Env.ldt.selector
         ||  pCtx->ldtr.u64Base  != pVM->rem.s.Env.ldt.base
         ||  pCtx->ldtr.u32Limit != pVM->rem.s.Env.ldt.limit
-        ||  pCtx->ldtr.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF)
+        ||  pCtx->ldtr.Attr.u   != ((pVM->rem.s.Env.ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK)
         ||  !(pCtx->ldtr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
     {
@@ -2885,7 +2894,7 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
         pCtx->ldtr.u64Base  = pVM->rem.s.Env.ldt.base;
         pCtx->ldtr.u32Limit = pVM->rem.s.Env.ldt.limit;
-        pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> 8) & 0xF0FF;
+        pCtx->ldtr.Attr.u   = (pVM->rem.s.Env.ldt.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
         STAM_COUNTER_INC(&gStatREMLDTRChange);
 #ifdef VBOX_WITH_RAW_MODE
         if (!HMIsEnabled(pVM))
@@ -2898,8 +2907,8 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         ||  pCtx->tr.u64Base  != pVM->rem.s.Env.tr.base
         ||  pCtx->tr.u32Limit != pVM->rem.s.Env.tr.limit
             /* Qemu and AMD/Intel have different ideas about the busy flag ... */
-        ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF
-                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8
+        ||  pCtx->tr.Attr.u   != (  (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & (SEL_FLAGS_SMASK & ~DESC_INTEL_UNUSABLE)
+                                  ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> SEL_FLAGS_SHIFT
                                   : 0)
         ||  !(pCtx->tr.fFlags & CPUMSELREG_FLAGS_VALID)
        )
@@ -2907,15 +2916,16 @@ static void remR3StateUpdate(PVM pVM, PVMCPU pVCpu)
         Log(("REM: TR changed! %#x{%#llx,%#x,%#x} -> %#x{%llx,%#x,%#x}\n",
              pCtx->tr.Sel, pCtx->tr.u64Base, pCtx->tr.u32Limit, pCtx->tr.Attr.u,
              pVM->rem.s.Env.tr.selector, (uint64_t)pVM->rem.s.Env.tr.base, pVM->rem.s.Env.tr.limit,
-             (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> 8 : 0));
+             (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & (SEL_FLAGS_SMASK & ~DESC_INTEL_UNUSABLE)
+             ? (pVM->rem.s.Env.tr.flags | DESC_TSS_BUSY_MASK) >> SEL_FLAGS_SHIFT : 0));
         pCtx->tr.Sel        = pVM->rem.s.Env.tr.selector;
         pCtx->tr.ValidSel   = pVM->rem.s.Env.tr.selector;
         pCtx->tr.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->tr.u64Base    = pVM->rem.s.Env.tr.base;
         pCtx->tr.u32Limit   = pVM->rem.s.Env.tr.limit;
-        pCtx->tr.Attr.u     = (pVM->rem.s.Env.tr.flags >> 8) & 0xF0FF;
-        if (pCtx->tr.Attr.u)
-            pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> 8;
+        pCtx->tr.Attr.u     = (pVM->rem.s.Env.tr.flags >> SEL_FLAGS_SHIFT) & SEL_FLAGS_SMASK;
+        if (pCtx->tr.Attr.u & ~DESC_INTEL_UNUSABLE)
+            pCtx->tr.Attr.u |= DESC_TSS_BUSY_MASK >> SEL_FLAGS_SHIFT;
         STAM_COUNTER_INC(&gStatREMTRChange);
 #ifdef VBOX_WITH_RAW_MODE
         if (!HMIsEnabled(pVM))
