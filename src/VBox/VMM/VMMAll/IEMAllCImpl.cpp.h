@@ -4417,6 +4417,35 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
 
 
 /**
+ * Implements 'SWAPGS'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_swapgs)
+{
+    Assert(pIemCpu->enmCpuMode == IEMMODE_64BIT); /* Caller checks this. */
+
+    /*
+     * Permission checks.
+     */
+    if (pIemCpu->uCpl != 0)
+    {
+        Log2(("swapgs: CPL != 0\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+
+    /*
+     * Do the job.
+     */
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint64_t uOtherGsBase = pCtx->msrKERNELGSBASE;
+    pCtx->msrKERNELGSBASE = pCtx->gs.u64Base;
+    pCtx->gs.u64Base = uOtherGsBase;
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Implements 'CPUID'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_cpuid)

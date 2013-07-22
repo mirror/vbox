@@ -810,7 +810,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_sidt, uint8_t, bRm)
 FNIEMOP_DEF(iemOp_Grp7_monitor)
 {
     IEMOP_MNEMONIC("monitor");
-    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+    IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX(); /** @todo Verify that monitor is allergic to lock prefixes. */
     return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_monitor, pIemCpu->iEffSeg);
 }
 
@@ -818,7 +818,7 @@ FNIEMOP_DEF(iemOp_Grp7_monitor)
 /** Opcode 0x0f 0x01 /1. */
 FNIEMOP_DEF(iemOp_Grp7_mwait)
 {
-    IEMOP_MNEMONIC("mwait");
+    IEMOP_MNEMONIC("mwait"); /** @todo Verify that mwait is allergic to lock prefixes. */
     IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
     return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_mwait);
 }
@@ -827,6 +827,7 @@ FNIEMOP_DEF(iemOp_Grp7_mwait)
 /** Opcode 0x0f 0x01 /2. */
 FNIEMOP_DEF_1(iemOp_Grp7_lgdt, uint8_t, bRm)
 {
+    IEMOP_MNEMONIC("lgdt");
     IEMOP_HLP_NO_LOCK_PREFIX();
 
     IEMOP_HLP_64BIT_OP_SIZE();
@@ -903,6 +904,7 @@ FNIEMOP_UD_STUB(iemOp_Grp7_Amd_invlpga);
 /** Opcode 0x0f 0x01 /4. */
 FNIEMOP_DEF_1(iemOp_Grp7_smsw, uint8_t, bRm)
 {
+    IEMOP_MNEMONIC("smsw");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -959,6 +961,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
 {
     /* The operand size is effectively ignored, all is 16-bit and only the
        lower 3-bits are used. */
+    IEMOP_MNEMONIC("lmsw");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
     {
@@ -985,6 +988,7 @@ FNIEMOP_DEF_1(iemOp_Grp7_lmsw, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 {
+    IEMOP_MNEMONIC("invlpg");
     IEMOP_HLP_NO_LOCK_PREFIX();
     IEM_MC_BEGIN(1, 1);
     IEM_MC_ARG(RTGCPTR, GCPtrEffDst, 0);
@@ -998,9 +1002,10 @@ FNIEMOP_DEF_1(iemOp_Grp7_invlpg, uint8_t, bRm)
 /** Opcode 0x0f 0x01 /7. */
 FNIEMOP_DEF(iemOp_Grp7_swapgs)
 {
-    NOREF(pIemCpu);
-    IEMOP_BITCH_ABOUT_STUB();
-    return VERR_IEM_INSTR_NOT_IMPLEMENTED;
+    IEMOP_MNEMONIC("swapgs");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    IEMOP_HLP_ONLY_64BIT();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_swapgs);
 }
 
 

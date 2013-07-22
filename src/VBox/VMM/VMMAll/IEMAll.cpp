@@ -7396,6 +7396,15 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
             return IEMOP_RAISE_INVALID_OPCODE(); \
     } while (0)
 
+/** The instruction is only available in 64-bit mode, throw #UD if we're not in
+ * 64-bit mode. */
+#define IEMOP_HLP_ONLY_64BIT() \
+    do \
+    { \
+        if (pIemCpu->enmCpuMode != IEMMODE_64BIT) \
+            return IEMOP_RAISE_INVALID_OPCODE(); \
+    } while (0)
+
 /** The instruction defaults to 64-bit operand size if 64-bit mode. */
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE() \
     do \
