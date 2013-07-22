@@ -1033,7 +1033,6 @@ int main()
     GEN_CHECK_OFF(EHCI, StatDroppedUrbs);
     GEN_CHECK_OFF(EHCI, StatTimer);
 #  endif
-    GEN_CHECK_OFF(EHCI, SavedStateEnd);
     GEN_CHECK_OFF(EHCI, u64TimerHz);
     GEN_CHECK_OFF(EHCI, cIdleCycles);
     GEN_CHECK_OFF(EHCI, uFrameRate);
