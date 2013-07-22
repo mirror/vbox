@@ -129,7 +129,8 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rm_rv, PCIEMOPBINSIZES, pImpl)
                 IEM_MC_REF_EFLAGS(pEFlags);
                 IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
-                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+                if (pImpl != &g_iemAImpl_test)
+                    IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
                 IEM_MC_ADVANCE_RIP();
                 IEM_MC_END();
                 break;
@@ -482,7 +483,8 @@ FNIEMOP_DEF_1(iemOpHlpBinaryOperator_rAX_Iz, PCIEMOPBINSIZES, pImpl)
             IEM_MC_REF_EFLAGS(pEFlags);
             IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
 
-            IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
+            if (pImpl != &g_iemAImpl_test)
+                IEM_MC_CLEAR_HIGH_GREG_U64_BY_REF(pu32Dst);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             return VINF_SUCCESS;
@@ -15661,7 +15663,7 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
     }
     else
     {
-        /* The new RIP is taken from a register. */
+        /* The new RIP is taken from a memory location. */
         switch (pIemCpu->enmEffOpSize)
         {
             case IEMMODE_16BIT:
@@ -15686,11 +15688,11 @@ FNIEMOP_DEF_1(iemOp_Grp5_jmpn_Ev, uint8_t, bRm)
 
             case IEMMODE_64BIT:
                 IEM_MC_BEGIN(0, 2);
-                IEM_MC_LOCAL(uint32_t, u32Target);
+                IEM_MC_LOCAL(uint64_t, u64Target);
                 IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
                 IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
-                IEM_MC_FETCH_MEM_U32(u32Target, pIemCpu->iEffSeg, GCPtrEffSrc);
-                IEM_MC_SET_RIP_U32(u32Target);
+                IEM_MC_FETCH_MEM_U64(u64Target, pIemCpu->iEffSeg, GCPtrEffSrc);
+                IEM_MC_SET_RIP_U64(u64Target);
                 IEM_MC_END()
                 return VINF_SUCCESS;
 

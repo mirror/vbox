@@ -3582,7 +3582,7 @@ static VBOXSTRICTRC iemRegRipJump(PIEMCPU pIemCpu, uint64_t uNewRip)
  */
 DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCCPUMCTX pCtx)
 {
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         return pCtx->rsp;
     if (pCtx->ss.Attr.n.u1DefBig)
         return pCtx->esp;
@@ -3640,7 +3640,7 @@ static void iemRegUpdateRip(PIEMCPU pIemCpu)
  */
 DECLINLINE(void) iemRegAddToRsp(PCPUMCTX pCtx, uint8_t cbToAdd)
 {
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         pCtx->rsp += cbToAdd;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pCtx->esp += cbToAdd;
@@ -3658,7 +3658,7 @@ DECLINLINE(void) iemRegAddToRsp(PCPUMCTX pCtx, uint8_t cbToAdd)
  */
 DECLINLINE(void) iemRegSubFromRsp(PCPUMCTX pCtx, uint8_t cbToSub)
 {
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         pCtx->rsp -= cbToSub;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pCtx->esp -= cbToSub;
@@ -3676,7 +3676,7 @@ DECLINLINE(void) iemRegSubFromRsp(PCPUMCTX pCtx, uint8_t cbToSub)
  */
 DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint16_t cbToAdd, PCCPUMCTX pCtx)
 {
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         pTmpRsp->u           += cbToAdd;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0  += cbToAdd;
@@ -3696,7 +3696,7 @@ DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint16_t cbToAdd, PCCPUMCT
  */
 DECLINLINE(void) iemRegSubFromRspEx(PRTUINT64U pTmpRsp, uint16_t cbToSub, PCCPUMCTX pCtx)
 {
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         pTmpRsp->u          -= cbToSub;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0 -= cbToSub;
@@ -3720,7 +3720,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pCtx->rsp;
 
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         GCPtrTop = uTmpRsp.u            -= cbItem;
     else if (pCtx->ss.Attr.n.u1DefBig)
         GCPtrTop = uTmpRsp.DWords.dw0   -= cbItem;
@@ -3746,7 +3746,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t 
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pCtx->rsp;
 
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
     {
         GCPtrTop = uTmpRsp.u;
         uTmpRsp.u += cbItem;
@@ -3779,7 +3779,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PC
 {
     RTGCPTR GCPtrTop;
 
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
         GCPtrTop = pTmpRsp->u          -= cbItem;
     else if (pCtx->ss.Attr.n.u1DefBig)
         GCPtrTop = pTmpRsp->DWords.dw0 -= cbItem;
@@ -3801,7 +3801,7 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PC
 DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PCCPUMCTX pCtx)
 {
     RTGCPTR GCPtrTop;
-    if (pCtx->ss.Attr.n.u1Long)
+    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
     {
         GCPtrTop = pTmpRsp->u;
         pTmpRsp->u          += cbItem;
@@ -8544,7 +8544,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         if (pIemRec != NULL)
             iemVerifyAssertRecord(pIemCpu, pIemRec, "Extra IEM record!");
         else if (pOtherRec != NULL)
-            iemVerifyAssertRecord(pIemCpu, pIemRec, "Extra Other record!");
+            iemVerifyAssertRecord(pIemCpu, pOtherRec, "Extra Other record!");
     }
     pIemCpu->CTX_SUFF(pCtx) = pOrgCtx;
 }
