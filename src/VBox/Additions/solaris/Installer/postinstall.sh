@@ -347,9 +347,8 @@ if test "$currentzone" = "global"; then
     # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
     # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
     /usr/sbin/svcadm restart svc:system/manifest-import:default
-    ## @todo why do we redirect to /dev/null and then save the output?
-    is_import=`/usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1 && /usr/bin/svcs virtualbox/vboxmslnk >/dev/null 2>&1`
-    while test $? -ne 0;
+    /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk >/dev/null 2>&1
+    while test "$?" -ne 0;
     do
         sleep 1
         cslept=`expr $cslept + 1`
@@ -357,7 +356,7 @@ if test "$currentzone" = "global"; then
             success=1
             break
         fi
-        is_import=`/usr/bin/svcs virtualbox/vboxservice >/dev/null 2>&1 && /usr/bin/svcs virtualbox/vboxmslnk >/dev/null 2>&1`
+        /usr/bin/svcs virtualbox/vboxservice virtualbox/vboxmslnk >/dev/null 2>&1
     done
     if test "$success" -eq 0; then
         echo "Enabling services..."
