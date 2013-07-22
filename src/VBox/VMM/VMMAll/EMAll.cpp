@@ -180,13 +180,15 @@ VMMDECL(RTGCUINTPTR) EMGetInhibitInterruptsPC(PVMCPU pVCpu)
  * @param   rax                 The content of RAX.
  * @param   rcx                 The content of RCX.
  * @param   rdx                 The content of RDX.
+ * @param   GCPhys              The physical address corresponding to rax.
  */
-VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx)
+VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx, uint64_t rdx, RTGCPHYS GCPhys)
 {
     pVCpu->em.s.MWait.uMonitorRAX = rax;
     pVCpu->em.s.MWait.uMonitorRCX = rcx;
     pVCpu->em.s.MWait.uMonitorRDX = rdx;
     pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
+    /** @todo Make use of GCPhys. */
     /** @todo Complete MONITOR implementation.  */
     return VINF_SUCCESS;
 }
@@ -1371,7 +1373,7 @@ VMM_INT_DECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFra
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
-    EMMonitorWaitPrepare(pVCpu, pRegFrame->rax, pRegFrame->rcx, pRegFrame->rdx);
+    EMMonitorWaitPrepare(pVCpu, pRegFrame->rax, pRegFrame->rcx, pRegFrame->rdx, NIL_RTGCPHYS);
     return VINF_SUCCESS;
 }
 

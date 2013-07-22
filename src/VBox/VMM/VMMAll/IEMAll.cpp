@@ -302,6 +302,12 @@ typedef IEMSELDESC *PIEMSELDESC;
      || iemRegIsIntelCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0) )
 
 /**
+ * Checks if an Intel CPUID feature is present.
+ */
+#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX(a_fEcx)  \
+    ( iemRegIsIntelCpuIdFeaturePresent(pIemCpu, 0, (a_fEcx)) )
+
+/**
  * Checks if an Intel CPUID feature is present in the host CPU.
  */
 #define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(a_fEdx)  \

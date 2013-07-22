@@ -4307,6 +4307,116 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
 
 
 /**
+ * Implements 'MONITOR'.
+ */
+IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
+{
+    /*
+     * Permission checks.
+     */
+    if (pIemCpu->uCpl != 0)
+    {
+        Log2(("monitor: CPL != 0\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu); /** @todo MSR[0xC0010015].MonMwaitUserEn if we care. */
+    }
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_FEATURE_ECX_MONITOR))
+    {
+        Log2(("monitor: Not in CPUID\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+
+    /*
+     * Gather the operands and validate them.
+     */
+    PCPUMCTX pCtx       = pIemCpu->CTX_SUFF(pCtx);
+    RTGCPTR  GCPtrMem   = pIemCpu->enmCpuMode == IEMMODE_64BIT ? pCtx->rax : pCtx->eax;
+    uint32_t uEcx       = pCtx->ecx;
+    uint32_t uEdx       = pCtx->edx;
+/** @todo Test whether EAX or ECX is processed first, i.e. do we get \#PF or
+ *        \#GP first. */
+    if (uEcx != 0)
+    {
+        Log2(("monitor rax=%RX64, ecx=%RX32, edx=%RX32; ECX != 0 -> #GP(0)\n", GCPtrMem, uEcx, uEdx));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    VBOXSTRICTRC rcStrict = iemMemApplySegment(pIemCpu, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, iEffSeg, 1, &GCPtrMem);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    RTGCPHYS GCPhysMem;
+    rcStrict = iemMemPageTranslateAndCheckAccess(pIemCpu, GCPtrMem, IEM_ACCESS_TYPE_READ | IEM_ACCESS_WHAT_DATA, &GCPhysMem);
+    if (rcStrict != VINF_SUCCESS)
+        return rcStrict;
+
+    /*
+     * Call EM to prepare the monitor/wait.
+     */
+    rcStrict = EMMonitorWaitPrepare(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rax, pCtx->rcx, pCtx->rdx, GCPhysMem);
+    Assert(rcStrict == VINF_SUCCESS);
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return rcStrict;
+}
+
+
+/**
+ * Implements 'MWAIT'.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_mwait)
+{
+    /*
+     * Permission checks.
+     */
+    if (pIemCpu->uCpl != 0)
+    {
+        Log2(("mwait: CPL != 0\n"));
+        /** @todo MSR[0xC0010015].MonMwaitUserEn if we care. (Remember to check
+         *        EFLAGS.VM then.) */
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_FEATURE_ECX_MONITOR))
+    {
+        Log2(("mwait: Not in CPUID\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+
+    /*
+     * Gather the operands and validate them.
+     */
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+    uint32_t uEax = pCtx->eax;
+    uint32_t uEcx = pCtx->ecx;
+    if (uEcx != 0)
+    {
+        /* Only supported extension is break on IRQ when IF=0. */
+        if (uEcx > 1)
+        {
+            Log2(("mwait eax=%RX32, ecx=%RX32; ECX > 1 -> #GP(0)\n", uEax, uEcx));
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+        }
+        uint32_t fMWaitFeatures = 0;
+        uint32_t uIgnore = 0;
+        CPUMGetGuestCpuId(IEMCPU_TO_VMCPU(pIemCpu), 5, &uIgnore, &uIgnore, &fMWaitFeatures, &uIgnore);
+        if (    (fMWaitFeatures & (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
+            !=                    (X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
+        {
+            Log2(("mwait eax=%RX32, ecx=%RX32; break-on-IRQ-IF=0 extension not enabled -> #GP(0)\n", uEax, uEcx));
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+        }
+    }
+
+    /*
+     * Call EM to prepare the monitor/wait.
+     */
+    VBOXSTRICTRC rcStrict = EMMonitorWaitPerform(IEMCPU_TO_VMCPU(pIemCpu), uEax, uEcx);
+
+    iemRegAddToRip(pIemCpu, cbInstr);
+    return rcStrict;
+}
+
+
+/**
  * Implements 'CPUID'.
  */
 IEM_CIMPL_DEF_0(iemCImpl_cpuid)
