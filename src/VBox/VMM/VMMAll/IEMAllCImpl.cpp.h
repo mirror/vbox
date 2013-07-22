@@ -3031,8 +3031,8 @@ IEM_CIMPL_DEF_5(iemCImpl_load_SReg_Greg,
 /**
  * Implements lgdt.
  *
- * @param   iEffSeg         The segment of the new ldtr contents
- * @param   GCPtrEffSrc     The address of the new ldtr contents.
+ * @param   iEffSeg         The segment of the new gdtr contents
+ * @param   GCPtrEffSrc     The address of the new gdtr contents.
  * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, enmEffOpSize)
@@ -3089,8 +3089,8 @@ IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
 /**
  * Implements lidt.
  *
- * @param   iEffSeg         The segment of the new ldtr contents
- * @param   GCPtrEffSrc     The address of the new ldtr contents.
+ * @param   iEffSeg         The segment of the new idtr contents
+ * @param   GCPtrEffSrc     The address of the new idtr contents.
  * @param   enmEffOpSize    The effective operand size.
  */
 IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, enmEffOpSize)
@@ -3183,9 +3183,8 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
             pCtx->ldtr.Sel = uNewLdt;
         pCtx->ldtr.ValidSel = uNewLdt;
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-        if (IEM_IS_GUEST_CPU_AMD(pIemCpu) && !IEM_VERIFICATION_ENABLED(pIemCpu))
-            pCtx->ldtr.Attr.u   = 0;
-        else
+        pCtx->ldtr.Attr.u   = X86DESCATTR_UNUSABLE;
+        if (!IEM_IS_GUEST_CPU_AMD(pIemCpu) || !IEM_VERIFICATION_ENABLED(pIemCpu)) /* See bs-cpu-hidden-regs-1 on AMD. */
         {
             pCtx->ldtr.u64Base  = 0;
             pCtx->ldtr.u32Limit = 0;
