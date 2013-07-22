@@ -50,6 +50,13 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: added support for listing active guest session and
+          guest processes via
+          <computeroutput>guestcontrol list &lt;all|sessions|processes&gt;</computeroutput>
+        </para>
+      </listitem>
+
+      <listitem>
         <para>3D support: several fixes for Mac OS X hosts</para>
       </listitem>
 
@@ -74,7 +81,7 @@
 
        <listitem>
          <para>Windows guests: ability to track guest user idle times through
-           the newly introduced event IGuestUserStateChangedEvent.</para>
+           the newly introduced event IGuestUserStateChangedEvent</para>
        </listitem>
 
     </itemizedlist>
