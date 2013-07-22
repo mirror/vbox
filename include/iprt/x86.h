@@ -744,6 +744,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR6_BT                          RT_BIT(15)
 /** Value of DR6 after powerup/reset. */
 #define X86_DR6_INIT_VAL                    UINT64_C(0xFFFF0FF0)
+/** Bits which must be 1s in DR6. */
+#define X86_DR6_RA1_MASK                    UINT64_C(0xffff0ff0)
+/** Bits which must be 0s in DR6. */
+#define X86_DR6_RAZ_MASK                    RT_BIT_64(12)
+/** Bits which must be 0s on writes to DR6. */
+#define X86_DR6_MBZ_MASK                    UINT64_C(0xffffffff00000000)
 /** @} */
 
 
@@ -790,8 +796,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 30 & 31 - LEN3 - Length field 0. Values X86_DR7_LEN_*. */
 #define X86_DR7_LEN3_MASK                   (3 << 30)
 
-/** Bits which must be 1s. */
-#define X86_DR7_MB1_MASK                    (RT_BIT(10))
+/** Bits which reads as 1s. */
+#define X86_DR7_RA1_MASK                    (RT_BIT(10))
+/** Bits which reads as zeros. */
+#define X86_DR7_RAZ_MASK                    UINT64_C(0x0000d800)
+/** Bits which must be 0s when writing to DR7. */
+#define X86_DR7_MBZ_MASK                    UINT64_C(0xffffffff00000000)
 
 /** Calcs the L bit of Nth breakpoint.
  * @param   iBp     The breakpoint number [0..3].

@@ -2499,6 +2499,13 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
                 SSMR3GetMem(pSSM, &pVCpu->cpum.s.GuestMsrs.au64[0], 2 * sizeof(uint64_t)); /* Restore two MSRs. */
                 SSMR3Skip(pSSM, 62 * sizeof(uint64_t));
             }
+
+            /* REM and other may have cleared must-be-one fields in DR6 and
+               DR7, fix these. */
+            pVCpu->cpum.s.Guest.dr[6] &= ~(X86_DR6_RAZ_MASK | X86_DR6_MBZ_MASK);
+            pVCpu->cpum.s.Guest.dr[6] |= X86_DR6_RA1_MASK;
+            pVCpu->cpum.s.Guest.dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
+            pVCpu->cpum.s.Guest.dr[7] |= X86_DR7_RA1_MASK;
         }
 
         /* Older states does not have the internal selector register flags
