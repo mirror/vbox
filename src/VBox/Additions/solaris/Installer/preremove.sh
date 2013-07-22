@@ -1,8 +1,11 @@
 #!/bin/sh
+# $Id$
+## @file
+# VirtualBox preremove script for Solaris Guest Additions.
 #
-# VirtualBox pre-remove script for Solaris Guest Additions.
+
 #
-# Copyright (C) 2008-2012 Oracle Corporation
+# Copyright (C) 2008-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
