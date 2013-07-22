@@ -1383,7 +1383,7 @@ FNIEMOP_DEF(iemOp_mov_Rd_Cd)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
         if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); /* #UD takes precedence over #GP(), see test. */
+            return IEMOP_RAISE_INVALID_OPCODE(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
     switch (iCrReg)
@@ -1429,7 +1429,7 @@ FNIEMOP_DEF(iemOp_mov_Cd_Rd)
     {
         /* The lock prefix can be used to encode CR8 accesses on some CPUs. */
         if (!IEM_IS_AMD_CPUID_FEATURE_PRESENT_ECX(X86_CPUID_AMD_FEATURE_ECX_CR8L))
-            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); /* #UD takes precedence over #GP(), see test. */
+            return IEMOP_RAISE_INVALID_OPCODE(); /* #UD takes precedence over #GP(), see test. */
         iCrReg |= 8;
     }
     switch (iCrReg)
@@ -3843,7 +3843,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxsave,   uint8_t, bRm)
     IEMOP_MNEMONIC("fxsave m512");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
-        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg,/*=*/pIemCpu->iEffSeg,           0);
@@ -3862,7 +3862,7 @@ FNIEMOP_DEF_1(iemOp_Grp15_fxrstor,  uint8_t, bRm)
     IEMOP_MNEMONIC("fxrstor m512");
     IEMOP_HLP_NO_LOCK_PREFIX();
     if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_FXSR))
-        return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        return IEMOP_RAISE_INVALID_OPCODE();
 
     IEM_MC_BEGIN(3, 1);
     IEM_MC_ARG_CONST(uint8_t,   iEffSeg,/*=*/pIemCpu->iEffSeg,           0);
@@ -3893,14 +3893,63 @@ FNIEMOP_UD_STUB_1(iemOp_Grp15_xsaveopt, uint8_t, bRm);
 /** Opcode 0x0f 0xae mem/7. */
 FNIEMOP_STUB_1(iemOp_Grp15_clflush,  uint8_t, bRm);
 
+
 /** Opcode 0x0f 0xae 11b/5. */
-FNIEMOP_STUB_1(iemOp_Grp15_lfence,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp15_lfence,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("lfence");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(0, 0);
+    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_lfence);
+    else
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0x0f 0xae 11b/6. */
-FNIEMOP_STUB_1(iemOp_Grp15_mfence,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp15_mfence,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("mfence");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(0, 0);
+    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_mfence);
+    else
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0x0f 0xae 11b/7. */
-FNIEMOP_STUB_1(iemOp_Grp15_sfence,   uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp15_sfence,   uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("sfence");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    if (!IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2))
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    IEM_MC_BEGIN(0, 0);
+    if (IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(X86_CPUID_FEATURE_EDX_SSE2))
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_sfence);
+    else
+        IEM_MC_CALL_VOID_AIMPL_0(iemAImpl_alt_mem_fence);
+    IEM_MC_ADVANCE_RIP();
+    IEM_MC_END();
+    return VINF_SUCCESS;
+}
+
 
 /** Opcode 0xf3 0x0f 0xae 11b/0. */
 FNIEMOP_UD_STUB_1(iemOp_Grp15_rdfsbase, uint8_t, bRm);
@@ -8735,7 +8784,7 @@ FNIEMOP_DEF(iemOp_lea_Gv_M)
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     IEMOP_HLP_NO_LOCK_PREFIX(); /** @todo should probably not be raised until we've fetched all the opcode bytes? */
     if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
-        return IEMOP_RAISE_INVALID_LOCK_PREFIX(); /* no register form */
+        return IEMOP_RAISE_INVALID_OPCODE(); /* no register form */
 
     switch (pIemCpu->enmEffOpSize)
     {
@@ -10438,7 +10487,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_Ib)
         case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC("shl Eb,Ib"); break;
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Eb,Ib"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Eb,Ib"); break;
-        case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_AF);
@@ -10498,7 +10547,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_Ib)
         case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC("shl Ev,Ib"); break;
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,Ib"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,Ib"); break;
-        case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe stupid */
     }
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_AF);
@@ -10869,7 +10918,7 @@ FNIEMOP_DEF(iemOp_Grp2_Eb_1)
         case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC("shl Eb,1"); break;
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Eb,1"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Eb,1"); break;
-        case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_AF);
@@ -10927,7 +10976,7 @@ FNIEMOP_DEF(iemOp_Grp2_Ev_1)
         case 4: pImpl = &g_iemAImpl_shl; IEMOP_MNEMONIC("shl Ev,1"); break;
         case 5: pImpl = &g_iemAImpl_shr; IEMOP_MNEMONIC("shr Ev,1"); break;
         case 7: pImpl = &g_iemAImpl_sar; IEMOP_MNEMONIC("sar Ev,1"); break;
-        case 6: return IEMOP_RAISE_INVALID_LOCK_PREFIX();
+        case 6: return IEMOP_RAISE_INVALID_OPCODE();
         IEM_NOT_REACHED_DEFAULT_CASE_RET(); /* gcc maybe, well... */
     }
     IEMOP_VERIFICATION_UNDEFINED_EFLAGS(X86_EFL_OF | X86_EFL_AF);

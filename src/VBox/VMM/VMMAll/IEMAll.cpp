@@ -302,14 +302,20 @@ typedef IEMSELDESC *PIEMSELDESC;
      || iemRegIsIntelCpuIdFeaturePresent(pIemCpu, (a_fEdx), 0) )
 
 /**
+ * Checks if an Intel CPUID feature is present in the host CPU.
+ */
+#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(a_fEdx)  \
+    ( (a_fEdx) & pIemCpu->fHostCpuIdStdFeaturesEdx )
+
+/**
  * Evaluates to true if we're presenting an Intel CPU to the guest.
  */
-#define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)  (true) /** @todo determin this once and store it the CPU structure */
+#define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)   ( (a_pIemCpu)->enmCpuVendor == CPUMCPUVENDOR_INTEL )
 
 /**
  * Evaluates to true if we're presenting an AMD CPU to the guest.
  */
-#define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)    (false) /** @todo determin this once and store it the CPU structure */
+#define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)     ( (a_pIemCpu)->enmCpuVendor == CPUMCPUVENDOR_AMD )
 
 /**
  * Check if the address is canonical.
@@ -7011,6 +7017,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm) \
     IEM_MC_RETURN_ON_FAILURE(iemOpHlpCalcRmEffAddr(pIemCpu, (bRm), (cbImm), &(a_GCPtrEff)))
 
+#define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                   (a_pfn)()
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)               (a_pfn)((a0))
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)           (a_pfn)((a0), (a1))
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)       (a_pfn)((a0), (a1), (a2))
