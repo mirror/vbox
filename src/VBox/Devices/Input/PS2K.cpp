@@ -419,7 +419,7 @@ static const   key_def   aPS2Keys[] = {
     /* 97 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Lang 8 */
     /* 98 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Lang 9 */
     /* 99 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Alternate Erase */
-    /* 9A */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard SysReq/Attention */
+    /* 9A */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard SysReq/Attention (Note 3) */
     /* 9B */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Cancel */
     /* 9C */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Clear */
     /* 9D */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard Prior */
@@ -431,6 +431,19 @@ static const   key_def   aPS2Keys[] = {
     /* A3 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard CrSel/Props */
     /* A4 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard ExSel */
 };
+
+/* 
+ * Note 1: The behavior of these keys depends on the state of modifier keys
+ * at the time the key was pressed.
+ *
+ * Note 2: The key label depends on the national version of the keyboard.
+ *
+ * Note 3: Certain keys which have their own PS/2 scancodes do not exist on
+ * USB keyboards; the SysReq key is an example. The SysReq key scancode needs
+ * to be translated to the Print Screen HID usage code. The HID usage to PS/2
+ * scancode conversion then generates the correct sequence depending on the
+ * keyboard state.
+ */
 
 /* USB to PS/2 conversion table for modifier keys. */
 static const   key_def   aPS2ModKeys[] = {
@@ -471,7 +484,7 @@ static uint8_t aScancode2Hid[] =
     0xe2, 0x2c, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, /* 38-3F */
     0x3f, 0x40, 0x41, 0x42, 0x43, 0x53, 0x47, 0x5f, /* 40-47 */
     0x60, 0x61, 0x56, 0x5c, 0x5d, 0x5e, 0x57, 0x59, /* 48-4F */
-    0x5a, 0x5b, 0x62, 0x63, 0x00, 0x00, 0x64, 0x44, /* 50-57 */
+    0x5a, 0x5b, 0x62, 0x63, 0x46, 0x00, 0x64, 0x44, /* 50-57 */
     0x45, 0x67, 0x00, 0x00, 0x8c, 0x00, 0x00, 0x00, /* 58-5F */
     0x00, 0x00, 0x00, 0x00, 0x68, 0x69, 0x6a, 0x6b, /* 60-67 */
     0x6c, 0x6d, 0x6e, 0x6f, 0x70, 0x71, 0x72, 0x00, /* 68-6F */
