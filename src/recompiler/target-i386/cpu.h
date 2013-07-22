@@ -115,6 +115,9 @@
 #define DESC_W_MASK     (1 << 9)  /* data: writable */
 
 #define DESC_TSS_BUSY_MASK (1 << 9)
+#ifdef VBOX
+# define DESC_INTEL_UNUSABLE    RT_BIT_32(16+8) /**< Internal VT-x bit for NULL sectors. */
+#endif
 
 /* eflags masks */
 #define CC_C   	0x0001
@@ -948,6 +951,10 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
 #else
     if (flags & DESC_P_MASK)
         flags |= DESC_A_MASK;           /* Make sure the A bit is set to avoid trouble. */
+    if (selector < 4U && (env->hflags & HF_CS64_MASK))
+        flags |= DESC_INTEL_UNUSABLE;
+    else
+        flags &= ~DESC_INTEL_UNUSABLE;
     sc->flags = flags;
     sc->newselector = 0;
     sc->fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
