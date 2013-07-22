@@ -133,6 +133,7 @@ typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
 #define IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(a_fEdx)        (g_fRandom)
 #define IEM_IS_AMD_CPUID_FEATURES_ANY_PRESENT(a_fEdx, a_fEcx) (g_fRandom)
 #define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(a_fEdx)      (g_fRandom)
+#define IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX_ON_HOST(a_fEdx) (g_fRandom)
 #define IEM_IS_GUEST_CPU_AMD(a_pIemCpu)                     (g_fRandom)
 #define IEM_IS_GUEST_CPU_INTEL(a_pIemCpu)                   (g_fRandom)
 
@@ -500,6 +501,7 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_MEM_COMMIT_AND_UNMAP(a_pvMem, a_fAccess)                             do {} while (0)
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do {} while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm)                 do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)
+#define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                 do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                             do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
 #define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)                     do {} while (0)

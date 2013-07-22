@@ -20,13 +20,25 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_EM
 #include <VBox/vmm/iem.h>
+#include <VBox/vmm/cpum.h>
 #include "IEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/err.h>
 
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/assert.h>
 
 
+
+/**
+ * Initializes the interpreted execution manager.
+ *
+ * This must be called after CPUM as we're quering information from CPUM about
+ * the guest and host CPUs.
+ *
+ * @returns VBox status code.
+ * @param   pVM                 The cross context VM structure.
+ */
 VMMR3DECL(int)      IEMR3Init(PVM pVM)
 {
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -38,20 +50,43 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         pVCpu->iem.s.pCtxR0   = VM_R0_ADDR(pVM, pVCpu->iem.s.pCtxR3);
         pVCpu->iem.s.pCtxRC   = VM_RC_ADDR(pVM, pVCpu->iem.s.pCtxR3);
 
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,               STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Instructions interpreted",          "/IEM/CPU%u/cInstructions", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,           STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Potential exists",                  "/IEM/CPU%u/cPotentialExits", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,    STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "VERR_IEM_ASPECT_NOT_IMPLEMENTED",   "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,     STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "VERR_IEM_INSTR_NOT_IMPLEMENTED",    "/IEM/CPU%u/cRetInstrNotImplemented", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInfStatuses,           STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Informational statuses returned",   "/IEM/CPU%u/cRetInfStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,             STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetErrStatuses,           STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Error statuses returned",           "/IEM/CPU%u/cRetErrStatuses", idCpu);
-        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                   STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
+        STAMR3RegisterF(pVM, &pVCpu->iem.s.cbWritten,                 STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
                         "Approx bytes written",              "/IEM/CPU%u/cbWritten", idCpu);
+
+        /*
+         * Host and guest CPU information.
+         */
+        if (idCpu == 0)
+        {
+            uint32_t uIgnored;
+            CPUMGetGuestCpuId(pVCpu, 1, &uIgnored, &uIgnored,
+                              &pVCpu->iem.s.fCpuIdStdFeaturesEcx, &pVCpu->iem.s.fCpuIdStdFeaturesEdx);
+            pVCpu->iem.s.enmCpuVendor             = CPUMGetGuestCpuVendor(pVM);
+
+            ASMCpuId_ECX_EDX(1, &pVCpu->iem.s.fHostCpuIdStdFeaturesEcx, &pVCpu->iem.s.fHostCpuIdStdFeaturesEdx);
+            pVCpu->iem.s.enmHostCpuVendor         = CPUMGetHostCpuVendor(pVM);
+        }
+        else
+        {
+            pVCpu->iem.s.fCpuIdStdFeaturesEcx     = pVM->aCpus[0].iem.s.fCpuIdStdFeaturesEcx;
+            pVCpu->iem.s.fCpuIdStdFeaturesEdx     = pVM->aCpus[0].iem.s.fCpuIdStdFeaturesEdx;
+            pVCpu->iem.s.enmCpuVendor             = pVM->aCpus[0].iem.s.enmCpuVendor;
+            pVCpu->iem.s.fHostCpuIdStdFeaturesEcx = pVM->aCpus[0].iem.s.fHostCpuIdStdFeaturesEcx;
+            pVCpu->iem.s.fHostCpuIdStdFeaturesEdx = pVM->aCpus[0].iem.s.fHostCpuIdStdFeaturesEdx;
+            pVCpu->iem.s.enmHostCpuVendor         = pVM->aCpus[0].iem.s.enmHostCpuVendor;
+        }
     }
     return VINF_SUCCESS;
 }

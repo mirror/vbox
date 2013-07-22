@@ -1036,6 +1036,36 @@ IEMIMPL_UNARY_OP neg, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_E
 IEMIMPL_UNARY_OP not, 0, 0
 
 
+;;
+; Macro for implementing memory fence operation.
+;
+; No return value, no operands or anything.
+;
+; @param        1      The instruction.
+;
+%macro IEMIMPL_MEM_FENCE 1
+BEGINCODE
+BEGINPROC_FASTCALL iemAImpl_ %+ %1, 0
+        %1
+        ret
+ENDPROC iemAImpl_ %+ %1
+%endmacro
+
+IEMIMPL_MEM_FENCE lfence
+IEMIMPL_MEM_FENCE sfence
+IEMIMPL_MEM_FENCE mfence
+
+;;
+; Alternative for non-SSE2 host.
+;
+BEGINPROC_FASTCALL iemAImpl_alt_mem_fence, 0
+        push    xAX
+        xchg    xAX, [xSP]
+        add     xSP, xCB
+        ret
+ENDPROC iemAImpl_alt_mem_fence
+
+
 
 ;;
 ; Macro for implementing a shift operation.

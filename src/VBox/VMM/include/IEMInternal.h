@@ -378,6 +378,28 @@ typedef struct IEMCPU
         uint8_t             ab[512];
     } aBounceBuffers[3];
 
+    /** @name Target CPU information.
+     * @{ */
+    /** EDX value of CPUID(1).
+     * @remarks Some bits are subject to change and must be queried dynamically. */
+    uint32_t                fCpuIdStdFeaturesEdx;
+    /** ECX value of CPUID(1).
+     * @remarks Some bits are subject to change and must be queried dynamically. */
+    uint32_t                fCpuIdStdFeaturesEcx;
+    /** The CPU vendor. */
+    CPUMCPUVENDOR           enmCpuVendor;
+    /** @} */
+
+    /** @name Host CPU information.
+     * @{ */
+    /** EDX value of CPUID(1). */
+    uint32_t                fHostCpuIdStdFeaturesEdx;
+    /** ECX value of CPUID(1). */
+    uint32_t                fHostCpuIdStdFeaturesEcx;
+    /** The CPU vendor. */
+    CPUMCPUVENDOR           enmHostCpuVendor;
+    /** @} */
+
 #ifdef IEM_VERIFICATION_MODE_FULL
     /** The event verification records for what IEM did (LIFO). */
     R3PTRTYPE(PIEMVERIFYEVTREC)     pIemEvtRecHead;
@@ -677,6 +699,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b,(PRTUINT128U *pu128Dst, PRTUINT128U 
                                              uint32_t *pEFlags));
 IEM_DECL_IMPL_DEF(void, iemAImpl_cmpxchg16b_locked,(PRTUINT128U *pu128Dst, PRTUINT128U pu64RaxRdx, PRTUINT128U pu64RbxRcx,
                                                     uint32_t *pEFlags));
+/** @} */
+
+/** @name Memory ordering
+ * @{ */
+typedef IEM_DECL_IMPL_DEF(void, FNIEMAIMPLMEMFENCE,(void));
+typedef FNIEMAIMPLMEMFENCE *PFNIEMAIMPLMEMFENCE;
+IEM_DECL_IMPL_DEF(void, iemAImpl_mfence,(void));
+IEM_DECL_IMPL_DEF(void, iemAImpl_sfence,(void));
+IEM_DECL_IMPL_DEF(void, iemAImpl_lfence,(void));
+IEM_DECL_IMPL_DEF(void, iemAImpl_alt_mem_fence,(void));
 /** @} */
 
 /** @name Double precision shifts
