@@ -66,6 +66,10 @@ bool                            g_frtSolOldIPI = false;
 bool                            g_frtSolOldIPIUlong = false;
 /** The xc_call callout table structure. */
 RTR0FNSOLXCCALL                 g_rtSolXcCall;
+/** Whether to use the old-style installctx()/removectx() routines. */
+bool                            g_frtSolOldThreadCtx = false;
+/** The thread-context hooks callout table structure. */
+RTR0FNSOLTHREADCTX              g_rtSolThreadCtx;
 /** Thread preemption offset. */
 size_t                          g_offrtSolThreadPreempt;
 /** Host scheduler preemption offset. */
@@ -126,9 +130,9 @@ DECLHIDDEN(int) rtR0InitNative(void)
             cmn_err(CE_NOTE, "Failed to find kthread_t::t_preempt!\n");
             goto errorbail;
         }
-        cmn_err(CE_CONT, "!cpu_t::cpu_runrun @ 0x%lx\n",    g_offrtSolCpuPreempt);
-        cmn_err(CE_CONT, "!cpu_t::cpu_kprunrun @ 0x%lx\n",  g_offrtSolCpuForceKernelPreempt);
-        cmn_err(CE_CONT, "!kthread_t::t_preempt @ 0x%lx\n", g_offrtSolThreadPreempt);
+        cmn_err(CE_CONT, "!cpu_t::cpu_runrun @ 0x%lx (%ld)\n",    g_offrtSolCpuPreempt, g_offrtSolCpuPreempt);
+        cmn_err(CE_CONT, "!cpu_t::cpu_kprunrun @ 0x%lx (%ld)\n",  g_offrtSolCpuForceKernelPreempt, g_offrtSolCpuForceKernelPreempt);
+        cmn_err(CE_CONT, "!kthread_t::t_preempt @ 0x%lx (%ld)\n", g_offrtSolThreadPreempt, g_offrtSolThreadPreempt);
 
         /*
          * Mandatory: CPU cross call infrastructure. Refer the-solaris-kernel.h for details.
@@ -160,6 +164,22 @@ DECLHIDDEN(int) rtR0InitNative(void)
                 rc = VERR_NOT_SUPPORTED;
                 goto errorbail;
             }
+        }
+
+        /*
+         * Mandatory: Thread-context hooks.
+         */
+        rc = RTR0DbgKrnlInfoQuerySymbol(g_hKrnlDbgInfo, NULL /* pszModule */, "exitctx",  NULL /* ppvSymbol */);
+        if (RT_SUCCESS(rc))
+        {
+            g_rtSolThreadCtx.Install.pfnSol_installctx = (void *)installctx;
+            g_rtSolThreadCtx.Remove.pfnSol_removectx =   (void *)removectx;
+        }
+        else
+        {
+            g_frtSolOldThreadCtx = true;
+            g_rtSolThreadCtx.Install.pfnSol_installctx_old = (void *)installctx;
+            g_rtSolThreadCtx.Remove.pfnSol_removectx_old   = (void *)removectx;
         }
 
         /*
