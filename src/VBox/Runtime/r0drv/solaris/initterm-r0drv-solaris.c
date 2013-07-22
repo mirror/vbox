@@ -173,7 +173,7 @@ DECLHIDDEN(int) rtR0InitNative(void)
         if (RT_SUCCESS(rc))
         {
             g_rtSolThreadCtx.Install.pfnSol_installctx = (void *)installctx;
-            g_rtSolThreadCtx.Remove.pfnSol_removectx =   (void *)removectx;
+            g_rtSolThreadCtx.Remove.pfnSol_removectx   = (void *)removectx;
         }
         else
         {
