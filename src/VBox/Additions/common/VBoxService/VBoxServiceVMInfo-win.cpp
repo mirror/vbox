@@ -24,9 +24,9 @@
 # define _WIN32_WINNT 0x0502 /* CachedRemoteInteractive in recent SDKs. */
 #endif
 #include <Windows.h>
-#include <wtsapi32.h>       /* For WTS* calls. */
-#include <psapi.h>          /* EnumProcesses. */
-#include <Ntsecapi.h>       /* Needed for process security information. */
+#include <wtsapi32.h>        /* For WTS* calls. */
+#include <psapi.h>           /* EnumProcesses. */
+#include <Ntsecapi.h>        /* Needed for process security information. */
 
 #include <iprt/assert.h>
 #include <iprt/ldr.h>
@@ -40,6 +40,7 @@
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
+#include "VBoxServiceVMInfo.h"
 #include "../../WINNT/VBoxTray/VBoxTrayMsg.h" /* For IPC. */
 
 static uint32_t s_uGuestPropClientID = 0;
@@ -91,7 +92,7 @@ uint32_t VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, PVBOXSERVICEVMI
 bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
 int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
 void VBoxServiceVMInfoWinProcessesFree(DWORD cProcs, PVBOXSERVICEVMINFOPROC paProcs);
-int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *pszDomain);
+int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain);
 
 typedef BOOL WINAPI FNQUERYFULLPROCESSIMAGENAME(HANDLE,  DWORD, LPTSTR, PDWORD);
 typedef FNQUERYFULLPROCESSIMAGENAME *PFNQUERYFULLPROCESSIMAGENAME;
@@ -807,8 +808,10 @@ bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER pUserInfo, PLUID pSes
 }
 
 
-static int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *pszDomain)
+static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
+                                              const char *pszUser, const char *pszDomain)
 {
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
@@ -832,16 +835,37 @@ static int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *p
                                            NULL /* Exact read */);
             if (RT_SUCCESS(rc))
             {
-                VBoxGuestUserState userState = ipcRes.uLastInputMs < 5000 /** @todo Make this configurable. */
+                VBoxGuestUserState userState = ipcRes.uLastInputMs < g_uVMInfoUserIdleThreshold
                                              ? VBoxGuestUserState_InUse
                                              : VBoxGuestUserState_Idle;
-                if (ipcRes.uLastInputMs)
+
+                rc = vboxServiceUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
+                                              userState == VBoxGuestUserState_InUse
+                                            ? "InUse" : "Idle");
+
+                /*
+                 * Note: vboxServiceUserUpdateF can return VINF_NO_CHANGE in case there wasn't anything
+                 *       to update. So only report the user's status to host when we really got something
+                 *       new.
+                 */
+                if (rc == VINF_SUCCESS)
                 {
                     VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32ms\n",
                                        pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInputMs);
 
-                    rc = VbglR3GuestUserReportState(pszUser, pszDomain, userState,
-                                                    NULL /* No details */, 0);
+#if 0 /* Do we want to write the idle time as well? */
+                    /* Also write the user's current idle time, if there is any. */
+                    if (userState == VBoxGuestUserState_Idle)
+                        rc = vboxServiceUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs",
+                                                    "%RU32", ipcRes.uLastInputMs);
+                    else
+                        rc = vboxServiceUserUpdateF(pCache, pszUser, pszDomain, "IdleTimeMs",
+                                                    NULL /* Delete property */);
+
+                    if (RT_SUCCESS(rc))
+#endif
+                        rc = VbglR3GuestUserReportState(pszUser, pszDomain, userState,
+                                                        NULL /* No details */, 0);
                 }
             }
 #ifdef DEBUG
@@ -882,12 +906,16 @@ static int vboxServiceVMInfoWinWriteLastInput(const char *pszUser, const char *p
  * user count.
  *
  * @returns VBox status code.
+ * @param   pCachce         Property cache to use for storing some of the lookup
+ *                          data in between calls.
  * @param   ppszUserList    Where to store the user list (separated by commas).
  *                          Must be freed with RTStrFree().
  * @param   pcUsersInList   Where to store the number of users in the list.
  */
-int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
+int VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache,
+                                   char **ppszUserList, uint32_t *pcUsersInList)
 {
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     AssertPtrReturn(ppszUserList, VERR_INVALID_POINTER);
     AssertPtrReturn(pcUsersInList, VERR_INVALID_POINTER);
 
@@ -1080,7 +1108,7 @@ int VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList)
 
                         /* Do idle detection. */
                         if (RT_SUCCESS(rc))
-                            rc = vboxServiceVMInfoWinWriteLastInput(pszUser, pszDomain);
+                            rc = vboxServiceVMInfoWinWriteLastInput(pCache, pszUser, pszDomain);
                     }
                     else
                         rc = RTStrAAppend(ppszUserList, "<string-conversion-error>");

@@ -102,12 +102,17 @@ static const char              *g_pszPropCacheValLoggedInUsersList = "/VirtualBo
 static const char              *g_pszPropCacheValLoggedInUsers = "/VirtualBox/GuestInfo/OS/LoggedInUsers";
 static const char              *g_pszPropCacheValNoLoggedInUsers = "/VirtualBox/GuestInfo/OS/NoLoggedInUsers";
 static const char              *g_pszPropCacheValNetCount = "/VirtualBox/GuestInfo/Net/Count";
+/** A guest user's guest property root key. */
+static const char              *g_pszPropCacheValUser = "/VirtualBox/GuestInfo/User/";
 /** The VM session ID. Changes whenever the VM is restored or reset. */
 static uint64_t                 g_idVMInfoSession;
 /** The last attached locartion awareness (LA) client timestamp. */
 static uint64_t                 g_LAClientAttachedTS = 0;
 /** The current LA client info. */
 static VBOXSERVICELACLIENTINFO  g_LAClientInfo;
+/** User idle threshold. This specifies the minimum time a user is considered
+ *  being idle and then will be reported to the host. Default is 5s. */
+uint32_t                        g_uVMInfoUserIdleThreshold = 5 * 1000;
 
 
 /*******************************************************************************
@@ -156,12 +161,17 @@ static DECLCALLBACK(int) VBoxServiceVMInfoPreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceVMInfoOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
+    /** @todo Use RTGetOpt here. */
+
     int rc = -1;
     if (ppszShort)
         /* no short options */;
     else if (!strcmp(argv[*pi], "--vminfo-interval"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
                                   &g_cMsVMInfoInterval, 1, UINT32_MAX - 1);
+    else if (!strcmp(argv[*pi], "--vminfo-user-idle-threshold"))
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
+                                  &g_uVMInfoUserIdleThreshold, 1, UINT32_MAX - 1);
     return rc;
 }
 
@@ -234,6 +244,19 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
                                               VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_ALWAYS_UPDATE, NULL /* Delete on exit */);
         if (RT_FAILURE(rc2))
             VBoxServiceError("Failed to init property cache value \"%s\", rc=%Rrc\n", g_pszPropCacheValNetCount, rc2);
+
+        /*
+         * Get configuration guest properties from the host.
+         * Note: All properties should have sensible defaults in case the lookup here fails.
+         */
+        char *pszValue;
+        rc2 = VBoxServiceReadHostProp(g_uVMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold", true /* Read only */,
+                                      &pszValue, NULL /* Flags */, NULL /* Timestamp */);
+        if (RT_SUCCESS(rc2))
+        {
+            AssertPtr(pszValue);
+            g_uVMInfoUserIdleThreshold = RT_CLAMP(RTStrToInt32(pszValue), 1000, UINT32_MAX - 1);
+        }
     }
     return rc;
 }
@@ -340,6 +363,66 @@ static void vboxServiceFreeLAClientInfo(PVBOXSERVICELACLIENTINFO pClient)
 
 
 /**
+ * Updates a per-guest user guest property inside the given property cache.
+ *
+ * @return  IPRT status code.
+ * @param   pCache                  Pointer to guest property cache to update user in.
+ * @param   pszUser                 Name of guest user to update.
+ * @param   pszDomain               Domain of guest user to update. Optional.
+ * @param   pszKey                  Key name of guest property to update.
+ * @param   pszValueFormat          Guest property value to set. Pass NULL for deleting
+ *                                  the property.
+ */
+int vboxServiceUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, const char *pszDomain,
+                           const char *pszKey, const char *pszValueFormat, ...)
+{
+    AssertPtrReturn(pCache, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+    /* pszDomain is optional. */
+    AssertPtrReturn(pszKey, VERR_INVALID_POINTER);
+    /* pszValueFormat is optional. */
+
+    int rc = VINF_SUCCESS;
+
+    char *pszName;
+    if (pszDomain)
+        if (!RTStrAPrintf(&pszName, "%s%s@%s/%s", g_pszPropCacheValUser, pszUser, pszDomain, pszKey))
+            rc = VERR_NO_MEMORY;
+    else
+        if (!RTStrAPrintf(&pszName, "%s%s/%s", g_pszPropCacheValUser, pszUser, pszKey))
+            rc = VERR_NO_MEMORY;
+
+    char *pszValue = NULL;
+    if (   RT_SUCCESS(rc)
+        && pszValueFormat)
+    {
+        va_list va;
+        va_start(va, pszValueFormat);
+        if (RTStrAPrintfV(&pszValue, pszValueFormat, va) < 0)
+            rc = VERR_NO_MEMORY;
+        va_end(va);
+        if (   RT_SUCCESS(rc)
+            && !pszValue)
+            rc = VERR_NO_STR_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+        rc = VBoxServicePropCacheUpdate(pCache, pszName, pszValue);
+    if (rc == VINF_SUCCESS) /* VBoxServicePropCacheUpdate will also return VINF_NO_CHANGE. */
+    {
+        /** @todo Combine updating flags w/ updating the actual value. */
+        rc = VBoxServicePropCacheUpdateEntry(pCache, pszName,
+                                             VBOXSERVICEPROPCACHEFLAG_TEMPORARY | VBOXSERVICEPROPCACHEFLAG_TRANSIENT,
+                                             NULL /* Delete on exit */);
+    }
+
+    RTStrFree(pszValue);
+    RTStrFree(pszName);
+    return rc;
+}
+
+
+/**
  * Writes the properties that won't change while the service is running.
  *
  * Errors are ignored.
@@ -430,7 +513,8 @@ static int vboxserviceVMInfoWriteUsers(void)
 
 #ifdef RT_OS_WINDOWS
 # ifndef TARGET_NT4
-    rc = VBoxServiceVMInfoWinWriteUsers(&pszUserList, &cUsersInList);
+    rc = VBoxServiceVMInfoWinWriteUsers(&g_VMInfoPropCache,
+                                        &pszUserList, &cUsersInList);
 # else
     rc = VERR_NOT_IMPLEMENTED;
 # endif
@@ -1390,11 +1474,15 @@ VBOXSERVICE g_VMInfo =
     /* pszDescription. */
     "Virtual Machine Information",
     /* pszUsage. */
-    "              [--vminfo-interval <ms>]"
+    "              [--vminfo-interval <ms>] [--vminfo-user-idle-threshold <ms>]"
     ,
     /* pszOptions. */
     "    --vminfo-interval       Specifies the interval at which to retrieve the\n"
     "                            VM information. The default is 10000 ms.\n"
+    "    --vminfo-user-idle-threshold <ms>\n"
+    "                            Specifies the user idle threshold (in ms) for\n"
+    "                            considering a guest user being as idle. The default\n"
+    "                            is 5000 (5 seconds).\n"
     ,
     /* methods */
     VBoxServiceVMInfoPreInit,
