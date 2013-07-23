@@ -3589,12 +3589,13 @@ static VBOXSTRICTRC iemRegRipJump(PIEMCPU pIemCpu, uint64_t uNewRip)
 /**
  * Get the address of the top of the stack.
  *
+ * @param   pIemCpu             The per CPU data.
  * @param   pCtx                The CPU context which SP/ESP/RSP should be
  *                              read.
  */
-DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCCPUMCTX pCtx)
+DECLINLINE(RTGCPTR) iemRegGetEffRsp(PCIEMCPU pIemCpu, PCCPUMCTX pCtx)
 {
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         return pCtx->rsp;
     if (pCtx->ss.Attr.n.u1DefBig)
         return pCtx->esp;
@@ -3646,13 +3647,14 @@ static void iemRegUpdateRip(PIEMCPU pIemCpu)
 /**
  * Adds to the stack pointer.
  *
+ * @param   pIemCpu             The per CPU data.
  * @param   pCtx                The CPU context which SP/ESP/RSP should be
  *                              updated.
  * @param   cbToAdd             The number of bytes to add.
  */
-DECLINLINE(void) iemRegAddToRsp(PCPUMCTX pCtx, uint8_t cbToAdd)
+DECLINLINE(void) iemRegAddToRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToAdd)
 {
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         pCtx->rsp += cbToAdd;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pCtx->esp += cbToAdd;
@@ -3664,13 +3666,14 @@ DECLINLINE(void) iemRegAddToRsp(PCPUMCTX pCtx, uint8_t cbToAdd)
 /**
  * Subtracts from the stack pointer.
  *
+ * @param   pIemCpu             The per CPU data.
  * @param   pCtx                The CPU context which SP/ESP/RSP should be
  *                              updated.
  * @param   cbToSub             The number of bytes to subtract.
  */
-DECLINLINE(void) iemRegSubFromRsp(PCPUMCTX pCtx, uint8_t cbToSub)
+DECLINLINE(void) iemRegSubFromRsp(PCIEMCPU pIemCpu, PCPUMCTX pCtx, uint8_t cbToSub)
 {
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         pCtx->rsp -= cbToSub;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pCtx->esp -= cbToSub;
@@ -3682,13 +3685,14 @@ DECLINLINE(void) iemRegSubFromRsp(PCPUMCTX pCtx, uint8_t cbToSub)
 /**
  * Adds to the temporary stack pointer.
  *
+ * @param   pIemCpu             The per CPU data.
  * @param   pTmpRsp             The temporary SP/ESP/RSP to update.
  * @param   cbToAdd             The number of bytes to add.
  * @param   pCtx                Where to get the current stack mode.
  */
-DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint16_t cbToAdd, PCCPUMCTX pCtx)
+DECLINLINE(void) iemRegAddToRspEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint16_t cbToAdd)
 {
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         pTmpRsp->u           += cbToAdd;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0  += cbToAdd;
@@ -3700,15 +3704,16 @@ DECLINLINE(void) iemRegAddToRspEx(PRTUINT64U pTmpRsp, uint16_t cbToAdd, PCCPUMCT
 /**
  * Subtracts from the temporary stack pointer.
  *
+ * @param   pIemCpu             The per CPU data.
  * @param   pTmpRsp             The temporary SP/ESP/RSP to update.
  * @param   cbToSub             The number of bytes to subtract.
  * @param   pCtx                Where to get the current stack mode.
  * @remarks The @a cbToSub argument *MUST* be 16-bit, iemCImpl_enter is
  *          expecting that.
  */
-DECLINLINE(void) iemRegSubFromRspEx(PRTUINT64U pTmpRsp, uint16_t cbToSub, PCCPUMCTX pCtx)
+DECLINLINE(void) iemRegSubFromRspEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint16_t cbToSub)
 {
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         pTmpRsp->u          -= cbToSub;
     else if (pCtx->ss.Attr.n.u1DefBig)
         pTmpRsp->DWords.dw0 -= cbToSub;
@@ -3722,17 +3727,18 @@ DECLINLINE(void) iemRegSubFromRspEx(PRTUINT64U pTmpRsp, uint16_t cbToSub, PCCPUM
  * well as the new RSP value (upper bits may be masked).
  *
  * @returns Effective stack addressf for the push.
+ * @param   pIemCpu             The IEM per CPU data.
  * @param   pCtx                Where to get the current stack mode.
  * @param   cbItem              The size of the stack item to pop.
  * @param   puNewRsp            Where to return the new RSP value.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t *puNewRsp)
+DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, uint8_t cbItem, uint64_t *puNewRsp)
 {
     RTUINT64U   uTmpRsp;
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pCtx->rsp;
 
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         GCPtrTop = uTmpRsp.u            -= cbItem;
     else if (pCtx->ss.Attr.n.u1DefBig)
         GCPtrTop = uTmpRsp.DWords.dw0   -= cbItem;
@@ -3748,17 +3754,18 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPush(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t
  * specified size.
  *
  * @returns Current stack pointer.
+ * @param   pIemCpu             The per CPU data.
  * @param   pCtx                Where to get the current stack mode.
  * @param   cbItem              The size of the stack item to pop.
  * @param   puNewRsp            Where to return the new RSP value.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t *puNewRsp)
+DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, uint8_t cbItem, uint64_t *puNewRsp)
 {
     RTUINT64U   uTmpRsp;
     RTGCPTR     GCPtrTop;
     uTmpRsp.u = pCtx->rsp;
 
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
     {
         GCPtrTop = uTmpRsp.u;
         uTmpRsp.u += cbItem;
@@ -3783,15 +3790,16 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPop(PCCPUMCTX pCtx, uint8_t cbItem, uint64_t 
  * well as the new temporary RSP value (upper bits may be masked).
  *
  * @returns Effective stack addressf for the push.
+ * @param   pIemCpu             The per CPU data.
  * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   cbItem              The size of the stack item to pop.
  * @param   puNewRsp            Where to return the new RSP value.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PCCPUMCTX pCtx)
+DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint8_t cbItem)
 {
     RTGCPTR GCPtrTop;
 
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         GCPtrTop = pTmpRsp->u          -= cbItem;
     else if (pCtx->ss.Attr.n.u1DefBig)
         GCPtrTop = pTmpRsp->DWords.dw0 -= cbItem;
@@ -3806,14 +3814,15 @@ DECLINLINE(RTGCPTR) iemRegGetRspForPushEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PC
  * calculates and updates the temporary RSP.
  *
  * @returns Current stack pointer.
+ * @param   pIemCpu             The per CPU data.
  * @param   pTmpRsp             The temporary stack pointer.  This is updated.
  * @param   pCtx                Where to get the current stack mode.
  * @param   cbItem              The size of the stack item to pop.
  */
-DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PRTUINT64U pTmpRsp, uint8_t cbItem, PCCPUMCTX pCtx)
+DECLINLINE(RTGCPTR) iemRegGetRspForPopEx(PCIEMCPU pIemCpu, PCCPUMCTX pCtx, PRTUINT64U pTmpRsp, uint8_t cbItem)
 {
     RTGCPTR GCPtrTop;
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
     {
         GCPtrTop = pTmpRsp->u;
         pTmpRsp->u          += cbItem;
@@ -5926,7 +5935,7 @@ static VBOXSTRICTRC iemMemStackPushU16(PIEMCPU pIemCpu, uint16_t u16Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, 2, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, 2, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint16_t *pu16Dst;
@@ -5957,7 +5966,7 @@ static VBOXSTRICTRC iemMemStackPushU32(PIEMCPU pIemCpu, uint32_t u32Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, 4, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, 4, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint32_t *pu32Dst;
@@ -5988,7 +5997,7 @@ static VBOXSTRICTRC iemMemStackPushU64(PIEMCPU pIemCpu, uint64_t u64Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, 8, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, 8, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint64_t *pu64Dst;
@@ -6019,7 +6028,7 @@ static VBOXSTRICTRC iemMemStackPopU16(PIEMCPU pIemCpu, uint16_t *pu16Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, 2, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pIemCpu, pCtx, 2, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint16_t const *pu16Src;
@@ -6050,7 +6059,7 @@ static VBOXSTRICTRC iemMemStackPopU32(PIEMCPU pIemCpu, uint32_t *pu32Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, 4, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pIemCpu, pCtx, 4, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint32_t const *pu32Src;
@@ -6081,7 +6090,7 @@ static VBOXSTRICTRC iemMemStackPopU64(PIEMCPU pIemCpu, uint64_t *pu64Value)
     /* Increment the stack pointer. */
     uint64_t    uNewRsp;
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, 8, &uNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pIemCpu, pCtx, 8, &uNewRsp);
 
     /* Write the word the lazy way. */
     uint64_t const *pu64Src;
@@ -6113,7 +6122,7 @@ static VBOXSTRICTRC iemMemStackPushU16Ex(PIEMCPU pIemCpu, uint16_t u16Value, PRT
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(&NewRsp, 2, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(pIemCpu, pCtx, &NewRsp, 2);
 
     /* Write the word the lazy way. */
     uint16_t *pu16Dst;
@@ -6145,7 +6154,7 @@ static VBOXSTRICTRC iemMemStackPushU32Ex(PIEMCPU pIemCpu, uint32_t u32Value, PRT
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(&NewRsp, 4, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(pIemCpu, pCtx, &NewRsp, 4);
 
     /* Write the word the lazy way. */
     uint32_t *pu32Dst;
@@ -6177,7 +6186,7 @@ static VBOXSTRICTRC iemMemStackPushU64Ex(PIEMCPU pIemCpu, uint64_t u64Value, PRT
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(&NewRsp, 8, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPushEx(pIemCpu, pCtx, &NewRsp, 8);
 
     /* Write the word the lazy way. */
     uint64_t *pu64Dst;
@@ -6209,7 +6218,7 @@ static VBOXSTRICTRC iemMemStackPopU16Ex(PIEMCPU pIemCpu, uint16_t *pu16Value, PR
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(&NewRsp, 2, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pIemCpu, pCtx, &NewRsp, 2);
 
     /* Write the word the lazy way. */
     uint16_t const *pu16Src;
@@ -6241,7 +6250,7 @@ static VBOXSTRICTRC iemMemStackPopU32Ex(PIEMCPU pIemCpu, uint32_t *pu32Value, PR
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(&NewRsp, 4, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pIemCpu, pCtx, &NewRsp, 4);
 
     /* Write the word the lazy way. */
     uint32_t const *pu32Src;
@@ -6273,7 +6282,7 @@ static VBOXSTRICTRC iemMemStackPopU64Ex(PIEMCPU pIemCpu, uint64_t *pu64Value, PR
     /* Increment the stack pointer. */
     PCPUMCTX    pCtx = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp = *pTmpRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(&NewRsp, 8, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pIemCpu, pCtx, &NewRsp, 8);
 
     /* Write the word the lazy way. */
     uint64_t const *pu64Src;
@@ -6313,7 +6322,7 @@ static VBOXSTRICTRC iemMemStackPushBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, v
 {
     Assert(cbMem < UINT8_MAX);
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pCtx, (uint8_t)cbMem, puNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, (uint8_t)cbMem, puNewRsp);
     return iemMemMap(pIemCpu, ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_W);
 }
 
@@ -6357,7 +6366,7 @@ static VBOXSTRICTRC iemMemStackPopBeginSpecial(PIEMCPU pIemCpu, size_t cbMem, vo
 {
     Assert(cbMem < UINT8_MAX);
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pCtx, (uint8_t)cbMem, puNewRsp);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPop(pIemCpu, pCtx, (uint8_t)cbMem, puNewRsp);
     return iemMemMap(pIemCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_R);
 }
 
@@ -6382,7 +6391,7 @@ static VBOXSTRICTRC iemMemStackPopContinueSpecial(PIEMCPU pIemCpu, size_t cbMem,
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
     RTUINT64U   NewRsp;
     NewRsp.u = *puNewRsp;
-    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(&NewRsp, 8, pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPopEx(pIemCpu, pCtx, &NewRsp, 8);
     *puNewRsp = NewRsp.u;
     return iemMemMap(pIemCpu, (void **)ppvMem, cbMem, X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_R);
 }

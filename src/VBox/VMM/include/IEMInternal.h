@@ -415,6 +415,8 @@ typedef struct IEMCPU
 } IEMCPU;
 /** Pointer to the per-CPU IEM state. */
 typedef IEMCPU *PIEMCPU;
+/** Pointer to the const per-CPU IEM state. */
+typedef IEMCPU const *PCIEMCPU;
 
 /** Converts a IEMCPU pointer to a VMCPU pointer.
  * @returns VMCPU pointer.
