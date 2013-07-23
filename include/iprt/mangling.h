@@ -1860,7 +1860,6 @@
 # define RTZipGzipDecompressIoStream                    RT_MANGLER(RTZipGzipDecompressIoStream)
 # define RTZipTarCmd                                    RT_MANGLER(RTZipTarCmd)
 # define RTZipTarFsStreamFromIoStream                   RT_MANGLER(RTZipTarFsStreamFromIoStream)
-# define RTZipGzipDecompressBuffer                      RT_MANGLER(RTZipGzipDecompressBuffer)
 /*
  * Stable variables (alphabetical order):
  */
