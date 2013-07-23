@@ -1247,7 +1247,8 @@ VBOXDDU_DECL(int) VDRepair(PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
  * @return  VBox status code.
  * @param   pDisk           Pointer to HDD container.
  * @param   fFlags          Combination of the VD_VFSFILE_* flags.
- * @param   phVfsFile       Where to stoer the handle to the VFS file on success.
+ * @param   phVfsFile       Where to store the handle to the VFS file on
+ *                          success.
  */
 VBOXDDU_DECL(int) VDCreateVfsFileFromDisk(PVBOXHDD pDisk, uint32_t fFlags,
                                           PRTVFSFILE phVfsFile);
