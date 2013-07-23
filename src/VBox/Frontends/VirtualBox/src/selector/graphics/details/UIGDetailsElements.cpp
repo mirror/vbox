@@ -536,7 +536,7 @@ UIGDetailsElementStorage::UIGDetailsElementStorage(UIGDetailsSet *pParent, bool 
     : UIGDetailsElementInterface(pParent, DetailsElementType_Storage, fOpened)
 {
     /* Icon: */
-    setIcon(UIIconPool::iconSet(":/attachment_16px.png"));
+    setIcon(UIIconPool::iconSet(":/hd_16px.png"));
 
     /* Translate: */
     retranslateUi();
