@@ -23,7 +23,9 @@
 #include "ProgressImpl.h"
 #include "ApplianceImpl.h"
 #include "ApplianceImplPrivate.h"
+#include "VirtualBoxImpl.h"
 
+#include <iprt/zip.h>
 #include <iprt/tar.h>
 #include <iprt/sha.h>
 #include <iprt/path.h>
@@ -31,6 +33,7 @@
 #include <iprt/stream.h>
 #include <iprt/circbuf.h>
 #include <VBox/vd.h>
+#include <zlib.h>
 
 /******************************************************************************
  *   Structures and Typedefs                                                  *
@@ -91,6 +94,38 @@ typedef struct SHASTORAGEINTERNAL
 //    uint64_t waits;
 } SHASTORAGEINTERNAL, *PSHASTORAGEINTERNAL;
 
+typedef struct GZIPSTORAGEINTERNAL
+{
+    /** Completion callback. */
+    PFNVDCOMPLETED pfnCompleted;
+    /** Storage handle for the next callback in chain. */
+    void *pvStorage;
+    /** Current file open mode. */
+    uint32_t fOpenMode;
+    /** Circular buffer used for transferring data from/to the worker thread. */
+    PRTCIRCBUF pCircBuf;
+    /** Current absolute position (regardless of the real read/written data). */
+    uint64_t cbCurAll;
+    /** Current real position in the file. */
+    uint64_t cbCurFile;
+    /** Handle of the worker thread. */
+    RTTHREAD pWorkerThread;
+    /** Status of the worker thread. */
+    volatile uint32_t u32Status;
+    /** Event for signaling a new status. */
+    RTSEMEVENT newStatusEvent;
+    /** Event for signaling a finished task of the worker thread. */
+    RTSEMEVENT workFinishedEvent;
+    /** Write mode only: Memory buffer for writing zeros. */
+    void *pvZeroBuf;
+    /** Write mode only: Size of the zero memory buffer. */
+    size_t cbZeroBuf;
+    /** Read mode only: Indicate if we reached end of file. */
+    volatile bool fEOF;
+//    uint64_t calls;
+//    uint64_t waits;
+} GZIPSTORAGEINTERNAL, *PGZIPSTORAGEINTERNAL;
+
 /******************************************************************************
  *   Defined Constants And Macros                                             *
  ******************************************************************************/
@@ -109,9 +144,17 @@ typedef struct SHASTORAGEINTERNAL
 # define DEBUG_PRINT_FLOW() do {} while (0)
 #endif
 
+/** Buffer for the decompressed data. */
+//static uint8_t *compressedBuffer;
+/** The current size of the compressed data*/
+static size_t   cbComprData;
+/** The current offset into the compressed data */
+static size_t   offComprData;
+
 /******************************************************************************
  *   Internal Functions                                                       *
  ******************************************************************************/
+//static DECLCALLBACK(int) CopyCompressedDataToBuffer(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbRead);
 
 /******************************************************************************
  *   Internal: RTFile interface
@@ -1173,8 +1216,446 @@ static int shaFlushSyncCallback(void *pvUser, void *pvStorage)
 }
 
 /******************************************************************************
+ *   Internal: RTGZIP interface
+ ******************************************************************************/
+
+//DECLCALLBACK(int) gzipCalcWorkerThread(RTTHREAD /* aThread */, void *pvUser)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvUser;
+//
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pInt->pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    int rc = VINF_SUCCESS;
+//    bool fLoop = true;
+//    while (fLoop)
+//    {
+//        /* What should we do next? */
+//        uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
+////        RTPrintf("status: %d\n", u32Status);
+//        switch (u32Status)
+//        {
+//            case STATUS_WAIT:
+//            {
+//                /* Wait for new work. */
+//                rc = RTSemEventWait(pInt->newStatusEvent, 100);
+//                if (   RT_FAILURE(rc)
+//                    && rc != VERR_TIMEOUT)
+//                    fLoop = false;
+//                break;
+//            }
+//            case STATUS_READ:
+//            {
+//                ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_READING, STATUS_READ);
+//                size_t cbAvail = RTCircBufFree(pInt->pCircBuf);
+//                size_t cbMemAllWrite = 0;
+//                /* First loop over all the available memory in the circular
+//                 * memory buffer (could be turn around at the end). */
+//                for (;;)
+//                {
+//                    if (   cbMemAllWrite == cbAvail
+//                        || fLoop == false)
+//                        break;
+//                    char *pcBuf;
+//                    size_t cbMemToWrite = cbAvail - cbMemAllWrite;
+//                    size_t cbMemWrite = 0;
+//                    /* Try to acquire all the free space of the circular buffer. */
+//                    RTCircBufAcquireWriteBlock(pInt->pCircBuf, cbMemToWrite, (void**)&pcBuf, &cbMemWrite);
+//                    /* Second, read as long as we filled all the memory. The
+//                     * read method could also split the reads up into to
+//                     * smaller parts. */
+//                    size_t cbAllRead = 0;
+//                    for (;;)
+//                    {
+//                        if (cbAllRead == cbMemWrite)
+//                            break;
+//                        size_t cbToRead = cbMemWrite - cbAllRead;
+//                        size_t cbRead = 0;
+//                        rc = vdIfIoFileReadSync(pIfIo, pInt->pvStorage, pInt->cbCurFile, &pcBuf[cbAllRead], cbToRead, &cbRead);
+//                        if (RT_FAILURE(rc))
+//                        {
+//                            fLoop = false;
+//                            break;
+//                        }
+//                        /* This indicates end of file. Stop reading. */
+//                        if (cbRead == 0)
+//                        {
+//                            fLoop = false;
+//                            ASMAtomicWriteBool(&pInt->fEOF, true);
+//                            break;
+//                        }
+//                        cbAllRead += cbRead;
+//                        pInt->cbCurFile += cbRead;
+//                    }
+//                    /* Update the GZIP context with the next data block. */
+//                    if (RT_SUCCESS(rc))
+//                    {
+//                            RTSha256Update(&pInt->ctx.Sha256, pcBuf, cbAllRead);
+//                    }
+//                    /* Mark the block as full. */
+//                    RTCircBufReleaseWriteBlock(pInt->pCircBuf, cbAllRead);
+//                    cbMemAllWrite += cbAllRead;
+//                }
+//                /* Reset the thread status and signal the main thread that we
+//                 * are finished. Use CmpXchg, so we not overwrite other states
+//                 * which could be signaled in the meantime. */
+//                if (ASMAtomicCmpXchgU32(&pInt->u32Status, STATUS_WAIT, STATUS_READING))
+//                    rc = RTSemEventSignal(pInt->workFinishedEvent);
+//                break;
+//            }
+//            case STATUS_END:
+//            {
+//                /* End signaled */
+//                fLoop = false;
+//                break;
+//            }
+//        }
+//    }
+//    /* Cleanup any status changes to indicate we are finished. */
+//    ASMAtomicWriteU32(&pInt->u32Status, STATUS_END);
+//    rc = RTSemEventSignal(pInt->workFinishedEvent);
+//    return rc;
+//}
+//
+//DECLINLINE(int) gzipSignalManifestThread(PGZIPSTORAGEINTERNAL pInt, uint32_t uStatus)
+//{
+//    ASMAtomicWriteU32(&pInt->u32Status, uStatus);
+//    return RTSemEventSignal(pInt->newStatusEvent);
+//}
+//
+//DECLINLINE(int) gzipWaitForManifestThreadFinished(PGZIPSTORAGEINTERNAL pInt)
+//{
+////    RTPrintf("start\n");
+//    int rc = VINF_SUCCESS;
+//    for (;;)
+//    {
+////        RTPrintf(" wait\n");
+//        uint32_t u32Status = ASMAtomicReadU32(&pInt->u32Status);
+//        if (!(   u32Status == STATUS_WRITE
+//              || u32Status == STATUS_WRITING
+//              || u32Status == STATUS_READ
+//              || u32Status == STATUS_READING))
+//            break;
+//        rc = RTSemEventWait(pInt->workFinishedEvent, 100);
+//    }
+//    if (rc == VERR_TIMEOUT)
+//        rc = VINF_SUCCESS;
+//    return rc;
+//}
+//
+//DECLINLINE(int) gzipFlushCurBuf(PGZIPSTORAGEINTERNAL pInt)
+//{
+//    int rc = VINF_SUCCESS;
+//    if (pInt->fOpenMode & RTFILE_O_WRITE)
+//    {
+//        /* Let the write worker thread start immediately. */
+//        rc = gzipSignalManifestThread(pInt, STATUS_WRITE);
+//        if (RT_FAILURE(rc))
+//            return rc;
+//
+//        /* Wait until the write worker thread has finished. */
+//        rc = gzipWaitForManifestThreadFinished(pInt);
+//    }
+//
+//    return rc;
+//}
+//
+//static int gzipOpenCallback(void *pvUser, const char *pszLocation, uint32_t fOpen,
+//                              PFNVDCOMPLETED pfnCompleted, void **ppInt)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
+//    AssertPtrReturn(pszLocation, VERR_INVALID_POINTER);
+//    AssertPtrNullReturn(pfnCompleted, VERR_INVALID_PARAMETER);
+//    AssertPtrReturn(ppInt, VERR_INVALID_POINTER);
+//    AssertReturn((fOpen & RTFILE_O_READWRITE) != RTFILE_O_READWRITE, VERR_INVALID_PARAMETER); /* No read/write allowed */
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)RTMemAllocZ(sizeof(GZIPSTORAGEINTERNAL));
+//    if (!pInt)
+//        return VERR_NO_MEMORY;
+//
+//    int rc = VINF_SUCCESS;
+//    do
+//    {
+//        pInt->pfnCompleted = pfnCompleted;
+//        pInt->fEOF         = false;
+//        pInt->fOpenMode    = fOpen;
+//        pInt->u32Status    = STATUS_WAIT;
+//
+//        /* Circular buffer in the read case. */
+//        rc = RTCircBufCreate(&pInt->pCircBuf, _1M * 2);
+//        if (RT_FAILURE(rc))
+//            break;
+//
+//        /* Create an event semaphore to indicate a state change for the worker
+//         * thread. */
+//        rc = RTSemEventCreate(&pInt->newStatusEvent);
+//        if (RT_FAILURE(rc))
+//            break;
+//        /* Create an event semaphore to indicate a finished calculation of the
+//           worker thread. */
+//        rc = RTSemEventCreate(&pInt->workFinishedEvent);
+//        if (RT_FAILURE(rc))
+//            break;
+//        /* Create the worker thread. */
+//        rc = RTThreadCreate(&pInt->pWorkerThread, gziCalcWorkerThread, pInt, 0, RTTHREADTYPE_MAIN_HEAVY_WORKER,
+//                            RTTHREADFLAGS_WAITABLE, "GZIP-Worker");
+//        if (RT_FAILURE(rc))
+//            break;
+//
+//        /* Open the file. */
+//        rc = vdIfIoFileOpen(pIfIo, pszLocation, fOpen, pInt->pfnCompleted,
+//                            &pInt->pvStorage);
+//        if (RT_FAILURE(rc))
+//            break;
+//
+//        if (fOpen & RTFILE_O_READ)
+//        {
+//            /* Immediately let the worker thread start the reading. */
+//            rc = gzipSignalManifestThread(pInt, STATUS_READ);
+//        }
+//    }
+//    while (0);
+//
+//    if (RT_FAILURE(rc))
+//    {
+//        if (pInt->pWorkerThread)
+//        {
+//            gzipSignalManifestThread(pInt, STATUS_END);
+//            RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
+//        }
+//        if (pInt->workFinishedEvent)
+//            RTSemEventDestroy(pInt->workFinishedEvent);
+//        if (pInt->newStatusEvent)
+//            RTSemEventDestroy(pInt->newStatusEvent);
+//        if (pInt->pCircBuf)
+//            RTCircBufDestroy(pInt->pCircBuf);
+//        if (pInt->pvZeroBuf)
+//            RTMemFree(pInt->pvZeroBuf);
+//        RTMemFree(pInt);
+//    }
+//    else
+//        *ppInt = pInt;
+//
+//    return rc;
+//}
+//
+//static int gzipCloseCallback(void *pvUser, void *pvStorage)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    PSHASTORAGEINTERNAL pInt = (PSHASTORAGEINTERNAL)pvStorage;
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    int rc = VINF_SUCCESS;
+//
+//    /* Make sure all pending writes are flushed */
+//    rc = gzipFlushCurBuf(pInt);
+//
+//    if (pInt->pWorkerThread)
+//    {
+//        /* Signal the worker thread to end himself */
+//        rc = gzipSignalManifestThread(pInt, STATUS_END);
+//        /* Worker thread stopped? */
+//        rc = RTThreadWait(pInt->pWorkerThread, RT_INDEFINITE_WAIT, 0);
+//    }
+//
+//    /* Close the file */
+//    rc = vdIfIoFileClose(pIfIo, pInt->pvStorage);
+//
+//    /* Cleanup */
+//    if (pInt->workFinishedEvent)
+//        RTSemEventDestroy(pInt->workFinishedEvent);
+//    if (pInt->newStatusEvent)
+//        RTSemEventDestroy(pInt->newStatusEvent);
+//    if (pInt->pCircBuf)
+//        RTCircBufDestroy(pInt->pCircBuf);
+//    if (pInt->pvZeroBuf)
+//        RTMemFree(pInt->pvZeroBuf);
+//    RTMemFree(pInt);
+//
+//    return rc;
+//}
+//
+//static int gzipDeleteCallback(void *pvUser, const char *pcszFilename)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    return VERR_NOT_IMPLEMENTED;
+//}
+//
+//static int gzipMoveCallback(void *pvUser, const char *pcszSrc, const char *pcszDst, unsigned fMove)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    return VERR_NOT_IMPLEMENTED;
+//}
+//
+//static int gzipGetFreeSpaceCallback(void *pvUser, const char *pcszFilename, int64_t *pcbFreeSpace)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    return VERR_NOT_IMPLEMENTED;
+//}
+//
+//static int gzipGetModificationTimeCallback(void *pvUser, const char *pcszFilename, PRTTIMESPEC pModificationTime)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    return VERR_NOT_IMPLEMENTED;
+//}
+//
+//
+//static int gzipGetSizeCallback(void *pvUser, void *pvStorage, uint64_t *pcbSize)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvStorage;
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    uint64_t cbSize;
+//    int rc = vdIfIoFileGetSize(pIfIo, pInt->pvStorage, &cbSize);
+//    if (RT_FAILURE(rc))
+//        return rc;
+//
+//    *pcbSize = RT_MAX(pInt->cbCurAll, cbSize);
+//
+//    return VINF_SUCCESS;
+//}
+//
+//static int gzipSetSizeCallback(void *pvUser, void *pvStorage, uint64_t cbSize)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvStorage;
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    return vdIfIoFileSetSize(pIfIo, pInt->pvStorage, cbSize);
+//}
+//
+//static int gzipWriteSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+//                                 const void *pvBuf, size_t cbWrite, size_t *pcbWritten)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvStorage;
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    int rc = VINF_SUCCESS;
+//
+//    return VERR_NOT_IMPLEMENTED;
+//}
+//
+//static int gzipReadSyncCallback(void *pvUser, void *pvStorage, uint64_t uOffset,
+//                               void *pvBuf, size_t cbRead, size_t *pcbRead)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvStorage;
+//
+//    int rc = VINF_SUCCESS;
+//
+//    return rc;
+//}
+//
+//static int gzipFlushSyncCallback(void *pvUser, void *pvStorage)
+//{
+//    /* Validate input. */
+//    AssertPtrReturn(pvUser, VERR_INVALID_POINTER);
+//    AssertPtrReturn(pvStorage, VERR_INVALID_POINTER);
+//
+//    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
+//    PVDINTERFACEIO pIfIo = VDIfIoGet(pShaStorage->pVDImageIfaces);
+//    AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
+//
+//    DEBUG_PRINT_FLOW();
+//
+//    PGZIPSTORAGEINTERNAL pInt = (PGZIPSTORAGEINTERNAL)pvStorage;
+//
+//    /* Check if there is still something in the buffer. If yes, flush it. */
+//    int rc = gzipFlushCurBuf(pInt);
+//    if (RT_FAILURE(rc))
+//        return rc;
+//
+//    return vdIfIoFileFlushSync(pIfIo, pInt->pvStorage);
+//}
+
+/******************************************************************************
  *   Public Functions                                                         *
  ******************************************************************************/
+//PVDINTERFACEIO GzipCreateInterface()
+//{
+//    PVDINTERFACEIO pCallbacks = (PVDINTERFACEIO)RTMemAllocZ(sizeof(VDINTERFACEIO));
+//    if (!pCallbacks)
+//        return NULL;
+//
+//    pCallbacks->pfnOpen                = gzipOpenCallback;
+//    pCallbacks->pfnClose               = gzipCloseCallback;
+//    pCallbacks->pfnDelete              = gzipDeleteCallback;
+//    pCallbacks->pfnMove                = gzipMoveCallback;
+//    pCallbacks->pfnGetFreeSpace        = gzipGetFreeSpaceCallback;
+//    pCallbacks->pfnGetModificationTime = gzipGetModificationTimeCallback;
+//    pCallbacks->pfnGetSize             = gzipGetSizeCallback;
+//    pCallbacks->pfnSetSize             = gzipSetSizeCallback;
+//    pCallbacks->pfnReadSync            = gzipReadSyncCallback;
+//    pCallbacks->pfnWriteSync           = gzipWriteSyncCallback;
+//    pCallbacks->pfnFlushSync           = gzipFlushSyncCallback;
+//
+//    return pCallbacks;
+//}
 
 PVDINTERFACEIO ShaCreateInterface()
 {
@@ -1337,4 +1818,140 @@ int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFA
 
     return rc;
 }
+
+int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullFilenameOut, PVDINTERFACEIO pIfIo, void *pvUser)
+{
+    /* Validate input. */
+    AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
+
+    void *pvStorage;
+    int rc = pIfIo->pfnOpen(pvUser, pcszFullFilenameIn,
+                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
+                            &pvStorage);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    Bytef *decompressedBuffer = 0;
+    Bytef *compressedBuffer = 0;
+    uint64_t cbTmpSize = _1M;
+    size_t cbAllRead = 0;
+    size_t cbAllWritten = 0;
+    RTFILE pFile = NULL;
+    z_stream gzipStream;
+
+    Utf8Str pathOut(pcszFullFilenameOut);
+    pathOut = pathOut.stripFilename();
+
+    Utf8Str fileIn(pcszFullFilenameIn);
+    fileIn = fileIn.stripPath();
+
+    do
+    {
+        if (RTFileExists(pcszFullFilenameOut) == false)
+        {
+            /* ensure the directory exists */
+            rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true);
+            if (FAILED(rc))
+            {
+                rc = VBOX_E_FILE_ERROR;
+                break;
+            }
+
+            rc = RTFileOpen(&pFile, pcszFullFilenameOut, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        }
+        else
+        {
+            rc = RTFileOpen(&pFile, pcszFullFilenameOut, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+        }
+
+        if (FAILED(rc) || pFile == NULL)
+        {
+            rc = VBOX_E_FILE_ERROR;
+            break;
+        }
+
+        compressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize);
+
+        if (!compressedBuffer)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+
+        decompressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize*10);
+
+        if (!decompressedBuffer)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        gzipStream.zalloc = Z_NULL;
+        gzipStream.zfree = Z_NULL;
+        gzipStream.opaque = Z_NULL;
+        gzipStream.next_in = compressedBuffer;
+        gzipStream.avail_in = 0;
+        gzipStream.next_out = decompressedBuffer;
+        gzipStream.avail_out = cbTmpSize*10;
+
+        rc = inflateInit2(&gzipStream, MAX_WBITS + 16 /* autodetect gzip header */);
+
+        if (rc < 0)
+        {
+            break;
+        }
+
+        size_t cbRead = 0;
+        size_t cbDecompressed = 0;
+        bool fFinished = true;
+
+        for (;;)
+        {
+            if (fFinished == true)
+            {
+                rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, compressedBuffer, cbTmpSize, &cbRead);
+                if (   RT_FAILURE(rc)
+                    || cbRead == 0)
+                    break;
+
+                gzipStream.avail_in = cbRead;
+                gzipStream.avail_out = cbTmpSize*10;
+            }
+
+            /* decompress the buffer */
+            rc = RTZipGzipDecompressBuffer(gzipStream,
+                                           (uint32_t *)(&cbDecompressed), 
+                                           &fFinished);
+
+            if (RT_FAILURE(rc))
+                break;
+
+            rc = RTFileWrite(pFile, decompressedBuffer, cbDecompressed, &cbDecompressed);
+
+            if (RT_FAILURE(rc))
+                break;
+
+            cbAllWritten += cbDecompressed;
+            cbAllRead += cbRead;
+        }
+    } while (0);
+
+    pIfIo->pfnClose(pvUser, pvStorage);
+
+    if (rc == VERR_EOF)
+        rc = VINF_SUCCESS;
+
+    rc = inflateEnd(&gzipStream);
+
+    rc = RTFileClose(pFile);
+
+    if (decompressedBuffer)
+        RTMemFree(decompressedBuffer);
+    if (compressedBuffer)
+        RTMemFree(compressedBuffer);
+
+    return rc;
+}
+
 

@@ -574,7 +574,8 @@ static DECLCALLBACK(int) rtZipZlibCompInit(PRTZIPCOMP pZip, RTZIPLEVEL enmLevel)
 static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, size_t *pcbWritten)
 {
     pZip->u.Zlib.next_out = (Bytef *)pvBuf;
-    pZip->u.Zlib.avail_out = (uInt)cbBuf;                   Assert(pZip->u.Zlib.avail_out == cbBuf);
+    pZip->u.Zlib.avail_out = (uInt)cbBuf;
+    Assert(pZip->u.Zlib.avail_out == cbBuf);
 
     /*
      * Be greedy reading input, even if no output buffer is left. It's possible
@@ -1926,3 +1927,42 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
 }
 RT_EXPORT_SYMBOL(RTZipBlockDecompress);
 
+RTDECL(int) RTZipGzipDecompressBuffer(z_stream streamIn,
+                                      uint32_t *cbDecompressed,
+                                      bool *finished)
+{
+    int rc;
+    int sh = streamIn.avail_out;
+
+    *cbDecompressed = 0;
+
+    do
+    {
+        rc = inflate(&streamIn, Z_NO_FLUSH);
+
+        if (rc < 0)
+        {
+            rc = zipErrConvertFromZlib(rc, false /*decompress*/);
+            break;
+        }
+
+        *cbDecompressed += (sh - streamIn.avail_out);
+        sh = streamIn.avail_out;
+    }
+    while (streamIn.avail_out > 0 && streamIn.avail_in > 0 );
+
+    if (RT_SUCCESS(rc))
+    {
+        if (streamIn.avail_in == 0)
+            *finished = true;
+        else
+        {
+            if (streamIn.avail_out == 0)
+                *finished = false;
+        }
+    }
+
+    return rc;
+}
+
+RT_EXPORT_SYMBOL(RTZipGzipDecompressBuffer);
