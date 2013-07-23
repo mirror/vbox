@@ -75,8 +75,12 @@ static void vboxvideo_crtc_dpms(struct drm_crtc *crtc, int mode)
 }
 
 static bool vboxvideo_crtc_mode_fixup(struct drm_crtc *crtc,
-                  struct drm_display_mode *mode,
-                  struct drm_display_mode *adjusted_mode)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+                                     const struct drm_display_mode *mode,
+#else
+                                     struct drm_display_mode *mode,
+#endif
+                                     struct drm_display_mode *adjusted_mode)
 {
     return true;
 }
@@ -126,7 +130,11 @@ static void vboxvideo_crtc_load_lut(struct drm_crtc *crtc)
 }
 
 static void vboxvideo_crtc_gamma_set(struct drm_crtc *crtc, u16 *red,
-                                     u16 *green, u16 *blue, uint32_t size)
+                                     u16 *green, u16 *blue,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+                                     uint32_t start,
+#endif
+                                     uint32_t size)
 {
     /* Dummy */
 }

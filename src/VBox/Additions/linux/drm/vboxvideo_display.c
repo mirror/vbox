@@ -79,6 +79,9 @@ int vboxvideo_modeset_init(struct vboxvideo_device *gdev)
         VBOXVIDEO_ERROR("vboxvideo_vga_init failed\n");
         return -1;
     }
+
+    drm_mode_connector_attach_encoder(connector, encoder);
+
     return 0;
 }
 
