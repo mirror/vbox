@@ -613,11 +613,13 @@ DECLINLINE(int) vdIfIoFileFlushSync(PVDINTERFACEIO pIfIo, void *pStorage)
  *
  * @return  VBox status code.
  * @param   pVDIfsIo        Pointer to the VD I/O interface.
+ * @param   pvStorage       The storage argument to pass to the interface
+ *                          methods.
  * @param   fFlags          RTFILE_O_XXX, access mask requied.
  * @param   phVfsIos        Where to return the VFS I/O stream handle on
  *                          success.
  */
-VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
+VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
 
 
 /**
