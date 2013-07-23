@@ -64,34 +64,47 @@ static struct pci_device_id pciidlist[] = {
 
 MODULE_DEVICE_TABLE(pci, pciidlist);
 
+#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
+# define IOCTL_MEMBER unlocked_ioctl
+#else
+# define IOCTL_MEMBER ioctl
+#endif
+
+#define DRIVER_FOPS \
+    { \
+        .owner = THIS_MODULE, \
+        .open = drm_open, \
+        .release = drm_release, \
+        /* This was changed with Linux 2.6.33 but Fedora backported this \
+         * change to their 2.6.32 kernel. */ \
+        .IOCTL_MEMBER = drm_ioctl, \
+        .mmap = drm_mmap, \
+        .poll = drm_poll, \
+        .fasync = drm_fasync, \
+    }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) || defined(DRM_DEBIAN_34ON32)
+/* since linux-3.3.0-rc1 drm_driver::fops is pointer */
+static struct file_operations driver_fops = DRIVER_FOPS;
+#endif
+
 static struct drm_driver driver =
 {
     .driver_features = 0,
     .load = vboxvideo_driver_load,
     .unload = vboxvideo_driver_unload,
-    .reclaim_buffers = drm_core_reclaim_buffers,
     /* As of Linux 2.6.37, always the internal functions are used. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 37) && !defined(DRM_RHEL61)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2, 6, 37) && !defined(DRM_RHEL61)
+    .reclaim_buffers = drm_core_reclaim_buffers,
     .get_map_ofs = drm_core_get_map_ofs,
     .get_reg_ofs = drm_core_get_reg_ofs,
 #endif
     .ioctls = vboxvideo_ioctls,
-    .fops =
-    {
-        .owner = THIS_MODULE,
-        .open = drm_open,
-        .release = drm_release,
-        /* This was changed with Linux 2.6.33 but Fedora backported this
-         * change to their 2.6.32 kernel. */
-#if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
-        .unlocked_ioctl = drm_ioctl,
-#else
-        .ioctl = drm_ioctl,
+# if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0) && !defined(DRM_RHEL63) && !defined(DRM_DEBIAN_34ON32)
+    .fops = DRIVER_FOPS,
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 3, 0) || defined(DRM_RHEL63) || defined(DRM_DEBIAN_34ON32) */
+    .fops = &driver_fops,
 #endif
-        .mmap = drm_mmap,
-        .poll = drm_poll,
-        .fasync = drm_fasync,
-    },
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
     .pci_driver =
     {

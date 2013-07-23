@@ -73,7 +73,11 @@ static void vboxvideo_dac_dpms(struct drm_encoder *encoder, int mode)
 }
 
 static bool vboxvideo_dac_mode_fixup(struct drm_encoder *encoder,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0)
+                                     const struct drm_display_mode *mode,
+#else
                                      struct drm_display_mode *mode,
+#endif
                                      struct drm_display_mode *adjusted_mode)
 {
     return true;
