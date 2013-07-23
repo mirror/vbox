@@ -233,7 +233,7 @@ typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
 #define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR           RT_BIT(3)
 
 /**
- * Strucutre for maintaining a guest session. This also
+ * Structure for maintaining a guest session. This also
  * contains all started threads (e.g. for guest processes).
  *
  * This structure can act in two different ways:
