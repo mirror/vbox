@@ -9506,6 +9506,14 @@
           Windows 2000 SP2.</note>
         <note>On Windows guests this function currently only supports
           reporting contiguous idle times up to 49.7 days per user.</note>
+        The event will be triggered if a guest user is not active for
+        at least 5 seconds. This threshold can be adjusted by either altering
+        VBoxService's command line on the guest to
+        <computeroutput>--vminfo-user-idle-threshold &lt;ms&gt;</computeroutput>
+        , or by setting the per-VM guest property 
+        <computeroutput>/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold &lt;ms&gt;</computeroutput>
+        with the RDONLYGUEST flag on the host. In both cases VBoxService needs
+        to be restarted in order to get the changes applied.
       </desc>
     </const>
     <const name="InUse"                   value="7">
