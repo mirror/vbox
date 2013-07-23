@@ -890,10 +890,8 @@ int rtldrkLdrOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, PRTL
             return VERR_INVALID_PARAMETER;
     }
     KU32 fKFlags = 0;
-#ifdef KLDRMOD_OPEN_FLAGS_FOR_INFO
     if (fFlags & RTLDR_O_FOR_DEBUG)
         fKFlags |= KLDRMOD_OPEN_FLAGS_FOR_INFO;
-#endif
 
     /* Create a rtkldrRdr_ instance. */
     PRTKLDRRDR pRdr = (PRTKLDRRDR)RTMemAllocZ(sizeof(*pRdr));
