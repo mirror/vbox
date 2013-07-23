@@ -4567,6 +4567,11 @@ static DECLCALLBACK(int) rtDbgModDwarfEnumCallback(RTLDRMOD hLdrMod, PCRTLDRDBGI
         pszSection += sizeof("__debug_") - 1;
     else if (!strcmp(pszSection, ".WATCOM_references"))
         return VINF_SUCCESS; /* Ignore special watcom section for now.*/
+    else if (   !strcmp(pszSection, "__apple_types")
+             || !strcmp(pszSection, "__apple_namespac")
+             || !strcmp(pszSection, "__apple_objc")
+             || !strcmp(pszSection, "__apple_names"))
+        return VINF_SUCCESS; /* Ignore special apple sections for now. */
     else
         AssertMsgFailedReturn(("%s\n", pszSection), VINF_SUCCESS /*ignore*/);
 
