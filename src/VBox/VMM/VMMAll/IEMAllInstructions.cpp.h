@@ -8933,9 +8933,9 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     uint64_t const  RspSaved = pCtx->rsp;
     switch (pIemCpu->enmEffOpSize)
     {
-        case IEMMODE_16BIT: iemRegAddToRsp(pCtx, 2); break;
-        case IEMMODE_32BIT: iemRegAddToRsp(pCtx, 4); break;
-        case IEMMODE_64BIT: iemRegAddToRsp(pCtx, 8); break;
+        case IEMMODE_16BIT: iemRegAddToRsp(pIemCpu, pCtx, 2); break;
+        case IEMMODE_32BIT: iemRegAddToRsp(pIemCpu, pCtx, 4); break;
+        case IEMMODE_64BIT: iemRegAddToRsp(pIemCpu, pCtx, 8); break;
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
     rcStrict = iemOpHlpCalcRmEffAddr(pIemCpu, bRm, 0, &GCPtrEff);

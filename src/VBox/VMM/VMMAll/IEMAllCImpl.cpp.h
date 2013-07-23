@@ -165,7 +165,7 @@ DECLINLINE(void) iemHlpUsedFpu(PIEMCPU pIemCpu)
 IEM_CIMPL_DEF_0(iemCImpl_popa_16)
 {
     PCPUMCTX        pCtx        = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR         GCPtrStart  = iemRegGetEffRsp(pCtx);
+    RTGCPTR         GCPtrStart  = iemRegGetEffRsp(pIemCpu, pCtx);
     RTGCPTR         GCPtrLast   = GCPtrStart + 15;
     VBOXSTRICTRC    rcStrict;
 
@@ -190,7 +190,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
             rcStrict = iemMemStackPopU16Ex(pIemCpu, &pCtx->bp, &TmpRsp);
         if (rcStrict == VINF_SUCCESS)
         {
-            iemRegAddToRspEx(&TmpRsp, 2, pCtx); /* sp */
+            iemRegAddToRspEx(pIemCpu, pCtx, &TmpRsp, 2); /* sp */
             rcStrict = iemMemStackPopU16Ex(pIemCpu, &pCtx->bx, &TmpRsp);
         }
         if (rcStrict == VINF_SUCCESS)
@@ -222,7 +222,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
             rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pa16Mem, IEM_ACCESS_STACK_R);
             if (rcStrict == VINF_SUCCESS)
             {
-                iemRegAddToRsp(pCtx, 16);
+                iemRegAddToRsp(pIemCpu, pCtx, 16);
                 iemRegAddToRip(pIemCpu, cbInstr);
             }
         }
@@ -237,7 +237,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
 IEM_CIMPL_DEF_0(iemCImpl_popa_32)
 {
     PCPUMCTX        pCtx        = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR         GCPtrStart  = iemRegGetEffRsp(pCtx);
+    RTGCPTR         GCPtrStart  = iemRegGetEffRsp(pIemCpu, pCtx);
     RTGCPTR         GCPtrLast   = GCPtrStart + 31;
     VBOXSTRICTRC    rcStrict;
 
@@ -262,7 +262,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
             rcStrict = iemMemStackPopU32Ex(pIemCpu, &pCtx->ebp, &TmpRsp);
         if (rcStrict == VINF_SUCCESS)
         {
-            iemRegAddToRspEx(&TmpRsp, 2, pCtx); /* sp */
+            iemRegAddToRspEx(pIemCpu, pCtx, &TmpRsp, 2); /* sp */
             rcStrict = iemMemStackPopU32Ex(pIemCpu, &pCtx->ebx, &TmpRsp);
         }
         if (rcStrict == VINF_SUCCESS)
@@ -303,7 +303,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
             rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pa32Mem, IEM_ACCESS_STACK_R);
             if (rcStrict == VINF_SUCCESS)
             {
-                iemRegAddToRsp(pCtx, 32);
+                iemRegAddToRsp(pIemCpu, pCtx, 32);
                 iemRegAddToRip(pIemCpu, cbInstr);
             }
         }
@@ -318,7 +318,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
 IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
 {
     PCPUMCTX        pCtx        = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR         GCPtrTop    = iemRegGetEffRsp(pCtx);
+    RTGCPTR         GCPtrTop    = iemRegGetEffRsp(pIemCpu, pCtx);
     RTGCPTR         GCPtrBottom = GCPtrTop - 15;
     VBOXSTRICTRC    rcStrict;
 
@@ -375,7 +375,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
             rcStrict = iemMemCommitAndUnmap(pIemCpu, (void *)pa16Mem, IEM_ACCESS_STACK_W);
             if (rcStrict == VINF_SUCCESS)
             {
-                iemRegSubFromRsp(pCtx, 16);
+                iemRegSubFromRsp(pIemCpu, pCtx, 16);
                 iemRegAddToRip(pIemCpu, cbInstr);
             }
         }
@@ -390,7 +390,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
 IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
 {
     PCPUMCTX        pCtx        = pIemCpu->CTX_SUFF(pCtx);
-    RTGCPTR         GCPtrTop    = iemRegGetEffRsp(pCtx);
+    RTGCPTR         GCPtrTop    = iemRegGetEffRsp(pIemCpu, pCtx);
     RTGCPTR         GCPtrBottom = GCPtrTop - 31;
     VBOXSTRICTRC    rcStrict;
 
@@ -447,7 +447,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
             rcStrict = iemMemCommitAndUnmap(pIemCpu, pa32Mem, IEM_ACCESS_STACK_W);
             if (rcStrict == VINF_SUCCESS)
             {
-                iemRegSubFromRsp(pCtx, 32);
+                iemRegSubFromRsp(pIemCpu, pCtx, 32);
                 iemRegAddToRip(pIemCpu, cbInstr);
             }
         }
@@ -1333,7 +1333,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.u64Base    = (uint32_t)uNewCs << 4;
         /** @todo do we load attribs and limit as well? */
         if (cbPop)
-            iemRegAddToRsp(pCtx, cbPop);
+            iemRegAddToRsp(pIemCpu, pCtx, cbPop);
         return VINF_SUCCESS;
     }
 
@@ -1582,7 +1582,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
          *        mode. */
 
         if (cbPop)
-            iemRegAddToRsp(pCtx, cbPop);
+            iemRegAddToRsp(pIemCpu, pCtx, cbPop);
 
         /* Done! */
     }
@@ -1646,7 +1646,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         /** @todo check if the hidden bits are loaded correctly for 64-bit
          *        mode.  */
         if (cbPop)
-            iemRegAddToRsp(pCtx, cbPop);
+            iemRegAddToRsp(pIemCpu, pCtx, cbPop);
     }
     return VINF_SUCCESS;
 }
@@ -1714,7 +1714,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     pCtx->rip = NewRip.u;
     pCtx->rsp = NewRsp.u;
     if (cbPop)
-        iemRegAddToRsp(pCtx, cbPop);
+        iemRegAddToRsp(pIemCpu, pCtx, cbPop);
 
     return VINF_SUCCESS;
 }
@@ -1822,7 +1822,7 @@ IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_
     }
 
     /* Recalc RSP. */
-    iemRegSubFromRspEx(&NewRsp, cbFrame, pCtx);
+    iemRegSubFromRspEx(pIemCpu, pCtx, &NewRsp, cbFrame);
 
     /** @todo Should probe write access at the new RSP according to AMD. */
 
@@ -1850,7 +1850,7 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
 
     /* Calculate the intermediate RSP from RBP and the stack attributes. */
     RTUINT64U       NewRsp;
-    if (pCtx->ss.Attr.n.u1Long || pCtx->ss.Attr.n.u1Unusable)
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
         NewRsp.u = pCtx->rbp;
     else if (pCtx->ss.Attr.n.u1DefBig)
         NewRsp.u = pCtx->ebp;
