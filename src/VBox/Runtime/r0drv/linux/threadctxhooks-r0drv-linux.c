@@ -51,7 +51,7 @@ typedef struct RTTHREADCTXINT
     /** Magic value (RTTHREADCTXINT_MAGIC). */
     uint32_t volatile           u32Magic;
     /** The thread handle (owner) for which the context-hooks are registered. */
-    RTTHREAD                    hOwner;
+    RTNATIVETHREAD              hOwner;
     /** The preemption notifier object. */
     struct preempt_notifier     hPreemptNotifier;
     /** Whether this handle has any hooks registered or not. */
@@ -62,6 +62,8 @@ typedef struct RTTHREADCTXINT
     void                       *pvUser;
     /** The thread-context operations. */
     struct preempt_ops          hPreemptOps;
+    /** The reference count for this object. */
+    uint32_t volatile           cRefs;
 } RTTHREADCTXINT, *PRTTHREADCTXINT;
 
 
@@ -108,7 +110,7 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
 
 
 /**
- * Worker function for RTThreadCtxHooks(Deregister|Destroy)().
+ * Worker function for RTThreadCtxHooks(Deregister|Release)().
  *
  * @param   pThis   Pointer to the internal thread-context object.
  */
@@ -130,9 +132,10 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
     if (RT_UNLIKELY(!pThis))
         return VERR_NO_MEMORY;
     pThis->u32Magic    = RTTHREADCTXINT_MAGIC;
-    pThis->hOwner      = RTThreadSelf();
+    pThis->hOwner      = RTThreadNativeSelf();
     pThis->fRegistered = false;
     preempt_notifier_init(&pThis->hPreemptNotifier, &pThis->hPreemptOps);
+    pThis->cRefs       = 1;
 
     *phThreadCtx = pThis;
     return VINF_SUCCESS;
@@ -140,39 +143,65 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
 
 
-RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
+RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
 {
     /*
      * Validate input.
      */
+    uint32_t        cRefs;
+    PRTTHREADCTXINT pThis = hThreadCtx;
+    AssertPtr(pThis);
+    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+                    UINT32_MAX);
+
+    cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < UINT32_MAX / 2);
+    return cRefs;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRetain);
+
+
+
+RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
+{
+    /*
+     * Validate input.
+     */
+    uint32_t        cRefs;
     PRTTHREADCTXINT pThis = hThreadCtx;
     if (pThis == NIL_RTTHREADCTX)
-        return;
+        return 0;
     AssertPtr(pThis);
-    AssertMsgReturnVoid(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
-    Assert(pThis->hOwner == RTThreadSelf());
+    AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
+                    UINT32_MAX);
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    /*
-     * If there's still a registered thread-context hook, deregister it now before destroying the object.
-     */
-    if (pThis->fRegistered)
-        rtThreadCtxHooksDeregister(pThis);
+    cRefs = ASMAtomicDecU32(&pThis->cRefs);
+    if (!cRefs)
+    {
+        /*
+         * If there's still a registered thread-context hook, deregister it now before destroying the object.
+         */
+        if (pThis->fRegistered)
+            rtThreadCtxHooksDeregister(pThis);
 
-    /*
-     * Paranoia... but since these are ring-0 threads we can't be too careful.
-     */
-    Assert(!pThis->fRegistered);
-    Assert(!pThis->hPreemptOps.sched_out);
-    Assert(!pThis->hPreemptOps.sched_in);
+        /*
+         * Paranoia... but since these are ring-0 threads we can't be too careful.
+         */
+        Assert(!pThis->fRegistered);
+        Assert(!pThis->hPreemptOps.sched_out);
+        Assert(!pThis->hPreemptOps.sched_in);
 
-    /*
-     * Destroy the object.
-     */
-    ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
-    RTMemFree(pThis);
+        ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
+        RTMemFree(pThis);
+        printk("freed pThis=%p\n", pThis);
+    }
+    else
+        Assert(cRefs < UINT32_MAX / 2);
+
+    return cRefs;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksDestroy);
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRelease);
 
 
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadCtxHook, void *pvUser)
@@ -186,7 +215,7 @@ RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK 
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
-    Assert(pThis->hOwner == RTThreadSelf());
+    Assert(pThis->hOwner == RTThreadNativeSelf());
     Assert(!pThis->hPreemptOps.sched_out);
     Assert(!pThis->hPreemptOps.sched_in);
 
@@ -216,7 +245,7 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
-    Assert(pThis->hOwner == RTThreadSelf());
+    Assert(pThis->hOwner == RTThreadNativeSelf());
     Assert(pThis->fRegistered);
 
     /*
@@ -237,11 +266,20 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
 
 
-RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
+RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
 {
     NOREF(hThreadCtx);
+    return UINT32_MAX;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksDestroy);
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRetain);
+
+
+RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
+{
+    NOREF(hThreadCtx);
+    return UINT32_MAX;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRelease);
 
 
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadCtxHook, void *pvUser)

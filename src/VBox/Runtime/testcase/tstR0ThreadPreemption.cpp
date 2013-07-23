@@ -373,7 +373,9 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             RTThreadCtxHooksDeregister(hThreadCtx);
 
             Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-            RTThreadCtxHooksDestroy(hThreadCtx);
+            uint32_t cRefs = RTThreadCtxHooksRelease(hThreadCtx);
+            if (cRefs == UINT32_MAX)
+                RTStrPrintf(pszErr, cchErr, "!RTThreadCtxHooksRelease returns invalid cRefs!");
 
             RTMemFree(pCtxData);
             break;

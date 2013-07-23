@@ -41,11 +41,20 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 RT_EXPORT_SYMBOL(RTThreadCtxHooksCreate);
 
 
-RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
+RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
 {
     NOREF(hThreadCtx);
+    return UINT32_MAX;
 }
-RT_EXPORT_SYMBOL(RTThreadCtxHooksDestroy);
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRelease);
+
+
+RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
+{
+    NOREF(hThreadCtx);
+    return UINT32_MAX;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHooksRetain);
 
 
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnCallback, void *pvUser)

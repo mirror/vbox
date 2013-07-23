@@ -609,28 +609,40 @@ typedef DECLCALLBACK(void) FNRTTHREADCTXHOOK(RTTHREADCTXEVENT enmEvent, void *pv
 typedef FNRTTHREADCTXHOOK *PFNRTTHREADCTXHOOK;
 
 /**
- * Create a handle for a thread-context hook.
+ * Initializes a thread-context hook for the current thread.
  *
  * This must be called once per-thread before using RTThreadCtxHooksRegister().
  *
  * @returns IPRT status code.
  * @param   phThreadCtx         Where to store the thread-context handle.
  *
- * @remarks Must be called with preemption enabled!
+ * @remarks This must be called with preemption enabled!
  */
 RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx);
 
 /**
- * Destroy a thread-context hook handle for the current thread.
+ * Retains a new reference to a thread-context hook.
  *
- * This will deregister any thread-context hooks registered under this handle if
- * required.
- *
+ * @returns New reference count.
+ *          UINT32_MAX is returned if the handle is invalid (asserted).
  * @param   phThreadCtx         Pointer to the thread-context handle.
  *
- * @remarks Must be called with preemption enabled!
+ * @remarks This can be called from any thread. Can be called with preemption
+ *          disabled.
  */
-RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx);
+RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx);
+
+/**
+ * Releases a reference to a thread-context hook.
+ *
+ * @returns New reference count, if 0 the thread-context hook was freed.
+ *          UINT32_MAX is returned if the handle is invalid (asserted).
+ * @param   phThreadCtx         Pointer to the thread-context handle.
+ *
+ * @remarks This can be called from any thread but must be called with
+ *          preemption enabled!
+ */
+RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx);
 
 /**
  * Registers a thread-context hook for the current thread to receive
@@ -647,7 +659,7 @@ RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx);
 RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK pfnThreadHook, void *pvUser);
 
 /**
- * Deregisters a thread-context hook for the current thread.
+ * Deregisters the thread-context hook for the current thread.
  *
  * @returns IPRT status code.
  * @param   phThreadCtx         Pointer to the thread-context handle.
