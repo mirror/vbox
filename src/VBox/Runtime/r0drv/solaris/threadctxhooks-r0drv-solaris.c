@@ -50,15 +50,29 @@ typedef struct RTTHREADCTXINT
     /** Magic value (RTTHREADCTXINT_MAGIC). */
     uint32_t volatile           u32Magic;
     /** The thread handle (owner) for which the context-hooks are registered. */
-    RTTHREAD                    hOwner;
+    RTNATIVETHREAD              hOwner;
     /** Pointer to the registered thread-context hook. */
     PFNRTTHREADCTXHOOK          pfnThreadCtxHook;
     /** User argument passed to the thread-context hook. */
     void                       *pvUser;
     /** Whether this handle has any hooks registered or not. */
     bool                        fRegistered;
+    /** Number of references to this object. */
+    uint32_t volatile           cRefs;
 } RTTHREADCTXINT, *PRTTHREADCTXINT;
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** Validates a thread-context hook handle and returns rc if not valid. */
+#define RTTHREADCTX_VALID_RETURN_RC(pThis, rc) \
+    do { \
+        AssertPtrReturn((pThis), (rc)); \
+        AssertMsgReturn((pThis)->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", (pThis)->u32Magic,  \
+                        (pThis)), (rc));  \
+        AssertMsgReturn((pThis)->cRefs > 0, ("cRefs is 0! pThis=%p\n", (pThis)), (rc)); \
+    } while (0)
 
 
 /**
@@ -103,6 +117,36 @@ static void rtThreadCtxHooksSolResumed(void *pvThreadCtxInt)
 }
 
 
+/**
+ * Hook function for the thread-free event.
+ *
+ * @param   pvThreadCtxInt      Opaque pointer to the internal thread-context
+ *                              object.
+ * @param   fIsExec             Whether this event is triggered due to exec().
+ */
+static void rtThreadCtxHooksSolFree(void *pvThreadCtxInt, int fIsExec)
+{
+    PRTTHREADCTXINT pThis = (PRTTHREADCTXINT)pvThreadCtxInt;
+    AssertPtrReturnVoid(pThis);
+    AssertMsgReturnVoid(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
+
+    uint32_t cRefs = ASMAtomicReadU32(&pThis->cRefs);
+    if (RT_UNLIKELY(!cRefs))
+    {
+        /* Should never happen. */
+        AssertMsgFailed(("rtThreadCtxHooksSolFree with cRefs=0 pThis=%p\n", pThis));
+        return;
+    }
+
+    if (!ASMAtomicDecU32(&pThis->cRefs))
+    {
+        Assert(!pThis->fRegistered);
+        ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
+        RTMemFree(pThis);
+    }
+}
+
+
 RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 {
     PRTTHREADCTXINT pThis;
@@ -112,8 +156,9 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
     if (RT_UNLIKELY(!pThis))
         return VERR_NO_MEMORY;
     pThis->u32Magic    = RTTHREADCTXINT_MAGIC;
-    pThis->hOwner      = RTThreadSelf();
+    pThis->hOwner      = RTThreadNativeSelf();
     pThis->fRegistered = false;
+    pThis->cRefs       = 2;               /* One reference for the thread, one for the hook object. */
 
     /*
      * installctx() allocates memory and thus cannot be used in RTThreadCtxHooksRegister() which can be used
@@ -128,7 +173,7 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
                                                        rtThreadCtxHooksSolResumed,
                                                        NULL,                          /* fork */
                                                        NULL,                          /* lwp_create */
-                                                       NULL);                         /* free */
+                                                       rtThreadCtxHooksSolFree);
     }
     else
     {
@@ -139,7 +184,7 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
                                                    NULL,                              /* fork */
                                                    NULL,                              /* lwp_create */
                                                    NULL,                              /* exit */
-                                                   NULL);                             /* free */
+                                                   rtThreadCtxHooksSolFree);
     }
 
     *phThreadCtx = pThis;
@@ -147,52 +192,75 @@ RTDECL(int) RTThreadCtxHooksCreate(PRTTHREADCTX phThreadCtx)
 }
 
 
-RTDECL(void) RTThreadCtxHooksDestroy(RTTHREADCTX hThreadCtx)
+RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx)
 {
-    /*
-     * Validate input.
-     */
+    PRTTHREADCTXINT pThis = hThreadCtx;
+    RTTHREADCTX_VALID_RETURN_RC(hThreadCtx, UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pThis->cRefs);
+    Assert(cRefs < UINT32_MAX / 2);
+    return cRefs;
+}
+
+
+RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
+{
     PRTTHREADCTXINT pThis = hThreadCtx;
     if (pThis == NIL_RTTHREADCTX)
-        return;
-    AssertPtr(pThis);
-    AssertMsgReturnVoid(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
-    Assert(pThis->hOwner == RTThreadSelf());
+        return 0;
+
+    RTTHREADCTX_VALID_RETURN_RC(hThreadCtx, UINT32_MAX);
     Assert(RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    /*
-     * Deregister the hook.
-     */
-    int rc;
-    if (g_frtSolOldThreadCtx)
+    pThis->fRegistered = false;
+    uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
+
+    if (   pThis->hOwner == RTThreadNativeSelf()
+        && cRefs == 1)
     {
-        rc = g_rtSolThreadCtx.Remove.pfnSol_removectx_old(curthread,
+        /*
+         * removectx() will invoke rtThreadCtxHooksSolFree() and there is no way to bypass it and still use
+         * rtThreadCtxHooksSolFree() at the same time.  Hence the convulated reference counting.
+         *
+         * When this function is called from the owner thread and is the last reference, we call removectx() which
+         * will invoke rtThreadCtxHooksSolFree() with cRefs = 1 and that will then free the hook object.
+         *
+         * When the function is called from a different thread, we simply decrement the reference. Whenever the
+         * ring-0 thread dies, Solaris will call rtThreadCtxHooksSolFree() which will free the hook object.
+         */
+        int rc;
+        if (g_frtSolOldThreadCtx)
+        {
+            rc = g_rtSolThreadCtx.Remove.pfnSol_removectx_old(curthread,
+                                                              pThis,
+                                                              rtThreadCtxHooksSolPreempting,
+                                                              rtThreadCtxHooksSolResumed,
+                                                              NULL,                          /* fork */
+                                                              NULL,                          /* lwp_create */
+                                                              rtThreadCtxHooksSolFree);
+        }
+        else
+        {
+            rc = g_rtSolThreadCtx.Remove.pfnSol_removectx(curthread,
                                                           pThis,
                                                           rtThreadCtxHooksSolPreempting,
                                                           rtThreadCtxHooksSolResumed,
-                                                          NULL,                          /* fork */
-                                                          NULL,                          /* lwp_create */
-                                                          NULL);                         /* free */
-    }
-    else
-    {
-        rc = g_rtSolThreadCtx.Remove.pfnSol_removectx(curthread,
-                                                      pThis,
-                                                      rtThreadCtxHooksSolPreempting,
-                                                      rtThreadCtxHooksSolResumed,
-                                                      NULL,                              /* fork */
-                                                      NULL,                              /* lwp_create */
-                                                      NULL,                              /* exit */
-                                                      NULL);                             /* free */
-    }
-    AssertMsg(rc, ("removectx failed. rc=%d\n", rc));
-    NOREF(rc);
+                                                          NULL,                              /* fork */
+                                                          NULL,                              /* lwp_create */
+                                                          NULL,                              /* exit */
+                                                          rtThreadCtxHooksSolFree);
+        }
+        AssertMsg(rc, ("removectx failed. rc=%d\n", rc));
+        NOREF(rc);
 
-    /*
-     * Destroy the object.
-     */
-    ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
-    RTMemFree(pThis);
+#ifdef VBOX_STRICT
+        cRefs = ASMAtomicReadU32(&pThis->cRefs);
+        Assert(!cRefs);
+#endif
+        cRefs = 0;
+    }
+
+    return cRefs;
 }
 
 
@@ -207,7 +275,7 @@ RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK 
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
-    Assert(pThis->hOwner == RTThreadSelf());
+    Assert(pThis->hOwner == RTThreadNativeSelf());
 
     /*
      * Register the callback.
@@ -231,7 +299,7 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
-    Assert(pThis->hOwner == RTThreadSelf());
+    Assert(pThis->hOwner == RTThreadNativeSelf());
     Assert(pThis->fRegistered);
 
     /*
