@@ -256,6 +256,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         {
             AssertPtr(pszValue);
             g_uVMInfoUserIdleThreshold = RT_CLAMP(RTStrToInt32(pszValue), 1000, UINT32_MAX - 1);
+            RTStrFree(pszValue);
         }
     }
     return rc;
