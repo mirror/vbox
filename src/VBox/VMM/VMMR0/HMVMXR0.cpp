@@ -3259,8 +3259,8 @@ static int hmR0VmxLoadGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
     {
         /* Validate. Intel spec. 17.2 "Debug Registers", recompiler paranoia checks. */
-        Assert((pMixedCtx->dr[7] & (X86_DR7_MBZ_MASK | X86_DR7_RAZ_MASK)) == 0);  /* bits 63:32, 15, 14, 12, 11 are reserved. */
-        Assert((pMixedCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK); /* bit 10 is reserved (RA1). */
+        Assert((pMixedCtx->dr[7] & (X86_DR7_MBZ_MASK | X86_DR7_RAZ_MASK)) == 0);  /* Bits 63:32, 15, 14, 12, 11 are reserved. */
+        Assert((pMixedCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK);        /* Bit 10 is reserved (RA1). */
     }
 #endif
 
@@ -5440,7 +5440,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
-        Log(("idxSel=%#x attr=%#x\n", idxSel, pSelReg->Attr.u));
+        Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x\n", idxSel, pSelReg->Attr.u));
 
         if (idxSel == VMX_VMCS16_GUEST_FIELD_SS)
             pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_DPL;
@@ -6870,7 +6870,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks Called with preemption disabled.
  */
-DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
@@ -6948,7 +6948,7 @@ DECLINLINE(int) hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
  * @remarks Called with preemption disabled.
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
@@ -7033,7 +7033,7 @@ DECLINLINE(void) hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMi
  * @remarks No-long-jump zone!!! This function will however re-enable longjmps
  *          unconditionally when it is safe to do so.
  */
-DECLINLINE(void) hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, int rcVMRun)
+static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient, int rcVMRun)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
