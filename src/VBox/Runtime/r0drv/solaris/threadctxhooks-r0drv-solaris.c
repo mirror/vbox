@@ -259,6 +259,15 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
 #endif
         cRefs = 0;
     }
+    else if (!cRefs)
+    {
+        /*
+         * The ring-0 thread for this hook object has already died. Free up the object as we have no more references.
+         */
+        Assert(pThis->hOwner != RTThreadNativeSelf());
+        ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
+        RTMemFree(pThis);
+    }
 
     return cRefs;
 }
