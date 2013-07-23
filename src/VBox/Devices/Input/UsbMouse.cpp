@@ -1599,6 +1599,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;
     pThis->Lun0.IPort.pfnPutEventAbs    = usbHidMousePutEventAbs;
+    pThis->Lun0.IPort.pfnPutEventMT     = usbHidMousePutEventMT;
 
     /*
      * Attach the mouse driver.
