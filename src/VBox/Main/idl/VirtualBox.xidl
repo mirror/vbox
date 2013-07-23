@@ -14382,6 +14382,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       Touch event contact state.
     </desc>
 
+    <const name="None"              value="0x00">
+      <desc>The touch has finished.</desc>
+    </const>
     <const name="InContact"         value="0x01">
       <desc>Whether the touch is really touching the device.</desc>
     </const>
