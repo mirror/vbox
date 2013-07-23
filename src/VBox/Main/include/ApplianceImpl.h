@@ -177,8 +177,19 @@ private:
     HRESULT importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock);
     HRESULT importS3(TaskOVF *pTask);
 
-    HRESULT readManifestFile(const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
-    HRESULT readTarManifestFile(RTTAR tar, const Utf8Str &strFile, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pCallbacks, PSHASTORAGE pStorage);
+    HRESULT readFileToBuf(const Utf8Str &strFile,
+                             void **ppvBuf,
+                             size_t *pcbSize,
+                             bool fCreateDigest,
+                             PVDINTERFACEIO pCallbacks,
+                             PSHASTORAGE pStorage);
+    HRESULT readTarFileToBuf(RTTAR tar,
+                             const Utf8Str &strFile,
+                             void **ppvBuf,
+                             size_t *pcbSize,
+                             bool fCreateDigest,
+                             PVDINTERFACEIO pCallbacks,
+                             PSHASTORAGE pStorage);
     HRESULT verifyManifestFile(const Utf8Str &strFile, ImportStack &stack, void *pvBuf, size_t cbSize);
 
     void convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
@@ -188,7 +199,7 @@ private:
                                      int32_t &lDevice);
 
     void importOneDiskImage(const ovf::DiskImage &di,
-                            const Utf8Str &strTargetPath,
+                            Utf8Str *strTargetPath,
                             ComObjPtr<Medium> &pTargetHD,
                             ImportStack &stack,
                             PVDINTERFACEIO pCallbacks,
