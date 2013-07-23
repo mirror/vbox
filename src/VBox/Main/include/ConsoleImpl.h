@@ -785,6 +785,8 @@ private:
     bool mfSnapshotFolderExt4WarningShown : 1;
     /** true if we already listed the disk type of the snapshot folder. */
     bool mfSnapshotFolderDiskTypeShown : 1;
+    /** true if a USB controller is available (i.e. USB devices can be attached). */
+    bool mfVMHasUsbController : 1;
 
     /** Pointer to the VMM -> User (that's us) callbacks. */
     struct MYVMM2USERMETHODS : public VMM2USERMETHODS

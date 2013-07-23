@@ -380,6 +380,7 @@ Console::Console()
     , mfSnapshotFolderSizeWarningShown(false)
     , mfSnapshotFolderExt4WarningShown(false)
     , mfSnapshotFolderDiskTypeShown(false)
+    , mfVMHasUsbController(false)
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
@@ -2847,10 +2848,8 @@ STDMETHODIMP Console::AttachUSBDevice(IN_BSTR aId)
     if (!ptrVM.isOk())
         return ptrVM.rc();
 
-    /* Don't proceed unless we've found the usb controller. */
-    PPDMIBASE pBase = NULL;
-    int vrc = PDMR3QueryLun(ptrVM.rawUVM(), "usb-ohci", 0, 0, &pBase);
-    if (RT_FAILURE(vrc))
+    /* Don't proceed unless we have a USB controller. */
+    if (!mfVMHasUsbController)
         return setError(VBOX_E_PDM_ERROR,
             tr("The virtual machine does not have a USB controller"));
 
@@ -7136,19 +7135,13 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
      * on failure (this will most likely fail too, but what to do?..) */
     if (RT_SUCCESS(vrc) || autoCaller.state() == InUninit)
     {
-        /* If the machine has an USB controller, release all USB devices
+        /* If the machine has a USB controller, release all USB devices
          * (symmetric to the code in captureUSBDevices()) */
-        bool fHasUSBController = false;
+        if (mfVMHasUsbController)
         {
-            PPDMIBASE pBase;
-            vrc = PDMR3QueryLun(pUVM, "usb-ohci", 0, 0, &pBase);
-            if (RT_SUCCESS(vrc))
-            {
-                fHasUSBController = true;
-                alock.release();
-                detachAllUSBDevices(false /* aDone */);
-                alock.acquire();
-            }
+            alock.release();
+            detachAllUSBDevices(false /* aDone */);
+            alock.acquire();
         }
 
         /* Now we've got to destroy the VM as well. (mpUVM is not valid beyond
@@ -7199,7 +7192,7 @@ HRESULT Console::powerDown(IProgress *aProgress /*= NULL*/)
         }
 
         /* Complete the detaching of the USB devices. */
-        if (fHasUSBController)
+        if (mfVMHasUsbController)
         {
             alock.release();
             detachAllUSBDevices(true /* aDone */);
@@ -8651,11 +8644,9 @@ HRESULT Console::captureUSBDevices(PUVM pUVM)
     AssertReturn(!isWriteLockOnCurrentThread(), E_FAIL);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* If the machine has an USB controller, ask the USB proxy service to
+    /* If the machine has a USB controller, ask the USB proxy service to
      * capture devices */
-    PPDMIBASE pBase;
-    int vrc = PDMR3QueryLun(pUVM, "usb-ohci", 0, 0, &pBase);
-    if (RT_SUCCESS(vrc))
+    if (mfVMHasUsbController)
     {
         /* release the lock before calling Host in VBoxSVC since Host may call
          * us back from under its lock (e.g. onUSBDeviceAttach()) which would
@@ -8665,13 +8656,8 @@ HRESULT Console::captureUSBDevices(PUVM pUVM)
         HRESULT hrc = mControl->AutoCaptureUSBDevices();
         ComAssertComRCRetRC(hrc);
     }
-    else if (   vrc == VERR_PDM_DEVICE_NOT_FOUND
-             || vrc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
-        vrc = VINF_SUCCESS;
-    else
-        AssertRC(vrc);
 
-    return RT_SUCCESS(vrc) ? S_OK : E_FAIL;
+    return S_OK;
 }
 
 
