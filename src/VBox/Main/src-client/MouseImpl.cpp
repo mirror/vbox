@@ -224,7 +224,7 @@ STDMETHODIMP Mouse::COMGETTER(MultiTouchSupported) (BOOL *multiTouchSupported)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    *multiTouchSupported = FALSE;
+    *multiTouchSupported = supportsMT();
     return S_OK;
 }
 
@@ -703,6 +703,8 @@ void Mouse::getDeviceCaps(bool *pfAbs, bool *pfRel, bool *pfMT)
         *pfAbs = fAbsDev;
     if (pfRel)
         *pfRel = fRelDev;
+    if (pfMT)
+        *pfMT = fMTDev;
 }
 
 
