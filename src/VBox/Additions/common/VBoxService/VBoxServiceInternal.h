@@ -173,30 +173,30 @@ extern VBOXSERVICE  g_AutoMount;
 extern RTCRITSECT   g_csLog; /* For guest process stdout dumping. */
 #endif
 
-extern RTEXITCODE   VBoxServiceSyntax(const char *pszFormat, ...);
-extern RTEXITCODE   VBoxServiceError(const char *pszFormat, ...);
-extern void         VBoxServiceVerbose(int iLevel, const char *pszFormat, ...);
-extern int          VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
-                                         uint32_t u32Min, uint32_t u32Max);
-extern int          VBoxServiceStartServices(void);
-extern int          VBoxServiceStopServices(void);
-extern void         VBoxServiceMainWait(void);
-extern int          VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus);
+extern RTEXITCODE               VBoxServiceSyntax(const char *pszFormat, ...);
+extern RTEXITCODE               VBoxServiceError(const char *pszFormat, ...);
+extern void                     VBoxServiceVerbose(int iLevel, const char *pszFormat, ...);
+extern int                      VBoxServiceArgUInt32(int argc, char **argv, const char *psz, int *pi, uint32_t *pu32,
+                                                     uint32_t u32Min, uint32_t u32Max);
+extern int                      VBoxServiceStartServices(void);
+extern int                      VBoxServiceStopServices(void);
+extern void                     VBoxServiceMainWait(void);
+extern int                      VBoxServiceReportStatus(VBoxGuestFacilityStatus enmStatus);
 #ifdef RT_OS_WINDOWS
-extern RTEXITCODE   VBoxServiceWinInstall(void);
-extern RTEXITCODE   VBoxServiceWinUninstall(void);
-extern RTEXITCODE   VBoxServiceWinEnterCtrlDispatcher(void);
-extern void         VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
+extern RTEXITCODE               VBoxServiceWinInstall(void);
+extern RTEXITCODE               VBoxServiceWinUninstall(void);
+extern RTEXITCODE               VBoxServiceWinEnterCtrlDispatcher(void);
+extern void                     VBoxServiceWinSetStopPendingStatus(uint32_t uCheckPoint);
 #endif
 
 #ifdef VBOXSERVICE_TOOLBOX
-extern bool         VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
+extern bool                     VBoxServiceToolboxMain(int argc, char **argv, RTEXITCODE *prcExit);
 #endif
 
 #ifdef RT_OS_WINDOWS
 # ifdef VBOX_WITH_GUEST_PROPS
-extern int          VBoxServiceVMInfoWinWriteUsers(char **ppszUserList, uint32_t *pcUsersInList);
-extern int          VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
+extern int                      VBoxServiceVMInfoWinWriteUsers(PVBOXSERVICEVEPROPCACHE pCache, char **ppszUserList, uint32_t *pcUsersInList);
+extern int                      VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
