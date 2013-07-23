@@ -9509,9 +9509,9 @@
         The event will be triggered if a guest user is not active for
         at least 5 seconds. This threshold can be adjusted by either altering
         VBoxService's command line on the guest to
-        <computeroutput>--vminfo-user-idle-threshold &lt;ms&gt;</computeroutput>
+        <pre>--vminfo-user-idle-threshold &lt;ms&gt;</pre>
         , or by setting the per-VM guest property 
-        <computeroutput>/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold &lt;ms&gt;</computeroutput>
+        <pre>/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold &lt;ms&gt;</pre>
         with the RDONLYGUEST flag on the host. In both cases VBoxService needs
         to be restarted in order to get the changes applied.
       </desc>
