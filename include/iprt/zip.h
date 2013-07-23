@@ -28,7 +28,6 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-# include <zlib.h>
 
 RT_C_DECLS_BEGIN
 
@@ -255,9 +254,6 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
  */
 RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs);
 
-RTDECL(int) RTZipGzipDecompressBuffer(z_stream streamIn,
-                                      uint32_t *cbDecompressed,
-                                      bool *finished);
 /** @} */
 
 RT_C_DECLS_END
