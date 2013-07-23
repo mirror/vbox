@@ -2289,6 +2289,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                  */
                 attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
 
+                mfVMHasUsbController = true;
 #ifdef VBOX_WITH_EHCI
                 BOOL fEHCIEnabled;
                 hrc = USBCtlPtr->COMGETTER(EnabledEHCI)(&fEHCIEnabled);                     H();
