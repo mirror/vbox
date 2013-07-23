@@ -452,6 +452,17 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
 RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos);
 
 /**
+ * Convenience function combining RTFileOpen with RTVfsIoStrmFromRTFile.
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename     The path to the file in the normal file system.
+ * @param   fOpen           The flags to pass to RTFileOpen when opening the
+ *                          file, i.e. RTFILE_O_XXX.
+ * @param   phVfsIos        Where to return the VFS I/O stream handle.
+ */
+RTDECL(int)         RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos);
+
+/**
  * Create a VFS I/O stream handle from one of the standard handles.
  *
  * @returns IPRT status code.
@@ -703,6 +714,17 @@ RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t 
  */
 RTDECL(int)         RTVfsFileFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSFILE phVfsFile);
 RTDECL(RTHCUINTPTR) RTVfsFileToNative(RTFILE hVfsFile);
+
+/**
+ * Convenience function combining RTFileOpen with RTVfsFileFromRTFile.
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename     The path to the file in the normal file system.
+ * @param   fOpen           The flags to pass to RTFileOpen when opening the
+ *                          file, i.e. RTFILE_O_XXX.
+ * @param   phVfsFile       Where to return the VFS file handle.
+ */
+RTDECL(int)         RTVfsFileOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile);
 
 /**
  * Convert the VFS file handle to a VFS I/O stream handle.

@@ -418,6 +418,31 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_rtVfsStdFileOps =
 };
 
 
+/**
+ * Internal worker for RTVfsFileFromRTFile and RTVfsFileOpenNormal.
+ *
+ * @returns IRPT status code.
+ * @param   hFile               The IPRT file handle.
+ * @param   fOpen               The RTFILE_O_XXX flags.
+ * @param   fLeaveOpen          Whether to leave it open or close it.
+ * @param   phVfsFile           Where to return the handle.
+ */
+static int rtVfsFileFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSFILE phVfsFile)
+{
+    PRTVFSSTDFILE   pThis;
+    RTVFSFILE       hVfsFile;
+    int rc = RTVfsNewFile(&g_rtVfsStdFileOps, sizeof(RTVFSSTDFILE), fOpen, NIL_RTVFS, NIL_RTVFSLOCK,
+                          &hVfsFile, (void **)&pThis);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pThis->hFile        = hFile;
+    pThis->fLeaveOpen   = fLeaveOpen;
+    *phVfsFile = hVfsFile;
+    return VINF_SUCCESS;
+}
+
+
 RTDECL(int) RTVfsFileFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSFILE phVfsFile)
 {
     /*
@@ -429,28 +454,36 @@ RTDECL(int) RTVfsFileFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, P
         return rc;
 
     /*
-     * Set up some fake fOpen flags.
+     * Set up some fake fOpen flags if necessary and create a VFS file handle.
      */
     if (!fOpen)
         fOpen = RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN_CREATE;
 
-    /*
-     * Create the handle.
-     */
-    PRTVFSSTDFILE   pThis;
-    RTVFSFILE       hVfsFile;
-    rc = RTVfsNewFile(&g_rtVfsStdFileOps, sizeof(RTVFSSTDFILE), fOpen, NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pThis);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    pThis->hFile        = hFile;
-    pThis->fLeaveOpen   = fLeaveOpen;
-    *phVfsFile = hVfsFile;
-    return VINF_SUCCESS;
+    return rtVfsFileFromRTFile(hFile, fOpen, fLeaveOpen, phVfsFile);
 }
 
 
-RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos)
+RTDECL(int) RTVfsFileOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile)
+{
+    /*
+     * Open the file the normal way and pass it to RTVfsFileFromRTFile.
+     */
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pszFilename, fOpen);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Create a VFS file handle.
+         */
+        rc = rtVfsFileFromRTFile(hFile, fOpen, false /*fLeaveOpen*/, phVfsFile);
+        if (RT_FAILURE(rc))
+            RTFileClose(hFile);
+    }
+    return rc;
+}
+
+
+RTDECL(int) RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLeaveOpen, PRTVFSIOSTREAM phVfsIos)
 {
     RTVFSFILE hVfsFile;
     int rc = RTVfsFileFromRTFile(hFile, fOpen, fLeaveOpen, &hVfsFile);
@@ -458,4 +491,15 @@ RTDECL(int)         RTVfsIoStrmFromRTFile(RTFILE hFile, uint64_t fOpen, bool fLe
         *phVfsIos = RTVfsFileToIoStream(hVfsFile);
     return rc;
 }
+
+
+RTDECL(int) RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVFSIOSTREAM phVfsIos)
+{
+    RTVFSFILE hVfsFile;
+    int rc = RTVfsFileOpenNormal(pszFilename, fOpen, &hVfsFile);
+    if (RT_SUCCESS(rc))
+        *phVfsIos = RTVfsFileToIoStream(hVfsFile);
+    return rc;
+}
+
 
