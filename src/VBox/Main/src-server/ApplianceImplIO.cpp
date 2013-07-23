@@ -1,11 +1,10 @@
 /* $Id$ */
 /** @file
- *
  * IO helper for IAppliance COM class implementations.
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,8 +31,10 @@
 #include <iprt/asm.h>
 #include <iprt/stream.h>
 #include <iprt/circbuf.h>
+#include <iprt/vfs.h>
 #include <VBox/vd.h>
 #include <zlib.h>
+//#define VBOX_MAIN_USE_VFS /** @todo Replace as much as possible with IPRT VFS. */
 
 /******************************************************************************
  *   Structures and Typedefs                                                  *
@@ -1405,12 +1406,57 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
     /* Validate input. */
     AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
 
+    /*
+     * Open the source file.
+     */
     void *pvStorage;
     int rc = pIfIo->pfnOpen(pvUser, pcszFullFilenameIn,
                             RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
                             &pvStorage);
     if (RT_FAILURE(rc))
         return rc;
+#ifdef VBOX_MAIN_USE_VFS
+
+    /* Turn the source file handle/whatever into a VFS stream. */
+    RTVFSIOSTREAM hVfsIosCompressedSrc;
+    rc = VDIfCreateVfsStream(pIfIo, pvStorage, RTFILE_O_READ, &hVfsIosCompressedSrc);
+    if (RT_SUCCESS(rc))
+    {
+        /* Pass the source thru gunzip. */
+        RTVFSIOSTREAM hVfsIosSrc;
+        rc = RTZipGzipDecompressIoStream(hVfsIosCompressedSrc, 0, &hVfsIosSrc);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Create the output file, including necessary paths.
+             * Any existing file will be overwritten.
+             */
+            rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true /*fCreate*/);
+            if (RT_SUCCESS(rc))
+            {
+                RTVFSIOSTREAM hVfsIosDst;
+                rc = RTVfsIoStrmOpenNormal(pcszFullFilenameOut,
+                                           RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL,
+                                           &hVfsIosDst);
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Pump the bytes thru. If we fail, delete the output file.
+                     */
+                    rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+
+                    RTVfsIoStrmRelease(hVfsIosDst);
+                    RTFileDelete(pcszFullFilenameOut);
+                }
+            }
+
+            RTVfsIoStrmRelease(hVfsIosSrc);
+        }
+        RTVfsIoStrmRelease(hVfsIosCompressedSrc);
+    }
+    pIfIo->pfnClose(pvUser, pvStorage);
+
+#else
 
     Bytef *decompressedBuffer = 0;
     Bytef *compressedBuffer = 0;
@@ -1434,7 +1480,7 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
             rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true);
             if (FAILED(rc))
             {
-                rc = VBOX_E_FILE_ERROR;
+                rc = VBOX_E_FILE_ERROR; /** @todo r=bird: You're mixing COM and VBox status codes... */
                 break;
             }
 
@@ -1531,6 +1577,7 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
         RTMemFree(decompressedBuffer);
     if (compressedBuffer)
         RTMemFree(compressedBuffer);
+#endif /* !VBOX_MAIN_USE_VFS */
 
     return rc;
 }
