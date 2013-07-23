@@ -332,7 +332,7 @@ RTDECL(uint32_t)    RTVfsDirRelease(RTVFSDIR hVfsDir);
 /** @}  */
 
 
-/** @defgroup grp_vfs_iostream      VFS Symbolic Link API
+/** @defgroup grp_vfs_symlink       VFS Symbolic Link API
  *
  * @remarks The TAR VFS and filesystem stream uses symbolic links for
  *          describing hard links as well.  The users must use RTFS_IS_SYMLINK
