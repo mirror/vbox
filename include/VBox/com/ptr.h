@@ -41,9 +41,9 @@
  #endif
 #else
  #include <nsISupportsUtils.h>
+
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
-#include <new> /* For bad_alloc. */
 #include <VBox/com/defs.h>
 
 #ifdef VBOX_WITH_XPCOM
@@ -462,31 +462,31 @@ public:
      */
     HRESULT createObject()
     {
-        HRESULT hr;
-        try
-        {
+        HRESULT rc;
 #if !defined (VBOX_WITH_XPCOM)
-# ifdef VBOX_COM_OUTOFPROC_MODULE
-            CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
-            obj->InternalFinalConstructAddRef();
-            hr = obj->FinalConstruct();
-            obj->InternalFinalConstructRelease();
-# else
-            CComObject<T> *obj = NULL;
-            hr = CComObject<T>::CreateInstance(&obj);
-# endif
-#else /* !defined (VBOX_WITH_XPCOM) */
-            CComObject<T> *obj = new CComObject<T>();
-            hr = obj->FinalConstruct();
-#endif /* !defined (VBOX_WITH_XPCOM) */
-            *this = obj;
-        }
-        catch(std::bad_alloc &)
+#   ifdef VBOX_COM_OUTOFPROC_MODULE
+        CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
+        if (obj)
         {
-            hr = E_OUTOFMEMORY;
+            obj->InternalFinalConstructAddRef();
+            rc = obj->FinalConstruct();
+            obj->InternalFinalConstructRelease();
         }
-
-        return hr;
+        else
+            rc = E_OUTOFMEMORY;
+#   else
+        CComObject<T> *obj = NULL;
+        rc = CComObject<T>::CreateInstance(&obj);
+#   endif
+#else /* !defined (VBOX_WITH_XPCOM) */
+        CComObject<T> *obj = new CComObject<T>();
+        if (obj)
+            rc = obj->FinalConstruct();
+        else
+            rc = E_OUTOFMEMORY;
+#endif /* !defined (VBOX_WITH_XPCOM) */
+        *this = obj;
+        return rc;
     }
 };
 #endif
