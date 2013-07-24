@@ -847,6 +847,7 @@ endif
 		--output $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.desc/PkgBuildComponent.plist \
 		$(VBOX_PATH_DI_SRC)/VirtualBox/PkgBuildComponent.plist
 	@# Copy the resources.
+	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/preinstall                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VirtualBox/postflight                        $(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.res/
 	@# Build the package.
 	$(VBOX_PKGBUILD) \

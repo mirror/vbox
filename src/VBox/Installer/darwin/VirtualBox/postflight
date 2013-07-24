@@ -90,5 +90,10 @@ if [[ -e "${LSREGISTER}" && "x" != "x${USER}" ]]; then
     /usr/bin/sudo -u "${USER}" ${LSREGISTER} -f /Applications/VirtualBox.app/Contents/Resources/vmstarter.app
 fi
 
-exit 0;
+# Restore previously installed Extension Packs (if any)
+if [ -d "${INSTALLER_TEMP}/ExtensionPacks" ]; then
+    cp -r "${INSTALLER_TEMP}/ExtensionPacks" "${VBOX_INSTALL_PATH}"
+    rm -rf "${INSTALLER_TEMP}/ExtensionPacks"
+fi
 
+exit 0;
