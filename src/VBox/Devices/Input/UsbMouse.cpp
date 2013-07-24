@@ -140,7 +140,7 @@ typedef struct USBHIDM_ACCUM
         } Absolute;
         struct
         {
-            bool        fContact;
+            uint32_t    fContact;
             uint32_t    x;
             uint32_t    y;
             uint32_t    cContact;
@@ -898,7 +898,6 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     switch (enmMode)
     {
     case USBHIDMODE_ABSOLUTE:
-    {
         pReport->t.fButtons = pAccumulated->u.Absolute.fButtons;
         pReport->t.x        = pAccumulated->u.Absolute.x;
         pReport->t.y        = pAccumulated->u.Absolute.y;
@@ -908,9 +907,7 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
                  pReport->t.x, pReport->t.y, pReport->t.fButtons,
                  cbCopy));
         break;
-    }
     case USBHIDMODE_RELATIVE:
-    {
         pReport->m.fButtons = pAccumulated->u.Relative.fButtons;
         pReport->m.dx       = clamp_i8(pAccumulated->u.Relative.dx);
         pReport->m.dy       = clamp_i8(pAccumulated->u.Relative.dy);
@@ -921,20 +918,17 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
                  pReport->m.dx, pReport->m.dy, pReport->m.dz,
                  pReport->m.fButtons, cbCopy));
         break;
-    }
     case USBHIDMODE_MULTI_TOUCH:
-    {
         pReport->mt.idReport         = REPORTID_MOUSE;
         pReport->mt.cContact         = pAccumulated->u.MultiTouch.cContact;
         pReport->mt.x                = pAccumulated->u.MultiTouch.x;
         pReport->mt.y                = pAccumulated->u.MultiTouch.y;
         pReport->mt.fContact         = pAccumulated->u.MultiTouch.fContact;
 
-        cbCopy = sizeof(pReport->t);
+        cbCopy = sizeof(pReport->mt);
         LogRel3(("Multi-touch event, x=%u, y=%u, report size %d\n",
                  pReport->mt.x, pReport->mt.y, cbCopy));
         break;
-    }
     }
 
     /* Clear the accumulated movement. */
@@ -1221,23 +1215,17 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                 switch (pThis->enmMode)
                                 {
                                 case USBHIDMODE_ABSOLUTE:
-                                {
                                     cbDesc = sizeof(g_UsbHidTIfHidDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidTIfHidDesc;
                                     break;
-                                }
                                 case USBHIDMODE_RELATIVE:
-                                {
                                     cbDesc = sizeof(g_UsbHidMIfHidDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidMIfHidDesc;
                                     break;
-                                }
                                 case USBHIDMODE_MULTI_TOUCH:
-                                {
                                     cbDesc = sizeof(g_UsbHidMTIfHidDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidMTIfHidDesc;
                                     break;
-                                }
                                 }
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);

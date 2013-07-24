@@ -91,7 +91,7 @@ typedef struct DRVMOUSEQUEUEITEM
         } Absolute;
         struct
         {
-            bool        fContact;
+            uint32_t    fContact;
             uint32_t    x;
             uint32_t    y;
             uint32_t    cContact;
