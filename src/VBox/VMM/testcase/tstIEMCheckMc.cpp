@@ -100,6 +100,7 @@ typedef VBOXSTRICTRC (* PFNIEMOP)(PIEMCPU pIemCpu);
 #define IEMOP_HLP_ONLY_64BIT()                              do { } while (0)
 #define IEMOP_HLP_64BIT_OP_SIZE()                           do { } while (0)
 #define IEMOP_HLP_DEFAULT_64BIT_OP_SIZE()                   do { } while (0)
+#define IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE(a_szPrf)      do { } while (0)
 #define IEMOP_HLP_DONE_DECODING()                           do { } while (0)
 #define IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX()            do { } while (0)
 #define IEMOP_RAISE_DIVIDE_ERROR()                          VERR_TRPM_ACTIVE_TRAP
@@ -297,6 +298,8 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_RAISE_DIVIDE_ERROR()                     return VERR_TRPM_ACTIVE_TRAP
 #define IEM_MC_MAYBE_RAISE_DEVICE_NOT_AVAILABLE()       do {} while (0)
 #define IEM_MC_MAYBE_RAISE_FPU_XCPT()                   do {} while (0)
+#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT()           do {} while (0)
+#define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT()          do {} while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO()              do {} while (0)
 
 #define IEM_MC_LOCAL(a_Type, a_Name) \
@@ -440,6 +443,11 @@ IEMOPSHIFTDBLSIZES g_iemAImpl_shrd;
 #define IEM_MC_CLEAR_EFL_BIT(a_fBit)                    do { CHK_SINGLE_BIT(uint32_t, a_fBit); } while (0)
 #define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { CHK_SINGLE_BIT(uint32_t, a_fBit); } while (0)
 #define IEM_MC_CLEAR_FSW_EX()                           do { } while (0)
+
+#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value)                      do { CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value)               do { CHK_TYPE(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value)              do { CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value)              do { CHK_TYPE(uint32_t, a_u32Value); } while (0)
 
 #define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem)                do { CHK_GCPTR(a_GCPtrMem); } while (0)
 #define IEM_MC_FETCH_MEM16_U8(a_u8Dst, a_iSeg, a_GCPtrMem16)            do { CHK_TYPE(uint16_t, a_GCPtrMem16); } while (0)
