@@ -69,9 +69,8 @@ typedef struct RTTHREADCTXINT
 #define RTTHREADCTX_VALID_RETURN_RC(pThis, rc) \
     do { \
         AssertPtrReturn((pThis), (rc)); \
-        AssertMsgReturn((pThis)->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", (pThis)->u32Magic,  \
-                        (pThis)), (rc));  \
-        AssertMsgReturn((pThis)->cRefs > 0, ("cRefs is 0! pThis=%p\n", (pThis)), (rc)); \
+        AssertReturn((pThis)->u32Magic == RTTHREADCTXINT_MAGIC, (rc)); \
+        AssertReturn((pThis)->cRefs > 0, (rc)); \
     } while (0)
 
 
