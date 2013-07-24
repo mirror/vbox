@@ -4126,7 +4126,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="f6258810-a760-11e2-9e96-0800200c9a66"
+    uuid="00daa773-1d35-40ae-ac06-336aa64959ef"
     wsmap="managed"
     >
     <desc>
@@ -4526,6 +4526,17 @@
     <attribute name="USBController" type="IUSBController" readonly="yes">
       <desc>
         Associated USB controller object.
+
+        <note>
+          If USB functionality is not available in the given edition of
+          VirtualBox, this method will set the result code to @c E_NOTIMPL.
+        </note>
+      </desc>
+    </attribute>
+
+    <attribute name="USBDeviceFilters" type="IUSBDeviceFilters" readonly="yes">
+      <desc>
+        Associated USB device filters object.
 
         <note>
           If USB functionality is not available in the given edition of
@@ -7613,7 +7624,7 @@
         <link to="USBDeviceState_Busy">Busy</link>, an error may also
         be returned if the host computer refuses to release it for some reason.
 
-        <see><link to="IUSBController::deviceFilters"/>,
+        <see><link to="IUSBDeviceFilters::deviceFilters"/>,
           <link to="USBDeviceState"/></see>
         <result name="VBOX_E_INVALID_VM_STATE">
           Virtual machine state neither Running nor Paused.
@@ -7637,7 +7648,7 @@
         to the host, but filters of this machine are ignored to avoid
         a possible automatic re-attachment.
 
-        <see><link to="IUSBController::deviceFilters"/>,
+        <see><link to="IUSBDeviceFilters::deviceFilters"/>,
           <link to="USBDeviceState"/></see>
 
         <result name="VBOX_E_PDM_ERROR">
@@ -8223,7 +8234,7 @@
 
         Unless the device is ignored by these filters, filters of all
         currently running virtual machines
-        (<link to="IUSBController::deviceFilters"/>) are applied to it.
+        (<link to="IUSBDeviceFilters::deviceFilters"/>) are applied to it.
 
         <note>
           If USB functionality is not available in the given edition of
@@ -16310,46 +16321,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <!--
-  // IUSBController
+  // IUSBDeviceFilters
   /////////////////////////////////////////////////////////////////////////
   -->
 
   <interface
-    name="IUSBController" extends="$unknown"
-    uuid="01e6f13a-0580-452f-a40f-74e32a5e4921"
+    name="IUSBDeviceFilters" extends="$unknown"
+    uuid="2ab550b2-53cc-4c2e-ae07-0adf4114e75c"
     wsmap="managed"
     >
-    <attribute name="enabled" type="boolean">
-      <desc>
-        Flag whether the USB controller is present in the
-        guest system. If disabled, the virtual guest hardware will
-        not contain any USB controller. Can only be changed when
-        the VM is powered off.
-      </desc>
-    </attribute>
-
-    <attribute name="enabledEHCI" type="boolean">
-      <desc>
-        Flag whether the USB EHCI controller is present in the
-        guest system. If disabled, the virtual guest hardware will
-        not contain a USB EHCI controller. Can only be changed when
-        the VM is powered off.
-      </desc>
-    </attribute>
-
-    <attribute name="proxyAvailable" type="boolean" readonly="yes">
-      <desc>
-        Flag whether there is an USB proxy available.
-      </desc>
-    </attribute>
-
-    <attribute name="USBStandard" type="unsigned short" readonly="yes">
-      <desc>
-        USB standard version which the controller implements.
-        This is a BCD which means that the major version is in the
-        high byte and minor version is in the low byte.
-      </desc>
-    </attribute>
 
     <attribute name="deviceFilters" type="IUSBDeviceFilter" readonly="yes" safearray="yes">
       <desc>
@@ -16463,6 +16443,50 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <desc>Removed USB device filter.</desc>
       </param>
     </method>
+
+  </interface>
+
+  <!--
+  // IUSBController
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IUSBController" extends="$unknown"
+    uuid="f12e6dda-2bad-40c4-8f2e-2d08fe8b74d4"
+    wsmap="managed"
+    >
+    <attribute name="enabled" type="boolean">
+      <desc>
+        Flag whether the USB controller is present in the
+        guest system. If disabled, the virtual guest hardware will
+        not contain any USB controller. Can only be changed when
+        the VM is powered off.
+      </desc>
+    </attribute>
+
+    <attribute name="enabledEHCI" type="boolean">
+      <desc>
+        Flag whether the USB EHCI controller is present in the
+        guest system. If disabled, the virtual guest hardware will
+        not contain a USB EHCI controller. Can only be changed when
+        the VM is powered off.
+      </desc>
+    </attribute>
+
+    <attribute name="proxyAvailable" type="boolean" readonly="yes">
+      <desc>
+        Flag whether there is an USB proxy available.
+      </desc>
+    </attribute>
+
+    <attribute name="USBStandard" type="unsigned short" readonly="yes">
+      <desc>
+        USB standard version which the controller implements.
+        This is a BCD which means that the major version is in the
+        high byte and minor version is in the low byte.
+      </desc>
+    </attribute>
 
   </interface>
 
@@ -16631,7 +16655,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <i>any match</i> no matter what string expression is specified.
       </note>
 
-      <see><link to="IUSBController::deviceFilters"/>,
+      <see><link to="IUSBDeviceFilters::deviceFilters"/>,
         <link to="IHostUSBDeviceFilter"/></see>
     </desc>
 
@@ -16746,7 +16770,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       filters (<link to="IHost::USBDeviceFilters"/>) are activated. They can
       either ignore the device, or put it to USBDeviceState_Held state, or do
       nothing. Unless the device is ignored by global filters, filters of all
-      currently running guests (<link to="IUSBController::deviceFilters"/>) are
+      currently running guests (<link to="IUSBDeviceFilters::deviceFilters"/>) are
       activated that can put it to USBDeviceState_Captured state.
 
       If the device was ignored by global filters, or didn't match
@@ -16877,7 +16901,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <note>
         The <link to="IUSBDeviceFilter::remote"/> attribute is ignored by this type of
         filters, because it makes sense only for
-        <link to="IUSBController::deviceFilters">machine USB filters</link>.
+        <link to="IUSBDeviceFilters::deviceFilters">machine USB filters</link>.
       </note>
 
       <see><link to="IHost::USBDeviceFilters"/></see>

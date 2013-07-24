@@ -356,6 +356,7 @@ VBoxSVC_SOURCES = \
 	src-server/StorageControllerImpl.cpp \
 	src-server/SystemPropertiesImpl.cpp \
 	src-server/USBControllerImpl.cpp \
+	src-server/USBDeviceFiltersImpl.cpp \
 	src-server/VFSExplorerImpl.cpp \
 	src-server/VirtualBoxImpl.cpp \
 	src-server/VRDEServerImpl.cpp \

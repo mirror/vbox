@@ -41,6 +41,7 @@
 #include "CSerialPort.h"
 #include "CParallelPort.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 #include "CUSBDeviceFilter.h"
 #include "CSharedFolder.h"
 
@@ -890,9 +891,10 @@ void UIGDetailsUpdateThreadUSB::run()
             const CUSBController &ctl = machine().GetUSBController();
             if (!ctl.isNull() && ctl.GetProxyAvailable())
             {
-                if (ctl.GetEnabled())
+                const CUSBDeviceFilters &flts = machine().GetUSBDeviceFilters();
+                if (!flts.isNull() && ctl.GetEnabled())
                 {
-                    const CUSBDeviceFilterVector &coll = ctl.GetDeviceFilters();
+                    const CUSBDeviceFilterVector &coll = flts.GetDeviceFilters();
                     uint uActive = 0;
                     for (int i = 0; i < coll.size(); ++i)
                         if (coll[i].GetActive())

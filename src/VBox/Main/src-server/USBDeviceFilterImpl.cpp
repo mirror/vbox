@@ -16,7 +16,7 @@
  */
 
 #include "USBDeviceFilterImpl.h"
-#include "USBControllerImpl.h"
+#include "USBDeviceFiltersImpl.h"
 #include "MachineImpl.h"
 #include "HostImpl.h"
 
@@ -203,7 +203,7 @@ void USBDeviceFilter::FinalRelease()
  *
  *  @param aParent  Handle of the parent object.
  */
-HRESULT USBDeviceFilter::init(USBController *aParent,
+HRESULT USBDeviceFilter::init(USBDeviceFilters *aParent,
                               const settings::USBDeviceFilter &data)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
@@ -277,7 +277,7 @@ HRESULT USBDeviceFilter::init(USBController *aParent,
  *
  *  @param aParent  Handle of the parent object.
  */
-HRESULT USBDeviceFilter::init(USBController *aParent, IN_BSTR aName)
+HRESULT USBDeviceFilter::init(USBDeviceFilters *aParent, IN_BSTR aName)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -326,7 +326,7 @@ HRESULT USBDeviceFilter::init(USBController *aParent, IN_BSTR aName)
  *  @note Locks @a aThat object for writing if @a aReshare is @c true, or for
  *  reading if @a aReshare is false.
  */
-HRESULT USBDeviceFilter::init (USBController *aParent, USBDeviceFilter *aThat,
+HRESULT USBDeviceFilter::init (USBDeviceFilters *aParent, USBDeviceFilter *aThat,
                                bool aReshare /* = false */)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p, aReshare=%RTbool\n",
@@ -379,7 +379,7 @@ HRESULT USBDeviceFilter::init (USBController *aParent, USBDeviceFilter *aThat,
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT USBDeviceFilter::initCopy (USBController *aParent, USBDeviceFilter *aThat)
+HRESULT USBDeviceFilter::initCopy (USBDeviceFilters *aParent, USBDeviceFilter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 

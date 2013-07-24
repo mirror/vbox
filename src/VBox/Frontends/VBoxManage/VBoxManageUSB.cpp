@@ -399,7 +399,7 @@ int handleUSBFilter(HandlerArg *a)
     USBFilterCmd::USBFilter &f = cmd.mFilter;
 
     ComPtr <IHost> host;
-    ComPtr <IUSBController> ctl;
+    ComPtr <IUSBDeviceFilters> flts;
     if (cmd.mGlobal)
         CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
     else
@@ -408,8 +408,8 @@ int handleUSBFilter(HandlerArg *a)
         CHECK_ERROR_RET(cmd.mMachine, LockMachine(a->session, LockType_Shared), 1);
         /* get the mutable session machine */
         a->session->COMGETTER(Machine)(cmd.mMachine.asOutParam());
-        /* and get the USB controller */
-        CHECK_ERROR_RET(cmd.mMachine, COMGETTER(USBController)(ctl.asOutParam()), 1);
+        /* and get the USB device filters */
+        CHECK_ERROR_RET(cmd.mMachine, COMGETTER(USBDeviceFilters)(flts.asOutParam()), 1);
     }
 
     switch (cmd.mAction)
@@ -445,7 +445,7 @@ int handleUSBFilter(HandlerArg *a)
             else
             {
                 ComPtr <IUSBDeviceFilter> flt;
-                CHECK_ERROR_BREAK(ctl, CreateDeviceFilter(f.mName.raw(),
+                CHECK_ERROR_BREAK(flts, CreateDeviceFilter(f.mName.raw(),
                                                           flt.asOutParam()));
 
                 if (!f.mActive.isNull())
@@ -465,7 +465,7 @@ int handleUSBFilter(HandlerArg *a)
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK(flt, COMSETTER(MaskedInterfaces)(f.mMaskedInterfaces));
 
-                CHECK_ERROR_BREAK(ctl, InsertDeviceFilter(cmd.mIndex, flt));
+                CHECK_ERROR_BREAK(flts, InsertDeviceFilter(cmd.mIndex, flt));
             }
             break;
         }
@@ -501,7 +501,7 @@ int handleUSBFilter(HandlerArg *a)
             else
             {
                 SafeIfaceArray <IUSBDeviceFilter> coll;
-                CHECK_ERROR_BREAK(ctl, COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(coll)));
+                CHECK_ERROR_BREAK(flts, COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(coll)));
 
                 ComPtr <IUSBDeviceFilter> flt = coll[cmd.mIndex];
 
@@ -536,7 +536,7 @@ int handleUSBFilter(HandlerArg *a)
             else
             {
                 ComPtr <IUSBDeviceFilter> flt;
-                CHECK_ERROR_BREAK(ctl, RemoveDeviceFilter(cmd.mIndex, flt.asOutParam()));
+                CHECK_ERROR_BREAK(flts, RemoveDeviceFilter(cmd.mIndex, flt.asOutParam()));
             }
             break;
         }

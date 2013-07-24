@@ -29,6 +29,7 @@
 // to remove them and put that code in shared code in MachineImplcpp
 #include "SharedFolderImpl.h"
 #include "USBControllerImpl.h"
+#include "USBDeviceFiltersImpl.h"
 #include "VirtualBoxImpl.h"
 
 #include "AutoCaller.h"
@@ -1079,6 +1080,9 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     unconst(mUSBController).createObject();
     mUSBController->initCopy(this, pMachine->mUSBController);
 
+    unconst(mUSBDeviceFilters).createObject();
+    mUSBDeviceFilters->initCopy(this, pMachine->mUSBDeviceFilters);
+
     mNetworkAdapters.resize(pMachine->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
     {
@@ -1177,6 +1181,9 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     unconst(mUSBController).createObject();
     mUSBController->init(this);
+
+    unconst(mUSBDeviceFilters).createObject();
+    mUSBDeviceFilters->init(this);
 
     mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)

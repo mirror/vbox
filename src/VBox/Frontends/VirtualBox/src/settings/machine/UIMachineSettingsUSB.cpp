@@ -35,6 +35,7 @@
 /* COM includes: */
 #include "CConsole.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 #include "CUSBDevice.h"
 #include "CUSBDeviceFilter.h"
 #include "CHostUSBDevice.h"
@@ -300,30 +301,34 @@ void UIMachineSettingsUSB::loadToCacheFrom(QVariant &data)
                 usbData.m_fEHCIEnabled = controller.GetEnabledEHCI();
 
                 /* For each USB filter: */
-                const CUSBDeviceFilterVector &filters = controller.GetDeviceFilters();
-                for (int iFilterIndex = 0; iFilterIndex < filters.size(); ++iFilterIndex)
+                const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
+                if (!filters.isNull())
                 {
-                    /* Prepare USB filter data: */
-                    UIDataSettingsMachineUSBFilter usbFilterData;
-
-                    /* Check if filter is valid: */
-                    const CUSBDeviceFilter &filter = filters[iFilterIndex];
-                    if (!filter.isNull())
+                    const CUSBDeviceFilterVector &coll = filters.GetDeviceFilters();
+                    for (int iFilterIndex = 0; iFilterIndex < coll.size(); ++iFilterIndex)
                     {
-                        usbFilterData.m_fActive = filter.GetActive();
-                        usbFilterData.m_strName = filter.GetName();
-                        usbFilterData.m_strVendorId = filter.GetVendorId();
-                        usbFilterData.m_strProductId = filter.GetProductId();
-                        usbFilterData.m_strRevision = filter.GetRevision();
-                        usbFilterData.m_strManufacturer = filter.GetManufacturer();
-                        usbFilterData.m_strProduct = filter.GetProduct();
-                        usbFilterData.m_strSerialNumber = filter.GetSerialNumber();
-                        usbFilterData.m_strPort = filter.GetPort();
-                        usbFilterData.m_strRemote = filter.GetRemote();
-                    }
+                        /* Prepare USB filter data: */
+                        UIDataSettingsMachineUSBFilter usbFilterData;
 
-                    /* Cache USB filter data: */
-                    m_cache.child(iFilterIndex).cacheInitialData(usbFilterData);
+                        /* Check if filter is valid: */
+                        const CUSBDeviceFilter &filter = coll[iFilterIndex];
+                        if (!filter.isNull())
+                        {
+                            usbFilterData.m_fActive = filter.GetActive();
+                            usbFilterData.m_strName = filter.GetName();
+                            usbFilterData.m_strVendorId = filter.GetVendorId();
+                            usbFilterData.m_strProductId = filter.GetProductId();
+                            usbFilterData.m_strRevision = filter.GetRevision();
+                            usbFilterData.m_strManufacturer = filter.GetManufacturer();
+                            usbFilterData.m_strProduct = filter.GetProduct();
+                            usbFilterData.m_strSerialNumber = filter.GetSerialNumber();
+                            usbFilterData.m_strPort = filter.GetPort();
+                            usbFilterData.m_strRemote = filter.GetRemote();
+                        }
+
+                        /* Cache USB filter data: */
+                        m_cache.child(iFilterIndex).cacheInitialData(usbFilterData);
+                    }
                 }
             }
 
@@ -489,6 +494,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                 if (!controller.isNull())
                 {
                     /* Get USB data from cache: */
+                    CUSBDeviceFilters filters = m_machine.GetUSBDeviceFilters();
                     const UIDataSettingsMachineUSB &usbData = m_cache.data();
                     /* Store USB data: */
                     if (isMachineOffline())
@@ -497,7 +503,8 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                         controller.SetEnabledEHCI(usbData.m_fEHCIEnabled);
                     }
                     /* Store USB filters data: */
-                    if (isMachineInValidMode())
+                    if (   isMachineInValidMode()
+                        && !filters.isNull())
                     {
                         /* For each USB filter data set: */
                         int iOperationPosition = 0;
@@ -510,7 +517,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                                 /* If filter was removed or updated: */
                                 if (usbFilterCache.wasRemoved() || usbFilterCache.wasUpdated())
                                 {
-                                    controller.RemoveDeviceFilter(iOperationPosition);
+                                    filters.RemoveDeviceFilter(iOperationPosition);
                                     if (usbFilterCache.wasRemoved())
                                         --iOperationPosition;
                                 }
@@ -521,7 +528,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                                     /* Get USB filter data from cache: */
                                     const UIDataSettingsMachineUSBFilter &usbFilterData = usbFilterCache.data();
                                     /* Store USB filter data: */
-                                    CUSBDeviceFilter filter = controller.CreateDeviceFilter(usbFilterData.m_strName);
+                                    CUSBDeviceFilter filter = filters.CreateDeviceFilter(usbFilterData.m_strName);
                                     filter.SetActive(usbFilterData.m_fActive);
                                     filter.SetVendorId(usbFilterData.m_strVendorId);
                                     filter.SetProductId(usbFilterData.m_strProductId);
@@ -531,7 +538,7 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
                                     filter.SetSerialNumber(usbFilterData.m_strSerialNumber);
                                     filter.SetPort(usbFilterData.m_strPort);
                                     filter.SetRemote(usbFilterData.m_strRemote);
-                                    controller.InsertDeviceFilter(iOperationPosition, filter);
+                                    filters.InsertDeviceFilter(iOperationPosition, filter);
                                 }
                             }
 
