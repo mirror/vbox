@@ -195,7 +195,6 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
 
         ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
         RTMemFree(pThis);
-        printk("freed pThis=%p\n", pThis);
     }
     else
         Assert(cRefs < UINT32_MAX / 2);
