@@ -171,6 +171,7 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
     PRTTHREADCTXINT pThis = hThreadCtx;
     if (pThis == NIL_RTTHREADCTX)
         return 0;
+
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     UINT32_MAX);

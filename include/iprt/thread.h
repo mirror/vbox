@@ -635,9 +635,13 @@ RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx);
 /**
  * Releases a reference to a thread-context hook.
  *
- * @returns New reference count, if 0 the thread-context hook was freed.
- *          UINT32_MAX is returned if the handle is invalid (asserted).
- * @param   phThreadCtx         Pointer to the thread-context handle.
+ * @returns New reference count.
+ * @retval  0 if the thread-context hook was freed or the handle was
+ *          NIL_RTTHREADCTX.
+ * @retval  UINT32_MAX is returned if the handle is invalid (asserted).
+ *
+ * @param   phThreadCtx         Pointer to the thread-context handle (can be
+ *                              NIL_RTTHREADCTX).
  *
  * @remarks This can be called from any thread but must be called with
  *          preemption enabled!
