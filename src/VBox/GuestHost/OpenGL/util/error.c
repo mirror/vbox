@@ -125,7 +125,7 @@ static void __crCheckAustralia(void)
 
 static void outputChromiumMessage( FILE *output, char *str )
 {
-    fprintf( output, "%s%s%s%s\n", str, 
+    fprintf( output, "%s%s%s%s\n", str,
             swedish_chef ? " BORK BORK BORK!" : "",
             canada ? ", eh?" : "",
             australia ? ", mate!" : ""
@@ -219,7 +219,7 @@ DECLEXPORT(void) crError(const char *format, ... )
         MessageBox( NULL, txt, "Chromium Error", MB_OK );
     }
     else
-    {   
+    {
 #endif
         va_end( args );
 #ifdef WINDOWS
@@ -241,7 +241,7 @@ DECLEXPORT(void) crError(const char *format, ... )
 }
 
 void crEnableWarnings(int onOff)
-{          
+{
     warnings_enabled = onOff;
 }
 
@@ -376,13 +376,13 @@ DECLEXPORT(void) crDebug(const char *format, ... )
             if (crStrlen(fnamePrefix) < sizeof (str) - sizeof (pname) - 20)
             {
                 crGetProcName(pname, 1024);
-                sprintf(str, "%s_%s_%u.txt", fnamePrefix, pname,
+                sprintf(str,
 #ifdef RT_OS_WINDOWS
-                        GetCurrentProcessId()
+                "%s_%s_%u.txt", fnamePrefix, pname, GetCurrentProcessId()
 #else
-                        crGetPID()
+                "%s_%s_%lu.txt", fnamePrefix, pname, crGetPID()
 #endif
-                        );
+                );
                 fname = &str[0];
             }
         }
@@ -402,7 +402,7 @@ DECLEXPORT(void) crDebug(const char *format, ... )
             output = fopen( fname, "w" );
             if (!output)
             {
-                crError( "Couldn't open debug log %s", fname ); 
+                crError( "Couldn't open debug log %s", fname );
             }
         }
         else
