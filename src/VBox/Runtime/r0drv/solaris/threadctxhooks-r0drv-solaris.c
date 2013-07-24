@@ -137,7 +137,8 @@ static void rtThreadCtxHooksSolFree(void *pvThreadCtxInt, int fIsExec)
         return;
     }
 
-    if (!ASMAtomicDecU32(&pThis->cRefs))
+    cRefs = ASMAtomicDecU32(&pThis->cRefs)
+    if (!cRefs)
     {
         Assert(!pThis->fRegistered);
         ASMAtomicWriteU32(&pThis->u32Magic, ~RTTHREADCTXINT_MAGIC);
