@@ -41,9 +41,9 @@
  #endif
 #else
  #include <nsISupportsUtils.h>
-
 #endif /* !defined (VBOX_WITH_XPCOM) */
 
+#include <new> /* For bad_alloc. */
 #include <VBox/com/defs.h>
 
 #ifdef VBOX_WITH_XPCOM
