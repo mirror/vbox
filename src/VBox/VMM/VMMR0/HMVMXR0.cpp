@@ -125,7 +125,7 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
  * @name Exception bitmap mask for real-mode guests (real-on-v86).
  *
  * We need to intercept all exceptions manually (except #PF). #NM is also
- * handled spearetely, see hmR0VmxLoadGuestControlRegs(). #PF need not be
+ * handled separately, see hmR0VmxLoadGuestControlRegs(). #PF need not be
  * intercepted even in real-mode if we have Nested Paging support.
  */
 #define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
@@ -218,7 +218,7 @@ typedef struct VMXTRANSIENT
     /** Whether TSC-offsetting should be setup before VM-entry. */
     bool            fUpdateTscOffsettingAndPreemptTimer;
     /** Whether the VM-exit was caused by a page-fault during delivery of a
-     *  contributary exception or a page-fault. */
+     *  contributory exception or a page-fault. */
     bool            fVectoringPF;
 } VMXTRANSIENT, *PVMXTRANSIENT;
 AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,    sizeof(uint64_t));
@@ -1990,7 +1990,7 @@ VMMR0DECL(int) VMXR0TermVM(PVM pVM)
 
 /**
  * Sets up the VM for execution under VT-x.
- * This function is only called once per-VM during initalization.
+ * This function is only called once per-VM during initialization.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
@@ -5431,10 +5431,10 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      *
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
      *
-     * bird: This isn't quite as simple.  VT-x and VBox(!) requires the DPL for SS to be the the same as CPL.  In 64-bit mode it
+     * bird: This isn't quite as simple.  VT-x and VBox(!) requires the DPL for SS to be the same as CPL.  In 64-bit mode it
      *       is possible (int/trap/xxx injects does this when switching rings) to load SS with a NULL selector and RPL=CPL.
      *       The Attr.u = X86DESCATTR_UNUSABLE works fine as long as nobody uses ring-1 or ring-2.  VT-x updates the DPL
-     *       correctly in the attributes of SS even when the unusable bit is set, we need to preseve the DPL or we get invalid
+     *       correctly in the attributes of SS even when the unusable bit is set, we need to preserve the DPL or we get invalid
      *       guest state trouble.  Try bs2-cpu-hidden-regs-1.
      */
     if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
@@ -6619,6 +6619,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
+#ifdef VBOX_STRICT
     /* Make sure we're in VMX root mode. */
     RTCCUINTREG u32HostCR4 = ASMGetCR4();
     if (!(u32HostCR4 & X86_CR4_VMXE))
@@ -6626,13 +6627,14 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
         LogRel(("VMXR0Enter: X86_CR4_VMXE bit in CR4 is not set!\n"));
         return VERR_VMX_X86_CR4_VMXE_CLEARED;
     }
+#endif
 
     /* Load the active VMCS as the current one. */
     int rc = VMXActivateVMCS(pVCpu->hm.s.vmx.HCPhysVmcs);
     if (RT_FAILURE(rc))
         return rc;
 
-    /** @todo this will change with preemption hooks where can can VMRESUME as long
+    /** @todo this will change with preemption hooks where can VMRESUME as long
      *        as we're no preempted. */
     pVCpu->hm.s.fResumeVM = false;
     return VINF_SUCCESS;
@@ -6848,7 +6850,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
  * recompiler. We must be cautious what we do here regarding committing
- * guest-state information into the the VMCS assuming we assuredly execute the
+ * guest-state information into the VMCS assuming we assuredly execute the
  * guest in VT-x. If we fall back to the recompiler after updating the VMCS and
  * clearing the common-state (TRPM/forceflags), we must undo those changes so
  * that the recompiler can (and should) use them when it resumes guest
