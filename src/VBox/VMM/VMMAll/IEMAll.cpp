@@ -6673,6 +6673,23 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         if ((pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW & X86_FSW_ES) \
             return iemRaiseMathFault(pIemCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT() \
+    do { \
+        if (   (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
+            || !(pIemCpu->CTX_SUFF(pCtx)->cr4 & X86_CR4_OSFSXR) \
+            || !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE2) ) \
+            return iemRaiseUndefinedOpcode(pIemCpu); \
+        if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pIemCpu); \
+    } while (0)
+#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT() \
+    do { \
+        if (   ((pIemCpu)->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
+            || !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_MMX) ) \
+            return iemRaiseUndefinedOpcode(pIemCpu); \
+        if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pIemCpu); \
+    } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
         if (pIemCpu->uCpl != 0) \
@@ -6833,6 +6850,21 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_FLIP_EFL_BIT(a_fBit)                     do { (pIemCpu)->CTX_SUFF(pCtx)->eflags.u ^= (a_fBit); } while (0)
 
 #define IEM_MC_CLEAR_FSW_EX()   do { (pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
+
+
+#define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
+    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
+#define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
+    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); } while (0)
+
+#define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
+    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
+         pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
+    } while (0)
+#define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value) \
+    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (uint32_t)(a_u32Value); \
+         pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
+    } while (0)
 
 
 #define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
@@ -7428,6 +7460,23 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     { \
         if (pIemCpu->enmCpuMode == IEMMODE_64BIT) \
             pIemCpu->enmEffOpSize = pIemCpu->enmDefOpSize = IEMMODE_64BIT; \
+    } while (0)
+
+/** Only a REX prefix immediately preceeding the first opcode byte takes
+ * effect. This macro helps ensuring this as well as logging bad guest code.  */
+#define IEMOP_HLP_CLEAR_REX_NOT_BEFORE_OPCODE(a_szPrf) \
+    do \
+    { \
+        if (RT_UNLIKELY(pIemCpu->fPrefixes & IEM_OP_PRF_REX)) \
+        { \
+            Log5((a_szPrf ## ": Overriding REX prefix at %RX16! fPrefixes=%#x\n", \
+                  pIemCpu->CTX_SUFF(pCtx)->rip, pIemCpu->fPrefixes)); \
+            pIemCpu->fPrefixes &= ~IEM_OP_PRF_REX_MASK; \
+            pIemCpu->uRexB     = 0; \
+            pIemCpu->uRexIndex = 0; \
+            pIemCpu->uRexReg   = 0; \
+            iemRecalEffOpSize(pIemCpu); \
+        } \
     } while (0)
 
 /**
