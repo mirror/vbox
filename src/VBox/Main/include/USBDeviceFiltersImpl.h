@@ -41,7 +41,7 @@ public:
 
     DECLARE_PROTECT_FINAL_CONSTRUCT()
 
-    BEGIN_COM_MAP(USBController)
+    BEGIN_COM_MAP(USBDeviceFilters)
         VBOX_DEFAULT_INTERFACE_ENTRIES(IUSBDeviceFilters)
     END_COM_MAP()
 
