@@ -25,6 +25,12 @@
         <file alias="vm_open_filemanager_disabled_16px.png">images/vm_open_filemanager_disabled_16px.png</file>
         <file alias="vm_create_shortcut_16px.png">images/vm_create_shortcut_16px.png</file>
         <file alias="vm_create_shortcut_disabled_16px.png">images/vm_create_shortcut_disabled_16px.png</file>
+        <file alias="vm_group_create_16px.png">images/vm_group_create_16px.png</file>
+        <file alias="vm_group_create_disabled_16px.png">images/vm_group_create_disabled_16px.png</file>
+        <file alias="vm_group_name_16px.png">images/vm_group_name_16px.png</file>
+        <file alias="vm_group_name_disabled_16px.png">images/vm_group_name_disabled_16px.png</file>
+        <file alias="vm_group_remove_16px.png">images/vm_group_remove_16px.png</file>
+        <file alias="vm_group_remove_disabled_16px.png">images/vm_group_remove_disabled_16px.png</file>
         <file alias="state_aborted_16px.png">images/state_aborted_16px.png</file>
         <file alias="state_discarding_16px.png">images/state_discarding_16px.png</file>
         <file alias="state_paused_16px.png">images/state_paused_16px.png</file>
