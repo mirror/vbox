@@ -64,6 +64,7 @@ class Mouse;
 class Display;
 class MachineDebugger;
 class USBController;
+class USBDeviceFilters;
 class Snapshot;
 class SharedFolder;
 class HostUSBDevice;
@@ -456,6 +457,7 @@ public:
     STDMETHOD(COMGETTER(VRDEServer))(IVRDEServer **vrdeServer);
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
     STDMETHOD(COMGETTER(USBController))(IUSBController * *aUSBController);
+    STDMETHOD(COMGETTER(USBDeviceFilters))(IUSBDeviceFilters * *aUSBDeviceFilters);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aFilePath);
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState))(SessionState_T *aSessionState);
@@ -754,6 +756,8 @@ public:
 
     void getDefaultVideoCaptureFile(Utf8Str &strFile);
 
+    bool isUSBControllerPresent();
+
     HRESULT launchVMProcess(IInternalSessionControl *aControl,
                             const Utf8Str &strType,
                             const Utf8Str &strEnvironment,
@@ -989,12 +993,13 @@ protected:
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of HWData
 
-    const ComObjPtr<VRDEServer>     mVRDEServer;
-    const ComObjPtr<SerialPort>     mSerialPorts[SchemaDefs::SerialPortCount];
-    const ComObjPtr<ParallelPort>   mParallelPorts[SchemaDefs::ParallelPortCount];
-    const ComObjPtr<AudioAdapter>   mAudioAdapter;
-    const ComObjPtr<USBController>  mUSBController;
-    const ComObjPtr<BIOSSettings>   mBIOSSettings;
+    const ComObjPtr<VRDEServer>        mVRDEServer;
+    const ComObjPtr<SerialPort>        mSerialPorts[SchemaDefs::SerialPortCount];
+    const ComObjPtr<ParallelPort>      mParallelPorts[SchemaDefs::ParallelPortCount];
+    const ComObjPtr<AudioAdapter>      mAudioAdapter;
+    const ComObjPtr<USBController>     mUSBController;
+    const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
+    const ComObjPtr<BIOSSettings>      mBIOSSettings;
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
     NetworkAdapterVector            mNetworkAdapters;
     const ComObjPtr<BandwidthControl> mBandwidthControl;

@@ -92,6 +92,7 @@
 #include "CMachine.h"
 #include "CSystemProperties.h"
 #include "CUSBDevice.h"
+#include "CUSBDeviceFilters.h"
 #include "CUSBDeviceFilter.h"
 #include "CBIOSSettings.h"
 #include "CVRDEServer.h"
@@ -1511,14 +1512,16 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString item;
 
         CUSBController ctl = aMachine.GetUSBController();
+        CUSBDeviceFilters flts = aMachine.GetUSBDeviceFilters();
         if (   !ctl.isNull()
+            && !flts.isNull()
             && ctl.GetProxyAvailable())
         {
             /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
 
             if (ctl.GetEnabled())
             {
-                CUSBDeviceFilterVector coll = ctl.GetDeviceFilters();
+                CUSBDeviceFilterVector coll = flts.GetDeviceFilters();
                 uint active = 0;
                 for (int i = 0; i < coll.size(); ++i)
                     if (coll[i].GetActive())

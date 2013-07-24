@@ -63,12 +63,6 @@ public:
     STDMETHOD(COMSETTER(EnabledEHCI))(BOOL aEnabled);
     STDMETHOD(COMGETTER(ProxyAvailable))(BOOL *aEnabled);
     STDMETHOD(COMGETTER(USBStandard))(USHORT *aUSBStandard);
-    STDMETHOD(COMGETTER(DeviceFilters))(ComSafeArrayOut(IUSBDeviceFilter *, aDevicesFilters));
-
-    // IUSBController methods
-    STDMETHOD(CreateDeviceFilter)(IN_BSTR aName, IUSBDeviceFilter **aFilter);
-    STDMETHOD(InsertDeviceFilter)(ULONG aPosition, IUSBDeviceFilter *aFilter);
-    STDMETHOD(RemoveDeviceFilter)(ULONG aPosition, IUSBDeviceFilter **aFilter);
 
     // public methods only for internal purposes
 
@@ -78,20 +72,6 @@ public:
     void rollback();
     void commit();
     void copyFrom(USBController *aThat);
-
-#ifdef VBOX_WITH_USB
-    HRESULT onDeviceFilterChange(USBDeviceFilter *aFilter,
-                                 BOOL aActiveChanged = FALSE);
-
-    bool hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice, ULONG *aMaskedIfs);
-    bool hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedIfs);
-
-    HRESULT notifyProxy(bool aInsertFilters);
-#endif /* VBOX_WITH_USB */
-
-    // public methods for internal purposes only
-    // (ensure there is a caller and a read lock before calling them!)
-    Machine* getMachine();
 
 private:
 

@@ -491,6 +491,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_USBDEVICE,
     /** Main group, IUSBDeviceFilter. */
     LOG_GROUP_MAIN_USBDEVICEFILTER,
+    /** Main group, IUSBDeviceFilters. */
+    LOG_GROUP_MAIN_USBDEVICEFILTERS,
     /** Main group, IUSBDeviceStateChangedEvent. */
     LOG_GROUP_MAIN_USBDEVICESTATECHANGEDEVENT,
     /** Main group, IVBoxSVCAvailabilityChangedEvent. */
@@ -892,6 +894,7 @@ typedef enum LOGGROUP
     "MAIN_USBCONTROLLERCHANGEDEVENT", \
     "MAIN_USBDEVICE", \
     "MAIN_USBDEVICEFILTER", \
+    "MAIN_USBDEVICEFILTERS", \
     "MAIN_USBDEVICESTATECHANGEDEVENT", \
     "MAIN_VBOXSVCAVAILABILITYCHANGEDEVENT", \
     "MAIN_VETOEVENT", \

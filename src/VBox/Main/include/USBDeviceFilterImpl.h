@@ -23,7 +23,7 @@
 #include "Matching.h"
 #include <VBox/usbfilter.h>
 
-class USBController;
+class USBDeviceFilters;
 class Host;
 namespace settings
 {
@@ -82,12 +82,12 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(USBController *aParent,
+    HRESULT init(USBDeviceFilters *aParent,
                  const settings::USBDeviceFilter &data);
-    HRESULT init(USBController *aParent, IN_BSTR aName);
-    HRESULT init(USBController *aParent, USBDeviceFilter *aThat,
+    HRESULT init(USBDeviceFilters *aParent, IN_BSTR aName);
+    HRESULT init(USBDeviceFilters *aParent, USBDeviceFilter *aThat,
                  bool aReshare = false);
-    HRESULT initCopy(USBController *aParent, USBDeviceFilter *aThat);
+    HRESULT initCopy(USBDeviceFilters *aParent, USBDeviceFilter *aThat);
     void uninit();
 
     // IUSBDeviceFilter properties
@@ -142,8 +142,8 @@ private:
     HRESULT usbFilterFieldSetter(USBFILTERIDX aIdx, IN_BSTR aStr);
     HRESULT usbFilterFieldSetter(USBFILTERIDX aIdx, const Utf8Str &strNew);
 
-    USBController * const       mParent;
-    USBDeviceFilter * const     mPeer;
+    USBDeviceFilters * const     mParent;
+    USBDeviceFilter  * const     mPeer;
 
     Backupable<Data> mData;
 
@@ -153,7 +153,7 @@ private:
         (not touched by the class itself except that in init()/uninit()) */
     bool mInList;
 
-    friend class USBController;
+    friend class USBDeviceFilters;
 };
 
 // HostUSBDeviceFilter

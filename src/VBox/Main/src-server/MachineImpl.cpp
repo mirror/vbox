@@ -40,6 +40,7 @@
 #include "MediumImpl.h"
 #include "MediumLock.h"
 #include "USBControllerImpl.h"
+#include "USBDeviceFiltersImpl.h"
 #include "HostImpl.h"
 #include "SharedFolderImpl.h"
 #include "GuestOSTypeImpl.h"
@@ -48,7 +49,6 @@
 #include "StorageControllerImpl.h"
 #include "DisplayImpl.h"
 #include "DisplayUtils.h"
-#include "BandwidthControlImpl.h"
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
 
@@ -2764,6 +2764,34 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE */
     NOREF(aUSBController);
+    ReturnComNotImplemented();
+#endif /* VBOX_WITH_VUSB */
+}
+
+STDMETHODIMP Machine::COMGETTER(USBDeviceFilters)(IUSBDeviceFilters **aUSBDeviceFilters)
+{
+#ifdef VBOX_WITH_VUSB
+    CheckComArgOutPointerValid(aUSBDeviceFilters);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    clearError();
+    MultiResult rc(S_OK);
+
+# ifdef VBOX_WITH_USB
+    rc = mParent->host()->checkUSBProxyService();
+    if (FAILED(rc)) return rc;
+# endif
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    return rc = mUSBDeviceFilters.queryInterfaceTo(aUSBDeviceFilters);
+#else
+    /* Note: The GUI depends on this method returning E_NOTIMPL with no
+     * extended error info to indicate that USB is simply not available
+     * (w/o treating it as a failure), for example, as in OSE */
+    NOREF(aUSBDeviceFilters);
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_VUSB */
 }
@@ -7708,6 +7736,24 @@ void Machine::getDefaultVideoCaptureFile(Utf8Str &strFile)
 }
 
 /**
+ * Returns whether at least one USB controller is present for the VM.
+ */
+bool Machine::isUSBControllerPresent()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), false);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    BOOL fEnabled = FALSE;
+    HRESULT rc = mUSBController->COMGETTER(Enabled)(&fEnabled);
+    if (SUCCEEDED(rc))
+        return !!fEnabled;
+    else
+        return false;
+}
+
+/**
  *  @note Locks this object for writing, calls the client process
  *        (inside the lock).
  */
@@ -8471,6 +8517,10 @@ HRESULT Machine::initDataAndChildObjects()
     unconst(mUSBController).createObject();
     mUSBController->init(this);
 
+    /* create the USB device filters object (always present) */
+    unconst(mUSBDeviceFilters).createObject();
+    mUSBDeviceFilters->init(this);
+
     /* create associated network adapter objects */
     mNetworkAdapters.resize(Global::getMaxNetworkAdapters(mHWData->mChipsetType));
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
@@ -8522,6 +8572,12 @@ void Machine::uninitDataAndChildObjects()
     {
         mUSBController->uninit();
         unconst(mUSBController).setNull();
+    }
+
+    if (mUSBDeviceFilters)
+    {
+        mUSBDeviceFilters->uninit();
+        unconst(mUSBDeviceFilters).setNull();
     }
 
     if (mAudioAdapter)
@@ -9119,6 +9175,10 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
 
         /* USB Controller */
         rc = mUSBController->loadSettings(data.usbController);
+        if (FAILED(rc)) return rc;
+
+        /* USB device filters */
+        rc = mUSBDeviceFilters->loadSettings(data.usbController);
         if (FAILED(rc)) return rc;
 
         // network adapters
@@ -10356,6 +10416,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
 
         /* USB Controller (required) */
         rc = mUSBController->saveSettings(data.usbController);
+        if (FAILED(rc)) throw rc;
+
+        /* USB device filters (required) */
+        rc = mUSBDeviceFilters->saveSettings(data.usbController);
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
@@ -11763,6 +11827,9 @@ void Machine::rollback(bool aNotify)
     if (mUSBController && (mData->flModifications & IsModified_USB))
         mUSBController->rollback();
 
+    if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
+        mUSBDeviceFilters->rollback();
+
     if (mBandwidthControl && (mData->flModifications & IsModified_BandwidthControl))
         mBandwidthControl->rollback();
 
@@ -11867,6 +11934,7 @@ void Machine::commit()
     mVRDEServer->commit();
     mAudioAdapter->commit();
     mUSBController->commit();
+    mUSBDeviceFilters->commit();
     mBandwidthControl->commit();
 
     /* Since mNetworkAdapters is a list which might have been changed (resized)
@@ -12045,6 +12113,7 @@ void Machine::copyFrom(Machine *aThat)
     mVRDEServer->copyFrom(aThat->mVRDEServer);
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
     mUSBController->copyFrom(aThat->mUSBController);
+    mUSBDeviceFilters->copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->copyFrom(aThat->mBandwidthControl);
 
     /* create private copies of all controllers */
@@ -12473,6 +12542,10 @@ HRESULT SessionMachine::init(Machine *aMachine)
     unconst(mUSBController).createObject();
     mUSBController->init(this, aMachine->mUSBController);
 
+    /* create another USB device filters object that will be mutable */
+    unconst(mUSBDeviceFilters).createObject();
+    mUSBDeviceFilters->init(this, aMachine->mUSBDeviceFilters);
+
     /* create a list of network adapters that will be mutable */
     mNetworkAdapters.resize(aMachine->mNetworkAdapters.size());
     for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
@@ -12578,7 +12651,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          *
          * This is identical to SessionMachine::DetachAllUSBDevices except
          * for the aAbnormal argument. */
-        HRESULT rc = mUSBController->notifyProxy(false /* aInsertFilters */);
+        HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
         AssertComRC(rc);
         NOREF(rc);
 
@@ -13042,7 +13115,7 @@ STDMETHODIMP SessionMachine::RunUSBDeviceFilters(IUSBDevice *aUSBDevice,
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    *aMatched = mUSBController->hasMatchingFilter(aUSBDevice, aMaskedIfs);
+    *aMatched = mUSBDeviceFilters->hasMatchingFilter(aUSBDevice, aMaskedIfs);
 #else
     NOREF(aUSBDevice);
     NOREF(aMaskedIfs);
@@ -13114,7 +13187,7 @@ STDMETHODIMP SessionMachine::AutoCaptureUSBDevices()
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    HRESULT rc = mUSBController->notifyProxy(true /* aInsertFilters */);
+    HRESULT rc = mUSBDeviceFilters->notifyProxy(true /* aInsertFilters */);
     AssertComRC(rc);
     NOREF(rc);
 
@@ -13144,7 +13217,7 @@ STDMETHODIMP SessionMachine::DetachAllUSBDevices(BOOL aDone)
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
 #ifdef VBOX_WITH_USB
-    HRESULT rc = mUSBController->notifyProxy(false /* aInsertFilters */);
+    HRESULT rc = mUSBDeviceFilters->notifyProxy(false /* aInsertFilters */);
     AssertComRC(rc);
     NOREF(rc);
 
@@ -14120,7 +14193,7 @@ bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevic
         /** @todo Live Migration: snapshoting & teleporting. Need to fend things of
          *        elsewhere... */
             alock.release();
-            return mUSBController->hasMatchingFilter(aDevice, aMaskedIfs);
+            return mUSBDeviceFilters->hasMatchingFilter(aDevice, aMaskedIfs);
         default: break;
     }
 #else
