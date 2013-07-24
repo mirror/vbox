@@ -171,6 +171,8 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
         && machineState != KMachineState_TeleportingPausedVM
         /* saving */
         && machineState != KMachineState_Saving
+        /* guru */
+        && machineState != KMachineState_Stuck
         )
     {
         LogRelFlow(("UIFrameBufferQImage::paintEvent: "
