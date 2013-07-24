@@ -1100,8 +1100,15 @@ FNIEMOP_DEF(iemOp_Grp7)
 FNIEMOP_STUB(iemOp_lar_Gv_Ew);
 /** Opcode 0x0f 0x03. */
 FNIEMOP_STUB(iemOp_lsl_Gv_Ew);
+
+
 /** Opcode 0x0f 0x04. */
-FNIEMOP_STUB(iemOp_syscall);
+FNIEMOP_DEF(iemOp_syscall)
+{
+    IEMOP_MNEMONIC("syscall");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_syscall);
+}
 
 
 /** Opcode 0x0f 0x05. */
@@ -1114,7 +1121,14 @@ FNIEMOP_DEF(iemOp_clts)
 
 
 /** Opcode 0x0f 0x06. */
-FNIEMOP_STUB(iemOp_sysret);
+FNIEMOP_DEF(iemOp_sysret)
+{
+    IEMOP_MNEMONIC("sysret");
+    IEMOP_HLP_NO_LOCK_PREFIX();
+    return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_sysret);
+}
+
+
 /** Opcode 0x0f 0x08. */
 FNIEMOP_STUB(iemOp_invd);
 
