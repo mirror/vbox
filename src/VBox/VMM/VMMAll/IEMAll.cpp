@@ -7469,7 +7469,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     { \
         if (RT_UNLIKELY(pIemCpu->fPrefixes & IEM_OP_PRF_REX)) \
         { \
-            Log5((a_szPrf ## ": Overriding REX prefix at %RX16! fPrefixes=%#x\n", \
+            Log5((a_szPrf ": Overriding REX prefix at %RX16! fPrefixes=%#x\n", \
                   pIemCpu->CTX_SUFF(pCtx)->rip, pIemCpu->fPrefixes)); \
             pIemCpu->fPrefixes &= ~IEM_OP_PRF_REX_MASK; \
             pIemCpu->uRexB     = 0; \
