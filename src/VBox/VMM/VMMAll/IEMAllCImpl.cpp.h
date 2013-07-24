@@ -2722,6 +2722,207 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
 
 
 /**
+ * Implements SYSCALL (AMD and Intel64).
+ *
+ * @param   enmEffOpSize    The effective operand size.
+ */
+IEM_CIMPL_DEF_0(iemCImpl_syscall)
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Check preconditions.
+     *
+     * Note that CPUs described in the documentation may load a few odd values
+     * into CS and SS than we allow here.  This has yet to be checked on real
+     * hardware.
+     */
+    if (!(pCtx->msrEFER & MSR_K6_EFER_SCE))
+    {
+        Log(("syscall: Not enabled in EFER -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+    if (!(pCtx->cr0 & X86_CR0_PE))
+    {
+        Log(("syscall: Protected mode is required -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !CPUMIsGuestInLongModeEx(pCtx))
+    {
+        Log(("syscall: Only available in long mode on intel -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+
+    /** @todo verify RPL ignoring and CS=0xfff8 (i.e. SS == 0). */
+    /** @todo what about LDT selectors? Shouldn't matter, really. */
+    uint16_t uNewCs = (pCtx->msrSTAR >> MSR_K6_STAR_SYSCALL_CS_SS_SHIFT) & X86_SEL_MASK_OFF_RPL;
+    uint16_t uNewSs = uNewCs + 8;
+    if (uNewCs == 0 || uNewSs == 0)
+    {
+        Log(("syscall: msrSTAR.CS = 0 or SS = 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /* Long mode and legacy mode differs. */
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        uint64_t uNewRip = pIemCpu->enmCpuMode == IEMMODE_64BIT ? pCtx->msrLSTAR : pCtx-> msrCSTAR;
+
+        /* This test isn't in the docs, but I'm not trusting the guys writing
+           the MSRs to have validated the values as canonical like they should. */
+        if (!IEM_IS_CANONICAL(uNewRip))
+        {
+            Log(("syscall: Only available in long mode on intel -> #UD\n"));
+            return iemRaiseUndefinedOpcode(pIemCpu);
+        }
+
+        /*
+         * Commit it.
+         */
+        Log(("syscall: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64\n", pCtx->cs, pCtx->rip, pCtx->rflags.u, uNewCs, uNewRip));
+        pCtx->rcx           = pCtx->rip + cbInstr;
+        pCtx->rip           = uNewRip;
+
+        pCtx->rflags.u     &= ~X86_EFL_RF;
+        pCtx->r11           = pCtx->rflags.u;
+        pCtx->rflags.u     &= ~pCtx->msrSFMASK;
+        pCtx->rflags.u     |= X86_EFL_1;
+
+        pCtx->cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
+        pCtx->ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
+    }
+    else
+    {
+        /*
+         * Commit it.
+         */
+        Log(("syscall: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n",
+             pCtx->cs, pCtx->eip, pCtx->eflags.u, uNewCs, (uint32_t)(pCtx->msrSTAR & MSR_K6_STAR_SYSCALL_EIP_MASK)));
+        pCtx->rcx           = pCtx->eip + cbInstr;
+        pCtx->rip           = pCtx->msrSTAR & MSR_K6_STAR_SYSCALL_EIP_MASK;
+        pCtx->rflags.u     &= ~(X86_EFL_VM | X86_EFL_IF | X86_EFL_RF);
+
+        pCtx->cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC;
+        pCtx->ss.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_RW_ACC;
+    }
+    pCtx->cs.Sel        = uNewCs;
+    pCtx->cs.ValidSel   = uNewCs;
+    pCtx->cs.u64Base    = 0;
+    pCtx->cs.u32Limit   = UINT32_MAX;
+    pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
+
+    pCtx->ss.Sel        = uNewSs;
+    pCtx->ss.ValidSel   = uNewSs;
+    pCtx->ss.u64Base    = 0;
+    pCtx->ss.u32Limit   = UINT32_MAX;
+    pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Implements SYSRET (AMD and Intel64).
+ */
+IEM_CIMPL_DEF_0(iemCImpl_sysret)
+
+{
+    PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
+
+    /*
+     * Check preconditions.
+     *
+     * Note that CPUs described in the documentation may load a few odd values
+     * into CS and SS than we allow here.  This has yet to be checked on real
+     * hardware.
+     */
+    if (!(pCtx->msrEFER & MSR_K6_EFER_SCE))
+    {
+        Log(("sysret: Not enabled in EFER -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !CPUMIsGuestInLongModeEx(pCtx))
+    {
+        Log(("sysret: Only available in long mode on intel -> #UD\n"));
+        return iemRaiseUndefinedOpcode(pIemCpu);
+    }
+    if (!(pCtx->cr0 & X86_CR0_PE))
+    {
+        Log(("sysret: Protected mode is required -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+    if (pIemCpu->uCpl != 0)
+    {
+        Log(("sysret: CPL must be 0 not %u -> #GP(0)\n", pIemCpu->uCpl));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /** @todo Does SYSRET verify CS != 0 and SS != 0? Neither is valid in ring-3. */
+    uint16_t uNewCs = (pCtx->msrSTAR >> MSR_K6_STAR_SYSRET_CS_SS_SHIFT) & X86_SEL_MASK_OFF_RPL;
+    uint16_t uNewSs = uNewCs + 8;
+    if (pIemCpu->enmEffOpSize == IEMMODE_64BIT)
+        uNewCs += 16;
+    if (uNewCs == 0 || uNewSs == 0)
+    {
+        Log(("sysret: msrSTAR.CS = 0 or SS = 0 -> #GP(0)\n"));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Commit it.
+     */
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        if (pIemCpu->enmEffOpSize == IEMMODE_64BIT)
+        {
+            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%016RX64 [r11=%#llx]\n",
+                 pCtx->cs, pCtx->rip, pCtx->rflags.u, uNewCs, pCtx->rcx, pCtx->r11));
+            /* Note! We disregard intel manual regarding the RCX cananonical
+                     check, ask intel+xen why AMD doesn't do it. */
+            pCtx->rip       = pCtx->rcx;
+            pCtx->cs.Attr.u = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_L | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
+                            | (3 << X86DESCATTR_DPL_SHIFT);
+        }
+        else
+        {
+            Log(("sysret: %04x:%016RX64 [efl=%#llx] -> %04x:%08RX32 [r11=%#llx]\n",
+                 pCtx->cs, pCtx->rip, pCtx->rflags.u, uNewCs, pCtx->ecx, pCtx->r11));
+            pCtx->rip       = pCtx->ecx;
+            pCtx->cs.Attr.u = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
+                            | (3 << X86DESCATTR_DPL_SHIFT);
+        }
+        /** @todo testcase: See what kind of flags we can make SYSRET restore and
+         *        what it really ignores. RF and VM are hinted at being zero, by AMD. */
+        pCtx->rflags.u      = pCtx->r11 & (X86_EFL_POPF_BITS | X86_EFL_VIF | X86_EFL_VIP);
+        pCtx->rflags.u     |= X86_EFL_1;
+    }
+    else
+    {
+        Log(("sysret: %04x:%08RX32 [efl=%#x] -> %04x:%08RX32\n", pCtx->cs, pCtx->eip, pCtx->eflags.u, uNewCs, pCtx->ecx));
+        pCtx->rip           = pCtx->rcx;
+        pCtx->rflags.u     |= X86_EFL_IF;
+        pCtx->cs.Attr.u     = X86DESCATTR_P | X86DESCATTR_G | X86DESCATTR_D | X86DESCATTR_DT | X86_SEL_TYPE_ER_ACC
+                            | (3 << X86DESCATTR_DPL_SHIFT);
+    }
+    pCtx->cs.Sel        = uNewCs | 3;
+    pCtx->cs.ValidSel   = uNewCs | 3;
+    pCtx->cs.u64Base    = 0;
+    pCtx->cs.u32Limit   = UINT32_MAX;
+    pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
+
+    pCtx->ss.Sel        = uNewSs | 3;
+    pCtx->ss.ValidSel   = uNewSs | 3;
+    pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
+    /* The SS hidden bits remains unchanged says AMD. To that I say "Yeah, right!". */
+    pCtx->ss.Attr.u    |= (3 << X86DESCATTR_DPL_SHIFT);
+    /** @todo Testcase: verify that SS.u1Long and SS.u1DefBig are left unchanged
+     *        on sysret. */
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Common worker for 'pop SReg', 'mov SReg, GReg' and 'lXs GReg, reg/mem'.
  *
  * @param   iSegReg     The segment register number (valid).
@@ -3647,7 +3848,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
             /* long mode checks. */
             if (   (uOldCrX & X86_CR4_PAE)
                 && !(uNewCrX & X86_CR4_PAE)
-                && (pCtx->msrEFER & MSR_K6_EFER_LMA) )
+                && CPUMIsGuestInLongModeEx(pCtx) )
             {
                 Log(("Trying to set clear CR4.PAE while long mode is active\n"));
                 return iemRaiseGeneralProtectionFault0(pIemCpu);
