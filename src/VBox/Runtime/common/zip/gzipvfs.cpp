@@ -56,6 +56,7 @@ PFNRT g_apfnRTZlibDeps[] =
 };
 #endif /* RT_OS_OS2 || RT_OS_SOLARIS || RT_OS_WINDOWS */
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -167,6 +168,12 @@ typedef struct RTZIPGZIPSTREAM
 typedef RTZIPGZIPSTREAM *PRTZIPGZIPSTREAM;
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int rtZipGzip_FlushIt(PRTZIPGZIPSTREAM pThis, uint8_t fFlushType);
+
+
 /**
  * Convert from zlib to IPRT status codes.
  *
@@ -223,11 +230,22 @@ static DECLCALLBACK(int) rtZipGzip_Close(void *pvThis)
 
     int rc;
     if (pThis->fDecompress)
+    {
         rc = inflateEnd(&pThis->Zlib);
+        if (rc != Z_OK)
+            rc = rtZipGzipConvertErrFromZlib(pThis, rc);
+    }
     else
-        rc = deflateEnd(&pThis->Zlib);
-    if (rc != Z_OK)
-        rc = rtZipGzipConvertErrFromZlib(pThis, rc);
+    {
+        /* Flush the compression stream before terminating it. */
+        rc = VINF_SUCCESS;
+        if (!pThis->fFatalError)
+            rc = rtZipGzip_FlushIt(pThis, Z_FINISH);
+
+        int rc2 = deflateEnd(&pThis->Zlib);
+        if (RT_SUCCESS(rc) && rc2 != Z_OK)
+            rc = rtZipGzipConvertErrFromZlib(pThis, rc);
+    }
 
     RTVfsIoStrmRelease(pThis->hVfsIos);
     pThis->hVfsIos = NIL_RTVFSIOSTREAM;
@@ -349,44 +367,138 @@ static int rtZipGzip_ReadOneSeg(PRTZIPGZIPSTREAM pThis, void *pvBuf, size_t cbTo
     return rc;
 }
 
+
 /**
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnRead}
  */
 static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
-    int              rc;
 
+    Assert(pSgBuf->cSegs == 1);
     AssertReturn(off == -1, VERR_INVALID_PARAMETER);
     if (!pThis->fDecompress)
         return VERR_ACCESS_DENIED;
 
-    if (pSgBuf->cSegs == 1)
-        rc = rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);
-    else
+    return rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[0].pvSeg, pSgBuf->paSegs[0].cbSeg, fBlocking, pcbRead);
+}
+
+
+/**
+ * Internal helper for rtZipGzip_Write, rtZipGzip_Flush and rtZipGzip_Close.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VINF_TRY_AGAIN - the only informational status.
+ * @retval  VERR_INTERRUPTED - call again.
+ *
+ * @param   pThis           The gzip I/O stream instance data.
+ * @param   fBlocking       Whether to block or not.
+ */
+static int rtZipGzip_WriteOutputBuffer(PRTZIPGZIPSTREAM pThis, bool fBlocking)
+{
+    /*
+     * Anything to write?  No, then just return immediately.
+     */
+    size_t cbToWrite = sizeof(pThis->abBuffer) - pThis->Zlib.avail_out;
+    if (cbToWrite == 0)
     {
-        rc = VINF_SUCCESS;
-        size_t  cbRead = 0;
-        size_t  cbReadSeg;
-        size_t *pcbReadSeg = pcbRead ? &cbReadSeg : NULL;
-        for (uint32_t iSeg = 0; iSeg < pSgBuf->cSegs; iSeg++)
+        Assert(pThis->Zlib.next_out == &pThis->abBuffer[0]);
+        return VINF_SUCCESS;
+    }
+    Assert(cbToWrite <= sizeof(pThis->abBuffer));
+
+    /*
+     * Loop write on VERR_INTERRUPTED.
+     *
+     * Note! Asserting a bit extra here to make sure the
+     *       RTVfsIoStrmSgWrite works correctly.
+     */
+    int    rc;
+    size_t cbWrittenOut;
+    for (;;)
+    {
+        /* Set up the buffer. */
+        pThis->SgSeg.cbSeg = cbToWrite;
+        Assert(pThis->SgSeg.pvSeg == &pThis->abBuffer[0]);
+        RTSgBufReset(&pThis->SgBuf);
+
+        cbWrittenOut = ~(size_t)0;
+        rc = RTVfsIoStrmSgWrite(pThis->hVfsIos, &pThis->SgBuf, fBlocking, &cbWrittenOut);
+        if (rc != VINF_SUCCESS)
         {
-            cbReadSeg = 0;
-            rc = rtZipGzip_ReadOneSeg(pThis, pSgBuf->paSegs[iSeg].pvSeg, pSgBuf->paSegs[iSeg].cbSeg, fBlocking, pcbReadSeg);
-            if (RT_FAILURE(rc))
-                break;
-            if (pcbRead)
+            AssertMsg(RT_FAILURE(rc) || rc == VINF_TRY_AGAIN, ("%Rrc\n", rc));
+            if (rc == VERR_INTERRUPTED)
             {
-                cbRead += cbReadSeg;
-                if (cbReadSeg != pSgBuf->paSegs[iSeg].cbSeg)
-                    break;
+                Assert(cbWrittenOut == 0);
+                continue;
+            }
+            if (RT_FAILURE(rc) || rc == VINF_TRY_AGAIN || cbWrittenOut == 0)
+            {
+                AssertReturn(cbWrittenOut == 0, VERR_INTERNAL_ERROR_3);
+                AssertReturn(rc != VINF_SUCCESS, VERR_IPE_UNEXPECTED_INFO_STATUS);
+                return rc;
             }
         }
-        if (pcbRead)
-            *pcbRead = cbRead;
+        break;
+    }
+    AssertMsgReturn(cbWrittenOut > 0 && cbWrittenOut <= sizeof(pThis->abBuffer),
+                    ("%zu %Rrc\n", cbWrittenOut, rc),
+                    VERR_INTERNAL_ERROR_4);
+
+    /*
+     * Adjust the Zlib output buffer members.
+     */
+    if (cbWrittenOut == pThis->SgBuf.paSegs[0].cbSeg)
+    {
+        pThis->Zlib.avail_out = sizeof(pThis->abBuffer);
+        pThis->Zlib.next_out  = &pThis->abBuffer[0];
+    }
+    else
+    {
+        Assert(cbWrittenOut <= pThis->SgBuf.paSegs[0].cbSeg);
+        size_t cbLeft = pThis->SgBuf.paSegs[0].cbSeg - cbWrittenOut;
+        memmove(&pThis->abBuffer[0], &pThis->abBuffer[cbWrittenOut], cbLeft);
+        pThis->Zlib.avail_out += (uInt)cbWrittenOut;
+        pThis->Zlib.next_out  = &pThis->abBuffer[cbWrittenOut];
     }
 
-    return rc;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Processes all available input.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pThis           The gzip I/O stream instance data.
+ * @param   fBlocking       Whether to block or not.
+ */
+static int rtZipGzip_CompressIt(PRTZIPGZIPSTREAM pThis, bool fBlocking)
+{
+    /*
+     * Processes all the intput currently lined up for us.
+     */
+    while (pThis->Zlib.avail_in > 0)
+    {
+        /* Make sure there is some space in the output buffer before calling
+           deflate() so we don't waste time filling up the corners. */
+        static const size_t s_cbFlushThreshold = 4096;
+        AssertCompile(sizeof(pThis->abBuffer) >= s_cbFlushThreshold * 4);
+        if (pThis->Zlib.avail_out < s_cbFlushThreshold)
+        {
+            int rc = rtZipGzip_WriteOutputBuffer(pThis, fBlocking);
+            if (rc != VINF_SUCCESS)
+                return rc;
+            Assert(pThis->Zlib.avail_out >= s_cbFlushThreshold);
+        }
+
+        int rcZlib = deflate(&pThis->Zlib, Z_NO_FLUSH);
+        if (rcZlib != Z_OK)
+            return rtZipGzipConvertErrFromZlib(pThis, rcZlib);
+    }
+    return VINF_SUCCESS;
 }
 
 
@@ -396,16 +508,87 @@ static DECLCALLBACK(int) rtZipGzip_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgB
 static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
-    //int              rc;
 
     AssertReturn(off == -1, VERR_INVALID_PARAMETER);
-    NOREF(fBlocking);
+    Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
+
     if (pThis->fDecompress)
         return VERR_ACCESS_DENIED;
 
-    /** @todo implement compression. */
-    NOREF(pSgBuf); NOREF(pcbWritten);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Write out the intput buffer. Using a loop here because of potential
+     * integer type overflow since avail_in is uInt and cbSeg is size_t.
+     */
+    int             rc        = VINF_SUCCESS;
+    size_t          cbWritten = 0;
+    uint8_t const  *pbSrc     = (uint8_t const *)pSgBuf->paSegs[0].pvSeg;
+    size_t          cbLeft    = pSgBuf->paSegs[0].cbSeg;
+    if (cbLeft > 0)
+        for (;;)
+        {
+            size_t cbThis = cbLeft < ~(uInt)0 ? cbLeft : ~(uInt)0 / 2;
+            pThis->Zlib.next_in  = (Bytef * )pbSrc;
+            pThis->Zlib.avail_in = (uInt)cbThis;
+            rc = rtZipGzip_CompressIt(pThis, fBlocking);
+
+            Assert(cbThis >= pThis->Zlib.avail_in);
+            cbThis -= pThis->Zlib.avail_in;
+            cbWritten += cbThis;
+            if (cbLeft == cbThis || rc != VINF_SUCCESS)
+                break;
+            pbSrc  += cbThis;
+            cbLeft -= cbThis;
+        }
+
+    if (pcbWritten)
+        *pcbWritten = cbWritten;
+    return rc;
+}
+
+
+/**
+ * Processes all available input.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pThis           The gzip I/O stream instance data.
+ * @param   fFlushType      The flush type to pass to deflate().
+ */
+static int rtZipGzip_FlushIt(PRTZIPGZIPSTREAM pThis, uint8_t fFlushType)
+{
+    /*
+     * Tell Zlib to flush until it stops producing more output.
+     */
+    int rc;
+    bool fMaybeMore = true;
+    for (;;)
+    {
+        /* Write the entire output buffer. */
+        do
+        {
+            rc = rtZipGzip_WriteOutputBuffer(pThis, true /*fBlocking*/);
+            if (RT_FAILURE(rc))
+                return rc;
+            Assert(rc == VINF_SUCCESS);
+        } while (pThis->Zlib.avail_out < sizeof(pThis->abBuffer));
+
+        if (!fMaybeMore)
+            return VINF_SUCCESS;
+
+        /* Do the flushing. */
+        pThis->Zlib.next_in  = NULL;
+        pThis->Zlib.avail_in = 0;
+        int rcZlib = deflate(&pThis->Zlib, fFlushType);
+        if (rcZlib == Z_OK)
+            fMaybeMore = pThis->Zlib.avail_out < 64 || fFlushType == Z_FINISH;
+        else if (rcZlib == Z_STREAM_END)
+            fMaybeMore = false;
+        else
+        {
+            rtZipGzip_WriteOutputBuffer(pThis, true /*fBlocking*/);
+            return rtZipGzipConvertErrFromZlib(pThis, rcZlib);
+        }
+    }
 }
 
 
@@ -415,6 +598,13 @@ static DECLCALLBACK(int) rtZipGzip_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSg
 static DECLCALLBACK(int) rtZipGzip_Flush(void *pvThis)
 {
     PRTZIPGZIPSTREAM pThis = (PRTZIPGZIPSTREAM)pvThis;
+    if (!pThis->fDecompress)
+    {
+        int rc = rtZipGzip_FlushIt(pThis, Z_SYNC_FLUSH);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
     return RTVfsIoStrmFlush(pThis->hVfsIos);
 }
 
@@ -480,7 +670,7 @@ static RTVFSIOSTREAMOPS g_rtZipGzipOps =
         RTVFSOBJOPS_VERSION
     },
     RTVFSIOSTREAMOPS_VERSION,
-    0,
+    RTVFSIOSTREAMOPS_FEAT_NO_SG,
     rtZipGzip_Read,
     rtZipGzip_Write,
     rtZipGzip_Flush,
@@ -567,6 +757,59 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
     }
     else
         RTVfsIoStrmRelease(hVfsIosIn);
+    return rc;
+}
+
+
+RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags, uint8_t uLevel, PRTVFSIOSTREAM phVfsIosZip)
+{
+    AssertPtrReturn(hVfsIosDst, VERR_INVALID_HANDLE);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(phVfsIosZip, VERR_INVALID_POINTER);
+    AssertReturn(uLevel > 0 && uLevel <= 9, VERR_INVALID_PARAMETER);
+
+    uint32_t cRefs = RTVfsIoStrmRetain(hVfsIosDst);
+    AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    /*
+     * Create the compression I/O stream.
+     */
+    RTVFSIOSTREAM    hVfsIos;
+    PRTZIPGZIPSTREAM pThis;
+    int rc = RTVfsNewIoStream(&g_rtZipGzipOps, sizeof(RTZIPGZIPSTREAM), RTFILE_O_WRITE, NIL_RTVFS, NIL_RTVFSLOCK,
+                              &hVfsIos, (void **)&pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->hVfsIos      = hVfsIosDst;
+        pThis->offStream    = 0;
+        pThis->fDecompress  = false;
+        pThis->SgSeg.pvSeg  = &pThis->abBuffer[0];
+        pThis->SgSeg.cbSeg  = sizeof(pThis->abBuffer);
+        RTSgBufInit(&pThis->SgBuf, &pThis->SgSeg, 1);
+
+        RT_ZERO(pThis->Zlib);
+        pThis->Zlib.opaque    = pThis;
+        pThis->Zlib.next_out  = &pThis->abBuffer[0];
+        pThis->Zlib.avail_out = sizeof(pThis->abBuffer);
+
+        rc = deflateInit2(&pThis->Zlib,
+                          uLevel,
+                          Z_DEFLATED,
+                          15 /* Windows Size */ + 16 /* GZIP header */,
+                          9 /* Max memory level for optimal speed */,
+                          Z_DEFAULT_STRATEGY);
+
+        if (rc >= 0)
+        {
+            *phVfsIosZip = hVfsIos;
+            return VINF_SUCCESS;
+        }
+
+        rc = rtZipGzipConvertErrFromZlib(pThis, rc); /** @todo cleaning up in this situation is going to go wrong. */
+        RTVfsIoStrmRelease(hVfsIos);
+    }
+    else
+        RTVfsIoStrmRelease(hVfsIosDst);
     return rc;
 }
 

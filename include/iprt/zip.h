@@ -220,13 +220,29 @@ RTDECL(int)     RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
  *
  * @returns IPRT status code.
  *
- * @param   hVfsIosIn           The compressed input stream.  The reference is
- *                              not consumed, instead another one is retained.
+ * @param   hVfsIosIn           The compressed input stream (must be readable).
+ *                              The reference is not consumed, instead another
+ *                              one is retained.
  * @param   fFlags              Flags, MBZ.
- * @param   phVfsIosOut         Where to return the handle to the gzip I/O
- *                              stream.
+ * @param   phVfsIosGunzip      Where to return the handle to the gunzipped I/O
+ *                              stream (read).
  */
-RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosOut);
+RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosGunzip);
+
+/**
+ * Opens a gzip decompression I/O stream.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsIosDst          The compressed output stream (must be writable).
+ *                              The reference is not consumed, instead another
+ *                              one is retained.
+ * @param   fFlags              Flags, MBZ.
+ * @param   uLevel              The gzip compression level, 1 thru 9.
+ * @param   phVfsIosGzip        Where to return the gzip input I/O stream handle
+ *                              (you write to this).
+ */
+RTDECL(int) RTZipGzipCompressIoStream(RTVFSIOSTREAM hVfsIosDst, uint32_t fFlags, uint8_t uLevel, PRTVFSIOSTREAM phVfsIosGzip);
 
 /**
  * Opens a TAR filesystem stream.

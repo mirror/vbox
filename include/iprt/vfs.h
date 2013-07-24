@@ -605,7 +605,7 @@ RTDECL(int)         RTVfsIoStrmSgRead(RTVFSIOSTREAM hVfsIos, PCRTSGBUF pSgBuf, b
  *                          attemted written.
  * @param   fBlocking       Whether the call is blocking (@c true) or not.  If
  *                          not, the @a pcbWritten parameter must not be NULL.
- * @param   pcbRead         Where to always store the number of bytes actually
+ * @param   pcbWritten      Where to always store the number of bytes actually
  *                          written.  This can be NULL if @a fBlocking is true.
  * @sa      RTFileSgWrite, RTSocketSgWrite
  */

@@ -911,6 +911,7 @@ static void rtZipTarUsage(const char *pszProgName)
              "        Display version number.\n");
 }
 
+
 RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 {
     /*
