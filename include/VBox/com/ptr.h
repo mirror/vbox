@@ -462,31 +462,31 @@ public:
      */
     HRESULT createObject()
     {
-        HRESULT rc;
-#if !defined (VBOX_WITH_XPCOM)
-#   ifdef VBOX_COM_OUTOFPROC_MODULE
-        CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
-        if (obj)
+        HRESULT hr;
+        try
         {
+#if !defined (VBOX_WITH_XPCOM)
+# ifdef VBOX_COM_OUTOFPROC_MODULE
+            CComObjectNoLock<T> *obj = new CComObjectNoLock<T>();
             obj->InternalFinalConstructAddRef();
-            rc = obj->FinalConstruct();
+            hr = obj->FinalConstruct();
             obj->InternalFinalConstructRelease();
-        }
-        else
-            rc = E_OUTOFMEMORY;
-#   else
-        CComObject<T> *obj = NULL;
-        rc = CComObject<T>::CreateInstance(&obj);
-#   endif
+# else
+            CComObject<T> *obj = NULL;
+            hr = CComObject<T>::CreateInstance(&obj);
+# endif
 #else /* !defined (VBOX_WITH_XPCOM) */
-        CComObject<T> *obj = new CComObject<T>();
-        if (obj)
-            rc = obj->FinalConstruct();
-        else
-            rc = E_OUTOFMEMORY;
+            CComObject<T> *obj = new CComObject<T>();
+            hr = obj->FinalConstruct();
 #endif /* !defined (VBOX_WITH_XPCOM) */
-        *this = obj;
-        return rc;
+            *this = obj;
+        }
+        catch(std::bad_alloc &)
+        {
+            hr = E_OUTOFMEMORY;
+        }
+
+        return hr;
     }
 };
 #endif
