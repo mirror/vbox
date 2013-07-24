@@ -39,6 +39,7 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CMachine.h"
+#include "CConsole.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -159,7 +160,7 @@ void UIFrameBufferQImage::paintEvent(QPaintEvent *pEvent)
      * We should acquire actual machine-state to exclude
      * situations when the state was changed already but
      * GUI didn't received event about that or didn't processed it yet. */
-    KMachineState machineState = m_pMachineView->uisession()->session().GetMachine().GetState();
+    KMachineState machineState = m_pMachineView->uisession()->session().GetConsole().GetState();
     if (   m_bUsesGuestVRAM
         /* running */
         && machineState != KMachineState_Running
