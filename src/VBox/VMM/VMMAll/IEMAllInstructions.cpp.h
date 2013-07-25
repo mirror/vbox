@@ -1501,15 +1501,15 @@ FNIEMOP_STUB(iemOp_movaps_Vps_Wps__movapd_Vpd_Wpd);
 /** Opcode 0x0f 0x29. */
 FNIEMOP_STUB(iemOp_movaps_Wps_Vps__movapd_Wpd_Vpd);
 /** Opcode 0x0f 0x2a. */
-FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd_Vsd_Ey);
+FNIEMOP_STUB(iemOp_cvtpi2ps_Vps_Qpi__cvtpi2pd_Vpd_Qpi__cvtsi2ss_Vss_Ey__cvtsi2sd_Vsd_Ey); //NEXT
 /** Opcode 0x0f 0x2b. */
 FNIEMOP_STUB(iemOp_movntps_Mps_Vps__movntpd_Mpd_Vpd);
 /** Opcode 0x0f 0x2c. */
-FNIEMOP_STUB(iemOp_cvttps2pi_Ppi_Wps__cvttpd2pi_Ppi_Wpd__cvttss2si_Gy_Wss__cvttsd2si_Yu_Wsd);
+FNIEMOP_STUB(iemOp_cvttps2pi_Ppi_Wps__cvttpd2pi_Ppi_Wpd__cvttss2si_Gy_Wss__cvttsd2si_Yu_Wsd); //NEXT
 /** Opcode 0x0f 0x2d. */
 FNIEMOP_STUB(iemOp_cvtps2pi_Ppi_Wps__cvtpd2pi_QpiWpd__cvtss2si_Gy_Wss__cvtsd2si_Gy_Wsd);
 /** Opcode 0x0f 0x2e. */
-FNIEMOP_STUB(iemOp_ucomiss_Vss_Wss__ucomisd_Vsd_Wsd);
+FNIEMOP_STUB(iemOp_ucomiss_Vss_Wss__ucomisd_Vsd_Wsd); //NEXT
 /** Opcode 0x0f 0x2f. */
 FNIEMOP_STUB(iemOp_comiss_Vss_Wss__comisd_Vsd_Wsd);
 
@@ -1805,9 +1805,9 @@ FNIEMOP_STUB(iemOp_orps_Wpd_Vpd__orpd_Wpd_Vpd);
 /** Opcode 0x0f 0x57. */
 FNIEMOP_STUB(iemOp_xorps_Vps_Wps__xorpd_Wpd_Vpd);
 /** Opcode 0x0f 0x58. */
-FNIEMOP_STUB(iemOp_addps_Vps_Wps__addpd_Vpd_Wpd__addss_Vss_Wss__addsd_Vsd_Wsd);
+FNIEMOP_STUB(iemOp_addps_Vps_Wps__addpd_Vpd_Wpd__addss_Vss_Wss__addsd_Vsd_Wsd); //NEXT
 /** Opcode 0x0f 0x59. */
-FNIEMOP_STUB(iemOp_mulps_Vps_Wps__mulpd_Vpd_Wpd__mulss_Vss__Wss__mulsd_Vsd_Wsd);
+FNIEMOP_STUB(iemOp_mulps_Vps_Wps__mulpd_Vpd_Wpd__mulss_Vss__Wss__mulsd_Vsd_Wsd);//NEXT
 /** Opcode 0x0f 0x5a. */
 FNIEMOP_STUB(iemOp_cvtps2pd_Vpd_Wps__cvtpd2ps_Vps_Wpd__cvtss2sd_Vsd_Wss__cvtsd2ss_Vss_Wsd);
 /** Opcode 0x0f 0x5b. */
