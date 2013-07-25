@@ -347,7 +347,7 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
     NOREF(a_Name)
 #define IEM_MC_ARG_LOCAL_EFLAGS(a_pName, a_Name, a_iArg) \
     RT_CONCAT(iArgCheck_, a_iArg) = 1; NOREF(RT_CONCAT(iArgCheck_,a_iArg)); \
-    int RT_CONCAT3(iArgCheck_,a_iArg,a_Name); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_Name)); \
+    int RT_CONCAT3(iArgCheck_,a_iArg,a_pName); NOREF(RT_CONCAT3(iArgCheck_,a_iArg,a_pName)); \
     AssertCompile((a_iArg) < cArgs); \
     uint32_t a_Name; \
     uint32_t *a_pName = &a_Name; \
@@ -548,25 +548,38 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
 #define IEM_MC_MEM_COMMIT_AND_UNMAP_FOR_FPU_STORE(a_pvMem, a_fAccess, a_u16FSW)     do {} while (0)
 #define IEM_MC_CALC_RM_EFF_ADDR(a_GCPtrEff, bRm, cbImm)                 do { (a_GCPtrEff) = 0; CHK_GCPTR(a_GCPtrEff); } while (0)
 #define IEM_MC_CALL_VOID_AIMPL_0(a_pfn)                                 do {} while (0)
-#define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0)                             do {} while (0)
-#define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1)                         do {} while (0)
-#define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2)                     do {} while (0)
-#define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3)                 do {} while (0)
-#define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2)                    do { (a_rc) = VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3)                do { (a_rc) = VINF_SUCCESS; } while (0)
-#define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 return VINF_SUCCESS
-#define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0)                             return VINF_SUCCESS
-#define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1)                         return VINF_SUCCESS
-#define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2)                     return VINF_SUCCESS
-#define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4)             return VINF_SUCCESS
+#define IEM_MC_CALL_VOID_AIMPL_1(a_pfn, a0) \
+    do { CHK_CALL_ARG(a0, 0); } while (0)
+#define IEM_MC_CALL_VOID_AIMPL_2(a_pfn, a0, a1) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
+#define IEM_MC_CALL_VOID_AIMPL_3(a_pfn, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); } while (0)
+#define IEM_MC_CALL_VOID_AIMPL_4(a_pfn, a0, a1, a2, a3) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); } while (0)
+#define IEM_MC_CALL_AIMPL_3(a_rc, a_pfn, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);  (a_rc) = VINF_SUCCESS; } while (0)
+#define IEM_MC_CALL_AIMPL_4(a_rc, a_pfn, a0, a1, a2, a3) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3);  (a_rc) = VINF_SUCCESS; } while (0)
+#define IEM_MC_CALL_CIMPL_0(a_pfnCImpl)                                 do { } while (0)
+#define IEM_MC_CALL_CIMPL_1(a_pfnCImpl, a0) \
+    do { CHK_CALL_ARG(a0, 0);  } while (0)
+#define IEM_MC_CALL_CIMPL_2(a_pfnCImpl, a0, a1) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
+#define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); } while (0)
+#define IEM_MC_CALL_CIMPL_5(a_pfnCImpl, a0, a1, a2, a3, a4) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); CHK_CALL_ARG(a3, 3); CHK_CALL_ARG(a4, 4);  } while (0)
 #define IEM_MC_DEFER_TO_CIMPL_0(a_pfnCImpl)                             (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_1(a_pfnCImpl, a0)                         (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_2(a_pfnCImpl, a0, a1)                     (VINF_SUCCESS)
 #define IEM_MC_DEFER_TO_CIMPL_3(a_pfnCImpl, a0, a1, a2)                 (VINF_SUCCESS)
 
-#define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0)                         do { } while (0)
-#define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
-#define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a3)                 do { } while (0)
+#define IEM_MC_CALL_FPU_AIMPL_1(a_pfnAImpl, a0) \
+    do { CHK_CALL_ARG(a0, 0);  } while (0)
+#define IEM_MC_CALL_FPU_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
+#define IEM_MC_CALL_FPU_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2); } while (0)
 #define IEM_MC_SET_FPU_RESULT(a_FpuData, a_FSW, a_pr80Value)            do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT(a_FpuData)                               do { } while (0)
 #define IEM_MC_PUSH_FPU_RESULT_MEM_OP(a_FpuData, a_iEffSeg, a_GCPtrEff) do { } while (0)
