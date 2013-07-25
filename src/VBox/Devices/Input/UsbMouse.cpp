@@ -1358,16 +1358,6 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 
         usbHidCompleteStall(pThis, pEp, pUrb, "TODO: standard request stuff");
     }
-    /* 3.1 Bulk-Only Mass Storage Reset */
-    else if (    pSetup->bmRequestType == (VUSB_REQ_CLASS | VUSB_TO_INTERFACE)
-             &&  pSetup->bRequest == 0xff
-             &&  !pSetup->wValue
-             &&  !pSetup->wLength
-             &&  pSetup->wIndex == 0)
-    {
-        LogRelFlow(("usbHidHandleDefaultPipe: Bulk-Only Mass Storage Reset\n"));
-        return usbHidResetWorker(pThis, pUrb, false /*fSetConfig*/);
-    }
     else
     {
         LogRelFlow(("usbHid: Unknown control msg: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
