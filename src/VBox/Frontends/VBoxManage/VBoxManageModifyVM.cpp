@@ -1772,7 +1772,7 @@ int handleModifyVM(HandlerArg *a)
                 {
                     /* Make sure the OHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
-                    rc = machine->GetUSBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
+                    rc = machine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
                     if (   SUCCEEDED(rc)
                         && !cOhciCtrls)
                     {
@@ -1806,7 +1806,7 @@ int handleModifyVM(HandlerArg *a)
                 {
                     /* Make sure the OHCI controller is enabled. */
                     ULONG cOhciCtrls = 0;
-                    rc = machine->GetUSBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
+                    rc = machine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
                     if (   SUCCEEDED(rc)
                         && !cOhciCtrls)
                     {
@@ -2307,7 +2307,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_USBEHCI:
             {
                 ULONG cEhciCtrls = 0;
-                rc = machine->GetUSBControllerCountByType)(USBControllerType_EHCI, &cEhciCtrls);
+                rc = machine->GetUSBControllerCountByType(USBControllerType_EHCI, &cEhciCtrls);
                 if (SUCCEEDED(rc))
                 {
                     if (!cEhciCtrls && ValueUnion.f)
@@ -2325,7 +2325,7 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_USB:
             {
                 ULONG cOhciCtrls = 0;
-                rc = machine->GetUSBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
+                rc = machine->GetUSBControllerCountByType(USBControllerType_OHCI, &cOhciCtrls);
                 if (SUCCEEDED(rc))
                 {
                     if (!cOhciCtrls && ValueUnion.f)
