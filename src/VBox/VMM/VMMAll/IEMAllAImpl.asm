@@ -2971,3 +2971,39 @@ ENDPROC iemAImpl_ %+ %1
 IEMIMPL_MEDIA_SSE_PSHUFXX pshufhw
 IEMIMPL_MEDIA_SSE_PSHUFXX pshuflw
 IEMIMPL_MEDIA_SSE_PSHUFXX pshufd
+
+
+;
+; Move byte mask.
+;
+
+BEGINPROC_FASTCALL iemAImpl_pmovmskb_u64, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_MMX_PROLOGUE
+
+        mov     T0,  [A1]
+        movq    mm1, [A2]
+        pmovmskb T0, mm1
+        mov     [A1], T0
+%ifdef RT_ARCH_X86
+        mov     dword [A1 + 4], 0
+%endif
+        IEMIMPL_MMX_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_pmovmskb_u64
+
+BEGINPROC_FASTCALL iemAImpl_pmovmskb_u128, 12
+        PROLOGUE_3_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        mov     T0,  [A1]
+        movdqu  xmm1, [A2]
+        pmovmskb T0, xmm1
+        mov     [A1], T0
+%ifdef RT_ARCH_X86
+        mov     dword [A1 + 4], 0
+%endif
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_3_ARGS
+ENDPROC iemAImpl_pmovmskb_u128
+

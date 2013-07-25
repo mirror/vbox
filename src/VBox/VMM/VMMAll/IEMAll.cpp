@@ -6867,6 +6867,15 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
             return iemRaiseDeviceNotAvailable(pIemCpu); \
     } while (0)
+#define IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT() \
+    do { \
+        if (   ((pIemCpu)->CTX_SUFF(pCtx)->cr0 & X86_CR0_EM) \
+            || (   !IEM_IS_INTEL_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_FEATURE_EDX_SSE) \
+                && !IEM_IS_AMD_CPUID_FEATURE_PRESENT_EDX(X86_CPUID_AMD_FEATURE_EDX_AXMMX) ) ) \
+            return iemRaiseUndefinedOpcode(pIemCpu); \
+        if (pIemCpu->CTX_SUFF(pCtx)->cr0 & X86_CR0_TS) \
+            return iemRaiseDeviceNotAvailable(pIemCpu); \
+    } while (0)
 #define IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO() \
     do { \
         if (pIemCpu->uCpl != 0) \
