@@ -7534,6 +7534,20 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
     } while (0)
 
+/**
+ * Calls a MMX assembly implementation taking three visible arguments.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
+ */
+#define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { \
+        iemFpuPrepareUsage(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
+    } while (0)
+
 
 /**
  * Calls a SSE assembly implementation taking two visible arguments.
@@ -7546,6 +7560,20 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     do { \
         iemFpuPrepareUsageSse(pIemCpu); \
         a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+    } while (0)
+
+/**
+ * Calls a SSE assembly implementation taking three visible arguments.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
+ */
+#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { \
+        iemFpuPrepareUsageSse(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1), (a2)); \
     } while (0)
 
 

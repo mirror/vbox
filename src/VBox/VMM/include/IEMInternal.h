@@ -1095,7 +1095,17 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1H1U128,(PCX86FXSTATE pFpuState
 typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF1H1U128;
 FNIEMAIMPLMEDIAF1H1U64  iemAImpl_punpckhbw_u64,  iemAImpl_punpckhwd_u64,  iemAImpl_punpckhdq_u64;
 FNIEMAIMPLMEDIAF1H1U128 iemAImpl_punpckhbw_u128, iemAImpl_punpckhwd_u128, iemAImpl_punpckhdq_u128, iemAImpl_punpckhqdq_u128;
-/** @}  */
+/** @} */
+
+/** @name Media (SSE/MMX/AVX) operation: Packed Shuffle Stuff (evil)
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAPSHUF,(PCX86FXSTATE pFpuState, uint128_t *pu128Dst,
+                                                       uint128_t const *pu128Src, uint8_t bEvil));
+typedef FNIEMAIMPLMEDIAPSHUF *PFNIEMAIMPLMEDIAPSHUF;
+FNIEMAIMPLMEDIAPSHUF iemAImpl_pshufhw, iemAImpl_pshuflw, iemAImpl_pshufd;
+IEM_DECL_IMPL_DEF(void, iemAImpl_pshufw,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src, uint8_t bEvil));
+/** @} */
+
 
 
 

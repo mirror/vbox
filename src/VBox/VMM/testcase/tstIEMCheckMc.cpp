@@ -64,6 +64,9 @@ uint128_t           g_u128Zero;
         uint8_t iMySeg = (a_iSeg); NOREF(iMySeg); /** @todo const or variable. grr. */ \
     } while (0)
 
+#define CHK_CALL_ARG(a_Name, a_iArg) \
+    do { RT_CONCAT3(iArgCheck_,a_iArg,a_Name) = 1; } while (0)
+
 
 /** @name Other stubs.
  * @{   */
@@ -265,6 +268,10 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
 
 #define iemCImpl_callf                  NULL
 #define iemCImpl_FarJmp                 NULL
+
+#define iemAImpl_pshufhw                NULL
+#define iemAImpl_pshuflw                NULL
+#define iemAImpl_pshufd                 NULL
 
 /** @}  */
 
@@ -589,8 +596,14 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
 #define IEM_MC_UPDATE_FSW_THEN_POP_POP(a_u16FSW)                                                do { } while (0)
 #define IEM_MC_USED_FPU()                                                                       do { } while (0)
 
-#define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
-#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1)                     do { } while (0)
+#define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
+#define IEM_MC_CALL_MMX_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);} while (0)
+#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); } while (0)
+#define IEM_MC_CALL_SSE_AIMPL_3(a_pfnAImpl, a0, a1, a2) \
+    do { CHK_CALL_ARG(a0, 0); CHK_CALL_ARG(a1, 1); CHK_CALL_ARG(a2, 2);} while (0)
 
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                                   if (g_fRandom) {
 #define IEM_MC_IF_EFL_BIT_NOT_SET(a_fBit)                               if (g_fRandom) {
