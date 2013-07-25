@@ -2811,6 +2811,9 @@ ENDPROC iemAImpl_ %+ %1 %+ _u128
 %endmacro
 
 IEMIMPL_MEDIA_F2 pxor
+IEMIMPL_MEDIA_F2 pcmpeqb
+IEMIMPL_MEDIA_F2 pcmpeqw
+IEMIMPL_MEDIA_F2 pcmpeqd
 
 
 ;;

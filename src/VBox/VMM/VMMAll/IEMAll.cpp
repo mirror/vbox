@@ -670,6 +670,12 @@ static const IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq = { NULL, iemAImpl_punpckhqdq_
 
 /** Function table for the PXOR instruction */
 static const IEMOPMEDIAF2 g_iemAImpl_pxor         = { iemAImpl_pxor_u64,       iemAImpl_pxor_u128 };
+/** Function table for the PCMPEQB instruction */
+static const IEMOPMEDIAF2 g_iemAImpl_pcmpeqb      = { iemAImpl_pcmpeqb_u64,    iemAImpl_pcmpeqb_u128 };
+/** Function table for the PCMPEQW instruction */
+static const IEMOPMEDIAF2 g_iemAImpl_pcmpeqw      = { iemAImpl_pcmpeqw_u64,    iemAImpl_pcmpeqw_u128 };
+/** Function table for the PCMPEQD instruction */
+static const IEMOPMEDIAF2 g_iemAImpl_pcmpeqd      = { iemAImpl_pcmpeqd_u64,    iemAImpl_pcmpeqd_u128 };
 
 
 #if defined(IEM_VERIFICATION_MODE_MINIMAL) || defined(IEM_LOG_MEMORY_WRITES)
@@ -5824,11 +5830,11 @@ static VBOXSTRICTRC iemMemFetchDataU128(PIEMCPU pIemCpu, uint128_t *pu128Dst, ui
  *                              this access.  The base and limits are checked.
  * @param   GCPtrMem            The address of the guest memory.
  */
-static VBOXSTRICTRC iemMemFetchDataU128Aligned(PIEMCPU pIemCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+static VBOXSTRICTRC iemMemFetchDataU128AlignedSse(PIEMCPU pIemCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
 {
     /* The lazy approach for now... */
     /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
-    if (RT_UNLIKELY(GCPtrMem & 15))
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MSXCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t const *pu128Src;
@@ -6016,7 +6022,7 @@ static VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPT
 
 
 /**
- * Stores a data dqword, aligned.
+ * Stores a data dqword, SSE aligned.
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM per CPU data.
@@ -6025,10 +6031,10 @@ static VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPT
  * @param   GCPtrMem            The address of the guest memory.
  * @param   u64Value            The value to store.
  */
-static VBOXSTRICTRC iemMemStoreDataU128Aligned(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+static VBOXSTRICTRC iemMemStoreDataU128AlignedSse(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
 {
     /* The lazy approach for now... */
-    if (GCPtrMem & 15)
+    if ((GCPtrMem & 15) && !(pIemCpu->CTX_SUFF(pCtx)->fpu.MXCSR & X86_MSXCR_MM)) /** @todo should probably check this *after* applying seg.u64Base... Check real HW. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
     uint128_t *pu128Dst;
@@ -7101,8 +7107,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 #define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
-#define IEM_MC_FETCH_MEM_U128_ALIGN(a_u128Dst, a_iSeg, a_GCPtrMem) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128Aligned(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
+#define IEM_MC_FETCH_MEM_U128_ALIGN_SSE(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128AlignedSse(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
 
 
 
@@ -7212,8 +7218,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 #define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
-#define IEM_MC_STORE_MEM_U128_ALIGN(a_iSeg, a_GCPtrMem, a_u128Value) \
-    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128Aligned(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
+#define IEM_MC_STORE_MEM_U128_ALIGN_SSE(a_iSeg, a_GCPtrMem, a_u128Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128AlignedSse(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
 
 
 #define IEM_MC_PUSH_U16(a_u16Value) \
