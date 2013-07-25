@@ -20,6 +20,7 @@
 /* Qt includes: */
 #include <QDesktopWidget>
 #include <QMouseEvent>
+#include <QTouchEvent>
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -595,6 +596,14 @@ bool UIMouseHandler::eventFilter(QObject *pWatched, QEvent *pEvent)
                         return true;
                     break;
                 }
+                case QEvent::TouchBegin:
+                case QEvent::TouchUpdate:
+                case QEvent::TouchEnd:
+                {
+                    if (uisession()->isMouseSupportsMultiTouch())
+                        return multiTouchEvent(static_cast<QTouchEvent*>(pEvent), uScreenId);
+                    break;
+                }
                 case QEvent::Wheel:
                 {
                     QWheelEvent *pWheelEvent = static_cast<QWheelEvent*>(pEvent);
@@ -874,6 +883,49 @@ bool UIMouseHandler::mouseEvent(int iEventType, ulong uScreenId,
     }
 
     return false;
+}
+
+bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
+{
+    /* Eat if machine isn't running: */
+    if (!uisession()->isRunning())
+        return true;
+
+    /* Eat if such view & viewport aren't registered: */
+    if (!m_views.contains(uScreenId) || !m_viewports.contains(uScreenId))
+        return true;
+
+    /* Get mouse: */
+    CMouse mouse = session().GetConsole().GetMouse();
+
+    /* Pass all multi-touch events into guest: */
+    foreach (const QTouchEvent::TouchPoint &touchPoint, pTouchEvent->touchPoints())
+    {
+        /* Get touch-point origin: */
+        QPoint currentTouchPoint = touchPoint.pos().toPoint();
+
+        /* Get touch-point state: */
+        LONG iTouchPointState = KTouchContactState_None;
+        switch (touchPoint.state())
+        {
+            case Qt::TouchPointPressed:
+            case Qt::TouchPointMoved:
+            case Qt::TouchPointStationary:
+                iTouchPointState = KTouchContactState_InContact | KTouchContactState_InRange;
+                break;
+            default:
+                break;
+        }
+
+        /* Pass absolute touch-point data: */
+        LogRelFlow(("UIMouseHandler::multiTouchEvent: Origin: %dx%d, State: %d\n",
+                    currentTouchPoint.x(), currentTouchPoint.y(), iTouchPointState));
+        mouse.PutMouseEventMultiTouch((LONG)currentTouchPoint.x(), (LONG)currentTouchPoint.y(),
+                                      (LONG)touchPoint.id(), iTouchPointState);
+    }
+
+    /* Eat by default? */
+    return true;
 }
 
 #ifdef Q_WS_WIN

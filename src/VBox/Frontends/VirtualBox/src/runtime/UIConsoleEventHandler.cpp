@@ -90,8 +90,8 @@ UIConsoleEventHandler::UIConsoleEventHandler(UISession *pSession)
             this, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
             Qt::QueuedConnection);
 
-    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
-            this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)),
+    connect(pListener->getWrapped(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
+            this, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
             Qt::QueuedConnection);
 
     connect(pListener->getWrapped(), SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),

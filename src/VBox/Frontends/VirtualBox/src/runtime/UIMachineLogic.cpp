@@ -455,7 +455,11 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     /* Variable falgs: */
     bool fIsMouseSupportsAbsolute = uisession()->isMouseSupportsAbsolute();
     bool fIsMouseSupportsRelative = uisession()->isMouseSupportsRelative();
+    bool fIsMouseSupportsMultiTouch = uisession()->isMouseSupportsMultiTouch();
     bool fIsMouseHostCursorNeeded = uisession()->isMouseHostCursorNeeded();
+
+    /* For now MT stuff is not important for MI action: */
+    Q_UNUSED(fIsMouseSupportsMultiTouch);
 
     /* Update action state: */
     QAction *pAction = gActionPool->action(UIActionIndexRuntime_Toggle_MouseIntegration);

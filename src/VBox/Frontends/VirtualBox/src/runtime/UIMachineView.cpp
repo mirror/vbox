@@ -93,6 +93,8 @@ public:
     {
         /* No need for background drawing: */
         setAttribute(Qt::WA_OpaquePaintEvent);
+        /* Enable multi-touch support: */
+        setAttribute(Qt::WA_AcceptTouchEvents);
     }
 
     QPaintEngine *paintEngine() const
