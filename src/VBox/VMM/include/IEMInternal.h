@@ -1056,7 +1056,47 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_fist_r80_to_i64,(PCX86FXSTATE pFpuState, uint16
                                                   int64_t *pi64Val, PCRTFLOAT80U pr80Val));
 IEM_DECL_IMPL_DEF(void, iemAImpl_fistt_r80_to_i64,(PCX86FXSTATE pFpuState, uint16_t *pu16FSW,
                                                    int64_t *pi32Val, PCRTFLOAT80U pr80Val));
+/** @} */
+
+
+/** Temporary type representing a 256-bit vector register. */
+typedef struct {uint64_t au64[4]; } IEMVMM256;
+/** Temporary type pointing to a 256-bit vector register. */
+typedef IEMVMM256 *PIEMVMM256;
+/** Temporary type pointing to a const 256-bit vector register. */
+typedef IEMVMM256 *PCIEMVMM256;
+
+
+/** @name Media (SSE/MMX/AVX) operations: full1 + full2 -> full1.
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src));
+typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF2U64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U128,(PCX86FXSTATE pFpuState, uint128_t *pu128Dst, uint128_t const *pu128Src));
+typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF2U128;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_pxor_u64;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_pxor_u128;
+/** @} */
+
+/** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1L1U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint32_t const *pu32Src));
+typedef FNIEMAIMPLMEDIAF1L1U64   *PFNIEMAIMPLMEDIAF1L1U64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1L1U128,(PCX86FXSTATE pFpuState, uint128_t *pu128Dst, uint64_t const *pu64Src));
+typedef FNIEMAIMPLMEDIAF1L1U128  *PFNIEMAIMPLMEDIAF1L1U128;
+FNIEMAIMPLMEDIAF1L1U64  iemAImpl_punpcklbw_u64,  iemAImpl_punpcklwd_u64,  iemAImpl_punpckldq_u64;
+FNIEMAIMPLMEDIAF1L1U128 iemAImpl_punpcklbw_u128, iemAImpl_punpcklwd_u128, iemAImpl_punpckldq_u128, iemAImpl_punpcklqdq_u128;
+/** @} */
+
+/** @name Media (SSE/MMX/AVX) operations: hihalf1 + hihalf2 -> full1.
+ * @{ */
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1H1U64,(PCX86FXSTATE pFpuState, uint64_t *pu64Dst, uint64_t const *pu64Src));
+typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF1H1U64;
+typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF1H1U128,(PCX86FXSTATE pFpuState, uint128_t *pu128Dst, uint128_t const *pu128Src));
+typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF1H1U128;
+FNIEMAIMPLMEDIAF1H1U64  iemAImpl_punpckhbw_u64,  iemAImpl_punpckhwd_u64,  iemAImpl_punpckhdq_u64;
+FNIEMAIMPLMEDIAF1H1U128 iemAImpl_punpckhbw_u128, iemAImpl_punpckhwd_u128, iemAImpl_punpckhdq_u128, iemAImpl_punpckhqdq_u128;
 /** @}  */
+
 
 
 /** @name Function tables.
@@ -1134,6 +1174,43 @@ typedef struct IEMOPSHIFTDBLSIZES
 } IEMOPSHIFTDBLSIZES;
 /** Pointer to a double precision shift function table. */
 typedef IEMOPSHIFTDBLSIZES const *PCIEMOPSHIFTDBLSIZES;
+
+
+/**
+ * Function table for media instruction taking two full sized media registers,
+ * optionally the 2nd being a memory reference (only modifying the first op.)
+ */
+typedef struct IEMOPMEDIAF2
+{
+    PFNIEMAIMPLMEDIAF2U64  pfnU64;
+    PFNIEMAIMPLMEDIAF2U128 pfnU128;
+} IEMOPMEDIAF2;
+/** Pointer to a media operation function table for full sized ops. */
+typedef IEMOPMEDIAF2 const *PCIEMOPMEDIAF2;
+
+/**
+ * Function table for media instruction taking taking one full and one lower
+ * half media register.
+ */
+typedef struct IEMOPMEDIAF1L1
+{
+    PFNIEMAIMPLMEDIAF1L1U64  pfnU64;
+    PFNIEMAIMPLMEDIAF1L1U128 pfnU128;
+} IEMOPMEDIAF1L1;
+/** Pointer to a media operation function table for lowhalf+lowhalf -> full. */
+typedef IEMOPMEDIAF1L1 const *PCIEMOPMEDIAF1L1;
+
+/**
+ * Function table for media instruction taking taking one full and one high half
+ * media register.
+ */
+typedef struct IEMOPMEDIAF1H1
+{
+    PFNIEMAIMPLMEDIAF1H1U64  pfnU64;
+    PFNIEMAIMPLMEDIAF1H1U128 pfnU128;
+} IEMOPMEDIAF1H1;
+/** Pointer to a media operation function table for hihalf+hihalf -> full. */
+typedef IEMOPMEDIAF1H1 const *PCIEMOPMEDIAF1H1;
 
 
 /** @} */

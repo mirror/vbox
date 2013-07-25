@@ -650,6 +650,28 @@ static const IEMOPSHIFTDBLSIZES g_iemAImpl_shrd =
 };
 
 
+/** Function table for the PUNPCKLBW instruction */
+static const IEMOPMEDIAF1L1 g_iemAImpl_punpcklbw  = { iemAImpl_punpcklbw_u64,  iemAImpl_punpcklbw_u128 };
+/** Function table for the PUNPCKLBD instruction */
+static const IEMOPMEDIAF1L1 g_iemAImpl_punpcklwd  = { iemAImpl_punpcklwd_u64,  iemAImpl_punpcklwd_u128 };
+/** Function table for the PUNPCKLDQ instruction */
+static const IEMOPMEDIAF1L1 g_iemAImpl_punpckldq  = { iemAImpl_punpckldq_u64,  iemAImpl_punpckldq_u128 };
+/** Function table for the PUNPCKLQDQ instruction */
+static const IEMOPMEDIAF1L1 g_iemAImpl_punpcklqdq = { NULL, iemAImpl_punpcklqdq_u128 };
+
+/** Function table for the PUNPCKHBW instruction */
+static const IEMOPMEDIAF1H1 g_iemAImpl_punpckhbw  = { iemAImpl_punpckhbw_u64,  iemAImpl_punpckhbw_u128 };
+/** Function table for the PUNPCKHBD instruction */
+static const IEMOPMEDIAF1H1 g_iemAImpl_punpckhwd  = { iemAImpl_punpckhwd_u64,  iemAImpl_punpckhwd_u128 };
+/** Function table for the PUNPCKHDQ instruction */
+static const IEMOPMEDIAF1H1 g_iemAImpl_punpckhdq  = { iemAImpl_punpckhdq_u64,  iemAImpl_punpckhdq_u128 };
+/** Function table for the PUNPCKHQDQ instruction */
+static const IEMOPMEDIAF1H1 g_iemAImpl_punpckhqdq = { NULL, iemAImpl_punpckhqdq_u128 };
+
+/** Function table for the PXOR instruction */
+static const IEMOPMEDIAF2 g_iemAImpl_pxor         = { iemAImpl_pxor_u64,       iemAImpl_pxor_u128 };
+
+
 #if defined(IEM_VERIFICATION_MODE_MINIMAL) || defined(IEM_LOG_MEMORY_WRITES)
 /** What IEM just wrote. */
 uint8_t g_abIemWrote[256];
@@ -3908,6 +3930,19 @@ DECLINLINE(void) iemFpuPrepareUsage(PIEMCPU pIemCpu)
 
 
 /**
+ * Hook for preparing to use the host FPU for SSE
+ *
+ * This is necessary in ring-0 and raw-mode context.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ */
+DECLINLINE(void) iemFpuPrepareUsageSse(PIEMCPU pIemCpu)
+{
+    iemFpuPrepareUsage(pIemCpu);
+}
+
+
+/**
  * Stores a QNaN value into a FPU register.
  *
  * @param   pReg                Pointer to the register.
@@ -5701,6 +5736,34 @@ static VBOXSTRICTRC iemMemFetchDataU64(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8
 
 
 /**
+ * Fetches a data qword, aligned at a 16 byte boundrary (for SSE).
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pu64Dst             Where to return the qword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+static VBOXSTRICTRC iemMemFetchDataU64AlignedU128(PIEMCPU pIemCpu, uint64_t *pu64Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
+    if (RT_UNLIKELY(GCPtrMem & 15))
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    uint64_t const *pu64Src;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu64Src, sizeof(*pu64Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    if (rc == VINF_SUCCESS)
+    {
+        *pu64Dst = *pu64Src;
+        rc = iemMemCommitAndUnmap(pIemCpu, (void *)pu64Src, IEM_ACCESS_DATA_R);
+    }
+    return rc;
+}
+
+
+/**
  * Fetches a data tword.
  *
  * @returns Strict VBox status code.
@@ -5722,6 +5785,63 @@ static VBOXSTRICTRC iemMemFetchDataR80(PIEMCPU pIemCpu, PRTFLOAT80U pr80Dst, uin
     }
     return rc;
 }
+
+
+/**
+ * Fetches a data dqword (double qword), generally SSE related.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pu128Dst            Where to return the qword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+static VBOXSTRICTRC iemMemFetchDataU128(PIEMCPU pIemCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    uint128_t const *pu128Src;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu128Src, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    if (rc == VINF_SUCCESS)
+    {
+        *pu128Dst = *pu128Src;
+        rc = iemMemCommitAndUnmap(pIemCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+    }
+    return rc;
+}
+
+
+/**
+ * Fetches a data dqword (double qword) at an aligned address, generally SSE
+ * related.
+ *
+ * Raises GP(0) if not aligned.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pu128Dst            Where to return the qword.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ */
+static VBOXSTRICTRC iemMemFetchDataU128Aligned(PIEMCPU pIemCpu, uint128_t *pu128Dst, uint8_t iSegReg, RTGCPTR GCPtrMem)
+{
+    /* The lazy approach for now... */
+    /** @todo testcase: Ordering of \#SS(0) vs \#GP() vs \#PF on SSE stuff. */
+    if (RT_UNLIKELY(GCPtrMem & 15))
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    uint128_t const *pu128Src;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu128Src, sizeof(*pu128Src), iSegReg, GCPtrMem, IEM_ACCESS_DATA_R);
+    if (rc == VINF_SUCCESS)
+    {
+        *pu128Dst = *pu128Src;
+        rc = iemMemCommitAndUnmap(pIemCpu, (void *)pu128Src, IEM_ACCESS_DATA_R);
+    }
+    return rc;
+}
+
+
 
 
 /**
@@ -6856,6 +6976,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (uint32_t)(a_u32Value); } while (0)
+#define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)         \
+        (a_pu64Dst) = (&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
+#define IEM_MC_REF_MREG_U64_CONST(a_pu64Dst, a_iMReg) \
+        (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
+#define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg) \
+        (a_pu32Dst) = ((uint32_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
 
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
@@ -6865,7 +6991,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (uint32_t)(a_u32Value); \
          pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
     } while (0)
-
+#define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)       \
+    (a_pu128Dst) = (&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm)
+#define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg) \
+    (a_pu128Dst) = ((uint128_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm)
+#define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg) \
+    (a_pu64Dst) = ((uint64_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0])
 
 #define IEM_MC_FETCH_MEM_U8(a_u8Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU8(pIemCpu, &(a_u8Dst), (a_iSeg), (a_GCPtrMem)))
@@ -6895,6 +7026,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_U64_DISP(a_u64Dst, a_iSeg, a_GCPtrMem, a_offDisp) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_u64Dst), (a_iSeg), (a_GCPtrMem) + (a_offDisp)))
+#define IEM_MC_FETCH_MEM_U64_ALIGN_U128(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64AlignedU128(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
 
 #define IEM_MC_FETCH_MEM_R32(a_r32Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU32(pIemCpu, &(a_r32Dst).u32, (a_iSeg), (a_GCPtrMem)))
@@ -6902,6 +7035,12 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU64(pIemCpu, &(a_r64Dst).au64[0], (a_iSeg), (a_GCPtrMem)))
 #define IEM_MC_FETCH_MEM_R80(a_r80Dst, a_iSeg, a_GCPtrMem) \
     IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataR80(pIemCpu, &(a_r80Dst), (a_iSeg), (a_GCPtrMem)))
+
+#define IEM_MC_FETCH_MEM_U128(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
+#define IEM_MC_FETCH_MEM_U128_ALIGN(a_u128Dst, a_iSeg, a_GCPtrMem) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemFetchDataU128Aligned(pIemCpu, &(a_u128Dst), (a_iSeg), (a_GCPtrMem)))
+
 
 
 #define IEM_MC_FETCH_MEM_U8_ZX_U16(a_u16Dst, a_iSeg, a_GCPtrMem) \
@@ -7313,6 +7452,34 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 /** Indicates that we (might) have modified the FPU state. */
 #define IEM_MC_USED_FPU() \
     CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_FPU_REM)
+
+/**
+ * Calls a MMX assembly implementation taking two visible arguments.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ */
+#define IEM_MC_CALL_MMX_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { \
+        iemFpuPrepareUsage(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+    } while (0)
+
+
+/**
+ * Calls a SSE assembly implementation taking two visible arguments.
+ *
+ * @param   a_pfnAImpl      Pointer to the assembly MMX routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ */
+#define IEM_MC_CALL_SSE_AIMPL_2(a_pfnAImpl, a0, a1) \
+    do { \
+        iemFpuPrepareUsageSse(pIemCpu); \
+        a_pfnAImpl(&pIemCpu->CTX_SUFF(pCtx)->fpu, (a0), (a1)); \
+    } while (0)
+
 
 /** @note Not for IOPL or IF testing. */
 #define IEM_MC_IF_EFL_BIT_SET(a_fBit)                   if (pIemCpu->CTX_SUFF(pCtx)->eflags.u & (a_fBit)) {
