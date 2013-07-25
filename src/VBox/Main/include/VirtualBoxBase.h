@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -212,6 +212,25 @@ public:
 #endif
 
 /**
+ *  Special version of the AssertMsgFailed macro to be used within VirtualBoxBase
+ *  subclasses.
+ *
+ *  See ComAssert for more info.
+ *
+ *  @param   a       printf argument list (in parenthesis).
+ */
+#if defined(DEBUG)
+#define ComAssertMsgFailed(a)   AssertMsgFailed(a)
+#else
+#define ComAssertMsgFailed(a) \
+    do { \
+        setError(E_FAIL, \
+                 "Assertion failed: at '%s' (%d) in %s.\n%s.\nPlease contact the product vendor!", \
+                 __FILE__, __LINE__, __PRETTY_FUNCTION__, Utf8StrFmt a .c_str()); \
+    } while (0)
+#endif
+
+/**
  *  Special version of the AssertRC macro to be used within VirtualBoxBase
  *  subclasses.
  *
@@ -270,9 +289,32 @@ public:
 /** Special version of ComAssertComRC that returns rc if rc does not succeed */
 #define ComAssertComRCRetRC(rc)             \
     do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return (rc); } while (0)
-/** Special version of ComAssert that returns ret */
-#define ComAssertFailedRet(ret)                \
+/** Special version of ComAssertFailed that returns ret */
+#define ComAssertFailedRet(ret)             \
     do { ComAssertFailed(); return (ret); } while (0)
+/** Special version of ComAssertMsgFailed that returns ret */
+#define ComAssertMsgFailedRet(msg, ret)     \
+    do { ComAssertMsgFailed(msg); return (ret); } while (0)
+
+
+/** Special version of ComAssert that returns void if expr fails */
+#define ComAssertRetVoid(expr)                  \
+    do { ComAssert(expr); if (!(expr)) return; } while (0)
+/** Special version of ComAssertMsg that returns void if expr fails */
+#define ComAssertMsgRetVoid(expr, a)            \
+    do { ComAssertMsg(expr, a); if (!(expr)) return; } while (0)
+/** Special version of ComAssertRC that returns void if vrc does not succeed */
+#define ComAssertRCRetVoid(vrc)                 \
+    do { ComAssertRC(vrc); if (!RT_SUCCESS(vrc)) return; } while (0)
+/** Special version of ComAssertComRC that returns void if rc does not succeed */
+#define ComAssertComRCRetVoid(rc)               \
+    do { ComAssertComRC(rc); if (!SUCCEEDED(rc)) return; } while (0)
+/** Special version of ComAssertFailed that returns void */
+#define ComAssertFailedRetVoid()                \
+    do { ComAssertFailed(); return; } while (0)
+/** Special version of ComAssertMsgFailed that returns void */
+#define ComAssertMsgFailedRetVoid(msg)          \
+    do { ComAssertMsgFailed(msg); return; } while (0)
 
 
 /** Special version of ComAssert that evaluates eval and breaks if expr fails */
