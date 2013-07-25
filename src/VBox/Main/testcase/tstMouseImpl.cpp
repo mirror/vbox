@@ -72,7 +72,60 @@ static int pdmdrvhlpAttach(PPDMDRVINS pDrvIns, uint32_t fFlags,
 static struct PDMDRVHLPR3 pdmHlpR3 =
 {
     PDM_DRVHLPR3_VERSION,
-    pdmdrvhlpAttach
+    pdmdrvhlpAttach,
+    NULL,                    /* pfnDetach */
+    NULL,                    /* pfnDetachSelf */
+    NULL,                    /* pfnMountPrepare */
+    NULL,                    /* pfnAssertEMT */
+    NULL,                    /* pfnAssertOther */
+    NULL,                    /* pfnVMSetError */
+    NULL,                    /* pfnVMSetErrorV */
+    NULL,                    /* pfnVMSetRuntimeError */
+    NULL,                    /* pfnVMSetRuntimeErrorV */
+    NULL,                    /* pfnVMState */
+    NULL,                    /* pfnVMTeleportedAndNotFullyResumedYet */
+    NULL,                    /* pfnGetSupDrvSession */
+    NULL,                    /* pfnQueueCreate */
+    NULL,                    /* pfnTMGetVirtualFreq */
+    NULL,                    /* pfnTMGetVirtualTime */
+    NULL,                    /* pfnTMTimerCreate */
+    NULL,                    /* pfnSSMRegister */
+    NULL,                    /* pfnSSMDeregister */
+    NULL,                    /* pfnDBGFInfoRegister */
+    NULL,                    /* pfnDBGFInfoDeregister */
+    NULL,                    /* pfnSTAMRegister */
+    NULL,                    /* pfnSTAMRegisterF */
+    NULL,                    /* pfnSTAMRegisterV */
+    NULL,                    /* pfnSTAMDeregister */
+    NULL,                    /* pfnSUPCallVMMR0Ex */
+    NULL,                    /* pfnUSBRegisterHub */
+    NULL,                    /* pfnSetAsyncNotification */
+    NULL,                    /* pfnAsyncNotificationCompleted */
+    NULL,                    /* pfnThreadCreate */
+    NULL,                    /* pfnAsyncCompletionTemplateCreate */
+#ifdef VBOX_WITH_NETSHAPER
+    NULL,                    /* pfnNetShaperAttach */
+    NULL,                    /* pfnNetShaperDetach */
+#endif
+    NULL,                    /* pfnLdrGetRCInterfaceSymbols */
+    NULL,                    /* pfnLdrGetR0InterfaceSymbols */
+    NULL,                    /* pfnCritSectInit */
+    NULL,                    /* pfnCallR0 */
+    NULL,                    /* pfnFTSetCheckpoint */
+    NULL,                    /* pfnBlkCacheRetain */
+    NULL,                    /* pfnVMGetSuspendReason */
+    NULL,                    /* pfnVMGetResumeReason */
+    NULL,                    /* pfnReserved0 */
+    NULL,                    /* pfnReserved1 */
+    NULL,                    /* pfnReserved2 */
+    NULL,                    /* pfnReserved3 */
+    NULL,                    /* pfnReserved4 */
+    NULL,                    /* pfnReserved5 */
+    NULL,                    /* pfnReserved6 */
+    NULL,                    /* pfnReserved7 */
+    NULL,                    /* pfnReserved8 */
+    NULL,                    /* pfnReserved9 */
+    PDM_DRVHLPR3_VERSION     /* u32TheEnd */
 };
 
 static struct
@@ -108,7 +161,8 @@ static int mousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX,
 static struct PDMIMOUSEPORT pdmiMousePort =
 {
     mousePutEvent,
-    mousePutEventAbs
+    mousePutEventAbs,
+    NULL                     /* pfnPutEventMT */
 };
 
 static void *pdmiBaseQuery(struct PDMIBASE *pInterface, const char *pszIID)
@@ -124,16 +178,27 @@ static struct PDMIBASE pdmiBase =
 static struct PDMDRVINS pdmdrvInsCore =
 {
     PDM_DRVINS_VERSION,
-    0,
-    NIL_RTRCPTR,
-    NIL_RTRCPTR,
-    NIL_RTR0PTR,
-    NIL_RTR0PTR,
+    0,                       /* iInstance */
+    NIL_RTRCPTR,             /* pHlpRC */
+    NIL_RTRCPTR,             /* pvInstanceDataRC */
+    NIL_RTR0PTR,             /* pHelpR0 */
+    NIL_RTR0PTR,             /* pvInstanceDataR0 */
     &pdmHlpR3,
-    NULL,
-    NULL,
-    NULL,
-    &pdmiBase
+    NULL,                    /* pvInstanceDataR3 */
+    NIL_RTR3PTR,             /* pReg */
+    NIL_RTR3PTR,             /* pCfg */
+    &pdmiBase,
+    NULL,                    /* pDownBase */
+    NULL,                    /* IBase */
+    0,                       /* fTracing */
+    0,                       /* idTracing */
+#if HC_ARCH_BITS == 32
+    0,                       /* au32Padding */
+#endif
+    {
+        0                    /* Padding */
+    },                       /* Internal */
+    0                        /* achInstanceData */
 };
 
 static struct PDMDRVINS *ppdmdrvIns = NULL;
