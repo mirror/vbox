@@ -455,16 +455,19 @@ IEMOPMEDIAF2 g_iemAImpl_pxor;
 
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg)          do { (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg)          do { (a_u32Value) = 0; CHK_TYPE(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value)          do { CHK_TYPE(uint64_t, a_u64Value); } while (0)
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value)   do { CHK_TYPE(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_REF_MREG_U64(a_pu64Dst, a_iMReg)             do { (a_pu64Dst) = (uint64_t *)((uintptr_t)0); CHK_PTYPE(uint64_t *, a_pu64Dst); } while (0)
 #define IEM_MC_REF_MREG_U64_CONST(a_pu64Dst, a_iMReg)       do { (a_pu64Dst) = (uint64_t const *)((uintptr_t)0); CHK_PTYPE(uint64_t const *, a_pu64Dst); } while (0)
 #define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg)       do { (a_pu32Dst) = (uint32_t const *)((uintptr_t)0); CHK_PTYPE(uint32_t const *, a_pu32Dst); } while (0)
 
-#define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg)          do { uint128_t u128Zero = {0,0}; (a_u128Value) = u128Zero; CHK_TYPE(uint128_t, a_u128Value); } while (0)
-#define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value)          do { CHK_TYPE(uint128_t, a_u128Value); } while (0)
-#define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value)              do { CHK_TYPE(uint64_t, a_u64Value); } while (0)
-#define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value)              do { CHK_TYPE(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg)        do { uint128_t u128Zero = {0,0}; (a_u128Value) = u128Zero; CHK_TYPE(uint128_t, a_u128Value); } while (0)
+#define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg)          do { (a_u64Value) = 0; CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg)          do { (a_u32Value) = 0; CHK_TYPE(uint32_t, a_u32Value); } while (0)
+#define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value)        do { CHK_TYPE(uint128_t, a_u128Value); } while (0)
+#define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value)  do { CHK_TYPE(uint64_t, a_u64Value); } while (0)
+#define IEM_MC_STORE_XREG_U32_ZX_U128(a_iXReg, a_u32Value)  do { CHK_TYPE(uint32_t, a_u32Value); } while (0)
 #define IEM_MC_REF_XREG_U128(a_pu128Dst, a_iXReg)           do { (a_pu128Dst) = (uint128_t *)((uintptr_t)0);        CHK_PTYPE(uint128_t *, a_pu128Dst); } while (0)
 #define IEM_MC_REF_XREG_U128_CONST(a_pu128Dst, a_iXReg)     do { (a_pu128Dst) = (uint128_t const *)((uintptr_t)0);  CHK_PTYPE(uint128_t const *, a_pu128Dst); } while (0)
 #define IEM_MC_REF_XREG_U64_CONST(a_pu64Dst, a_iXReg)       do { (a_pu64Dst)  = (uint64_t const *)((uintptr_t)0);   CHK_PTYPE(uint64_t const *, a_pu64Dst); } while (0)
