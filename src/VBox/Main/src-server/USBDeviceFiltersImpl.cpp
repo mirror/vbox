@@ -895,11 +895,11 @@ bool USBDeviceFilters::hasMatchingFilter(const ComObjPtr<HostUSBDevice> &aDevice
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* It is not possible to work with USB device if there is no USB controller present. */
     if (!m->pParent->isUSBControllerPresent())
         return false;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* apply self filters */
     for (DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();
@@ -936,11 +936,11 @@ bool USBDeviceFilters::hasMatchingFilter(IUSBDevice *aUSBDevice, ULONG *aMaskedI
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     /* It is not possible to work with USB device if there is no USB controller present. */
     if (!m->pParent->isUSBControllerPresent())
         return false;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
