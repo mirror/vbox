@@ -1941,7 +1941,7 @@ FNIEMOP_DEF(iemOp_punpcklbw_Pq_Qd__punpcklbw_Vdq_Wdq)
 /** Opcode 0x0f 0x61. */
 FNIEMOP_DEF(iemOp_punpcklwd_Pq_Qd__punpcklwd_Vdq_Wdq)
 {
-    IEMOP_MNEMONIC("punpcklwd");
+    IEMOP_MNEMONIC("punpcklwd"); /** @todo AMD mark the MMX version as 3DNow!. Intel says MMX CPUID req. */
     return FNIEMOP_CALL_1(iemOpCommonMmxSse_LowLow_To_Full, &g_iemAImpl_punpcklwd);
 }
 
@@ -2401,7 +2401,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 IEM_MC_ARG(uint64_t *,          pDst, 0);
                 IEM_MC_ARG(uint64_t const *,    pSrc, 1);
                 IEM_MC_ARG_CONST(uint8_t,       bEvilArg, /*=*/ bEvil, 2);
-                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
                 IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
                 IEM_MC_CALL_MMX_AIMPL_3(iemAImpl_pshufw, pDst, pSrc, bEvilArg);
@@ -2423,7 +2423,7 @@ FNIEMOP_DEF(iemOp_pshufw_Pq_Qq_Ib__pshufd_Vdq_Wdq_Ib__pshufhw_Vdq_Wdq_Ib__pshufl
                 uint8_t bEvil; IEM_OPCODE_GET_NEXT_U8(&bEvil);
                 IEM_MC_ARG_CONST(uint8_t,               bEvilArg, /*=*/ bEvil, 2);
                 IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
-                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT();
+                IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
 
                 IEM_MC_FETCH_MEM_U64(uSrc, pIemCpu->iEffSeg, GCPtrEffSrc);
                 IEM_MC_REF_MREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
@@ -2616,9 +2616,9 @@ FNIEMOP_DEF(iemOp_Grp14)
  *      pxxx    xmm1, xmm2/mem128
  *
  * Proper alignment of the 128-bit operand is enforced.
- * Exceptions type 4.
+ * Exceptions type 4. SSE2 and MMX cpuid checks.
  */
-FNIEMOP_DEF_1(iemOpCommonMmxSse_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
+FNIEMOP_DEF_1(iemOpCommonMmxSse2_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 {
     uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
     switch (pIemCpu->fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
@@ -2717,7 +2717,7 @@ FNIEMOP_DEF_1(iemOpCommonMmxSse_FullFull_To_Full, PCIEMOPMEDIAF2, pImpl)
 FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq__pcmpeqb_Vdq_Wdq)
 {
     IEMOP_MNEMONIC("pcmpeqb");
-    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqb);
 }
 
 
@@ -2725,7 +2725,7 @@ FNIEMOP_DEF(iemOp_pcmpeqb_Pq_Qq__pcmpeqb_Vdq_Wdq)
 FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq__pcmpeqw_Vdq_Wdq)
 {
     IEMOP_MNEMONIC("pcmpeqw");
-    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqw);
 }
 
 
@@ -2733,7 +2733,7 @@ FNIEMOP_DEF(iemOp_pcmpeqw_Pq_Qq__pcmpeqw_Vdq_Wdq)
 FNIEMOP_DEF(iemOp_pcmped_Pq_Qq__pcmpeqd_Vdq_Wdq)
 {
     IEMOP_MNEMONIC("pcmpeqd");
-    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse2_FullFull_To_Full, &g_iemAImpl_pcmpeqd);
 }
 
 
@@ -6292,8 +6292,55 @@ FNIEMOP_STUB(iemOp_paddq_Pq_Qq__paddq_Vdq_Wdq);
 FNIEMOP_STUB(iemOp_pmulq_Pq_Qq__pmullw_Vdq_Wdq);
 /** Opcode 0x0f 0xd6. */
 FNIEMOP_STUB(iemOp_movq_Wq_Vq__movq2dq_Vdq_Nq__movdq2q_Pq_Uq);
+
+
 /** Opcode 0x0f 0xd7. */
-FNIEMOP_STUB(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq); //NEXT
+FNIEMOP_DEF(iemOp_pmovmskb_Gd_Nq__pmovmskb_Gd_Udq)
+{
+    /* Docs says register only. */
+    uint8_t bRm; IEM_OPCODE_GET_NEXT_U8(&bRm);
+    if ((bRm & X86_MODRM_MOD_MASK) != (3 << X86_MODRM_MOD_SHIFT)) /** @todo test that this is registers only. */
+        return IEMOP_RAISE_INVALID_OPCODE();
+
+    /* Note! Taking the lazy approch here wrt the high 32-bits of the GREG. */
+    /** @todo testcase: Check that the instruction implicitly clears the high
+     *        bits in 64-bit mode.  The REX.W is first necessary when VLMAX > 256
+     *        and opcode modifications are made to work with the whole width (not
+     *        just 128). */
+    switch (pIemCpu->fPrefixes & (IEM_OP_PRF_SIZE_OP | IEM_OP_PRF_REPNZ | IEM_OP_PRF_REPZ))
+    {
+        case IEM_OP_PRF_SIZE_OP: /* SSE */
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *,           pDst, 0);
+            IEM_MC_ARG(uint128_t const *,    pSrc, 1);
+            IEM_MC_MAYBE_RAISE_SSE2_RELATED_XCPT();
+            IEM_MC_REF_GREG_U64(pDst, ((bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK) | pIemCpu->uRexReg);
+            IEM_MC_REF_XREG_U128_CONST(pSrc, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+            IEM_MC_CALL_SSE_AIMPL_2(iemAImpl_pmovmskb_u128, pDst, pSrc);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        case 0: /* MMX */
+            IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+            IEM_MC_BEGIN(2, 0);
+            IEM_MC_ARG(uint64_t *,          pDst, 0);
+            IEM_MC_ARG(uint64_t const *,    pSrc, 1);
+            IEM_MC_MAYBE_RAISE_MMX_RELATED_XCPT_CHECK_SSE_OR_MMXEXT();
+            IEM_MC_REF_GREG_U64(pDst, (bRm >> X86_MODRM_REG_SHIFT) & X86_MODRM_REG_SMASK);
+            IEM_MC_REF_MREG_U64_CONST(pSrc, bRm & X86_MODRM_RM_MASK);
+            IEM_MC_CALL_MMX_AIMPL_2(iemAImpl_pmovmskb_u64, pDst, pSrc);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            return VINF_SUCCESS;
+
+        default:
+            return IEMOP_RAISE_INVALID_OPCODE();
+    }
+}
+
+
 /** Opcode 0x0f 0xd8. */
 FNIEMOP_STUB(iemOp_psubusb_Pq_Qq__psubusb_Vdq_Wdq);
 /** Opcode 0x0f 0xd9. */
@@ -6346,7 +6393,7 @@ FNIEMOP_STUB(iemOp_pmaxsw_Pq_Qq__pmaxsw_Vdq_Wdq);
 FNIEMOP_DEF(iemOp_pxor_Pq_Qq__pxor_Vdq_Wdq)
 {
     IEMOP_MNEMONIC("pxor");
-    return FNIEMOP_CALL_1(iemOpCommonMmxSse_FullFull_To_Full, &g_iemAImpl_pxor);
+    return FNIEMOP_CALL_1(iemOpCommonMmxSse2_FullFull_To_Full, &g_iemAImpl_pxor);
 }
 
 
