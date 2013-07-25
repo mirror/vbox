@@ -1073,8 +1073,8 @@ typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U64,(PCX86FXSTATE pFpuState, u
 typedef FNIEMAIMPLMEDIAF2U64   *PFNIEMAIMPLMEDIAF2U64;
 typedef IEM_DECL_IMPL_TYPE(void, FNIEMAIMPLMEDIAF2U128,(PCX86FXSTATE pFpuState, uint128_t *pu128Dst, uint128_t const *pu128Src));
 typedef FNIEMAIMPLMEDIAF2U128  *PFNIEMAIMPLMEDIAF2U128;
-FNIEMAIMPLMEDIAF2U64  iemAImpl_pxor_u64;
-FNIEMAIMPLMEDIAF2U128 iemAImpl_pxor_u128;
+FNIEMAIMPLMEDIAF2U64  iemAImpl_pxor_u64,  iemAImpl_pcmpeqb_u64,  iemAImpl_pcmpeqw_u64,  iemAImpl_pcmpeqd_u64;
+FNIEMAIMPLMEDIAF2U128 iemAImpl_pxor_u128, iemAImpl_pcmpeqb_u128, iemAImpl_pcmpeqw_u128, iemAImpl_pcmpeqd_u128;
 /** @} */
 
 /** @name Media (SSE/MMX/AVX) operations: lowhalf1 + lowhalf1 -> full1.
