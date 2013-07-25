@@ -79,6 +79,9 @@ private:
     /* Helper: Translate stuff: */
     void retranslateUi();
 
+    /* Handler: Event-filtering stuff: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
     /* Handler: Polish-event stuff: */
     void polishEvent(QShowEvent *pEvent);
 
