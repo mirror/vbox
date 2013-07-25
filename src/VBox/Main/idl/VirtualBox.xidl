@@ -11080,6 +11080,9 @@
     <method name="terminate">
       <desc>
         Terminates (kills) a running process.
+        <note>It can take up to 30 seconds to get a guest process killed. In
+          case a guest process could not be killed an appropriate error is
+          returned.</note>
       </desc>
     </method>
   </interface>
