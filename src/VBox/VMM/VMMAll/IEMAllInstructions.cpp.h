@@ -1316,17 +1316,17 @@ FNIEMOP_STUB(iemOp_movups_Vps_Wps__movupd_Vpd_Wpd__movss_Vss_Wss__movsd_Vsd_Wsd)
 /** Opcode 0x0f 0x11. */
 FNIEMOP_STUB(iemOp_movups_Wps_Vps__movupd_Wpd_Vpd__movss_Wss_Vss__movsd_Vsd_Wsd);
 /** Opcode 0x0f 0x12. */
-FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__movddup_Vq_Wq);
+FNIEMOP_STUB(iemOp_movlps_Vq_Mq__movhlps_Vq_Uq__movlpd_Vq_Mq__movsldup_Vq_Wq__movddup_Vq_Wq); //NEXT
 /** Opcode 0x0f 0x13. */
-FNIEMOP_STUB(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq);
+FNIEMOP_STUB(iemOp_movlps_Mq_Vq__movlpd_Mq_Vq); //NEXT
 /** Opcode 0x0f 0x14. */
 FNIEMOP_STUB(iemOp_unpckhlps_Vps_Wq__unpcklpd_Vpd_Wq);
 /** Opcode 0x0f 0x15. */
 FNIEMOP_STUB(iemOp_unpckhps_Vps_Wq__unpckhpd_Vpd_Wq);
 /** Opcode 0x0f 0x16. */
-FNIEMOP_STUB(iemOp_movhps_Vq_Mq__movlhps_Vq_Uq__movhpd_Vq_Mq__movshdup_Vq_Wq);
+FNIEMOP_STUB(iemOp_movhps_Vq_Mq__movlhps_Vq_Uq__movhpd_Vq_Mq__movshdup_Vq_Wq); //NEXT
 /** Opcode 0x0f 0x17. */
-FNIEMOP_STUB(iemOp_movhps_Mq_Vq__movhpd_Mq_Vq);
+FNIEMOP_STUB(iemOp_movhps_Mq_Vq__movhpd_Mq_Vq); //NEXT
 
 
 /** Opcode 0x0f 0x18. */
@@ -2557,7 +2557,7 @@ FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Nq_Ib,   uint8_t, bRm);
 FNIEMOP_STUB_1(iemOp_Grp14_psrlq_Udq_Ib,  uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/3. */
-FNIEMOP_STUB_1(iemOp_Grp14_psrldq_Udq_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_psrldq_Udq_Ib, uint8_t, bRm); //NEXT
 
 /** Opcode 0x0f 0x73 11/6. */
 FNIEMOP_STUB_1(iemOp_Grp14_psllq_Nq_Ib,   uint8_t, bRm);
@@ -2566,7 +2566,7 @@ FNIEMOP_STUB_1(iemOp_Grp14_psllq_Nq_Ib,   uint8_t, bRm);
 FNIEMOP_STUB_1(iemOp_Grp14_psllq_Udq_Ib,  uint8_t, bRm);
 
 /** Opcode 0x66 0x0f 0x73 11/7. */
-FNIEMOP_STUB_1(iemOp_Grp14_pslldq_Udq_Ib, uint8_t, bRm);
+FNIEMOP_STUB_1(iemOp_Grp14_pslldq_Udq_Ib, uint8_t, bRm); //NEXT
 
 
 /** Opcode 0x0f 0x73. */
@@ -6416,7 +6416,7 @@ FNIEMOP_STUB(iemOp_psadbw_Pq_Qq__psadbw_Vdq_Wdq);
 /** Opcode 0x0f 0xf7. */
 FNIEMOP_STUB(iemOp_maskmovq_Pq_Nq__maskmovdqu_Vdq_Udq);
 /** Opcode 0x0f 0xf8. */
-FNIEMOP_STUB(iemOp_psubb_Pq_Qq_psubb_Vdq_Wdq);
+FNIEMOP_STUB(iemOp_psubb_Pq_Qq_psubb_Vdq_Wdq); //NEXT
 /** Opcode 0x0f 0xf9. */
 FNIEMOP_STUB(iemOp_psubw_Pq_Qq__psubw_Vdq_Wdq);
 /** Opcode 0x0f 0xfa. */
