@@ -110,6 +110,9 @@ AssertCompile(RT_IS_POWER_OF_TWO(DISPREFIX_REX_FLAGS_R));
 #define DISOPTYPE_REXB_EXTENDS_OPREG       RT_BIT_32(23)  /**< REX.B extends the register field in the opcode byte */
 #define DISOPTYPE_MOD_FIXED_11             RT_BIT_32(24)  /**< modrm.mod is always 11b */
 #define DISOPTYPE_FORCED_32_OP_SIZE_X86    RT_BIT_32(25)  /**< Forced 32 bits operand size; regardless of prefix bytes (only in 16 & 32 bits mode!) */
+#define DISOPTYPE_SSE                      RT_BIT_32(29)  /**< SSE,SSE2,SSE3,AVX,++ instruction. Not implemented yet! */
+#define DISOPTYPE_MMX                      RT_BIT_32(30)  /**< MMX,MMXExt,3DNow,++ instruction. Not implemented yet! */
+#define DISOPTYPE_FPU                      RT_BIT_32(31)  /**< FPU instruction. Not implemented yet! */
 #define DISOPTYPE_ALL                      UINT32_C(0xffffffff)
 /** @}  */
 

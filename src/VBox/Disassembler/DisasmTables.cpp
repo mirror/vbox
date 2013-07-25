@@ -636,7 +636,7 @@ const DISOPCODE g_aTwoByteMapX86[256] =
     OP("paddq %Pq,%Qq",      IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PADDQ,   OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pmullw %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULLW,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     INVALID_OPCODE, /** @todo 0x0f 0xd7 pmovmskb/pmovmskb */
-    OP("pmovskb %Gd,%Pq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMOVSKB, OP_PARM_Gd,         OP_PARM_Pq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("pmovmskb %Gd,%Pq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMOVMSKB,OP_PARM_Gd,         OP_PARM_Pq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("psubusb %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSB, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("psubusw %Pq,%Qq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSW, OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pminub %Pq,%Qq",     IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMINUB,  OP_PARM_Pq,         OP_PARM_Qq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
@@ -838,7 +838,7 @@ const DISOPCODE g_aTwoByteMapX86_PF66[256] =
     OP("paddq %Vdq,%Wdq",    IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PADDQ,   OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pmullw %Vdq,%Wdq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMULLW,  OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("movq %Wq,%Vq",       IDX_ParseModRM,     IDX_UseModRM,   0,          OP_MOVQ,    OP_PARM_Wq,         OP_PARM_Vq,     OP_PARM_NONE,   DISOPTYPE_HARMLESS),
-    OP("pmovskb %Gd,%Vdq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMOVSKB, OP_PARM_Gd,         OP_PARM_Vdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
+    OP("pmovmskb %Gd,%Vdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMOVMSKB,OP_PARM_Gd,         OP_PARM_Vdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("psubusb %Vdq,%Wdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSB, OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("psubusw %Vdq,%Wdq",  IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PSUBUSW, OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("pminub %Vdq,%Wdq",   IDX_ParseModRM,     IDX_UseModRM,   0,          OP_PMINUB,  OP_PARM_Vdq,        OP_PARM_Wdq,    OP_PARM_NONE,   DISOPTYPE_HARMLESS),

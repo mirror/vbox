@@ -292,7 +292,7 @@
 #define OP_PSRLQ        244
 #define OP_PADDQ        245
 #define OP_PMULLW       246
-#define OP_PMOVSKB      247
+#define OP_PMOVMSKB     247
 #define OP_PSUBUSB      248
 #define OP_PSUBUSW      249
 #define OP_PMINUB       250
