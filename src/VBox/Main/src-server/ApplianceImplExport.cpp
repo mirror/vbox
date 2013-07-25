@@ -87,15 +87,21 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
         pNewDesc->m->pMachine = this;
 
         // first, call the COM methods, as they request locks
-        ComPtr<IUSBController> pUsbController;
-        rc = COMGETTER(USBController)(pUsbController.asOutParam());
-        BOOL fUSBEnabled;
-        if (FAILED(rc))
-            fUSBEnabled = false;
-        else
+        BOOL fUSBEnabled = FALSE;
+        com::SafeIfaceArray<IUSBController> usbControllers;
+        rc = COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbControllers));
+        if (SUCCEEDED(rc))
         {
-            rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
-            if (FAILED(rc)) throw rc;
+            for (unsigned i = 0; i < usbControllers.size(); i++)
+            {
+                USBControllerType_T enmType;
+
+                rc = usbControllers[i]->COMGETTER(Type)(&enmType);
+                if (FAILED(rc)) throw rc;
+
+                if (enmType == USBControllerType_OHCI)
+                    fUSBEnabled = TRUE;
+            }
         }
 
         // request the machine lock while accessing internal members

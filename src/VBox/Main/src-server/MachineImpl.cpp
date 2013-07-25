@@ -51,6 +51,7 @@
 #include "DisplayUtils.h"
 #include "MachineImplCloneVM.h"
 #include "AutostartDb.h"
+#include "SystemPropertiesImpl.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -2740,10 +2741,10 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
+STDMETHODIMP Machine::COMGETTER(USBControllers)(ComSafeArrayOut(IUSBController *, aUSBControllers))
 {
 #ifdef VBOX_WITH_VUSB
-    CheckComArgOutPointerValid(aUSBController);
+    CheckComArgOutPointerValid(aUSBControllers);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2758,12 +2759,14 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return rc = mUSBController.queryInterfaceTo(aUSBController);
+    SafeIfaceArray<IUSBController> ctrls(*mUSBControllers.data());
+    ctrls.detachTo(ComSafeArrayOutArg(aUSBControllers));
+    return S_OK;
 #else
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE */
-    NOREF(aUSBController);
+    NOREF(aUSBControllers);
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_VUSB */
 }
@@ -6553,6 +6556,132 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     return S_OK;
 }
 
+STDMETHODIMP Machine::AddUSBController(IN_BSTR aName, USBControllerType_T aType,
+                                       IUSBController **controller)
+{
+    if (   (aType <= USBControllerType_Null)
+        || (aType >= USBControllerType_Last))
+        return setError(E_INVALIDARG,
+                        tr("Invalid USB controller type: %d"),
+                        aType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    /* try to find one with the same type first. */
+    ComObjPtr<USBController> ctrl;
+
+    rc = getUSBControllerByName(aName, ctrl, false /* aSetError */);
+    if (SUCCEEDED(rc))
+        return setError(VBOX_E_OBJECT_IN_USE,
+                        tr("USB controller named '%ls' already exists"),
+                        aName);
+
+    /* Check that we don't exceed the maximum number of USB controllers for the given type. */
+    ULONG maxInstances;
+    rc = mParent->getSystemProperties()->GetMaxInstancesOfUSBControllerType(mHWData->mChipsetType, aType, &maxInstances);
+    if (FAILED(rc))
+        return rc;
+
+    ULONG cInstances = getUSBControllerCountByType(aType);
+    if (cInstances >= maxInstances)
+        return setError(E_INVALIDARG,
+                        tr("Too many USB controllers of this type"));
+
+    ctrl.createObject();
+
+    rc = ctrl->init(this, aName, aType);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_USB);
+    mUSBControllers.backup();
+    mUSBControllers->push_back(ctrl);
+
+    ctrl.queryInterfaceTo(controller);
+
+    /* inform the direct session if any */
+    alock.release();
+    onUSBControllerChange();
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::GetUSBControllerByName(IN_BSTR aName, IUSBController **aUSBController)
+{
+    CheckComArgStrNotEmptyOrNull(aName);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComObjPtr<USBController> ctrl;
+
+    HRESULT rc = getUSBControllerByName(aName, ctrl, true /* aSetError */);
+    if (SUCCEEDED(rc))
+        ctrl.queryInterfaceTo(aUSBController);
+
+    return rc;
+}
+
+STDMETHODIMP Machine::GetUSBControllerCountByType(USBControllerType_T aType,
+                                                  ULONG *aControllers)
+{
+    CheckComArgOutPointerValid(aControllers);
+
+    if (   (aType <= USBControllerType_Null)
+        || (aType >= USBControllerType_Last))
+        return setError(E_INVALIDARG,
+                        tr("Invalid USB controller type: %d"),
+                        aType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    ComObjPtr<USBController> ctrl;
+
+    *aControllers = getUSBControllerCountByType(aType);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::RemoveUSBController(IN_BSTR aName)
+{
+    CheckComArgStrNotEmptyOrNull(aName);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    ComObjPtr<USBController> ctrl;
+    rc = getUSBControllerByName(aName, ctrl, true /* aSetError */);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_USB);
+    mUSBControllers.backup();
+
+    ctrl->unshare();
+
+    mUSBControllers->remove(ctrl);
+
+    /* inform the direct session if any */
+    alock.release();
+    onUSBControllerChange();
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::QuerySavedGuestScreenInfo(ULONG uScreenId,
                                                 ULONG *puOriginX,
                                                 ULONG *puOriginY,
@@ -7476,6 +7605,21 @@ STDMETHODIMP Machine::COMSETTER(Icon)(ComSafeArrayIn(BYTE, aIcon))
     return hrc;
 }
 
+STDMETHODIMP Machine::COMGETTER(USBProxyAvailable)(BOOL *aAvailable)
+{
+    CheckComArgOutPointerValid(aAvailable);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+#ifdef VBOX_WITH_USB
+    *aAvailable = true;
+#else
+    *aAvailable = false;
+#endif
+    return S_OK;
+}
+
 STDMETHODIMP Machine::CloneTo(IMachine *pTarget, CloneMode_T mode, ComSafeArrayIn(CloneOptions_T, options), IProgress **pProgress)
 {
     LogFlowFuncEnter();
@@ -7745,12 +7889,7 @@ bool Machine::isUSBControllerPresent()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    BOOL fEnabled = FALSE;
-    HRESULT rc = mUSBController->COMGETTER(Enabled)(&fEnabled);
-    if (SUCCEEDED(rc))
-        return !!fEnabled;
-    else
-        return false;
+    return (mUSBControllers->size() > 0);
 }
 
 /**
@@ -8483,6 +8622,7 @@ HRESULT Machine::initDataAndChildObjects()
     mHWData.allocate();
     mMediaData.allocate();
     mStorageControllers.allocate();
+    mUSBControllers.allocate();
 
     /* initialize mOSTypeId */
     mUserData->s.strOsType = mParent->getUnknownOSType()->id();
@@ -8512,10 +8652,6 @@ HRESULT Machine::initDataAndChildObjects()
     /* create the audio adapter object (always present, default is disabled) */
     unconst(mAudioAdapter).createObject();
     mAudioAdapter->init(this);
-
-    /* create the USB controller object (always present, default is disabled) */
-    unconst(mUSBController).createObject();
-    mUSBController->init(this);
 
     /* create the USB device filters object (always present) */
     unconst(mUSBDeviceFilters).createObject();
@@ -8566,12 +8702,6 @@ void Machine::uninitDataAndChildObjects()
             mNetworkAdapters[slot]->uninit();
             unconst(mNetworkAdapters[slot]).setNull();
         }
-    }
-
-    if (mUSBController)
-    {
-        mUSBController->uninit();
-        unconst(mUSBController).setNull();
     }
 
     if (mUSBDeviceFilters)
@@ -8660,6 +8790,7 @@ void Machine::uninitDataAndChildObjects()
      * since it may be still in use) */
     mMediaData.free();
     mStorageControllers.free();
+    mUSBControllers.free();
     mHWData.free();
     mUserData.free();
     mSSData.free();
@@ -9173,12 +9304,21 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         rc = mBandwidthControl->loadSettings(data.ioSettings);
         if (FAILED(rc)) return rc;
 
-        /* USB Controller */
-        rc = mUSBController->loadSettings(data.usbController);
-        if (FAILED(rc)) return rc;
+        /* Shared folders */
+        for (settings::USBControllerList::const_iterator it = data.usbSettings.llUSBControllers.begin();
+             it != data.usbSettings.llUSBControllers.end();
+             ++it)
+        {
+            const settings::USBController &settingsCtrl = *it;
+            ComObjPtr<USBController> newCtrl;
+
+            newCtrl.createObject();
+            newCtrl->init(this, settingsCtrl.strName, settingsCtrl.enmType);
+            mUSBControllers->push_back(newCtrl);
+        }
 
         /* USB device filters */
-        rc = mUSBDeviceFilters->loadSettings(data.usbController);
+        rc = mUSBDeviceFilters->loadSettings(data.usbSettings);
         if (FAILED(rc)) return rc;
 
         // network adapters
@@ -9745,6 +9885,57 @@ HRESULT Machine::getStorageControllerByName(const Utf8Str &aName,
                         tr("Could not find a storage controller named '%s'"),
                         aName.c_str());
     return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Returns a USB controller object with the given name.
+ *
+ *  @param aName                 USB controller name to find
+ *  @param aUSBController        where to return the found USB controller
+ *  @param aSetError             true to set extended error info on failure
+ */
+HRESULT Machine::getUSBControllerByName(const Utf8Str &aName,
+                                        ComObjPtr<USBController> &aUSBController,
+                                        bool aSetError /* = false */)
+{
+    AssertReturn(!aName.isEmpty(), E_INVALIDARG);
+
+    for (USBControllerList::const_iterator it = mUSBControllers->begin();
+         it != mUSBControllers->end();
+         ++it)
+    {
+        if ((*it)->getName() == aName)
+        {
+            aUSBController = (*it);
+            return S_OK;
+        }
+    }
+
+    if (aSetError)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("Could not find a storage controller named '%s'"),
+                        aName.c_str());
+    return VBOX_E_OBJECT_NOT_FOUND;
+}
+
+/**
+ * Returns the number of USB controller instance of the given type.
+ *
+ * @param enmType                USB controller type.
+ */
+ULONG Machine::getUSBControllerCountByType(USBControllerType_T enmType)
+{
+    ULONG cCtrls = 0;
+
+    for (USBControllerList::const_iterator it = mUSBControllers->begin();
+         it != mUSBControllers->end();
+         ++it)
+    {
+        if ((*it)->getControllerType() == enmType)
+            cCtrls++;
+    }
+
+    return cCtrls;
 }
 
 HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
@@ -10415,11 +10606,21 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         if (FAILED(rc)) throw rc;
 
         /* USB Controller (required) */
-        rc = mUSBController->saveSettings(data.usbController);
-        if (FAILED(rc)) throw rc;
+        for (USBControllerList::const_iterator it = mUSBControllers->begin();
+             it != mUSBControllers->end();
+             ++it)
+        {
+            ComObjPtr<USBController> ctrl = *it;
+            settings::USBController settingsCtrl;
+
+            settingsCtrl.strName = ctrl->getName();
+            settingsCtrl.enmType = ctrl->getControllerType();
+
+            data.usbSettings.llUSBControllers.push_back(settingsCtrl);
+        }
 
         /* USB device filters (required) */
-        rc = mUSBDeviceFilters->saveSettings(data.usbController);
+        rc = mUSBDeviceFilters->saveSettings(data.usbSettings);
         if (FAILED(rc)) throw rc;
 
         /* Network adapters (required) */
@@ -11808,6 +12009,40 @@ void Machine::rollback(bool aNotify)
         }
     }
 
+    if (!mUSBControllers.isNull())
+    {
+        if (mUSBControllers.isBackedUp())
+        {
+            /* unitialize all new devices (absent in the backed up list). */
+            USBControllerList::const_iterator it = mUSBControllers->begin();
+            USBControllerList *backedList = mUSBControllers.backedUpData();
+            while (it != mUSBControllers->end())
+            {
+                if (   std::find(backedList->begin(), backedList->end(), *it)
+                    == backedList->end()
+                   )
+                {
+                    (*it)->uninit();
+                }
+                ++it;
+            }
+
+            /* restore the list */
+            mUSBControllers.rollback();
+        }
+
+        /* rollback any changes to devices after restoring the list */
+        if (mData->flModifications & IsModified_USB)
+        {
+            USBControllerList::const_iterator it = mUSBControllers->begin();
+            while (it != mUSBControllers->end())
+            {
+                (*it)->rollback();
+                ++it;
+            }
+        }
+    }
+
     mUserData.rollback();
 
     mHWData.rollback();
@@ -11823,9 +12058,6 @@ void Machine::rollback(bool aNotify)
 
     if (mAudioAdapter)
         mAudioAdapter->rollback();
-
-    if (mUSBController && (mData->flModifications & IsModified_USB))
-        mUSBController->rollback();
 
     if (mUSBDeviceFilters && (mData->flModifications & IsModified_USB))
         mUSBDeviceFilters->rollback();
@@ -11933,7 +12165,6 @@ void Machine::commit()
     mBIOSSettings->commit();
     mVRDEServer->commit();
     mAudioAdapter->commit();
-    mUSBController->commit();
     mUSBDeviceFilters->commit();
     mBandwidthControl->commit();
 
@@ -12064,6 +12295,77 @@ void Machine::commit()
         }
     }
 
+    bool commitUSBControllers = false;
+
+    if (mUSBControllers.isBackedUp())
+    {
+        mUSBControllers.commit();
+
+        if (mPeer)
+        {
+            /* Commit all changes to new controllers (this will reshare data with
+             * peers for those who have peers) */
+            USBControllerList *newList = new USBControllerList();
+            USBControllerList::const_iterator it = mUSBControllers->begin();
+            while (it != mUSBControllers->end())
+            {
+                (*it)->commit();
+
+                /* look if this controller has a peer device */
+                ComObjPtr<USBController> peer = (*it)->getPeer();
+                if (!peer)
+                {
+                    /* no peer means the device is a newly created one;
+                     * create a peer owning data this device share it with */
+                    peer.createObject();
+                    peer->init(mPeer, *it, true /* aReshare */);
+                }
+                else
+                {
+                    /* remove peer from the old list */
+                    mPeer->mUSBControllers->remove(peer);
+                }
+                /* and add it to the new list */
+                newList->push_back(peer);
+
+                ++it;
+            }
+
+            /* uninit old peer's controllers that are left */
+            it = mPeer->mUSBControllers->begin();
+            while (it != mPeer->mUSBControllers->end())
+            {
+                (*it)->uninit();
+                ++it;
+            }
+
+            /* attach new list of controllers to our peer */
+            mPeer->mUSBControllers.attach(newList);
+        }
+        else
+        {
+            /* we have no peer (our parent is the newly created machine);
+             * just commit changes to devices */
+            commitUSBControllers = true;
+        }
+    }
+    else
+    {
+        /* the list of controllers itself is not changed,
+         * just commit changes to controllers themselves */
+        commitUSBControllers = true;
+    }
+
+    if (commitUSBControllers)
+    {
+        USBControllerList::const_iterator it = mUSBControllers->begin();
+        while (it != mUSBControllers->end())
+        {
+            (*it)->commit();
+            ++it;
+        }
+    }
+
     if (isSessionMachine())
     {
         /* attach new data to the primary machine and reshare it */
@@ -12112,7 +12414,6 @@ void Machine::copyFrom(Machine *aThat)
     mBIOSSettings->copyFrom(aThat->mBIOSSettings);
     mVRDEServer->copyFrom(aThat->mVRDEServer);
     mAudioAdapter->copyFrom(aThat->mAudioAdapter);
-    mUSBController->copyFrom(aThat->mUSBController);
     mUSBDeviceFilters->copyFrom(aThat->mUSBDeviceFilters);
     mBandwidthControl->copyFrom(aThat->mBandwidthControl);
 
@@ -12127,6 +12428,19 @@ void Machine::copyFrom(Machine *aThat)
         ctrl.createObject();
         ctrl->initCopy(this, *it);
         mStorageControllers->push_back(ctrl);
+    }
+
+    /* create private copies of all USB controllers */
+    mUSBControllers.backup();
+    mUSBControllers->clear();
+    for (USBControllerList::iterator it = aThat->mUSBControllers->begin();
+         it != aThat->mUSBControllers->end();
+         ++it)
+    {
+        ComObjPtr<USBController> ctrl;
+        ctrl.createObject();
+        ctrl->initCopy(this, *it);
+        mUSBControllers->push_back(ctrl);
     }
 
     mNetworkAdapters.resize(aThat->mNetworkAdapters.size());
@@ -12518,6 +12832,17 @@ HRESULT SessionMachine::init(Machine *aMachine)
         mStorageControllers->push_back(ctl);
     }
 
+    mUSBControllers.allocate();
+    for (USBControllerList::const_iterator it = aMachine->mUSBControllers->begin();
+         it != aMachine->mUSBControllers->end();
+         ++it)
+    {
+        ComObjPtr<USBController> ctl;
+        ctl.createObject();
+        ctl->init(this, *it);
+        mUSBControllers->push_back(ctl);
+    }
+
     unconst(mBIOSSettings).createObject();
     mBIOSSettings->init(this, aMachine->mBIOSSettings);
     /* create another VRDEServer object that will be mutable */
@@ -12538,9 +12863,6 @@ HRESULT SessionMachine::init(Machine *aMachine)
         unconst(mParallelPorts[slot]).createObject();
         mParallelPorts[slot]->init(this, aMachine->mParallelPorts[slot]);
     }
-    /* create another USB controller object that will be mutable */
-    unconst(mUSBController).createObject();
-    mUSBController->init(this, aMachine->mUSBController);
 
     /* create another USB device filters object that will be mutable */
     unconst(mUSBDeviceFilters).createObject();

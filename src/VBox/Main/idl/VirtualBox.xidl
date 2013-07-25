@@ -544,7 +544,7 @@
     <const name="v1_14" value="16">
       <desc>Settings version "1.14", written by VirtualBox 4.3.x.</desc>
       <!--
-          Machine changes: default frontend.
+          Machine changes: default frontend, USB rework.
       -->
     </const>
 
@@ -4126,7 +4126,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="00daa773-1d35-40ae-ac06-336aa64959ef"
+    uuid="b6057c6f-2176-4820-a8d6-cb6687ed1583"
     wsmap="managed"
     >
     <desc>
@@ -4523,9 +4523,9 @@
       <desc>Array of media attached to this machine.</desc>
     </attribute>
 
-    <attribute name="USBController" type="IUSBController" readonly="yes">
+    <attribute name="USBControllers" type="IUSBController" readonly="yes" safearray="yes">
       <desc>
-        Associated USB controller object.
+        Array of USB controllers attached to this machine.
 
         <note>
           If USB functionality is not available in the given edition of
@@ -4905,6 +4905,12 @@
         <link to="ISystemProperties::defaultFrontend" /> attribute, and is
         overridden by a frontend type passed to
         <link to="IMachine::launchVMProcess" />.
+      </desc>
+    </attribute>
+
+    <attribute name="USBProxyAvailable" type="boolean" readonly="yes">
+      <desc>
+        Returns whether there is an USB proxy available.
       </desc>
     </attribute>
 
@@ -5946,6 +5952,54 @@
       </desc>
       <param name="name" type="wstring" dir="in"/>
       <param name="bootable" type="boolean" dir="in"/>
+    </method>
+
+    <method name="addUSBController">
+      <desc>
+        Adds a new USB controller to the machine and returns it as an instance of
+        <link to="IUSBController" />.
+
+        <result name="VBOX_E_OBJECT_IN_USE">
+          A USB controller with given type exists already.
+        </result>
+        <result name="E_INVALIDARG">
+          Invalid @a controllerType.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="type" type="USBControllerType" dir="in"/>
+      <param name="controller" type="IUSBController" dir="return"/>
+    </method>
+
+    <method name="removeUSBController">
+      <desc>
+        Removes a USB controller from the machine.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A USB controller with given type doesn't exist.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+    </method>
+
+    <method name="getUSBControllerByName" const="yes">
+      <desc>
+        Returns a USB controller with the given type.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          A USB controller with given name doesn't exist.
+        </result>
+      </desc>
+      <param name="name" type="wstring" dir="in"/>
+      <param name="controller" type="IUSBController" dir="return"/>
+    </method>
+
+    <method name="getUSBControllerCountByType" const="yes">
+      <desc>
+        Returns the number of USB controllers of the given type attached to the VM.
+      </desc>
+      <param name="type" type="USBControllerType" dir="in"/>
+      <param name="controllers" type="unsigned long" dir="return"/>
     </method>
 
     <method name="getSerialPort" const="yes">
@@ -8653,7 +8707,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="55699910-cc50-11e2-8b8b-0800200c9a66"
+    uuid="856be1bc-0525-46b1-a27a-fe17d9a4939f"
     wsmap="managed"
     >
     <desc>
@@ -9058,6 +9112,25 @@
 
       <param name="enabled" type="boolean" dir="return">
         <desc>Returned flag indicating the default value</desc>
+      </param>
+    </method>
+
+    <method name="getMaxInstancesOfUSBControllerType">
+      <desc>Returns the maximum number of USB controller instances which
+        can be configured for each VM. This corresponds to the number of
+        USB controllers one can have. Value may depend on chipset type
+        used.</desc>
+
+      <param name="chipset" type="ChipsetType" dir="in">
+        <desc>The chipset type to get the value for.</desc>
+      </param>
+
+      <param name="type" type="USBControllerType" dir="in">
+        <desc>The USB controller type to get the value for.</desc>
+      </param>
+
+      <param name="maxInstances" type="unsigned long" dir="return">
+        <desc>The maximum number of instances for the given USB controller type.</desc>
       </param>
     </method>
   </interface>
@@ -16454,32 +16527,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   /////////////////////////////////////////////////////////////////////////
   -->
 
+  <enum
+    name="USBControllerType"
+    uuid="8fdd1c6a-5412-41da-ab07-7baed7d6e18e"
+    >
+    <desc>
+      The USB controller type. <link to="IUSBController::type" />.
+    </desc>
+    <const name="Null"      value="0">
+      <desc>@c null value. Never used by the API.</desc>
+    </const>
+    <const name="OHCI"      value="1"/>
+    <const name="EHCI"      value="2"/>
+    <const name="Last"      value="3">
+      <desc>Last element (invalid). Used for parameter checks.</desc>
+    </const>
+  </enum>
+
   <interface
     name="IUSBController" extends="$unknown"
-    uuid="f12e6dda-2bad-40c4-8f2e-2d08fe8b74d4"
+    uuid="d2745291-65f7-4d75-9556-38047d802319"
     wsmap="managed"
     >
-    <attribute name="enabled" type="boolean">
+
+    <attribute name="name" type="wstring" readonly="yes">
       <desc>
-        Flag whether the USB controller is present in the
-        guest system. If disabled, the virtual guest hardware will
-        not contain any USB controller. Can only be changed when
-        the VM is powered off.
+        The USB Controller name.
       </desc>
     </attribute>
 
-    <attribute name="enabledEHCI" type="boolean">
+    <attribute name="type" type="USBControllerType" readonly="yes">
       <desc>
-        Flag whether the USB EHCI controller is present in the
-        guest system. If disabled, the virtual guest hardware will
-        not contain a USB EHCI controller. Can only be changed when
-        the VM is powered off.
-      </desc>
-    </attribute>
-
-    <attribute name="proxyAvailable" type="boolean" readonly="yes">
-      <desc>
-        Flag whether there is an USB proxy available.
+        The USB Controller type.
       </desc>
     </attribute>
 
@@ -20898,7 +20977,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     >
     <desc>
       Notification when a property of the virtual
-      <link to="IMachine::USBController">USB controller</link> changes.
+      <link to="IMachine::USBControllers">USB controllers</link> changes.
       Interested callees should use IUSBController methods and attributes to
       find out what has changed.
     </desc>

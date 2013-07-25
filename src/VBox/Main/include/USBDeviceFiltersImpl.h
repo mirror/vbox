@@ -27,7 +27,7 @@ class USBDeviceFilter;
 
 namespace settings
 {
-    struct USBController;
+    struct USB;
 }
 
 class ATL_NO_VTABLE USBDeviceFilters :
@@ -66,8 +66,8 @@ public:
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings(const settings::USBController &data);
-    HRESULT saveSettings(settings::USBController &data);
+    HRESULT loadSettings(const settings::USB &data);
+    HRESULT saveSettings(settings::USB &data);
 
     void rollback();
     void commit();

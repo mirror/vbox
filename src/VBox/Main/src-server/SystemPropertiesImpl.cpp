@@ -583,6 +583,35 @@ STDMETHODIMP SystemProperties::GetDefaultIoCacheSettingForStorageController(Stor
     return S_OK;
 }
 
+STDMETHODIMP SystemProperties::GetMaxInstancesOfUSBControllerType(ChipsetType_T aChipset,
+                                                                  USBControllerType_T aType,
+                                                                  ULONG *aMaxInstances)
+{
+    CheckComArgOutPointerValid(aMaxInstances);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ULONG cCtrs = 0;
+
+    /* no need to lock, this is const */
+    switch (aType)
+    {
+        case USBControllerType_OHCI:
+        case USBControllerType_EHCI:
+        {
+            cCtrs = 1;
+            break;
+        }
+        default:
+            AssertMsgFailed(("Invalid bus type %d\n", aType));
+    }
+
+    *aMaxInstances = cCtrs;
+
+    return S_OK;
+}
+
 STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder)(BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);

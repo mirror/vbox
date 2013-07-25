@@ -1710,9 +1710,22 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
 bool USBController::operator==(const USBController &u) const
 {
     return (    (this == &u)
-                 || (    (fEnabled          == u.fEnabled)
-                      && (fEnabledEHCI      == u.fEnabledEHCI)
-                      && (llDeviceFilters   == u.llDeviceFilters)
+                 || (    (strName == u.strName)
+                      && (enmType == u.enmType)
+                    )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool USB::operator==(const USB &u) const
+{
+    return (    (this == &u)
+                 || (    (llUSBControllers == u.llUSBControllers)
+                      && (llDeviceFilters  == u.llDeviceFilters)
                     )
            );
 }
@@ -1935,7 +1948,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader)
                   && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
-                  && (usbController             == h.usbController)
+                  && (usbSettings               == h.usbSettings)
                   && (llNetworkAdapters         == h.llNetworkAdapters)
                   && (llSerialPorts             == h.llSerialPorts)
                   && (llParallelPorts           == h.llParallelPorts)
@@ -2967,13 +2980,68 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 strg.llStorageControllers.push_back(sctl);
             }
         }
-        else if (pelmHwChild->nameEquals("USBController"))
+        else if (   (m->sv <= SettingsVersion_v1_14)
+                 && pelmHwChild->nameEquals("USBController"))
         {
-            pelmHwChild->getAttributeValue("enabled", hw.usbController.fEnabled);
-            pelmHwChild->getAttributeValue("enabledEhci", hw.usbController.fEnabledEHCI);
+            bool fEnabled = false;
+
+            pelmHwChild->getAttributeValue("enabled", fEnabled);
+            if (fEnabled)
+            {
+                /* Create OHCI controller with default name. */
+                USBController ctrl;
+
+                ctrl.strName = "OHCI";
+                ctrl.enmType = USBControllerType_OHCI;
+                hw.usbSettings.llUSBControllers.push_back(ctrl);
+            }
+
+            pelmHwChild->getAttributeValue("enabledEhci", fEnabled);
+            if (fEnabled)
+            {
+                /* Create OHCI controller with default name. */
+                USBController ctrl;
+
+                ctrl.strName = "EHCI";
+                ctrl.enmType = USBControllerType_EHCI;
+                hw.usbSettings.llUSBControllers.push_back(ctrl);
+            }
 
             readUSBDeviceFilters(*pelmHwChild,
-                                 hw.usbController.llDeviceFilters);
+                                 hw.usbSettings.llDeviceFilters);
+        }
+        else if (pelmHwChild->nameEquals("USB"))
+        {
+            const xml::ElementNode *pelmUSBChild;
+
+            if ((pelmUSBChild = pelmHwChild->findChildElement("Controllers")))
+            {
+                xml::NodesLoop nl2(*pelmUSBChild, "Controller");
+                const xml::ElementNode *pelmCtrl;
+
+                while ((pelmCtrl = nl2.forAllNodes()))
+                {
+                    USBController ctrl;
+                    com::Utf8Str strCtrlType;
+
+                    pelmCtrl->getAttributeValue("name", ctrl.strName);
+
+                    if (pelmCtrl->getAttributeValue("type", strCtrlType))
+                    {
+                        if (strCtrlType == "OHCI")
+                            ctrl.enmType = USBControllerType_OHCI;
+                        else if (strCtrlType == "EHCI")
+                            ctrl.enmType = USBControllerType_EHCI;
+                        else
+                            throw ConfigFileError(this, pelmCtrl, N_("Invalid value '%s' for Controller/@type attribute"), strCtrlType.c_str());
+                    }
+
+                    hw.usbSettings.llUSBControllers.push_back(ctrl);
+                }
+            }
+
+            if ((pelmUSBChild = pelmHwChild->findChildElement("DeviceFilters")))
+                readUSBDeviceFilters(*pelmUSBChild, hw.usbSettings.llDeviceFilters);
         }
         else if (    (m->sv < SettingsVersion_v1_7)
                   && (pelmHwChild->nameEquals("SATAController"))
@@ -4205,13 +4273,68 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             throw ConfigFileError(this, NULL, N_("Internal error: cannot save more than one floppy drive with old settings format"));
     }
 
-    xml::ElementNode *pelmUSB = pelmHardware->createChild("USBController");
-    pelmUSB->setAttribute("enabled", hw.usbController.fEnabled);
-    pelmUSB->setAttribute("enabledEhci", hw.usbController.fEnabledEHCI);
+    if (m->sv < SettingsVersion_v1_14)
+    {
+        bool fOhciEnabled = false;
+        bool fEhciEnabled = false;
+        xml::ElementNode *pelmUSB = pelmHardware->createChild("USBController");
 
-    buildUSBDeviceFilters(*pelmUSB,
-                          hw.usbController.llDeviceFilters,
-                          false);               // fHostMode
+        for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
+             it != hardwareMachine.usbSettings.llUSBControllers.end();
+             ++it)
+        {
+            const USBController &ctrl = *it;
+
+            switch (ctrl.enmType)
+            {
+                case USBControllerType_OHCI:
+                    fOhciEnabled = true;
+                    break;
+                case USBControllerType_EHCI:
+                    fEhciEnabled = true;
+                    break;
+                default:
+                    AssertMsgFailed(("Unknown USB controller type %d\n", ctrl.enmType));
+            }
+        }
+
+        pelmUSB->setAttribute("enabled", fOhciEnabled);
+        pelmUSB->setAttribute("enabledEhci", fEhciEnabled);
+
+        buildUSBDeviceFilters(*pelmUSB, hw.usbSettings.llDeviceFilters, false /* fHostMode */);
+    }
+    else
+    {
+        xml::ElementNode *pelmUSB = pelmHardware->createChild("USB");
+        xml::ElementNode *pelmCtrls = pelmUSB->createChild("Controllers");
+
+        for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
+             it != hardwareMachine.usbSettings.llUSBControllers.end();
+             ++it)
+        {
+            const USBController &ctrl = *it;
+            com::Utf8Str strType;
+            xml::ElementNode *pelmCtrl = pelmCtrls->createChild("Controller");
+
+            switch (ctrl.enmType)
+            {
+                case USBControllerType_OHCI:
+                    strType = "OHCI";
+                    break;
+                case USBControllerType_EHCI:
+                    strType = "EHCI";
+                    break;
+                default:
+                    AssertMsgFailed(("Unknown USB controller type %d\n", ctrl.enmType));
+            }
+
+            pelmCtrl->setAttribute("name", ctrl.strName);
+            pelmCtrl->setAttribute("type", strType);
+        }
+
+        xml::ElementNode *pelmFilters = pelmUSB->createChild("DeviceFilters");
+        buildUSBDeviceFilters(*pelmFilters, hw.usbSettings.llDeviceFilters, false /* fHostMode */);
+    }
 
     xml::ElementNode *pelmNetwork = pelmHardware->createChild("Network");
     for (NetworkAdaptersList::const_iterator it = hw.llNetworkAdapters.begin();
@@ -5173,6 +5296,43 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             || machineUserData.ovIcon.length() > 0
             || hardwareMachine.fVideoCaptureEnabled)
             m->sv = SettingsVersion_v1_14;
+    }
+
+    if (m->sv < SettingsVersion_v1_14)
+    {
+        unsigned cOhciCtrls = 0;
+        unsigned cEhciCtrls = 0;
+        bool fNonStdName = false;
+
+        for (USBControllerList::const_iterator it = hardwareMachine.usbSettings.llUSBControllers.begin();
+             it != hardwareMachine.usbSettings.llUSBControllers.end();
+             ++it)
+        {
+            const USBController &ctrl = *it;
+
+            switch (ctrl.enmType)
+            {
+                case USBControllerType_OHCI:
+                    cOhciCtrls++;
+                    if (ctrl.strName != "OHCI")
+                        fNonStdName = true;
+                    break;
+               case USBControllerType_EHCI:
+                    cEhciCtrls++;
+                    if (ctrl.strName != "EHCI")
+                        fNonStdName = true;
+                    break;
+                default:
+                    AssertMsgFailed(("Unknown USB controller type %d\n", ctrl.enmType));
+            }
+
+            /* Skip checking other controllers if the settings bump is necessary. */
+            if (cOhciCtrls > 1 || cEhciCtrls > 1 || fNonStdName)
+            {
+                m->sv = SettingsVersion_v1_14;
+                break;
+            }
+        }
     }
 
     if (m->sv < SettingsVersion_v1_13)

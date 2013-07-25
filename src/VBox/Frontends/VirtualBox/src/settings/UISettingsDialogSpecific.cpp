@@ -857,9 +857,9 @@ void UISettingsDialogMachine::saveData()
         /* Enable OHCI controller if HID is enabled: */
         if (pSystemPage && pSystemPage->isHIDEnabled())
         {
-            CUSBController controller = m_machine.GetUSBController();
-            if (!controller.isNull())
-                controller.SetEnabled(true);
+            ULONG cOhciCtls = m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+            if (!cOhciCtls)
+                m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
         }
 
         /* Clear the "GUI_FirstRun" extra data key in case if
@@ -1123,14 +1123,16 @@ bool UISettingsDialogMachine::isPageAvailable(int iPageId)
             /* Depends on ports availability: */
             if (!isPageAvailable(MachineSettingsPageType_Ports))
                 return false;
-            /* Get the USB controller object: */
-            CUSBController controller = m_machine.GetUSBController();
-            /* Show the machine error message if any: */
-            if (!m_machine.isReallyOk() && !controller.isNull() && controller.GetEnabled())
-                msgCenter().warnAboutUnaccessibleUSB(m_machine, parentWidget());
             /* Check if USB is implemented: */
-            if (controller.isNull() || !controller.GetProxyAvailable())
+            if (!m_machine.GetUSBProxyAvailable())
                 return false;
+            /* Get the USB controller object: */
+            CUSBControllerVector controllerColl = m_machine.GetUSBControllers();
+            /* Show the machine error message if any: */
+            if (   !m_machine.isReallyOk()
+                && controllerColl.size() > 0
+                && m_machine.GetUSBControllerCountByType(KUSBControllerType_OHCI))
+                msgCenter().warnAboutUnaccessibleUSB(m_machine, parentWidget());
             break;
         }
         default:

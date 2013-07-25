@@ -67,6 +67,7 @@
 #include "CHostNetworkInterface.h"
 #include "CVRDEServer.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 #include "CSnapshot.h"
 
 UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
@@ -1295,11 +1296,16 @@ void UISession::reinitMenuPool()
 
     /* USB stuff: */
     {
-        /* Get USB controller: */
-        const CUSBController &usbController = machine.GetUSBController();
-        bool fUSBControllerEnabled = !usbController.isNull() && usbController.GetEnabled() && usbController.GetProxyAvailable();
+        /*
+         * Check whether there is at least one OHCI USB controllers with
+         * an available proxy.
+         */
+        const CUSBDeviceFilters &filters = machine.GetUSBDeviceFilters();
+        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+        bool fUSBEnabled = !filters.isNull() && cOhciCtls && machine.GetUSBProxyAvailable();
+
         /* Show/Hide USB menu depending on controller availability, activity and USB-proxy presence: */
-        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBControllerEnabled);
+        gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->setVisible(fUSBEnabled);
     }
 }
 

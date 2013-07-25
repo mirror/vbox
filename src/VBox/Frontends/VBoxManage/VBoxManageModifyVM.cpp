@@ -1771,16 +1771,14 @@ int handleModifyVM(HandlerArg *a)
                 if (fEnableUsb)
                 {
                     /* Make sure the OHCI controller is enabled. */
-                    ComPtr<IUSBController> UsbCtl;
-                    rc = machine->COMGETTER(USBController)(UsbCtl.asOutParam());
-                    if (SUCCEEDED(rc))
+                    ULONG cOhciCtrls = 0;
+                    rc = machine->COMGETTER(USBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
+                    if (   SUCCEEDED(rc)
+                        && !cOhciCtrls)
                     {
-                        BOOL fEnabled;
-                        rc = UsbCtl->COMGETTER(Enabled)(&fEnabled);
-                        if (FAILED(rc))
-                            fEnabled = false;
-                        if (!fEnabled)
-                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
+                        ComPtr<IUSBController> UsbCtl;
+                        CHECK_ERROR(machine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
+                                                              UsbCtl.asOutParam()));
                     }
                 }
                 break;
@@ -1807,16 +1805,14 @@ int handleModifyVM(HandlerArg *a)
                 if (fEnableUsb)
                 {
                     /* Make sure the OHCI controller is enabled. */
-                    ComPtr<IUSBController> UsbCtl;
-                    rc = machine->COMGETTER(USBController)(UsbCtl.asOutParam());
-                    if (SUCCEEDED(rc))
+                    ULONG cOhciCtrls = 0;
+                    rc = machine->COMGETTER(USBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
+                    if (   SUCCEEDED(rc)
+                        && !cOhciCtrls)
                     {
-                        BOOL fEnabled;
-                        rc = UsbCtl->COMGETTER(Enabled)(&fEnabled);
-                        if (FAILED(rc))
-                            fEnabled = false;
-                        if (!fEnabled)
-                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
+                        ComPtr<IUSBController> UsbCtl;
+                        CHECK_ERROR(machine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
+                                                              UsbCtl.asOutParam()));
                     }
                 }
                 break;
@@ -2310,19 +2306,37 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_USBEHCI:
             {
-                ComPtr<IUSBController> UsbCtl;
-                CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                ULONG cEhciCtrls = 0;
+                rc = machine->COMGETTER(USBControllerCountByType)(USBControllerType_EHCI, &cEhciCtrls);
                 if (SUCCEEDED(rc))
-                    CHECK_ERROR(UsbCtl, COMSETTER(EnabledEHCI)(ValueUnion.f));
+                {
+                    if (!cEhciCtrls && ValueUnion.f)
+                    {
+                        ComPtr<IUSBController> UsbCtl;
+                        CHECK_ERROR(machine, AddUSBController(Bstr("EHCI").raw(), USBControllerType_EHCI,
+                                                              UsbCtl.asOutParam()));
+                    }
+                    else if (cEhciCtrls && !ValueUnion.f)
+                        CHECK_ERROR(machine, RemoveUSBController(Bstr("EHCI").raw()));
+                }
                 break;
             }
 
             case MODIFYVM_USB:
             {
-                ComPtr<IUSBController> UsbCtl;
-                CHECK_ERROR(machine, COMGETTER(USBController)(UsbCtl.asOutParam()));
+                ULONG cOhciCtrls = 0;
+                rc = machine->COMGETTER(USBControllerCountByType)(USBControllerType_OHCI, &cOhciCtrls);
                 if (SUCCEEDED(rc))
-                    CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(ValueUnion.f));
+                {
+                    if (!cOhciCtrls && ValueUnion.f)
+                    {
+                        ComPtr<IUSBController> UsbCtl;
+                        CHECK_ERROR(machine, AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI,
+                                                              UsbCtl.asOutParam()));
+                    }
+                    else if (cOhciCtrls && !ValueUnion.f)
+                        CHECK_ERROR(machine, RemoveUSBController(Bstr("OHCI").raw()));
+                }
                 break;
             }
 

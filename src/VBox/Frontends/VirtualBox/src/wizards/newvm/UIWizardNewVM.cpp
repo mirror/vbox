@@ -29,6 +29,7 @@
 /* COM includes: */
 #include "CAudioAdapter.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 #include "CExtPackManager.h"
 #include "CStorageController.h"
 
@@ -93,10 +94,12 @@ bool UIWizardNewVM::createVM()
     m_machine.GetAudioAdapter().SetEnabled(true);
 
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2): */
-    CUSBController usbController = m_machine.GetUSBController();
-    if (!usbController.isNull() && type.GetRecommendedUSB() && usbController.GetProxyAvailable())
+    CUSBDeviceFilters usbDeviceFilters = m_machine.GetUSBDeviceFilters();
+    bool fOhciEnabled = false;
+    if (!usbDeviceFilters.isNull() && type.GetRecommendedUSB() && m_machine.GetUSBProxyAvailable())
     {
-        usbController.SetEnabled(true);
+        m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
+        fOhciEnabled = true;
         /* USB 2.0 is only available if the proper ExtPack is installed.
          * Note. Configuring EHCI here and providing messages about
          * the missing extpack isn't exactly clean, but it is a
@@ -104,7 +107,7 @@ bool UIWizardNewVM::createVM()
          * introduced by the new distribution model. */
         CExtPackManager manager = vboxGlobal().virtualBox().GetExtensionPackManager();
         if (manager.IsExtPackUsable(GUI_ExtPackName))
-            usbController.SetEnabledEHCI(true);
+            m_machine.AddUSBController("EHCI", KUSBControllerType_EHCI);
     }
 
     /* Create a floppy controller if recommended: */
@@ -161,15 +164,15 @@ bool UIWizardNewVM::createVM()
     {
         m_machine.SetKeyboardHIDType(KKeyboardHIDType_USBKeyboard);
         m_machine.SetPointingHIDType(KPointingHIDType_USBMouse);
-        if (!usbController.isNull())
-            usbController.SetEnabled(true);
+        if (!fOhciEnabled && !usbDeviceFilters.isNull())
+            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
     }
 
     if (type.GetRecommendedUSBTablet())
     {
         m_machine.SetPointingHIDType(KPointingHIDType_USBTablet);
-        if (!usbController.isNull())
-            usbController.SetEnabled(true);
+        if (!fOhciEnabled && !usbDeviceFilters.isNull())
+            m_machine.AddUSBController("OHCI", KUSBControllerType_OHCI);
     }
 
     /* Set HPET flag: */

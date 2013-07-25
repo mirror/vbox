@@ -446,14 +446,25 @@ struct BIOSSettings
 struct USBController
 {
     USBController()
-        : fEnabled(false),
-          fEnabledEHCI(false)
+        : enmType(USBControllerType_Null)
     {}
 
     bool operator==(const USBController &u) const;
 
-    bool                    fEnabled;
-    bool                    fEnabledEHCI;
+    com::Utf8Str            strName;
+    USBControllerType_T     enmType;
+};
+typedef std::list<USBController> USBControllerList;
+
+struct USB
+{
+    USB() {}
+
+    bool operator==(const USB &u) const;
+
+    /** List of USB controllers present. */
+    USBControllerList       llUSBControllers;
+    /** List of USB device filters. */
     USBDeviceFiltersList    llDeviceFilters;
 };
 
@@ -875,7 +886,7 @@ struct Hardware
     VRDESettings        vrdeSettings;
 
     BIOSSettings        biosSettings;
-    USBController       usbController;
+    USB                 usbSettings;
     NetworkAdaptersList llNetworkAdapters;
     SerialPortsList     llSerialPorts;
     ParallelPortsList   llParallelPorts;

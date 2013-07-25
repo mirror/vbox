@@ -1077,8 +1077,19 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     unconst(mAudioAdapter).createObject();
     mAudioAdapter->initCopy(this, pMachine->mAudioAdapter);
 
-    unconst(mUSBController).createObject();
-    mUSBController->initCopy(this, pMachine->mUSBController);
+    /* create copies of all USB controllers (mUSBControllerData
+     * after attaching a copy contains just references to original objects) */
+    mUSBControllers.allocate();
+    for (USBControllerList::const_iterator
+         it = aSessionMachine->mUSBControllers->begin();
+         it != aSessionMachine->mUSBControllers->end();
+         ++it)
+    {
+        ComObjPtr<USBController> ctrl;
+        ctrl.createObject();
+        ctrl->initCopy(this, *it);
+        mUSBControllers->push_back(ctrl);
+    }
 
     unconst(mUSBDeviceFilters).createObject();
     mUSBDeviceFilters->initCopy(this, pMachine->mUSBDeviceFilters);
@@ -1163,6 +1174,7 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
     mHWData.allocate();
     mMediaData.allocate();
     mStorageControllers.allocate();
+    mUSBControllers.allocate();
 
     /* SSData is always unique for SnapshotMachine */
     mSSData.allocate();
@@ -1178,9 +1190,6 @@ HRESULT SnapshotMachine::initFromSettings(Machine *aMachine,
 
     unconst(mAudioAdapter).createObject();
     mAudioAdapter->init(this);
-
-    unconst(mUSBController).createObject();
-    mUSBController->init(this);
 
     unconst(mUSBDeviceFilters).createObject();
     mUSBDeviceFilters->init(this);

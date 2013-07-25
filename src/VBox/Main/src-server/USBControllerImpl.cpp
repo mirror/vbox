@@ -41,12 +41,11 @@
 struct BackupableUSBData
 {
     BackupableUSBData()
-        : fEnabled(false),
-          fEnabledEHCI(false)
+        : enmType(USBControllerType_Null)
     { }
 
-    BOOL fEnabled;
-    BOOL fEnabledEHCI;
+    Utf8Str             strName;
+    USBControllerType_T enmType;
 };
 
 struct USBController::Data
@@ -92,12 +91,18 @@ void USBController::FinalRelease()
  *
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
+ * @param aName         The name of the USB controller.
+ * @param enmType       The USB controller type.
  */
-HRESULT USBController::init(Machine *aParent)
+HRESULT USBController::init(Machine *aParent, const Utf8Str &aName, USBControllerType_T enmType)
 {
-    LogFlowThisFunc(("aParent=%p\n", aParent));
+    LogFlowThisFunc(("aParent=%p aName=\"%s\"\n", aParent, aName.c_str()));
 
-    ComAssertRet(aParent, E_INVALIDARG);
+    ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
+    if (   (enmType <= USBControllerType_Null)
+        || (enmType >  USBControllerType_EHCI))
+        return setError(E_INVALIDARG,
+                        tr("Invalid USB controller type"));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -108,6 +113,8 @@ HRESULT USBController::init(Machine *aParent)
     /* mPeer is left null */
 
     m->bd.allocate();
+    m->bd->strName = aName;
+    m->bd->enmType = enmType;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -123,13 +130,22 @@ HRESULT USBController::init(Machine *aParent)
  * @returns COM result indicator.
  * @param aParent       Pointer to our parent object.
  * @param aPeer         The object to share.
+ *  @param  aReshare
+ *      When false, the original object will remain a data owner.
+ *      Otherwise, data ownership will be transferred from the original
+ *      object to this one.
  *
- * @note This object must be destroyed before the original object
- * it shares data with is destroyed.
+ *  @note This object must be destroyed before the original object
+ *  it shares data with is destroyed.
+ *
+ *  @note Locks @a aThat object for writing if @a aReshare is @c true, or for
+ *  reading if @a aReshare is false.
  */
-HRESULT USBController::init(Machine *aParent, USBController *aPeer)
+HRESULT USBController::init(Machine *aParent, USBController *aPeer,
+                            bool fReshare /* = false */)
 {
-    LogFlowThisFunc(("aParent=%p, aPeer=%p\n", aParent, aPeer));
+    LogFlowThisFunc(("aParent=%p, aPeer=%p, fReshare=%RTbool\n",
+                      aParent, aPeer, fReshare));
 
     ComAssertRet(aParent && aPeer, E_INVALIDARG);
 
@@ -139,10 +155,24 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer)
 
     m = new Data(aParent);
 
-    unconst(m->pPeer) = aPeer;
+    /* sanity */
+    AutoCaller peerCaller(aPeer);
+    AssertComRCReturnRC(peerCaller.rc());
 
-    AutoWriteLock thatlock(aPeer COMMA_LOCKVAL_SRC_POS);
-    m->bd.share(aPeer->m->bd);
+    if (fReshare)
+    {
+        AutoWriteLock peerLock(aPeer COMMA_LOCKVAL_SRC_POS);
+
+        unconst(aPeer->m->pPeer) = this;
+        m->bd.attach (aPeer->m->bd);
+    }
+    else
+    {
+        unconst(m->pPeer) = aPeer;
+
+        AutoReadLock peerLock(aPeer COMMA_LOCKVAL_SRC_POS);
+        m->bd.share (aPeer->m->bd);
+    }
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -205,112 +235,29 @@ void USBController::uninit()
 
 // IUSBController properties
 /////////////////////////////////////////////////////////////////////////////
-
-STDMETHODIMP USBController::COMGETTER(Enabled)(BOOL *aEnabled)
+STDMETHODIMP USBController::COMGETTER(Name) (BSTR *aName)
 {
-    CheckComArgOutPointerValid(aEnabled);
+    CheckComArgOutPointerValid(aName);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* strName is constant during life time, no need to lock */
+    m->bd->strName.cloneTo(aName);
+
+    return S_OK;
+}
+
+STDMETHODIMP USBController::COMGETTER(Type)(USBControllerType_T *aType)
+{
+    CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aEnabled = m->bd->fEnabled;
-
-    return S_OK;
-}
-
-
-STDMETHODIMP USBController::COMSETTER(Enabled)(BOOL aEnabled)
-{
-    LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->bd->fEnabled != aEnabled)
-    {
-        m->bd.backup();
-        m->bd->fEnabled = aEnabled;
-
-        // leave the lock for safety
-        alock.release();
-
-        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-        m->pParent->setModified(Machine::IsModified_USB);
-        mlock.release();
-
-        m->pParent->onUSBControllerChange();
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP USBController::COMGETTER(EnabledEHCI)(BOOL *aEnabled)
-{
-    CheckComArgOutPointerValid(aEnabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aEnabled = m->bd->fEnabledEHCI;
-
-    return S_OK;
-}
-
-STDMETHODIMP USBController::COMSETTER(EnabledEHCI)(BOOL aEnabled)
-{
-    LogFlowThisFunc(("aEnabled=%RTbool\n", aEnabled));
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pParent);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->bd->fEnabledEHCI != aEnabled)
-    {
-        m->bd.backup();
-        m->bd->fEnabledEHCI = aEnabled;
-
-        // leave the lock for safety
-        alock.release();
-
-        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
-        m->pParent->setModified(Machine::IsModified_USB);
-        mlock.release();
-
-        m->pParent->onUSBControllerChange();
-    }
-
-    return S_OK;
-}
-
-STDMETHODIMP USBController::COMGETTER(ProxyAvailable)(BOOL *aEnabled)
-{
-    CheckComArgOutPointerValid(aEnabled);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-#ifdef VBOX_WITH_USB
-    *aEnabled = true;
-#else
-    *aEnabled = false;
-#endif
+    *aType = m->bd->enmType;
 
     return S_OK;
 }
@@ -322,66 +269,26 @@ STDMETHODIMP USBController::COMGETTER(USBStandard)(USHORT *aUSBStandard)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* not accessing data -- no need to lock */
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /** @todo This is no longer correct */
-    *aUSBStandard = 0x0101;
+    switch (m->bd->enmType)
+    {
+        case USBControllerType_OHCI:
+            *aUSBStandard = 0x0101;
+            break;
+        case USBControllerType_EHCI:
+            *aUSBStandard = 0x0200;
+            break;
+        default:
+            AssertMsgFailedReturn(("Invalid controller type %d\n", m->bd->enmType),
+                                  E_FAIL);
+    }
 
     return S_OK;
 }
 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Loads settings from the given machine node.
- *  May be called once right after this object creation.
- *
- *  @param aMachineNode <Machine> node.
- *
- *  @note Does not lock "this" as Machine::loadHardware, which calls this, does not lock either.
- */
-HRESULT USBController::loadSettings(const settings::USBController &data)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
-
-    /* Note: we assume that the default values for attributes of optional
-     * nodes are assigned in the Data::Data() constructor and don't do it
-     * here. It implies that this method may only be called after constructing
-     * a new BIOSSettings object while all its data fields are in the default
-     * values. Exceptions are fields whose creation time defaults don't match
-     * values that should be applied when these fields are not explicitly set
-     * in the settings file (for backwards compatibility reasons). This takes
-     * place when a setting of a newly created object must default to A while
-     * the same setting of an object loaded from the old settings file must
-     * default to B. */
-
-    m->bd->fEnabled = data.fEnabled;
-    m->bd->fEnabledEHCI = data.fEnabledEHCI;
-
-    return S_OK;
-}
-
-/**
- *  Saves settings to the given machine node.
- *
- *  @param aMachineNode <Machine> node.
- *
- *  @note Locks this object for reading.
- */
-HRESULT USBController::saveSettings(settings::USBController &data)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    data.fEnabled = !!m->bd->fEnabled;
-    data.fEnabledEHCI = !!m->bd->fEnabledEHCI;
-
-    return S_OK;
-}
 
 /** @note Locks objects for writing! */
 void USBController::rollback()
@@ -457,6 +364,54 @@ void USBController::copyFrom(USBController *aThat)
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
+}
+
+/**
+ *  Cancels sharing (if any) by making an independent copy of data.
+ *  This operation also resets this object's peer to NULL.
+ *
+ *  @note Locks this object for writing, together with the peer object
+ *  represented by @a aThat (locked for reading).
+ */
+void USBController::unshare()
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    /* sanity too */
+    AutoCaller peerCaller (m->pPeer);
+    AssertComRCReturnVoid (peerCaller.rc());
+
+    /* peer is not modified, lock it for reading (m->pPeer is "master" so locked
+     * first) */
+    AutoReadLock rl(m->pPeer COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
+
+    if (m->bd.isShared())
+    {
+        if (!m->bd.isBackedUp())
+            m->bd.backup();
+
+        m->bd.commit();
+    }
+
+    unconst(m->pPeer) = NULL;
+}
+
+const Utf8Str& USBController::getName() const
+{
+    return m->bd->strName;
+}
+
+USBControllerType_T USBController::getControllerType() const
+{
+    return m->bd->enmType;
+}
+
+ComObjPtr<USBController> USBController::getPeer()
+{
+    return m->pPeer;
 }
 
 // private methods
