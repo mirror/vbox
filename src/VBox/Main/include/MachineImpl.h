@@ -594,7 +594,7 @@ public:
     STDMETHOD(GetStorageControllerByName(IN_BSTR aName, IStorageController **storageController));
     STDMETHOD(GetStorageControllerByInstance(ULONG aInstance, IStorageController **storageController));
     STDMETHOD(SetStorageControllerBootable)(IN_BSTR aName, BOOL fBootable);
-    STDMETHOD(AddUSBController)(IN_BSTR aName, StorageBus_T aConnectionType, IUSBController **controller);
+    STDMETHOD(AddUSBController)(IN_BSTR aName, USBControllerType_T aConnectionType, IUSBController **controller);
     STDMETHOD(RemoveUSBController(IN_BSTR aName));
     STDMETHOD(GetUSBControllerByName(IN_BSTR aName, IUSBController **usbController));
     STDMETHOD(GetUSBControllerCountByType(USBControllerType_T aType, ULONG *aControllers));
