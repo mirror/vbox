@@ -5992,6 +5992,57 @@ static VBOXSTRICTRC iemMemStoreDataU64(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR
 
 
 /**
+ * Stores a data dqword.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   u64Value            The value to store.
+ */
+static VBOXSTRICTRC iemMemStoreDataU128(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+{
+    /* The lazy approach for now... */
+    uint128_t *pu128Dst;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu128Dst, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    if (rc == VINF_SUCCESS)
+    {
+        *pu128Dst = u128Value;
+        rc = iemMemCommitAndUnmap(pIemCpu, pu128Dst, IEM_ACCESS_DATA_W);
+    }
+    return rc;
+}
+
+
+/**
+ * Stores a data dqword, aligned.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   iSegReg             The index of the segment register to use for
+ *                              this access.  The base and limits are checked.
+ * @param   GCPtrMem            The address of the guest memory.
+ * @param   u64Value            The value to store.
+ */
+static VBOXSTRICTRC iemMemStoreDataU128Aligned(PIEMCPU pIemCpu, uint8_t iSegReg, RTGCPTR GCPtrMem, uint128_t u128Value)
+{
+    /* The lazy approach for now... */
+    if (GCPtrMem & 15)
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+
+    uint128_t *pu128Dst;
+    VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu128Dst, sizeof(*pu128Dst), iSegReg, GCPtrMem, IEM_ACCESS_DATA_W);
+    if (rc == VINF_SUCCESS)
+    {
+        *pu128Dst = u128Value;
+        rc = iemMemCommitAndUnmap(pIemCpu, pu128Dst, IEM_ACCESS_DATA_W);
+    }
+    return rc;
+}
+
+
+/**
  * Stores a descriptor register (sgdt, sidt).
  *
  * @returns Strict VBox status code.
@@ -6972,6 +7023,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_CLEAR_FSW_EX()   do { (pIemCpu)->CTX_SUFF(pCtx)->fpu.FSW &= X86_FSW_C_MASK | X86_FSW_TOP_MASK; } while (0)
 
 
+#define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg) \
+    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx; } while (0)
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
@@ -6983,6 +7036,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 #define IEM_MC_REF_MREG_U32_CONST(a_pu32Dst, a_iMReg) \
         (a_pu32Dst) = ((uint32_t const *)&pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx)
 
+#define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
+    do { (a_u128Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm; } while (0)
+#define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value) \
+    do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0] = (a_u64Value); \
          pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[1] = 0; \
@@ -7146,6 +7203,11 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
         (a_pr80Dst)->au64[0] = UINT64_C(0xc000000000000000); \
         (a_pr80Dst)->au16[4] = UINT16_C(0xffff); \
     } while (0)
+
+#define IEM_MC_STORE_MEM_U128(a_iSeg, a_GCPtrMem, a_u128Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
+#define IEM_MC_STORE_MEM_U128_ALIGN(a_iSeg, a_GCPtrMem, a_u128Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStoreDataU128Aligned(pIemCpu, (a_iSeg), (a_GCPtrMem), (a_u128Value)))
 
 
 #define IEM_MC_PUSH_U16(a_u16Value) \
