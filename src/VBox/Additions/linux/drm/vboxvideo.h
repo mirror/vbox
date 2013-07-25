@@ -52,6 +52,7 @@ struct vboxvideo_mc
 {
     resource_size_t    aper_size;
     resource_size_t    aper_base;
+    char __iomem      *vram;
     u32                vram_size;
 };
 
