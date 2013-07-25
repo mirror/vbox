@@ -2233,6 +2233,55 @@ typedef const X86FXSTATE *PCX86FXSTATE;
 #define X86_FCW_ZERO_MASK   UINT16_C(0xf080)
 /** @} */
 
+/** @name SSE MXCSR
+ * @{ */
+/** Exception Flag: Invalid operation.  */
+#define X86_MSXCR_IE          RT_BIT(0)
+/** Exception Flag: Denormalized operand.  */
+#define X86_MSXCR_DE          RT_BIT(1)
+/** Exception Flag: Zero divide.  */
+#define X86_MSXCR_ZE          RT_BIT(2)
+/** Exception Flag: Overflow.  */
+#define X86_MSXCR_OE          RT_BIT(3)
+/** Exception Flag: Underflow.  */
+#define X86_MSXCR_UE          RT_BIT(4)
+/** Exception Flag: Precision.  */
+#define X86_MSXCR_PE          RT_BIT(5)
+
+/** Denormals are zero. */
+#define X86_MSXCR_DAZ         RT_BIT(6)
+
+/** Exception Mask: Invalid operation. */
+#define X86_MSXCR_IM          RT_BIT(7)
+/** Exception Mask: Denormalized operand. */
+#define X86_MSXCR_DM          RT_BIT(8)
+/** Exception Mask: Zero divide.  */
+#define X86_MSXCR_ZM          RT_BIT(9)
+/** Exception Mask: Overflow.  */
+#define X86_MSXCR_OM          RT_BIT(10)
+/** Exception Mask: Underflow.  */
+#define X86_MSXCR_UM          RT_BIT(11)
+/** Exception Mask: Precision.  */
+#define X86_MSXCR_PM          RT_BIT(12)
+
+/** Rounding control mask. */
+#define X86_MSXCR_RC_MASK     UINT16_C(0x6000)
+/** Rounding control: To nearest. */
+#define X86_MSXCR_RC_NEAREST  UINT16_C(0x0000)
+/** Rounding control: Down. */
+#define X86_MSXCR_RC_DOWN     UINT16_C(0x2000)
+/** Rounding control: Up. */
+#define X86_MSXCR_RC_UP       UINT16_C(0x4000)
+/** Rounding control: Towards zero. */
+#define X86_MSXCR_RC_ZERO     UINT16_C(0x6000)
+
+/** Flush-to-zero for masked underflow.  */
+#define X86_MSXCR_FZ          RT_BIT(15)
+
+/** Misaligned Exception Mask.  */
+#define X86_MSXCR_MM          RT_BIT(16)
+/** @} */
+
 
 /** @name Selector Descriptor
  * @{
