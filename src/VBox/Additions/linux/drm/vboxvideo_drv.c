@@ -58,11 +58,36 @@
 
 #include "vboxvideo_drv.h"
 
+#ifndef __devinit
+#define __devinit
+#define __devinitdata
+#endif
+
+static struct drm_driver driver;
+
 static struct pci_device_id pciidlist[] = {
         vboxvideo_PCI_IDS
 };
 
 MODULE_DEVICE_TABLE(pci, pciidlist);
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
+# define drm_get_dev drm_get_pci_dev
+#endif
+
+static int __devinit
+vboxvideo_pci_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
+{
+    return drm_get_dev(pdev, ent, &driver);
+}
+
+static void
+vboxvideo_pci_remove(struct pci_dev *pdev)
+{
+    struct drm_device *dev = pci_get_drvdata(pdev);
+
+    drm_put_dev(dev);
+}
 
 #if defined(DRM_UNLOCKED) || LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 # define IOCTL_MEMBER unlocked_ioctl
@@ -88,9 +113,21 @@ MODULE_DEVICE_TABLE(pci, pciidlist);
 static struct file_operations driver_fops = DRIVER_FOPS;
 #endif
 
+#define PCI_DRIVER \
+    { \
+        .name = DRIVER_NAME, \
+        .id_table = pciidlist, \
+        .probe = vboxvideo_pci_probe, \
+        .remove = vboxvideo_pci_remove, \
+    }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
+static struct pci_driver pci_driver = PCI_DRIVER;
+#endif
+
 static struct drm_driver driver =
 {
-    .driver_features = 0,
+    .driver_features = DRIVER_MODESET,
     .load = vboxvideo_driver_load,
     .unload = vboxvideo_driver_unload,
     /* As of Linux 2.6.37, always the internal functions are used. */
@@ -106,11 +143,7 @@ static struct drm_driver driver =
     .fops = &driver_fops,
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 39)
-    .pci_driver =
-    {
-        .name = DRIVER_NAME,
-        .id_table = pciidlist,
-    },
+    .pci_driver = PCI_DRIVER,
 #endif
     .name = DRIVER_NAME,
     .desc = DRIVER_DESC,
@@ -119,14 +152,6 @@ static struct drm_driver driver =
     .minor = DRIVER_MINOR,
     .patchlevel = DRIVER_PATCHLEVEL,
 };
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 39)
-static struct pci_driver pci_driver =
-{
-    .name = DRIVER_NAME,
-    .id_table = pciidlist,
-};
-#endif
 
 static int __init vboxvideo_init(void)
 {

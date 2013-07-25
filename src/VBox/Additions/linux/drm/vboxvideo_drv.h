@@ -65,6 +65,8 @@
 #define VBOXVIDEO_INFO(fmt, arg...)  DRM_INFO(DRIVER_NAME ": " fmt, ##arg)
 #define VBOXVIDEO_ERROR(fmt, arg...) DRM_ERROR(DRIVER_NAME ": " fmt, ##arg)
 
+#define MB (1024 * 1024)
+
 /** @todo does this make sense?  What exactly is this connector? */
 #define VBOXVIDEOFB_CONN_LIMIT VBOX_VIDEO_MAX_SCREENS
 
