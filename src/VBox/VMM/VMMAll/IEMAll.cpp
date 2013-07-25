@@ -7025,6 +7025,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 #define IEM_MC_FETCH_MREG_U64(a_u64Value, a_iMReg) \
     do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx; } while (0)
+#define IEM_MC_FETCH_MREG_U32(a_u32Value, a_iMReg) \
+    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].au32[0]; } while (0)
 #define IEM_MC_STORE_MREG_U64(a_iMReg, a_u64Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aRegs[(a_iMReg)].mmx = (a_u64Value); } while (0)
 #define IEM_MC_STORE_MREG_U32_ZX_U64(a_iMReg, a_u32Value) \
@@ -7038,6 +7040,10 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 #define IEM_MC_FETCH_XREG_U128(a_u128Value, a_iXReg) \
     do { (a_u128Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm; } while (0)
+#define IEM_MC_FETCH_XREG_U64(a_u64Value, a_iXReg) \
+    do { (a_u64Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au64[0]; } while (0)
+#define IEM_MC_FETCH_XREG_U32(a_u32Value, a_iXReg) \
+    do { (a_u32Value) = pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].au32[0]; } while (0)
 #define IEM_MC_STORE_XREG_U128(a_iXReg, a_u128Value) \
     do { pIemCpu->CTX_SUFF(pCtx)->fpu.aXMM[(a_iXReg)].xmm = (a_u128Value); } while (0)
 #define IEM_MC_STORE_XREG_U64_ZX_U128(a_iXReg, a_u64Value) \
