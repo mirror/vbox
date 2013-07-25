@@ -31,6 +31,7 @@
 #include "ParallelPortImpl.h"
 #include "BIOSSettingsImpl.h"
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
+#include "USBControllerImpl.h"              // required for MachineImpl.h to compile on Windows
 #include "BandwidthControlImpl.h"
 #include "BandwidthGroupImpl.h"
 #include "VBox/settings.h"
