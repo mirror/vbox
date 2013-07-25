@@ -193,12 +193,16 @@ static struct PDMDRVINS pdmdrvInsCore =
     0,                       /* fTracing */
     0,                       /* idTracing */
 #if HC_ARCH_BITS == 32
-    0,                       /* au32Padding */
+    {
+        0
+    }                        /* au32Padding */
 #endif
     {
         0                    /* Padding */
     },                       /* Internal */
-    0                        /* achInstanceData */
+    {
+        0                    /* achInstanceData */
+    }
 };
 
 static struct PDMDRVINS *ppdmdrvIns = NULL;
