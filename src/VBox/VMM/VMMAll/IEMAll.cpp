@@ -102,9 +102,12 @@
 #include <VBox/log.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <VBox/dis.h>
+#include <VBox/disopcode.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/x86.h>
+
 
 
 /*******************************************************************************
@@ -7774,6 +7777,24 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     { \
         if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK) \
             return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+    } while (0)
+#define IEMOP_HLP_DECODED_NL_1(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_fDisOpType) \
+    do \
+    { \
+        if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK) \
+        { \
+            NOREF(a_uDisOpNo); NOREF(a_fIemOpFlags); NOREF(a_uDisParam0); NOREF(a_fDisOpType); \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+        } \
+    } while (0)
+#define IEMOP_HLP_DECODED_NL_2(a_uDisOpNo, a_fIemOpFlags, a_uDisParam0, a_uDisParam1, a_fDisOpType) \
+    do \
+    { \
+        if (pIemCpu->fPrefixes & IEM_OP_PRF_LOCK) \
+        { \
+            NOREF(a_uDisOpNo); NOREF(a_fIemOpFlags); NOREF(a_uDisParam0); NOREF(a_uDisParam1); NOREF(a_fDisOpType); \
+            return IEMOP_RAISE_INVALID_LOCK_PREFIX(); \
+        } \
     } while (0)
 
 

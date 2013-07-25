@@ -497,6 +497,35 @@ typedef IEMCPU const *PCIEMCPU;
 #define IEM_OP_PRF_REX_MASK  (IEM_OP_PRF_REX | IEM_OP_PRF_REX_R | IEM_OP_PRF_REX_B | IEM_OP_PRF_REX_X | IEM_OP_PRF_SIZE_REX_W )
 /** @} */
 
+/** @name Opcode forms
+ * @{ */
+/** ModR/M: reg, r/m */
+#define IEMOPFORM_RM            0
+/** ModR/M: reg, r/m (register) */
+#define IEMOPFORM_RM_REG        (IEMOPFORM_RM | IEMOPFORM_MOD3)
+/** ModR/M: reg, r/m (memory)   */
+#define IEMOPFORM_RM_MEM        (IEMOPFORM_RM | IEMOPFORM_NOT_MOD3)
+/** ModR/M: r/m, reg */
+#define IEMOPFORM_MR            1
+/** ModR/M: r/m (register), reg */
+#define IEMOPFORM_MR_REG        (IEMOPFORM_MR | IEMOPFORM_MOD3)
+/** ModR/M: r/m (memory), reg */
+#define IEMOPFORM_MR_MEM        (IEMOPFORM_MR | IEMOPFORM_NOT_MOD3)
+/** ModR/M: r/m only */
+#define IEMOPFORM_M             2
+/** ModR/M: r/m only (register). */
+#define IEMOPFORM_M_REG         (IEMOPFORM_M | IEMOPFORM_MOD3)
+/** ModR/M: r/m only (memory). */
+#define IEMOPFORM_M_MEM         (IEMOPFORM_M | IEMOPFORM_NOT_MOD3)
+/** ModR/M: reg only */
+#define IEMOPFORM_R             3
+
+/** The r/m is a register. */
+#define IEMOPFORM_MOD3          RT_BIT_32(8)
+/** The r/m is a memory access. */
+#define IEMOPFORM_NOT_MOD3      RT_BIT_32(9)
+/** @} */
+
 /**
  * Tests if verification mode is enabled.
  *
