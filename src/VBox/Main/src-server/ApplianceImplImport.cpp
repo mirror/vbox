@@ -353,7 +353,7 @@ STDMETHODIMP Appliance::Interpret()
             /* USB Controller */
             /* If there is a <vbox:Machine>, we always prefer the setting from there. */
             if (   (   vsysThis.pelmVboxMachine
-                    && pNewDesc->m->pConfig->hardwareMachine.usbController.fEnabled)
+                    && pNewDesc->m->pConfig->hardwareMachine.usbSettings.llUSBControllers.size() > 0)
                 || vsysThis.fHasUsbController)
                 pNewDesc->addEntry(VirtualSystemDescriptionType_USBController, "", "", "");
 #endif /* VBOX_WITH_USB */
@@ -2618,11 +2618,12 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
 
 #ifdef VBOX_WITH_USB
     /* USB Controller */
-    ComPtr<IUSBController> usbController;
-    rc = pNewMachine->COMGETTER(USBController)(usbController.asOutParam());
-    if (FAILED(rc)) throw rc;
-    rc = usbController->COMSETTER(Enabled)(stack.fUSBEnabled);
-    if (FAILED(rc)) throw rc;
+    if (stack.fUSBEnabled)
+    {
+        ComPtr<IUSBController> usbController;
+        rc = pNewMachine->AddUSBController(Bstr("OHCI").raw(), USBControllerType_OHCI, usbController.asOutParam());
+        if (FAILED(rc)) throw rc;
+    }
 #endif /* VBOX_WITH_USB */
 
     /* Change the network adapters */
@@ -3255,7 +3256,15 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
 
 #ifdef VBOX_WITH_USB
     /* USB controller */
-    config.hardwareMachine.usbController.fEnabled = stack.fUSBEnabled;
+    if (stack.fUSBEnabled)
+    {
+        settings::USBController ctrl;
+
+        ctrl.strName = "OHCI";
+        ctrl.enmType = USBControllerType_OHCI;
+
+        config.hardwareMachine.usbSettings.llUSBControllers.push_back(ctrl);
+    }
 #endif
     /* Audio adapter */
     if (stack.strAudioAdapter.isNotEmpty())

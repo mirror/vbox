@@ -28,6 +28,7 @@
 
 /* COM includes: */
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 
 UIGDetailsSet::UIGDetailsSet(UIGDetailsItem *pParent)
     : UIGDetailsItem(pParent)
@@ -95,8 +96,8 @@ void UIGDetailsSet::buildSet(UIVMItem *pMachineItem, bool fFullSet, const QStrin
     m_iLastStepNumber = m_fFullSet ? DetailsElementType_Description : DetailsElementType_Preview;
 
     /* Fetch USB controller restrictions: */
-    const CUSBController &ctl = m_machine.GetUSBController();
-    if (ctl.isNull() || !ctl.GetProxyAvailable())
+    const CUSBDeviceFilters &filters = m_machine.GetUSBDeviceFilters();
+    if (filters.isNull() || !m_machine.GetUSBProxyAvailable())
     {
         QString strElementTypeOpened = gpConverter->toInternalString(DetailsElementType_USB);
         QString strElementTypeClosed = strElementTypeOpened + "Closed";

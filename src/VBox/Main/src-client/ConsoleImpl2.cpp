@@ -2265,35 +2265,55 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         /*
-         * The USB Controller.
+         * The USB Controllers.
          */
-        ComPtr<IUSBController> USBCtlPtr;
-        hrc = pMachine->COMGETTER(USBController)(USBCtlPtr.asOutParam());
-        if (USBCtlPtr)
+        com::SafeIfaceArray<IUSBController> usbCtrls;
+        hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));        H();
+        bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is presnet. */
+
+        for (size_t i = 0; i < usbCtrls.size(); ++i)
         {
-            BOOL fOhciEnabled;
-            hrc = USBCtlPtr->COMGETTER(Enabled)(&fOhciEnabled);                             H();
-            if (fOhciEnabled)
+            USBControllerType_T enmCtrlType;
+            rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
+            if (enmCtrlType == USBControllerType_OHCI)
             {
-                InsertConfigNode(pDevices, "usb-ohci", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-                InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                hrc = pBusMgr->assignPCIDevice("usb-ohci", pInst);                          H();
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                fOhciPresent = true;
+                break;
+            }
+        }
 
-                /*
-                 * Attach the status driver.
-                 */
-                attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
+        /*
+         * Currently EHCI is only enabled when a OHCI controller is present too.
+         * This might change when XHCI is supported.
+         */
+        if (fOhciPresent)
+            mfVMHasUsbController = true;
 
-                mfVMHasUsbController = true;
+        if (mfVMHasUsbController)
+        {
+            for (size_t i = 0; i < usbCtrls.size(); ++i)
+            {
+                USBControllerType_T enmCtrlType;
+                rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
+
+                if (enmCtrlType == USBControllerType_OHCI)
+                {
+                    InsertConfigNode(pDevices, "usb-ohci", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice("usb-ohci", pInst);                          H();
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                    /*
+                     * Attach the status driver.
+                     */
+                    attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
+                }
 #ifdef VBOX_WITH_EHCI
-                BOOL fEHCIEnabled;
-                hrc = USBCtlPtr->COMGETTER(EnabledEHCI)(&fEHCIEnabled);                     H();
-                if (fEHCIEnabled)
+                else if (enmCtrlType == USBControllerType_EHCI)
                 {
                     /*
                      * USB 2.0 is only available if the proper ExtPack is installed.
@@ -2339,164 +2359,164 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 # endif
                 }
 #endif
+            } /* for every USB controller. */
 
-                /*
-                 * Virtual USB Devices.
-                 */
-                PCFGMNODE pUsbDevices = NULL;
-                InsertConfigNode(pRoot, "USB", &pUsbDevices);
+
+            /*
+             * Virtual USB Devices.
+             */
+            PCFGMNODE pUsbDevices = NULL;
+            InsertConfigNode(pRoot, "USB", &pUsbDevices);
 
 #ifdef VBOX_WITH_USB
-                {
-                    /*
-                    * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
-                    * on a per device level now.
-                    */
-                    InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
-                    InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
-                    // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
-                    //InsertConfigInteger(pCfg, "Force11Device", true);
-                    // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
-                    // that it's documented somewhere.) Users needing it can use:
-                    //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
-                    //InsertConfigInteger(pCfg, "Force11PacketSize", true);
-                }
+            {
+                /*
+                 * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
+                 * on a per device level now.
+                 */
+                InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
+                InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
+                // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
+                //InsertConfigInteger(pCfg, "Force11Device", true);
+                // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
+                // that it's documented somewhere.) Users needing it can use:
+                //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
+                //InsertConfigInteger(pCfg, "Force11PacketSize", true);
+            }
 #endif
 
 #ifdef VBOX_WITH_USB_VIDEO
-                BOOL aEmulatedUSBWebcamEnabled = FALSE;
-                hrc = pMachine->COMGETTER(EmulatedUSBWebcameraEnabled)(&aEmulatedUSBWebcamEnabled);    H();
-                if (aEmulatedUSBWebcamEnabled)
-                {
-                    InsertConfigNode(pUsbDevices, "Webcam", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver", "EmWebcam");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "Object", (uintptr_t)mEmWebcam);
-                }
-#endif
-
-#ifdef VBOX_WITH_USB_CARDREADER
-                BOOL aEmulatedUSBCardReaderEnabled = FALSE;
-                hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
-                if (aEmulatedUSBCardReaderEnabled)
-                {
-                    InsertConfigNode(pUsbDevices, "CardReader", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
-
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-# ifdef VBOX_WITH_USB_CARDREADER_TEST
-                    InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-# else
-                    InsertConfigString(pLunL0, "Driver", "UsbCardReader");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
-# endif
-                }
-#endif
-
-# if 0  /* Virtual MSD*/
-
-                InsertConfigNode(pUsbDevices, "Msd", &pDev);
+            BOOL aEmulatedUSBWebcamEnabled = FALSE;
+            hrc = pMachine->COMGETTER(EmulatedUSBWebcameraEnabled)(&aEmulatedUSBWebcamEnabled);    H();
+            if (aEmulatedUSBWebcamEnabled)
+            {
+                InsertConfigNode(pUsbDevices, "Webcam", &pDev);
                 InsertConfigNode(pDev,     "0", &pInst);
                 InsertConfigNode(pInst,    "Config", &pCfg);
                 InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-
-                InsertConfigString(pLunL0, "Driver", "SCSI");
+                InsertConfigString(pLunL0, "Driver", "EmWebcam");
                 InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mEmWebcam);
+            }
+#endif
 
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver", "Block");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                InsertConfigString(pCfg,   "Type", "HardDisk");
-                InsertConfigInteger(pCfg,  "Mountable", 0);
+#ifdef VBOX_WITH_USB_CARDREADER
+            BOOL aEmulatedUSBCardReaderEnabled = FALSE;
+            hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
+            if (aEmulatedUSBCardReaderEnabled)
+            {
+                InsertConfigNode(pUsbDevices, "CardReader", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
 
-                InsertConfigNode(pLunL1,   "AttachedDriver", &pLunL2);
-                InsertConfigString(pLunL2, "Driver", "VD");
-                InsertConfigNode(pLunL2,   "Config", &pCfg);
-                InsertConfigString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi");
-                InsertConfigString(pCfg,   "Format", "VDI");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+# ifdef VBOX_WITH_USB_CARDREADER_TEST
+                InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+# else
+                InsertConfigString(pLunL0, "Driver", "UsbCardReader");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
+# endif
+             }
+#endif
+
+# if 0  /* Virtual MSD*/
+            InsertConfigNode(pUsbDevices, "Msd", &pDev);
+            InsertConfigNode(pDev,     "0", &pInst);
+            InsertConfigNode(pInst,    "Config", &pCfg);
+            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+
+            InsertConfigString(pLunL0, "Driver", "SCSI");
+            InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+            InsertConfigString(pLunL1, "Driver", "Block");
+            InsertConfigNode(pLunL1,   "Config", &pCfg);
+            InsertConfigString(pCfg,   "Type", "HardDisk");
+            InsertConfigInteger(pCfg,  "Mountable", 0);
+
+            InsertConfigNode(pLunL1,   "AttachedDriver", &pLunL2);
+            InsertConfigString(pLunL2, "Driver", "VD");
+            InsertConfigNode(pLunL2,   "Config", &pCfg);
+            InsertConfigString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi");
+            InsertConfigString(pCfg,   "Format", "VDI");
 # endif
 
-                /* Virtual USB Mouse/Tablet */
-                if (   aPointingHID == PointingHIDType_USBMouse
-                    || aPointingHID == PointingHIDType_ComboMouse
-                    || aPointingHID == PointingHIDType_USBTablet
-                    || aPointingHID == PointingHIDType_USBMultiTouch)
-                {
-                    InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+            /* Virtual USB Mouse/Tablet */
+            if (   aPointingHID == PointingHIDType_USBMouse
+                || aPointingHID == PointingHIDType_ComboMouse
+                || aPointingHID == PointingHIDType_USBTablet
+                || aPointingHID == PointingHIDType_USBMultiTouch)
+            {
+                InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
 
-                    InsertConfigString(pCfg,   "Mode", "relative");
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "QueueSize",            128);
+                InsertConfigString(pCfg,   "Mode", "relative");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
 
-                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                    InsertConfigNode(pLunL1,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-                }
-                if (   aPointingHID == PointingHIDType_USBTablet
-                    || aPointingHID == PointingHIDType_USBMultiTouch)
-                {
-                    InsertConfigNode(pDev,     "1", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
+            if (   aPointingHID == PointingHIDType_USBTablet
+                || aPointingHID == PointingHIDType_USBMultiTouch)
+            {
+                InsertConfigNode(pDev,     "1", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
 
-                    InsertConfigString(pCfg,   "Mode", "absolute");
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "QueueSize",            128);
+                InsertConfigString(pCfg,   "Mode", "absolute");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
 
-                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                    InsertConfigNode(pLunL1,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-                }
-                if (aPointingHID == PointingHIDType_USBMultiTouch)
-                {
-                    InsertConfigNode(pDev,     "2", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
+            if (aPointingHID == PointingHIDType_USBMultiTouch)
+            {
+                InsertConfigNode(pDev,     "2", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
 
-                    InsertConfigString(pCfg,   "Mode", "multitouch");
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "QueueSize",            128);
+                InsertConfigString(pCfg,   "Mode", "multitouch");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
 
-                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                    InsertConfigNode(pLunL1,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-                }
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
 
-                /* Virtual USB Keyboard */
-                KeyboardHIDType_T aKbdHID;
-                hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                       H();
-                if (aKbdHID == KeyboardHIDType_USBKeyboard)
-                {
-                    InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
+            /* Virtual USB Keyboard */
+            KeyboardHIDType_T aKbdHID;
+            hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                       H();
+            if (aKbdHID == KeyboardHIDType_USBKeyboard)
+            {
+                InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
 
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-                    InsertConfigInteger(pCfg,  "QueueSize",            64);
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            64);
 
-                    InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                    InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
-                    InsertConfigNode(pLunL1,   "Config", &pCfg);
-                    pKeyboard = mKeyboard;
-                    InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
-                }
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                pKeyboard = mKeyboard;
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
             }
         }
 

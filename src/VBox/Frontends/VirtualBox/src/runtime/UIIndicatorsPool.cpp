@@ -38,6 +38,7 @@
 #include "CMediumAttachment.h"
 #include "CNetworkAdapter.h"
 #include "CUSBController.h"
+#include "CUSBDeviceFilters.h"
 #include "CUSBDevice.h"
 #include "CSharedFolder.h"
 #include "CVRDEServer.h"
@@ -387,9 +388,17 @@ public:
                                 "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
         QString strFullData;
 
-        const CUSBController &usbctl = machine.GetUSBController();
-        setState(!usbctl.isNull() && usbctl.GetEnabled() && usbctl.GetProxyAvailable() ? KDeviceActivity_Idle : KDeviceActivity_Null);
-        if (!usbctl.isNull() && usbctl.GetEnabled())
+
+        /*
+         * Check whether there is at least one OHCI USB controllers with
+         * an available proxy.
+         */
+        const CUSBDeviceFilters &filters = machine.GetUSBDeviceFilters();
+        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+        bool fUSBEnabled = !filters.isNull() && cOhciCtls && machine.GetUSBProxyAvailable();
+
+        setState(fUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        if (fUSBEnabled)
         {
             const CConsole &console = m_session.GetConsole();
 

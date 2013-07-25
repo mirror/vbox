@@ -51,27 +51,27 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init(Machine *aParent);
-    HRESULT init(Machine *aParent, USBController *aThat);
+    HRESULT init(Machine *aParent, const Utf8Str &aName, USBControllerType_T enmType);
+    HRESULT init(Machine *aParent, USBController *aThat, bool fReshare = false);
     HRESULT initCopy(Machine *aParent, USBController *aThat);
     void uninit();
 
     // IUSBController properties
-    STDMETHOD(COMGETTER(Enabled))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(Enabled))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(EnabledEHCI))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(EnabledEHCI))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(ProxyAvailable))(BOOL *aEnabled);
+    STDMETHOD(COMGETTER(Name))(BSTR *aName);
+    STDMETHOD(COMGETTER(Type))(USBControllerType_T *enmType);
     STDMETHOD(COMGETTER(USBStandard))(USHORT *aUSBStandard);
 
     // public methods only for internal purposes
 
-    HRESULT loadSettings(const settings::USBController &data);
-    HRESULT saveSettings(settings::USBController &data);
-
     void rollback();
     void commit();
     void copyFrom(USBController *aThat);
+    void unshare();
+
+    const Utf8Str &getName() const;
+    USBControllerType_T getControllerType() const;
+
+    ComObjPtr<USBController> getPeer();
 
 private:
 

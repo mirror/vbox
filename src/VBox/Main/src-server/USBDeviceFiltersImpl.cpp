@@ -496,7 +496,7 @@ STDMETHODIMP USBDeviceFilters::RemoveDeviceFilter(ULONG aPosition,
  *
  *  @note Does not lock "this" as Machine::loadHardware, which calls this, does not lock either.
  */
-HRESULT USBDeviceFilters::loadSettings(const settings::USBController &data)
+HRESULT USBDeviceFilters::loadSettings(const settings::USB &data)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
@@ -539,7 +539,7 @@ HRESULT USBDeviceFilters::loadSettings(const settings::USBController &data)
  *
  *  @note Locks this object for reading.
  */
-HRESULT USBDeviceFilters::saveSettings(settings::USBController &data)
+HRESULT USBDeviceFilters::saveSettings(settings::USB &data)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

@@ -108,6 +108,7 @@ public:
     STDMETHOD(GetMaxInstancesOfStorageBus)(ChipsetType_T aChipset, StorageBus_T aBus, ULONG *aMaxInstances);
     STDMETHOD(GetDeviceTypesForStorageBus)(StorageBus_T aBus, ComSafeArrayOut(DeviceType_T, aDeviceTypes));
     STDMETHOD(GetDefaultIoCacheSettingForStorageController)(StorageControllerType_T aControllerType, BOOL *aEnabled);
+    STDMETHOD(GetMaxInstancesOfUSBControllerType)(ChipsetType_T aChipset, USBControllerType_T aType, ULONG *aMaxInstances);
 
     // public methods only for internal purposes
 

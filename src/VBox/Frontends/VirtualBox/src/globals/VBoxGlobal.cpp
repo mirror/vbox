@@ -1511,15 +1511,15 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
     {
         QString item;
 
-        CUSBController ctl = aMachine.GetUSBController();
         CUSBDeviceFilters flts = aMachine.GetUSBDeviceFilters();
-        if (   !ctl.isNull()
-            && !flts.isNull()
-            && ctl.GetProxyAvailable())
+        if (   !flts.isNull()
+            && aMachine.GetUSBProxyAvailable())
         {
             /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
 
-            if (ctl.GetEnabled())
+            ULONG cOhciCtls = aMachine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+
+            if (cOhciCtls)
             {
                 CUSBDeviceFilterVector coll = flts.GetDeviceFilters();
                 uint active = 0;

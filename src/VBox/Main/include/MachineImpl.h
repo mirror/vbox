@@ -456,7 +456,7 @@ public:
     STDMETHOD(COMGETTER(MediumAttachments))(ComSafeArrayOut(IMediumAttachment *, aAttachments));
     STDMETHOD(COMGETTER(VRDEServer))(IVRDEServer **vrdeServer);
     STDMETHOD(COMGETTER(AudioAdapter))(IAudioAdapter **audioAdapter);
-    STDMETHOD(COMGETTER(USBController))(IUSBController * *aUSBController);
+    STDMETHOD(COMGETTER(USBControllers))(ComSafeArrayOut(IUSBController *, aUSBControllers));
     STDMETHOD(COMGETTER(USBDeviceFilters))(IUSBDeviceFilters * *aUSBDeviceFilters);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aFilePath);
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *aModified);
@@ -528,6 +528,7 @@ public:
     STDMETHOD(COMSETTER(DefaultFrontend))(IN_BSTR aDefaultFrontend);
     STDMETHOD(COMGETTER(Icon))(ComSafeArrayOut(BYTE, aIcon));
     STDMETHOD(COMSETTER(Icon))(ComSafeArrayIn(BYTE, aIcon));
+    STDMETHOD(COMGETTER(USBProxyAvailable))(BOOL *aAvailable);
 
     // IMachine methods
     STDMETHOD(LockMachine)(ISession *aSession, LockType_T lockType);
@@ -592,6 +593,10 @@ public:
     STDMETHOD(GetStorageControllerByName(IN_BSTR aName, IStorageController **storageController));
     STDMETHOD(GetStorageControllerByInstance(ULONG aInstance, IStorageController **storageController));
     STDMETHOD(SetStorageControllerBootable)(IN_BSTR aName, BOOL fBootable);
+    STDMETHOD(AddUSBController)(IN_BSTR aName, StorageBus_T aConnectionType, IUSBController **controller);
+    STDMETHOD(RemoveUSBController(IN_BSTR aName));
+    STDMETHOD(GetUSBControllerByName(IN_BSTR aName, IUSBController **usbController));
+    STDMETHOD(GetUSBControllerCountByType(USBControllerType_T aType, ULONG *aControllers));
     STDMETHOD(QuerySavedGuestScreenInfo)(ULONG uScreenId, ULONG *puOriginX, ULONG *puOriginY, ULONG *puWidth, ULONG *puHeight, BOOL *pfEnabled);
     STDMETHOD(QuerySavedThumbnailSize)(ULONG aScreenId, ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
     STDMETHOD(ReadSavedThumbnailToArray)(ULONG aScreenId, BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
@@ -886,6 +891,12 @@ protected:
     HRESULT getMediumAttachmentsOfController(CBSTR aName,
                                              MediaData::AttachmentList &aAttachments);
 
+    HRESULT getUSBControllerByName(const Utf8Str &aName,
+                                   ComObjPtr<USBController> &aUSBController,
+                                   bool aSetError = false);
+
+    ULONG   getUSBControllerCountByType(USBControllerType_T enmType);
+
     enum
     {
         /* flags for #saveSettings() */
@@ -997,15 +1008,18 @@ protected:
     const ComObjPtr<SerialPort>        mSerialPorts[SchemaDefs::SerialPortCount];
     const ComObjPtr<ParallelPort>      mParallelPorts[SchemaDefs::ParallelPortCount];
     const ComObjPtr<AudioAdapter>      mAudioAdapter;
-    const ComObjPtr<USBController>     mUSBController;
     const ComObjPtr<USBDeviceFilters>  mUSBDeviceFilters;
     const ComObjPtr<BIOSSettings>      mBIOSSettings;
+    const ComObjPtr<BandwidthControl>  mBandwidthControl;
+
     typedef std::vector<ComObjPtr<NetworkAdapter> > NetworkAdapterVector;
-    NetworkAdapterVector            mNetworkAdapters;
-    const ComObjPtr<BandwidthControl> mBandwidthControl;
+    NetworkAdapterVector               mNetworkAdapters;
 
     typedef std::list<ComObjPtr<StorageController> > StorageControllerList;
-    Backupable<StorageControllerList> mStorageControllers;
+    Backupable<StorageControllerList>  mStorageControllers;
+
+    typedef std::list<ComObjPtr<USBController> > USBControllerList;
+    Backupable<USBControllerList>      mUSBControllers;
 
     uint64_t                        uRegistryNeedsSaving;
 

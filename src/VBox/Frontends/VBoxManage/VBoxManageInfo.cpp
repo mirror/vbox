@@ -1748,27 +1748,43 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     /*
      * USB.
      */
-    ComPtr<IUSBController> USBCtl;
-    rc = machine->COMGETTER(USBController)(USBCtl.asOutParam());
+    SafeIfaceArray<IUSBController> USBCtlColl;
+    rc = machine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(USBCtlColl));
     if (SUCCEEDED(rc))
     {
-        BOOL fEnabled;
-        BOOL fEHCIEnabled;
-        rc = USBCtl->COMGETTER(Enabled)(&fEnabled);
-        if (FAILED(rc))
-            fEnabled = false;
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("usb=\"%s\"\n", fEnabled ? "on" : "off");
-        else
-            RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
+        bool fOhciEnabled = false;
+        bool fEhciEnabled = false;
 
-        rc = USBCtl->COMGETTER(EnabledEHCI)(&fEHCIEnabled);
-        if (FAILED(rc))
-            fEHCIEnabled = false;
+        for (unsigned i = 0; i < USBCtlColl.size(); i++)
+        {
+            USBControllerType_T enmType;
+
+            rc = USBCtlColl[i]->COMGETTER(Type)(&enmType);
+            if (SUCCEEDED(rc))
+            {
+                switch (enmType)
+                {
+                    case USBControllerType_OHCI:
+                        fOhciEnabled = true;
+                        break;
+                    case USBControllerType_EHCI:
+                        fEhciEnabled = true;
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
         if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("ehci=\"%s\"\n", fEHCIEnabled ? "on" : "off");
+            RTPrintf("usb=\"%s\"\n", fOhciEnabled ? "on" : "off");
         else
-            RTPrintf("EHCI:            %s\n", fEHCIEnabled ? "enabled" : "disabled");
+            RTPrintf("USB:             %s\n", fOhciEnabled ? "enabled" : "disabled");
+
+        if (details == VMINFO_MACHINEREADABLE)
+            RTPrintf("ehci=\"%s\"\n", fEhciEnabled ? "on" : "off");
+        else
+            RTPrintf("EHCI:            %s\n", fEhciEnabled ? "enabled" : "disabled");
     }
 
     ComPtr<IUSBDeviceFilters> USBFlts;
