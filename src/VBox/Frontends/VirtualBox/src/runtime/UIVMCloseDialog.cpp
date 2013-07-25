@@ -188,6 +188,7 @@ void UIVMCloseDialog::prepare()
                     m_pSaveRadio = new QRadioButton(this);
                     {
                         /* Configure button: */
+                        m_pSaveRadio->installEventFilter(this);
                         connect(m_pSaveRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
                     }
                     /* Prepare 'shutdown' icon: */
@@ -201,6 +202,7 @@ void UIVMCloseDialog::prepare()
                     m_pShutdownRadio = new QRadioButton(this);
                     {
                         /* Configure button: */
+                        m_pShutdownRadio->installEventFilter(this);
                         connect(m_pShutdownRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
                     }
                     /* Prepare 'power-off' icon: */
@@ -214,6 +216,7 @@ void UIVMCloseDialog::prepare()
                     m_pPowerOffRadio = new QRadioButton(this);
                     {
                         /* Configure button: */
+                        m_pPowerOffRadio->installEventFilter(this);
                         connect(m_pPowerOffRadio, SIGNAL(toggled(bool)), this, SLOT(sltUpdateWidgetAvailability()));
                     }
                     /* Prepare 'discard' check-box: */
@@ -380,6 +383,25 @@ void UIVMCloseDialog::retranslateUi()
     m_pDiscardCheckBox->setWhatsThis(tr("<p>When checked, the machine will be returned to the state stored in the current snapshot after "
                                         "it is turned off. This is useful if you are sure that you want to discard the results of your "
                                         "last sessions and start again at that snapshot.</p>"));
+}
+
+bool UIVMCloseDialog::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* For now we are interested in double-click events only: */
+    if (pEvent->type() == QEvent::MouseButtonDblClick)
+    {
+        /* Make sure its one of the radio-buttons
+         * which has this event-filter installed: */
+        if (qobject_cast<QRadioButton*>(pWatched))
+        {
+            /* Since on double-click the button will be also selected
+             * we are just calling for the *accept* slot: */
+            accept();
+        }
+    }
+
+    /* Call to base-class: */
+    return QIWithRetranslateUI<QIDialog>::eventFilter(pWatched, pEvent);
 }
 
 void UIVMCloseDialog::polishEvent(QShowEvent *pEvent)
