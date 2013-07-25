@@ -3923,7 +3923,7 @@ AuthResult AUTHCALL AuthEntry(
               </row>
               <row>
                 <entry>IUSBController::enabledEhci</entry>
-                <entry><xref linkend="IUSBController__enabledEHCI" xreflabel="IUSBController::enabledEHCI"/></entry>
+                <entry>IUSBController::enabledEHCI"</entry>
               </row>
               <row>
                 <entry>INATEngine::tftpPrefix</entry>
