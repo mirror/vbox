@@ -134,6 +134,7 @@ public:
     /* Mouse getters: */
     bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
     bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
+    bool isMouseSupportsMultiTouch() const { return m_fIsMouseSupportsMultiTouch; }
     bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
     bool isMouseCaptured() const { return m_fIsMouseCaptured; }
     bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
@@ -213,7 +214,7 @@ private slots:
 
     /* Console events slots */
     void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
-    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fNeedsHostCursor);
+    void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
     void sltKeyboardLedsChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock);
     void sltStateChange(KMachineState state);
     void sltAdditionsChange();
@@ -299,6 +300,7 @@ private:
     /* Mouse flags: */
     bool m_fIsMouseSupportsAbsolute : 1;
     bool m_fIsMouseSupportsRelative : 1;
+    bool m_fIsMouseSupportsMultiTouch: 1;
     bool m_fIsMouseHostCursorNeeded : 1;
     bool m_fIsMouseCaptured : 1;
     bool m_fIsMouseIntegrated : 1;
