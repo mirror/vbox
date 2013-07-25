@@ -2905,3 +2905,66 @@ IEMIMPL_MEDIA_F1L1 punpckhwd,  1
 IEMIMPL_MEDIA_F1L1 punpckhdq,  1
 IEMIMPL_MEDIA_F1L1 punpckhqdq, 0
 
+
+;
+; Shufflers with evil 8-bit immediates.
+;
+
+BEGINPROC_FASTCALL iemAImpl_pshufw, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_MMX_PROLOGUE
+
+        movq    mm0, [A1]
+        movq    mm1, [A2]
+        lea     T0, [A3 + A3*4]         ; sizeof(pshufw+ret) == 5
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T1, [T1 + T0]
+        call    T1
+        movq    [A1], mm0
+
+        IEMIMPL_MMX_EPILOGUE
+        EPILOGUE_4_ARGS
+%assign bImm 0
+%rep 256
+.imm %+ bImm:
+       pshufw    mm0, mm1, bImm
+       ret
+ %assign bImm bImm + 1
+%endrep
+.immEnd:                                ; 256*5 == 0x500
+dw 0xfaff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x104ff - (.immEnd - .imm0)          ; will cause warning if entries are small big.
+ENDPROC iemAImpl_pshufw
+
+
+%macro IEMIMPL_MEDIA_SSE_PSHUFXX 1
+BEGINPROC_FASTCALL iemAImpl_ %+ %1, 16
+        PROLOGUE_4_ARGS
+        IEMIMPL_SSE_PROLOGUE
+
+        movdqu  xmm0, [A1]
+        movdqu  xmm1, [A2]
+        lea     T1, [.imm0 xWrtRIP]
+        lea     T0, [A3 + A3*2]         ; sizeof(pshufXX+ret) == 6: (A3 * 3) *2
+        lea     T1, [T1 + T0*2]
+        call    T1
+        movdqu  [A1], xmm0
+
+        IEMIMPL_SSE_EPILOGUE
+        EPILOGUE_4_ARGS
+ %assign bImm 0
+ %rep 256
+.imm %+ bImm:
+       %1       xmm0, xmm1, bImm
+       ret
+  %assign bImm bImm + 1
+ %endrep
+.immEnd:                                ; 256*6 == 0x600
+dw 0xf9ff  + (.immEnd - .imm0)          ; will cause warning if entries are too big.
+dw 0x105ff - (.immEnd - .imm0)          ; will cause warning if entries are small big.
+ENDPROC iemAImpl_ %+ %1
+%endmacro
+
+IEMIMPL_MEDIA_SSE_PSHUFXX pshufhw
+IEMIMPL_MEDIA_SSE_PSHUFXX pshuflw
+IEMIMPL_MEDIA_SSE_PSHUFXX pshufd
