@@ -20,6 +20,94 @@
  * @{
  */
 
+
+/**
+ * Worker function for iemHlpCheckPortIOPermission, don't call directly.
+ *
+ * @returns Strict VBox status code.
+ *
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   pCtx                The register context.
+ * @param   u16Port             The port number.
+ * @param   cbOperand           The operand size.
+ */
+static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX pCtx, uint16_t u16Port, uint8_t cbOperand)
+{
+    /* The TSS bits we're interested in are the same on 386 and AMD64. */
+    AssertCompile(AMD64_SEL_TYPE_SYS_TSS_BUSY  == X86_SEL_TYPE_SYS_386_TSS_BUSY);
+    AssertCompile(AMD64_SEL_TYPE_SYS_TSS_AVAIL == X86_SEL_TYPE_SYS_386_TSS_AVAIL);
+    AssertCompileMembersAtSameOffset(X86TSS32, offIoBitmap, X86TSS64, offIoBitmap);
+    AssertCompile(sizeof(X86TSS32) == sizeof(X86TSS64));
+
+    /*
+     * Check the TSS type, 16-bit TSSes doesn't have any I/O permission bitmap.
+     */
+    Assert(!pCtx->tr.Attr.n.u1DescType);
+    if (RT_UNLIKELY(   pCtx->tr.Attr.n.u4Type != AMD64_SEL_TYPE_SYS_TSS_BUSY
+                    && pCtx->tr.Attr.n.u4Type != AMD64_SEL_TYPE_SYS_TSS_AVAIL))
+    {
+        Log(("iomInterpretCheckPortIOAccess: Port=%#x cb=%d - TSS type %#x (attr=%#x) has no I/O bitmap -> #GP(0)\n",
+             u16Port, cbOperand, pCtx->tr.Attr.n.u4Type, pCtx->tr.Attr.u));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Read the bitmap offset (may #PF).
+     */
+    uint16_t offBitmap;
+    VBOXSTRICTRC rcStrict = iemMemFetchSysU16(pIemCpu, &offBitmap, UINT8_MAX,
+                                              pCtx->tr.u64Base + RT_OFFSETOF(X86TSS64, offIoBitmap));
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iomInterpretCheckPortIOAccess: Error reading offIoBitmap (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /*
+     * The bit range from u16Port to (u16Port + cbOperand - 1), however intel
+     * describes the CPU actually reading two bytes regardless of whether the
+     * bit range crosses a byte boundrary.  Thus the + 1 in the test below.
+     */
+    uint32_t offFirstBit = (uint32_t)u16Port / 8 + offBitmap;
+    /** @todo check if real CPUs ensures that offBitmap has a minimum value of
+     *        for instance sizeof(X86TSS32). */
+    if (offFirstBit + 1 > pCtx->tr.u32Limit) /* the limit is inclusive */
+    {
+        Log(("iomInterpretCheckPortIOAccess: offFirstBit=%#x + 1 is beyond u32Limit=%#x -> #GP(0)\n",
+             offFirstBit, pCtx->tr.u32Limit));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    /*
+     * Read the necessary bits.
+     */
+    /** @todo Test the assertion in the intel manual that the CPU reads two
+     *        bytes.  The question is how this works wrt to #PF and #GP on the
+     *        2nd byte when it's not required. */
+    uint16_t bmBytes = UINT16_MAX;
+    rcStrict = iemMemFetchSysU16(pIemCpu, &bmBytes, UINT8_MAX, pCtx->tr.u64Base + offFirstBit);
+    if (rcStrict != VINF_SUCCESS)
+    {
+        Log(("iomInterpretCheckPortIOAccess: Error reading I/O bitmap @%#x (%Rrc)\n", offFirstBit, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
+    }
+
+    /*
+     * Perform the check.
+     */
+    uint16_t fPortMask = (1 << cbOperand) - 1;
+    bmBytes >>= (u16Port & 7);
+    if (bmBytes & fPortMask)
+    {
+        Log(("iomInterpretCheckPortIOAccess: u16Port=%#x LB %u - access denied (bm=%#x mask=%#x) -> #GP(0)\n",
+             u16Port, cbOperand, bmBytes, fPortMask));
+        return iemRaiseGeneralProtectionFault0(pIemCpu);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Checks if we are allowed to access the given I/O port, raising the
  * appropriate exceptions if we aren't (or if the I/O bitmap is not
@@ -39,10 +127,7 @@ DECLINLINE(VBOXSTRICTRC) iemHlpCheckPortIOPermission(PIEMCPU pIemCpu, PCCPUMCTX 
     if (   (pCtx->cr0 & X86_CR0_PE)
         && (    pIemCpu->uCpl > Efl.Bits.u2IOPL
             ||  Efl.Bits.u1VM) )
-    {
-        NOREF(u16Port); NOREF(cbOperand); /** @todo I/O port permission bitmap check */
-        IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Implement I/O permission bitmap\n"));
-    }
+        return iemHlpCheckPortIOPermissionBitmap(pIemCpu, pCtx, u16Port, cbOperand);
     return VINF_SUCCESS;
 }
 
