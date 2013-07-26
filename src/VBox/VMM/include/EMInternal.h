@@ -265,11 +265,15 @@ typedef struct EMSTATS
 
     /** @name Privileged Instructions Ending Up In HC.
      * @{ */
+    STAMCOUNTER             StatIoRestarted;
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+    STAMCOUNTER             StatIoIem;
+#else
+    STAMCOUNTER             StatIn;
+    STAMCOUNTER             StatOut;
+#endif
     STAMCOUNTER             StatCli;
     STAMCOUNTER             StatSti;
-    STAMCOUNTER             StatIn;
-    STAMCOUNTER             StatIoRestarted;
-    STAMCOUNTER             StatOut;
     STAMCOUNTER             StatInvlpg;
     STAMCOUNTER             StatHlt;
     STAMCOUNTER             StatMovReadCR[DISCREG_CR4 + 1];

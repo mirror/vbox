@@ -414,6 +414,17 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  */
 static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+    STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
+
+    /* Hand it over to the interpreter. */
+    VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
+    LogFlow(("emR3ExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+    return VBOXSTRICTRC_TODO(rcStrict);
+
+#else
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
@@ -496,6 +507,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
+#endif
 }
 
 

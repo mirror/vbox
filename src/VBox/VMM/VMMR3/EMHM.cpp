@@ -298,6 +298,15 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
     AssertMsgReturn(rcStrict == VERR_NOT_FOUND, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)),
                     RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
 
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+    /* Hand it over to the interpreter. */
+    rcStrict = IEMExecOne(pVCpu);
+    LogFlow(("emR3ExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+    return VBOXSTRICTRC_TODO(rcStrict);
+
+#else
     /** @todo probably we should fall back to the recompiler; otherwise we'll go back and forth between HC & GC
      *   as io instructions tend to come in packages of more than one
      */
@@ -378,6 +387,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
+#endif
 }
 
 
