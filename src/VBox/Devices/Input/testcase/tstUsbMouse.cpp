@@ -110,8 +110,8 @@ static DECLCALLBACK(void) tstMouseReportModes(PPDMIMOUSECONNECTOR pInterface,
 }
 
 
-static int tstMouseConstruct(int iInstance, bool isAbsolute, uint8_t u8CoordShift,
-                             PPDMUSBINS *ppThis)
+static int tstMouseConstruct(int iInstance, const char *pcszMode,
+                             uint8_t u8CoordShift, PPDMUSBINS *ppThis)
 {
     int rc = VERR_NO_MEMORY;
     PPDMUSBINS pThis = (PPDMUSBINS)RTMemAllocZ(  sizeof(*pThis)
@@ -120,7 +120,7 @@ static int tstMouseConstruct(int iInstance, bool isAbsolute, uint8_t u8CoordShif
     if (pThis)
     pCfg = CFGMR3CreateTree(NULL);
     if (pCfg)
-        rc = CFGMR3InsertInteger(pCfg, "Absolute", isAbsolute);
+        rc = CFGMR3InsertString(pCfg, "Mode", pcszMode);
     if (RT_SUCCESS(rc))
         rc = CFGMR3InsertInteger(pCfg, "CoordShift", u8CoordShift);
     if (RT_SUCCESS(rc))
@@ -149,19 +149,62 @@ static void testConstructAndDestruct(RTTEST hTest)
 {
     PPDMUSBINS pThis;
     RTTestSub(hTest, "simple construction and destruction");
-    int rc = tstMouseConstruct(0, false, 1, &pThis);
+    int rc = tstMouseConstruct(0, "relative", 1, &pThis);
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (pThis)
         g_UsbHidMou.pfnDestruct(pThis);
 }
 
 
-static void testSendPosition(RTTEST hTest)
+static void testSendPositionRel(RTTEST hTest)
 {
     PPDMUSBINS pThis = NULL;
     VUSBURB Urb;
-    RTTestSub(hTest, "sending a position event");
-    int rc = tstMouseConstruct(0, true, 1, &pThis);
+    RTTestSub(hTest, "sending a relative position event");
+    int rc = tstMouseConstruct(0, "relative", 1, &pThis);
+    RT_ZERO(Urb);
+    if (RT_SUCCESS(rc))
+        rc = g_UsbHidMou.pfnUsbReset(pThis, false);
+    if (RT_SUCCESS(rc) && !s_drvTstMouse.pDrv)
+        rc = VERR_PDM_MISSING_INTERFACE;
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (RT_SUCCESS(rc))
+    {
+        s_drvTstMouse.pDrv->pfnPutEvent(s_drvTstMouse.pDrv, 123, -16, 1, -1, 3);
+        Urb.EndPt = 0x01;
+        rc = g_UsbHidMou.pfnUrbQueue(pThis, &Urb);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pThis, 0);
+        if (pUrb)
+        {
+            if (pUrb == &Urb)
+            {
+                if (   Urb.abData[0] != 3    /* Buttons */
+                    || Urb.abData[1] != 123  /* x */
+                    || Urb.abData[2] != 240  /* 256 - y */
+                    || Urb.abData[3] != 255  /* z */)
+                    rc = VERR_GENERAL_FAILURE;
+            }
+            else
+                rc = VERR_GENERAL_FAILURE;
+        }
+        else
+            rc = VERR_GENERAL_FAILURE;
+    }
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (pThis)
+        g_UsbHidMou.pfnDestruct(pThis);
+}
+
+
+static void testSendPositionAbs(RTTEST hTest)
+{
+    PPDMUSBINS pThis = NULL;
+    VUSBURB Urb;
+    RTTestSub(hTest, "sending an absolute position event");
+    int rc = tstMouseConstruct(0, "absolute", 1, &pThis);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
@@ -187,11 +230,59 @@ static void testSendPosition(RTTEST hTest)
         {
             if (pUrb == &Urb)
             {
+                if (   *(uint16_t *)&Urb.abData[0] != 150  /* x >> 1 */
+                    || *(uint16_t *)&Urb.abData[2] != 100  /* y >> 1 */
+                    || Urb.abData[4] != 3                  /* Buttons */)
+                    rc = VERR_GENERAL_FAILURE;
+            }
+            else
+                rc = VERR_GENERAL_FAILURE;
+        }
+        else
+            rc = VERR_GENERAL_FAILURE;
+    }
+    RTTEST_CHECK_RC_OK(hTest, rc);
+    if (pThis)
+        g_UsbHidMou.pfnDestruct(pThis);
+}
+
+
+static void testSendPositionMT(RTTEST hTest)
+{
+    PPDMUSBINS pThis = NULL;
+    VUSBURB Urb;
+    RTTestSub(hTest, "sending a multi-touch position event");
+    int rc = tstMouseConstruct(0, "multitouch", 1, &pThis);
+    RT_ZERO(Urb);
+    if (RT_SUCCESS(rc))
+    {
+        rc = g_UsbHidMou.pfnUsbReset(pThis, false);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        if (s_drvTstMouse.pDrv)
+            s_drvTstMouse.pDrv->pfnPutEventMT(s_drvTstMouse.pDrv, 300, 200, 2,
+                                              3);
+        else
+            rc = VERR_PDM_MISSING_INTERFACE;
+    }
+    if (RT_SUCCESS(rc))
+    {
+        Urb.EndPt = 0x01;
+        rc = g_UsbHidMou.pfnUrbQueue(pThis, &Urb);
+    }
+    if (RT_SUCCESS(rc))
+    {
+        PVUSBURB pUrb = g_UsbHidMou.pfnUrbReap(pThis, 0);
+        if (pUrb)
+        {
+            if (pUrb == &Urb)
+            {
                 if (   Urb.abData[0] != 1                  /* Report ID */
-                    || Urb.abData[1] != 3                  /* Buttons */
-                    || (int8_t)Urb.abData[2] != -1         /* Wheel, inverted */
-                    || *(uint16_t *)&Urb.abData[4] != 150  /* x >> 1 */
-                    || *(uint16_t *)&Urb.abData[6] != 100  /* y >> 1 */)
+                    || Urb.abData[1] != 3                  /* Contact flags */
+                    || *(uint16_t *)&Urb.abData[2] != 150  /* x >> 1 */
+                    || *(uint16_t *)&Urb.abData[4] != 100  /* y >> 1 */
+                    || Urb.abData[6] != 2                  /* Contact number */)
                     rc = VERR_GENERAL_FAILURE;
             }
             else
@@ -228,6 +319,8 @@ int main()
      * Run the tests.
      */
     testConstructAndDestruct(hTest);
-    testSendPosition(hTest);
+    testSendPositionRel(hTest);
+    testSendPositionAbs(hTest);
+    testSendPositionMT(hTest);
     return RTTestSummaryAndDestroy(hTest);
 }
