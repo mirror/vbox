@@ -2105,6 +2105,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_RESCHEDULE_RAW:
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_RAW: %d -> %d (EMSTATE_RAW)\n", enmOldState, EMSTATE_RAW));
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
+                    pVCpu->em.s.enmState = EMSTATE_RAW;
                     break;
 
                 /*
