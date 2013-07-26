@@ -189,20 +189,18 @@ static struct PDMDRVINS pdmdrvInsCore =
     NIL_RTR3PTR,             /* pCfg */
     &pdmiBase,
     NULL,                    /* pDownBase */
-    NULL,                    /* IBase */
+    {                        /* IBase */
+        NULL                 /* pfnQueryInterface */
+    },
     0,                       /* fTracing */
     0,                       /* idTracing */
 #if HC_ARCH_BITS == 32
-    {
-        0                    /* au32Padding */
-    },
+    { 0 },                   /* au32Padding */
 #endif
     {
-        0                    /* Padding */
+        { 0 }                /* padding */
     },                       /* Internal */
-    {
-        0                    /* achInstanceData */
-    }
+    { 0 }                    /* achInstanceData */
 };
 
 static struct PDMDRVINS *ppdmdrvIns = NULL;

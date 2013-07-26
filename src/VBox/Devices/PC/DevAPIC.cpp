@@ -1240,7 +1240,7 @@ PDMBOTHCBDECL(bool) apicHasPendingIrq(PPDMDEVINS pDevIns, VMCPUID idCpu, uint8_t
 
     if (pu8PendingIrq)
     {
-        Assert(irrv >= 0 && irrv <= UINT8_MAX);
+        Assert(irrv >= 0 && irrv <= (int)UINT8_MAX);
         *pu8PendingIrq = (uint8_t)irrv;
     }
     return true;

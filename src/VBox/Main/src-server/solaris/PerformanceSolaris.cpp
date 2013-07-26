@@ -143,15 +143,15 @@ CollectorSolaris::CollectorSolaris()
     mZfsSo = dlopen("libzfs.so", RTLD_LAZY);
     if (mZfsSo)
     {
-        mZfsInit        =        (PFNZFSINIT)dlsym(mZfsSo, "libzfs_init");
-        mZfsFini        =        (PFNZFSFINI)dlsym(mZfsSo, "libzfs_fini");
-        mZfsOpen        =        (PFNZFSOPEN)dlsym(mZfsSo, "zfs_open");
-        mZfsClose       =       (PFNZFSCLOSE)dlsym(mZfsSo, "zfs_close");
-        mZfsPropGetInt  =  (PFNZFSPROPGETINT)dlsym(mZfsSo, "zfs_prop_get_int");
-        mZpoolOpen      =      (PFNZPOOLOPEN)dlsym(mZfsSo, "zpool_open");
-        mZpoolClose     =     (PFNZPOOLCLOSE)dlsym(mZfsSo, "zpool_close");
-        mZpoolGetConfig = (PFNZPOOLGETCONFIG)dlsym(mZfsSo, "zpool_get_config");
-        mZpoolVdevName  =  (PFNZPOOLVDEVNAME)dlsym(mZfsSo, "zpool_vdev_name");
+        mZfsInit        =        (PFNZFSINIT)(uintptr_t)dlsym(mZfsSo, "libzfs_init");
+        mZfsFini        =        (PFNZFSFINI)(uintptr_t)dlsym(mZfsSo, "libzfs_fini");
+        mZfsOpen        =        (PFNZFSOPEN)(uintptr_t)dlsym(mZfsSo, "zfs_open");
+        mZfsClose       =       (PFNZFSCLOSE)(uintptr_t)dlsym(mZfsSo, "zfs_close");
+        mZfsPropGetInt  =  (PFNZFSPROPGETINT)(uintptr_t)dlsym(mZfsSo, "zfs_prop_get_int");
+        mZpoolOpen      =      (PFNZPOOLOPEN)(uintptr_t)dlsym(mZfsSo, "zpool_open");
+        mZpoolClose     =     (PFNZPOOLCLOSE)(uintptr_t)dlsym(mZfsSo, "zpool_close");
+        mZpoolGetConfig = (PFNZPOOLGETCONFIG)(uintptr_t)dlsym(mZfsSo, "zpool_get_config");
+        mZpoolVdevName  =  (PFNZPOOLVDEVNAME)(uintptr_t)dlsym(mZfsSo, "zpool_vdev_name");
 
         if (   mZfsInit
             && mZfsOpen
@@ -350,6 +350,7 @@ uint32_t CollectorSolaris::getInstance(const char *pszIfaceName, char *pszDevNam
 
 uint64_t CollectorSolaris::wrapCorrection(uint32_t cur, uint64_t prev, const char *name)
 {
+    NOREF(name);
     uint64_t corrected = (prev & 0xffffffff00000000) + cur;
     if (cur < (prev & 0xffffffff))
     {

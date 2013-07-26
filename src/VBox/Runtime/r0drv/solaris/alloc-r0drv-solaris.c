@@ -73,7 +73,7 @@ DECLHIDDEN(int) rtR0MemAllocEx(size_t cb, uint32_t fFlags, PRTMEMHDR *ppHdr)
 #ifdef RT_ARCH_AMD64
     if (fFlags & RTMEMHDR_FLAG_EXEC)
     {
-        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), NULL);
+        AssertReturn(!(fFlags & RTMEMHDR_FLAG_ANY_CTX), VERR_NOT_SUPPORTED);
         cbAllocated = RT_ALIGN_Z(cb + sizeof(*pHdr), PAGE_SIZE) - sizeof(*pHdr);
         pHdr = (PRTMEMHDR)segkmem_alloc(heaptext_arena, cbAllocated + sizeof(*pHdr), KM_SLEEP);
     }
