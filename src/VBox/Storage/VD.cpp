@@ -2770,19 +2770,21 @@ static int vdFlushHelperAsync(PVDIOCTX pIoCtx)
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pBackendData, pIoCtx);
         if (   (   RT_SUCCESS(rc)
-                || rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
+                || rc == VERR_VD_ASYNC_IO_IN_PROGRESS
+                || rc == VERR_VD_IOCTX_HALT)
             && pDisk->pCache)
         {
             rc = pDisk->pCache->Backend->pfnFlush(pDisk->pCache->pBackendData, pIoCtx);
             if (   RT_SUCCESS(rc)
-                || rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
+                || (   rc != VERR_VD_ASYNC_IO_IN_PROGRESS
+                    && rc != VERR_VD_IOCTX_HALT))
                 vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
-            else
+            else if (rc != VERR_VD_IOCTX_HALT)
                 rc = VINF_SUCCESS;
         }
         else if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
             rc = VINF_SUCCESS;
-        else /* Some other error. */
+        else if (rc != VERR_VD_IOCTX_HALT)/* Some other error. */
             vdIoCtxUnlockDisk(pDisk, pIoCtx, true /* fProcessBlockedReqs */);
     }
 
@@ -4620,6 +4622,9 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
     PVDIO    pVDIo = (PVDIO)pvUser;
     PVBOXHDD pDisk = pVDIo->pDisk;
 
+    LogFlowFunc(("pvUser=%#p pIoCtx=%#p rcReq=%Rrc cbCompleted=%zu\n",
+                 pvUser, pIoCtx, rcReq, cbCompleted));
+
     /*
      * Grab the disk critical section to avoid races with other threads which
      * might still modify the I/O context.
@@ -4629,7 +4634,7 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
      * It can overwrite the state to true before we call vdIoCtxContinue and the
      * the request would hang indefinite.
      */
-    pIoCtx->rcReq = rcReq;
+    ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rcReq, VINF_SUCCESS);
     ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCompleted);
 
     /* Set next transfer function if the current one finished.
