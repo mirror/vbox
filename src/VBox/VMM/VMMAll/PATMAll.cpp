@@ -35,6 +35,7 @@
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 
 
 /**
@@ -281,6 +282,46 @@ VMM_INT_DECL(RCPTRTYPE(PPATMGCSTATE)) PATMGetGCState(PVM pVM)
 VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddrGC)
 {
     return (PATMIsEnabled(pVM) && pAddrGC - (RTRCUINTPTR)pVM->patm.s.pPatchMemGC < pVM->patm.s.cbPatchMem) ? true : false;
+}
+
+/**
+ * Reads patch code.
+ *
+ * @returns
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PATCH_NOT_FOUND if the request is entirely outside the patch
+ *          code.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   GCPtrPatchCode  The patch address to start reading at.
+ * @param   pvDst           Where to return the patch code.
+ * @param   cbToRead        Number of bytes to read.
+ * @param   pcbRead         Where to return the actual number of bytes we've
+ *                          read. Optional.
+ */
+VMM_INT_DECL(int) PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst, size_t cbToRead, size_t *pcbRead)
+{
+    /* Shortcut. */
+    if (!PATMIsEnabled(pVM))
+        return VERR_PATCH_NOT_FOUND;
+    Assert(!HMIsEnabled(pVM));
+
+    RTGCPTR offPatchedInstr = GCPtrPatchCode - (RTGCPTR32)pVM->patm.s.pPatchMemGC;
+    if (offPatchedInstr >= pVM->patm.s.cbPatchMem)
+        return VERR_PATCH_NOT_FOUND;
+
+    uint32_t cbMaxRead = pVM->patm.s.cbPatchMem - (uint32_t)offPatchedInstr;
+    if (cbToRead > cbMaxRead)
+        cbToRead = cbMaxRead;
+
+#ifdef IN_RC
+    memcpy(pvDst, pVM->patm.s.pPatchMemGC + (uint32_t)offPatchedInstr, cbToRead);
+#else
+    memcpy(pvDst, pVM->patm.s.pPatchMemHC + (uint32_t)offPatchedInstr, cbToRead);
+#endif
+    if (pcbRead)
+        *pcbRead = cbToRead;
+    return VINF_SUCCESS;
 }
 
 /**

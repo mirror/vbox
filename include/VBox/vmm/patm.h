@@ -141,6 +141,7 @@ typedef enum
 #define PATMIsEnabled(a_pVM)    ((a_pVM)->fPATMEnabled)
 
 VMMDECL(bool)           PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddr);
+VMM_INT_DECL(int)       PATMReadPatchCode(PVM pVM, RTGCPTR GCPtrPatchCode, void *pvDst, size_t cbToRead, size_t *pcbRead);
 
 VMM_INT_DECL(void)      PATMRawEnter(PVM pVM, PCPUMCTXCORE pCtxCore);
 VMM_INT_DECL(void)      PATMRawLeave(PVM pVM, PCPUMCTXCORE pCtxCore, int rawRC);
