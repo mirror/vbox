@@ -43,7 +43,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 
 #include <VBox/VBoxVideoGuest.h>
 
@@ -193,4 +192,16 @@ void vboxvideo_crtc_init(struct drm_device *dev, int index)
     drm_crtc_helper_add(&vboxvideo_crtc->base, &vboxvideo_helper_funcs);
 }
 
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
+/** Sets the color ramps on behalf of fbcon */
+void vboxvideo_crtc_fb_gamma_set(struct drm_crtc *crtc, u16 red, u16 green,
+                                 u16 blue, int regno)
+{
+
+}
+
+/** Gets the color ramps on behalf of fbcon */
+void vboxvideo_crtc_fb_gamma_get(struct drm_crtc *crtc, u16 *red, u16 *green,
+                                 u16 *blue, int regno)
+{
+
+}

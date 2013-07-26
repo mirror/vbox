@@ -43,7 +43,6 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 33)
 
 #include "vboxvideo_drv.h"
 
@@ -137,5 +136,3 @@ struct drm_encoder *vboxvideo_dac_init(struct drm_device *dev)
 
     return encoder;
 }
-
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */

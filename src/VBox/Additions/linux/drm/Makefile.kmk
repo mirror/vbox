@@ -39,46 +39,55 @@ vboxvideo_drm-mod_EXEC_SOURCES = \
 # The kernel module.
 #
 # Note! Syntax checking only.  Don't bother if drmP.h is missing (introduced
-#       in 2.6.27).
+#       in 2.6.27).  For the mode-setting driver make sure this is supported.
 # Note! The DEBUG_HASH* stuff is for CONFIG_DYNAMIC_DEBUG-enabled kernels.
 #
-if defined(VBOX_WITH_ADDITION_DRIVERS) \
-  && "$(strip $(foreach inc,$(VBOX_LINUX_INCS),$(wildcard $(inc)/drm/drmP.h)))" != ""
- SYSMODS += vboxvideo_drm
- vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
- vboxvideo_drm_CFLAGS          = -fshort-wchar
- vboxvideo_drm_DEFS            = \
- 	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
- 	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
-	KBUILD_BASENAME=KBUILD_STR\(vboxvideo\) \
- 	DEBUG_HASH=2 DEBUG_HASH2=3
- # detect fc6 2.6.18
- vboxvideo_drm_DEFS           += \
- 	$(foreach inc,$(VBOX_LINUX_INCS),\
- 		$(if $(wildcard $(inc)/linux/utsrelease.h),\
- 		 $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
- 		               then echo yes; fi),KERNEL_FC6,),))
- # detect rhel5 2.6.18
- vboxvideo_drm_DEFS           += \
- 	$(foreach inc,$(VBOX_LINUX_INCS),\
- 		$(if $(wildcard $(inc)/linux/utsrelease.h),\
- 		 $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
- 		               then echo yes; fi),KERNEL_FC6,),))
+if defined(VBOX_WITH_ADDITION_DRIVERS)
  if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
-  vboxvideo_drm_SOURCES         = vboxvideo_drm.c
+  if "$(strip $(foreach inc,$(VBOX_LINUX_INCS),$(wildcard $(inc)/drm/drmP.h)))" != ""
+   SYSMODS += vboxvideo_drm
+  endif
  else
-  vboxvideo_drm_INCS           += ../../../Runtime/r0drv/linux
-  vboxvideo_drm_SOURCES         = \
-    ../../common/VBoxVideo/Modesetting.cpp \
-  	vboxvideo_crtc.c \
-  	vboxvideo_dac.c \
-  	vboxvideo_device.c \
-  	vboxvideo_display.c \
-  	vboxvideo_drv.c \
-  	vboxvideo_kms.c \
-  	vboxvideo_vga.c
+  if "$(shell grep -s 'DRIVER_MODESET' $(foreach inc,$(VBOX_LINUX_INCS),$(inc)/drm/drmP.h))" != ""
+   SYSMODS += vboxvideo_drm
+  endif
  endif
+endif
 
+vboxvideo_drm_TEMPLATE        = VBOXGUESTR0
+vboxvideo_drm_CFLAGS          = -fshort-wchar
+vboxvideo_drm_DEFS            = \
+	MODULE IN_RT_R0 VBOXGUEST VBOX_WITH_HGCM \
+	KBUILD_MODNAME=KBUILD_STR\(vboxvideo\) \
+	KBUILD_BASENAME=KBUILD_STR\(vboxvideo\) \
+	DEBUG_HASH=2 DEBUG_HASH2=3
+# detect fc6 2.6.18
+vboxvideo_drm_DEFS           += \
+	$(foreach inc,$(VBOX_LINUX_INCS),\
+		$(if $(wildcard $(inc)/linux/utsrelease.h),\
+		 $(if $(shell if grep -q '"2.6.18.*fc6.*"' $(inc)/linux/utsrelease.h;\
+		               then echo yes; fi),KERNEL_FC6,),))
+# detect rhel5 2.6.18
+vboxvideo_drm_DEFS           += \
+	$(foreach inc,$(VBOX_LINUX_INCS),\
+		$(if $(wildcard $(inc)/linux/utsrelease.h),\
+		 $(if $(shell if grep -q '"2.6.18.*el5.*"' $(inc)/linux/utsrelease.h;\
+		               then echo yes; fi),KERNEL_FC6,),))
+if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
+ vboxvideo_drm_SOURCES         = vboxvideo_drm.c
+else
+ vboxvideo_drm_INCS           += ../../../Runtime/r0drv/linux
+ vboxvideo_drm_SOURCES         = \
+   ../../common/VBoxVideo/Modesetting.cpp \
+ 	vboxvideo_crtc.c \
+ 	vboxvideo_dac.c \
+ 	vboxvideo_device.c \
+ 	vboxvideo_display.c \
+ 	vboxvideo_drv.c \
+ 	vboxvideo_fbdev.c \
+ 	vboxvideo_framebuffer.c \
+ 	vboxvideo_kms.c \
+ 	vboxvideo_vga.c
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

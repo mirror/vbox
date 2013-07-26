@@ -47,14 +47,22 @@
 
 #include <VBox/Hardware/VBoxVideoVBE.h>
 #include "drm/drmP.h"
+#include <linux/version.h>
 
 #define VBOXVIDEO_MAX_FB_HEIGHT VBE_DISPI_MAX_YRES
 #define VBOXVIDEO_MAX_FB_WIDTH  VBE_DISPI_MAX_XRES
 
 #define to_vboxvideo_crtc(x)    container_of(x, struct vboxvideo_crtc, base)
 #define to_vboxvideo_encoder(x) container_of(x, struct vboxvideo_encoder, base)
+#define to_vboxvideo_framebuffer(x) container_of(x, struct vboxvideo_framebuffer, base)
 
 #define VBOXVIDEO_DPMS_CLEARED (-1)
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+# define DRM_MODE_FB_CMD drm_mode_fb_cmd
+#else
+# define DRM_MODE_FB_CMD drm_mode_fb_cmd2
+#endif
 
 struct vboxvideo_crtc
 {
@@ -67,7 +75,9 @@ struct vboxvideo_crtc
 struct vboxvideo_mode_info
 {
     bool                    mode_config_initialized;
-    struct vboxvideo_crtc  *crtcs[VBOX_VIDEO_MAX_SCREENS];
+    struct vboxvideo_crtc  *crtcs[1]; /* FIXME: how many CRTCs? */
+    /* pointer to fbdev info structure */
+    struct vboxvideo_fbdev *gfbdev;
 };
 
 struct vboxvideo_encoder
@@ -78,6 +88,10 @@ struct vboxvideo_encoder
 
 struct vboxvideo_connector {
     struct drm_connector  base;
+};
+
+struct vboxvideo_framebuffer {
+    struct drm_framebuffer    base;
 };
 
 #endif                /* __DRM_VBOXVIDEO_H__ */

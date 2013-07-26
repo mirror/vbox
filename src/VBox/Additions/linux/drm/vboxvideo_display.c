@@ -44,14 +44,13 @@
 
 #include <linux/version.h>
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27)
-
 #include "vboxvideo_drv.h"
 
 int vboxvideo_modeset_init(struct vboxvideo_device *gdev)
 {
     struct drm_encoder *encoder;
     struct drm_connector *connector;
+    int ret;
     int i;
 
     drm_mode_config_init(gdev->ddev);
@@ -60,7 +59,7 @@ int vboxvideo_modeset_init(struct vboxvideo_device *gdev)
     gdev->ddev->mode_config.max_width = VBOXVIDEO_MAX_FB_WIDTH;
     gdev->ddev->mode_config.max_height = VBOXVIDEO_MAX_FB_HEIGHT;
 
-    gdev->ddev->mode_config.fb_base = gdev->mc.aper_base;
+    gdev->ddev->mode_config.fb_base = gdev->mc.vram_base;
 
     /* allocate crtcs */
     for (i = 0; i < gdev->num_crtc; i++)
@@ -82,15 +81,22 @@ int vboxvideo_modeset_init(struct vboxvideo_device *gdev)
 
     drm_mode_connector_attach_encoder(connector, encoder);
 
+    ret = vboxvideo_fbdev_init(gdev);
+    if (ret) {
+        VBOXVIDEO_ERROR("vboxvideo_fbdev_init failed\n");
+        return ret;
+    }
+
     return 0;
 }
 
 void vboxvideo_modeset_fini(struct vboxvideo_device *gdev)
 {
+    vboxvideo_fbdev_fini(gdev);
+
     if (gdev->mode_info.mode_config_initialized)
     {
         drm_mode_config_cleanup(gdev->ddev);
         gdev->mode_info.mode_config_initialized = false;
     }
 }
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 27) */
