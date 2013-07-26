@@ -382,11 +382,15 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER_USED(&pStats->StatRZFailedPrefix,         "/EM/CPU%d/RZ/Interpret/Failed/Prefix",     "The number of rejections because of prefix .");
         EM_REG_COUNTER_USED(&pStats->StatR3FailedPrefix,         "/EM/CPU%d/R3/Interpret/Failed/Prefix",     "The number of rejections because of prefix .");
 
-        EM_REG_COUNTER_USED(&pStats->StatCli,                    "/EM/CPU%d/R3/PrivInst/Cli",                "Number of cli instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatSti,                    "/EM/CPU%d/R3/PrivInst/Sti",                "Number of sli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatIoRestarted,            "/EM/CPU%d/R3/PrivInst/IoRestarted",        "I/O instructions restarted in ring-3.");
+# ifdef VBOX_WITH_FIRST_IEM_STEP
+        EM_REG_COUNTER_USED(&pStats->StatIoIem,                  "/EM/CPU%d/R3/PrivInst/IoIem",              "I/O instructions end to IEM in ring-3.");
+# else
         EM_REG_COUNTER_USED(&pStats->StatIn,                     "/EM/CPU%d/R3/PrivInst/In",                 "Number of in instructions.");
         EM_REG_COUNTER_USED(&pStats->StatOut,                    "/EM/CPU%d/R3/PrivInst/Out",                "Number of out instructions.");
-        EM_REG_COUNTER_USED(&pStats->StatIoRestarted,            "/EM/CPU%d/R3/PrivInst/IoRestarted",        "Number of restarted i/o instructions.");
+# endif
+        EM_REG_COUNTER_USED(&pStats->StatCli,                    "/EM/CPU%d/R3/PrivInst/Cli",                "Number of cli instructions.");
+        EM_REG_COUNTER_USED(&pStats->StatSti,                    "/EM/CPU%d/R3/PrivInst/Sti",                "Number of sli instructions.");
         EM_REG_COUNTER_USED(&pStats->StatHlt,                    "/EM/CPU%d/R3/PrivInst/Hlt",                "Number of hlt instructions not handled in GC because of PATM.");
         EM_REG_COUNTER_USED(&pStats->StatInvlpg,                 "/EM/CPU%d/R3/PrivInst/Invlpg",             "Number of invlpg instructions.");
         EM_REG_COUNTER_USED(&pStats->StatMisc,                   "/EM/CPU%d/R3/PrivInst/Misc",               "Number of misc. instructions.");
