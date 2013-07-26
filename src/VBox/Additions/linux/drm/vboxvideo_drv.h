@@ -67,14 +67,26 @@
 
 #define MB (1024 * 1024)
 
-/** @todo does this make sense?  What exactly is this connector? */
 #define VBOXVIDEOFB_CONN_LIMIT VBOX_VIDEO_MAX_SCREENS
 
 /* vboxvideo_crtc.c */
+void vboxvideo_crtc_fb_gamma_set(struct drm_crtc *crtc, u16 red, u16 green,
+                                 u16 blue, int regno);
+void vboxvideo_crtc_fb_gamma_get(struct drm_crtc *crtc, u16 *red, u16 *green,
+                                 u16 *blue, int regno);
 void vboxvideo_crtc_init(struct drm_device *dev, int index);
 
 /* vboxvideo_dac.c */
 struct drm_encoder *vboxvideo_dac_init(struct drm_device *dev);
+
+/* vboxvideo_fbdev.c */
+int vboxvideo_fbdev_init(struct vboxvideo_device *gdev);
+void vboxvideo_fbdev_fini(struct vboxvideo_device *gdev);
+
+/* vboxvideo_framebuffer.c */
+int vboxvideo_framebuffer_init(struct drm_device *dev,
+                               struct vboxvideo_framebuffer *gfb,
+                               struct DRM_MODE_FB_CMD *mode_cmd);
 
 /* vboxvideo_device.c */
 int vboxvideo_device_init(struct vboxvideo_device *gdev,

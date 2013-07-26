@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011-2012 Oracle Corporation
+ * Copyright (C) 2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,7 +16,7 @@
  * --------------------------------------------------------------------
  *
  * This code is based on
- * vboxvideo_device.c
+ * glint_framebuffer.c
  * with the following copyright and permission notice:
  *
  * Copyright 2010 Matt Turner.
@@ -41,70 +41,40 @@
  *
  * Authors: Matt Turner
  */
+#include "drm/drmP.h"
+#include "drm/drm.h"
+#include "drm/drm_crtc_helper.h"
 
-#include <linux/version.h>
-
-#include "the-linux-kernel.h"
-
+#include "vboxvideo.h"
 #include "vboxvideo_drv.h"
 
-#include <VBox/VBoxVideoGuest.h>
-
-static int vboxvideo_vram_init(struct vboxvideo_device *gdev)
+static void vboxvideo_user_framebuffer_destroy(struct drm_framebuffer *fb)
 {
-    unsigned size;
-    int ret;
+    drm_framebuffer_cleanup(fb);
+}
 
-    /* set accessible VRAM */
-    gdev->mc.vram_base = pci_resource_start(gdev->ddev->pdev, 1);
-    gdev->mc.vram_size = pci_resource_len(gdev->ddev->pdev, 1);
-
-    gdev->fAnyX        = VBoxVideoAnyWidthAllowed();
-    gdev->mc.vram_size = VBoxVideoGetVRAMSize();
-
-    if (!request_region(gdev->mc.vram_base, gdev->mc.vram_size, "vboxvideofb_vram")) {
-        VBOXVIDEO_ERROR("can't region_reserve VRAM\n");
-        return -ENXIO;
-    }
-
-    ret = drm_addmap(gdev->ddev, gdev->mc.vram_base, gdev->mc.vram_size,
-        _DRM_FRAME_BUFFER, _DRM_WRITE_COMBINING,
-        &gdev->framebuffer);
+static int vboxvideo_user_framebuffer_create_handle(struct drm_framebuffer *fb,
+                                                    struct drm_file *file_priv,
+                                                    unsigned int *handle)
+{
     return 0;
 }
 
-static void vboxvideo_vram_fini(struct vboxvideo_device *gdev)
+static const struct drm_framebuffer_funcs vboxvideo_fb_funcs = {
+    .destroy = vboxvideo_user_framebuffer_destroy,
+    .create_handle = vboxvideo_user_framebuffer_create_handle,
+};
+
+int vboxvideo_framebuffer_init(struct drm_device *dev,
+                               struct vboxvideo_framebuffer *gfb,
+                               struct DRM_MODE_FB_CMD *mode_cmd)
 {
-    if (gdev->framebuffer)
-        drm_rmmap(gdev->ddev, gdev->framebuffer);
-    if (gdev->mc.vram_base)
-        release_region(gdev->mc.vram_base, gdev->mc.vram_size);
-}
-
-int vboxvideo_device_init(struct vboxvideo_device *gdev,
-              struct drm_device *ddev,
-              struct pci_dev *pdev,
-              uint32_t flags)
-{
-    int ret;
-
-    gdev->dev      = &pdev->dev;
-    gdev->ddev     = ddev;
-    gdev->pdev     = pdev;
-    gdev->flags    = flags;
-    gdev->num_crtc = 1;
-
-    /** @todo hardware initialisation goes here once we start doing more complex
-     *        stuff.
-     */
-    ret = vboxvideo_vram_init(gdev);
-    if (ret)
+    int ret = drm_framebuffer_init(dev, &gfb->base, &vboxvideo_fb_funcs);
+    if (ret) {
+        VBOXVIDEO_ERROR("drm_framebuffer_init failed: %d\n", ret);
         return ret;
+    }
+    drm_helper_mode_fill_fb_struct(&gfb->base, mode_cmd);
 
     return 0;
-}
-
-void vboxvideo_device_fini(struct vboxvideo_device *gdev)
-{
-    vboxvideo_vram_fini(gdev);
 }

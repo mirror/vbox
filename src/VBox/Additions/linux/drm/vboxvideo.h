@@ -50,10 +50,8 @@
 
 struct vboxvideo_mc
 {
-    resource_size_t    aper_size;
-    resource_size_t    aper_base;
-    char __iomem      *vram;
-    u32                vram_size;
+    resource_size_t    vram_size;
+    resource_size_t    vram_base;
 };
 
 struct vboxvideo_device
@@ -64,6 +62,8 @@ struct vboxvideo_device
     unsigned long       flags;
     /** @todo move this into flags */
     bool                fAnyX;
+
+    drm_local_map_t    *framebuffer;
 
     struct vboxvideo_mc mc;
     struct vboxvideo_mode_info  mode_info;
