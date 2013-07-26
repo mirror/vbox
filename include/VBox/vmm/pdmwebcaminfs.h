@@ -31,12 +31,22 @@
 
 typedef struct PDMIWEBCAM_DEVICEDESC PDMIWEBCAM_DEVICEDESC;
 typedef struct PDMIWEBCAM_CTRLHDR PDMIWEBCAM_CTRLHDR;
+typedef struct PDMIWEBCAM_FRAMEHDR PDMIWEBCAM_FRAMEHDR;
 
 
-#define PDMIWEBCAMDOWN_IID "0846959f-8b4a-4b2c-be78-9903b2ae9de5"
+#define PDMIWEBCAMDOWN_IID "0d29b9a1-f4cd-4719-a564-38d5634ba9f8"
 typedef struct PDMIWEBCAMDOWN *PPDMIWEBCAMDOWN;
 typedef struct PDMIWEBCAMDOWN
 {
+    /*
+     * The PDM device is ready to get webcam notifications.
+     *
+     * @param pInterface  Pointer to the interface.
+     * @param fReady      Whether the device is ready.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnWebcamDownReady, (PPDMIWEBCAMDOWN pInterface,
+                                                    bool fReady));
+
     /*
      * Send a control request to the webcam.
      * Async response will be returned by pfnWebcamUpControl callback.
@@ -55,7 +65,7 @@ typedef struct PDMIWEBCAMDOWN
 } PDMIWEBCAMDOWN;
 
 
-#define PDMIWEBCAMUP_IID "476c5d41-7bd1-4997-825e-722a72577af3"
+#define PDMIWEBCAMUP_IID "6ac03e3c-f56c-4a35-80af-c13ce47a9dd7"
 typedef struct PDMIWEBCAMUP *PPDMIWEBCAMUP;
 typedef struct PDMIWEBCAMUP
 {
@@ -107,12 +117,16 @@ typedef struct PDMIWEBCAMUP
      *
      * @param pInterface   Pointer to the interface.
      * @param u64DeviceId  Unique id for the reported webcam assigned by the driver.
-     * @param pu8Frame     The frame data including the payload header and the image data.
-     * @param cbFrame      The size of the frame data.
+     * @param pHeader      Payload header.
+     * @param cbHeader     Size of the payload header.
+     * @param pvFrame      Frame (image) data.
+     * @param cbFrame      Size of the image data.
      */
     DECLR3CALLBACKMEMBER(void, pfnWebcamUpFrame,(PPDMIWEBCAMUP pInterface,
                                                  uint64_t u64DeviceId,
-                                                 const uint8_t *pu8Frame,
+                                                 PDMIWEBCAM_FRAMEHDR *pHeader,
+                                                 uint32_t cbHeader,
+                                                 const void *pvFrame,
                                                  uint32_t cbFrame));
 } PDMIWEBCAMUP;
 
