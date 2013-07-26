@@ -823,7 +823,7 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
     pIemCpu->iNextMapping       = 0;
     pIemCpu->rcPassUp           = VINF_SUCCESS;
     pIemCpu->fBypassHandlers    = fBypassHandlers;
-#ifdef IN_RC
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
     pIemCpu->fInPatchCode       = pIemCpu->uCpl == 0
                                && pCtx->cs.u64Base == 0
                                && pCtx->cs.u32Limit == UINT32_MAX
@@ -871,24 +871,26 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
         if (GCPtrPC32 > pCtx->cs.u32Limit)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         cbToTryRead = pCtx->cs.u32Limit - GCPtrPC32 + 1;
+        if (!cbToTryRead) /* overflowed */
+        {
+            Assert(GCPtrPC32 == 0); Assert(pCtx->cs.u32Limit == UINT32_MAX);
+            cbToTryRead = UINT32_MAX;
+        }
         GCPtrPC = pCtx->cs.u64Base + GCPtrPC32;
     }
 
-#if defined(IN_RC) && defined(VBOX_WITH_RAW_MODE)
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
     /* Allow interpretation of patch manager code blocks since they can for
        instance throw #PFs for perfectly good reasons. */
     if (pIemCpu->fInPatchCode)
     {
-        uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
-        if (cbToTryRead > cbLeftOnPage)
-            cbToTryRead = cbLeftOnPage;
-        if (cbToTryRead > sizeof(pIemCpu->abOpcode))
-            cbToTryRead = sizeof(pIemCpu->abOpcode);
-        memcpy(pIemCpu->abOpcode, (void const *)(uintptr_t)GCPtrPC, cbToTryRead);
-        pIemCpu->cbOpcode = cbToTryRead;
+        size_t cbRead = 0;
+        int rc = PATMReadPatchCode(IEMCPU_TO_VM(pIemCpu), GCPtrPC, pIemCpu->abOpcode, sizeof(pIemCpu->abOpcode), &cbRead);
+        AssertRCReturn(rc, rc);
+        pIemCpu->cbOpcode = (uint8_t)cbRead; Assert(pIemCpu->cbOpcode == cbRead); Assert(cbRead > 0);
         return VINF_SUCCESS;
     }
-#endif
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
@@ -964,7 +966,8 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
  *
  * @returns Strict VBox status code.
  * @param   pIemCpu             The IEM state.
- * @param   cbMin               Where to return the opcode byte.
+ * @param   cbMin               The minimum number of bytes relative offOpcode
+ *                              that must be read.
  */
 static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
 {
@@ -983,8 +986,6 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         GCPtrNext   = pCtx->rip + pIemCpu->cbOpcode;
         if (!IEM_IS_CANONICAL(GCPtrNext))
             return iemRaiseGeneralProtectionFault0(pIemCpu);
-        cbToTryRead = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
-        Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
     }
     else
     {
@@ -994,10 +995,38 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
         if (GCPtrNext32 > pCtx->cs.u32Limit)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         cbToTryRead = pCtx->cs.u32Limit - GCPtrNext32 + 1;
+        if (!cbToTryRead) /* overflowed */
+        {
+            Assert(GCPtrNext32 == 0); Assert(pCtx->cs.u32Limit == UINT32_MAX);
+            cbToTryRead = UINT32_MAX;
+            /** @todo check out wrapping around the code segment.  */
+        }
         if (cbToTryRead < cbMin - cbLeft)
             return iemRaiseSelectorBounds(pIemCpu, X86_SREG_CS, IEM_ACCESS_INSTRUCTION);
         GCPtrNext = pCtx->cs.u64Base + GCPtrNext32;
     }
+
+    /* Only read up to the end of the page, and make sure we don't read more
+       than the opcode buffer can hold. */
+    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
+    if (cbToTryRead > cbLeftOnPage)
+        cbToTryRead = cbLeftOnPage;
+    if (cbToTryRead > sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode)
+        cbToTryRead = sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode;
+    Assert(cbToTryRead >= cbMin - cbLeft); /* ASSUMPTION based on iemInitDecoderAndPrefetchOpcodes. */
+
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    /* Allow interpretation of patch manager code blocks since they can for
+       instance throw #PFs for perfectly good reasons. */
+    if (pIemCpu->fInPatchCode)
+    {
+        size_t cbRead = 0;
+        int rc = PATMReadPatchCode(IEMCPU_TO_VM(pIemCpu), GCPtrNext, pIemCpu->abOpcode, cbToTryRead, &cbRead);
+        AssertRCReturn(rc, rc);
+        pIemCpu->cbOpcode = (uint8_t)cbRead; Assert(pIemCpu->cbOpcode == cbRead); Assert(cbRead > 0);
+        return VINF_SUCCESS;
+    }
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
 
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
@@ -1026,12 +1055,6 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
     /*
      * Read the bytes at this address.
      */
-    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrNext & PAGE_OFFSET_MASK);
-    if (cbToTryRead > cbLeftOnPage)
-        cbToTryRead = cbLeftOnPage;
-    if (cbToTryRead > sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode)
-        cbToTryRead = sizeof(pIemCpu->abOpcode) - pIemCpu->cbOpcode;
-    Assert(cbToTryRead >= cbMin - cbLeft);
     if (!pIemCpu->fBypassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead);
     else
