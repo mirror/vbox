@@ -373,7 +373,7 @@ VBOX_WITH_OLD_VTX_CODE =
 # Activate this to use the old AMD-V code.
 VBOX_WITH_OLD_AMDV_CODE =
 # Enables the first step using IEM (the interpreter).
-VBOX_WITH_FIRST_IEM_STEP = #1
+VBOX_WITH_FIRST_IEM_STEP = 1
 ## @}
 
 
