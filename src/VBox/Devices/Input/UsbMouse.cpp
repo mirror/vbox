@@ -926,8 +926,10 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         pReport->mt.fContact         = pAccumulated->u.MultiTouch.fContact;
 
         cbCopy = sizeof(pReport->mt);
-        LogRel3(("Multi-touch event, x=%u, y=%u, report size %d\n",
-                 pReport->mt.x, pReport->mt.y, cbCopy));
+        LogRel3(("Multi-touch event, x=%u, y=%u, cContact=%u, fContact=%02x, report size %d\n",
+                 (unsigned)pReport->mt.x, (unsigned)pReport->mt.y,
+                 (unsigned)pReport->mt.cContact, (unsigned)pReport->mt.fContact,
+                 cbCopy));
         break;
     }
 
@@ -1045,8 +1047,8 @@ static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
      * accumulated and only the last value is used).
      */
     pThis->PtrDelta.u.MultiTouch.fContact = fContact;
-    pThis->PtrDelta.u.MultiTouch.x        = x;
-    pThis->PtrDelta.u.MultiTouch.y        = y;
+    pThis->PtrDelta.u.MultiTouch.x        = x >> pThis->u8CoordShift;
+    pThis->PtrDelta.u.MultiTouch.y        = y >> pThis->u8CoordShift;
     pThis->PtrDelta.u.MultiTouch.cContact = cContact;
 
     /* Send a report if possible. */
