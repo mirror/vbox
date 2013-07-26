@@ -1271,19 +1271,15 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         Mouse *pMouse = mMouse;
         PointingHIDType_T aPointingHID;
         hrc = pMachine->COMGETTER(PointingHIDType)(&aPointingHID);          H();
-        if (   aPointingHID == PointingHIDType_PS2Mouse
-            || aPointingHID == PointingHIDType_ComboMouse)
-        {
-            InsertConfigNode(pInst,    "LUN#1", &pLunL0);
-            InsertConfigString(pLunL0, "Driver",               "MouseQueue");
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
-            InsertConfigInteger(pCfg, "QueueSize",            128);
+        InsertConfigNode(pInst,    "LUN#1", &pLunL0);
+        InsertConfigString(pLunL0, "Driver",               "MouseQueue");
+        InsertConfigNode(pLunL0,   "Config", &pCfg);
+        InsertConfigInteger(pCfg, "QueueSize",            128);
 
-            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-            InsertConfigString(pLunL1, "Driver",               "MainMouse");
-            InsertConfigNode(pLunL1,   "Config", &pCfg);
-            InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-        }
+        InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+        InsertConfigString(pLunL1, "Driver",               "MainMouse");
+        InsertConfigNode(pLunL1,   "Config", &pCfg);
+        InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
 
         /*
          * i8254 Programmable Interval Timer And Dummy Speaker
