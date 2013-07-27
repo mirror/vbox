@@ -2651,10 +2651,17 @@
 #endif
 
 /** @def RT_INLINE_ASM_USES_INTRIN
- * Defined as 1 if the compiler have and uses intrin.h. Otherwise it is 0. */
+ * Defined as the major MSC version if the compiler have and uses intrin.h.
+ * Otherwise it is 0. */
 #ifdef _MSC_VER
-# if _MSC_VER >= 1400
-#  define RT_INLINE_ASM_USES_INTRIN 1
+# if   _MSC_VER >= 1700
+#  define RT_INLINE_ASM_USES_INTRIN 17
+# elif _MSC_VER >= 1600
+#  define RT_INLINE_ASM_USES_INTRIN 16
+# elif _MSC_VER >= 1500
+#  define RT_INLINE_ASM_USES_INTRIN 15
+# elif _MSC_VER >= 1400
+#  define RT_INLINE_ASM_USES_INTRIN 14
 # endif
 #endif
 #ifndef RT_INLINE_ASM_USES_INTRIN
