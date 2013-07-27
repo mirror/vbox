@@ -68,10 +68,9 @@
 
 /**
  * Host-state restoration structure.
- * This holds host-state fields that require manual restoration. The layout is
- * critical as it's used from assembly code.
+ * This holds host-state fields that require manual restoration.
+ * Assembly version found in hm_vmx.mac (should be automatically verified).
  */
-#pragma pack(1)
 typedef struct VMXRESTOREHOST
 {
     RTSEL       uHostSelDS;     /* 0x00 */
@@ -79,26 +78,20 @@ typedef struct VMXRESTOREHOST
     RTSEL       uHostSelFS;     /* 0x04 */
     RTSEL       uHostSelGS;     /* 0x06 */
     RTSEL       uHostSelTR;     /* 0x08 */
-    uint16_t    u16Padding;     /* 0x0a */
-    uint64_t    uHostFSBase;    /* 0x0c */
-    uint64_t    uHostGSBase;    /* 0x14 */
-    X86XDTR64   HostGdtr;       /* 0x1c */
-    X86XDTR64   HostIdtr;       /* 0x26 */
+    uint8_t     abPadding0[4];
+    X86XDTR64   HostGdtr;       /**< 0x0e - should be aligned by it's 64-bit member.  */
+    uint8_t     abPadding1[6];
+    X86XDTR64   HostIdtr;       /**< 0x1e - should be aligned by it's 64-bit member. */
+    uint64_t    uHostFSBase;    /* 0x28 */
+    uint64_t    uHostGSBase;    /* 0x30 */
 } VMXRESTOREHOST;
-#pragma pack()
 /** Pointer to VMXRESTOREHOST. */
 typedef VMXRESTOREHOST *PVMXRESTOREHOST;
 AssertCompileSize(X86XDTR64, 10);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelDS,    0);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelES,    2);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelFS,    4);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelGS,    6);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostSelTR,    8);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,  12);
-AssertCompileMemberOffset(VMXRESTOREHOST, uHostGSBase,  20);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr,     28);
-AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr,     38);
-AssertCompileSize(VMXRESTOREHOST, 48);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostGdtr.uAddr, 16);
+AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 32);
+AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40);
+AssertCompileSize(VMXRESTOREHOST, 56);
 
 /** @name VMX VMCS-Read cache indices.
  * @{
