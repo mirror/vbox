@@ -285,80 +285,90 @@ BEGINCODE
 ; * Restores host-state fields.
 ; *
 ; * @returns VBox status code
-; * @param   u32RestoreHostFlags  x86: [ebp + 08h]  msc: rcx  gcc: rdi   u32RestoreHost - RestoreHost flags.
-; * @param   pRestoreHost         x86: [ebp + 0ch]  msc: rdx  gcc: rsi   pRestoreHost - Pointer to the RestoreHost struct.
+; * @param   f32RestoreHost x86: [ebp + 08h]  msc: ecx  gcc: edi   RestoreHost flags.
+; * @param   pRestoreHost   x86: [ebp + 0ch]  msc: rdx  gcc: rsi   Pointer to the RestoreHost struct.
 ; */
 ALIGNCODE(16)
 BEGINPROC VMXRestoreHostState
 %ifdef RT_ARCH_AMD64
  %ifndef ASM_CALL64_GCC
-    ; On msc R10, R11 are scratch, RDI and RSI are not. So we must save and restore them!
+    ; Use GCC's input registers since we'll be needing both rcx and rdx further
+    ; down with the wrmsr instruction.  Use the R10 and R11 register for saving
+    ; RDI and RSI since MSC preserve the two latter registers.
     mov         r10, rdi
     mov         r11, rsi
-    ; Switch to common register usage (i.e. gcc's in this function)
     mov         rdi, rcx
     mov         rsi, rdx
  %endif
 
     test        edi, VMX_RESTORE_HOST_GDTR
-    jz          near .test_idtr
+    jz          .test_idtr
     lgdt        [rsi + VMXRESTOREHOST.HostGdtr]
 
 .test_idtr:
     test        edi, VMX_RESTORE_HOST_IDTR
-    jz          near .test_ds
+    jz          .test_ds
     lidt        [rsi + VMXRESTOREHOST.HostIdtr]
 
 .test_ds:
     test        edi, VMX_RESTORE_HOST_SEL_DS
-    jz          near .test_es
-    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelDS]
+    jz          .test_es
+    mov         ax, [rsi + VMXRESTOREHOST.uHostSelDS]
     mov         ds, ax
 
 .test_es:
     test        edi, VMX_RESTORE_HOST_SEL_ES
-    jz          near .test_tr
-    mov         ax, word [rsi + VMXRESTOREHOST.uHostSelES]
+    jz          .test_tr
+    mov         ax, [rsi + VMXRESTOREHOST.uHostSelES]
     mov         es, ax
 
 .test_tr:
     test        edi, VMX_RESTORE_HOST_SEL_TR
-    jz          near .test_fs
-    mov         dx, word [rsi + VMXRESTOREHOST.uHostSelTR]
-    xor         xAX, xAX
+    jz          .test_fs
+    ; When restoring the TR, we must first clear the busy flag or we'll end up faulting.
+    mov         dx, [rsi + VMXRESTOREHOST.uHostSelTR]
     mov         ax, dx
-    and         al, ~(X86_SEL_LDT | X86_SEL_RPL)                  ; Mask away TI and RPL bits leaving only the descriptor offset.
-    add         xAX, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]    ; xAX <- descriptor offset + GDTR.pGdt.
-    and         dword [ss:xAX + 4], ~RT_BIT(9)                    ; Clear the busy flag in TSS (bits 0-7=base, bit 9=busy bit).
+    and         eax, X86_SEL_MASK_OFF_RPL                       ; Mask away TI and RPL bits leaving only the descriptor offset.
+    add         rax, qword [rsi + VMXRESTOREHOST.HostGdtr + 2]  ; xAX <- descriptor offset + GDTR.pGdt.
+    and         dword [rax + 4], ~RT_BIT(9)                     ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
     ltr         dx
 
 .test_fs:
-    ; We're only restoring the selector. The base is valid and restored by VT-x. If we get an interrupt in between FS & GS
-    ; below, we are fine as the base is what is relevant in 64-bit mode. We need to disable interrupts only during
-    ; writing of the selector as that zaps (trashes) the upper-part of the base until we wrmsr the full 64-bit base.
+    ;
+    ; When restoring the selector values for FS and GS, we'll temporarily trash
+    ; the base address (at least the high 32-bit bits, but quite possibly the
+    ; whole base address), the wrmsr will restore it correctly. (VT-x actually
+    ; restores the base correctly when leaving guest mode, but not the selector
+    ; value, so there is little problem with interrupts being enabled prior to
+    ; this restore job.)
+    ; We'll disable ints once for both FS and GS as that's probably faster.
+    ;
+    test        edi, VMX_RESTORE_HOST_SEL_FS | VMX_RESTORE_HOST_SEL_GS
+    jz          .restore_success
+    pushfq
+    cli                                   ; (see above)
 
     test        edi, VMX_RESTORE_HOST_SEL_FS
-    jz          near .test_gs
+    jz          .test_gs
     mov         ax, word [rsi + VMXRESTOREHOST.uHostSelFS]
-    cli                                   ; Disable interrupts as mov fs, ax will zap the upper part of the base
     mov         fs, ax
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostFSBase]         ; uHostFSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostFSBase + 4h]    ; uHostFSBase - Hi
     mov         ecx, MSR_K8_FS_BASE
     wrmsr
-    sti                                   ; Re-enable interrupts as fsbase is consistent now
 
-.test_gs:
     test        edi, VMX_RESTORE_HOST_SEL_GS
-    jz          near .restore_success
+    jz          .restore_flags
+.test_gs:
     mov         ax, word [rsi + VMXRESTOREHOST.uHostSelGS]
-    cli                                   ; Disable interrupts as mov gs, ax will zap the upper part of the base
     mov         gs, ax
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostGSBase]         ; uHostGSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostGSBase + 4h]    ; uHostGSBase - Hi
     mov         ecx, MSR_K8_GS_BASE
     wrmsr
-    sti                                   ; Re-enable interrupts as gsbase is consistent now
+
+.restore_flags:
+    popfq
 
 .restore_success:
     mov         eax, VINF_SUCCESS

@@ -6666,14 +6666,9 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hm.s.vmx.fRestoreHostFlags)
     {
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-        /** @todo r=ramshankar: This is broken when
-         *        VBOX_WITH_VMMR0_DISABLE_PREEMPTION is not defined. As
-         *        VMXRestoreHostState() may unconditionally enables interrupts. */
-#error "VMM: Fix Me! Make VMXRestoreHostState() function to skip cli/sti."
-#else
         Assert(ASMIntAreEnabled());
-        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
 #endif
+        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
     }
 
