@@ -5583,20 +5583,22 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                      before using them.
  *
  * @remarks No-long-jump zone!!!
+ * @todo r=bird: Why is this plural when it only saves DR7?  I almost jumped to
+ *       the wrong conclusions looking at the I/O code just now (it most likely
+ *       only needs DR7).
  */
 static int hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    int rc = VINF_SUCCESS;
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
     {
         /* Upper 32-bits are always zero. See Intel spec. 2.7.3 "Loading and Storing Debug Registers". */
         uint32_t u32Val;
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_DR7, &u32Val);        AssertRCReturn(rc, rc);
+        int rc = VMXReadVmcs32(VMX_VMCS_GUEST_DR7, &u32Val);    AssertRCReturn(rc, rc);
         pMixedCtx->dr[7] = u32Val;
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_DEBUG;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -8336,41 +8338,41 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
     uint32_t uIOPort   = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
-    uint32_t uIOWidth  = VMX_EXIT_QUALIFICATION_IO_WIDTH(pVmxTransient->uExitQualification);
-    bool     fIOWrite  = (VMX_EXIT_QUALIFICATION_IO_DIRECTION(pVmxTransient->uExitQualification)
+    uint8_t  uIOWidth  = VMX_EXIT_QUALIFICATION_IO_WIDTH(pVmxTransient->uExitQualification);
+    bool     fIOWrite  = (   VMX_EXIT_QUALIFICATION_IO_DIRECTION(pVmxTransient->uExitQualification)
                           == VMX_EXIT_QUALIFICATION_IO_DIRECTION_OUT);
     bool     fIOString = (VMX_EXIT_QUALIFICATION_IO_STRING(pVmxTransient->uExitQualification) == 1);
-    Assert(uIOWidth == 0 || uIOWidth == 1 || uIOWidth == 3);
+    AssertReturn(uIOWidth <= 3 && uIOWidth != 2, VERR_HM_IPE_3);
 
     /* I/O operation lookup arrays. */
-    static const uint32_t s_aIOSize[4]  = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
+    static const uint32_t s_aIOSizes[4]  = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
     static const uint32_t s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };  /* AND masks for saving the result (in AL/AX/EAX). */
 
-    const uint32_t cbSize  = s_aIOSize[uIOWidth];
-    const uint32_t cbInstr = pVmxTransient->cbInstr;
-    PVM pVM                = pVCpu->CTX_SUFF(pVM);
+    const uint32_t cbValue  = s_aIOSizes[uIOWidth];
+    const uint32_t cbInstr  = pVmxTransient->cbInstr;
+    PVM pVM                 = pVCpu->CTX_SUFF(pVM);
     if (fIOString)
     {
         /* INS/OUTS - I/O String instruction. */
-        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
         /** @todo for now manually disassemble later optimize by getting the fields from
          *        the VMCS. VMX_VMCS_RO_EXIT_GUEST_LINEAR_ADDR contains the flat pointer
          *        operand of the instruction. VMX_VMCS32_RO_EXIT_INSTR_INFO contains
          *        segment prefix info. */
+        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
         rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
         if (RT_SUCCESS(rc))
         {
             if (fIOWrite)
             {
                 VBOXSTRICTRC rc2 = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                                      (DISCPUMODE)pDis->uAddrMode, cbSize);
+                                                      (DISCPUMODE)pDis->uAddrMode, cbValue);
                 rc = VBOXSTRICTRC_VAL(rc2);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
             }
             else
             {
                 VBOXSTRICTRC rc2 = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                                     (DISCPUMODE)pDis->uAddrMode, cbSize);
+                                                     (DISCPUMODE)pDis->uAddrMode, cbValue);
                 rc = VBOXSTRICTRC_VAL(rc2);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
             }
@@ -8388,16 +8390,16 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         Assert(!VMX_EXIT_QUALIFICATION_IO_REP(pVmxTransient->uExitQualification));
         if (fIOWrite)
         {
-            VBOXSTRICTRC rc2 = IOMIOPortWrite(pVM, pVCpu, uIOPort, pMixedCtx->eax & uAndVal, cbSize);
+            VBOXSTRICTRC rc2 = IOMIOPortWrite(pVM, pVCpu, uIOPort, pMixedCtx->eax & uAndVal, cbValue);
             rc = VBOXSTRICTRC_VAL(rc2);
             if (rc == VINF_IOM_R3_IOPORT_WRITE)
-                HMR0SavePendingIOPortWrite(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbSize);
+                HMR0SavePendingIOPortWrite(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
         }
         else
         {
             uint32_t u32Result = 0;
-            VBOXSTRICTRC rc2 = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbSize);
+            VBOXSTRICTRC rc2 = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbValue);
             rc = VBOXSTRICTRC_VAL(rc2);
             if (IOM_SUCCESS(rc))
             {
@@ -8405,7 +8407,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                 pMixedCtx->eax = (pMixedCtx->eax & ~uAndVal) | (u32Result & uAndVal);
             }
             else if (rc == VINF_IOM_R3_IOPORT_READ)
-                HMR0SavePendingIOPortRead(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbSize);
+                HMR0SavePendingIOPortRead(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
         }
     }
@@ -8416,50 +8418,71 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
+            /*
+             * If any I/O breakpoints are armed, then we should check if a
+             * debug trap needs to be generated.
+             * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
+             */
             rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);      /* For DR7. */
             AssertRCReturn(rc, rc);
-
-            /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
-            if (pMixedCtx->dr[7] & X86_DR7_ENABLED_MASK)
+            uint32_t const uDr7 = pMixedCtx->dr[7];
+            if (   (uDr7 & X86_DR7_ENABLED_MASK)
+                && X86_DR7_ANY_RW_IO(uDr7)
+                && (pMixedCtx->cr4 & X86_CR4_DE) )
             {
+                /** @todo We're a little late here if we're doing string I/O, as we're supposed
+                 *        to break after the each repetition.  Not sooo important, just for a
+                 *        rainy day. (Should probably refactor some of this code; after the uDr7
+                 *        detection let someone else handle it.) */
+                /** @todo The AMD is mumbling something that sounds like cbValue == cbBp.  The
+                 *        Intel manual describes it differently, data and I/O breakpoints are to
+                 *        be matched in the same way, probably.  Bochs does it that way. We've
+                 *        implemented it that way too, but it would be worth having a
+                 *        bootsector testcase for asserting the correct behavior (as well as
+                 *        correctness of this code). */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
-                for (unsigned i = 0; i < 4; i++)
+                uint32_t uIOPortLast = uIOPort + cbValue - 1;
+                for (unsigned iBp = 0; iBp < 4; iBp++)
                 {
-                    uint32_t uBPLen = s_aIOSize[X86_DR7_GET_LEN(pMixedCtx->dr[7], i)];
-                    if (   (   uIOPort >= pMixedCtx->dr[i]
-                            && uIOPort < pMixedCtx->dr[i] + uBPLen)
-                        && (pMixedCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
-                        && (pMixedCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
+                    if (   (uDr7 & X86_DR7_L_G(iBp))
+                        && X86_DR7_GET_RW(uDr7, iBp) == X86_DR7_RW_IO)
                     {
-                        Assert(CPUMIsGuestDebugStateActive(pVCpu));
-                        uint64_t uDR6 = ASMGetDR6();
+                        /* ASSUME the breakpoint and the I/O width qualifier uses the same encoding (1 2 x 4). */
+                        static uint8_t const s_abInvAlign[4] = { 0, 1, 7, 3 };
+                        uint8_t  cbInvAlign = s_abInvAlign[X86_DR7_GET_LEN(uDr7, iBp)];
+                        uint64_t uDrXFirst  = pMixedCtx->dr[iBp] & ~(uint64_t)cbInvAlign;
+                        uint64_t uDrXLast   = uDrXFirst + cbInvAlign;
+                        if (uDrXFirst <= uIOPortLast && uDrXLast >= uIOPort)
+                        {
+                            Assert(CPUMIsGuestDebugStateActive(pVCpu));
+                            uint64_t uDR6 = ASMGetDR6();
 
-                        /* Clear all breakpoint status flags and set the one we just hit. */
-                        uDR6 &= ~(X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3);
-                        uDR6 |= (uint64_t)RT_BIT(i);
+                            /* Clear all breakpoint status flags and set the one we just hit. */
+                            uDR6 &= ~X86_DR6_B_MASK;
+                            uDR6 |= X86_DR6_B(iBp);
 
-                        /*
-                         * Note: AMD64 Architecture Programmer's Manual 13.1:
-                         * Bits 15:13 of the DR6 register is never cleared by the processor and must
-                         * be cleared by software after the contents have been read.
-                         */
-                        ASMSetDR6(uDR6);
+                            /*
+                             * Note: AMD64 Architecture Programmer's Manual 13.1:
+                             * Bits 15:13 of the DR6 register is never cleared by the processor and must
+                             * be cleared by software after the contents have been read.
+                             */
+                            ASMSetDR6(uDR6);
 
-                        /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
-                        pMixedCtx->dr[7] &= ~X86_DR7_GD;
+                            /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
+                            pMixedCtx->dr[7] &= ~X86_DR7_GD;
 
-                        /* Paranoia. */
-                        pMixedCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
-                        pMixedCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
-                        pMixedCtx->dr[7] |= 0x400;                                                  /* MB1. */
+                            /* Paranoia. */
+                            pMixedCtx->dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
+                            pMixedCtx->dr[7] |= X86_DR7_RA1_MASK;
 
-                        /* Resync DR7 */
-                        /** @todo probably cheaper to just reload DR7, nothing else needs changing. */
-                        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+                            /* Resync DR7 */
+                            /** @todo probably cheaper to just reload DR7, nothing else needs changing. */
+                            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
 
-                        /* Set #DB to be injected into the VM and continue guest execution. */
-                        hmR0VmxSetPendingXcptDB(pVCpu, pMixedCtx);
-                        break;
+                            /* Set #DB to be injected into the VM and continue guest execution. */
+                            hmR0VmxSetPendingXcptDB(pVCpu, pMixedCtx);
+                            break;
+                        }
                     }
                 }
             }
