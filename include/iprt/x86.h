@@ -737,6 +737,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_DR6_B2                          RT_BIT(2)
 /** Bit 3 - B3 - Breakpoint 3 condition detected. */
 #define X86_DR6_B3                          RT_BIT(3)
+/** Mask of all the Bx bits. */
+#define X86_DR6_B_MASK                      UINT64_C(0x0000000f)
 /** Bit 13 - BD - Debug register access detected. Corresponds to the X86_DR7_GD bit. */
 #define X86_DR6_BD                          RT_BIT(13)
 /** Bit 14 - BS - Single step */
@@ -752,6 +754,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bits which must be 0s on writes to DR6. */
 #define X86_DR6_MBZ_MASK                    UINT64_C(0xffffffff00000000)
 /** @} */
+
+/** Get the DR6.Bx bit for a the given breakpoint. */
+#define X86_DR6_B(iBp)                      RT_BIT_64(iBp)
 
 
 /** @name DR7
@@ -814,6 +819,11 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  */
 #define X86_DR7_G(iBp)                      ( UINT32_C(1) << (iBp * 2 + 1) )
 
+/** Calcs the L and G bits of Nth breakpoint.
+ * @param   iBp     The breakpoint number [0..3].
+ */
+#define X86_DR7_L_G(iBp)                    ( UINT32_C(3) << (iBp * 2) )
+
 /** @name Read/Write values.
  * @{ */
 /** Break on instruction fetch only. */
@@ -831,6 +841,33 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @param   fRw     One of the X86_DR7_RW_* value.
  */
 #define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
+
+/** Fetch the the R/Wx bits for a given breakpoint (so it can be compared with
+ * one of the X86_DR7_RW_XXX constants).
+ *
+ * @returns X86_DR7_RW_XXX
+ * @param   uDR7    DR7 value
+ * @param   iBp     The breakpoint number [0..3].
+ */
+#define X86_DR7_GET_RW(uDR7, iBp)            ( ( (uDR7) >> ((iBp) * 4 + 16) ) & UINT32_C(3) )
+
+/** R/W0, R/W1, R/W2, and R/W3. */
+#define X86_DR7_RW_ALL_MASKS                UINT32_C(0x33330000)
+
+/** Checks if there are any I/O breakpoint types configured in the RW
+ * registers.  Does NOT check if these are enabled, sorry. */
+#define X86_DR7_ANY_RW_IO(uDR7) \
+    (   (    UINT32_C(0x22220000) & (uDR7) ) /* any candidates? */ \
+     && ( ( (UINT32_C(0x22220000) & (uDR7) ) >> 1 )  &  ~(uDR7) ) )
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x33330000)) == 0);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x22220000)) == 1);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x32320000)) == 1);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x23230000)) == 1);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00000000)) == 0);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00010000)) == 0);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00020000)) == 1);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00030000)) == 0);
+AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 
 /** @name Length values.
  * @{ */
@@ -850,13 +887,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
  * @param   uDR7    DR7 value
  * @param   iBp     The breakpoint number [0..3].
  */
-#define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3U)
+#define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & UINT32_C(0x3) )
 
 /** Mask used to check if any breakpoints are enabled. */
-#define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
-
-/** Mask used to check if any io breakpoints are set. */
-#define X86_DR7_IO_ENABLED_MASK             (X86_DR7_RW(0, X86_DR7_RW_IO) | X86_DR7_RW(1, X86_DR7_RW_IO) | X86_DR7_RW(2, X86_DR7_RW_IO) | X86_DR7_RW(3, X86_DR7_RW_IO))
+#define X86_DR7_ENABLED_MASK                UINT32_C(0x000000ff)
 
 /** Value of DR7 after powerup/reset. */
 #define X86_DR7_INIT_VAL                    0x400
