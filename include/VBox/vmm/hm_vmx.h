@@ -31,6 +31,23 @@
 #include <iprt/x86.h>
 #include <iprt/assert.h>
 
+/* In Visual C++ versions prior to 2012, the vmx intrinsics are only available
+   when targeting AMD64. */
+#if RT_INLINE_ASM_USES_INTRIN >= 16 && defined(RT_ARCH_AMD64)
+# include <intrin.h>
+/* We always want them as intrinsics, no functions. */
+# pragma intrinsic(__vmx_on)
+# pragma intrinsic(__vmx_off)
+# pragma intrinsic(__vmx_vmclear)
+# pragma intrinsic(__vmx_vmptrld)
+# pragma intrinsic(__vmx_vmread)
+# pragma intrinsic(__vmx_vmwrite)
+# define VMX_USE_MSC_INTRINSICS 1
+#else
+# define VMX_USE_MSC_INTRINSICS 0
+#endif
+
+
 /** @defgroup grp_vmx   vmx Types and Definitions
  * @ingroup grp_hm
  * @{
@@ -1554,13 +1571,13 @@ DECLASM(int) VMXDispatchHostNmi(void);
  * @returns VBox status code
  * @param   pVMXOn      Physical address of VMXON structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXEnable(RTHCPHYS pVMXOn);
 #else
 DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
 {
-    int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
+    int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        "push     %3                                             \n\t"
        "push     %2                                             \n\t"
@@ -1579,7 +1596,16 @@ DECLINLINE(int) VMXEnable(RTHCPHYS pVMXOn)
         "ir"((uint32_t)(pVMXOn >> 32)) /* this would not work with -fomit-frame-pointer */
        :"memory"
        );
+    return rc;
+
+# elif VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_on(&pVMXOn);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMXON_PTR : VERR_VMX_VMXON_FAILED;
+
 # else
+    int rc = VINF_SUCCESS;
     __asm
     {
         push    dword ptr [pVMXOn+4]
@@ -1600,7 +1626,6 @@ the_end:
         add     esp, 8
     }
 # endif
-    return rc;
 }
 #endif
 
@@ -1608,7 +1633,7 @@ the_end:
 /**
  * Executes VMXOFF
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(void) VMXDisable(void);
 #else
 DECLINLINE(void) VMXDisable(void)
@@ -1617,6 +1642,10 @@ DECLINLINE(void) VMXDisable(void)
     __asm__ __volatile__ (
        ".byte 0x0F, 0x01, 0xC4  # VMXOFF                        \n\t"
        );
+
+# elif VMX_USE_MSC_INTRINSICS
+    __vmx_off();
+
 # else
     __asm
     {
@@ -1635,13 +1664,13 @@ DECLINLINE(void) VMXDisable(void)
  * @returns VBox status code
  * @param   pVMCS       Physical address of VM control structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXClearVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
 {
-    int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
+    int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        "push    %3                                              \n\t"
        "push    %2                                              \n\t"
@@ -1656,7 +1685,16 @@ DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
         "ir"((uint32_t)(pVMCS >> 32)) /* this would not work with -fomit-frame-pointer */
        :"memory"
        );
+    return rc;
+
+# elif VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_vmclear(&pVMCS);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return VERR_VMX_INVALID_VMCS_PTR;
+
 # else
+    int rc = VINF_SUCCESS;
     __asm
     {
         push    dword ptr [pVMCS+4]
@@ -1671,8 +1709,8 @@ DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
 success:
         add     esp, 8
     }
-# endif
     return rc;
+# endif
 }
 #endif
 
@@ -1683,13 +1721,13 @@ success:
  * @returns VBox status code
  * @param   pVMCS       Physical address of VMCS structure
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXActivateVMCS(RTHCPHYS pVMCS);
 #else
 DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
 {
-    int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
+    int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        "push    %3                                              \n\t"
        "push    %2                                              \n\t"
@@ -1703,7 +1741,16 @@ DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
         "ir"((uint32_t)pVMCS),        /* don't allow direct memory reference here, */
         "ir"((uint32_t)(pVMCS >> 32)) /* this will not work with -fomit-frame-pointer */
        );
+    return rc;
+
+# elif VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc = __vmx_vmptrld(&pVMCS);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return VERR_VMX_INVALID_VMCS_PTR;
+
 # else
+    int rc = VINF_SUCCESS;
     __asm
     {
         push    dword ptr [pVMCS+4]
@@ -1718,8 +1765,8 @@ DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
 success:
         add     esp, 8
     }
-# endif
     return rc;
+# endif
 }
 #endif
 
@@ -1738,13 +1785,13 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val);
 #else
 DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
 {
-    int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
+    int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        ".byte  0x0F, 0x79, 0xC2        # VMWRITE eax, edx       \n\t"
        "ja     2f                                               \n\t"
@@ -1759,7 +1806,16 @@ DECLINLINE(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val)
         "a"(idxField),
         "d"(u32Val)
        );
-# else
+    return rc;
+
+# elif VMX_USE_MSC_INTRINSICS
+     unsigned char rcMsc = __vmx_vmwrite(idxField, u32Val);
+     if (RT_LIKELY(rcMsc == 0))
+         return VINF_SUCCESS;
+     return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+#else
+    int rc = VINF_SUCCESS;
     __asm
     {
         push   dword ptr [u32Val]
@@ -1778,8 +1834,8 @@ valid_vmcs:
 the_end:
         add    esp, 4
     }
-# endif
     return rc;
+# endif
 }
 #endif
 
@@ -1790,16 +1846,25 @@ the_end:
  * @param   idxField        VMCS index
  * @param   u64Val          16, 32 or 64 bits value
  */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if !defined(RT_ARCH_X86) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+# if !VMX_USE_MSC_INTRINSICS || ARCH_BITS != 64
 DECLASM(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val);
+# else  /* VMX_USE_MSC_INTRINSICS */
+DECLINLINE(int) VMXWriteVmcs64(uint32_t idxField, uint64_t u64Val)
+{
+    unsigned char rcMsc = __vmx_vmwrite(idxField, u64Val);
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+}
+# endif /* VMX_USE_MSC_INTRINSICS */
 #else
+# define VMXWriteVmcs64(idxField, u64Val)    VMXWriteVmcs64Ex(pVCpu, idxField, u64Val) /** @todo dead ugly, picking up pVCpu like this */
 VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
-
-#define VMXWriteVmcs64(idxField, u64Val)    VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
 #endif
 
 #ifdef VBOX_WITH_OLD_VTX_CODE
-# if HC_ARCH_BITS == 64
+# if ARCH_BITS == 64
 #  define VMXWriteVmcs VMXWriteVmcs64
 # else
 #  define VMXWriteVmcs VMXWriteVmcs32
@@ -1812,10 +1877,10 @@ VMMR0DECL(int) VMXWriteVmcs64Ex(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val
 #  define VMXWriteVmcsGstN(idxField, u64Val)     (pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests) ? \
                                                    VMXWriteVmcs64(idxField, u64Val)               \
                                                  : VMXWriteVmcs32(idxField, u64Val)
-# elif HC_ARCH_BITS == 32
+# elif ARCH_BITS == 32
 #  define VMXWriteVmcsHstN                       VMXWriteVmcs32
 #  define VMXWriteVmcsGstN(idxField, u64Val)     VMXWriteVmcs64Ex(pVCpu, idxField, u64Val)
-# else  /* HC_ARCH_BITS == 64 */
+# else  /* ARCH_BITS == 64 */
 #  define VMXWriteVmcsHstN                       VMXWriteVmcs64
 #  define VMXWriteVmcsGstN                       VMXWriteVmcs64
 # endif
@@ -1845,13 +1910,13 @@ DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-#if RT_INLINE_ASM_EXTERNAL || HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
 #else
 DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
 {
-    int rc = VINF_SUCCESS;
 # if RT_INLINE_ASM_GNU_STYLE
+    int rc = VINF_SUCCESS;
     __asm__ __volatile__ (
        "movl   $"RT_XSTR(VINF_SUCCESS)", %0                      \n\t"
        ".byte  0x0F, 0x78, 0xc2        # VMREAD eax, edx         \n\t"
@@ -1867,7 +1932,23 @@ DECLINLINE(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData)
        :"a"(idxField),
         "d"(0)
        );
-# else
+    return rc;
+
+# elif VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc;
+#  if ARCH_BITS == 32
+    rcMsc = __vmx_vmread(idxField, pData);
+#  else
+    uint64_t u64Tmp;
+    rcMsc = __vmx_vmread(idxField, &u64Tmp);
+    *pData = (uint32_t)u64Tmp;
+#  endif
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
+
+#else
+    int rc = VINF_SUCCESS;
     __asm
     {
         sub     esp, 4
@@ -1888,8 +1969,8 @@ valid_vmcs:
         mov     dword ptr [rc], VERR_VMX_INVALID_VMCS_FIELD
 the_end:
     }
-# endif
     return rc;
+# endif
 }
 #endif
 
@@ -1900,24 +1981,43 @@ the_end:
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
  */
-#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
 #else
 DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
 {
-    int rc;
+# if VMX_USE_MSC_INTRINSICS
+    unsigned char rcMsc;
+#  if ARCH_BITS == 32
+    size_t        uLow;
+    size_t        uHigh;
+    rcMsc  = __vmx_vmread(idxField, &uLow);
+    rcMsc |= __vmx_vmread(idxField + 1, &uHigh);
+    *pData = RT_MAKE_U64(uLow, uHigh);
+# else
+    rcMsc = __vmx_vmread(idxField, pData);
+# endif
+    if (RT_LIKELY(rcMsc == 0))
+        return VINF_SUCCESS;
+    return rcMsc == 2 ? VERR_VMX_INVALID_VMCS_PTR : VERR_VMX_INVALID_VMCS_FIELD;
 
+# elif ARCH_BITS == 32
+    int rc;
     uint32_t val_hi, val;
     rc  = VMXReadVmcs32(idxField, &val);
     rc |= VMXReadVmcs32(idxField + 1, &val_hi);
     AssertRC(rc);
     *pData = RT_MAKE_U64(val, val_hi);
     return rc;
+
+# else
+#  error "Shouldn't be here..."
+# endif
 }
 #endif
 
 #ifdef VBOX_WITH_OLD_VTX_CODE
-# if HC_ARCH_BITS == 64
+# if ARCH_BITS == 64
 #  define VMXReadVmcsField VMXReadVmcs64
 # else
 #  define VMXReadVmcsField VMXReadVmcs32
@@ -1931,7 +2031,7 @@ DECLINLINE(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData)
  */
 DECLINLINE(uint32_t) VMXGetLastError(void)
 {
-#if HC_ARCH_BITS == 64
+#if ARCH_BITS == 64
     uint64_t uLastError = 0;
     int rc = VMXReadVmcs64(VMX_VMCS32_RO_VM_INSTR_ERROR, &uLastError);
     AssertRC(rc);
