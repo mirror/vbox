@@ -4107,6 +4107,10 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
+            /** @todo This is inefficient and wrong according to intel and amd specs
+             *        (regardless of which is correct).  See the same code in the VT-x case.
+             *        write testcase and refactor the code to use a mostly shared
+             *        implementation after the initial DR7/CR4 checks. */
             if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
             {
                 /* I/O breakpoint length, in bytes. */
