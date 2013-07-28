@@ -31,7 +31,8 @@
 %define X86_EFL_ID          RT_BIT(21)
 %define X86_EFL_IOPL_SHIFT  12
 %define X86_EFL_GET_IOPL(efl)   (((efl) >> X86_EFL_IOPL_SHIFT) & 3)
-%define X86_EFL_POPF_BITS       (X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID)
+%define X86_EFL_POPF_BITS       (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
+                                 | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID )
 %ifndef VBOX_FOR_DTRACE_LIB
 %else
 %endif
@@ -203,10 +204,15 @@
 %define X86_DR6_B1                          RT_BIT(1)
 %define X86_DR6_B2                          RT_BIT(2)
 %define X86_DR6_B3                          RT_BIT(3)
+%define X86_DR6_B_MASK                      0x0000000f
 %define X86_DR6_BD                          RT_BIT(13)
 %define X86_DR6_BS                          RT_BIT(14)
 %define X86_DR6_BT                          RT_BIT(15)
 %define X86_DR6_INIT_VAL                    0xFFFF0FF0
+%define X86_DR6_RA1_MASK                    0xffff0ff0
+%define X86_DR6_RAZ_MASK                    RT_BIT_64(12)
+%define X86_DR6_MBZ_MASK                    0xffffffff00000000
+%define X86_DR6_B(iBp)                      RT_BIT_64(iBp)
 %define X86_DR7_L0                          RT_BIT(0)
 %define X86_DR7_G0                          RT_BIT(1)
 %define X86_DR7_L1                          RT_BIT(2)
@@ -226,22 +232,28 @@
 %define X86_DR7_LEN2_MASK                   (3 << 26)
 %define X86_DR7_RW3_MASK                    (3 << 28)
 %define X86_DR7_LEN3_MASK                   (3 << 30)
-%define X86_DR7_MB1_MASK                    (RT_BIT(10))
+%define X86_DR7_RA1_MASK                    (RT_BIT(10))
+%define X86_DR7_RAZ_MASK                    0x0000d800
+%define X86_DR7_MBZ_MASK                    0xffffffff00000000
 %define X86_DR7_L(iBp)                      ( 1 << (iBp * 2) )
 %define X86_DR7_G(iBp)                      ( 1 << (iBp * 2 + 1) )
+%define X86_DR7_L_G(iBp)                    ( 3 << (iBp * 2) )
 %define X86_DR7_RW_EO                       0
 %define X86_DR7_RW_WO                       1
 %define X86_DR7_RW_IO                       2
 %define X86_DR7_RW_RW                       3
 %define X86_DR7_RW(iBp, fRw)                ( (fRw) << ((iBp) * 4 + 16) )
+%define X86_DR7_GET_RW(uDR7, iBp)            ( ( (uDR7) >> ((iBp) * 4 + 16) ) & 3 )
+%define X86_DR7_RW_ALL_MASKS                0x33330000
+%define X86_DR7_ANY_RW_IO(uDR7) \
+    (   (    0x22220000 & (uDR7) )
 %define X86_DR7_LEN_BYTE                    0
 %define X86_DR7_LEN_WORD                    1
 %define X86_DR7_LEN_QWORD                   2
 %define X86_DR7_LEN_DWORD                   3
 %define X86_DR7_LEN(iBp, cb)                ( (cb) << ((iBp) * 4 + 18) )
-%define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3)
-%define X86_DR7_ENABLED_MASK                (RT_BIT(0) | RT_BIT(1) | RT_BIT(2) | RT_BIT(3) | RT_BIT(4) | RT_BIT(5) | RT_BIT(6) | RT_BIT(7))
-%define X86_DR7_IO_ENABLED_MASK             (X86_DR7_RW(0, X86_DR7_RW_IO) | X86_DR7_RW(1, X86_DR7_RW_IO) | X86_DR7_RW(2, X86_DR7_RW_IO) | X86_DR7_RW(3, X86_DR7_RW_IO))
+%define X86_DR7_GET_LEN(uDR7, iBp)          ( ( (uDR7) >> ((iBp) * 4 + 18) ) & 0x3 )
+%define X86_DR7_ENABLED_MASK                0x000000ff
 %define X86_DR7_INIT_VAL                    0x400
 %define MSR_IA32_TSC                        0x10
 %define MSR_IA32_PLATFORM_ID                0x17
@@ -545,6 +557,26 @@
 %define X86_FCW_RC_UP       0x0800
 %define X86_FCW_RC_ZERO     0x0c00
 %define X86_FCW_ZERO_MASK   0xf080
+%define X86_MSXCR_IE          RT_BIT(0)
+%define X86_MSXCR_DE          RT_BIT(1)
+%define X86_MSXCR_ZE          RT_BIT(2)
+%define X86_MSXCR_OE          RT_BIT(3)
+%define X86_MSXCR_UE          RT_BIT(4)
+%define X86_MSXCR_PE          RT_BIT(5)
+%define X86_MSXCR_DAZ         RT_BIT(6)
+%define X86_MSXCR_IM          RT_BIT(7)
+%define X86_MSXCR_DM          RT_BIT(8)
+%define X86_MSXCR_ZM          RT_BIT(9)
+%define X86_MSXCR_OM          RT_BIT(10)
+%define X86_MSXCR_UM          RT_BIT(11)
+%define X86_MSXCR_PM          RT_BIT(12)
+%define X86_MSXCR_RC_MASK     0x6000
+%define X86_MSXCR_RC_NEAREST  0x0000
+%define X86_MSXCR_RC_DOWN     0x2000
+%define X86_MSXCR_RC_UP       0x4000
+%define X86_MSXCR_RC_ZERO     0x6000
+%define X86_MSXCR_FZ          RT_BIT(15)
+%define X86_MSXCR_MM          RT_BIT(16)
 %ifndef VBOX_FOR_DTRACE_LIB
 %endif
 %define X86DESCATTR_TYPE            0x0000000f

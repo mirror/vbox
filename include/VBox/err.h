@@ -1870,24 +1870,28 @@
 /** @name VBox VMX Status Codes
  * @{
  */
-/** Invalid VMCS index or write to read-only element. */
-#define VERR_VMX_INVALID_VMCS_FIELD                 (-4000)
-/** Invalid VMCS pointer. */
+/** VMXON failed; possibly because it was already run before. */
+#define VERR_VMX_VMXON_FAILED                       (-4000)
+/** Invalid VMCS pointer.
+ * (Can be OR'ed with VERR_VMX_INVALID_VMCS_FIELD.) */
 #define VERR_VMX_INVALID_VMCS_PTR                   (-4001)
+/** Invalid VMCS index or write to read-only element. */
+#define VERR_VMX_INVALID_VMCS_FIELD                 (-4002)
+/** Reserved for future status code that we wish to OR with
+ *  VERR_VMX_INVALID_VMCS_PTR and VERR_VMX_INVALID_VMCS_FIELD. */
+#define VERR_VMX_RESERVED                           (-4003)
 /** Invalid VMXON pointer. */
-#define VERR_VMX_INVALID_VMXON_PTR                  (-4002)
-/** Invalid CPU mode for VMX execution. */
-#define VERR_VMX_UNSUPPORTED_MODE                   (-4004)
+#define VERR_VMX_INVALID_VMXON_PTR                  (-4004)
 /** Unable to start VM execution. */
 #define VERR_VMX_UNABLE_TO_START_VM                 (-4005)
 /** Unable to switch due to invalid host state. */
-#define VERR_VMX_INVALID_HOST_STATE                 (-4007)
+#define VERR_VMX_INVALID_HOST_STATE                 (-4006)
 /** IA32_FEATURE_CONTROL MSR not setup correcty (turn on VMX in the host system BIOS) */
-#define VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR        (-4008)
+#define VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR        (-4007)
+/** Invalid CPU mode for VMX execution. */
+#define VERR_VMX_UNSUPPORTED_MODE                   (-4008)
 /** VMX CPU extension not available */
 #define VERR_VMX_NO_VMX                             (-4009)
-/** VMXON failed; possibly because it was already run before */
-#define VERR_VMX_VMXON_FAILED                       (-4010)
 /** CPU was incorrectly left in VMX root mode; incompatible with VirtualBox */
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */
