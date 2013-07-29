@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIPopupStack class declaration
+ * UIPopupStackViewport class declaration
  */
 
 /*
@@ -16,30 +16,30 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIPopupStack_h__
-#define __UIPopupStack_h__
+#ifndef __UIPopupStackViewport_h__
+#define __UIPopupStackViewport_h__
 
 /* Qt includes: */
 #include <QWidget>
 #include <QMap>
 
 /* Forward declaration: */
-class QVBoxLayout;
-class QScrollArea;
-class UIPopupStackViewport;
+class UIPopupPane;
 
-/* Popup-stack prototype class: */
-class UIPopupStack : public QWidget
+/* Popup-stack viewport prototype class: */
+class UIPopupStackViewport : public QWidget
 {
     Q_OBJECT;
 
 signals:
 
     /* Notifier: Layout stuff: */
-    void sigProposeStackViewportWidth(int iWidth);
+    void sigProposePopupPaneWidth(int iWidth);
+    void sigSizeHintChanged();
 
     /* Notifier: Popup-pane stuff: */
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
+    void sigPopupPaneRemoved(QString strPopupPaneID);
 
     /* Notifier: Popup-stack stuff: */
     void sigRemove();
@@ -47,7 +47,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupStack();
+    UIPopupStackViewport();
 
     /* API: Popup-pane stuff: */
     bool exists(const QString &strPopupPaneID) const;
@@ -59,45 +59,31 @@ public:
                          const QString &strMessage, const QString &strDetails);
     void recallPopupPane(const QString &strPopupPaneID);
 
-    /* API: Parent stuff: */
-    void setParent(QWidget *pParent);
-    void setParent(QWidget *pParent, Qt::WindowFlags flags);
+    /* API: Layout stuff: */
+    QSize minimumSizeHint() const { return m_minimumSizeHint; }
 
 private slots:
 
-    /* Handler: Layout stuff: */
+    /* Handlers: Layout stuff: */
+    void sltHandleProposalForWidth(int iWidth);
     void sltAdjustGeometry();
 
-    /* Handler: Popuyp-pane stuff: */
-    void sltPopupPaneRemoved(QString strPopupPaneID);
+    /* Handler: Popup-pane stuff: */
+    void sltPopupPaneDone(int iButtonCode);
 
 private:
 
-    /* Helpers: Prepare stuff: */
-    void prepare();
-    void prepareContent();
-
-    /* Handler: Event-filter stuff: */
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
-    /* Handler: Event stuff: */
-    void showEvent(QShowEvent *pEvent);
-
-    /* Helper: Layout stuff: */
-    void propagateWidth();
-
-    /* Static helpers: Prepare stuff: */
-    static int parentMenuBarHeight(QWidget *pParent);
-    static int parentStatusBarHeight(QWidget *pParent);
-
-    /* Variables: Widget stuff: */
-    QVBoxLayout *m_pMainLayout;
-    QScrollArea *m_pScrollArea;
-    UIPopupStackViewport *m_pScrollViewport;
+    /* Helpers: Layout stuff: */
+    void updateSizeHint();
+    void layoutContent();
 
     /* Variables: Layout stuff: */
-    int m_iParentMenuBarHeight;
-    int m_iParentStatusBarHeight;
+    const int m_iLayoutMargin;
+    const int m_iLayoutSpacing;
+    QSize m_minimumSizeHint;
+
+    /* Variables: Children stuff: */
+    QMap<QString, UIPopupPane*> m_panes;
 };
 
-#endif /* __UIPopupStack_h__ */
+#endif /* __UIPopupStackViewport_h__ */
