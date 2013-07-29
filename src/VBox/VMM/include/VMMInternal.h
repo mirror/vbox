@@ -420,6 +420,9 @@ typedef struct VMMCPU
     /** @name Thread-context hooks.
      *  @{*/
     RTTHREADCTX                 hR0ThreadCtx;
+#if HC_ARCH_BITS == 32
+    uint32_t                    u32Padding;
+#endif
     /** @} */
 
     /** @name Rendezvous
