@@ -2698,7 +2698,7 @@ const DISOPCODE g_aMapX86_Group15_mod11_rm000[8] =
     INVALID_OPCODE_MOD_RM(0x),
     INVALID_OPCODE_MOD_RM(0x),
     INVALID_OPCODE_MOD_RM(0x),
-    /** @todo mfence + lfence + sfence instructions doesn't not require rm=0,
+    /** @todo mfence + lfence + sfence instructions do not require rm=0,
      *        they work for any RM value. See bs2-cpu-instr-1.asm for details. */
     OP("lfence",             IDX_ParseModFence,  0,          0,          OP_LFENCE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
     OP("mfence",             IDX_ParseModFence,  0,          0,          OP_MFENCE,  OP_PARM_NONE,       OP_PARM_NONE,   OP_PARM_NONE,   DISOPTYPE_HARMLESS),
