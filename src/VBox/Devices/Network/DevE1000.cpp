@@ -414,7 +414,7 @@ AssertCompileSize(PBAST, 4);
 #define COLC     pThis->auRegs[COLC_IDX]
 #define DC       pThis->auRegs[DC_IDX]
 #define TNCRS    pThis->auRegs[TNCRS_IDX]
-#define SEC      pThis->auRegs[SEC_IDX]
+/* #define SEC      pThis->auRegs[SEC_IDX]       Conflict with sys/time.h */
 #define CEXTERR  pThis->auRegs[CEXTERR_IDX]
 #define RLEC     pThis->auRegs[RLEC_IDX]
 #define XONRXC   pThis->auRegs[XONRXC_IDX]
