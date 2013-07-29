@@ -111,6 +111,7 @@ struc VMMCPU
 %if HC_ARCH_BITS == 32
         .u32Padding             resd 1
 %endif
+        .u64Padding             resq 1
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
