@@ -194,7 +194,7 @@ QSize UIFilm::minimumSizeHint() const
 {
     /* Return 16:9 aspect-ratio msh: */
     QSize msh = QWidget::minimumSizeHint();
-    return QSize(msh.width(), (int)((double)9 / 16 * msh.width()));
+    return QSize(msh.width(), (msh.width() * 9) / 16);
 }
 
 void UIFilm::paintEvent(QPaintEvent*)
