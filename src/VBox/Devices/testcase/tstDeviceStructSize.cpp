@@ -147,7 +147,7 @@
     { \
         if (RT_OFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("tstDeviceStructSize: error! %s::%s offset=%#x (%u) expected alignment %x, meaning %#x (%u) off\n", \
+            printf("tstDeviceStructSize: error! %s::%s offset=%#x (%u) expected alignment %#x, meaning %#x (%u) off\n", \
                    #strct, #member, \
                    (unsigned)RT_OFFSETOF(strct, member), \
                    (unsigned)RT_OFFSETOF(strct, member), \
