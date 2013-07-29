@@ -110,8 +110,9 @@ struc VMMCPU
         .hR0ThreadCtx		RTR0PTR_RES 1
 %if HC_ARCH_BITS == 32
         .u32Padding             resd 1
-%endif
+%else
         .u64Padding             resq 1
+%endif
 
         .fInRendezvous          resb 1
 %if HC_ARCH_BITS == 32
