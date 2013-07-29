@@ -979,6 +979,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: VMCS physical address limit   = %s\n", MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.msr.vmx_basic_info) ? "< 4 GB" : "None"));
     LogRel(("HM: VMCS memory type              = %x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(pVM->hm.s.vmx.msr.vmx_basic_info)));
     LogRel(("HM: Dual-monitor treatment        = %d\n", MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.msr.vmx_basic_info)));
+    LogRel(("HM: OUTS & INS instruction-info   = %d\n", MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.msr.vmx_basic_info)));
     LogRel(("HM: Max resume loops              = %RX32\n", pVM->hm.s.cMaxResumeLoops));
 
     LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS    = %RX64\n", pVM->hm.s.vmx.msr.vmx_pin_ctls.u));

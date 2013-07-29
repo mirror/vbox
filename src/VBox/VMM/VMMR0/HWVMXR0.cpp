@@ -1612,7 +1612,7 @@ static int hmR0VmxSavePaePdpes(PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE2_FULL, &aPdpes[2].u); AssertRCReturn(rc, rc);
         rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PDPTE3_FULL, &aPdpes[3].u); AssertRCReturn(rc, rc);
 
-        rc = PGMGstUpdatePaePdpes(pVCpu, &aPdpes[0]);
+        PGMGstUpdatePaePdpes(pVCpu, &aPdpes[0]);
         AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
@@ -4597,7 +4597,7 @@ ResumeExecution:
         }
 
         uint32_t cbSize = g_aIOSize[uIOWidth];
-        if (VMX_EXIT_QUALIFICATION_IO_STRING(exitQualification))
+        if (VMX_EXIT_QUALIFICATION_IO_IS_STRING(exitQualification))
         {
             /* ins/outs */
             PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;

@@ -18,8 +18,9 @@
 #ifndef ___IEMInternal_h
 #define ___IEMInternal_h
 
-#include <VBox/vmm/stam.h>
 #include <VBox/vmm/cpum.h>
+#include <VBox/vmm/iem.h>
+#include <VBox/vmm/stam.h>
 #include <VBox/param.h>
 
 
@@ -49,17 +50,6 @@ typedef union
 typedef RTFLOAT32U *PRTFLOAT32U;
 typedef RTFLOAT32U const *PCRTFLOAT32U;
 
-
-/**
- * Operand or addressing mode.
- */
-typedef enum IEMMODE
-{
-    IEMMODE_16BIT = 0,
-    IEMMODE_32BIT,
-    IEMMODE_64BIT
-} IEMMODE;
-AssertCompileSize(IEMMODE, 4);
 
 /**
  * Extended operand mode that includes a representation of 8-bit.
