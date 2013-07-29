@@ -255,7 +255,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         if (RT_SUCCESS(rc2))
         {
             AssertPtr(pszValue);
-            g_uVMInfoUserIdleThreshold = RT_CLAMP(RTStrToInt32(pszValue), 1000, UINT32_MAX - 1);
+            g_uVMInfoUserIdleThreshold = RT_CLAMP(RTStrToUInt32(pszValue), 1000, UINT32_MAX - 1);
             RTStrFree(pszValue);
         }
     }
@@ -387,11 +387,15 @@ int vboxServiceUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *pszUser, 
 
     char *pszName;
     if (pszDomain)
+    {
         if (!RTStrAPrintf(&pszName, "%s%s@%s/%s", g_pszPropCacheValUser, pszUser, pszDomain, pszKey))
             rc = VERR_NO_MEMORY;
+    }
     else
+    {
         if (!RTStrAPrintf(&pszName, "%s%s/%s", g_pszPropCacheValUser, pszUser, pszKey))
             rc = VERR_NO_MEMORY;
+    }
 
     char *pszValue = NULL;
     if (   RT_SUCCESS(rc)
