@@ -104,6 +104,7 @@ int NetworkServiceRunner::stop()
         return VINF_OBJECT_DESTROYED;
 
     int rc = RTProcTerminate(mProcess);
+    RTProcWait(mProcess, RTPROCWAIT_FLAGS_BLOCK, NULL);
     mProcess = NIL_RTPROCESS;
     return rc;
 }

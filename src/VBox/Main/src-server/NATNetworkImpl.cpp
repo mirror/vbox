@@ -721,6 +721,9 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 STDMETHODIMP NATNetwork::Stop()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
+    if (!m->dhcpServer.isNull())
+        m->dhcpServer->Stop();
+
     if (RT_SUCCESS(m->NATRunner.stop()))
     {
         mVirtualBox->onNATNetworkStartStop(mName.raw(), FALSE);
