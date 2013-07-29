@@ -5621,7 +5621,7 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Saves the guest debug registers from the current VMCS into the guest-CPU
+ * Saves the guest debug-register DR7 from the current VMCS into the guest-CPU
  * context.
  *
  * @returns VBox status code.
@@ -5631,11 +5631,8 @@ static int hmR0VmxSaveGuestTableRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *                      before using them.
  *
  * @remarks No-long-jump zone!!!
- * @todo r=bird: Why is this plural when it only saves DR7?  I almost jumped to
- *       the wrong conclusions looking at the I/O code just now (it most likely
- *       only needs DR7).
  */
-static int hmR0VmxSaveGuestDebugRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxSaveGuestDR7(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
     {
@@ -5707,8 +5704,8 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxSaveGuestTableRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestTableRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
-    rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
+    rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDR7 failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     rc = hmR0VmxSaveGuestSysenterMsrs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestSysenterMsrs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
@@ -5726,7 +5723,7 @@ static int hmR0VmxSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestActivityState failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     rc = hmR0VmxSaveGuestApicState(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestDebugRegs failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSaveGuestApicState failed! rc=%Rrc (pVCpu=%p)\n", rc, pVCpu), rc);
 
     AssertMsg(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL,
               ("Missed guest state bits while saving state; residue %RX32\n", pVCpu->hm.s.vmx.fUpdatedGuestState));
@@ -8515,7 +8512,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
              *        We're also ignoring our own debugger's attempt at using I/O
              *        breakpoints.  The whole host & guest debugger stuff needs to be
              *        looked over at some point.  For now, it's just best effort. */
-            rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);      /* For DR7. */
+            rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             uint32_t const uDr7 = pMixedCtx->dr[7];
             if (   (uDr7 & X86_DR7_ENABLED_MASK)
@@ -9031,7 +9028,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         if (CPUMIsGuestDebugStateActive(pVCpu))
             ASMSetDR6(pMixedCtx->dr[6]);
 
-        rc = hmR0VmxSaveGuestDebugRegs(pVCpu, pMixedCtx);
+        rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
 
         /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
         pMixedCtx->dr[7] &= ~X86_DR7_GD;
