@@ -741,7 +741,7 @@ static int iemSetPassUpStatus(PIEMCPU pIemCpu, VBOXSTRICTRC rcPassUp)
     int32_t const rcOldPassUp = pIemCpu->rcPassUp;
     if (rcOldPassUp == VINF_SUCCESS)
         pIemCpu->rcPassUp = VBOXSTRICTRC_VAL(rcPassUp);
-    /* If both are EM scheduling code, use EM priority rules. */
+    /* If both are EM scheduling codes, use EM priority rules. */
     else if (   rcOldPassUp >= VINF_EM_FIRST && rcOldPassUp <= VINF_EM_LAST
              && rcPassUp    >= VINF_EM_FIRST && rcPassUp    <= VINF_EM_LAST)
     {
@@ -763,6 +763,67 @@ static int iemSetPassUpStatus(PIEMCPU pIemCpu, VBOXSTRICTRC rcPassUp)
     else
         Log(("IEM: rcPassUp=%Rrc  rcOldPassUp=%Rrc!\n", VBOXSTRICTRC_VAL(rcPassUp), rcOldPassUp));
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Initializes the execution state.
+ *
+ * @param   pIemCpu             The per CPU IEM state.
+ * @param   fBypassHandlers     Whether to bypass access handlers.
+ */
+DECLINLINE(void) iemInitExec(PIEMCPU pIemCpu, bool fBypassHandlers)
+{
+    PCPUMCTX pCtx  = pIemCpu->CTX_SUFF(pCtx);
+    PVMCPU   pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
+
+#if defined(VBOX_STRICT) && (defined(IEM_VERIFICATION_MODE_FULL) || !defined(VBOX_WITH_RAW_MODE_NOT_R0))
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->cs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ss));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->es));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ds));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->fs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->gs));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->ldtr));
+    Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pCtx->tr));
+#endif
+
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    CPUMGuestLazyLoadHiddenCsAndSs(pVCpu);
+#endif
+    pIemCpu->uCpl               = CPUMGetGuestCPL(pVCpu);
+    IEMMODE enmMode = CPUMIsGuestIn64BitCodeEx(pCtx)
+                    ? IEMMODE_64BIT
+                    : pCtx->cs.Attr.n.u1DefBig /** @todo check if this is correct... */
+                    ? IEMMODE_32BIT
+                    : IEMMODE_16BIT;
+    pIemCpu->enmCpuMode         = enmMode;
+#ifdef VBOX_STRICT
+    pIemCpu->enmDefAddrMode     = (IEMMODE)0xc0fe;
+    pIemCpu->enmEffAddrMode     = (IEMMODE)0xc0fe;
+    pIemCpu->enmDefOpSize       = (IEMMODE)0xc0fe;
+    pIemCpu->enmEffOpSize       = (IEMMODE)0xc0fe;
+    pIemCpu->fPrefixes          = (IEMMODE)0xfeedbeef;
+    pIemCpu->uRexReg            = 127;
+    pIemCpu->uRexB              = 127;
+    pIemCpu->uRexIndex          = 127;
+    pIemCpu->iEffSeg            = 127;
+    pIemCpu->offOpcode          = 127;
+    pIemCpu->cbOpcode           = 127;
+#endif
+
+    pIemCpu->cActiveMappings    = 0;
+    pIemCpu->iNextMapping       = 0;
+    pIemCpu->rcPassUp           = VINF_SUCCESS;
+    pIemCpu->fBypassHandlers    = fBypassHandlers;
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    pIemCpu->fInPatchCode       = pIemCpu->uCpl == 0
+                               && pCtx->cs.u64Base == 0
+                               && pCtx->cs.u32Limit == UINT32_MAX
+                               && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
+    if (!pIemCpu->fInPatchCode)
+        CPUMRawLeave(pVCpu, CPUMCTX2CORE(pCtx), VINF_SUCCESS);
+#endif
 }
 
 
@@ -9020,6 +9081,65 @@ static VBOXSTRICTRC     iemVerifyFakeIOPortWrite(PIEMCPU pIemCpu, RTIOPORT Port,
 
 
 /**
+ * Makes status code addjustments (pass up from I/O and access handler)
+ * as well as maintaining statistics.
+ *
+ * @returns Strict VBox status code to pass up.
+ * @param   pIemCpu     The IEM per CPU data.
+ * @param   rcStrict    The status from executing an instruction.
+ */
+DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecStatusCodeFiddling(PIEMCPU pIemCpu, VBOXSTRICTRC rcStrict)
+{
+    if (rcStrict != VINF_SUCCESS)
+    {
+        if (RT_SUCCESS(rcStrict))
+        {
+            AssertMsg(   (rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST)
+                      || rcStrict == VINF_IOM_R3_IOPORT_READ
+                      || rcStrict == VINF_IOM_R3_IOPORT_WRITE
+                      || rcStrict == VINF_IOM_R3_MMIO_READ
+                      || rcStrict == VINF_IOM_R3_MMIO_READ_WRITE
+                      || rcStrict == VINF_IOM_R3_MMIO_WRITE
+                      , ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            int32_t const rcPassUp = pIemCpu->rcPassUp;
+            if (rcPassUp == VINF_SUCCESS)
+                pIemCpu->cRetInfStatuses++;
+            else if (   rcPassUp < VINF_EM_FIRST
+                     || rcPassUp > VINF_EM_LAST
+                     || rcPassUp < VBOXSTRICTRC_VAL(rcStrict))
+            {
+                Log(("IEM: rcPassUp=%Rrc! rcStrict=%Rrc\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                pIemCpu->cRetPassUpStatus++;
+                rcStrict = rcPassUp;
+            }
+            else
+            {
+                Log(("IEM: rcPassUp=%Rrc  rcStrict=%Rrc!\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
+                pIemCpu->cRetInfStatuses++;
+            }
+        }
+        else if (rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
+            pIemCpu->cRetAspectNotImplemented++;
+        else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+            pIemCpu->cRetInstrNotImplemented++;
+#ifdef IEM_VERIFICATION_MODE_FULL
+        else if (rcStrict == VERR_IEM_RESTART_INSTRUCTION)
+            rcStrict = VINF_SUCCESS;
+#endif
+        else
+            pIemCpu->cRetErrStatuses++;
+    }
+    else if (pIemCpu->rcPassUp != VINF_SUCCESS)
+    {
+        pIemCpu->cRetPassUpStatus++;
+        rcStrict = pIemCpu->rcPassUp;
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * The actual code execution bits of IEMExecOne, IEMExecOneEx, and
  * IEMExecOneWithPrefetchedByPC.
  *
@@ -9058,46 +9178,9 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
     }
 
     /*
-     * Return value fiddling and statistics.
+     * Return value fiddling, statistics and sanity assertions.
      */
-    if (rcStrict != VINF_SUCCESS)
-    {
-        if (RT_SUCCESS(rcStrict))
-        {
-            AssertMsg(rcStrict >= VINF_EM_FIRST && rcStrict <= VINF_EM_LAST, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
-            int32_t const rcPassUp = pIemCpu->rcPassUp;
-            if (rcPassUp == VINF_SUCCESS)
-                pIemCpu->cRetInfStatuses++;
-            else if (   rcPassUp < VINF_EM_FIRST
-                     || rcPassUp > VINF_EM_LAST
-                     || rcPassUp < VBOXSTRICTRC_VAL(rcStrict))
-            {
-                Log(("IEM: rcPassUp=%Rrc! rcStrict=%Rrc\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
-                pIemCpu->cRetPassUpStatus++;
-                rcStrict = rcPassUp;
-            }
-            else
-            {
-                Log(("IEM: rcPassUp=%Rrc  rcStrict=%Rrc!\n", rcPassUp, VBOXSTRICTRC_VAL(rcStrict)));
-                pIemCpu->cRetInfStatuses++;
-            }
-        }
-        else if (rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED)
-            pIemCpu->cRetAspectNotImplemented++;
-        else if (rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
-            pIemCpu->cRetInstrNotImplemented++;
-#ifdef IEM_VERIFICATION_MODE_FULL
-        else if (rcStrict == VERR_IEM_RESTART_INSTRUCTION)
-            rcStrict = VINF_SUCCESS;
-#endif
-        else
-            pIemCpu->cRetErrStatuses++;
-    }
-    else if (pIemCpu->rcPassUp != VINF_SUCCESS)
-    {
-        pIemCpu->cRetPassUpStatus++;
-        rcStrict = pIemCpu->rcPassUp;
-    }
+    rcStrict = iemExecStatusCodeFiddling(pIemCpu, rcStrict);
 
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->cs));
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, &pIemCpu->CTX_SUFF(pCtx)->ss));
@@ -9479,4 +9562,241 @@ VMM_INT_DECL(int) IEMExecInstr_iret(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     return rcStrict;
 }
 #endif
+
+
+
+/**
+ * Interface for HM and EM for executing string I/O OUT (write) instructions.
+ *
+ * This API ASSUMES that the caller has already verified that the guest code is
+ * allowed to access the I/O port.  (The I/O port is in the DX register in the
+ * guest state.)
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context per virtual CPU structure.
+ * @param   cbValue             The size of the I/O port access (1, 2, or 4).
+ * @param   enmAddrMode         The addressing mode.
+ * @param   fRepPrefix          Indicates whether a repeat prefix is used
+ *                              (doesn't matter which for this instruction).
+ * @param   cbInstr             The instruction length in bytes.
+ * @param   iEffSeg             The effective segment address.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
+                                                bool fRepPrefix, uint8_t cbInstr, uint8_t iEffSeg)
+{
+    AssertMsgReturn(iEffSeg < X86_SREG_COUNT, ("%#x\n", iEffSeg), VERR_IEM_INVALID_EFF_SEG);
+    AssertReturn(cbInstr - 1U <= 14U, VERR_IEM_INVALID_INSTR_LENGTH);
+
+    /*
+     * State init.
+     */
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+
+    /*
+     * Switch orgy for getting to the right handler.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (fRepPrefix)
+    {
+        switch (enmAddrMode)
+        {
+            case IEMMODE_16BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_32BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_64BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            default:
+                AssertMsgFailedReturn(("enmAddrMode=%d\n", enmAddrMode), VERR_IEM_INVALID_ADDRESS_MODE);
+        }
+    }
+    else
+    {
+        switch (enmAddrMode)
+        {
+            case IEMMODE_16BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_outs_op8_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr16(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_32BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_outs_op8_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr32(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_64BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_outs_op8_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_outs_op16_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_outs_op32_addr64(pIemCpu, cbInstr, iEffSeg, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            default:
+                AssertMsgFailedReturn(("enmAddrMode=%d\n", enmAddrMode), VERR_IEM_INVALID_ADDRESS_MODE);
+        }
+    }
+
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
+
+
+/**
+ * Interface for HM and EM for executing string I/O IN (read) instructions.
+ *
+ * This API ASSUMES that the caller has already verified that the guest code is
+ * allowed to access the I/O port.  (The I/O port is in the DX register in the
+ * guest state.)
+ *
+ * @returns Strict VBox status code.
+ * @param   pVCpu               The cross context per virtual CPU structure.
+ * @param   cbValue             The size of the I/O port access (1, 2, or 4).
+ * @param   enmAddrMode         The addressing mode.
+ * @param   fRepPrefix          Indicates whether a repeat prefix is used
+ *                              (doesn't matter which for this instruction).
+ * @param   cbInstr             The instruction length in bytes.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
+                                               bool fRepPrefix, uint8_t cbInstr)
+{
+    AssertReturn(cbInstr - 1U <= 14U, VERR_IEM_INVALID_INSTR_LENGTH);
+
+    /*
+     * State init.
+     */
+    PIEMCPU pIemCpu = &pVCpu->iem.s;
+    iemInitExec(pIemCpu, false /*fBypassHandlers*/);
+
+    /*
+     * Switch orgy for getting to the right handler.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (fRepPrefix)
+    {
+        switch (enmAddrMode)
+        {
+            case IEMMODE_16BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_32BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_64BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_rep_ins_op8_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_rep_ins_op16_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_rep_ins_op32_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            default:
+                AssertMsgFailedReturn(("enmAddrMode=%d\n", enmAddrMode), VERR_IEM_INVALID_ADDRESS_MODE);
+        }
+    }
+    else
+    {
+        switch (enmAddrMode)
+        {
+            case IEMMODE_16BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_ins_op8_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr16(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_32BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_ins_op8_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr32(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            case IEMMODE_64BIT:
+                switch (cbValue)
+                {
+                    case 1: rcStrict = iemCImpl_ins_op8_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 2: rcStrict = iemCImpl_ins_op16_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    case 4: rcStrict = iemCImpl_ins_op32_addr64(pIemCpu, cbInstr, true /*fIoChecked*/); break;
+                    default:
+                        AssertMsgFailedReturn(("cbValue=%#x\n", cbValue), VERR_IEM_INVALID_OPERAND_SIZE);
+                }
+                break;
+
+            default:
+                AssertMsgFailedReturn(("enmAddrMode=%d\n", enmAddrMode), VERR_IEM_INVALID_ADDRESS_MODE);
+        }
+    }
+
+    return iemExecStatusCodeFiddling(pIemCpu, rcStrict);
+}
 

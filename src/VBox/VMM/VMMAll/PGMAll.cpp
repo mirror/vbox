@@ -1766,14 +1766,13 @@ VMM_INT_DECL(int) PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes)
  *
  * @remarks This must be called *AFTER* PGMUpdateCR3.
  *
- * @returns VBox status code.
  * @param   pVCpu               Pointer to the VMCPU.
  * @param   paPdpes             The four PDPE values. The array pointed to must
  *                              have exactly 4 entries.
  *
  * @remarks No-long-jump zone!!!
  */
-VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
+VMM_INT_DECL(void) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
 {
     Assert(pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
 
@@ -1794,7 +1793,6 @@ VMM_INT_DECL(int) PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes)
     }
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_HM_UPDATE_PAE_PDPES);
-    return VINF_SUCCESS;
 }
 
 
@@ -2036,9 +2034,9 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
  *
  * @returns VBox status code.
  * @retval  VINF_SUCCESS.
- * @retval  (If applied when not in nested mode: VINF_PGM_SYNC_CR3 if monitoring
- *          requires a CR3 sync. This can safely be ignored and overridden since
- *          the FF will be set too then.)
+ * @retval  VINF_PGM_SYNC_CR3 if monitoring requires a CR3 sync (not for nested
+ *          paging modes).  This can safely be ignored and overridden since the
+ *          FF will be set too then.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   cr3         The new cr3.
  */

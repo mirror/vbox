@@ -1017,7 +1017,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
 /**
  * Implements 'INS' (no rep)
  */
-IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
     PVM             pVM  = IEMCPU_TO_VM(pIemCpu);
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -1037,9 +1037,12 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
      * segmentation and finally any #PF due to virtual address translation.
      * ASSUMES nothing is read from the I/O port before traps are taken.
      */
-    rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, pCtx->dx, OP_SIZE / 8);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
+    if (!fIoChecked)
+    {
+        rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, pCtx->dx, OP_SIZE / 8);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
 
     OP_TYPE        *puMem;
     rcStrict = iemMemMap(pIemCpu, (void **)&puMem, OP_SIZE / 8, X86_SREG_ES, pCtx->ADDR_rDI, IEM_ACCESS_DATA_W);
@@ -1076,7 +1079,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 /**
  * Implements 'REP INS'.
  */
-IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
+IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
     PVM         pVM   = IEMCPU_TO_VM(pIemCpu);
     PVMCPU      pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
@@ -1086,9 +1089,13 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
      * Setup.
      */
     uint16_t const  u16Port    = pCtx->dx;
-    VBOXSTRICTRC rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, u16Port, OP_SIZE / 8);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
+    VBOXSTRICTRC    rcStrict;
+    if (!fIoChecked)
+    {
+        rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, u16Port, OP_SIZE / 8);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
@@ -1147,7 +1154,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
              */
             /** @todo Change the I/O manager interface to make use of
              *        mapped buffers instead of leaving those bits to the
-             *        device implementation? */
+             *        device implementation! */
             PGMPAGEMAPLOCK PgLockMem;
             OP_TYPE *puMem;
             rcStrict = iemMemPageMap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, (void **)&puMem, &PgLockMem);
@@ -1170,9 +1177,11 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
                     if (rcStrict != VINF_SUCCESS)
                     {
                         if (IOM_SUCCESS(rcStrict))
+                        {
                             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-                        if (uCounterReg == 0)
-                            iemRegAddToRip(pIemCpu, cbInstr);
+                            if (uCounterReg == 0)
+                                iemRegAddToRip(pIemCpu, cbInstr);
+                        }
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
                         return rcStrict;
                     }
@@ -1225,10 +1234,9 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
             cLeftPage--;
             if (rcStrict != VINF_SUCCESS)
             {
-                if (IOM_SUCCESS(rcStrict))
-                    rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 if (uCounterReg == 0)
                     iemRegAddToRip(pIemCpu, cbInstr);
+                rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 return rcStrict;
             }
         } while ((int32_t)cLeftPage > 0);
@@ -1245,7 +1253,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE))
 /**
  * Implements 'OUTS' (no rep)
  */
-IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
+IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
     PVM             pVM  = IEMCPU_TO_VM(pIemCpu);
     PCPUMCTX        pCtx = pIemCpu->CTX_SUFF(pCtx);
@@ -1256,9 +1264,12 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
      * segmentation and finally any #PF due to virtual address translation.
      * ASSUMES nothing is read from the I/O port before traps are taken.
      */
-    rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, pCtx->dx, OP_SIZE / 8);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
+    if (!fIoChecked)
+    {
+        rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, pCtx->dx, OP_SIZE / 8);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
 
     OP_TYPE uValue;
     rcStrict = RT_CONCAT(iemMemFetchDataU,OP_SIZE)(pIemCpu, &uValue, iEffSeg, pCtx->ADDR_rSI);
@@ -1286,7 +1297,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
 /**
  * Implements 'REP OUTS'.
  */
-IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg)
+IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
     PVM         pVM   = IEMCPU_TO_VM(pIemCpu);
     PVMCPU      pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
@@ -1296,9 +1307,13 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
      * Setup.
      */
     uint16_t const  u16Port    = pCtx->dx;
-    VBOXSTRICTRC rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, u16Port, OP_SIZE / 8);
-    if (rcStrict != VINF_SUCCESS)
-        return rcStrict;
+    VBOXSTRICTRC    rcStrict;
+    if (!fIoChecked)
+    {
+        rcStrict = iemHlpCheckPortIOPermission(pIemCpu, pCtx, u16Port, OP_SIZE / 8);
+        if (rcStrict != VINF_SUCCESS)
+            return rcStrict;
+    }
 
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
@@ -1371,9 +1386,11 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                     if (rcStrict != VINF_SUCCESS)
                     {
                         if (IOM_SUCCESS(rcStrict))
+                        {
                             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-                        if (uCounterReg == 0)
-                            iemRegAddToRip(pIemCpu, cbInstr);
+                            if (uCounterReg == 0)
+                                iemRegAddToRip(pIemCpu, cbInstr);
+                        }
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                         return rcStrict;
                     }
@@ -1421,9 +1438,11 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
             if (rcStrict != VINF_SUCCESS)
             {
                 if (IOM_SUCCESS(rcStrict))
+                {
+                    if (uCounterReg == 0)
+                        iemRegAddToRip(pIemCpu, cbInstr);
                     rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-                if (uCounterReg == 0)
-                    iemRegAddToRip(pIemCpu, cbInstr);
+                }
                 return rcStrict;
             }
         } while ((int32_t)cLeftPage > 0);

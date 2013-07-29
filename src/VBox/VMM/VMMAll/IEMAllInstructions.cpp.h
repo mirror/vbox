@@ -8384,9 +8384,9 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
         IEMOP_MNEMONIC("rep ins Yb,DX");
         switch (pIemCpu->enmEffAddrMode)
         {
-            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op8_addr16);
-            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op8_addr32);
-            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op8_addr64);
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op8_addr16, false);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op8_addr32, false);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op8_addr64, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -8395,9 +8395,9 @@ FNIEMOP_DEF(iemOp_insb_Yb_DX)
         IEMOP_MNEMONIC("ins Yb,DX");
         switch (pIemCpu->enmEffAddrMode)
         {
-            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op8_addr16);
-            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op8_addr32);
-            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op8_addr64);
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op8_addr16, false);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op8_addr32, false);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op8_addr64, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -8416,9 +8416,9 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_16BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op16_addr16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op16_addr32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op16_addr64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op16_addr16, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op16_addr32, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op16_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8426,9 +8426,9 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_32BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op32_addr16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op32_addr32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_rep_ins_op32_addr64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op32_addr16, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op32_addr32, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_ins_op32_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8443,9 +8443,9 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_16BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op16_addr16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op16_addr32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op16_addr64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op16_addr16, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op16_addr32, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op16_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8453,9 +8453,9 @@ FNIEMOP_DEF(iemOp_inswd_Yv_DX)
             case IEMMODE_32BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op32_addr16);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op32_addr32);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_0(iemCImpl_ins_op32_addr64);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op32_addr16, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op32_addr32, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_ins_op32_addr64, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8474,9 +8474,9 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
         IEMOP_MNEMONIC("rep out DX,Yb");
         switch (pIemCpu->enmEffAddrMode)
         {
-            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op8_addr16, pIemCpu->iEffSeg);
-            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op8_addr32, pIemCpu->iEffSeg);
-            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op8_addr64, pIemCpu->iEffSeg);
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op8_addr16, pIemCpu->iEffSeg, false);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op8_addr32, pIemCpu->iEffSeg, false);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op8_addr64, pIemCpu->iEffSeg, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -8485,9 +8485,9 @@ FNIEMOP_DEF(iemOp_outsb_Yb_DX)
         IEMOP_MNEMONIC("out DX,Yb");
         switch (pIemCpu->enmEffAddrMode)
         {
-            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op8_addr16, pIemCpu->iEffSeg);
-            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op8_addr32, pIemCpu->iEffSeg);
-            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op8_addr64, pIemCpu->iEffSeg);
+            case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op8_addr16, pIemCpu->iEffSeg, false);
+            case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op8_addr32, pIemCpu->iEffSeg, false);
+            case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op8_addr64, pIemCpu->iEffSeg, false);
             IEM_NOT_REACHED_DEFAULT_CASE_RET();
         }
     }
@@ -8506,9 +8506,9 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
             case IEMMODE_16BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op16_addr16, pIemCpu->iEffSeg);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op16_addr32, pIemCpu->iEffSeg);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op16_addr64, pIemCpu->iEffSeg);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op16_addr16, pIemCpu->iEffSeg, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op16_addr32, pIemCpu->iEffSeg, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op16_addr64, pIemCpu->iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8516,9 +8516,9 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
             case IEMMODE_32BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op32_addr16, pIemCpu->iEffSeg);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op32_addr32, pIemCpu->iEffSeg);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_rep_outs_op32_addr64, pIemCpu->iEffSeg);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op32_addr16, pIemCpu->iEffSeg, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op32_addr32, pIemCpu->iEffSeg, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_rep_outs_op32_addr64, pIemCpu->iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8533,9 +8533,9 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
             case IEMMODE_16BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op16_addr16, pIemCpu->iEffSeg);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op16_addr32, pIemCpu->iEffSeg);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op16_addr64, pIemCpu->iEffSeg);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op16_addr16, pIemCpu->iEffSeg, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op16_addr32, pIemCpu->iEffSeg, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op16_addr64, pIemCpu->iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
@@ -8543,9 +8543,9 @@ FNIEMOP_DEF(iemOp_outswd_Yv_DX)
             case IEMMODE_32BIT:
                 switch (pIemCpu->enmEffAddrMode)
                 {
-                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op32_addr16, pIemCpu->iEffSeg);
-                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op32_addr32, pIemCpu->iEffSeg);
-                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_1(iemCImpl_outs_op32_addr64, pIemCpu->iEffSeg);
+                    case IEMMODE_16BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op32_addr16, pIemCpu->iEffSeg, false);
+                    case IEMMODE_32BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op32_addr32, pIemCpu->iEffSeg, false);
+                    case IEMMODE_64BIT: return IEM_MC_DEFER_TO_CIMPL_2(iemCImpl_outs_op32_addr64, pIemCpu->iEffSeg, false);
                     IEM_NOT_REACHED_DEFAULT_CASE_RET();
                 }
                 break;
