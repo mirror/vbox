@@ -5769,8 +5769,8 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                                      | VMCPU_FF_REQUEST | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES))
     {
         /* We need the control registers now, make sure the guest-CPU context is updated. */
-        int rc2 = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
-        AssertRCReturn(rc2, rc2);
+        int rc3 = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
+        AssertRCReturn(rc3, rc3);
 
         /* Pending HM CR3 sync. */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_UPDATE_CR3))
