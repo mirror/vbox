@@ -333,7 +333,7 @@ VMMDECL(bool)       PGMGstIsPagePresent(PVMCPU pVCpu, RTGCPTR GCPtr);
 VMMDECL(int)        PGMGstSetPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags);
 VMMDECL(int)        PGMGstModifyPage(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 VMM_INT_DECL(int)   PGMGstGetPaePdpes(PVMCPU pVCpu, PX86PDPE paPdpes);
-VMM_INT_DECL(int)   PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes);
+VMM_INT_DECL(void)  PGMGstUpdatePaePdpes(PVMCPU pVCpu, PCX86PDPE paPdpes);
 
 VMMDECL(int)        PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage);
 VMMDECL(int)        PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal);

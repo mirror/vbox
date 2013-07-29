@@ -787,7 +787,7 @@ typedef union
 /** Memory type that must be used for the VMCS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(a)                (((a) >> 50) & 0xF)
 /** Whether the processor provides additional information for exits due to INS/OUTS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                (((a) >> 54) & 1)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(a)                RT_BOOL((a) & RT_BIT_64(54))
 /** @} */
 
 
@@ -1412,17 +1412,17 @@ typedef union
  * @{
  */
 /** 0-2:   IO operation width. */
-#define VMX_EXIT_QUALIFICATION_IO_WIDTH(a)                      (a & 7)
+#define VMX_EXIT_QUALIFICATION_IO_WIDTH(a)                      ((a) & 7)
 /** 3:     IO operation direction. */
-#define VMX_EXIT_QUALIFICATION_IO_DIRECTION(a)                  ((a >> 3) & 1)
-/** 4:     String IO operation. */
-#define VMX_EXIT_QUALIFICATION_IO_STRING(a)                     ((a >> 4) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_DIRECTION(a)                  (((a) >> 3) & 1)
+/** 4:     String IO operation (INS / OUTS). */
+#define VMX_EXIT_QUALIFICATION_IO_IS_STRING(a)                  RT_BOOL((a) & RT_BIT_64(4))
 /** 5:     Repeated IO operation. */
-#define VMX_EXIT_QUALIFICATION_IO_REP(a)                        ((a >> 5) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_IS_REP(a)                     RT_BOOL((a) & RT_BIT_64(5))
 /** 6:     Operand encoding. */
-#define VMX_EXIT_QUALIFICATION_IO_ENCODING(a)                   ((a >> 6) & 1)
+#define VMX_EXIT_QUALIFICATION_IO_ENCODING(a)                   (((a) >> 6) & 1)
 /** 16-31: IO Port (0-0xffff). */
-#define VMX_EXIT_QUALIFICATION_IO_PORT(a)                       ((a >> 16) & 0xffff)
+#define VMX_EXIT_QUALIFICATION_IO_PORT(a)                       (((a) >> 16) & 0xffff)
 /* Rest reserved. */
 /** @} */
 
@@ -1775,8 +1775,15 @@ DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
  * Executes VMWRITE
  *
  * @returns VBox status code
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_VMX_INVALID_VMCS_PTR
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ *
  * @param   idxField        VMCS index
  * @param   u32Val          32 bits value
+ *
+ * @remarks The values of the two status codes can be ORed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXWriteVmcs32(uint32_t idxField, uint32_t u32Val);
@@ -1836,8 +1843,15 @@ the_end:
  * Executes VMWRITE
  *
  * @returns VBox status code
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_VMX_INVALID_VMCS_PTR
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ *
  * @param   idxField        VMCS index
  * @param   u64Val          16, 32 or 64 bits value
+ *
+ * @remarks The values of the two status codes can be ORed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if !defined(RT_ARCH_X86) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 # if !VMX_USE_MSC_INTRINSICS || ARCH_BITS != 64
@@ -1900,8 +1914,15 @@ DECLASM(int) VMXR0InvVPID(VMX_FLUSH_VPID enmFlush, uint64_t *pDescriptor);
  * Executes VMREAD
  *
  * @returns VBox status code
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_VMX_INVALID_VMCS_PTR
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ *
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
+ *
+ * @remarks The values of the two status codes can be ORed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXReadVmcs32(uint32_t idxField, uint32_t *pData);
@@ -1971,8 +1992,15 @@ the_end:
  * Executes VMREAD
  *
  * @returns VBox status code
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_VMX_INVALID_VMCS_PTR
+ * @retval  VERR_VMX_INVALID_VMCS_FIELD
+ *
  * @param   idxField        VMCS index
  * @param   pData           Ptr to store VM field value
+ *
+ * @remarks The values of the two status codes can be ORed together, the result
+ *          will be VERR_VMX_INVALID_VMCS_PTR.
  */
 #if (!defined(RT_ARCH_X86) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int) VMXReadVmcs64(uint32_t idxField, uint64_t *pData);
