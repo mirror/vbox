@@ -422,8 +422,9 @@ typedef struct VMMCPU
     R0PTRTYPE(RTTHREADCTX)      hR0ThreadCtx;
 #if HC_ARCH_BITS == 32
     uint32_t                    u32Padding;
-#endif
+#else
     uint64_t                    u64Padding;
+#endif
     /** @} */
 
     /** @name Rendezvous
