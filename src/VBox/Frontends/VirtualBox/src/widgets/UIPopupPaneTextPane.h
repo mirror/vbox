@@ -55,9 +55,6 @@ public:
     /* API: Text stuff: */
     void setText(const QString &strText);
 
-    /* API: Desired-width stuff: */
-    void setDesiredWidth(int iDesiredWidth);
-
     /* API: Auto-confirmation stuff: */
     void setProposeAutoConfirmation(bool fPropose);
     bool autoConfirmationProposed() const;
@@ -69,6 +66,9 @@ public:
     void layoutContent();
 
 private slots:
+
+    /* Handler: Layout stuff: */
+    void sltHandleProposalForWidth(int iWidth);
 
     /* Handlers: Focus stuff: */
     void sltFocusEnter();

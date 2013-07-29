@@ -88,17 +88,6 @@ void UIPopupPane::setProposeAutoConfirmation(bool fPropose)
     m_pTextPane->setProposeAutoConfirmation(m_fProposeAutoConfirmation);
 }
 
-void UIPopupPane::setDesiredWidth(int iWidth)
-{
-    /* Make sure text-pane exists: */
-    if (!m_pTextPane)
-        return;
-
-    /* Propagate desired width to the text-pane we have: */
-    m_pTextPane->setDesiredWidth(iWidth - 2 * m_iLayoutMargin
-                                        - m_pButtonPane->minimumSizeHint().width());
-}
-
 void UIPopupPane::setMinimumSizeHint(const QSize &minimumSizeHint)
 {
     /* Make sure the size-hint has changed: */
@@ -145,6 +134,23 @@ void UIPopupPane::sltMarkAsShown()
 {
     /* Mark popup-pane as 'shown': */
     m_fShown = true;
+}
+
+void UIPopupPane::sltHandleProposalForWidth(int iWidth)
+{
+    /* Make sure text-pane exists: */
+    if (!m_pTextPane)
+        return;
+
+    /* Subtract layout margins: */
+    iWidth -= 2 * m_iLayoutMargin;
+    /* Subtract layout spacing: */
+    iWidth -= m_iLayoutSpacing;
+    /* Subtract button-pane width: */
+    iWidth -= m_pButtonPane->minimumSizeHint().width();
+
+    /* Propose resulting width to text-pane: */
+    emit sigProposeTextPaneWidth(iWidth);
 }
 
 void UIPopupPane::sltUpdateSizeHint()
@@ -196,6 +202,10 @@ void UIPopupPane::sltButtonClicked(int iButtonID)
 
 void UIPopupPane::prepare()
 {
+    /* Prepare this: */
+    installEventFilter(this);
+    /* Prepare background: */
+    prepareBackground();
     /* Prepare content: */
     prepareContent();
     /* Prepare animation: */
@@ -205,15 +215,21 @@ void UIPopupPane::prepare()
     sltUpdateSizeHint();
 }
 
+void UIPopupPane::prepareBackground()
+{
+    /* Prepare palette: */
+    QPalette pal = palette();
+    pal.setColor(QPalette::Window, QApplication::palette().color(QPalette::Window));
+    setPalette(pal);
+}
+
 void UIPopupPane::prepareContent()
 {
-    /* Prepare this: */
-    installEventFilter(this);
-
     /* Create message-label: */
     m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fProposeAutoConfirmation);
     {
         /* Prepare label: */
+        connect(this, SIGNAL(sigProposeTextPaneWidth(int)), m_pTextPane, SLOT(sltHandleProposalForWidth(int)));
         connect(m_pTextPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltUpdateSizeHint()));
         m_pTextPane->installEventFilter(this);
     }
@@ -300,8 +316,8 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
             }
             break;
         }
-        /* Pane is focused: */
-        case QEvent::FocusIn:
+        /* Pane is clicked with mouse: */
+        case QEvent::MouseButtonPress:
         {
             /* Focus pane if not focused: */
             if (!m_fFocused)

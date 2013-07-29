@@ -24,7 +24,10 @@
 #include <QMap>
 
 /* Forward declaration: */
+class QVBoxLayout;
+class QScrollArea;
 class UIPopupPane;
+class UIPopupStackViewport;
 
 /* Popup-stack prototype class: */
 class UIPopupStack : public QWidget
@@ -32,6 +35,9 @@ class UIPopupStack : public QWidget
     Q_OBJECT;
 
 signals:
+
+    /* Notifier: Layout stuff: */
+    void sigProposeStackViewportWidth(int iWidth);
 
     /* Notifier: Popup-pane stuff: */
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
@@ -63,16 +69,14 @@ private slots:
     /* Handler: Layout stuff: */
     void sltAdjustGeometry();
 
-    /* Handler: Popup-pane stuff: */
-    void sltPopupPaneDone(int iButtonCode);
+    /* Handler: Popuyp-pane stuff: */
+    void sltPopupPaneRemoved(QString strPopupPaneID);
 
 private:
 
-    /* Helpers: Layout stuff: */
-    QSize minimumSizeHint() const { return m_minimumSizeHint; }
-    void updateSizeHint();
-    void setDesiredWidth(int iWidth);
-    void layoutContent();
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    void prepareContent();
 
     /* Handler: Event-filter stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
@@ -80,16 +84,80 @@ private:
     /* Handler: Event stuff: */
     void showEvent(QShowEvent *pEvent);
 
+    /* Helper: Layout stuff: */
+    void propagateWidth();
+
     /* Static helpers: Prepare stuff: */
     static int parentMenuBarHeight(QWidget *pParent);
     static int parentStatusBarHeight(QWidget *pParent);
 
-    /* Variables: */
+    /* Variables: Widget stuff: */
+    QVBoxLayout *m_pMainLayout;
+    QScrollArea *m_pScrollArea;
+    UIPopupStackViewport *m_pScrollViewport;
+
+    /* Variables: Layout stuff: */
+    int m_iParentMenuBarHeight;
+    int m_iParentStatusBarHeight;
+};
+
+/* Popup-stack viewport prototype class: */
+class UIPopupStackViewport : public QWidget
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Layout stuff: */
+    void sigProposePopupPaneWidth(int iWidth);
+    void sigSizeHintChanged();
+
+    /* Notifier: Popup-pane stuff: */
+    void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
+    void sigPopupPaneRemoved(QString strPopupPaneID);
+
+    /* Notifier: Popup-stack stuff: */
+    void sigRemove();
+
+public:
+
+    /* Constructor: */
+    UIPopupStackViewport();
+
+    /* API: Popup-pane stuff: */
+    bool exists(const QString &strPopupPaneID) const;
+    void createPopupPane(const QString &strPopupPaneID,
+                         const QString &strMessage, const QString &strDetails,
+                         const QMap<int, QString> &buttonDescriptions,
+                         bool fProposeAutoConfirmation);
+    void updatePopupPane(const QString &strPopupPaneID,
+                         const QString &strMessage, const QString &strDetails);
+    void recallPopupPane(const QString &strPopupPaneID);
+
+    /* API: Layout stuff: */
+    QSize minimumSizeHint() const { return m_minimumSizeHint; }
+
+private slots:
+
+    /* Handlers: Layout stuff: */
+    void sltHandleProposalForWidth(int iWidth);
+    void sltAdjustGeometry();
+
+    /* Handler: Popup-pane stuff: */
+    void sltPopupPaneDone(int iButtonCode);
+
+private:
+
+    /* Helpers: Layout stuff: */
+    void updateSizeHint();
+    void layoutContent();
+
+    /* Variables: Layout stuff: */
     const int m_iLayoutMargin;
     const int m_iLayoutSpacing;
     QSize m_minimumSizeHint;
-    int m_iParentMenuBarHeight;
-    int m_iParentStatusBarHeight;
+
+    /* Variables: Children stuff: */
     QMap<QString, UIPopupPane*> m_panes;
 };
 

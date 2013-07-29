@@ -316,12 +316,14 @@ void UIPopupCenter::raisePopupStack(QWidget *pParent)
     if (!m_stacks.contains(strPopupStackID))
         return;
 
-    /* Just raise, its:
-     * useful for Win host,
-     * do not work on Mac host and
-     * need to check for x11/KDE still. */
-    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
-    pPopupStack->raise();
+    /* Remove stack: */
+    hidePopupStack(pParent);
+
+    /* Make sure integration type is correct: */
+    setStackIntegrationType(UIPopupIntegrationType_Toplevel);
+
+    /* Return stack again: */
+    showPopupStack(pParent);
 }
 
 void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
