@@ -1403,6 +1403,8 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
     RT_ZERO(m_interfaceCallbacksTSMF);
     RT_ZERO(m_interfaceVideoIn);
     RT_ZERO(m_interfaceCallbacksVideoIn);
+    RT_ZERO(m_interfaceInput);
+    RT_ZERO(m_interfaceCallbacksInput);
 
     rc = RTCritSectInit(&mTSMFLock);
     AssertRC(rc);
@@ -1709,6 +1711,29 @@ int ConsoleVRDPServer::Launch(void)
                     else
                     {
                         RT_ZERO(m_interfaceVideoIn);
+                    }
+
+                    /* Input interface. */
+                    m_interfaceInput.header.u64Version = 1;
+                    m_interfaceInput.header.u64Size = sizeof(m_interfaceInput);
+
+                    m_interfaceCallbacksInput.header.u64Version = 1;
+                    m_interfaceCallbacksInput.header.u64Size = sizeof(m_interfaceCallbacksInput);
+                    m_interfaceCallbacksInput.VRDECallbackInputSetup = VRDECallbackInputSetup;
+                    m_interfaceCallbacksInput.VRDECallbackInputEvent = VRDECallbackInputEvent;
+
+                    vrc = mpEntryPoints->VRDEGetInterface(mhServer,
+                                                          VRDE_INPUT_INTERFACE_NAME,
+                                                          &m_interfaceInput.header,
+                                                          &m_interfaceCallbacksInput.header,
+                                                          this);
+                    if (RT_SUCCESS(vrc))
+                    {
+                        LogRel(("VRDE: [%s]\n", VRDE_INPUT_INTERFACE_NAME));
+                    }
+                    else
+                    {
+                        RT_ZERO(m_interfaceInput);
                     }
 
                     /* Since these interfaces are optional, it is always a success here. */
@@ -2759,6 +2784,79 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
 
     return rc;
 }
+
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackInputSetup(void *pvCallback,
+                                                                          int rcRequest,
+                                                                          uint32_t u32Method,
+                                                                          const void *pvResult,
+                                                                          uint32_t cbResult)
+{
+    NOREF(pvCallback);
+    NOREF(rcRequest);
+    NOREF(u32Method);
+    NOREF(pvResult);
+    NOREF(cbResult);
+}
+
+/* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackInputEvent(void *pvCallback,
+                                                                          uint32_t u32Method,
+                                                                          const void *pvEvent,
+                                                                          uint32_t cbEvent)
+{
+    ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
+
+    if (u32Method == VRDE_INPUT_METHOD_TOUCH)
+    {
+        if (cbEvent >= sizeof(VRDEINPUTHEADER))
+        {
+            VRDEINPUTHEADER *pHeader = (VRDEINPUTHEADER *)pvEvent;
+
+            if (pHeader->u16EventId == VRDEINPUT_EVENTID_TOUCH)
+            {
+                VRDEINPUT_TOUCH_EVENT_PDU *p = (VRDEINPUT_TOUCH_EVENT_PDU *)pHeader;
+
+                uint16_t iFrame;
+                for (iFrame = 0; iFrame < p->u16FrameCount; iFrame++)
+                {
+                    VRDEINPUT_TOUCH_FRAME *pFrame = &p->aFrames[iFrame];
+
+                    uint16_t iContact;
+                    for (iContact = 0; iContact < pFrame->u16ContactCount; iContact++)
+                    {
+                        VRDEINPUT_CONTACT_DATA *pContact = &pFrame->aContacts[iContact];
+
+                        LONG x = pContact->i32X;
+                        LONG y = pContact->i32Y;
+                        LONG cContact = pContact->u8ContactId;
+                        LONG contactState = TouchContactState_None;
+
+                        /* @todo */
+                        if (pContact->u32ContactFlags & VRDEINPUT_CONTACT_FLAG_INRANGE)
+                        {
+                            contactState |= TouchContactState_InRange;
+                        }
+                        if (pContact->u32ContactFlags & VRDEINPUT_CONTACT_FLAG_INCONTACT)
+                        {
+                            contactState |= TouchContactState_InContact;
+                        }
+	
+                        HRESULT hrc = pThis->mConsole->getMouse()->PutMouseEventMultiTouch(x, y, cContact, contactState);
+                    }
+                }
+            }
+            else if (pHeader->u16EventId == VRDEINPUT_EVENTID_DISMISS_HOVERING_CONTACT)
+            {
+                /* @todo */
+            }
+            else
+            {
+                AssertMsgFailed(("EventId %d\n", pHeader->u16EventId));
+            }
+        }
+    }
+}
+
 
 void ConsoleVRDPServer::EnableConnections(void)
 {

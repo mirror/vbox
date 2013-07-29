@@ -29,6 +29,7 @@
 #include <VBox/RemoteDesktop/VRDETSMF.h>
 #define VRDE_VIDEOIN_WITH_VRDEINTERFACE /* Get the VRDE interface definitions. */
 #include <VBox/RemoteDesktop/VRDEVideoIn.h>
+#include <VBox/RemoteDesktop/VRDEInput.h>
 
 #include <VBox/HostServices/VBoxClipboardExt.h>
 #include <VBox/HostServices/VBoxHostChannel.h>
@@ -341,6 +342,19 @@ private:
                                                        void *pDeviceCtx,
                                                        const VRDEVIDEOINPAYLOADHDR *pFrame,
                                                        uint32_t cbFrame);
+
+    /* Input interface. */
+    VRDEINPUTINTERFACE m_interfaceInput;
+    VRDEINPUTCALLBACKS m_interfaceCallbacksInput;
+    static DECLCALLBACK(void) VRDECallbackInputSetup(void *pvCallback,
+                                                     int rcRequest,
+                                                     uint32_t u32Method,
+                                                     const void *pvResult,
+                                                     uint32_t cbResult);
+    static DECLCALLBACK(void) VRDECallbackInputEvent(void *pvCallback,
+                                                     uint32_t u32Method,
+                                                     const void *pvEvent,
+                                                     uint32_t cbEvent);
 };
 
 
