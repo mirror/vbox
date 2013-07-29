@@ -58,7 +58,8 @@ signals:
     void sigFocusEnter();
     void sigFocusLeave();
 
-    /* Notifier: Layout stuff: */
+    /* Notifiers: Layout stuff: */
+    void sigProposeTextPaneWidth(int iWidth);
     void sigSizeHintChanged();
 
     /* Notifier: Complete stuff: */
@@ -85,7 +86,6 @@ public:
     /* API: Layout stuff: */
     QSize minimumSizeHint() const { return m_minimumSizeHint; }
     void setMinimumSizeHint(const QSize &minimumSizeHint);
-    void setDesiredWidth(int iWidth);
     void layoutContent();
 
 private slots:
@@ -93,7 +93,8 @@ private slots:
     /* Handler: Show/hide stuff: */
     void sltMarkAsShown();
 
-    /* Handler: Layout stuff: */
+    /* Handlers: Layout stuff: */
+    void sltHandleProposalForWidth(int iWidth);
     void sltUpdateSizeHint();
 
     /* Handler: Button stuff: */
@@ -103,6 +104,7 @@ private:
 
     /* Helpers: Prepare stuff: */
     void prepare();
+    void prepareBackground();
     void prepareContent();
     void prepareAnimation();
 

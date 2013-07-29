@@ -55,19 +55,6 @@ void UIPopupPaneTextPane::setText(const QString &strText)
     updateSizeHint();
 }
 
-void UIPopupPaneTextPane::setDesiredWidth(int iDesiredWidth)
-{
-    /* Make sure the desired-width has changed: */
-    if (m_iDesiredLabelWidth == iDesiredWidth)
-        return;
-
-    /* Fetch new desired-width: */
-    m_iDesiredLabelWidth = iDesiredWidth;
-
-    /* Update size-hint: */
-    updateSizeHint();
-}
-
 void UIPopupPaneTextPane::setProposeAutoConfirmation(bool fPropose)
 {
     /* Make sure the auto-confirmation-proposal has changed: */
@@ -148,6 +135,19 @@ void UIPopupPaneTextPane::layoutContent()
     }
     else if (!m_pAutoConfirmCheckBox->isHidden())
         m_pAutoConfirmCheckBox->hide();
+}
+
+void UIPopupPaneTextPane::sltHandleProposalForWidth(int iWidth)
+{
+    /* Make sure the desired-width has changed: */
+    if (m_iDesiredLabelWidth == iWidth)
+        return;
+
+    /* Fetch new desired-width: */
+    m_iDesiredLabelWidth = iWidth;
+
+    /* Update size-hint: */
+    updateSizeHint();
 }
 
 void UIPopupPaneTextPane::sltFocusEnter()

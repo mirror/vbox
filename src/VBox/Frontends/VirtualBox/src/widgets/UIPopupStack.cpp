@@ -18,6 +18,8 @@
  */
 
 /* Qt includes: */
+#include <QVBoxLayout>
+#include <QScrollArea>
 #include <QEvent>
 #include <QMainWindow>
 #include <QMenuBar>
@@ -32,32 +34,19 @@
 #include <VBox/sup.h>
 
 UIPopupStack::UIPopupStack()
-    : m_iLayoutMargin(1)
-    , m_iLayoutSpacing(1)
+    : m_pScrollArea(0)
+    , m_pScrollViewport(0)
     , m_iParentMenuBarHeight(0)
     , m_iParentStatusBarHeight(0)
 {
-    /* Make sure cursor is *always* valid: */
-    setCursor(Qt::ArrowCursor);
-
-#if defined(Q_WS_WIN) || defined (Q_WS_MAC)
-    /* Using Qt API to enable translucent background for the Win/Mac host.
-     * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
-    setAttribute(Qt::WA_TranslucentBackground);
-#endif /* Q_WS_WIN || Q_WS_MAC */
-
-#ifdef Q_WS_MAC
-    /* Do not hide popup-stack
-     * and actually the seamless machine-window too
-     * due to Qt bug on window deactivation... */
-    setAttribute(Qt::WA_MacAlwaysShowToolWindow);
-#endif /* Q_WS_MAC */
+    /* Prepare: */
+    prepare();
 }
 
 bool UIPopupStack::exists(const QString &strPopupPaneID) const
 {
-    /* Is there already popup-pane with the same ID? */
-    return m_panes.contains(strPopupPaneID);
+    /* Redirect question to viewport: */
+    return m_pScrollViewport->exists(strPopupPaneID);
 }
 
 void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
@@ -65,75 +54,34 @@ void UIPopupStack::createPopupPane(const QString &strPopupPaneID,
                                    const QMap<int, QString> &buttonDescriptions,
                                    bool fProposeAutoConfirmation)
 {
-    /* Make sure there is no such popup-pane already: */
-    if (m_panes.contains(strPopupPaneID))
-    {
-        AssertMsgFailed(("Popup-pane already exists!"));
-        return;
-    }
+    /* Redirect request to viewport: */
+    m_pScrollViewport->createPopupPane(strPopupPaneID,
+                                       strMessage, strDetails,
+                                       buttonDescriptions,
+                                       fProposeAutoConfirmation);
 
-    /* Create new popup-pane: */
-    UIPopupPane *pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
-                                                                        strMessage, strDetails,
-                                                                        buttonDescriptions,
-                                                                        fProposeAutoConfirmation);
-    /* Attach popup-pane connection: */
-    connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
-    connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
-    /* Show popup-pane: */
-    pPopupPane->show();
-
-    /* Adjust geometry only if parent is currently set: */
-    if (parent())
-    {
-        /* Propagate desired width: */
-        setDesiredWidth(parentWidget()->width());
-        /* Adjust geometry: */
-        sltAdjustGeometry();
-    }
+    /* Propagate width: */
+    propagateWidth();
 }
 
 void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
                                    const QString &strMessage, const QString &strDetails)
 {
-    /* Make sure there is such popup-pane already: */
-    if (!m_panes.contains(strPopupPaneID))
-    {
-        AssertMsgFailed(("Popup-pane doesn't exists!"));
-        return;
-    }
+    /* Redirect request to viewport: */
+    m_pScrollViewport->updatePopupPane(strPopupPaneID,
+                                       strMessage, strDetails);
 
-    /* Get existing popup-pane: */
-    UIPopupPane *pPopupPane = m_panes[strPopupPaneID];
-
-    /* Update message and details: */
-    pPopupPane->setMessage(strMessage);
-    pPopupPane->setDetails(strDetails);
-
-    /* Adjust geometry only if parent is currently set: */
-    if (parent())
-    {
-        /* Propagate desired width: */
-        setDesiredWidth(parentWidget()->width());
-        /* Adjust geometry: */
-        sltAdjustGeometry();
-    }
+    /* Propagate width: */
+    propagateWidth();
 }
 
 void UIPopupStack::recallPopupPane(const QString &strPopupPaneID)
 {
-    /* Make sure there is such popup-pane already: */
-    if (!m_panes.contains(strPopupPaneID))
-    {
-        AssertMsgFailed(("Popup-pane doesn't exists!"));
-        return;
-    }
+    /* Redirect request to viewport: */
+    m_pScrollViewport->recallPopupPane(strPopupPaneID);
 
-    /* Get existing popup-pane: */
-    UIPopupPane *pPopupPane = m_panes[strPopupPaneID];
-
-    /* Recall popup-pane: */
-    pPopupPane->recall();
+    /* Propagate width: */
+    propagateWidth();
 }
 
 void UIPopupStack::setParent(QWidget *pParent)
@@ -158,28 +106,300 @@ void UIPopupStack::setParent(QWidget *pParent, Qt::WindowFlags flags)
 
 void UIPopupStack::sltAdjustGeometry()
 {
-    /* Adjust geometry only if parent is currently set: */
+    /* Make sure parent is currently set: */
     if (!parent())
         return;
 
+    /* Read parent geometry: */
+    QRect geo(parentWidget()->geometry());
+
+    /* Determine origin: */
+    bool fIsWindow = isWindow();
+    int iX = fIsWindow ? geo.x() : 0;
+    int iY = fIsWindow ? geo.y() : 0;
+    /* Subtract menu-bar height: */
+    iY += m_iParentMenuBarHeight;
+
+    /* Determine size: */
+    int iWidth = parentWidget()->width();
+    int iHeight = parentWidget()->height();
+    /* Subtract menu-bar and status-bar heights: */
+    iHeight -= (m_iParentMenuBarHeight + m_iParentStatusBarHeight);
+    /* Check if minimum height is even less than current: */
+    if (m_pScrollViewport)
+    {
+        /* Get minimum viewport height: */
+        int iMinimumHeight = m_pScrollViewport->minimumSizeHint().height();
+        /* Subtract layout margins: */
+        int iLeft, iTop, iRight, iBottom;
+        m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        iMinimumHeight += (iTop + iBottom);
+        /* Compare minimum and current height: */
+        iHeight = qMin(iHeight, iMinimumHeight);
+    }
+
+    /* Adjust geometry: */
+    setGeometry(iX, iY, iWidth, iHeight);
+}
+
+void UIPopupStack::sltPopupPaneRemoved(QString)
+{
+    /* Move focus to the parent: */
+    if (parentWidget())
+        parentWidget()->setFocus();
+}
+
+void UIPopupStack::prepare()
+{
+    /* Configure background: */
+    setAutoFillBackground(false);
+#if defined(Q_WS_WIN) || defined (Q_WS_MAC)
+    /* Using Qt API to enable translucent background for the Win/Mac host.
+     * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
+    setAttribute(Qt::WA_TranslucentBackground);
+#endif /* Q_WS_WIN || Q_WS_MAC */
+
+#ifdef Q_WS_MAC
+    /* Do not hide popup-stack
+     * and actually the seamless machine-window too
+     * due to Qt bug on window deactivation... */
+    setAttribute(Qt::WA_MacAlwaysShowToolWindow);
+#endif /* Q_WS_MAC */
+
+    /* Prepare content: */
+    prepareContent();
+}
+
+void UIPopupStack::prepareContent()
+{
+    /* Create main-layout: */
+    m_pMainLayout = new QVBoxLayout(this);
+    {
+        /* Configure main-layout: */
+        m_pMainLayout->setContentsMargins(0, 0, 0, 0);
+        /* Create scroll-area: */
+        m_pScrollArea = new QScrollArea;
+        {
+            /* Configure scroll-area: */
+            m_pScrollArea->setCursor(Qt::ArrowCursor);
+            m_pScrollArea->setWidgetResizable(true);
+            m_pScrollArea->setFrameStyle(QFrame::NoFrame | QFrame::Plain);
+            m_pScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            //m_pScrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+            QPalette pal = m_pScrollArea->palette();
+            pal.setColor(QPalette::Window, QColor(Qt::transparent));
+            m_pScrollArea->setPalette(pal);
+            /* Create scroll-viewport: */
+            m_pScrollViewport = new UIPopupStackViewport;
+            {
+                /* Configure scroll-viewport: */
+                m_pScrollViewport->setCursor(Qt::ArrowCursor);
+                /* Connect scroll-viewport: */
+                connect(this, SIGNAL(sigProposeStackViewportWidth(int)),
+                        m_pScrollViewport, SLOT(sltHandleProposalForWidth(int)));
+                connect(m_pScrollViewport, SIGNAL(sigSizeHintChanged()),
+                        this, SLOT(sltAdjustGeometry()));
+                connect(m_pScrollViewport, SIGNAL(sigPopupPaneDone(QString, int)),
+                        this, SIGNAL(sigPopupPaneDone(QString, int)));
+                connect(m_pScrollViewport, SIGNAL(sigPopupPaneRemoved(QString)),
+                        this, SLOT(sltPopupPaneRemoved(QString)));
+                connect(m_pScrollViewport, SIGNAL(sigRemove()),
+                        this, SIGNAL(sigRemove()));
+            }
+            /* Assign scroll-viewport to scroll-area: */
+            m_pScrollArea->setWidget(m_pScrollViewport);
+        }
+        /* Add scroll-area to layout: */
+        m_pMainLayout->addWidget(m_pScrollArea);
+    }
+}
+
+bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* Call to base-class if that is not parent event: */
+    if (!parent() || pWatched != parent())
+        return QWidget::eventFilter(pWatched, pEvent);
+
+    /* Handle parent geometry events: */
+    switch (pEvent->type())
+    {
+        case QEvent::Resize:
+        {
+            /* Propagate stack width: */
+            propagateWidth();
+            /* Adjust geometry: */
+            sltAdjustGeometry();
+            break;
+        }
+        case QEvent::Move:
+        {
+            /* Adjust geometry: */
+            sltAdjustGeometry();
+            break;
+        }
+    }
+
+    /* Call to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
+}
+
+void UIPopupStack::showEvent(QShowEvent*)
+{
+    /* Propagate width: */
+    propagateWidth();
+    /* Adjust geometry: */
+    sltAdjustGeometry();
+}
+
+void UIPopupStack::propagateWidth()
+{
+    /* Make sure parent is currently set: */
+    if (!parent())
+        return;
+
+    /* Get parent width: */
+    int iWidth = parentWidget()->width();
+    /* Subtract left/right layout margins: */
+    if (m_pMainLayout)
+    {
+        int iLeft, iTop, iRight, iBottom;
+        m_pMainLayout->getContentsMargins(&iLeft, &iTop, &iRight, &iBottom);
+        iWidth -= (iLeft + iRight);
+    }
+    /* Subtract scroll-area frame-width: */
+    if (m_pScrollArea)
+    {
+        iWidth -= 2 * m_pScrollArea->frameWidth();
+    }
+
+    /* Propose resulting width to viewport: */
+    emit sigProposeStackViewportWidth(iWidth);
+}
+
+/* static */
+int UIPopupStack::parentMenuBarHeight(QWidget *pParent)
+{
+    /* Menu-bar can exist only on QMainWindow sub-class: */
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
+    {
+        /* Search for existing menu-bar child: */
+        if (QMenuBar *pMenuBar = pMainWindow->findChild<QMenuBar*>())
+            return pMenuBar->height();
+    }
+    /* Zero by default: */
+    return 0;
+}
+
+/* static */
+int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
+{
+    /* Status-bar can exist only on QMainWindow sub-class: */
+    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
+    {
+        /* Search for existing status-bar child: */
+        if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
+            return pStatusBar->height();
+    }
+    /* Zero by default: */
+    return 0;
+}
+
+
+UIPopupStackViewport::UIPopupStackViewport()
+    : m_iLayoutMargin(1)
+    , m_iLayoutSpacing(1)
+{
+}
+
+bool UIPopupStackViewport::exists(const QString &strPopupPaneID) const
+{
+    /* Is there already popup-pane with the same ID? */
+    return m_panes.contains(strPopupPaneID);
+}
+
+void UIPopupStackViewport::createPopupPane(const QString &strPopupPaneID,
+                                           const QString &strMessage, const QString &strDetails,
+                                           const QMap<int, QString> &buttonDescriptions,
+                                           bool fProposeAutoConfirmation)
+{
+    /* Make sure there is no such popup-pane already: */
+    if (m_panes.contains(strPopupPaneID))
+    {
+        AssertMsgFailed(("Popup-pane already exists!"));
+        return;
+    }
+
+    /* Create new popup-pane: */
+    UIPopupPane *pPopupPane = m_panes[strPopupPaneID] = new UIPopupPane(this,
+                                                                        strMessage, strDetails,
+                                                                        buttonDescriptions,
+                                                                        fProposeAutoConfirmation);
+
+    /* Attach popup-pane connection: */
+    connect(this, SIGNAL(sigProposePopupPaneWidth(int)), pPopupPane, SLOT(sltHandleProposalForWidth(int)));
+    connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
+    connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
+
+    /* Show popup-pane: */
+    pPopupPane->show();
+}
+
+void UIPopupStackViewport::updatePopupPane(const QString &strPopupPaneID,
+                                           const QString &strMessage, const QString &strDetails)
+{
+    /* Make sure there is such popup-pane already: */
+    if (!m_panes.contains(strPopupPaneID))
+    {
+        AssertMsgFailed(("Popup-pane doesn't exists!"));
+        return;
+    }
+
+    /* Get existing popup-pane: */
+    UIPopupPane *pPopupPane = m_panes[strPopupPaneID];
+
+    /* Update message and details: */
+    pPopupPane->setMessage(strMessage);
+    pPopupPane->setDetails(strDetails);
+}
+
+void UIPopupStackViewport::recallPopupPane(const QString &strPopupPaneID)
+{
+    /* Make sure there is such popup-pane already: */
+    if (!m_panes.contains(strPopupPaneID))
+    {
+        AssertMsgFailed(("Popup-pane doesn't exists!"));
+        return;
+    }
+
+    /* Get existing popup-pane: */
+    UIPopupPane *pPopupPane = m_panes[strPopupPaneID];
+
+    /* Recall popup-pane: */
+    pPopupPane->recall();
+}
+
+void UIPopupStackViewport::sltHandleProposalForWidth(int iWidth)
+{
+    /* Subtract layout margins: */
+    iWidth -= 2 * m_iLayoutMargin;
+
+    /* Propagate resulting width to popups: */
+    emit sigProposePopupPaneWidth(iWidth);
+}
+
+void UIPopupStackViewport::sltAdjustGeometry()
+{
     /* Update size-hint: */
     updateSizeHint();
 
-    /* Get this attributes: */
-    bool fIsWindow = isWindow();
-    const int iX = fIsWindow ? parentWidget()->x() : 0;
-    const int iY = fIsWindow ? parentWidget()->y() : m_iParentMenuBarHeight;
-    const int iWidth = parentWidget()->width();
-    const int iHeight = m_minimumSizeHint.height();
-
-    /* Move/resize according parent: */
-    setGeometry(iX, iY, iWidth, iHeight);
-
     /* Layout content: */
     layoutContent();
+
+    /* Notify parent popup-stack: */
+    emit sigSizeHintChanged();
 }
 
-void UIPopupStack::sltPopupPaneDone(int iResultCode)
+void UIPopupStackViewport::sltPopupPaneDone(int iResultCode)
 {
     /* Make sure the sender is the popup-pane: */
     UIPopupPane *pPopupPane = qobject_cast<UIPopupPane*>(sender());
@@ -197,19 +417,18 @@ void UIPopupStack::sltPopupPaneDone(int iResultCode)
         return;
     }
 
-    /* Notify listeners about popup-pane: */
+    /* Notify listeners about popup-pane removal: */
     emit sigPopupPaneDone(strPopupPaneID, iResultCode);
 
     /* Cleanup the popup-pane: */
     m_panes.remove(strPopupPaneID);
     delete pPopupPane;
 
-    /* Give focus back to parent: */
-    if (parentWidget())
-        parentWidget()->setFocus();
+    /* Notify listeners about popup-pane removed: */
+    emit sigPopupPaneRemoved(strPopupPaneID);
 
-    /* Layout content: */
-    layoutContent();
+    /* Adjust geometry: */
+    sltAdjustGeometry();
 
     /* Make sure this stack still contains popup-panes: */
     if (!m_panes.isEmpty())
@@ -219,7 +438,7 @@ void UIPopupStack::sltPopupPaneDone(int iResultCode)
     emit sigRemove();
 }
 
-void UIPopupStack::updateSizeHint()
+void UIPopupStackViewport::updateSizeHint()
 {
     /* Calculate minimum width-hint: */
     int iMinimumWidthHint = 0;
@@ -251,14 +470,7 @@ void UIPopupStack::updateSizeHint()
     m_minimumSizeHint = QSize(iMinimumWidthHint, iMinimumHeightHint);
 }
 
-void UIPopupStack::setDesiredWidth(int iWidth)
-{
-    /* Propagate desired width to all the popup-panes we have: */
-    foreach (UIPopupPane *pPane, m_panes)
-        pPane->setDesiredWidth(iWidth - 2 * m_iLayoutMargin);
-}
-
-void UIPopupStack::layoutContent()
+void UIPopupStackViewport::layoutContent()
 {
     /* Get attributes: */
     int iX = m_iLayoutMargin;
@@ -268,73 +480,14 @@ void UIPopupStack::layoutContent()
     foreach (UIPopupPane *pPane, m_panes)
     {
         /* Get pane attributes: */
-        const int iPaneWidth = width() - 2 * m_iLayoutMargin;
-        const int iPaneHeight = pPane->minimumSizeHint().height();
+        QSize paneSize = pPane->minimumSizeHint();
+        const int iPaneWidth = paneSize.width();
+        const int iPaneHeight = paneSize.height();
         /* Adjust geometry for the pane: */
-        pPane->move(iX, iY);
-        pPane->resize(iPaneWidth, iPaneHeight);
+        pPane->setGeometry(iX, iY, iPaneWidth, iPaneHeight);
         pPane->layoutContent();
         /* Increment placeholder: */
         iY += (iPaneHeight + m_iLayoutSpacing);
     }
-}
-
-bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
-{
-    /* Make sure its parent event came: */
-    if (!parent() || pWatched != parent())
-        return false;
-
-    /* Make sure its resize event came: */
-    if (pEvent->type() != QEvent::Resize)
-        return false;
-
-    /* Propagate desired width: */
-    setDesiredWidth(parentWidget()->width());
-    /* Adjust geometry: */
-    sltAdjustGeometry();
-
-    /* Do not filter anything: */
-    return false;
-}
-
-void UIPopupStack::showEvent(QShowEvent*)
-{
-    /* Adjust geometry only if parent is currently set: */
-    if (parent())
-    {
-        /* Propagate desired width: */
-        setDesiredWidth(parentWidget()->width());
-        /* Adjust geometry: */
-        sltAdjustGeometry();
-    }
-}
-
-/* static */
-int UIPopupStack::parentMenuBarHeight(QWidget *pParent)
-{
-    /* Menu-bar can exist only on QMainWindow sub-class: */
-    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
-    {
-        /* Search for existing menu-bar child: */
-        if (QMenuBar *pMenuBar = pMainWindow->findChild<QMenuBar*>())
-            return pMenuBar->height();
-    }
-    /* Zero by default: */
-    return 0;
-}
-
-/* static */
-int UIPopupStack::parentStatusBarHeight(QWidget *pParent)
-{
-    /* Status-bar can exist only on QMainWindow sub-class: */
-    if (QMainWindow *pMainWindow = qobject_cast<QMainWindow*>(pParent))
-    {
-        /* Search for existing status-bar child: */
-        if (QStatusBar *pStatusBar = pMainWindow->findChild<QStatusBar*>())
-            return pStatusBar->height();
-    }
-    /* Zero by default: */
-    return 0;
 }
 
