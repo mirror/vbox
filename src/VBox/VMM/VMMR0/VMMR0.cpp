@@ -428,6 +428,42 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
 }
 
 
+/**
+ * Creates R0 thread-context hooks for the current EMT thread.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @thread EMT.
+ */
+VMMR0DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    Assert(pVCpu->vmm.s.hR0ThreadCtx == NIL_RTTHREADCTX);
+    int rc = RTThreadCtxHooksCreate(&pVCpu->vmm.s.hR0ThreadCtx);
+    if (   RT_SUCCESS(rc)
+        || rc == VERR_NOT_SUPPORTED)
+    {
+        return VINF_SUCCESS;
+    }
+
+    Log(("RTThreadCtxHooksCreate failed! rc=%Rrc pVCpu=%p idCpu=%RU32\n", rc, pVCpu, pVCpu->idCpu));
+    return rc;
+}
+
+
+/**
+ * Releases the object reference for the thread-context hook.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @remarks Can be called from any thread.
+ */
+VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
+{
+    RTThreadCtxHooksRelease(pVCpu->vmm.s.hR0ThreadCtx);
+}
+
+
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
