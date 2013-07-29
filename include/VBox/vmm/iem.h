@@ -28,6 +28,7 @@
 
 #include <VBox/types.h>
 #include <VBox/vmm/trpm.h>
+#include <iprt/assert.h>
 
 
 RT_C_DECLS_BEGIN
@@ -36,6 +37,17 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
+/**
+ * Operand or addressing mode.
+ */
+typedef enum IEMMODE
+{
+    IEMMODE_16BIT = 0,
+    IEMMODE_32BIT,
+    IEMMODE_64BIT
+} IEMMODE;
+AssertCompileSize(IEMMODE, 4);
 
 
 VMMDECL(VBOXSTRICTRC)       IEMExecOne(PVMCPU pVCpu);
@@ -53,7 +65,10 @@ VMM_INT_DECL(int)           IEMBreakpointClear(PVM pVM, RTGCPTR GCPtrBp);
 
 /** @name Given Instruction Interpreters
  * @{ */
-
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecStringIoWrite(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
+                                                 bool fRepPrefix, uint8_t cbInstr, uint8_t iEffSeg);
+VMM_INT_DECL(VBOXSTRICTRC)  IEMExecStringIoRead(PVMCPU pVCpu, uint8_t cbValue, IEMMODE enmAddrMode,
+                                                bool fRepPrefix, uint8_t cbInstr);
 /** @}  */
 
 #if defined(IEM_VERIFICATION_MODE) && defined(IN_RING3)

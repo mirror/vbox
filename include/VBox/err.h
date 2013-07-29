@@ -1914,6 +1914,16 @@
 #define VERR_VMX_VMPTRLD_FAILED                     (-4021)
 /** Invalid VMCS pointer passed to VMLAUNCH/VMRESUME. */
 #define VERR_VMX_INVALID_VMCS_PTR_TO_START_VM       (-4022)
+/** Internal VMX processing error no 1. */
+#define VERR_HMVMX_IPE_1                            (-4023)
+/** Internal VMX processing error no 1. */
+#define VERR_HMVMX_IPE_2                            (-4024)
+/** Internal VMX processing error no 1. */
+#define VERR_HMVMX_IPE_3                            (-4025)
+/** Internal VMX processing error no 1. */
+#define VERR_HMVMX_IPE_4                            (-4026)
+/** Internal VMX processing error no 1. */
+#define VERR_HMVMX_IPE_5                            (-4027)
 /** @} */
 
 
@@ -2156,6 +2166,14 @@
  * @{ */
 /** The instruction is not yet implemented by IEM. */
 #define VERR_IEM_INSTR_NOT_IMPLEMENTED              (-5300)
+/** Invalid operand size passed to an IEM function. */
+#define VERR_IEM_INVALID_OPERAND_SIZE               (-5301)
+/** Invalid address mode passed to an IEM function. */
+#define VERR_IEM_INVALID_ADDRESS_MODE               (-5302)
+/** Invalid effective segment register number passed to an IEM function. */
+#define VERR_IEM_INVALID_EFF_SEG                    (-5303)
+/** Invalid instruction length passed to an IEM function. */
+#define VERR_IEM_INVALID_INSTR_LENGTH               (-5304)
 /** This particular aspect of the instruction is not yet implemented by IEM. */
 #define VERR_IEM_ASPECT_NOT_IMPLEMENTED             (-5391)
 /** Internal processing error \#1 in the IEM code.. */
