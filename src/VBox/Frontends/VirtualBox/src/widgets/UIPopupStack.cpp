@@ -66,18 +66,12 @@ void UIPopupStack::updatePopupPane(const QString &strPopupPaneID,
     /* Redirect request to viewport: */
     m_pScrollViewport->updatePopupPane(strPopupPaneID,
                                        strMessage, strDetails);
-
-    /* Propagate width: */
-    propagateWidth();
 }
 
 void UIPopupStack::recallPopupPane(const QString &strPopupPaneID)
 {
     /* Redirect request to viewport: */
     m_pScrollViewport->recallPopupPane(strPopupPaneID);
-
-    /* Propagate width: */
-    propagateWidth();
 }
 
 void UIPopupStack::setParent(QWidget *pParent)
@@ -113,7 +107,7 @@ void UIPopupStack::sltAdjustGeometry()
     bool fIsWindow = isWindow();
     int iX = fIsWindow ? geo.x() : 0;
     int iY = fIsWindow ? geo.y() : 0;
-    /* Subtract menu-bar height: */
+    /* Add menu-bar height: */
     iY += m_iParentMenuBarHeight;
 
     /* Determine size: */
@@ -221,7 +215,7 @@ bool UIPopupStack::eventFilter(QObject *pWatched, QEvent *pEvent)
     {
         case QEvent::Resize:
         {
-            /* Propagate stack width: */
+            /* Propagate width: */
             propagateWidth();
             /* Adjust geometry: */
             sltAdjustGeometry();
