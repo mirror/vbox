@@ -697,7 +697,7 @@ static int vmmdevReqHandler_ReportGuestUserState(PVMMDEV pThis, VMMDevRequestHea
         /* Note: pszDomain can be NULL. */
 
         pvDynamic += pStatus->cbDomain; /* Advance to next field. */
-        const uint8_t *puDetails = (uint8_t *)pStatus->cbDetails
+        const uint8_t *puDetails = pStatus->cbDetails
                                  ? pvDynamic : NULL;
         /* Note: puDetails can be NULL. */
 
