@@ -33,11 +33,11 @@ class UIPopupStackViewport : public QWidget
 
 signals:
 
-    /* Notifier: Layout stuff: */
+    /* Notifiers: Layout stuff: */
     void sigProposePopupPaneWidth(int iWidth);
     void sigSizeHintChanged();
 
-    /* Notifier: Popup-pane stuff: */
+    /* Notifiers: Popup-pane stuff: */
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
     void sigPopupPaneRemoved(QString strPopupPaneID);
 
