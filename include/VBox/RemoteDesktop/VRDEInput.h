@@ -162,7 +162,7 @@ typedef struct VRDEINPUT_CONTACT_DATA
     int16_t i16ContactRectLeft;
     int16_t i16ContactRectTop;
     int16_t i16ContactRectRight;
-    int16_t i16ContactRectBotton;
+    int16_t i16ContactRectBottom;
     uint32_t u32Orientation;
     uint32_t u32Pressure;
 } VRDEINPUT_CONTACT_DATA;
