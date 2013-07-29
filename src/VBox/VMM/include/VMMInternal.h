@@ -417,6 +417,11 @@ typedef struct VMMCPU
      * This is NULL if logging is disabled. */
     R0PTRTYPE(PVMMR0LOGGER)     pR0LoggerR0;
 
+    /** @name Thread-context hooks.
+     *  @{*/
+    RTTHREADCTX                 hR0ThreadCtx;
+    /** @} */
+
     /** @name Rendezvous
      * @{ */
     /** Whether the EMT is executing a rendezvous right now. For detecting

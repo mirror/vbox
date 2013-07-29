@@ -867,8 +867,9 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pVM->aCpus[i].hNativeThreadR0 = NIL_RTNATIVETHREAD;
                                     }
 
-                                    rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1, 0,
-                                                           RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+                                    rc = RTR0MemObjMapUser(&pGVM->gvmm.s.VMPagesMapObj, pGVM->gvmm.s.VMPagesMemObj, (RTR3PTR)-1,
+                                                           0 /* uAlignment */, RTMEM_PROT_READ | RTMEM_PROT_WRITE,
+                                                           NIL_RTR0PROCESS);
                                     if (RT_SUCCESS(rc))
                                     {
                                         pVM->paVMPagesR3 = RTR0MemObjAddressR3(pGVM->gvmm.s.VMPagesMapObj);
@@ -887,14 +888,18 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PVM *ppV
                                         pVM->aCpus[0].hNativeThreadR0 = hEMT0;
                                         pGVMM->cEMTs += cCpus;
 
-                                        VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pVM, ProcId, (void *)hEMT0, cCpus);
+                                        rc = VMMR0ThreadCtxHooksCreate(&pVM->aCpus[0]);
+                                        if (RT_SUCCESS(rc))
+                                        {
+                                            VBOXVMM_R0_GVMM_VM_CREATED(pGVM, pVM, ProcId, (void *)hEMT0, cCpus);
 
-                                        gvmmR0UsedUnlock(pGVMM);
-                                        gvmmR0CreateDestroyUnlock(pGVMM);
+                                            gvmmR0UsedUnlock(pGVMM);
+                                            gvmmR0CreateDestroyUnlock(pGVMM);
 
-                                        *ppVM = pVM;
-                                        Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
-                                        return VINF_SUCCESS;
+                                            *ppVM = pVM;
+                                            Log(("GVMMR0CreateVM: pVM=%p pVMR3=%p pGVM=%p hGVM=%d\n", pVM, pVM->pVMR3, pGVM, iHandle));
+                                            return VINF_SUCCESS;
+                                        }
                                     }
 
                                     RTR0MemObjFree(pGVM->gvmm.s.VMMapObj, false /* fFreeMappings */);
@@ -1097,7 +1102,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     int rc = gvmmR0CreateDestroyLock(pGVMM);
     AssertRC(rc);
 
-    /* be careful here because we might theoretically be racing someone else cleaning up. */
+    /* Be careful here because we might theoretically be racing someone else cleaning up. */
     if (    pHandle->pVM == pVM
         &&  (   (   pHandle->hEMT0  == hSelf
                  && pHandle->ProcId == ProcId)
@@ -1110,6 +1115,9 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
         void *pvObj = pHandle->pvObj;
         pHandle->pvObj = NULL;
         gvmmR0CreateDestroyUnlock(pGVMM);
+
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+            VMMR0ThreadCtxHooksRelease(&pVM->aCpus[idCpu]);
 
         SUPR0ObjRelease(pvObj, pHandle->pSession);
     }
@@ -1336,7 +1344,8 @@ GVMMR0DECL(int) GVMMR0RegisterVCpu(PVM pVM, VMCPUID idCpu)
 
     pVM->aCpus[idCpu].hNativeThreadR0 = pGVM->aCpus[idCpu].hEMT = RTThreadNativeSelf();
 
-    return VINF_SUCCESS;
+    rc = VMMR0ThreadCtxHooksCreate(&pVM->aCpus[idCpu]);
+    return rc;
 }
 
 
