@@ -617,7 +617,7 @@ static int VBoxUSBMonSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, c
     /*
      * Process the IOCtl.
      */
-    size_t cbDataReturned;
+    size_t cbDataReturned = 0;
     rc = vboxUSBMonSolarisProcessIOCtl(Cmd, pState, pvBuf, ReqWrap.cbData, &cbDataReturned);
     ReqWrap.rc = rc;
     rc = 0;
@@ -775,6 +775,7 @@ static int vboxUSBMonSolarisProcessIOCtl(int iFunction, void *pvState, void *pvD
         default:
         {
             LogRel((DEVICE_NAME ":vboxUSBMonSolarisProcessIOCtl: Unknown request (Process:%d) %#x\n", pState->Process, iFunction));
+            *pcbReturnedData = 0;
             rc = VERR_NOT_SUPPORTED;
             break;
         }
@@ -1021,9 +1022,9 @@ int VBoxUSBMonSolarisElectDriver(usb_dev_descr_t *pDevDesc, usb_dev_str_t *pDevS
     USBFilterSetNumExact(&Filter, USBFILTERIDX_DEVICE_PROTOCOL, pDevDesc->bDeviceProtocol, true);
     USBFilterSetNumExact(&Filter, USBFILTERIDX_BUS, 0x0 /* Bus */, true); /* Use 0x0 as userland initFilterFromDevice function in Main: see comment on "SetMustBePresent" below */
     USBFilterSetNumExact(&Filter, USBFILTERIDX_PORT, Port, true);
-    USBFilterSetStringExact(&Filter, USBFILTERIDX_MANUFACTURER_STR, pDevStrings->usb_mfg, true);
-    USBFilterSetStringExact(&Filter, USBFILTERIDX_PRODUCT_STR, pDevStrings->usb_product, true);
-    USBFilterSetStringExact(&Filter, USBFILTERIDX_SERIAL_NUMBER_STR, pDevStrings->usb_serialno, true);
+    USBFilterSetStringExact(&Filter, USBFILTERIDX_MANUFACTURER_STR, pDevStrings->usb_mfg ? pDevStrings->usb_mfg : "", true);
+    USBFilterSetStringExact(&Filter, USBFILTERIDX_PRODUCT_STR, pDevStrings->usb_product ? pDevStrings->usb_product : "", true);
+    USBFilterSetStringExact(&Filter, USBFILTERIDX_SERIAL_NUMBER_STR, pDevStrings->usb_serialno ? pDevStrings->usb_serialno : "", true);
 
     /* This doesn't work like it should (USBFilterMatch fails on matching field (6) i.e. Bus despite this. Investigate later. */
     USBFilterSetMustBePresent(&Filter, USBFILTERIDX_BUS, false /* fMustBePresent */);
