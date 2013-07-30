@@ -1037,6 +1037,8 @@ static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
                                                uint32_t fContact)
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+    if (pThis->fHasPendingChanges)
+        return VERR_TRY_AGAIN;
     RTCritSectEnter(&pThis->CritSect);
 
     Assert(pThis->enmMode == USBHIDMODE_MULTI_TOUCH);
