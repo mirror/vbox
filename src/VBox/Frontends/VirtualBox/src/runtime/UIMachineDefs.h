@@ -22,15 +22,6 @@
 /* Global includes */
 #include <iprt/cdefs.h>
 
-/* Machine states enum: */
-enum UIVisualStateType
-{
-    UIVisualStateType_Normal,
-    UIVisualStateType_Fullscreen,
-    UIVisualStateType_Seamless,
-    UIVisualStateType_Scale
-};
-
 /* Machine elements enum: */
 enum UIVisualElement
 {

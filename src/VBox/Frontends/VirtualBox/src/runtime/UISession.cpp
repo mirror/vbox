@@ -456,6 +456,21 @@ QMenuBar* UISession::newMenuBar(RuntimeMenuType fOptions /* = RuntimeMenuType_AL
     return pMenuBar;
 }
 
+bool UISession::isVisualStateAllowedFullscreen() const
+{
+    return m_pMachine->isVisualStateAllowedFullscreen();
+}
+
+bool UISession::isVisualStateAllowedSeamless() const
+{
+    return m_pMachine->isVisualStateAllowedSeamless();
+}
+
+bool UISession::isVisualStateAllowedScale() const
+{
+    return m_pMachine->isVisualStateAllowedScale();
+}
+
 bool UISession::setPause(bool fOn)
 {
     CConsole console = session().GetConsole();
@@ -903,7 +918,7 @@ void UISession::prepareFramebuffers()
 
 void UISession::prepareMenuPool()
 {
-    m_pMenuPool = new UIMachineMenuBar(session().GetMachine());
+    m_pMenuPool = new UIMachineMenuBar(this, session().GetMachine());
 }
 
 void UISession::loadSessionSettings()

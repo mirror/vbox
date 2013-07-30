@@ -124,6 +124,7 @@ namespace UIDefs
 
     /* Machine-window declarations: */
     extern const char* GUI_RestrictedRuntimeMenus;
+    extern const char* GUI_RestrictedVisualStates;
     extern const char* GUI_Input_MachineShortcuts;
     extern const char* GUI_LastNormalWindowPosition;
     extern const char* GUI_LastScaleWindowPosition;
@@ -237,6 +238,17 @@ enum RuntimeMenuType
     RuntimeMenuType_Debug   = RT_BIT(3),
     RuntimeMenuType_Help    = RT_BIT(4),
     RuntimeMenuType_All     = 0xFF
+};
+
+/* Runtime UI visual-state types: */
+enum UIVisualStateType
+{
+    UIVisualStateType_Invalid    = 0,
+    UIVisualStateType_Normal     = RT_BIT(0),
+    UIVisualStateType_Fullscreen = RT_BIT(1),
+    UIVisualStateType_Seamless   = RT_BIT(2),
+    UIVisualStateType_Scale      = RT_BIT(3),
+    UIVisualStateType_All        = 0xFF
 };
 
 /* Details element type: */

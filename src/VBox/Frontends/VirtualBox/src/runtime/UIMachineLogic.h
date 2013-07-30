@@ -20,7 +20,7 @@
 #define __UIMachineLogic_h__
 
 /* GUI includes: */
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 #include <QIWithRetranslateUI.h>
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>

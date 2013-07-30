@@ -56,6 +56,7 @@ template<class X> X fromInternalString(const QString & /* strData */) { Assert(0
 /* Declare global canConvert specializations: */
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<RuntimeMenuType>();
+template<> bool canConvert<UIVisualStateType>();
 template<> bool canConvert<DetailsElementType>();
 template<> bool canConvert<GlobalSettingsPageType>();
 template<> bool canConvert<MachineSettingsPageType>();
@@ -90,6 +91,8 @@ template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
 template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);
 template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &strRuntimeMenuType);
+template<> QString toInternalString(const UIVisualStateType &visualStateType);
+template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType);
 template<> QString toString(const DetailsElementType &detailsElementType);
 template<> DetailsElementType fromString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const DetailsElementType &detailsElementType);

@@ -369,6 +369,7 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     , m_session(session)
     , m_pSession(0)
     , m_pVisualState(0)
+    , m_allowedVisualStateTypes(UIVisualStateType_Invalid)
 {
     /* Store self pointer: */
     if (m_ppThis)
@@ -504,6 +505,8 @@ void UIMachine::loadMachineSettings()
 {
     /* Load machine settings: */
     CMachine machine = uisession()->session().GetMachine();
+    UIVisualStateType restrictedVisualStateTypes = VBoxGlobal::restrictedVisualStateTypes(machine);
+    m_allowedVisualStateTypes = static_cast<UIVisualStateType>(UIVisualStateType_All ^ restrictedVisualStateTypes);
 
     /* Load extra-data settings: */
     {
@@ -519,7 +522,7 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'scale' flag: */
             QString strScaleSettings = machine.GetExtraData(GUI_Scale);
-            if (strScaleSettings == "on")
+            if (strScaleSettings == "on" && isVisualStateAllowedScale())
             {
                 fIsSomeExtendedModeChosen = true;
                 /* We can enter scale mode initially: */
@@ -531,7 +534,7 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'seamless' flag: */
             QString strSeamlessSettings = machine.GetExtraData(GUI_Seamless);
-            if (strSeamlessSettings == "on")
+            if (strSeamlessSettings == "on" && isVisualStateAllowedSeamless())
             {
                 fIsSomeExtendedModeChosen = true;
                 /* We can't enter seamless mode initially,
@@ -544,7 +547,7 @@ void UIMachine::loadMachineSettings()
         {
             /* Test 'fullscreen' flag: */
             QString strFullscreenSettings = machine.GetExtraData(GUI_Fullscreen);
-            if (strFullscreenSettings == "on")
+            if (strFullscreenSettings == "on" && isVisualStateAllowedFullscreen())
             {
                 fIsSomeExtendedModeChosen = true;
                 /* We can enter fullscreen mode initially: */

@@ -28,6 +28,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindowFullscreen.h"
+#include "UIMachineDefs.h"
 #include "UIMiniToolBar.h"
 
 /* COM includes: */

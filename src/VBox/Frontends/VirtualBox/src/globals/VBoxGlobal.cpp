@@ -3784,6 +3784,25 @@ RuntimeMenuType VBoxGlobal::restrictedRuntimeMenuTypes(CMachine &machine)
 }
 
 /* static */
+UIVisualStateType VBoxGlobal::restrictedVisualStateTypes(CMachine &machine)
+{
+    /* Prepare result: */
+    UIVisualStateType result = UIVisualStateType_Invalid;
+    /* Load restricted visual-state-types: */
+    QString strList(machine.GetExtraData(GUI_RestrictedVisualStates));
+    QStringList list = strList.split(',');
+    /* Convert list into appropriate values: */
+    foreach (const QString &strValue, list)
+    {
+        UIVisualStateType value = gpConverter->fromInternalString<UIVisualStateType>(strValue);
+        if (value != UIVisualStateType_Invalid)
+            result = static_cast<UIVisualStateType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+/* static */
 QList<IndicatorType> VBoxGlobal::restrictedStatusBarIndicators(CMachine &machine)
 {
     /* Prepare result: */
