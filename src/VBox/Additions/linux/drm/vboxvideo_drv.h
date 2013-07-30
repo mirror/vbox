@@ -67,7 +67,7 @@
 
 #define MB (1024 * 1024)
 
-#define VBOXVIDEOFB_CONN_LIMIT VBOX_VIDEO_MAX_SCREENS
+#define VBOXVIDEOFB_CONN_LIMIT VBOX_VIDEO_MAX_SCREENS°°
 
 /* vboxvideo_crtc.c */
 void vboxvideo_crtc_fb_gamma_set(struct drm_crtc *crtc, u16 red, u16 green,

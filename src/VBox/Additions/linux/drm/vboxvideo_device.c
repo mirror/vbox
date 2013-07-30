@@ -54,6 +54,9 @@ static int vboxvideo_vram_init(struct vboxvideo_device *gdev)
 {
     unsigned size;
     int ret;
+    int rc = VINF_SUCCESS;
+    uint32_t offVRAMBaseMapping, offGuestHeapMemory, cbGuestHeapMemory;
+    void *pvGuestHeapMemory;
 
     /* set accessible VRAM */
     gdev->mc.vram_base = pci_resource_start(gdev->ddev->pdev, 1);
@@ -70,6 +73,22 @@ static int vboxvideo_vram_init(struct vboxvideo_device *gdev)
     ret = drm_addmap(gdev->ddev, gdev->mc.vram_base, gdev->mc.vram_size,
         _DRM_FRAME_BUFFER, _DRM_WRITE_COMBINING,
         &gdev->framebuffer);
+    if (!pVBox->fHaveHGSMI)
+        return 0;
+    VBoxHGSMIGetBaseMappingInfo(gdev->mc.vram_size, &offVRAMBaseMapping,
+                                NULL, &offGuestHeapMemory, &cbGuestHeapMemory,
+                                NULL);
+    pvGuestHeapMemory =   ((uint8_t *)gdev->framebuffer->handle)
+                        + offVRAMBaseMapping + offGuestHeapMemory;
+    rc = VBoxHGSMISetupGuestContext(&gdev->Ctx, pvGuestHeapMemory,
+                                    cbGuestHeapMemory,
+                                    offVRAMBaseMapping + offGuestHeapMemory);
+    if (RT_FAILURE(rc))
+    {
+        gdev->fHaveHGSMI = false;
+        return 0;
+    }
+    gdev->offViewInfo = offVRAMBaseMapping;
     return 0;
 }
 
@@ -79,6 +98,32 @@ static void vboxvideo_vram_fini(struct vboxvideo_device *gdev)
         drm_rmmap(gdev->ddev, gdev->framebuffer);
     if (gdev->mc.vram_base)
         release_region(gdev->mc.vram_base, gdev->mc.vram_size);
+}
+
+static int vboxvideo_command_buffers_init(struct vboxvideo_device *gdev)
+{
+    unsigned i;
+    gdev->offCommandBuffers =   gdev->offViewInfo
+                              - gdev->num_crtc * VBVA_MIN_BUFFER_SIZE;
+    for (i = 0; i < gdev->num_crtc; ++i)
+    {
+        gdev->offCommandBuffers -= VBVA_MIN_BUFFER_SIZE;
+        VBoxVBVASetupBufferContext(&pVBox->aVbvaCtx[i],
+                                   pVBox->aoffVBVABuffer[i],
+                                   VBVA_MIN_BUFFER_SIZE);
+    }
+    TRACE_LOG("Maximum framebuffer size: %lu (0x%lx)\n",
+              (unsigned long) pVBox->cbFBMax,
+              (unsigned long) pVBox->cbFBMax);
+    rc = VBoxHGSMISendViewInfo(&pVBox->guestCtx, pVBox->cScreens,
+                               vboxFillViewInfo, (void *)pVBox);
+    if (RT_FAILURE(rc))
+    {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "Failed to send the view information to the host, rc=%d\n", rc);
+        return FALSE;
+    }
+    return TRUE;
+
 }
 
 int vboxvideo_device_init(struct vboxvideo_device *gdev,
@@ -97,10 +142,19 @@ int vboxvideo_device_init(struct vboxvideo_device *gdev,
     /** @todo hardware initialisation goes here once we start doing more complex
      *        stuff.
      */
+    gdev->fHaveHGSMI = VBoxHGSMIIsSupported();
     ret = vboxvideo_vram_init(gdev);
     if (ret)
         return ret;
-
+    if (!gdev->fHaveHGSMI)
+        return 0;
+    gdev->num_crtc = VBoxHGSMIGetMonitorCount(&gdev->Ctx);
+    ret = vboxvideo_command_buffers_init(gdev);
+    if (ret)
+    {
+        gdev->fHaveHGSMI = false;
+        return ret;
+    }
     return 0;
 }
 

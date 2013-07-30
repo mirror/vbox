@@ -50,11 +50,47 @@
 
 #include "drm/drm_crtc_helper.h"
 
+/** Set a graphics mode.  Poke any required values into registers, do an HGSMI
+ * mode set and tell the host we support advanced graphics functions.
+ */
+static void vboxvideo_do_modeset(struct drm_crtc *crtc)
+{
+    struct vboxvideo_crtc   *vboxvideo_crtc = to_vboxvideo_crtc(crtc);
+    struct vboxvideo_device *gdev = crtc->dev->dev_private;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 3, 0)
+    int pitch = crtc->fb.pitch;
+#else
+    int pitch = crtc->fb.pitches[0];
+#endif
+
+    if (vboxvideo_crtc->crtc_id == 0)
+        VBoxVideoSetModeRegisters(vboxvideo_crtc->last_width,
+                                  vboxvideo_crtc->last_height,
+                                  pitch,
+                                  crtc->fb.bits_per_pixel, 0,
+                                  vboxvideo_crtc->last_x,
+                                  vboxvideo_crtc->last_y);
+    if (gdev->fHaveHGSMI)
+    {
+        uint16_t fFlags = VBVA_SCREEN_F_ACTIVE;
+        fFlags |= (vboxvideo_crtc->enabled ? 0 : VBVA_SCREEN_F_DISABLED);
+        VBoxHGSMIProcessDisplayInfo(&gdev->Ctx, vboxvideo_crtc->crtc_id,
+                                    vboxvideo_crtc->last_x,
+                                    vboxvideo_crtc->last_y,
+                                        vboxvideo_crtc->last_x
+                                      * crtc->fb.bits_per_pixel
+                                    + vboxvideo_crtc->last_y * pitch,
+                                    pitch,
+                                    vboxvideo_crtc->last_width,
+                                    vboxvideo_crtc->last_height,
+                                    crtc->fb.bits_per_pixel, fFlags);
+    }
+}
+
+
 static void vboxvideo_crtc_dpms(struct drm_crtc *crtc, int mode)
 {
     struct vboxvideo_crtc *vboxvideo_crtc = to_vboxvideo_crtc(crtc);
-    struct drm_device *dev = crtc->dev;
-    struct vboxvideo_device *gdev = dev->dev_private;
 
     if (mode == vboxvideo_crtc->last_dpms) /* Don't do unnecesary mode changes. */
         return;
@@ -162,9 +198,6 @@ static const struct drm_crtc_helper_funcs vboxvideo_helper_funcs = {
     .dpms = vboxvideo_crtc_dpms,
     .mode_fixup = vboxvideo_crtc_mode_fixup,
     .mode_set = vboxvideo_crtc_mode_set,
-    /*
-    .mode_set_base = vboxvideo_crtc_set_base,
-    */
     .prepare = vboxvideo_crtc_prepare,
     .commit = vboxvideo_crtc_commit,
     .load_lut = vboxvideo_crtc_load_lut,
@@ -186,6 +219,14 @@ void vboxvideo_crtc_init(struct drm_device *dev, int index)
     drm_crtc_init(dev, &vboxvideo_crtc->base, &vboxvideo_crtc_funcs);
 
     vboxvideo_crtc->crtc_id = index;
+    if (gdev->fHaveHGSMI)
+    {
+        vboxvideo_crtc->offCommandBuffer =   gdev->offViewInfo
+                                           - (index + 1) * VBVA_MIN_BUFFER_SIZE;
+        VBoxVBVASetupBufferContext(&vboxvideo_crtc->VbvaCtx,
+                                   vboxvideo_crtc->offCommandBuffer,
+                                   VBVA_MIN_BUFFER_SIZE);
+    }
     vboxvideo_crtc->last_dpms = VBOXVIDEO_DPMS_CLEARED;
     gdev->mode_info.crtcs[index] = vboxvideo_crtc;
 
