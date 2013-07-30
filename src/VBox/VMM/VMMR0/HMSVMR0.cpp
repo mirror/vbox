@@ -24,7 +24,7 @@
 
 #include "HMInternal.h"
 #include <VBox/vmm/vm.h>
-#include "HWSVMR0.h"
+#include "HMSVMR0.h"
 #include <VBox/vmm/pdmapi.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/iom.h>
