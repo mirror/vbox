@@ -68,14 +68,20 @@ struct vboxvideo_crtc
 {
     struct drm_crtc   base;
     int               crtc_id;
+    size_t            offCommandBuffer;
+    struct VBVABUFFERCONTEXT VbvaCtx;
     int               last_dpms;
+    int               last_hdisplay;
+    int               last_vdisplay;
+    int               last_x;
+    int               last_y;
     bool              enabled;
 };
 
 struct vboxvideo_mode_info
 {
     bool                    mode_config_initialized;
-    struct vboxvideo_crtc  *crtcs[1]; /* FIXME: how many CRTCs? */
+    struct vboxvideo_crtc  *crtcs[VBOX_VIDEO_MAX_SCREENS];
     /* pointer to fbdev info structure */
     struct vboxvideo_fbdev *gfbdev;
 };
