@@ -717,32 +717,38 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
             if (RT_SUCCESS_NP(rc2))
             {
                 fProcessAlive = false;
-                continue;
-            }
-            if (RT_UNLIKELY(rc2 == VERR_INTERRUPTED))
-                continue;
-            if (RT_UNLIKELY(rc2 == VERR_PROCESS_NOT_FOUND))
-            {
-                fProcessAlive = false;
-                ProcessStatus.enmReason = RTPROCEXITREASON_ABEND;
-                ProcessStatus.iStatus   = 255;
-                AssertFailed();
+                /* Note: Don't bail out here yet. First check in the next block below
+                 *       if all needed pipe outputs have been consumed. */
             }
             else
-                AssertMsg(rc2 == VERR_PROCESS_RUNNING, ("%Rrc\n", rc2));
+            {
+                if (RT_UNLIKELY(rc2 == VERR_INTERRUPTED))
+                    continue;
+                if (RT_UNLIKELY(rc2 == VERR_PROCESS_NOT_FOUND))
+                {
+                    fProcessAlive = false;
+                    ProcessStatus.enmReason = RTPROCEXITREASON_ABEND;
+                    ProcessStatus.iStatus   = 255;
+                    AssertFailed();
+                }
+                else
+                    AssertMsg(rc2 == VERR_PROCESS_RUNNING, ("%Rrc\n", rc2));
+            }
         }
 
         /*
          * If the process has terminated and all output has been consumed,
          * we should be heading out.
          */
-        if (   !fProcessAlive
-            && *phStdOutR == NIL_RTPIPE
-            && *phStdErrR == NIL_RTPIPE)
+        if (!fProcessAlive)
         {
-            VBoxServiceVerbose(3, "[PID %RU32]: All pipes closed, process not alive anymore, bailing out ...\n",
-                                   pProcess->uPID);
-            break;
+            if (   fProcessTimedOut
+                || (   *phStdOutR == NIL_RTPIPE
+                    && *phStdErrR == NIL_RTPIPE)
+               )
+            {
+                break;
+            }
         }
 
         /*
@@ -756,7 +762,7 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
             uint64_t cMsElapsed = u64Now - uMsStart;
             if (cMsElapsed >= pProcess->StartupInfo.uTimeLimitMS)
             {
-                VBoxServiceVerbose(3, "[PID %RU32]: Timed out (%RU32ms elapsed > %RU32ms timeout), killing ...\n",
+                VBoxServiceVerbose(3, "[PID %RU32]: Timed out (%RU64ms elapsed > %RU64ms timeout), killing ...\n",
                                    pProcess->uPID, cMsElapsed, pProcess->StartupInfo.uTimeLimitMS);
 
                 fProcessTimedOut = true;
@@ -765,7 +771,9 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
                 {
                     if (u64Now - MsProcessKilled > 20*60*1000)
                         break; /* Give up after 20 mins. */
-                    RTProcTerminate(hProcess);
+                    rc2 = RTProcTerminate(hProcess);
+                    VBoxServiceVerbose(3, "[PID %RU32]: Killing process resulted in rc=%Rrc\n",
+                                       pProcess->uPID, rc2);
                     MsProcessKilled = u64Now;
                     continue;
                 }
@@ -783,8 +791,10 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
             cMsPollCur = cMilliesLeft;
     }
 
-    VBoxServiceVerbose(2, "[PID %RU32]: Process loop ended with rc=%Rrc\n",
-                       pProcess->uPID, rc);
+    VBoxServiceVerbose(3, "[PID %RU32]: Loop ended: fShutdown=%RTbool, fProcessAlive=%RTbool, fProcessTimedOut=%RTbool, MsProcessKilled=%RU32\n",
+                       pProcess->uPID, pProcess->fShutdown, fProcessAlive, fProcessTimedOut, MsProcessKilled, MsProcessKilled);
+    VBoxServiceVerbose(3, "[PID %RU32]: *phStdOutR=%s, *phStdErrR=%s\n",
+                       pProcess->uPID, *phStdOutR == NIL_RTPIPE ? "closed" : "open", *phStdErrR == NIL_RTPIPE ? "closed" : "open");
 
     /* Signal that this thread is in progress of shutting down. */
     ASMAtomicXchgBool(&pProcess->fShutdown, true);
