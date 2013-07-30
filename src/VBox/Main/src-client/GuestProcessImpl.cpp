@@ -1438,7 +1438,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
                                   &processStatus, pGuestRc);
         if (RT_SUCCESS(vrc))
         {
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+            alock.acquire();
 
             waitResult = waitFlagsToResultEx(fWaitFlags, processStatus,
                                              mData.mProcess.mFlags, mSession->getProtocolVersion());
