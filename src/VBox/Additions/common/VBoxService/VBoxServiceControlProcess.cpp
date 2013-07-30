@@ -791,7 +791,7 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
             cMsPollCur = cMilliesLeft;
     }
 
-    VBoxServiceVerbose(3, "[PID %RU32]: Loop ended: fShutdown=%RTbool, fProcessAlive=%RTbool, fProcessTimedOut=%RTbool, MsProcessKilled=%RU32\n",
+    VBoxServiceVerbose(3, "[PID %RU32]: Loop ended: fShutdown=%RTbool, fProcessAlive=%RTbool, fProcessTimedOut=%RTbool, MsProcessKilled=%RU64\n",
                        pProcess->uPID, pProcess->fShutdown, fProcessAlive, fProcessTimedOut, MsProcessKilled, MsProcessKilled);
     VBoxServiceVerbose(3, "[PID %RU32]: *phStdOutR=%s, *phStdErrR=%s\n",
                        pProcess->uPID, *phStdOutR == NIL_RTPIPE ? "closed" : "open", *phStdErrR == NIL_RTPIPE ? "closed" : "open");
