@@ -832,7 +832,8 @@ int GuestBase::cancelWaitEvents(void)
                 itEvents = itEventTypes->second.erase(itEvents);
             }
 
-            itEventTypes = mWaitEvents.erase(itEventTypes);
+            mWaitEvents.erase(itEventTypes);
+            itEventTypes = mWaitEvents.begin();
         }
 
         int rc2 = RTCritSectLeave(&mWaitEventCritSect);
