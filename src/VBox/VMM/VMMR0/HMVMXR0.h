@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___HWVMXR0_h
-#define ___HWVMXR0_h
+#ifndef ___HMVMXR0_h
+#define ___HMVMXR0_h
 
 RT_C_DECLS_BEGIN
 
@@ -95,5 +95,5 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 
 RT_C_DECLS_END
 
-#endif /* ___HWVMXR0_h */
+#endif /* ___HMVMXR0_h */
 

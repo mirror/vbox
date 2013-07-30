@@ -15,8 +15,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef ___VMMR0_HWSVMR0_h
-#define ___VMMR0_HWSVMR0_h
+#ifndef ___HMSVMR0_h
+#define ___HMSVMR0_h
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
@@ -95,5 +95,5 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 RT_C_DECLS_END
 
-#endif /* !___VMMR0_HWSVMR0_h */
+#endif /* HMSVMR0_h */
 
