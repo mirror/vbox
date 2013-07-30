@@ -206,11 +206,15 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     int rc = queryInfo();
     if (RT_SUCCESS(rc))
     {
-        unconst(mEventSource).createObject();
-        Assert(!mEventSource.isNull());
-        hr = mEventSource->init(static_cast<IGuestSession*>(this));
+        hr = unconst(mEventSource).createObject();
         if (FAILED(hr))
-            rc = VERR_COM_UNEXPECTED;
+            rc = VERR_NO_MEMORY;
+        else
+        {
+            hr = mEventSource->init(static_cast<IGuestSession*>(this));
+            if (FAILED(hr))
+                rc = VERR_COM_UNEXPECTED;
+        }
     }
 
     if (RT_SUCCESS(rc))
@@ -225,15 +229,15 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
 
             if (SUCCEEDED(hr))
             {
-                mListener = thisListener;
-
                 com::SafeArray <VBoxEventType_T> eventTypes;
                 eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
-                hr = mEventSource->RegisterListener(mListener,
+                hr = mEventSource->RegisterListener(thisListener,
                                                     ComSafeArrayAsInParam(eventTypes),
                                                     TRUE /* Active listener */);
                 if (SUCCEEDED(hr))
                 {
+                    mLocalListener = thisListener;
+
                     rc = RTCritSectInit(&mWaitEventCritSect);
                     AssertRC(rc);
                 }
@@ -257,7 +261,8 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     else
         autoInitSpan.setFailed();
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("mName=%s, mID=%RU32, mIsInternal=%RTbool, rc=%Rrc\n",
+                     mData.mSession.mName.c_str(), mData.mSession.mID, mData.mSession.mIsInternal, rc));
     return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -283,7 +288,7 @@ void GuestSession::uninit(void)
     for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
-        (*itDirs)->uninit();
+        (*itDirs)->Release();
     }
     mData.mDirectories.clear();
 
@@ -292,7 +297,7 @@ void GuestSession::uninit(void)
     for (SessionFiles::iterator itFiles = mData.mFiles.begin();
          itFiles != mData.mFiles.end(); ++itFiles)
     {
-        itFiles->second->uninit();
+        itFiles->second->Release();
     }
     mData.mFiles.clear();
 
@@ -301,14 +306,16 @@ void GuestSession::uninit(void)
     for (SessionProcesses::iterator itProcs = mData.mProcesses.begin();
          itProcs != mData.mProcesses.end(); ++itProcs)
     {
-        itProcs->second->uninit();
+        itProcs->second->Release();
     }
     mData.mProcesses.clear();
 
     LogFlowThisFunc(("mNumObjects=%RU32\n", mData.mNumObjects));
 
+    baseUninit();
+
+    mEventSource->UnregisterListener(mLocalListener);
     unconst(mEventSource).setNull();
-    unregisterEventListener();
 
 #endif /* VBOX_WITH_GUEST_CONTROL */
     LogFlowFuncLeaveRC(rc);
@@ -462,6 +469,27 @@ STDMETHODIMP GuestSession::COMSETTER(Timeout)(ULONG aTimeout)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP GuestSession::COMGETTER(ProtocolVersion)(ULONG *aVersion)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aVersion);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aVersion = mData.mProtocolVersion;
+
+    LogFlowFuncLeaveRC(S_OK);
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnvironment))
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -538,7 +566,7 @@ STDMETHODIMP GuestSession::COMGETTER(Processes)(ComSafeArrayOut(IGuestProcess *,
     SafeIfaceArray<IGuestProcess> collection(mData.mProcesses);
     collection.detachTo(ComSafeArrayOutArg(aProcesses));
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowFunc(("mProcesses=%zu\n", collection.size()));
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -560,7 +588,7 @@ STDMETHODIMP GuestSession::COMGETTER(Directories)(ComSafeArrayOut(IGuestDirector
     SafeIfaceArray<IGuestDirectory> collection(mData.mDirectories);
     collection.detachTo(ComSafeArrayOutArg(aDirectories));
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowFunc(("mDirectories=%zu\n", collection.size()));
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -582,7 +610,7 @@ STDMETHODIMP GuestSession::COMGETTER(Files)(ComSafeArrayOut(IGuestFile *, aFiles
     SafeIfaceArray<IGuestFile> collection(mData.mFiles);
     collection.detachTo(ComSafeArrayOutArg(aFiles));
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowFunc(("mFiles=%zu\n", collection.size()));
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -616,8 +644,8 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Legacy Guest Additions don't support opening dedicated
-       guest sessions. */
+    /* Guest Additions < 4.3 don't support closing dedicated
+       guest sessions, skip. */
     if (mData.mProtocolVersion < 2)
     {
         LogFlowThisFunc(("Installed Guest Additions don't support closing dedicated sessions, skipping\n"));
@@ -637,8 +665,8 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
 
-        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
-                            eventTypes, &pEvent);
+        vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */,
+                                eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -665,7 +693,7 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
                                   NULL /* Session status */, pGuestRc);
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1318,7 +1346,7 @@ int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
     return vrc;
 }
 
-int GuestSession::startSessionIntenal(int *pGuestRc)
+int GuestSession::startSessionInternal(int *pGuestRc)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1326,7 +1354,7 @@ int GuestSession::startSessionIntenal(int *pGuestRc)
                      mData.mSession.mID, mData.mSession.mName.c_str(), mData.mProtocolVersion,
                      mData.mSession.mOpenFlags, mData.mSession.mOpenTimeoutMS));
 
-    /* Legacy Guest Additions don't support opening dedicated
+    /* Guest Additions < 4.3 don't support opening dedicated
        guest sessions. Simply return success here. */
     if (mData.mProtocolVersion < 2)
     {
@@ -1352,8 +1380,8 @@ int GuestSession::startSessionIntenal(int *pGuestRc)
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
 
-        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
-                            eventTypes, &pEvent);
+        vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */,
+                                eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -1386,7 +1414,7 @@ int GuestSession::startSessionIntenal(int *pGuestRc)
                                   NULL /* Session status */, pGuestRc);
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1438,7 +1466,7 @@ DECLCALLBACK(int) GuestSession::startSessionThread(RTTHREAD Thread, void *pvUser
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->startSessionIntenal(NULL /* Guest rc, ignored */);
+    int vrc = pSession->startSessionInternal(NULL /* Guest rc, ignored */);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
@@ -1475,6 +1503,10 @@ int GuestSession::processRemoveFromList(GuestProcess *pProcess)
             Assert(mData.mNumObjects);
             LogFlowFunc(("Removing process ID=%RU32 (Session: %RU32), guest PID=%RU32 (now total %ld processes, %ld objects)\n",
                          pCurProc->getObjectID(), mData.mSession.mID, uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
+
+            pCurProc->cancelWaitEvents();
+
+            itProcs->second->Release();
 
             mData.mProcesses.erase(itProcs);
             mData.mNumObjects--;
@@ -1771,15 +1803,6 @@ int GuestSession::startTaskAsync(const Utf8Str &strTaskDesc,
  */
 int GuestSession::queryInfo(void)
 {
-#ifndef DEBUG_andy
-    /* Since the new functions are not fully implemented yet, force Main
-       to use protocol ver 1 so far. */
-    mData.mProtocolVersion = 1;
-#else
- #if 1
-    /* For debugging only: Hardcode version. */
-    mData.mProtocolVersion = 2;
- #else
     /*
      * Try querying the guest control protocol version running on the guest.
      * This is done using the Guest Additions version
@@ -1788,19 +1811,27 @@ int GuestSession::queryInfo(void)
     Assert(!pGuest.isNull());
 
     uint32_t uVerAdditions = pGuest->getAdditionsVersion();
-    mData.mProtocolVersion = (   VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions) >= 4
-                              && VBOX_FULL_VERSION_GET_MINOR(uVerAdditions) >= 3) /** @todo What's about v5.0 ? */
+    uint32_t uVBoxMajor    = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
+    uint32_t uVBoxMinor    = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
+
+    mData.mProtocolVersion = (
+                              /* VBox 5.0 and up. */
+                                 uVBoxMajor  >= 5
+                              /* VBox 4.3 and up. */
+                              || (uVBoxMajor == 4 && uVBoxMinor >= 3))
                            ? 2  /* Guest control 2.0. */
                            : 1; /* Legacy guest control (VBox < 4.3). */
     /* Build revision is ignored. */
+
+    LogFlowThisFunc(("uVerAdditions=%RU32 (%RU32.%RU32), mProtocolVersion=%RU32\n",
+                     uVerAdditions, uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
 
     /* Tell the user but don't bitch too often. */
     static short s_gctrlLegacyWarning = 0;
     if (s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
         LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
-                VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions), VBOX_FULL_VERSION_GET_MINOR(uVerAdditions), mData.mProtocolVersion));
- #endif
-#endif
+                uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
+
     return VINF_SUCCESS;
 }
 
@@ -1813,7 +1844,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
     /*LogFlowThisFunc(("fWaitFlags=0x%x, uTimeoutMS=%RU32, mStatus=%RU32, mWaitCount=%RU32, mWaitEvent=%p, pGuestRc=%p\n",
                      fWaitFlags, uTimeoutMS, mData.mStatus, mData.mWaitCount, mData.mWaitEvent, pGuestRc));*/
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* Did some error occur before? Then skip waiting and return. */
     if (mData.mStatus == GuestSessionStatus_Error)
@@ -1823,6 +1854,15 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         if (pGuestRc)
             *pGuestRc = mData.mRC; /* Return last set error. */
         return VERR_GSTCTL_GUEST_ERROR;
+    }
+
+    /* Guest Additions < 4.3 don't support session handling, skip. */
+    if (mData.mProtocolVersion < 2)
+    {
+        waitResult = GuestSessionWaitResult_WaitFlagNotSupported;
+
+        LogFlowThisFunc(("Installed Guest Additions don't support waiting for dedicated sessions, skipping\n"));
+        return VINF_SUCCESS;
     }
 
     waitResult = GuestSessionWaitResult_None;
@@ -1910,8 +1950,8 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
 
-        vrc = registerEvent(mData.mSession.mID, 0 /* Object ID */,
-                            eventTypes, &pEvent);
+        vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */,
+                                eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -1955,7 +1995,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         }
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -2017,7 +2057,7 @@ STDMETHODIMP GuestSession::Close(void)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* Close session on guest. */
-    int guestRc;
+    int guestRc = VINF_SUCCESS;
     int rc = closeSession(0 /* Flags */, 30 * 1000 /* Timeout */,
                           &guestRc);
     /* On failure don't return here, instead do all the cleanup
@@ -2028,14 +2068,8 @@ STDMETHODIMP GuestSession::Close(void)
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    /*
-     * Release autocaller before calling uninit.
-     */
-    autoCaller.release();
-
-    uninit();
-
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",
+                     rc, guestRc));
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_GSTCTL_GUEST_ERROR)
@@ -2853,10 +2887,10 @@ STDMETHODIMP GuestSession::ProcessCreate(IN_BSTR aCommand, ComSafeArrayIn(IN_BST
 #else
     LogFlowThisFuncEnter();
 
-    com::SafeArray<LONG> affinity;
+    com::SafeArray<LONG> affinityIgnored;
 
     return ProcessCreateEx(aCommand, ComSafeArrayInArg(aArguments), ComSafeArrayInArg(aEnvironment),
-                           ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinity), aProcess);
+                           ComSafeArrayInArg(aFlags), aTimeoutMS, ProcessPriority_Default, ComSafeArrayAsInParam(affinityIgnored), aProcess);
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

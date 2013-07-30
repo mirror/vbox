@@ -272,6 +272,7 @@ public:
     STDMETHOD(COMGETTER(Status))(GuestSessionStatus_T *aStatus);
     STDMETHOD(COMGETTER(Timeout))(ULONG *aTimeout);
     STDMETHOD(COMSETTER(Timeout))(ULONG aTimeout);
+    STDMETHOD(COMGETTER(ProtocolVersion))(ULONG *aVersion);
     STDMETHOD(COMGETTER(Environment))(ComSafeArrayOut(BSTR, aEnvironment));
     STDMETHOD(COMSETTER(Environment))(ComSafeArrayIn(IN_BSTR, aEnvironment));
     STDMETHOD(COMGETTER(Processes))(ComSafeArrayOut(IGuestProcess *, aProcesses));
@@ -358,7 +359,7 @@ public:
     static Utf8Str          guestErrorToString(int guestRc);
     HRESULT                 isReadyExternal(void);
     int                     onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int                     startSessionIntenal(int *pGuestRc);
+    int                     startSessionInternal(int *pGuestRc);
     int                     startSessionAsync(void);
     static DECLCALLBACK(int)
                             startSessionThread(RTTHREAD Thread, void *pvUser);
@@ -383,7 +384,11 @@ private:
     /** Pointer to the parent (Guest). */
     Guest                          *mParent;
     /**
-     * This can safely be used without holding any locks.
+     * The session's event source. This source is used for
+     * serving the internal listener as well as all other
+     * external listeners that may register to it.
+     *
+     * Note: This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and
      * internally there is a lock providing the necessary serialization.
      */

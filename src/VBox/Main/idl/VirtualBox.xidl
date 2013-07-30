@@ -9586,7 +9586,7 @@
     <const name="Idle"                    value="6">
       <desc>
         A guest user currently is not using the guest OS.
-        <note>Currently only available for Windows guests since 
+        <note>Currently only available for Windows guests since
           Windows 2000 SP2.</note>
         <note>On Windows guests this function currently only supports
           reporting contiguous idle times up to 49.7 days per user.</note>
@@ -9594,14 +9594,14 @@
         at least 5 seconds. This threshold can be adjusted by either altering
         VBoxService's command line on the guest to
         <pre>--vminfo-user-idle-threshold &lt;ms&gt;</pre>
-        , or by setting the per-VM guest property 
+        , or by setting the per-VM guest property
         <pre>/VirtualBox/GuestAdd/VBoxService/--vminfo-user-idle-threshold &lt;ms&gt;</pre>
         with the RDONLYGUEST flag on the host. In both cases VBoxService needs
         to be restarted in order to get the changes applied.
       </desc>
     </const>
     <const name="InUse"                   value="7">
-      <desc>A guest user continued using the guest OS after 
+      <desc>A guest user continued using the guest OS after
         being idle.</desc>
     </const>
     <const name="Created"                 value="8">
@@ -10134,7 +10134,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="c8e8607b-5e67-4073-8f14-146515d0c1ff"
+    uuid="1afeabbd-0c0b-458c-8026-04464892ae12"
     wsmap="managed"
     >
     <desc>
@@ -10182,6 +10182,10 @@
           The method is not implemented yet.
         </result>
       </desc>
+    </attribute>
+    <attribute name="protocolVersion" type="unsigned long" readonly="yes">
+      <desc>Returns the protocol version which is used by this session to 
+        communicate with the guest.</desc>
     </attribute>
     <attribute name="status" type="GuestSessionStatus" readonly="yes">
       <desc>Returns the current session status.</desc>

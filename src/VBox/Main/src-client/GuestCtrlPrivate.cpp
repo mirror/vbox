@@ -24,6 +24,7 @@
 #include "VMMDev.h"
 
 #include <iprt/asm.h>
+#include <iprt/cpp/utils.h> /* For unconst(). */
 #include <iprt/ctype.h>
 #ifdef DEBUG
 # include <iprt/file.h>
@@ -787,11 +788,67 @@ GuestBase::~GuestBase(void)
 {
 }
 
+int GuestBase::baseInit(void)
+{
+    int rc = RTCritSectInit(&mWaitEventCritSect);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+void GuestBase::baseUninit(void)
+{
+    LogFlowThisFuncEnter();
+
+    int rc = RTCritSectDelete(&mWaitEventCritSect);
+
+    LogFlowFuncLeaveRC(rc);
+    /* No return value. */
+}
+
+int GuestBase::cancelWaitEvents(void)
+{
+    LogFlowThisFuncEnter();
+
+    int rc = RTCritSectEnter(&mWaitEventCritSect);
+    if (RT_SUCCESS(rc))
+    {
+        GuestWaitEventTypes::iterator itEventTypes = mWaitEvents.begin();
+        while (itEventTypes != mWaitEvents.end())
+        {
+            GuestWaitEvents::iterator itEvents = itEventTypes->second.begin();
+            while (itEvents != itEventTypes->second.end())
+            {
+                GuestWaitEvent *pEvent = (*itEvents);
+                AssertPtr(pEvent);
+
+                /*
+                 * Just cancel the event and remove it from the wait events
+                 * map. Don't delete it though, this (hopefully) is done by
+                 * the caller using unregisterWaitEvent().
+                 */
+                int rc2 = pEvent->Signal(NULL /* Cancel */);
+                AssertRC(rc2);
+                itEvents = itEventTypes->second.erase(itEvents);
+            }
+
+            itEventTypes = mWaitEvents.erase(itEventTypes);
+        }
+
+        int rc2 = RTCritSectLeave(&mWaitEventCritSect);
+        if (RT_SUCCESS(rc))
+            rc = rc2;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID)
 {
     AssertPtrReturn(puContextID, VERR_INVALID_POINTER);
 
-    uint32_t uCount = mNextContextID++;
+    uint32_t uCount = ASMAtomicIncU32(&mNextContextID);
     if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
         uCount = 0;
 
@@ -803,9 +860,9 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
     return VINF_SUCCESS;
 }
 
-int GuestBase::registerEvent(uint32_t uSessionID, uint32_t uObjectID,
-                             const std::list<VBoxEventType_T> &lstEvents,
-                             GuestWaitEvent **ppEvent)
+int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
+                                 const std::list<VBoxEventType_T> &lstEvents,
+                                 GuestWaitEvent **ppEvent)
 {
     AssertPtrReturn(ppEvent, VERR_INVALID_POINTER);
 
@@ -870,9 +927,10 @@ int GuestBase::signalWaitEvents(VBoxEventType_T aType, IEvent *aEvent)
     return rc;
 }
 
-void GuestBase::unregisterEvent(GuestWaitEvent *pEvent)
+void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
 {
-    AssertPtrReturnVoid(pEvent);
+    if (!pEvent) /* Nothing to unregister. */
+        return;
 
     int rc = RTCritSectEnter(&mWaitEventCritSect);
     if (RT_SUCCESS(rc))
@@ -896,30 +954,12 @@ void GuestBase::unregisterEvent(GuestWaitEvent *pEvent)
         }
 
         delete pEvent;
+        pEvent = NULL;
 
         int rc2 = RTCritSectLeave(&mWaitEventCritSect);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
-}
-
-void GuestBase::unregisterEventListener(void)
-{
-    if (mListener)
-    {
-        ComPtr<IEventSource> es;
-        HRESULT hr = mConsole->COMGETTER(EventSource)(es.asOutParam());
-        if (SUCCEEDED(hr))
-        {
-            Assert(!es.isNull());
-            es->UnregisterListener(mListener);
-        }
-
-        mListener.setNull();
-    }
-
-    int rc2 = RTCritSectDelete(&mWaitEventCritSect);
-    AssertRC(rc2);
 }
 
 int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
@@ -942,8 +982,11 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
             if (FAILED(hr))
                 vrc = VERR_COM_UNEXPECTED;
         }
-        if (ppEvent)
+        if (   RT_SUCCESS(vrc)
+            && ppEvent)
             pThisEvent.queryInterfaceTo(ppEvent);
+
+        unconst(pThisEvent).setNull();
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -972,11 +1015,11 @@ int GuestObject::bindToSession(Console *pConsole, GuestSession *pSession, uint32
     return VINF_SUCCESS;
 }
 
-int GuestObject::registerEvent(const std::list<VBoxEventType_T> &lstEvents,
-                               GuestWaitEvent **ppEvent)
+int GuestObject::registerWaitEvent(const std::list<VBoxEventType_T> &lstEvents,
+                                   GuestWaitEvent **ppEvent)
 {
     AssertPtr(mSession);
-    return GuestBase::registerEvent(mSession->getId(), mObjectID, lstEvents, ppEvent);
+    return GuestBase::registerWaitEvent(mSession->getId(), mObjectID, lstEvents, ppEvent);
 }
 
 int GuestObject::sendCommand(uint32_t uFunction,
@@ -1008,7 +1051,8 @@ int GuestObject::sendCommand(uint32_t uFunction,
 
 GuestWaitEvent::GuestWaitEvent(uint32_t uCID,
                                const std::list<VBoxEventType_T> &lstEvents)
-    : mCID(uCID),
+    : fAborted(false),
+      mCID(uCID),
       mEventTypes(lstEvents),
       mEventSem(NIL_RTSEMEVENT)
 {
@@ -1022,26 +1066,45 @@ GuestWaitEvent::~GuestWaitEvent(void)
 
 }
 
+/**
+ * Signals the event. Passing NULL will abort (cancel)
+ * the event.
+ *
+ * @return  IPRT status code.
+ * @param   pEvent              IEvent to associate.
+ */
 int GuestWaitEvent::Signal(IEvent *pEvent)
 {
-    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
     AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
 
-    mEvent = pEvent;
+    if (pEvent)
+        mEvent = pEvent;
+    else
+        ASMAtomicWriteBool(&fAborted, true);
 
     return RTSemEventSignal(mEventSem);
 }
 
 int GuestWaitEvent::Wait(RTMSINTERVAL uTimeoutMS)
 {
-    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("uTimeoutMS=%RU32ms\n", uTimeoutMS));
 
-    AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+    int rc = VINF_SUCCESS;
 
-    RTMSINTERVAL msInterval = uTimeoutMS;
-    if (!uTimeoutMS)
-        msInterval = RT_INDEFINITE_WAIT;
-    int rc = RTSemEventWait(mEventSem, msInterval);
+    if (ASMAtomicReadBool(&fAborted))
+        rc = VERR_CANCELLED;
+
+    if (RT_SUCCESS(rc))
+    {
+        AssertReturn(mEventSem != NIL_RTSEMEVENT, VERR_CANCELLED);
+
+        RTMSINTERVAL msInterval = uTimeoutMS;
+        if (!uTimeoutMS)
+            msInterval = RT_INDEFINITE_WAIT;
+        rc = RTSemEventWait(mEventSem, msInterval);
+        if (ASMAtomicReadBool(&fAborted))
+            rc = VERR_CANCELLED;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

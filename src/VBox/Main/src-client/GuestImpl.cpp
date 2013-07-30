@@ -109,9 +109,9 @@ HRESULT Guest::init(Console *aParent)
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc)\n", vrc));
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-    unconst(mEventSource).createObject();
-    Assert(!mEventSource.isNull());
-    hr = mEventSource->init(static_cast<IGuest*>(this));
+    hr = unconst(mEventSource).createObject();
+    if (SUCCEEDED(hr))
+        hr = mEventSource->init(static_cast<IGuest*>(this));
 #else
     hr = S_OK;
 #endif

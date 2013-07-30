@@ -114,7 +114,7 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
-STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR, aArguments), 
+STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR, aArguments),
                                          ComSafeArrayIn(AdditionsUpdateFlag_T, aFlags), IProgress **aProgress)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
@@ -193,7 +193,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR
     {
         Assert(!pSession.isNull());
         int guestRc;
-        rc = pSession->startSessionIntenal(&guestRc);
+        rc = pSession->startSessionInternal(&guestRc);
         if (RT_FAILURE(rc))
         {
             /** @todo Handle guestRc! */
@@ -340,8 +340,13 @@ int Guest::sessionRemove(GuestSession *pSession)
     {
         if (pSession == itSessions->second)
         {
+            GuestSession *pCurSession = itSessions->second;
+            AssertPtr(pCurSession);
+
             LogFlowFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
-                         (GuestSession *)itSessions->second, itSessions->second->getId(), mData.mGuestSessions.size() - 1));
+                         pCurSession, pCurSession->getId(), mData.mGuestSessions.size() - 1));
+
+            itSessions->second->Release();
 
             mData.mGuestSessions.erase(itSessions);
 
@@ -457,6 +462,8 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
     /* Do not allow anonymous sessions (with system rights) with public API. */
     if (RT_UNLIKELY((aUser) == NULL || *(aUser) == '\0'))
         return setError(E_INVALIDARG, tr("No user name specified"));
+    if (RT_UNLIKELY((aPassword) == NULL || *(aPassword) == '\0'))
+        return setError(E_INVALIDARG, tr("No password specified"));
     CheckComArgOutPointerValid(aGuestSession);
     /* Rest is optional. */
 

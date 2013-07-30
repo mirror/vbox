@@ -185,7 +185,7 @@ int SessionTaskOpen::Run(int *pGuestRc)
     AutoCaller autoCaller(pSession);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    int vrc = pSession->startSessionIntenal(pGuestRc);
+    int vrc = pSession->startSessionInternal(pGuestRc);
     /* Nothing to do here anymore. */
 
     LogFlowFuncLeaveRC(vrc);
@@ -318,7 +318,8 @@ int SessionTaskCopyTo::Run(void)
     ComObjPtr<GuestProcess> pProcess; int guestRc;
     rc = pSession->processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
-        rc = pProcess->startProcess(&guestRc);
+        rc = pProcess->startProcess(30 * 1000 /* 30s timeout */,
+                                    &guestRc);
     if (RT_FAILURE(rc))
     {
         switch (rc)
@@ -461,7 +462,8 @@ int SessionTaskCopyTo::Run(void)
                 break;
         } /* for */
 
-        LogFlowThisFunc(("Copy loop ended with rc=%Rrc\n" ,rc));
+        LogFlowThisFunc(("Copy loop ended with rc=%Rrc, cbWrittenTotal=%RU64, cbFileSize=%RU64\n",
+                         rc, cbWrittenTotal, mSourceSize));
 
         if (   !fCanceled
             || RT_SUCCESS(rc))
@@ -530,8 +532,7 @@ int SessionTaskCopyTo::Run(void)
             }
         }
 
-        if (!pProcess.isNull())
-            pProcess->uninit();
+        pProcess->Release();
     } /* processCreateExInteral */
 
     if (!mSourceFile) /* Only close locally opened files. */
@@ -637,7 +638,8 @@ int SessionTaskCopyFrom::Run(void)
             ComObjPtr<GuestProcess> pProcess;
             rc = pSession->processCreateExInteral(procInfo, pProcess);
             if (RT_SUCCESS(rc))
-                rc = pProcess->startProcess(&guestRc);
+                rc = pProcess->startProcess(30 * 1000 /* 30s timeout */,
+                                            &guestRc);
             if (RT_FAILURE(rc))
             {
                 switch (rc)
@@ -801,8 +803,7 @@ int SessionTaskCopyFrom::Run(void)
                     }
                 }
 
-                if (!pProcess.isNull())
-                    pProcess->uninit();
+                pProcess->Release();
             }
 
             RTFileClose(fileDest);

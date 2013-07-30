@@ -376,6 +376,7 @@ public:
 
 class GuestWaitEvent
 {
+
 public:
 
     GuestWaitEvent(uint32_t mCID, const std::list<VBoxEventType_T> &lstEvents);
@@ -386,12 +387,17 @@ public:
     uint32_t                         ContextID(void) { return mCID; };
     const ComPtr<IEvent>             Event(void) { return mEvent; };
     const std::list<VBoxEventType_T> Types(void) { return mEventTypes; };
-    int                              Signal(IEvent *pEvent);
+    virtual int                      Signal(IEvent *pEvent);
     int                              Wait(RTMSINTERVAL uTimeoutMS);
 
 protected:
 
+    /* Shutdown indicator. */
+    bool                       fAborted;
+    /* Associated context ID (CID). */
     uint32_t                   mCID;
+    /** List of event types this event should
+     *  be signalled on. */
     std::list<VBoxEventType_T> mEventTypes;
     /** The event semaphore for triggering
      *  the actual event. */
@@ -417,10 +423,12 @@ public:
 
 public:
 
+    int baseInit(void);
+    void baseUninit(void);
+    int cancelWaitEvents(void);
     int generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID);
-    int registerEvent(uint32_t uSessionID, uint32_t uObjectID, const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
-    void unregisterEvent(GuestWaitEvent *pEvent);
-    void unregisterEventListener(void);
+    int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
+    void unregisterWaitEvent(GuestWaitEvent *pEvent);
     int waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, VBoxEventType_T *pType, IEvent **ppEvent);
 
 protected:
@@ -430,8 +438,9 @@ protected:
     Console                 *mConsole;
     /** The next upcoming context ID for this object. */
     uint32_t                 mNextContextID;
-    /** Local listener for handling the waiting events. */
-    ComPtr<IEventListener>   mListener;
+    /** Local listener for handling the waiting events
+     *  internally. */
+    ComPtr<IEventListener>   mLocalListener;
     /** Critical section for wait events access. */
     RTCRITSECT               mWaitEventCritSect;
     /** Map of internal events to wait for. */
@@ -462,7 +471,7 @@ protected:
 protected:
 
     int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
-    int registerEvent(const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
+    int registerWaitEvent(const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
 
 protected:
