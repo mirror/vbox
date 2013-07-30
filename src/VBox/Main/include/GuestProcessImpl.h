@@ -79,13 +79,16 @@ public:
     bool isReady(void);
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
     static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
-    int startProcess(int *pGuestRc);
+    int startProcess(uint32_t uTimeoutMS, int *pGuestRc);
     int startProcessAsync(void);
-    int terminateProcess(int *pGuestRc);
+    int terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
+    static ProcessWaitResult_T waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    ProcessWaitResult_T waitFlagsToResult(uint32_t fWaitFlags);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
     int waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
     int waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, void* pvData, size_t cbData, uint32_t *pcbRead);
-    int waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlags, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
+    int waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, ProcessStatus_T *pProcessStatus, int *pGuestRc);
+    static bool waitResultImpliesEx(ProcessWaitResult_T waitResult, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
     int writeData(uint32_t uHandle, uint32_t uFlags, void *pvData, size_t cbData, uint32_t uTimeoutMS, uint32_t *puWritten, int *pGuestRc);
     /** @}  */
 
@@ -167,7 +170,7 @@ public:
 
     int TerminatedOk(LONG *pExitCode);
 
-    void Terminate(void);
+    int Terminate(uint32_t uTimeoutMS, int *pGuestRc);
 
 protected:
 

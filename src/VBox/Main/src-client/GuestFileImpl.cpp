@@ -174,20 +174,21 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
 
             if (SUCCEEDED(hr))
             {
-                mListener = thisListener;
-
                 com::SafeArray <VBoxEventType_T> eventTypes;
                 eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
                 eventTypes.push_back(VBoxEventType_OnGuestFileOffsetChanged);
                 eventTypes.push_back(VBoxEventType_OnGuestFileRead);
                 eventTypes.push_back(VBoxEventType_OnGuestFileWrite);
-                hr = mEventSource->RegisterListener(mListener,
+                hr = mEventSource->RegisterListener(thisListener,
                                                     ComSafeArrayAsInParam(eventTypes),
                                                     TRUE /* Active listener */);
                 if (SUCCEEDED(hr))
                 {
-                    vrc = RTCritSectInit(&mWaitEventCritSect);
-                    AssertRC(vrc);
+                    vrc = baseInit();
+                    if (RT_SUCCESS(vrc))
+                    {
+                        mLocalListener = thisListener;
+                    }
                 }
                 else
                     vrc = VERR_COM_UNEXPECTED;
@@ -228,8 +229,10 @@ void GuestFile::uninit(void)
         return;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
+    baseUninit();
+
+    mEventSource->UnregisterListener(mLocalListener);
     unconst(mEventSource).setNull();
-    unregisterEventListener();
 #endif
 
     LogFlowThisFuncLeave();
@@ -431,7 +434,7 @@ int GuestFile::closeFile(int *pGuestRc)
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -451,7 +454,7 @@ int GuestFile::closeFile(int *pGuestRc)
     if (RT_SUCCESS(vrc))
         vrc = waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
                                   NULL /* FileStatus */);
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -710,7 +713,7 @@ int GuestFile::openFile(int *pGuestRc)
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -738,7 +741,7 @@ int GuestFile::openFile(int *pGuestRc)
         vrc = waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
                                   NULL /* FileStatus */);
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -761,7 +764,7 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestFileRead);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -791,7 +794,7 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
             *pcbRead = cbRead;
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -811,7 +814,7 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestFileRead);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -842,7 +845,7 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
             *pcbRead = cbRead;
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -862,7 +865,7 @@ int GuestFile::seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType,
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestFileOffsetChanged);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -884,7 +887,7 @@ int GuestFile::seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType,
     if (RT_SUCCESS(vrc))
         vrc = waitForOffsetChange(pEvent, uTimeoutMS, puOffset);
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1077,7 +1080,7 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestFileWrite);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -1108,7 +1111,7 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
             *pcbWritten = cbWritten;
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1131,7 +1134,7 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
         eventTypes.push_back(VBoxEventType_OnGuestFileWrite);
 
-        vrc = registerEvent(eventTypes, &pEvent);
+        vrc = registerWaitEvent(eventTypes, &pEvent);
     }
     catch (std::bad_alloc)
     {
@@ -1163,7 +1166,7 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
             *pcbWritten = cbWritten;
     }
 
-    unregisterEvent(pEvent);
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
