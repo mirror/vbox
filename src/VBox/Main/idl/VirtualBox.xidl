@@ -9531,7 +9531,7 @@
     <const name="Timeout"                 value="5">
       <desc>
         The waiting operation timed out. This also will happen
-        when no event has been occured matching the
+        when no event has been occurred matching the
         current waiting flags in a <link to="IGuestSession::waitFor"/> call.
       </desc>
     </const>
@@ -9767,7 +9767,7 @@
     <const name="Timeout"               value="5">
       <desc>
         The waiting operation timed out. This also will happen
-        when no event has been occured matching the
+        when no event has been occurred matching the
         current waiting flags in a <link to="IProcess::waitFor"/> call.
       </desc>
     </const>
@@ -10184,7 +10184,7 @@
       </desc>
     </attribute>
     <attribute name="protocolVersion" type="unsigned long" readonly="yes">
-      <desc>Returns the protocol version which is used by this session to 
+      <desc>Returns the protocol version which is used by this session to
         communicate with the guest.</desc>
     </attribute>
     <attribute name="status" type="GuestSessionStatus" readonly="yes">
@@ -11754,7 +11754,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
       <param name="y" type="unsigned long" dir="in">
         <desc>y-position of the event.</desc>
@@ -11788,7 +11788,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
       <param name="x" type="unsigned long" dir="in">
         <desc>x-position of the event.</desc>
@@ -11822,7 +11822,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
     </method>
 
@@ -11838,7 +11838,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
       <param name="x" type="unsigned long" dir="in">
         <desc>x-position of the event.</desc>
@@ -11875,7 +11875,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
       <param name="format" type="wstring" dir="in">
         <desc>The mime type the data is in.</desc>
@@ -11902,7 +11902,7 @@
 
       </desc>
       <param name="screenId" type="unsigned long" dir="in">
-        <desc>The screen id where the Drag and Drop event occured.</desc>
+        <desc>The screen id where the Drag and Drop event occurred.</desc>
       </param>
       <param name="formats" type="wstring" dir="out" safearray="yes">
         <desc>On return the supported mime types.</desc>
@@ -11917,7 +11917,7 @@
 
     <method name="dragGHDropped">
       <desc>
-        Informs the guest that a drop event occured for a pending Drag and Drop event.
+        Informs the guest that a drop event occurred for a pending Drag and Drop event.
 
         This is used in Guest - Host direction.
 
