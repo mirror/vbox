@@ -1107,29 +1107,10 @@ postinstall()
                 # take a while to complete, using disable/enable -s doesn't work either. So we restart it, and poll in
                 # 1 second intervals to see if our service has been successfully imported and timeout after 'cmax' seconds.
                 $BIN_SVCADM restart svc:system/manifest-import:default
-                cmax=32
-                success=0
-                $BIN_SVCS virtualbox/zoneaccess >/dev/null 2>&1
-                while test "$?" -ne 0;
-                do
-                    sleep 1
-                    cslept=`expr $cslept + 1`
-                    if test "$cslept" -eq "$cmax"; then
-                        success=1
-                        break
-                    fi
-                    $BIN_SVCS virtualbox/zoneaccess >/dev/null 2>&1
-                done
 
                 # Start ZoneAccess service, other services are disabled by default.
-                if test "$success" -eq 0; then
-                    start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default" \
-                                "/var/svc/log/application-virtualbox-zoneaccess:default.log"
-                else
-                    echo "## Service import failed."
-                    echo "## See /var/svc/log/system-manifest-import:default.log for details."
-                fi
-	    fi
+                start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default" \
+                            "/var/svc/log/application-virtualbox-zoneaccess:default.log"
         fi
 
         # Update mime and desktop databases to get the right menu entries
