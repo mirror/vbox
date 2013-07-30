@@ -3614,9 +3614,12 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
-          <para>Guest control APIs now emit own events to provide clients much
-            finer control and the ability to write own frontends for guest
-            operations. The event <xref linkend="IGuestSessionEvent"
+          <para>Guest control APIs - such as <xref linkend="IGuest"
+            xreflabel="IGuest" />, <xref linkend="IGuestSession"
+            xreflabel="IGuestSession" />, <xref linkend="IGuestProcess"
+            xreflabel="IGuestProcess" /> and so on - now emit own events to provide
+            clients much finer control and the ability to write own frontends for
+            guest operations. The event <xref linkend="IGuestSessionEvent"
             xreflabel="IGuestSessionEvent" /> acts as an abstract base class
             for all guest control events. Certain guest events contain a
             <xref linkend="IVirtualBoxErrorInfo" xreflabel="IVirtualBoxErrorInfo" /> member
@@ -3627,7 +3630,7 @@ AuthResult AUTHCALL AuthEntry(
         <listitem>
           <para>Guest control sessions on the guest started by <xref
             linkend="IGuest__createSession" xreflabel="IGuest::createSession()" />
-            now are dedicated processes to provide more safety and performance
+            now are dedicated guest processes to provide more safety and performance
             for certain operations. Also, the <xref linkend="IGuest__createSession"
             xreflabel="IGuest::createSession()" /> call does not wait for the
             guest session being created anymore due to the dedicated guest session
@@ -3656,8 +3659,22 @@ AuthResult AUTHCALL AuthEntry(
           <para>A new event <xref linkend="IGuestUserStateChangedEvent"
           xreflabel="IGuestUserStateChangedEvent" /> was introduced to provide
           guest user status updates to the host via event listeners. To use this
-          event there needs to be at least the 4.3 Guest Additions installed on 
-          the guest.</para>
+          event there needs to be at least the 4.3 Guest Additions installed on
+          the guest. At the moment only the states "Idle" and "InUse" of the
+          <xref linkend="GuestUserState"
+          xreflabel="GuestUserState" /> enum are supported on
+          Windows guests, starting at Windows 2000 SP2.</para>
+        </listitem>
+
+        <listitem>
+          <para>
+            The attribute <xref linkend="IGuestSession__protocolVersion"
+            xreflabel="IGuestSession::protocolVersion"/> was added to provide a
+            convenient way to lookup the guest session's protocol version it
+            uses to communicate with the installed Guest Additions on the guest.
+            Older Guest Additions will set the protocol version to 1, whereas
+            Guest Additions 4.3 will set the protocol version to 2. This might
+            change in the future as new features arise.</para>
         </listitem>
       </itemizedlist>
     </sect1>
