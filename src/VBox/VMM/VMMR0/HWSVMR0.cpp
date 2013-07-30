@@ -45,7 +45,7 @@
 # include <iprt/thread.h>
 #endif
 #include <iprt/x86.h>
-#include "HWSVMR0.h"
+#include "HMSVMR0.h"
 
 #include "dtrace/VBoxVMM.h"
 

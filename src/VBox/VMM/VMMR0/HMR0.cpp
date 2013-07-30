@@ -40,8 +40,8 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/x86.h>
-#include "HWVMXR0.h"
-#include "HWSVMR0.h"
+#include "HMVMXR0.h"
+#include "HMSVMR0.h"
 
 
 /*******************************************************************************
