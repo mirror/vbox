@@ -447,7 +447,7 @@ void UIMachineLogic::sltAdditionsStateChanged()
 {
     /* Update action states: */
     gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize)->setEnabled(uisession()->isGuestSupportsGraphics());
-    gActionPool->action(UIActionIndexRuntime_Toggle_Seamless)->setEnabled(uisession()->isGuestSupportsSeamless());
+    gActionPool->action(UIActionIndexRuntime_Toggle_Seamless)->setEnabled(uisession()->isVisualStateAllowedSeamless() && uisession()->isGuestSupportsSeamless());
 }
 
 void UIMachineLogic::sltMouseCapabilityChanged()

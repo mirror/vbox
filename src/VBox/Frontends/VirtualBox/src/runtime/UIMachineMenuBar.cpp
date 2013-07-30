@@ -33,6 +33,7 @@
 #include "UIImageTools.h"
 #include "UINetworkManager.h"
 #include "VBoxGlobal.h"
+#include "UISession.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -98,10 +99,11 @@ private:
     bool m_fShowBetaLabel;
 };
 
-UIMachineMenuBar::UIMachineMenuBar(const CMachine &machine)
+UIMachineMenuBar::UIMachineMenuBar(UISession *pSession, const CMachine &machine)
     /* On the Mac we add some items only the first time, cause otherwise they
      * will be merged more than once to the application menu by Qt. */
-    : m_machine(machine)
+    : m_pSession(pSession)
+    , m_machine(machine)
 {
 }
 
@@ -225,10 +227,20 @@ void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
         return;
 
     /* View submenu: */
-    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen));
-    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless));
-    pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Scale));
-    pMenu->addSeparator();
+    bool fIsAllowedFullscreen = uisession()->isVisualStateAllowedFullscreen();
+    bool fIsAllowedSeamless = uisession()->isVisualStateAllowedSeamless();
+    bool fIsAllowedScale = uisession()->isVisualStateAllowedScale();
+    gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen)->setEnabled(fIsAllowedFullscreen);
+    if (fIsAllowedFullscreen)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen));
+    gActionPool->action(UIActionIndexRuntime_Toggle_Seamless)->setEnabled(fIsAllowedSeamless);
+    if (fIsAllowedSeamless)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Seamless));
+    gActionPool->action(UIActionIndexRuntime_Toggle_Scale)->setEnabled(fIsAllowedScale);
+    if (fIsAllowedScale)
+        pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Scale));
+    if (fIsAllowedFullscreen || fIsAllowedSeamless || fIsAllowedScale)
+        pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_GuestAutoresize));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_AdjustWindow));
 }

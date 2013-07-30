@@ -32,6 +32,7 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<RuntimeMenuType>() { return true; }
+template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
 template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
@@ -304,6 +305,44 @@ template<> RuntimeMenuType fromInternalString<RuntimeMenuType>(const QString &st
         return RuntimeMenuType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strRuntimeMenuType, Qt::CaseInsensitive)));
+}
+
+/* QString <= UIVisualStateType: */
+template<> QString toInternalString(const UIVisualStateType &visualStateType)
+{
+    QString strResult;
+    switch (visualStateType)
+    {
+        case UIVisualStateType_Normal:     strResult = "Normal"; break;
+        case UIVisualStateType_Fullscreen: strResult = "Fullscreen"; break;
+        case UIVisualStateType_Seamless:   strResult = "Seamless"; break;
+        case UIVisualStateType_Scale:      strResult = "Scale"; break;
+        case UIVisualStateType_All:        strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for visual state type=%d", visualStateType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIVisualStateType <= QString: */
+template<> UIVisualStateType fromInternalString<UIVisualStateType>(const QString &strVisualStateType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;     QList<UIVisualStateType> values;
+    keys << "Normal";     values << UIVisualStateType_Normal;
+    keys << "Fullscreen"; values << UIVisualStateType_Fullscreen;
+    keys << "Seamless";   values << UIVisualStateType_Seamless;
+    keys << "Scale";      values << UIVisualStateType_Scale;
+    keys << "All";        values << UIVisualStateType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strVisualStateType, Qt::CaseInsensitive))
+        return UIVisualStateType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strVisualStateType, Qt::CaseInsensitive)));
 }
 
 /* QString <= DetailsElementType: */

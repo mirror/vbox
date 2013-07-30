@@ -102,6 +102,11 @@ public:
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
+    /* API: Visual-state stuff: */
+    bool isVisualStateAllowedFullscreen() const;
+    bool isVisualStateAllowedSeamless() const;
+    bool isVisualStateAllowedScale() const;
+
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
                                       machineState() == KMachineState_Saved ||

@@ -24,7 +24,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"

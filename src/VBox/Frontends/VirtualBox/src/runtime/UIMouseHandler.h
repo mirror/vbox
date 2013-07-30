@@ -26,7 +26,7 @@
 #include <QRect>
 
 /* GUI includes: */
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 
 /* Forward declarations: */
 class QWidget;

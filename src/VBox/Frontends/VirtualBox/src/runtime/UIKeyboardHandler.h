@@ -24,7 +24,7 @@
 #include <QMap>
 
 /* GUI includes: */
-#include "UIMachineDefs.h"
+#include "UIDefs.h"
 #ifdef Q_WS_MAC
 # include <CoreFoundation/CFBase.h>
 # include <Carbon/Carbon.h>

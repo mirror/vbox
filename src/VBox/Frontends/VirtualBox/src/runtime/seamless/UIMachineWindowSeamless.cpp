@@ -30,6 +30,7 @@
 #include "UIMachineWindowSeamless.h"
 #include "UIMachineViewSeamless.h"
 #ifndef Q_WS_MAC
+# include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
 #endif /* !Q_WS_MAC */
 #ifdef Q_WS_MAC

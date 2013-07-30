@@ -22,7 +22,8 @@
 /* Qt includes: */
 #include <QObject>
 
-/* GUI includes:  */
+/* GUI includes: */
+#include "UIDefs.h"
 #include "UIMachineDefs.h"
 
 /* COM includes: */
@@ -49,6 +50,11 @@ public:
     QWidget* activeWindow() const;
     UISession *uisession() const { return m_pSession; }
 
+    /* API: Visual-state stuff: */
+    bool isVisualStateAllowedFullscreen() const { return m_allowedVisualStateTypes & UIVisualStateType_Fullscreen; }
+    bool isVisualStateAllowedSeamless() const { return m_allowedVisualStateTypes & UIVisualStateType_Seamless; }
+    bool isVisualStateAllowedScale() const { return m_allowedVisualStateTypes & UIVisualStateType_Scale; }
+
 private slots:
 
     /* Visual state-change handler: */
@@ -74,6 +80,7 @@ private:
     CSession m_session;
     UISession *m_pSession;
     UIVisualState *m_pVisualState;
+    UIVisualStateType m_allowedVisualStateTypes;
 
     /* Friend classes: */
     friend class UISession;

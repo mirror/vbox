@@ -32,12 +32,13 @@
 /* Global forwards */
 class QMenu;
 class QMenuBar;
+class UISession;
 
 class UIMachineMenuBar
 {
 public:
 
-    UIMachineMenuBar(const CMachine &machine);
+    UIMachineMenuBar(UISession *pSession, const CMachine &machine);
 
     QMenu* createMenu(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QMenuBar* createMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
@@ -53,6 +54,11 @@ protected:
 #endif
     void prepareMenuHelp(QMenu *pMenu);
 
+    /* Helper: UI session stuff: */
+    UISession* uisession() const { return m_pSession; }
+
+    /* Variables: */
+    UISession *m_pSession;
     CMachine m_machine;
 };
 
