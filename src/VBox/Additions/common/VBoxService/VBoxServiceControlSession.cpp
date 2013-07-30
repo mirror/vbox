@@ -1261,7 +1261,7 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
 
 
 /**
- * Finds a (formerly) started guest process given by its PID and increses
+ * Finds a (formerly) started guest process given by its PID and increases
  * its reference count. Must be decreased by the caller with GstCntlProcessRelease().
  *
  * @return  PVBOXSERVICECTRLTHREAD      Locked guest process if found, otherwise NULL.
