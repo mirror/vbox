@@ -1365,33 +1365,34 @@ static int gstcntlProcessAllocateArgv(const char *pszArgv0,
  * another (stale) guest process which was using that PID before and destroys it.
  *
  * @return  IPRT status code.
- * @param   pThread        Thread to assign PID to.
+ * @param   pProcess       Process to assign PID to.
  * @param   uPID           PID to assign to the specified guest control execution thread.
  */
-int gstcntlProcessAssignPID(PVBOXSERVICECTRLPROCESS pThread, uint32_t uPID)
+int gstcntlProcessAssignPID(PVBOXSERVICECTRLPROCESS pProcess, uint32_t uPID)
 {
-    AssertPtrReturn(pThread, VERR_INVALID_POINTER);
+    AssertPtrReturn(pProcess, VERR_INVALID_POINTER);
     AssertReturn(uPID, VERR_INVALID_PARAMETER);
 
-    AssertPtr(pThread->pSession);
-    int rc = RTCritSectEnter(&pThread->pSession->CritSect);
+    AssertPtr(pProcess->pSession);
+    int rc = RTCritSectEnter(&pProcess->pSession->CritSect);
     if (RT_SUCCESS(rc))
     {
         /* Search old threads using the desired PID and shut them down completely -- it's
          * not used anymore. */
-        PVBOXSERVICECTRLPROCESS pThreadCur;
-        bool fTryAgain = false;
+        PVBOXSERVICECTRLPROCESS pProcessCur;
+        bool fTryAgain;
         do
         {
-            RTListForEach(&pThread->pSession->lstProcessesActive, pThreadCur, VBOXSERVICECTRLPROCESS, Node)
+            fTryAgain = false;
+            RTListForEach(&pProcess->pSession->lstProcessesActive, pProcessCur, VBOXSERVICECTRLPROCESS, Node)
             {
-                if (pThreadCur->uPID == uPID)
+                if (pProcessCur->uPID == uPID)
                 {
-                    Assert(pThreadCur != pThread); /* can't happen */
+                    Assert(pProcessCur != pProcess); /* can't happen */
                     uint32_t uTriedPID = uPID;
                     uPID += 391939;
-                    VBoxServiceVerbose(2, "PID %RU32 was used before, trying again with %u ...\n",
-                                       uTriedPID, uPID);
+                    VBoxServiceVerbose(2, "PID %RU32 was used before (process %p), trying again with %RU32 ...\n",
+                                       uTriedPID, pProcessCur, uPID);
                     fTryAgain = true;
                     break;
                 }
@@ -1399,9 +1400,9 @@ int gstcntlProcessAssignPID(PVBOXSERVICECTRLPROCESS pThread, uint32_t uPID)
         } while (fTryAgain);
 
         /* Assign PID to current thread. */
-        pThread->uPID = uPID;
+        pProcess->uPID = uPID;
 
-        rc = RTCritSectLeave(&pThread->pSession->CritSect);
+        rc = RTCritSectLeave(&pProcess->pSession->CritSect);
         AssertRC(rc);
     }
 
