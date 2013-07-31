@@ -115,7 +115,7 @@ private slots:
     /* Handlers: Popup-stack stuff: */
     void sltShowPopupStack();
     void sltHidePopupStack();
-    void sltRaisePopupStack();
+    void sltReinstallPopupStack(bool fAsTopLevel);
     void sltRemovePopupStack();
 
 private:
@@ -139,7 +139,7 @@ private:
     /* Helpers: Popup-stack stuff: */
     void showPopupStack(QWidget *pParent);
     void hidePopupStack(QWidget *pParent);
-    void raisePopupStack(QWidget *pParent);
+    void reinstallPopupStack(QWidget *pParent, bool fAsTopLevel);
     void assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
     void unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
 
