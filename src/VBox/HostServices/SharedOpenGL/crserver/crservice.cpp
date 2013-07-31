@@ -243,7 +243,7 @@ static DECLCALLBACK(void) svcNotifyEventCB(int32_t screenId, uint32_t uEvent, vo
     if (!pFramebuffer)
         return;
 
-    CHECK_ERROR2_STMT(pFramebuffer, Notify3DEvent(VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW, NULL), return);
+    CHECK_ERROR2_STMT(pFramebuffer, Notify3DEvent(uEvent, (BYTE*)pvData), return);
 }
 
 

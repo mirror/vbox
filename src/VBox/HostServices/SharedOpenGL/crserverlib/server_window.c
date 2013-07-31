@@ -10,6 +10,91 @@
 #include "cr_rand.h"
 #include "cr_string.h"
 
+static GLboolean crServerWindowCalcIsVisible(CRMuralInfo *pMural)
+{
+    uint32_t cRegions;
+    int rc;
+    if (!pMural->width || !pMural->height)
+        return GL_FALSE;
+
+    if (!pMural->bVisible || !(pMural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
+        return GL_FALSE;
+
+    rc = CrVrScrCompositorRegionsGet(pMural->fRootVrOn ? &pMural->RootVrCompositor : &pMural->Compositor, &cRegions, NULL, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
+        return GL_FALSE;
+    }
+
+    if (!cRegions)
+        return GL_FALSE;
+
+    return GL_TRUE;
+}
+
+void crServerWindowSetIsVisible(CRMuralInfo *pMural, GLboolean fIsVisible)
+{
+    if (!fIsVisible == !pMural->fIsVisible)
+        return;
+
+    pMural->fIsVisible = fIsVisible;
+
+    CRASSERT(pMural->screenId < RT_ELEMENTS(cr_server.acVisibleWindows));
+
+    if (fIsVisible)
+    {
+        ++cr_server.acVisibleWindows[pMural->screenId];
+        if (cr_server.acVisibleWindows[pMural->screenId] == 1)
+            crVBoxServerNotifyEvent(pMural->screenId, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, (void*)1);
+    }
+    else
+    {
+        --cr_server.acVisibleWindows[pMural->screenId];
+        CRASSERT(cr_server.acVisibleWindows[pMural->screenId] < UINT32_MAX/2);
+        if (cr_server.acVisibleWindows[pMural->screenId] == 0)
+            crVBoxServerNotifyEvent(pMural->screenId, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, NULL);
+    }
+}
+
+void crServerWindowCheckIsVisible(CRMuralInfo *pMural)
+{
+    GLboolean fIsVisible = crServerWindowCalcIsVisible(pMural);
+
+    crServerWindowSetIsVisible(pMural, fIsVisible);
+}
+
+void crServerWindowSize(CRMuralInfo *pMural)
+{
+    cr_server.head_spu->dispatch_table.WindowSize(pMural->spuWindow, pMural->width, pMural->height);
+
+    crServerWindowCheckIsVisible(pMural);
+}
+
+void crServerWindowShow(CRMuralInfo *pMural)
+{
+    cr_server.head_spu->dispatch_table.WindowShow(pMural->spuWindow,
+            !!(pMural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) && pMural->bVisible);
+
+    crServerWindowCheckIsVisible(pMural);
+}
+
+void crServerWindowVisibleRegion(CRMuralInfo *pMural)
+{
+    uint32_t cRects;
+    const RTRECT *pRects;
+    int rc = CrVrScrCompositorRegionsGet(pMural->fRootVrOn ? &pMural->RootVrCompositor : &pMural->Compositor, &cRects, NULL, &pRects, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMural->spuWindow, cRects, (const GLint*)pRects);
+
+        crServerWindowCheckIsVisible(pMural);
+    }
+    else
+        crWarning("CrVrScrCompositorRegionsGet failed rc %d", rc);
+
+}
+
 GLint SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
 {
@@ -127,8 +212,8 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
                         || pRects[0].xLeft != 0 || pRects[0].yTop != 0
                         || pRects[0].xRight != mural->width || pRects[0].yBottom != mural->height)
                 {
-                    /* do visible rects only ig they differ from the default */
-                    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
+                    /* do visible rects only if they differ from the default */
+                    crServerWindowVisibleRegion(mural);
                 }
             }
             else
@@ -434,8 +519,6 @@ int crServerMuralSynchRootVr(CRMuralInfo *mural)
 
 void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 {
-    uint32_t cRects;
-    const RTRECT *pRects;
     RTRECT Rect;
     VBOXVR_TEXTURE Tex;
     int rc = VINF_SUCCESS;
@@ -514,13 +597,6 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
         crStateGetCurrent()->buffer.height = mural->height;
     }
 
-    rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRects, NULL, &pRects, NULL);
-    if (!RT_SUCCESS(rc))
-    {
-        crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-        goto end;
-    }
-
     if (mural->fRootVrOn)
     {
         rc = crServerMuralSynchRootVr(mural);
@@ -529,23 +605,19 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
             crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
             goto end;
         }
-
-        rc = CrVrScrCompositorRegionsGet(&mural->RootVrCompositor, &cRects, NULL, &pRects, NULL);
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-            goto end;
-        }
     }
 
     crServerCheckMuralGeometry(mural);
 
-    cr_server.head_spu->dispatch_table.WindowSize(mural->spuWindow, width, height);
+    crServerWindowSize(mural);
 
-    cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
+    crServerWindowVisibleRegion(mural);
 
     if (mural->pvOutputRedirectInstance)
     {
+        uint32_t cRects;
+        const RTRECT *pRects;
+
         /* always get non-stretched rects for output redirect */
 //        if (mural->fRootVrOn)
         {
@@ -634,15 +706,7 @@ void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y)
                 int rc = crServerMuralSynchRootVr(mural);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = CrVrScrCompositorRegionsGet(&mural->RootVrCompositor, &cRects, NULL, &pRects, NULL);
-                    if (RT_SUCCESS(rc))
-                    {
-                        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRects, (const GLint*)pRects);
-                    }
-                    else
-                    {
-                        crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                    }
+                    crServerWindowVisibleRegion(mural);
                 }
                 else
                 {
@@ -727,9 +791,6 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
 
     if (fRegionsChanged)
     {
-        const RTRECT * pRealRects;
-        uint32_t cRealRects;
-
         if (mural->fRootVrOn)
         {
             rc = crServerMuralSynchRootVr(mural);
@@ -738,38 +799,23 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
                 crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
                 goto end;
             }
-
-            rc = CrVrScrCompositorRegionsGet(&mural->RootVrCompositor, &cRealRects, NULL, &pRealRects, NULL);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                goto end;
-            }
-        }
-        else
-        {
-            rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRealRects, NULL, &pRealRects, NULL);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                goto end;
-            }
         }
 
-        cr_server.head_spu->dispatch_table.WindowVisibleRegion(mural->spuWindow, cRealRects, (const GLint*)pRealRects);
+        crServerWindowVisibleRegion(mural);
 
         if (mural->pvOutputRedirectInstance)
         {
-//            if (mural->fRootVrOn)
+            const RTRECT * pRealRects;
+            uint32_t cRealRects;
+
+            /* always get unstretched regions here */
+            rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRealRects, NULL, NULL, &pRealRects);
+            if (!RT_SUCCESS(rc))
             {
-                /* always get unstretched regions here */
-                rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRealRects, NULL, NULL, &pRealRects);
-                if (!RT_SUCCESS(rc))
-                {
-                    crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                    goto end;
-                }
+                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
+                goto end;
             }
+
             /* @todo the code assumes that RTRECT == four GLInts. */
             cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance, cRealRects, pRealRects);
         }
@@ -795,15 +841,10 @@ crServerDispatchWindowVisibleRegion( GLint window, GLint cRects, const GLint *pR
 
 void crServerMuralShow( CRMuralInfo *mural, GLint state )
 {
-    if (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
-    {
-        cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, state);
-
-        if (state && mural->fHasParentWindow)
-            crVBoxServerNotifyEvent(mural->screenId);
-    }
-
     mural->bVisible = !!state;
+
+    if (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
+        crServerWindowShow(mural);
 }
 
 void SERVER_DISPATCH_APIENTRY

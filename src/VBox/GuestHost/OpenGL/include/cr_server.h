@@ -264,6 +264,8 @@ typedef struct {
 
     GLboolean fUseDefaultDEntry;
 
+    GLboolean fIsVisible;
+
     CR_DISPLAY_ENTRY DefaultDEntry;
 
     VBOXVR_SCR_COMPOSITOR Compositor;
@@ -539,8 +541,8 @@ typedef struct {
      * that the TexPresent mechanism is available and enabled */
     uint32_t              u32Caps;
 
-    uint32_t              NotifyEventMap[(CR_MAX_GUEST_MONITORS + 31)/32];
-    uint32_t              cDisableEvent;
+    uint32_t              acVisibleWindows[CR_MAX_GUEST_MONITORS];
+
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
 
     SPUDispatchTable TmpCtxDispatch;

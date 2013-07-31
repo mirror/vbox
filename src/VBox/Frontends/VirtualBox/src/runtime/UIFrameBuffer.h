@@ -156,7 +156,7 @@ public:
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
-    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pReserved);
+    STDMETHOD(Notify3DEvent)(ULONG uType, BYTE *pData);
 
     ulong width() { return m_width; }
     ulong height() { return m_height; }
