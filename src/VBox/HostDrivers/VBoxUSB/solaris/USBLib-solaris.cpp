@@ -57,13 +57,7 @@
 static uint32_t volatile g_cUsers = 0;
 /** VBoxUSB Device handle. */
 static RTFILE g_hFile = NIL_RTFILE;
-/** List of tasks handled by the USB helper. */
-typedef enum USBHELPER_OP
-{
-    ADD_ALIAS = 0,
-    DEL_ALIAS,
-    RESET
-};
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
