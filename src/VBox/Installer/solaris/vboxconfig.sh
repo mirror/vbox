@@ -1111,6 +1111,7 @@ postinstall()
                 # Start ZoneAccess service, other services are disabled by default.
                 start_service "Zone access service" "virtualbox/zoneaccess" "svc:/application/virtualbox/zoneaccess:default" \
                             "/var/svc/log/application-virtualbox-zoneaccess:default.log"
+            fi
         fi
 
         # Update mime and desktop databases to get the right menu entries
