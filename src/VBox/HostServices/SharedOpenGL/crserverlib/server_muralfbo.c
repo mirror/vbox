@@ -148,6 +148,13 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
 
             primaryS = 0;
         }
+        else
+        {
+            Assert(brS == tlS);
+
+            primaryS = brS;
+        }
+
 
         Assert(brS == tlS);
 
@@ -185,6 +192,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         }
     }
 
+    CRASSERT(primaryS >= 0);
+
     winID = overlappingScreenCount ? cr_server.screen[primaryS].winID : 0;
 
     if (!winID != !mural->fHasParentWindow
@@ -195,17 +204,25 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural)
         renderspuSetWindowId(winID);
         renderspuReparentWindow(mural->spuWindow);
         renderspuSetWindowId(cr_server.screen[0].winID);
-
-        if (mural->bVisible && (mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) && mural->fHasParentWindow)
-            crVBoxServerNotifyEvent(mural->screenId);
     }
 
-    mural->screenId = primaryS;
+    if (primaryS != mural->screenId)
+    {
+        /* mark it invisible on the old screen */
+        crServerWindowSetIsVisible(mural, GL_FALSE);
+        mural->screenId = primaryS;
+        /* check if mural is visivle on the new screen, and mark it as such */
+        crServerWindowCheckIsVisible(mural);
+    }
 
     mural->hX = mural->gX-cr_server.screen[primaryS].x;
     mural->hY = mural->gY-cr_server.screen[primaryS].y;
 
     fPresentMode = cr_server.fPresentMode;
+
+    if (!mural->fHasParentWindow)
+        fPresentMode &= ~CR_SERVER_REDIR_F_DISPLAY;
+
     if (!overlappingScreenCount)
         fPresentMode &= ~CR_SERVER_REDIR_F_DISPLAY;
     else if (overlappingScreenCount > 1)
@@ -359,21 +376,20 @@ static void crServerEnableDisplayMuralFBO(CRMuralInfo *mural, GLboolean fEnable)
     {
         if (!(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
         {
-            if  (mural->bVisible && mural->fHasParentWindow)
-            {
-                cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_TRUE);
-                crVBoxServerNotifyEvent(mural->screenId);
-            }
             mural->fPresentMode |= CR_SERVER_REDIR_F_DISPLAY;
+
+            if  (mural->bVisible)
+                crServerWindowShow(mural);
         }
     }
     else
     {
         if ((mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY))
         {
-            if (mural->bVisible)
-                cr_server.head_spu->dispatch_table.WindowShow(mural->spuWindow, GL_FALSE);
             mural->fPresentMode &= ~CR_SERVER_REDIR_F_DISPLAY;
+
+            if (mural->bVisible)
+                crServerWindowShow(mural);
         }
     }
 }
@@ -764,31 +780,9 @@ static void crServerVBoxCompositionSetEnableStateGlobalCB(unsigned long key, voi
 
 DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
-    if (!fEnable)
-        ++cr_server.cDisableEvent;
-
     crHashtableWalk(cr_server.muralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)(uintptr_t)fEnable);
 
     crHashtableWalk(cr_server.dummyMuralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)(uintptr_t)fEnable);
-
-    if (fEnable)
-    {
-        --cr_server.cDisableEvent;
-        CRASSERT(cr_server.cDisableEvent < UINT32_MAX/2);
-        if(!cr_server.cDisableEvent)
-        {
-            int i;
-            for (i = 0; i < cr_server.screenCount; ++i)
-            {
-                if (!ASMBitTest(cr_server.NotifyEventMap, i))
-                    continue;
-
-                cr_server.pfnNotifyEventCB(i, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW, NULL);
-
-                ASMBitClear(cr_server.NotifyEventMap, i);
-            }
-        }
-    }
 }
 
 static void crServerPresentMuralVRAM(CRMuralInfo *mural, char *pixels)

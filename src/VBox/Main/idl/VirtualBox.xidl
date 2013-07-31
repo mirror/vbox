@@ -15096,10 +15096,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
 
       <param name="type" type="unsigned long" dir="in">
-        <desc>event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW is supported.</desc>
+        <desc>event type. Currently only VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA is supported.</desc>
       </param>
-      <param name="reserved" type="octet" mod="ptr" dir="in">
-        <desc>Reserved for future use, must be NULL.</desc>
+      <param name="data" type="octet" mod="ptr" dir="in">
+        <desc>event-specific data, depends on the supplied event type</desc>
       </param>
     </method>
 

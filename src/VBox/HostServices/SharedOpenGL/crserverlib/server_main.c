@@ -2639,7 +2639,7 @@ extern DECLEXPORT(void) crServerVBoxSetNotifyEventCB(PFNCRSERVERNOTIFYEVENT pfnC
     cr_server.pfnNotifyEventCB = pfnCb;
 }
 
-void crVBoxServerNotifyEvent(int32_t idScreen)
+void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData)
 {
     /* this is something unexpected, but just in case */
     if (idScreen >= cr_server.screenCount)
@@ -2648,10 +2648,7 @@ void crVBoxServerNotifyEvent(int32_t idScreen)
         return;
     }
 
-    if (!cr_server.cDisableEvent)
-        cr_server.pfnNotifyEventCB(idScreen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_WINDOW, NULL);
-    else
-        ASMBitSet(cr_server.NotifyEventMap, idScreen);
+    cr_server.pfnNotifyEventCB(idScreen, uEvent, pvData);
 }
 
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
@@ -2668,9 +2665,6 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
         pMI->fHasParentWindow = !!cr_server.screen[pMI->screenId].winID;
 
         renderspuReparentWindow(pMI->spuWindow);
-
-        if (pMI->bVisible && (pMI->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) && pMI->fHasParentWindow)
-            crVBoxServerNotifyEvent(pMI->screenId);
 
         crServerVBoxCompositionDisableLeave(pMI, GL_FALSE);
     }
@@ -2826,28 +2820,15 @@ static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
             crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
             goto end;
         }
-
-        rc = CrVrScrCompositorRegionsGet(&pMI->RootVrCompositor, &cRects, NULL, &pRects, NULL);
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-            goto end;
-        }
     }
     else
     {
         CrVrScrCompositorClear(&pMI->RootVrCompositor);
-        rc = CrVrScrCompositorRegionsGet(&pMI->Compositor, &cRects, NULL, &pRects, NULL);
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("CrVrScrCompositorEntryRegionsGet failed, rc %d", rc);
-            goto end;
-        }
     }
 
-    cr_server.head_spu->dispatch_table.WindowVisibleRegion(pMI->spuWindow, cRects, (const GLint*)pRects);
-
     pMI->fRootVrOn = cr_server.fRootVrOn;
+
+    crServerWindowVisibleRegion(pMI);
 
 end:
     crServerVBoxCompositionDisableLeave(pMI, fForcePresent);

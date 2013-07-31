@@ -1807,6 +1807,12 @@ int hgsmiCompleteGuestCommand(PHGSMIINSTANCE pIns,
             /* Now guest can read the FIFO, the notification is informational. */
             hgsmiNotifyGuest (pIns);
         }
+#ifdef DEBUG_misha
+        else
+        {
+            Assert(0);
+        }
+#endif
     }
     return rc;
 }
