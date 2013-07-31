@@ -5033,14 +5033,18 @@ static VBOXSTRICTRC iemMemApplySegment(PIEMCPU pIemCpu, uint32_t fAccess, uint8_
                     if (   GCPtrFirst32 > pSel->u32Limit
                         || GCPtrLast32  > pSel->u32Limit) /* yes, in real mode too (since 80286). */
                         return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
-
-                    *pGCPtrMem = GCPtrFirst32 += (uint32_t)pSel->u64Base;
                 }
                 else
                 {
-                    /** @todo implement expand down segments. */
-                    IEM_RETURN_ASPECT_NOT_IMPLEMENTED_LOG(("Expand down segments\n"));
+                   /*
+                    * The upper boundary is defined by the B bit, not the G bit!
+                    */
+                   if (   GCPtrFirst32 < pSel->u32Limit + 1
+                       || GCPtrLast32  > (pSel->Attr.n.u1DefBig ? 0xFFFFFFFF : 0xFFFF))
+                      return iemRaiseSelectorBounds(pIemCpu, iSegReg, fAccess);
+                    
                 }
+                *pGCPtrMem = GCPtrFirst32 += (uint32_t)pSel->u64Base;
             }
             else
             {
