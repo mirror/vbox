@@ -1034,6 +1034,8 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvR3IntNetPowerResume\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
+    VMRESUMEREASON enmReason = PDMDrvHlpVMGetResumeReason(pDrvIns);
+
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmRecvState, RECVSTATE_RUNNING);
@@ -1041,32 +1043,64 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         drvR3IntNetUpdateMacAddress(pThis); /* (could be a state restore) */
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }
-    if (   PDMDrvHlpVMTeleportedAndNotFullyResumedYet(pDrvIns)
-        && pThis->pIAboveConfigR3)
+
+    switch (enmReason)
     {
-        /*
-         * We've just been teleported and need to drop a hint to the switch
-         * since we're likely to have changed to a different port.  We just
-         * push out some ethernet frame that doesn't mean anything to anyone.
-         * For this purpose ethertype 0x801e was chosen since it was registered
-         * to Sun (dunno what it is/was used for though).
-         */
-        union
+        case VMRESUMEREASON_HOST_RESUME:
         {
-            RTNETETHERHDR   Hdr;
-            uint8_t         ab[128];
-        } Frame;
-        RT_ZERO(Frame);
-        Frame.Hdr.DstMac.au16[0] = 0xffff;
-        Frame.Hdr.DstMac.au16[1] = 0xffff;
-        Frame.Hdr.DstMac.au16[2] = 0xffff;
-        Frame.Hdr.EtherType      = RT_H2BE_U16_C(0x801e);
-        int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &Frame.Hdr.SrcMac);
-        if (RT_SUCCESS(rc))
-            rc = drvR3IntNetResumeSend(pThis, &Frame, sizeof(Frame));
-        if (RT_FAILURE(rc))
-            LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
-    }
+            uint32_t u32TrunkType;
+            int rc = CFGMR3QueryU32(pDrvIns->pCfg, "TrunkType", &u32TrunkType);
+            AssertRC(rc);
+
+            /*
+             * Only do the disconnect for bridged networking. Host-only and
+             * internal networks are not affected by a host resume.
+             */
+            if (   RT_SUCCESS(rc)
+                && u32TrunkType == kIntNetTrunkType_NetFlt)
+            {
+                rc = pThis->pIAboveConfigR3->pfnSetLinkState(pThis->pIAboveConfigR3,
+                                                             PDMNETWORKLINKSTATE_DOWN_RESUME);
+                AssertRC(rc);
+            }
+            break;
+        }
+        case VMRESUMEREASON_TELEPORTED:
+        case VMRESUMEREASON_TELEPORT_FAILED:
+        {
+            if (   PDMDrvHlpVMTeleportedAndNotFullyResumedYet(pDrvIns)
+                   && pThis->pIAboveConfigR3)
+            {
+                /*
+                 * We've just been teleported and need to drop a hint to the switch
+                 * since we're likely to have changed to a different port.  We just
+                 * push out some ethernet frame that doesn't mean anything to anyone.
+                 * For this purpose ethertype 0x801e was chosen since it was registered
+                 * to Sun (dunno what it is/was used for though).
+                 */
+                union
+                {
+                    RTNETETHERHDR   Hdr;
+                    uint8_t         ab[128];
+                } Frame;
+                RT_ZERO(Frame);
+                Frame.Hdr.DstMac.au16[0] = 0xffff;
+                Frame.Hdr.DstMac.au16[1] = 0xffff;
+                Frame.Hdr.DstMac.au16[2] = 0xffff;
+                Frame.Hdr.EtherType      = RT_H2BE_U16_C(0x801e);
+                int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, 
+                                                           &Frame.Hdr.SrcMac);
+                if (RT_SUCCESS(rc))
+                    rc = drvR3IntNetResumeSend(pThis, &Frame, sizeof(Frame));
+                if (RT_FAILURE(rc))
+                    LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", 
+                            pDrvIns->iInstance, rc));
+            }
+            break;
+        }
+        default: /* ignore every other resume reason else */
+            break;
+    } /* end of switch(enmReason) */
 }
 
 
