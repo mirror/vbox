@@ -203,6 +203,11 @@ enum GETOPTDEF_MKDIR
     GETOPTDEF_MKDIR_PASSWORD = 1000
 };
 
+enum GETOPTDEF_SESSIONCLOSE
+{
+    GETOPTDEF_SESSIONCLOSE_ALL = 1000
+};
+
 enum GETOPTDEF_STAT
 {
     GETOPTDEF_STAT_PASSWORD = 1000
@@ -260,6 +265,10 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "\n"
                  "                            list <all|sessions|processes> [--verbose]\n"
                  "\n"
+                 "                            session close  --session-id <ID>\n"
+                 "                                         | --session-name <name or pattern>\n"
+                 "                                         | --all\n"
+                 "                                         [--verbose]\n"
                  "                            stat\n"
                  "                            <file>... --username <name>\n"
                  "                            [--passwordfile <file> | --password <password>]\n"
@@ -2900,6 +2909,160 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
     return rcExit;
 }
 
+static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+
+    if (pArg->argc < 1)
+        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least session ID to close");
+
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--all",                 GETOPTDEF_SESSIONCLOSE_ALL,      RTGETOPT_REQ_NOTHING  },
+        { "--session-id",          'i',                             RTGETOPT_REQ_UINT32  },
+        { "--session-name",        'n',                             RTGETOPT_REQ_UINT32  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    ULONG ulSessionID = UINT32_MAX;
+    Utf8Str strNamePattern;
+    bool fVerbose = false;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'n': /* Session name pattern */
+                strNamePattern = ValueUnion.psz;
+                break;
+
+            case 'i': /* Session ID */
+                ulSessionID = ValueUnion.u32;
+                break;
+
+            /** @todo Add an option for finding all session by a name pattern. */
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case GETOPTDEF_SESSIONCLOSE_ALL:
+                strNamePattern = "*";
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                /** @todo Supply a CSV list of IDs or patterns to close? */
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+
+    if (   strNamePattern.isEmpty()
+        && ulSessionID == UINT32_MAX)
+    {
+        return errorSyntax(USAGE_GUESTCONTROL, "No session ID specified!");
+    }
+    else if (   !strNamePattern.isEmpty()
+             && ulSessionID != UINT32_MAX)
+    {
+        return errorSyntax(USAGE_GUESTCONTROL, "Either session ID or name (pattern) must be specified");
+    }
+
+    HRESULT rc = S_OK;
+
+    ComPtr<IGuestSession> pSession;
+    do
+    {
+        bool fSessionFound = false;
+
+        SafeIfaceArray <IGuestSession> collSessions;
+        CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+        size_t cSessions = collSessions.size();
+
+        for (size_t i = 0; i < cSessions; i++)
+        {
+            pSession = collSessions[i];
+            Assert(!pSession.isNull());
+
+            ULONG uID; /* Session ID */
+            CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
+            Bstr strName;
+            CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
+            Utf8Str strNameUtf8(strName); /* Session name */
+
+            if (strNamePattern.isEmpty()) /* Search by ID. Slow lookup. */
+            {
+                fSessionFound = uID == ulSessionID;
+            }
+            else /* ... or by naming pattern. */
+            {
+                if (RTStrSimplePatternMatch(strNamePattern.c_str(), strNameUtf8.c_str()))
+                    fSessionFound = true;
+            }
+
+            if (fSessionFound)
+            {
+                Assert(!pSession.isNull());
+                if (fVerbose)
+                    RTPrintf("Closing guest session ID=#%RU32 \"%s\" ...\n",
+                             uID, strNameUtf8.c_str());
+                CHECK_ERROR_BREAK(pSession, Close());
+                if (fVerbose)
+                    RTPrintf("Guest session successfully closed\n");
+
+                pSession->Release();
+            }
+        }
+
+        if (!fSessionFound)
+        {
+            RTPrintf("No guest session(s) found\n");
+            rc = E_ABORT; /* To set exit code accordingly. */
+        }
+
+    } while (0);
+
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE handleCtrlSession(ComPtr<IGuest> guest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+
+    if (pArg->argc < 1)
+        return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
+
+    /** Use RTGetOpt here when handling command line args gets more complex. */
+
+    HandlerArg argSub = *pArg;
+    argSub.argc = pArg->argc - 1; /* Skip session action. */
+    argSub.argv = pArg->argv + 1; /* Same here. */
+
+    if (   !RTStrICmp(pArg->argv[0], "close")
+        || !RTStrICmp(pArg->argv[0], "kill")
+        || !RTStrICmp(pArg->argv[0], "terminate"))
+    {
+        return handleCtrlSessionClose(guest, &argSub);
+    }
+
+    return errorSyntax(USAGE_GUESTCONTROL, "Invalid session action '%s'", pArg->argv[0]);
+}
+
 /**
  * Access the guest control store.
  *
@@ -2926,30 +3089,32 @@ int handleGuestControl(HandlerArg *pArg)
         int rcExit;
         if (pArg->argc < 2)
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
-        else if (   !strcmp(pArg->argv[1], "exec")
-                 || !strcmp(pArg->argv[1], "execute"))
+        else if (   !RTStrICmp(pArg->argv[1], "exec")
+                 || !RTStrICmp(pArg->argv[1], "execute"))
             rcExit = handleCtrlExecProgram(guest, &arg);
-        else if (!strcmp(pArg->argv[1], "copyfrom"))
+        else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
             rcExit = handleCtrlCopy(guest, &arg, false /* Guest to host */);
-        else if (   !strcmp(pArg->argv[1], "copyto")
-                 || !strcmp(pArg->argv[1], "cp"))
+        else if (   !RTStrICmp(pArg->argv[1], "copyto")
+                 || !RTStrICmp(pArg->argv[1], "cp"))
             rcExit = handleCtrlCopy(guest, &arg, true /* Host to guest */);
-        else if (   !strcmp(pArg->argv[1], "createdirectory")
-                 || !strcmp(pArg->argv[1], "createdir")
-                 || !strcmp(pArg->argv[1], "mkdir")
-                 || !strcmp(pArg->argv[1], "md"))
+        else if (   !RTStrICmp(pArg->argv[1], "createdirectory")
+                 || !RTStrICmp(pArg->argv[1], "createdir")
+                 || !RTStrICmp(pArg->argv[1], "mkdir")
+                 || !RTStrICmp(pArg->argv[1], "md"))
             rcExit = handleCtrlCreateDirectory(guest, &arg);
-        else if (   !strcmp(pArg->argv[1], "createtemporary")
-                 || !strcmp(pArg->argv[1], "createtemp")
-                 || !strcmp(pArg->argv[1], "mktemp"))
+        else if (   !RTStrICmp(pArg->argv[1], "createtemporary")
+                 || !RTStrICmp(pArg->argv[1], "createtemp")
+                 || !RTStrICmp(pArg->argv[1], "mktemp"))
             rcExit = handleCtrlCreateTemp(guest, &arg);
-        else if (   !strcmp(pArg->argv[1], "stat"))
+        else if (   !RTStrICmp(pArg->argv[1], "stat"))
             rcExit = handleCtrlStat(guest, &arg);
-        else if (   !strcmp(pArg->argv[1], "updateadditions")
-                 || !strcmp(pArg->argv[1], "updateadds"))
+        else if (   !RTStrICmp(pArg->argv[1], "updateadditions")
+                 || !RTStrICmp(pArg->argv[1], "updateadds"))
             rcExit = handleCtrlUpdateAdditions(guest, &arg);
-        else if (   !strcmp(pArg->argv[1], "list"))
+        else if (   !RTStrICmp(pArg->argv[1], "list"))
             rcExit = handleCtrlList(guest, &arg);
+        else if (   !RTStrICmp(pArg->argv[1], "session"))
+            rcExit = handleCtrlSession(guest, &arg);
         else
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
