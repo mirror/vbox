@@ -4665,21 +4665,19 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
 {
     PPCNETSTATE pThis = RT_FROM_MEMBER(pInterface, PCNETSTATE, INetworkConfig);
     bool fLinkUp;
-    if (    enmState != PDMNETWORKLINKSTATE_DOWN
-        &&  enmState != PDMNETWORKLINKSTATE_UP)
-    {
-        AssertMsgFailed(("Invalid parameter enmState=%d\n", enmState));
-        return VERR_INVALID_PARAMETER;
-    }
+
+    AssertMsgReturn(enmState > PDMNETWORKLINKSTATE_INVALID && enmState <= PDMNETWORKLINKSTATE_DOWN_RESUME,
+                    ("Invalid link state: enmState=%d\n", enmState), VERR_INVALID_PARAMETER);
 
     /* has the state changed? */
-    fLinkUp = enmState == PDMNETWORKLINKSTATE_UP;
-    if (pThis->fLinkUp != fLinkUp)
+    fLinkUp = enmState == PDMNETWORKLINKSTATE_UP || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME;
+    if (   pThis->fLinkUp != fLinkUp
+        || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
     {
         pThis->fLinkUp = fLinkUp;
         if (fLinkUp)
         {
-            /* connect  with a delay of 5 seconds */
+            /* Connect with a configured delay. */
             pThis->fLinkTempDown = true;
             pThis->cLinkDownReported = 0;
             pThis->aCSR[0] |= RT_BIT(15) | RT_BIT(13); /* ERR | CERR (this is probably wrong) */
@@ -4696,7 +4694,16 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
         }
         Assert(!PDMCritSectIsOwner(&pThis->CritSect));
         if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
+        {
+            /*
+             * Send a UP link state to the driver below if the network adapter is only
+             * temproarily disconnected due to resume event.
+             */
+            if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
+                pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_UP);
+            else
+                pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
+        }
     }
     return VINF_SUCCESS;
 }

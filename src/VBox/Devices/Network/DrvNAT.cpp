@@ -973,6 +973,31 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
 
 
 /**
+ * @interface_method_impl{PDMDEVREG,pfnResume}
+ */
+static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
+{
+    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+    VMRESUMEREASON enmReason = PDMDrvHlpVMGetResumeReason(pDrvIns);
+
+    switch (enmReason)
+    {
+        case VMRESUMEREASON_HOST_RESUME:
+            /*
+             * Host resumed from a suspend and the network might have changed.
+             * Disconnect the guest from the network temporarily to let it pick up the changes.
+             */
+            pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, 
+                                                  PDMNETWORKLINKSTATE_DOWN_RESUME);
+            return;
+        default: /* Ignore every other resume reason. */
+            /* do nothing */
+            return;
+    }
+}
+
+
+/**
  * Info handler.
  */
 static DECLCALLBACK(void) drvNATInfo(PPDMDRVINS pDrvIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
@@ -1445,7 +1470,7 @@ const PDMDRVREG g_DrvNAT =
     /* pfnSuspend */
     NULL,
     /* pfnResume */
-    NULL,
+    drvNATResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
