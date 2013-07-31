@@ -3293,6 +3293,61 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
+          <para><emphasis role="bold"><computeroutput>session close</computeroutput></emphasis>,
+          which closes specific guest sessions, based on either the session's ID or the
+          session's name.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; session close
+            --session-id &lt;ID&gt;
+          | --session-name &lt;name or pattern&gt;
+          | --all
+          [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+              <glossdef>
+                <para>The VM UUID or VM name. Mandatory.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Close a guest session specified by its ID.</para>
+              </glossdef>
+            </glossentry>
+
+             <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Close a guest session specified by its name. Multiple sessions
+                  can be closed when specifying * or ? wildcards.</para>
+              </glossdef>
+            </glossentry>
+
+             <glossentry>
+              <glossterm><computeroutput>--all</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Close all guest sessions.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Tells VBoxManage to be more verbose.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
           <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>,
           which displays file
           or file system status on the guest.</para>
