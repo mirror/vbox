@@ -1041,7 +1041,7 @@ int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
  */
 int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
 {
-    LogFlowFunc(("[Client %RU32] Disonnected (%zu clients total)\n",
+    LogFlowFunc(("[Client %RU32] Disconnected (%zu clients total)\n",
                  u32ClientID, mClientStateMap.size()));
 
     AssertMsg(mClientStateMap.size(),
