@@ -828,7 +828,10 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             break;
         }
 
-        Assert(sessionWaitResult == GuestSessionWaitResult_Start);
+        Assert(   sessionWaitResult == GuestSessionWaitResult_Start
+               /* Note: This might happen when Guest Additions < 4.3 are installed which don't
+                *       support dedicated guest sessions. */
+               || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported);
         if (fVerbose)
             RTPrintf("Guest session has been started\n");
 
@@ -909,7 +912,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     {
                         /* Just print plain PID to make it easier for scripts
                          * invoking VBoxManage. */
-                        RTPrintf("%ul\n", uPID);
+                        RTPrintf("%ld\n", uPID);
                     }
 
                     /* We're done here if we don't want to wait for termination. */
@@ -1013,16 +1016,26 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         }
     } while (0);
 
-    if (fVerbose)
-        RTPrintf("Closing guest session ...\n");
-    rc = pGuestSession->Close();
-    if (FAILED(rc))
+    /*
+     * Only close the guest session if we waited for the guest
+     * process to exit. Otherwise we wouldn't have any chance to
+     * access and/or kill detached guest process lateron.
+     */
+    if (fWaitForExit)
     {
-        ctrlPrintError(pGuestSession, COM_IIDOF(ISession));
+        if (fVerbose)
+            RTPrintf("Closing guest session ...\n");
+        rc = pGuestSession->Close();
+        if (FAILED(rc))
+        {
+            ctrlPrintError(pGuestSession, COM_IIDOF(ISession));
 
-        if (rcExit == RTEXITCODE_SUCCESS)
-            rcExit = RTEXITCODE_FAILURE;
+            if (rcExit == RTEXITCODE_SUCCESS)
+                rcExit = RTEXITCODE_FAILURE;
+        }
     }
+    else if (fVerbose)
+        RTPrintf("Guest session detached\n");
 
     return rcExit;
 }
@@ -2812,8 +2825,6 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
     if (   fListAll
         || fListSessions)
     {
-        RTPrintf("Active guest sessions:\n");
-
         HRESULT rc;
         do
         {
@@ -2821,48 +2832,61 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             SafeIfaceArray <IGuestSession> collSessions;
             CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
-            for (size_t i = 0; i < collSessions.size(); i++)
+            size_t cSessions = collSessions.size();
+
+            if (cSessions)
             {
-                ComPtr<IGuestSession> pCurSession = collSessions[i];
-                if (!pCurSession.isNull())
+                RTPrintf("Active guest sessions:\n");
+
+                /** @todo Make this output a bit prettier. No time now. */
+
+                for (size_t i = 0; i < cSessions; i++)
                 {
-                    Bstr strName;
-                    CHECK_ERROR_BREAK(pCurSession, COMGETTER(Name)(strName.asOutParam()));
-                    Bstr strUser;
-                    CHECK_ERROR_BREAK(pCurSession, COMGETTER(User)(strUser.asOutParam()));
-                    ULONG uID;
-                    CHECK_ERROR_BREAK(pCurSession, COMGETTER(Id)(&uID));
-
-                    RTPrintf("\n\tSession #%zu: ID=%RU32, User=%ls, Name=%ls",
-                             i, uID, strUser.raw(), strName.raw());
-
-                    if (   fListAll
-                        || fListProcesses)
+                    ComPtr<IGuestSession> pCurSession = collSessions[i];
+                    if (!pCurSession.isNull())
                     {
-                        SafeIfaceArray <IGuestProcess> collProcesses;
-                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Processes)(ComSafeArrayAsOutParam(collProcesses)));
-                        for (size_t a = 0; a < collProcesses.size(); a++)
+                        Bstr strName;
+                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Name)(strName.asOutParam()));
+                        Bstr strUser;
+                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(User)(strUser.asOutParam()));
+                        ULONG uID;
+                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Id)(&uID));
+
+                        RTPrintf("\n\tSession #%-3zu ID=%-3RU32 User=%-16ls Name=%ls",
+                                 i, uID, strUser.raw(), strName.raw());
+
+                        if (   fListAll
+                            || fListProcesses)
                         {
-                            ComPtr<IGuestProcess> pCurProcess = collProcesses[a];
-                            if (!pCurProcess.isNull())
+                            SafeIfaceArray <IGuestProcess> collProcesses;
+                            CHECK_ERROR_BREAK(pCurSession, COMGETTER(Processes)(ComSafeArrayAsOutParam(collProcesses)));
+                            for (size_t a = 0; a < collProcesses.size(); a++)
                             {
-                                ULONG uPID;
-                                CHECK_ERROR_BREAK(pCurProcess, COMGETTER(PID)(&uPID));
-                                Bstr strExecPath;
-                                CHECK_ERROR_BREAK(pCurProcess, COMGETTER(ExecutablePath)(strExecPath.asOutParam()));
+                                ComPtr<IGuestProcess> pCurProcess = collProcesses[a];
+                                if (!pCurProcess.isNull())
+                                {
+                                    ULONG uPID;
+                                    CHECK_ERROR_BREAK(pCurProcess, COMGETTER(PID)(&uPID));
+                                    Bstr strExecPath;
+                                    CHECK_ERROR_BREAK(pCurProcess, COMGETTER(ExecutablePath)(strExecPath.asOutParam()));
+                                    ProcessStatus_T status;
+                                    CHECK_ERROR_BREAK(pCurProcess, COMGETTER(Status)(&status));
 
-                                RTPrintf("\n\t\tProcess #%zu: PID=%RU32, CmdLine=%ls",
-                                         i, uPID, strExecPath.raw());
+                                    RTPrintf("\n\t\tProcess #%-03zu PID=%-6RU32 Status=[%s] Command=%ls",
+                                             a, uPID, ctrlExecProcessStatusToText(status), strExecPath.raw());
+                                }
                             }
-                        }
 
-                        cTotalProcs += collProcesses.size();
+                            cTotalProcs += collProcesses.size();
+                        }
                     }
                 }
-            }
 
-            RTPrintf("\n\nTotal guest sessions: %zu", collSessions.size());
-            RTPrintf("\n\nTotal guest processes: %zu", cTotalProcs);
+                RTPrintf("\n\nTotal guest sessions: %zu\n", collSessions.size());
+                RTPrintf("Total guest processes: %zu\n", cTotalProcs);
+            }
+            else
+                RTPrintf("No active guest sessions found\n");
 
         } while (0);
 
