@@ -292,9 +292,9 @@ void UIMachineView::sltHandleSetVisibleRegion(QRegion region)
     Q_UNUSED(region);
 }
 
-void UIMachineView::sltNotify3DEvent()
+void UIMachineView::sltHandle3DOverlayVisibilityChange(bool fVisible)
 {
-    machineLogic()->notifyAbout3DEvent();
+    machineLogic()->notifyAbout3DOverlayVisibilityChange(fVisible);
 }
 
 void UIMachineView::sltDesktopResized()

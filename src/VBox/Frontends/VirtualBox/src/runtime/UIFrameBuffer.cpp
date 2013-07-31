@@ -347,12 +347,12 @@ STDMETHODIMP UIFrameBuffer::Notify3DEvent(ULONG uType, BYTE *pData)
     {
         case VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA:
         {
+            /* Notify GUI about 3D overlay visibility change: */
             BOOL fVisible = !!pData;
-
-            /* @todo: implement 3D visibility handling */
-//            /* Notify GUI about 3D event: */
-//            emit sigNotify3DEvent();
-
+            LogRelFlow(("UIFrameBuffer::Notify3DEvent: "
+                        "VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA=%s\n",
+                        fVisible ? "TRUE" : "FALSE"));
+            emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
             return S_OK;
         }
         default:
@@ -426,8 +426,8 @@ void UIFrameBuffer::prepareConnections()
     connect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
             m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)),
             Qt::QueuedConnection);
-    connect(this, SIGNAL(sigNotify3DEvent()),
-            m_pMachineView, SLOT(sltNotify3DEvent()),
+    connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+            m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)),
             Qt::QueuedConnection);
 }
 
@@ -439,7 +439,7 @@ void UIFrameBuffer::cleanupConnections()
                m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
     disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
                m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
-    disconnect(this, SIGNAL(sigNotify3DEvent()),
-               m_pMachineView, SLOT(sltNotify3DEvent()));
+    disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+               m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
 }
 

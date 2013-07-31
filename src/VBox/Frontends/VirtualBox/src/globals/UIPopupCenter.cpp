@@ -302,25 +302,30 @@ void UIPopupCenter::hidePopupStack(QWidget *pParent)
     unassignPopupStackParent(pPopupStack, pParent);
 }
 
-void UIPopupCenter::raisePopupStack(QWidget *pParent)
+void UIPopupCenter::reinstallPopupStack(QWidget *pParent, bool fAsTopLevel)
 {
     /* Make sure passed parent is valid: */
     if (!pParent)
-    {
-        AssertMsgFailed(("Passed parent is NULL"));
         return;
-    }
 
     /* Do we have a stack for passed parent? */
     const QString strPopupStackID(popupStackID(pParent));
     if (!m_stacks.contains(strPopupStackID))
         return;
 
+    /* Make sure we should really reinstall stack: */
+    if ((fAsTopLevel && m_type == UIPopupIntegrationType_Toplevel) ||
+        (!fAsTopLevel && m_type == UIPopupIntegrationType_Embedded))
+        return;
+
+    LogRelFlow(("UIPopupCenter::reinstallPopupStack: Reinstalling popup-stack as %s.\n",
+                fAsTopLevel ? "top level window" : "embedded widget"));
+
     /* Remove stack: */
     hidePopupStack(pParent);
 
     /* Make sure integration type is correct: */
-    setStackIntegrationType(UIPopupIntegrationType_Toplevel);
+    setStackIntegrationType(fAsTopLevel ? UIPopupIntegrationType_Toplevel : UIPopupIntegrationType_Embedded);
 
     /* Return stack again: */
     showPopupStack(pParent);
@@ -388,9 +393,9 @@ void UIPopupCenter::sltHidePopupStack()
     hidePopupStack(vboxGlobal().activeMachineWindow());
 }
 
-void UIPopupCenter::sltRaisePopupStack()
+void UIPopupCenter::sltReinstallPopupStack(bool fAsTopLevel)
 {
-    raisePopupStack(vboxGlobal().activeMachineWindow());
+    reinstallPopupStack(vboxGlobal().activeMachineWindow(), fAsTopLevel);
 }
 
 void UIPopupCenter::sltRemovePopupStack()

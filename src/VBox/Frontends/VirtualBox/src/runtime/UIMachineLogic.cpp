@@ -350,10 +350,10 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
         uisession()->closeRuntimeUI();
 }
 
-void UIMachineLogic::notifyAbout3DEvent()
+void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
 {
-    /* Notify listener about 3D event: */
-    emit sigNotify3DEvent();
+    /* Notify listener about 3D overlay visibility change: */
+    emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
 }
 
 void UIMachineLogic::sltMachineStateChanged()
@@ -548,8 +548,8 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
             &popupCenter(), SLOT(sltShowPopupStack()));
     connect(this, SIGNAL(sigMachineWindowsDestroyed()),
             &popupCenter(), SLOT(sltHidePopupStack()));
-    connect(this, SIGNAL(sigNotify3DEvent()),
-            &popupCenter(), SLOT(sltRaisePopupStack()));
+    connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+            &popupCenter(), SLOT(sltReinstallPopupStack(bool)));
 }
 
 UIMachineLogic::~UIMachineLogic()
@@ -559,8 +559,8 @@ UIMachineLogic::~UIMachineLogic()
                &popupCenter(), SLOT(sltShowPopupStack()));
     disconnect(this, SIGNAL(sigMachineWindowsDestroyed()),
                &popupCenter(), SLOT(sltHidePopupStack()));
-    disconnect(this, SIGNAL(sigNotify3DEvent()),
-               &popupCenter(), SLOT(sltRaisePopupStack()));
+    disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
+               &popupCenter(), SLOT(sltReinstallPopupStack(bool)));
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
