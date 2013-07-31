@@ -139,7 +139,7 @@ static char *solaudio_getdevice (void)
      * This is for multiple audio devices where env. var determines current one,
      * otherwise else we fallback to default.
      */
-    const char *pszAudioDev = RTEnvDupEx(RTENV_DEFAULT, "AUDIODEV");
+    char *pszAudioDev = RTEnvDupEx(RTENV_DEFAULT, "AUDIODEV");
     if (!pszAudioDev)
         pszAudioDev = RTStrDup("/dev/audio");
     return pszAudioDev;
@@ -407,7 +407,8 @@ static int solaudio_run_out (HWVoiceOut *hw)
 {
     solaudioVoiceOut *pSol = (solaudioVoiceOut *) hw;
     int          csLive, csDecr, csSamples, csToWrite, csAvail;
-    size_t       cbAvail, cbToWrite, cbWritten;
+    size_t       cbAvail, cbToWrite;
+    ssize_t      cbWritten;
     uint8_t     *pu8Dst;
     st_sample_t *psSrc;
 
