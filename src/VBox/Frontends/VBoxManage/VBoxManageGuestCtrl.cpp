@@ -904,7 +904,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
                     if (fVerbose)
                     {
-                        RTPrintf("Process '%s' (PID: %ul) %s\n",
+                        RTPrintf("Process '%s' (PID: %ld) %s\n",
                                  strCmd.c_str(), uPID,
                                  fWaitForExit ? "started" : "started (detached)");
                     }
@@ -1021,7 +1021,8 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
      * process to exit. Otherwise we wouldn't have any chance to
      * access and/or kill detached guest process lateron.
      */
-    if (fWaitForExit)
+    if (   fWaitForExit
+        || rcExit != EXITCODEEXEC_SUCCESS)
     {
         if (fVerbose)
             RTPrintf("Closing guest session ...\n");
