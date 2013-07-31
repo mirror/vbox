@@ -3726,8 +3726,7 @@ static void setup_fpu(void)
     cw = (cw & ~0xf3f) | 0x3f;
     __asm fldcw cw;
 #elif defined(RT_ARCH_AMD64)
-    unsigned int currentControl = 0;
-    _controlfp_s(&currentControl, 0x3f, 0xf3f);
+    /* @todo: impl*/
 #else
     FIXME("FPU setup not implemented for this platform.\n");
 #endif
