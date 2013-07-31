@@ -271,7 +271,7 @@ DECLEXPORT(void) crWarning(const char *format, ... )
 #endif
         va_end( args );
 
-#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST)
+#if defined(WINDOWS) && defined(DEBUG) && !defined(IN_GUEST) && defined(DEBUG_misha)
         DebugBreak();
 #endif
     }
