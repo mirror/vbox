@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -407,7 +407,7 @@ static void usbProxySolarisClose(PUSBPROXYDEV pProxyDev)
 
     /* Close the device (do not re-enumerate). */
     VBOXUSBREQ_CLOSE_DEVICE CloseReq;
-    CloseReq.ResetLevel = VBOXUSB_RESET_LEVEL_NONE;
+    CloseReq.ResetLevel = VBOXUSB_RESET_LEVEL_CLOSE;
     usbProxySolarisIOCtl(pDevSol, VBOXUSB_IOCTL_CLOSE_DEVICE, &CloseReq, sizeof(CloseReq));
 
     pProxyDev->fDetached = true;
@@ -870,6 +870,6 @@ extern const USBPROXYBACK g_USBProxyDeviceHost =
     usbProxySolarisUrbQueue,
     usbProxySolarisUrbCancel,
     usbProxySolarisUrbReap,
-    NULL
+    0
 };
 

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -154,8 +154,11 @@ typedef struct
 
 typedef enum
 {
-    VBOXUSB_RESET_LEVEL_NONE      = 0,
+    /** Close device not a reset. */
+    VBOXUSB_RESET_LEVEL_CLOSE     = 0,
+    /** Hard reset resulting in device replug behaviour. */
     VBOXUSB_RESET_LEVEL_REATTACH  = 2,
+    /** Device-level reset. */
     VBOXUSB_RESET_LEVEL_SOFT      = 4
 } VBOXUSB_RESET_LEVEL;
 
