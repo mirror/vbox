@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -95,7 +95,7 @@
 
 /** -=-=-=-=-=-=- Tunable Parameters -=-=-=-=-=-=- */
 /** Time to wait while draining inflight UBRs on suspend, in seconds. */
-#define VBOXUSB_DRAIN_TIME                              30
+#define VBOXUSB_DRAIN_TIME                              20
 /** Ctrl Xfer timeout in seconds. */
 #define VBOXUSB_CTRL_XFER_TIMEOUT                       10
 /** Bulk Xfer timeout in seconds. */
@@ -1867,10 +1867,11 @@ LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
                     /*
                      * Paranoia: we should have a single message block almost always.
                      */
-                    if (RT_LIKELY(!pUrb->pMsg->b_cont && cbData > 0))
+                    if (RT_LIKELY(   !pUrb->pMsg->b_cont
+                                  && cbData))
                     {
                         rc = ddi_copyout(pUrb->pMsg->b_rptr, (void *)pUrbReq->pvData, cbData, Mode);
-                        if (RT_UNLIKELY(rc != 0))
+                        if (RT_UNLIKELY(rc))
                         {
                             LogRel((DEVICE_NAME ":vboxUSBSolarisReapUrb ddi_copyout failed! rc=%d\n", rc));
                             pUrbReq->enmStatus = VUSBSTATUS_INVALID;
@@ -1943,16 +1944,13 @@ LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
             {
                 AssertCompile(sizeof(pUrbReq->aIsocPkts) == sizeof(pUrb->aIsocPkts));
                 pUrbReq->cIsocPkts = pUrb->cIsocPkts;
-#if 0
+
                 for (unsigned i = 0; i < pUrb->cIsocPkts; i++)
                 {
-                    pUrbReq->aIsocPkts[i].cbPkt = pUrb->aIsocPkts[i].cbPkt;
-                    pUrbReq->aIsocPkts[i].cbActPkt = pUrb->aIsocPkts[i].cbActPkt;
+                    pUrbReq->aIsocPkts[i].cbPkt     = pUrb->aIsocPkts[i].cbPkt;
+                    pUrbReq->aIsocPkts[i].cbActPkt  = pUrb->aIsocPkts[i].cbActPkt;
                     pUrbReq->aIsocPkts[i].enmStatus = pUrb->aIsocPkts[i].enmStatus;
                 }
-#else
-                bcopy(pUrb->aIsocPkts, pUrbReq->aIsocPkts, pUrb->cIsocPkts * sizeof(VUSBISOC_PKT_DESC));
-#endif
 
                 if (pUrb->enmDir == VUSBDIRECTION_IN)
                 {
@@ -1980,7 +1978,6 @@ LOCAL int vboxUSBSolarisReapURB(vboxusb_state_t *pState, PVBOXUSBREQ_URB pUrbReq
     else
         mutex_exit(&pState->Mtx);
 
-    Log((DEVICE_NAME ":vboxUSBSolarisReapUrb returns %d\n", rc));
     return rc;
 }
 
@@ -2233,7 +2230,7 @@ LOCAL int vboxUSBSolarisCloseDevice(vboxusb_state_t *pState, VBOXUSB_RESET_LEVEL
     mutex_enter(&pState->Mtx);
     int rc = vboxUSBSolarisDeviceState(pState->DevState);
 
-    if (enmReset == VBOXUSB_RESET_LEVEL_NONE)
+    if (enmReset == VBOXUSB_RESET_LEVEL_CLOSE)
     {
         vboxUSBSolarisCloseAllPipes(pState, true /* ControlPipe */);
         pState->fClosed = true;
@@ -2662,8 +2659,6 @@ LOCAL void vboxUSBSolarisCloseAllPipes(vboxusb_state_t *pState, bool fDefault)
  */
 LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
 {
-//    LogFunc((DEVICE_NAME ":vboxUSBSolarisOpenPipe pState=%p pEp=%p\n", pState, pEp));
-
     Assert(mutex_owned(&pState->Mtx));
 
     /*
@@ -2671,6 +2666,7 @@ LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
      */
     if (pEp->pPipe)
         return VINF_SUCCESS;
+
 
     /*
      * Default Endpoint; already opened just copy the pipe handle.
@@ -2691,6 +2687,7 @@ LOCAL int vboxUSBSolarisOpenPipe(vboxusb_state_t *pState, vboxusb_ep_t *pEp)
     mutex_enter(&pState->Mtx);
     if (rc == USB_SUCCESS)
     {
+        LogFunc((DEVICE_NAME ":vboxUSBSolarisOpenPipe: Opened pipe. pState=%p pEp=%p\n", pState, pEp));
         usb_pipe_set_private(pEp->pPipe, (usb_opaque_t)pEp);
 
         /*
@@ -2926,14 +2923,16 @@ LOCAL vboxusb_urb_t *vboxUSBSolarisQueueURB(vboxusb_state_t *pState, PVBOXUSBREQ
 
     if (RT_LIKELY(pUrbReq))
     {
-        pUrb->pvUrbR3 = pUrbReq->pvUrbR3;
+        pUrb->pvUrbR3   = pUrbReq->pvUrbR3;
         pUrb->bEndpoint = pUrbReq->bEndpoint;
-        pUrb->enmType = pUrbReq->enmType;
-        pUrb->enmDir = pUrbReq->enmDir;
+        pUrb->enmType   = pUrbReq->enmType;
+        pUrb->enmDir    = pUrbReq->enmDir;
         pUrb->enmStatus = pUrbReq->enmStatus;
-        pUrb->cbDataR3 = pUrbReq->cbData;
-        pUrb->pvDataR3 = (RTR3PTR)pUrbReq->pvData;
+        pUrb->fShortOk  = pUrbReq->fShortOk;
+        pUrb->pvDataR3  = (RTR3PTR)pUrbReq->pvData;
+        pUrb->cbDataR3  = pUrbReq->cbData;
         pUrb->cIsocPkts = pUrbReq->cIsocPkts;
+
         if (pUrbReq->enmType == VUSBXFERTYPE_ISOC)
         {
             for (unsigned i = 0; i < pUrbReq->cIsocPkts; i++)
@@ -3068,12 +3067,7 @@ LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
 
     AssertPtrReturn(pUrb->pMsg, VERR_INVALID_PARAMETER);
     uchar_t *pSetupData = pUrb->pMsg->b_rptr;
-    size_t cbData = pUrb->cbDataR3 - VBOXUSB_CTRL_XFER_SIZE;
-
-    /*
-     * Solaris USBA gives us garbage and incorrect message lengths making it impossible to use
-     * pre-allocated control messages. The allocation of "ctrl_data" is not documented well.
-     */
+    size_t cbData = pUrb->cbDataR3 > VBOXUSB_CTRL_XFER_SIZE ? pUrb->cbDataR3 - VBOXUSB_CTRL_XFER_SIZE : 0;
 
     /*
      * Allocate a wrapper request.
@@ -3092,7 +3086,7 @@ LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
         pReq->ctrl_wLength        = (pSetupData[7] << VBOXUSB_CTRL_XFER_SIZE) | pSetupData[6];
 
         if (   pUrb->enmDir == VUSBDIRECTION_OUT
-            && cbData > 0)
+            && cbData)
         {
             pUrb->pMsg->b_rptr += VBOXUSB_CTRL_XFER_SIZE;
             bcopy(pUrb->pMsg->b_rptr, pReq->ctrl_data->b_wptr, cbData);
@@ -3118,6 +3112,8 @@ LOCAL int vboxUSBSolarisCtrlXfer(vboxusb_state_t *pState, vboxusb_ep_t *pEp, vbo
 
         pReq->ctrl_client_private = (usb_opaque_t)pUrb;
 
+        LogFunc((DEVICE_NAME ":vboxUSBSolarisCtrlXfer ctrl_wLength=%#RX16 cbData=%#zx fShortOk=%RTbool\n", pReq->ctrl_wLength,
+                 cbData, !!(fAttributes & USB_ATTRS_SHORT_XFER_OK)));
         Log((DEVICE_NAME ":vboxUSBSolarisCtrlXfer %.*Rhxd\n", VBOXUSB_CTRL_XFER_SIZE, pSetupData));
 
         /*
@@ -3184,7 +3180,7 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
             pReq->ctrl_data = NULL;
             vboxUSBSolarisConcatMsg(pUrb);
 
-#if defined(DEBUG_ramshankar)
+#ifdef DEBUG_ramshankar
             if (   pUrb->pMsg
                 && pUrb->pMsg->b_cont == NULL)  /* Concat succeeded */
             {
@@ -3198,8 +3194,6 @@ LOCAL void vboxUSBSolarisCtrlXferCompleted(usb_pipe_handle_t pPipe, usb_ctrl_req
              * Update the URB and move to landed list for reaping.
              */
             vboxUSBSolarisDeQueueURB(pUrb, pReq->ctrl_completion_reason);
-            usb_free_ctrl_req(pReq);
-            return;
         }
         else
         {
