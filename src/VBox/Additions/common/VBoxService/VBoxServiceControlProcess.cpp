@@ -947,19 +947,14 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess,
         VBoxServiceVerbose(2, "[PID %RU32]: Ended, ClientID=%u, CID=%u, Status=%u, Flags=0x%x\n",
                            pProcess->uPID, pProcess->uClientID, pProcess->uContextID, uStatus, uFlags);
 
-        if (!(pProcess->StartupInfo.uFlags & EXECUTEPROCESSFLAG_WAIT_START))
-        {
             VBGLR3GUESTCTRLCMDCTX ctxEnd = { pProcess->uClientID, pProcess->uContextID };
             rc2 = VbglR3GuestCtrlProcCbStatus(&ctxEnd,
                                               pProcess->uPID, uStatus, uFlags,
                                               NULL /* pvData */, 0 /* cbData */);
-            if (RT_FAILURE(rc2))
+            if (   RT_FAILURE(rc2)
+                && rc2 == VERR_NOT_FOUND)
                 VBoxServiceError("[PID %RU32]: Error reporting final status to host; rc=%Rrc\n",
                                  pProcess->uPID, rc2);
-        }
-        else
-            VBoxServiceVerbose(3, "[PID %RU32]: Was started detached, no final status sent to host\n",
-                               pProcess->uPID);
     }
 
     VBoxServiceVerbose(3, "[PID %RU32]: Process loop returned with rc=%Rrc\n",
