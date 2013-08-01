@@ -169,6 +169,28 @@ RTDECL(int)     RTZipDecompCreate(PRTZIPDECOMP *ppZip, void *pvUser, PFNRTZIPIN 
 RTDECL(int)     RTZipDecompress(PRTZIPDECOMP pZip, void *pvBuf, size_t cbBuf, size_t *pcbWritten);
 
 /**
+ * Decompresses a chunk of Gzip file.
+ *
+ * @returns iprt status code.
+ * @param   pZip        The stream decompressor instance. 
+ * @param   pvBufIn     Where to read the compressed data from.
+ * @param   cbBufIn     Number of bytes to read. 
+ * @param   pcbRead     Number of bytes actually read from the 
+ *                      buffer
+ * @param   pvBufOut    Where to store the decompressed data.
+ * @param   cbBufOut    Number of bytes to produce.
+ * @param   pcbWritten  Number of bytes actually written to the 
+ *                      buffer.
+ */
+RTDECL(int)     RTZipGzipFileBufferDecompress(PRTZIPDECOMP pZip,
+                                              void *pvBufIn, 
+                                              size_t cbBufIn, 
+                                              size_t *pcbRead,
+                                              void *pvBufOut, 
+                                              size_t cbBufOut, 
+                                              size_t *pcbWritten);
+
+/**
  * Destroys the stream decompressor instance.
  *
  * @returns iprt status code.

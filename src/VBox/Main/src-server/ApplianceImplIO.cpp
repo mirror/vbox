@@ -33,8 +33,6 @@
 #include <iprt/circbuf.h>
 #include <iprt/vfs.h>
 #include <VBox/vd.h>
-#include <zlib.h>
-//#define VBOX_MAIN_USE_VFS /** @todo Replace as much as possible with IPRT VFS. */
 
 /******************************************************************************
  *   Structures and Typedefs                                                  *
@@ -95,6 +93,7 @@ typedef struct SHASTORAGEINTERNAL
 //    uint64_t waits;
 } SHASTORAGEINTERNAL, *PSHASTORAGEINTERNAL;
 
+
 /******************************************************************************
  *   Defined Constants And Macros                                             *
  ******************************************************************************/
@@ -116,7 +115,14 @@ typedef struct SHASTORAGEINTERNAL
 /******************************************************************************
  *   Internal Functions                                                       *
  ******************************************************************************/
-
+/**
+ * dummy function is needed only for initialization PRTZIPDECOMP pZipDecomp.
+ * see the call/description of RTZipDecompCreate
+ */
+static DECLCALLBACK(int) FillBufferWithGzipData(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf)
+{
+    return VINF_SUCCESS;
+}
 
 /******************************************************************************
  *   Internal: RTFile interface
@@ -1240,6 +1246,102 @@ PVDINTERFACEIO TarCreateInterface()
     return pCallbacks;
 }
 
+
+int copyFileAndCalcShaDigest(const char *pcszSourceFilename, const char *pcszTargetFilename, PVDINTERFACEIO pIfIo, void *pvUser)
+{
+    /* Validate input. */
+    AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
+
+    void *pvStorage;
+    RTFILE pFile = NULL;
+
+    int rc = pIfIo->pfnOpen(pvUser, pcszSourceFilename,
+                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE, 0,
+                            &pvStorage);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    try
+    {
+        if (RTFileExists(pcszTargetFilename) == false)
+        {
+            /* ensure the directory exists */
+            rc = VirtualBox::ensureFilePathExists(pcszTargetFilename, true);
+            if (FAILED(rc))
+                throw rc;
+
+            // create a new file and copy raw data into one from buffer pvTmpBuf
+            rc = RTFileOpen(&pFile,
+                            pcszTargetFilename,
+                            RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+
+            if (RT_FAILURE(rc) || pFile == NULL)
+            {
+                throw rc;
+            }
+        }
+        else
+        {
+            rc = RTFileOpen(&pFile,
+                            pcszTargetFilename,
+                            RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+            if (RT_FAILURE(rc) || pFile == NULL)
+            {
+                throw rc;
+            }
+        }
+    }
+    catch(...)
+    {
+        pIfIo->pfnClose(pvUser, pvStorage);
+        return rc;
+    }
+
+    void *pvTmpBuf = 0;
+    uint64_t cbTmpSize = _1M;
+    size_t cbAllRead = 0;
+    do
+    {
+        pvTmpBuf = RTMemAlloc(cbTmpSize);
+        if (!pvTmpBuf)
+        {
+            rc = VERR_NO_MEMORY;
+            break;
+        }
+
+        for (;;)
+        {
+            size_t cbRead = 0;
+            rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, pvTmpBuf, cbTmpSize, &cbRead);
+            if (   RT_FAILURE(rc)
+                || cbRead == 0)
+                break;
+
+            size_t cbWritten = 0;
+
+            rc = RTFileWrite(pFile, pvTmpBuf, cbRead, &cbWritten);
+
+            if (RT_FAILURE(rc))
+            {
+                break;
+            }
+
+            cbAllRead += cbRead;
+        }
+    } while (0);
+
+    pIfIo->pfnClose(pvUser, pvStorage);
+    RTFileClose(pFile);
+
+    if (rc == VERR_EOF)
+        rc = VINF_SUCCESS;
+
+    if (pvTmpBuf)
+        RTMemFree(pvTmpBuf);
+
+    return rc;
+}
+
 int ShaReadBuf(const char *pcszFilename, void **ppvBuf, size_t *pcbSize, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
@@ -1339,68 +1441,6 @@ int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFA
     return rc;
 }
 
-static int zipDecompressBuffer(z_stream streamIn,
-                                      uint32_t *cbDecompressed,
-                                      bool *finished)
-{
-    int rc;
-    int sh = streamIn.avail_out;
-
-    *cbDecompressed = 0;
-
-    do
-    {
-        rc = inflate(&streamIn, Z_NO_FLUSH);
-
-        if (rc < 0)
-        {
-            switch (rc)
-            {
-                case Z_STREAM_ERROR:
-                    rc = VERR_ZIP_CORRUPTED;
-                    break;
-                case Z_DATA_ERROR:
-                    rc = VERR_ZIP_CORRUPTED;
-                    break;
-                case Z_MEM_ERROR:
-                    rc = VERR_ZIP_NO_MEMORY;
-                    break;
-                case Z_BUF_ERROR:
-                    rc = VERR_ZIP_ERROR;
-                    break;
-                case Z_VERSION_ERROR:
-                    rc = VERR_ZIP_UNSUPPORTED_VERSION;
-                    break;
-                case Z_ERRNO: /* We shouldn't see this status! */
-                default:
-                    AssertMsgFailed(("%d\n", rc));
-                    if (rc >= 0)
-                        rc = VINF_SUCCESS;
-                    rc = VERR_ZIP_ERROR;
-            }
-
-            break;
-        }
-
-        *cbDecompressed += (sh - streamIn.avail_out);
-        sh = streamIn.avail_out;
-    }
-    while (streamIn.avail_out > 0 && streamIn.avail_in > 0 );
-
-    if (RT_SUCCESS(rc))
-    {
-        if (streamIn.avail_in == 0)
-            *finished = true;
-        else
-        {
-            if (streamIn.avail_out == 0)
-                *finished = false;
-        }
-    }
-
-    return rc;
-}
-
 int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullFilenameOut, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
@@ -1415,56 +1455,14 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
                             &pvStorage);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_MAIN_USE_VFS
 
-    /* Turn the source file handle/whatever into a VFS stream. */
-    RTVFSIOSTREAM hVfsIosCompressedSrc;
-    rc = VDIfCreateVfsStream(pIfIo, pvStorage, RTFILE_O_READ, &hVfsIosCompressedSrc);
-    if (RT_SUCCESS(rc))
-    {
-        /* Pass the source thru gunzip. */
-        RTVFSIOSTREAM hVfsIosSrc;
-        rc = RTZipGzipDecompressIoStream(hVfsIosCompressedSrc, 0, &hVfsIosSrc);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Create the output file, including necessary paths.
-             * Any existing file will be overwritten.
-             */
-            rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true /*fCreate*/);
-            if (RT_SUCCESS(rc))
-            {
-                RTVFSIOSTREAM hVfsIosDst;
-                rc = RTVfsIoStrmOpenNormal(pcszFullFilenameOut,
-                                           RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_ALL,
-                                           &hVfsIosDst);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Pump the bytes thru. If we fail, delete the output file.
-                     */
-                    rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
-
-                    RTVfsIoStrmRelease(hVfsIosDst);
-                    RTFileDelete(pcszFullFilenameOut);
-                }
-            }
-
-            RTVfsIoStrmRelease(hVfsIosSrc);
-        }
-        RTVfsIoStrmRelease(hVfsIosCompressedSrc);
-    }
-    pIfIo->pfnClose(pvUser, pvStorage);
-
-#else
-
-    Bytef *decompressedBuffer = 0;
-    Bytef *compressedBuffer = 0;
+    uint8_t *compressedBuffer = 0;
+    uint8_t *decompressedBuffer = 0;
     uint64_t cbTmpSize = _1M;
     size_t cbAllRead = 0;
     size_t cbAllWritten = 0;
     RTFILE pFile = NULL;
-    z_stream gzipStream;
+    PRTZIPDECOMP pZipDecomp;
 
     Utf8Str pathOut(pcszFullFilenameOut);
     pathOut = pathOut.stripFilename();
@@ -1497,7 +1495,7 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
             break;
         }
 
-        compressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize);
+        compressedBuffer = (uint8_t *)RTMemAlloc(cbTmpSize);
 
         if (!compressedBuffer)
         {
@@ -1505,8 +1503,7 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
             break;
         }
 
-
-        decompressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize*10);
+        decompressedBuffer = (uint8_t *)RTMemAlloc(cbTmpSize);
 
         if (!decompressedBuffer)
         {
@@ -1514,53 +1511,66 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
             break;
         }
 
-        gzipStream.zalloc = Z_NULL;
-        gzipStream.zfree = Z_NULL;
-        gzipStream.opaque = Z_NULL;
-        gzipStream.next_in = compressedBuffer;
-        gzipStream.avail_in = 0;
-        gzipStream.next_out = decompressedBuffer;
-        gzipStream.avail_out = cbTmpSize*10;
-
-        rc = inflateInit2(&gzipStream, MAX_WBITS + 16 /* autodetect gzip header */);
+        rc = RTZipDecompCreate(&pZipDecomp, NULL, FillBufferWithGzipData);
 
         if (rc < 0)
         {
             break;
         }
 
-        size_t cbRead = 0;
+        size_t cbRead = 0, cbActuallyRead = 0;
         size_t cbDecompressed = 0;
-        bool fFinished = true;
+        bool fData = false;
+        uint8_t *currentInput = compressedBuffer;
 
         for (;;)
         {
-            if (fFinished == true)
+            /*
+             * skip reading a new chunk of compressed data in case if we decompressed not at all data from the buffer
+             * 
+             */
+            if (fData == false)
             {
                 rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, compressedBuffer, cbTmpSize, &cbRead);
-                if (   RT_FAILURE(rc)
-                    || cbRead == 0)
+                if (RT_FAILURE(rc) || cbRead == 0)
                     break;
 
-                gzipStream.avail_in = cbRead;
-                gzipStream.avail_out = cbTmpSize*10;
+                currentInput = compressedBuffer;
             }
 
-            /* decompress the buffer */
-            rc = zipDecompressBuffer(gzipStream,
-                                           (uint32_t *)(&cbDecompressed),
-                                           &fFinished);
+            rc = RTZipGzipFileBufferDecompress(pZipDecomp, 
+                                               currentInput,
+                                               cbRead,
+                                               &cbActuallyRead,
+                                               decompressedBuffer, 
+                                               cbTmpSize, 
+                                               &cbDecompressed);
 
             if (RT_FAILURE(rc))
                 break;
 
+            cbAllRead += cbActuallyRead;
+
+            if (cbRead == cbActuallyRead)
+            {
+                /* it means the input buffer is empty */
+                fData = false;
+            }
+            else
+            {
+                /* some data still leaves in the input buffer */
+                fData = true;
+                cbRead = cbRead - cbActuallyRead;
+                currentInput = &currentInput[cbActuallyRead];
+            }
+
+            /* write decompressed data to the output file */
             rc = RTFileWrite(pFile, decompressedBuffer, cbDecompressed, &cbDecompressed);
 
             if (RT_FAILURE(rc))
                 break;
 
             cbAllWritten += cbDecompressed;
-            cbAllRead += cbRead;
         }
     } while (0);
 
@@ -1569,17 +1579,15 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
     if (rc == VERR_EOF)
         rc = VINF_SUCCESS;
 
-    rc = inflateEnd(&gzipStream);
+    RTZipDecompDestroy(pZipDecomp);
 
-    rc = RTFileClose(pFile);
+    RTFileClose(pFile);
 
-    if (decompressedBuffer)
-        RTMemFree(decompressedBuffer);
     if (compressedBuffer)
         RTMemFree(compressedBuffer);
-#endif /* !VBOX_MAIN_USE_VFS */
+    if (decompressedBuffer)
+        RTMemFree(decompressedBuffer);
 
     return rc;
 }
-
 
