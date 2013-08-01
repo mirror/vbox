@@ -617,6 +617,7 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
     /* let's main first */
     if (!m_DhcpServer.isNull())
     {
+#if 0
         HRESULT hrc;
         com::SafeArray<BSTR> sf;
         hrc = m_DhcpServer->GetMacOptions(com::BstrFmt("%02X%02X%02X%02X%02X%02X",
@@ -631,24 +632,26 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
         {
             /* XXX: per-host configuration */
         }
-
-        SessionManager *sesionManager = SessionManager::getSessionManager();
-        Session& session = sesionManager->getClientSessionByDhcpPacket(pDhcpMsg, cb);
-        /* XXX: switch -> private */
-        session.switchTo(DHCPDISCOVERRECEIEVED);
-
+#endif
+        RawOption opt;
+        memset(&opt, 0, sizeof(RawOption));
+        /* 1. Find client */
         ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
-        int rc = confManager->findConfiguration4Session(session);
-        AssertRCReturn(rc, false);
+        Client *client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
 
-        rc = confManager->allocateConfiguration4Session(session);
-        AssertRCReturn(rc, false);
+        /* 2. Find/Bind lease for client */
+        Lease *lease = confManager->allocateLease4Client(client, pDhcpMsg, cb);
+        AssertPtrReturn(lease, VINF_SUCCESS);
 
-        NetworkManager *netManager = NetworkManager::getNetworkManager();
-        rc = netManager->offer4Session(session);
-        AssertRCReturn(rc, false);
-
-
+        int rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
+        
+        /* 3. Send of offer */
+        NetworkManager *networkManager = NetworkManager::getNetworkManager();
+        
+        lease->fBinding = true;
+        lease->u64TimestampBindingStarted = RTTimeMilliTS();
+        lease->u32BindExpirationPeriod = 300; /* 3 min. */
+        networkManager->offer4Client(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
     } /* end of if(!m_DhcpServer.isNull()) */
 
     return VINF_SUCCESS;
@@ -665,25 +668,39 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
  */
 bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
 {
-    SessionManager *sesionManager = SessionManager::getSessionManager();
-    Session& session = sesionManager->getClientSessionByDhcpPacket(pDhcpMsg, cb);
-    /* XXX: switch -> private */
-    session.switchTo(DHCPREQUESTRECEIVED);
-
     ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
-    int rc = confManager->findConfiguration4Session(session);
-    AssertRCReturn(rc, false);
+    NetworkManager *networkManager = NetworkManager::getNetworkManager();
 
-    rc = confManager->commitConfiguration4ClientSession(session);
+    /* 1. find client */
+    Client *client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
 
-    NetworkManager *netManager = NetworkManager::getNetworkManager();
-    if (RT_SUCCESS(rc))
-        rc = netManager->ack(session);
+    /* 2. find bound lease */
+    if (client->m_lease)
+    {
+
+        if (client->m_lease->isExpired())
+        {
+            /* send client to INIT state */
+            networkManager->nak(client, pDhcpMsg->bp_xid);
+            confManager->expireLease4Client(client);
+            return true;
+        }
+        /* XXX: Validate request */
+        RawOption opt;
+        memset((void *)&opt, 0, sizeof(RawOption));
+
+        int rc = confManager->commitLease4Client(client);
+        AssertRCReturn(rc, false);
+
+        rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
+        AssertRCReturn(rc, false);
+
+        networkManager->ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
+    }
     else
-        rc = netManager->nak(session);
-
-    AssertRCReturn(rc, false);
-
+    {
+        networkManager->nak(client, pDhcpMsg->bp_xid);
+    }
     return true;
 }
 

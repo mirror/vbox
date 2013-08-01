@@ -35,33 +35,21 @@
 
 
 const NullConfigEntity *g_NullConfig = new NullConfigEntity();
-const RootConfigEntity *g_RootConfig = new RootConfigEntity(std::string("ROOT"));
+RootConfigEntity *g_RootConfig = new RootConfigEntity(std::string("ROOT"), 1200 /* 20 min. */);
 const ClientMatchCriteria *g_AnyClient = new AnyClientMatchCriteria();
 
-static SessionManager *g_SessionManager = SessionManager::getSessionManager();
 static ConfigurationManager *g_ConfigurationManager = ConfigurationManager::getConfigurationManager();
 
 static NetworkManager *g_NetworkManager = NetworkManager::getNetworkManager();
 
+
+
 /* Client */
 
-Client::Client(const RTMAC& mac, uint32_t xid)
+Client::Client(const RTMAC& mac)
 {
     m_mac = mac;
-    //    m_sessions.insert(Map2ClientSessionType(xid, Session(this, xid)));
-}
-
-/* Session */
-
-bool Session::operator < (const Session& s) const
-{
-    return (m_u32Xid < s.m_u32Xid);
-}
-
-int Session::switchTo(CLIENTSESSIONSTATE enmState)
-{
-    m_state = enmState;
-    return VINF_SUCCESS;
+    m_lease = NULL;
 }
 
 /* Configs
@@ -73,143 +61,11 @@ int Session::switchTo(CLIENTSESSIONSTATE enmState)
 */
 static const RTNETADDRIPV4 g_AnyIpv4 = {0};
 static const RTNETADDRIPV4 g_AllIpv4 = {0xffffffff};
-RootConfigEntity::RootConfigEntity(std::string name):
+RootConfigEntity::RootConfigEntity(std::string name, uint32_t expPeriod):
   NetworkConfigEntity(name, g_NullConfig, g_AnyClient, g_AnyIpv4, g_AllIpv4)
 {
     m_MatchLevel = 2;
-}
-
-/* Session Manager */
-SessionManager *SessionManager::getSessionManager()
-{
-    if (!g_SessionManager)
-        g_SessionManager = new SessionManager();
-    return g_SessionManager;
-}
-
-/*
- *  XXX: it sounds like a hack, we use packet descriptor to get the session,
- * instead use corresponding functions in NetworkManager to fetch client identification
- * (note: it isn't only mac driven) and XID for the session.
- */
-
-/**
- * XXX: what about leases ... Lease is a committed Session....
- */
-Session& SessionManager::getClientSessionByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg)
-{
-
-    VecClientIterator it;
-    bool fDhcpValid = false;
-    uint8_t uMsgType = 0;
-
-    fDhcpValid = RTNetIPv4IsDHCPValid(NULL, pDhcpMsg, cbDhcpMsg, &uMsgType);
-    Assert(fDhcpValid);
-
-    /* 1st. client IDs */
-    for ( it = m_clients.begin();
-         it != m_clients.end();
-         ++it)
-    {
-        /* OK. */
-        if ((*it) == pDhcpMsg->bp_chaddr.Mac)
-            break;
-    }
-
-    const uint32_t xid = pDhcpMsg->bp_xid;
-    if (it == m_clients.end())
-    {
-        /* We hasn't got any session for this client */
-        m_clients.push_back(Client(pDhcpMsg->bp_chaddr.Mac,
-                                   pDhcpMsg->bp_xid));
-        Client& client = m_clients.back();
-        client.m_sessions.insert(Map2ClientSessionType(xid, Session(&client, xid)));
-        Assert(client.m_sessions[xid].m_pClient);
-        return client.m_sessions[xid];
-    }
-
-    Session& session = it->m_sessions[xid];
-    session.m_pClient = &(*it);
-    session.m_u32Xid = xid;
-
-    RawOption opt;
-    int rc;
-
-    switch(uMsgType)
-    {
-        case RTNET_DHCP_MT_DISCOVER:
-            session.switchTo(DHCPDISCOVERRECEIEVED);
-            /* MAY */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cbDhcpMsg, opt);
-            if (RT_SUCCESS(rc))
-            {
-                /* hint for address allocation here */
-                session.addressHint = *(PRTNETADDRIPV4)opt.au8RawOpt;
-            }
-            /* MAY: todo */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_LEASE_TIME, pDhcpMsg, cbDhcpMsg, opt);
-
-            /* MAY: not now  */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_CLIENT_ID, pDhcpMsg, cbDhcpMsg, opt);
-            /* XXX: MAY
-            ConfigurationManager::findOption(RTNET_DHCP_OPT_VENDOR_CLASS_IDENTIFIER, pDhcpMsg, opt);
-            */
-            /* MAY: well */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_PARAM_REQ_LIST, pDhcpMsg, cbDhcpMsg, opt);
-            if (RT_SUCCESS(rc))
-                memcpy(&session.reqParamList, &opt, sizeof(RawOption));
-
-            /* MAY: todo */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_MAX_DHCP_MSG_SIZE, pDhcpMsg, cbDhcpMsg, opt);
-
-            break;
-
-        case RTNET_DHCP_MT_REQUEST:
-            session.switchTo(DHCPREQUESTRECEIVED);
-            /* MUST in (SELECTING. INIT-REBOOT) MUST NOT BOUND. RENEW MAY  */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cbDhcpMsg, opt);
-            if (RT_SUCCESS(rc))
-            {
-                /* hint for address allocation here */
-                session.addressHint = *(PRTNETADDRIPV4)opt.au8RawOpt;
-            }
-
-            /* MAY */
-            ConfigurationManager::findOption(RTNET_DHCP_OPT_LEASE_TIME, pDhcpMsg, cbDhcpMsg, opt);
-            /* MAY */
-            ConfigurationManager::findOption(RTNET_DHCP_OPT_CLIENT_ID, pDhcpMsg, cbDhcpMsg, opt);
-            /* XXX: MAY
-            ConfigurationManager::findOption(RTNET_DHCP_OPT_VENDOR_CLASS_IDENTIFIER, pDhcpMsg, opt);
-            */
-            /* MAY */
-            rc = ConfigurationManager::findOption(RTNET_DHCP_OPT_PARAM_REQ_LIST, pDhcpMsg, cbDhcpMsg, opt);
-            if (RT_SUCCESS(rc))
-                memcpy(&session.reqParamList, &opt, sizeof(RawOption));
-
-            /* MAY */
-            ConfigurationManager::findOption(RTNET_DHCP_OPT_MAX_DHCP_MSG_SIZE, pDhcpMsg, cbDhcpMsg, opt);
-
-            break;
-
-        case RTNET_DHCP_MT_DECLINE:
-        case RTNET_DHCP_MT_OFFER:
-        case RTNET_DHCP_MT_ACK:
-        case RTNET_DHCP_MT_NAC:
-        case RTNET_DHCP_MT_RELEASE:
-        case RTNET_DHCP_MT_INFORM:
-            AssertMsgFailed(("unimplemented"));
-    }
-
-    Assert(session.m_pClient);
-    return session;
-}
-
-void SessionManager::releaseClientSession(Session& session)
-{
-}
-
-void SessionManager::releaseClient(Client& client)
-{
+    m_u32ExpirationPeriod = expPeriod;
 }
 
 
@@ -222,6 +78,46 @@ ConfigurationManager *ConfigurationManager::getConfigurationManager()
     return g_ConfigurationManager;
 }
 
+
+int ConfigurationManager::extractRequestList(PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& rawOpt)
+{
+    return ConfigurationManager::findOption(RTNET_DHCP_OPT_PARAM_REQ_LIST, pDhcpMsg, cbDhcpMsg, rawOpt);
+}
+
+
+Client *ConfigurationManager::getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg)
+{
+
+    VecClientIterator it;
+    bool fDhcpValid = false;
+    uint8_t uMsgType = 0;
+    
+    fDhcpValid = RTNetIPv4IsDHCPValid(NULL, pDhcpMsg, cbDhcpMsg, &uMsgType);
+    AssertReturn(fDhcpValid, NULL);
+
+    LogFlowFunc(("dhcp:mac:%RTmac\n", &pDhcpMsg->bp_chaddr.Mac));
+    /* 1st. client IDs */
+    for ( it = m_clients.begin();
+         it != m_clients.end();
+         ++it)
+    {
+        if (*(*it) == pDhcpMsg->bp_chaddr.Mac)
+        {
+            LogFlowFunc(("client:mac:%RTmac\n",  &(*it)->m_mac));
+            /* check timestamp that request wasn't expired. */
+            return (*it);
+        }
+    }
+
+    if (it == m_clients.end())
+    {
+        /* We hasn't got any session for this client */
+        m_clients.push_back(new Client(pDhcpMsg->bp_chaddr.Mac));
+        return m_clients.back();
+    }
+
+    return NULL;
+}
 
 /**
  * Finds an option.
@@ -271,7 +167,7 @@ ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t 
             break;
         else
         {
-            size_t  cbCur = pb[1];
+            size_t cbCur = pb[1];
             if (cbCur > cbLeft - 2)
                 cbCur = cbLeft - 2;
             if (uCur == uOption)
@@ -293,136 +189,124 @@ ConfigurationManager::findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t 
 
 
 /**
- * We've find the config for session ...
- * XXX: using Session's private members
+ * We bind lease for client till it continue with it on DHCPREQUEST.
  */
-int ConfigurationManager::findConfiguration4Session(Session& session)
-{
-    /* XXX: state switching broken?
-     * XXX: DHCPDECLINE and DHCPINFO should we support them.
-     */
-    AssertReturn(   session.m_state == DHCPDISCOVERRECEIEVED
-                 || session.m_state == DHCPREQUESTRECEIVED, VERR_INTERNAL_ERROR);
-
-    if (session.m_pCfg)
-        return VINF_SUCCESS;
-
-    Assert(session.m_pClient);
-    if (g_RootConfig->match(*session.m_pClient, &session.m_pCfg) > 0)
-        return VINF_SUCCESS;
-    else
-        return VERR_INTERNAL_ERROR; /* XXX: is it really *internal* error? Perhaps some misconfiguration */
-
-}
-
-/**
- * What we are archieveing here is non commited lease ()
- */
-int ConfigurationManager::allocateConfiguration4Session(Session& session)
+Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg)
 {
     /**
      * Well, session hasn't get the config.
      */
-    AssertPtrReturn(session.m_pCfg, VERR_INTERNAL_ERROR);
-
-    bool fWithAddressHint = (session.addressHint.u != 0);
-
-    if (fWithAddressHint)
-    {
-        if (m_allocations[session].u == session.addressHint.u)
-        {
-            /* Good, our hint matches allocation  */
-            return VINF_SUCCESS;
-        }
-        /**
-         * This definetly depends on client state ...
-         * AssertMsgFailed(("Debug Me"));
-         * Workaround #1
-         * clear and ignore.
-         */
-        fWithAddressHint = false;
-        session.addressHint.u = 0;
-    }
-
-    /*
-     * We've received DHCPDISCOVER
-     */
-    AssertReturn(session.m_state == DHCPDISCOVERRECEIEVED, VERR_INTERNAL_ERROR);
-
+    AssertPtrReturn(client, NULL);
+    
     /**
-     * XXX: this is wrong allocation check...
-     * session initilized by client shouldn't be equal to lease in STL terms.
+     * This mean that client has already bound or commited lease.
+     * If we've it happens it means that we received DHCPDISCOVER twice. 
      */
-    MapSession2Ip4AddressIterator it = m_allocations.find(session);
-
-    if (it == m_allocations.end())
+    if (client->m_lease)
     {
-        /* XXX: not optimal allocation */
-        const NetworkConfigEntity *pNetCfg = dynamic_cast<const NetworkConfigEntity *>(session.m_pCfg);
-
-        /**
-         * Check config class.
-         */
-        AssertPtrReturn(pNetCfg, VERR_INTERNAL_ERROR);
-
-        uint32_t u32Address = RT_N2H_U32(pNetCfg->lowerIp().u);
-        while (u32Address < RT_N2H_U32(pNetCfg->upperIp().u))
+        if (client->m_lease->isExpired())
+            expireLease4Client(client);
+        else
         {
-
-            /* u32Address in host format */
-            MapSession2Ip4AddressIterator addressIterator;
-            bool fFound = false;
-
-            for (addressIterator = m_allocations.begin();
-                 addressIterator != m_allocations.end();
-                 ++addressIterator)
-            {
-                if (RT_N2H_U32(addressIterator->second.u) == u32Address)
-                {
-                    /*
-                     * This address is taken
-                     * XXX: check if session isn't expired... if expired we can
-                     * reuse it for this request
-                     */
-                    /* XXX: fTakeAddress = true; owning session is expired */
-                    fFound = true;
-                    break;
-                }
-            } /* end of for over allocations */
-
-            if (!fFound)
-            {
-                RTNETADDRIPV4 address = { RT_H2N_U32_C(u32Address)};
-                m_allocations.insert(MapSession2Ip4AddressPair(session, address));
-                session.switchTo(DHCPOFFERPREPARED);
-                return VINF_SUCCESS;
-            }
-
-            u32Address ++;
-        } /* end of while over candidates */
-
+            AssertReturn(client->m_lease->m_address.u != 0,NULL);
+            return client->m_lease;
+        }
     }
 
-    /* XXX: really??? */
-    session.switchTo(DHCPOFFERPREPARED);
+    RTNETADDRIPV4 hintAddress;
+    RawOption opt;
+    Lease *please = NULL;
+
+    NetworkConfigEntity *pNetCfg;
+
+    AssertReturn(g_RootConfig->match(*client, (BaseConfigEntity **)&pNetCfg) > 0, NULL);
+
+    /* DHCPDISCOVER MAY contain request address */
+    hintAddress.u = 0;
+    int rc = findOption(RTNET_DHCP_OPT_REQ_ADDR, pDhcpMsg, cbDhcpMsg, opt);
+    if (RT_SUCCESS(rc))
+    {
+        hintAddress.u = *(uint32_t *)opt.au8RawOpt;
+        if (   !RT_H2N_U32(hintAddress.u) < RT_H2N_U32(pNetCfg->lowerIp().u)
+            || !RT_H2N_U32(hintAddress.u) > RT_H2N_U32(pNetCfg->upperIp().u))
+            hintAddress.u = 0; /* clear hint */
+    }
+
+    if (   hintAddress.u 
+        && !isAddressTaken(hintAddress, NULL))
+    {
+        please = new Lease();
+        please->pCfg = pNetCfg;
+        please->m_client = client;
+        client->m_lease = please;
+        client->m_lease->m_address = hintAddress;
+        m_allocations[please] = hintAddress;
+        return please;
+    }
+
+    uint32_t u32 = 0;
+    for(u32 = RT_H2N_U32(pNetCfg->lowerIp().u);
+        u32 <= RT_H2N_U32(pNetCfg->upperIp().u);
+        ++u32)
+    {
+        RTNETADDRIPV4 address;
+        address.u = RT_H2N_U32(u32);
+        if (!isAddressTaken(address, NULL))
+        {
+            please = new Lease();
+            please->pCfg = pNetCfg;
+            please->m_client = client;
+            client->m_lease = please;
+            client->m_lease->m_address = address;
+            m_allocations[please] = client->m_lease->m_address;
+            return please;
+        }
+    }
+   
+    return NULL;
+}
+
+
+int ConfigurationManager::commitLease4Client(Client *client)
+{
+    client->m_lease->u64TimestampBindingStarted = 0;
+    client->m_lease->u32LeaseExpirationPeriod = client->m_lease->pCfg->expirationPeriod();
+    client->m_lease->u64TimestampLeasingStarted = RTTimeMilliTS();
+    client->m_lease->fBinding = false;
     return VINF_SUCCESS;
 }
 
-
-int ConfigurationManager::commitConfiguration4ClientSession(Session& session)
+int ConfigurationManager::expireLease4Client(Client *client)
 {
-    /**/
-    session.switchTo(DHCPACKNAKPREPARED);
+    MapLease2Ip4AddressIterator it = m_allocations.find(client->m_lease);
+    AssertReturn(it != m_allocations.end(), VERR_NOT_FOUND);
 
-    /* XXX: clean up the rest of the session, now this session LEASE!!! */
+    m_allocations.erase(it);
+
+    delete client->m_lease;
+    client->m_lease = NULL;
+    
     return VINF_SUCCESS;
 }
 
-RTNETADDRIPV4 ConfigurationManager::getSessionAddress(const Session& session)
+bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppLease)
 {
-    return m_allocations[session];
+    MapLease2Ip4AddressIterator it;
+    
+    for (it = m_allocations.begin();
+         it != m_allocations.end();
+         ++it)
+    {
+        if (it->second.u == addr.u)
+        {
+            if (ppLease)
+                *ppLease = it->first;
+            
+            return true;
+        }
+    }
+    return false;
 }
-
 
 NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *pCfg,
                                     const RTNETADDRIPV4& networkId,
@@ -483,13 +367,16 @@ NetworkManager *NetworkManager::getNetworkManager()
 /**
  * Network manager creates DHCPOFFER datagramm
  */
-int NetworkManager::offer4Session(Session& session)
+int NetworkManager::offer4Client(Client *client, uint32_t u32Xid, 
+                                 uint8_t *pu8ReqList, int cReqList)
 {
-    AssertReturn(session.m_state == DHCPOFFERPREPARED, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
 
-    prepareReplyPacket4Session(session);
+    prepareReplyPacket4Client(client, u32Xid);
 
-    RTNETADDRIPV4 address = ConfigurationManager::getConfigurationManager()->getSessionAddress(session);
+    
+    RTNETADDRIPV4 address = client->m_lease->m_address;
     BootPReplyMsg.BootPHeader.bp_yiaddr =  address;
 
     /* Ubuntu ???*/
@@ -504,7 +391,6 @@ int NetworkManager::offer4Session(Session& session)
     RT_ZERO(opt);
 
     /* XXX: can't store options per session */
-    Client *client = unconst(session.m_pClient);
     AssertPtr(client);
 
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
@@ -513,27 +399,30 @@ int NetworkManager::offer4Session(Session& session)
     client->rawOptions.push_back(opt);
 
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
-    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(ConfigurationManager::getConfigurationManager()->getLeaseTime());
+    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->pCfg->expirationPeriod());
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
-    processParameterReqList(session);
+    processParameterReqList(client, pu8ReqList, cReqList);
 
-    return doReply(session);
+    return doReply(client);
 }
 
 
 /**
  * Network manager creates DHCPACK
  */
-int NetworkManager::ack(Session& session)
+int NetworkManager::ack(Client *client, uint32_t u32Xid,
+                        uint8_t *pu8ReqList, int cReqList)
 {
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
+
     RTNETADDRIPV4 address;
 
-    AssertReturn(session.m_state == DHCPACKNAKPREPARED, VERR_INTERNAL_ERROR);
-    prepareReplyPacket4Session(session);
+    prepareReplyPacket4Client(client, u32Xid);
 
-    address = ConfigurationManager::getConfigurationManager()->getSessionAddress(session);
+    address = client->m_lease->m_address;
     BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
 
 
@@ -541,8 +430,8 @@ int NetworkManager::ack(Session& session)
      * DHCPREQUEST or 0 ...
      * XXX: Using addressHint is not correct way to initialize [cy]iaddress...
      */
-    BootPReplyMsg.BootPHeader.bp_ciaddr = session.addressHint;
-    BootPReplyMsg.BootPHeader.bp_yiaddr = session.addressHint;
+    BootPReplyMsg.BootPHeader.bp_ciaddr = client->m_lease->m_address;
+    BootPReplyMsg.BootPHeader.bp_yiaddr = client->m_lease->m_address;
 
     Assert(BootPReplyMsg.BootPHeader.bp_yiaddr.u);
 
@@ -554,10 +443,6 @@ int NetworkManager::ack(Session& session)
     RawOption opt;
     RT_ZERO(opt);
 
-    /* XXX: can't store options per session */
-    Client *client = unconst(session.m_pClient);
-    AssertPtr(client);
-
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_ACK;
     opt.cbRawOpt = 1;
@@ -568,26 +453,25 @@ int NetworkManager::ack(Session& session)
      * else on dhcpinform it mustn't.
      */
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
-    *(uint32_t *)opt.au8RawOpt = 
-      RT_H2N_U32(ConfigurationManager::getConfigurationManager()->getLeaseTime());
+    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->u32LeaseExpirationPeriod);
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
-    processParameterReqList(session);
+    processParameterReqList(client, pu8ReqList, cReqList);
 
-    return doReply(session);
-
+    return doReply(client);
 }
 
 
 /**
  * Network manager creates DHCPNAK
  */
-int NetworkManager::nak(Session& session)
+int NetworkManager::nak(Client* client, uint32_t u32Xid)
 {
-    AssertReturn(session.m_state == DHCPACKNAKPREPARED, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
 
-    prepareReplyPacket4Session(session);
+    prepareReplyPacket4Client(client, u32Xid);
 
     /* this field filed in prepareReplyPacket4Session, and
      * RFC 2131 require to have it zero fo NAK.
@@ -601,43 +485,39 @@ int NetworkManager::nak(Session& session)
     RawOption opt;
     RT_ZERO(opt);
 
-    /* XXX: can't store options per session */
-    Client *client = unconst(session.m_pClient);
-    AssertPtr(client);
-
     opt.u8OptId = RTNET_DHCP_OPT_MSG_TYPE;
     opt.au8RawOpt[0] = RTNET_DHCP_MT_NAC;
     opt.cbRawOpt = 1;
     client->rawOptions.push_back(opt);
 
-    return doReply(session);
+    return doReply(client);
 }
 
 
 /**
  *
  */
-int NetworkManager::prepareReplyPacket4Session(const Session& session)
+int NetworkManager::prepareReplyPacket4Client(Client *client, uint32_t u32Xid)
 {
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
+
     memset(&BootPReplyMsg, 0, sizeof(BootPReplyMsg));
 
     BootPReplyMsg.BootPHeader.bp_op     = RTNETBOOTP_OP_REPLY;
     BootPReplyMsg.BootPHeader.bp_htype  = RTNET_ARP_ETHER;
     BootPReplyMsg.BootPHeader.bp_hlen   = sizeof(RTMAC);
     BootPReplyMsg.BootPHeader.bp_hops   = 0;
-    BootPReplyMsg.BootPHeader.bp_xid    = session.m_u32Xid;
+    BootPReplyMsg.BootPHeader.bp_xid    = u32Xid;
     BootPReplyMsg.BootPHeader.bp_secs   = 0;
     /* XXX: bp_flags should be processed specially */
     BootPReplyMsg.BootPHeader.bp_flags  = 0;
     BootPReplyMsg.BootPHeader.bp_ciaddr.u = 0;
     BootPReplyMsg.BootPHeader.bp_giaddr.u = 0;
 
-    Assert(session.m_pClient);
-    BootPReplyMsg.BootPHeader.bp_chaddr.Mac = session.m_pClient->m_mac;
+    BootPReplyMsg.BootPHeader.bp_chaddr.Mac = client->m_mac;
 
-    BootPReplyMsg.BootPHeader.bp_yiaddr =
-      ConfigurationManager::getConfigurationManager()->getSessionAddress(session);
-
+    BootPReplyMsg.BootPHeader.bp_yiaddr = client->m_lease->m_address;
     BootPReplyMsg.BootPHeader.bp_siaddr.u = 0;
 
 
@@ -651,52 +531,41 @@ int NetworkManager::prepareReplyPacket4Session(const Session& session)
 }
 
 
-int NetworkManager::doReply(const Session& session)
+int NetworkManager::doReply(Client *client)
 {
     int rc;
+
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
+    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
 
     /*
       Options....
      */
     VBoxNetDhcpWriteCursor Cursor(&BootPReplyMsg.BootPHeader, RTNET_DHCP_NORMAL_SIZE);
 
-    /* XXX: unconst */
-    Client *cl = unconst(session.m_pClient);
-    AssertPtrReturn(cl, VERR_INTERNAL_ERROR);
-
     /* The basics */
 
     Cursor.optIPv4Addr(RTNET_DHCP_OPT_SERVER_ID, m_OurAddress);
 
-    while(!cl->rawOptions.empty())
+    while(!client->rawOptions.empty())
     {
-        RawOption opt = cl->rawOptions.back();
+        RawOption opt = client->rawOptions.back();
         if (!Cursor.begin(opt.u8OptId, opt.cbRawOpt))
             break;
         Cursor.put(opt.au8RawOpt, opt.cbRawOpt);
 
-        cl->rawOptions.pop_back();
+        client->rawOptions.pop_back();
     }
 
 
-    if (!cl->rawOptions.empty())
+    if (!client->rawOptions.empty())
     {
         Log(("Wasn't able to put all options\n"));
         /* force clean up */
-        cl->rawOptions.clear();
+        client->rawOptions.clear();
     }
 
     Cursor.optEnd();
-
-    switch (session.m_state)
-    {
-        case DHCPOFFERPREPARED:
-            break;
-        case DHCPACKNAKPREPARED:
-            break;
-        default:
-            AssertMsgFailedReturn(("Unsupported state(%d)\n", session.m_state), VERR_INTERNAL_ERROR);
-    }
 
     /*
      */
@@ -731,22 +600,19 @@ int NetworkManager::doReply(const Session& session)
 }
 
 
-int NetworkManager::processParameterReqList(Session& session)
+int NetworkManager::processParameterReqList(Client* client, uint8_t *pu8ReqList, int cReqList)
 {
     /* request parameter list */
     RawOption opt;
     int idxParam = 0;
 
-    uint8_t *pReqList = session.reqParamList.au8RawOpt;
+    AssertPtrReturn(client, VERR_INTERNAL_ERROR);
 
-    const NetworkConfigEntity *pNetCfg = dynamic_cast<const NetworkConfigEntity *>(session.m_pCfg);
+    uint8_t *pReqList = pu8ReqList;
 
-    /* XXX: can't store options per session */
-    Client *client = unconst(session.m_pClient);
-    AssertPtr(client);
+    const NetworkConfigEntity *pNetCfg = client->m_lease->pCfg;
 
-
-    for (idxParam = 0; idxParam < session.reqParamList.cbRawOpt; ++idxParam)
+    for (idxParam = 0; idxParam < cReqList; ++idxParam)
     {
 
         RT_ZERO(opt);
@@ -761,7 +627,9 @@ int NetworkManager::processParameterReqList(Session& session)
 
             case RTNET_DHCP_OPT_ROUTERS:
                 {
-                    const Ipv4AddressContainer lst = g_ConfigurationManager->getAddressList(RTNET_DHCP_OPT_ROUTERS);
+                    const Ipv4AddressContainer lst = 
+                      g_ConfigurationManager->getAddressList(
+                        RTNET_DHCP_OPT_ROUTERS);
                     PRTNETADDRIPV4 pAddresses = (PRTNETADDRIPV4)&opt.au8RawOpt[0];
 
                     for (Ipv4AddressConstIterator it = lst.begin();

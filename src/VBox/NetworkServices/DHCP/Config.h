@@ -6,6 +6,7 @@
 #ifndef _CONFIG_H_
 # define _CONFIG_H_
 
+#include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>
 
 typedef std::vector<RTMAC> MacAddressContainer;
@@ -26,56 +27,6 @@ static bool operator > (const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
 }
 
 
-typedef enum CLIENTSESSIONSTATE
-{
-  /**
-   * defult state, session isn't operable, not initialized an so on.
-   */
-  DHCPNONSENSE,
-  /** We've received dhcp discover =>
-   * we're starting new client and/or session.
-   * Using XID (we record session)
-   * and response with DHCPOFFER
-   */
-  DHCPDISCOVERRECEIEVED,
-  /**
-   * We're ready to send DHCPOFFER
-   */
-  DHCPOFFERPREPARED,
-  /**
-   * This more, session state, we responsed, to
-   * client with DHCPOFFER using session's XID
-   */
-  DHCPOFFERSENT,
-  /**
-   * this is session's state, client's done DHCPREQUEST with (XID)
-   */
-  DHCPREQUESTRECEIVED,
-  /**
-   * We're ready to send DHCPACK or DHCPNAK
-   */
-  DHCPACKNAKPREPARED,
-  /**
-   * We've been able to furfill client's request for (XID) session, erased others Client
-   * 's sessions ... and send DHCPACK (should be Lease bind at this point?)
-   */
-  DHCPACKSENT,
-  /**
-   * We couldn't furfill client's request -> destroy session.
-   */
-  DHCPNACKSENT,
-  /**
-   * real client, don't want our DHCPOFFER, we're delating our client representation,
-   * and sessions objects.
-   */
-  DHCPDECLINERECEIVED,
-  /**
-   * nice to have, but not mandatory.
-   */
-  DHCPINFORMRECEIVED
-} CLIENTSESSIONSTATE;
-
-
 class RawOption
 {
 public:
@@ -86,86 +37,17 @@ public:
 
 
 class Client;
+class Lease;
 class BaseConfigEntity;
 
-/**
- * This class joins client and the lease ...
- * at the begining client might request several address assignments...
- *
- * So session here is descriptor joining client to each of it's requests.
- * When client finalizes its selection ... only single assignment is chosen,
- * others are released.
- */
-class Session
-{
-public:
-    Session(const Client *client = NULL,
-            uint32_t xid = 0,
-            CLIENTSESSIONSTATE enmState = DHCPNONSENSE):
-      m_pClient(client),
-      m_state(enmState),
-      m_u32Xid(xid),
-      m_pCfg(NULL)
-    {
-        /* XXX: state ? Which is acceptable on initialization ?! */
-        addressHint.u = 0;
-        RT_ZERO(reqParamList);
-    }
 
-    bool operator < (const Session& s) const;
+class NetworkConfigEntity;
+class HostConfigEntity;
+class ClientMatchCriteria;
 
-    int switchTo(CLIENTSESSIONSTATE);
-    /* XXX private: */
-
-    /**/
-    const Client* m_pClient;
-    /* We don't store the state in the client, because client might initiate several
-     * sessions.
-     */
-    CLIENTSESSIONSTATE m_state;
-    /**
-     * uniq identificator of session
-     */
-    uint32_t m_u32Xid;
-
-    /* dhcp-opts: request address */
-    RTNETADDRIPV4 addressHint;
-
-    /* dhcp-opts: request parameter list */
-    RawOption reqParamList;
-    /* Config for this session */
-    const BaseConfigEntity *m_pCfg;
-
-    /**
-     * times used for evaluating wherther Session/Lease could be expired.
-     */
-
-    RTTIMESPEC creation;
-    RTTIMESPEC expiration;
-};
-
-typedef std::map<uint32_t, Session>   Map2ClientSession;
-typedef Map2ClientSession::value_type Map2ClientSessionType;
-typedef Map2ClientSession::iterator   Map2ClientSessionIterator;
-
-class Lease
-{
-public:
-    Lease(const Session& session):m_pClient(session.m_pClient){}
-    virtual ~Lease(){}
-private:
-    const Client *m_pClient;
-
-    bool operator == (const Session& session) const
-    {
-        /* XXX: pointer comparison, perhaps not we really need */
-        return (session.m_pClient == m_pClient);
-    }
-};
-
-typedef std::map<Lease, RTNETADDRIPV4> MapLease2Ip4Address;
-typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
+typedef std::map<Lease *, RTNETADDRIPV4> MapLease2Ip4Address;
 typedef MapLease2Ip4Address::iterator MapLease2Ip4AddressIterator;
+typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
 
 /*
  * it's a basic representation of
@@ -181,7 +63,7 @@ class Client
     public:
 
     /* XXX: Option 60 and 61 */
-    Client(const RTMAC& mac, uint32_t xid = 0);
+    Client(const RTMAC& mac);
 
     bool operator== (const RTMAC& mac) const
     {
@@ -195,191 +77,17 @@ class Client
     /* XXX! private: */
 
     RTMAC m_mac;
-    Map2ClientSession m_sessions;
-    /* XXX: it's logically per session object, but some client broke XIDness */
-    /* XXX: we're using it as stack */
+    Lease *m_lease;
+
+    /* XXX: should be in lease */
     std::vector<RawOption> rawOptions;
 };
 
 
-typedef std::vector<Client> VecClient;
+typedef std::vector<Client*> VecClient;
 typedef VecClient::iterator VecClientIterator;
 typedef VecClient::const_iterator VecClientConstIterator;
 
-
-class SessionManager
-{
-    public:
-
-    static SessionManager* getSessionManager();
-
-    /**
-     * This method we call on every DHCP packet we've received.
-     * 1. it finds/creates Client/and Session Object.
-     */
-    Session& getClientSessionByDhcpPacket(const RTNETBOOTP* pDhcpMsg, size_t cbPacket);
-
-    /* XXX: DHCPDECLINE */
-    void releaseClientSession(Session& session);
-    /* XXX: DHCPRELEASE */
-    void releaseClient(Client& client);
-
-    private:
-
-    VecClient m_clients;
-
-    SessionManager(){}
-    virtual ~SessionManager(){}
-};
-
-
-typedef std::map<Session, RTNETADDRIPV4> MapSession2Ip4Address;
-typedef MapSession2Ip4Address::iterator MapSession2Ip4AddressIterator;
-typedef MapSession2Ip4Address::value_type MapSession2Ip4AddressPair;
-
-class NetworkConfigEntity;
-class HostConfigEntity;
-class ClientMatchCriteria;
-
-class ConfigurationManager
-{
-    public:
-    static ConfigurationManager* getConfigurationManager();
-
-    /**
-     * We call this on DHCPDISCOVER
-     */
-    int findConfiguration4Session(Session& session);
-
-    /**
-     * XXX: it's could be done on DHCPOFFER or on DHCPACK (rfc2131 gives freedom here
-     * 3.1.2, what is strict that allocation should do address check before real
-     * allocation)...
-     */
-    int allocateConfiguration4Session(Session& session);
-
-    /*
-     * We call this before DHCPACK sent and after DHCPREQUEST received ...
-     * when requested configuration is acceptable.
-     */
-    int commitConfiguration4ClientSession(Session& sesion);
-
-    static int findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& opt);
-
-    NetworkConfigEntity *addNetwork(NetworkConfigEntity *pCfg,
-                                    const RTNETADDRIPV4& networkId,
-                                    const RTNETADDRIPV4& netmask,
-                                    RTNETADDRIPV4& UpperAddress,
-                                    RTNETADDRIPV4& LowerAddress);
-
-    HostConfigEntity *addHost(NetworkConfigEntity*, const RTNETADDRIPV4&, ClientMatchCriteria*);
-
-    RTNETADDRIPV4  getSessionAddress(const Session& session);
-
-    /* XXX: from config */
-    uint32_t getLeaseTime() {return 600;}
-
-    int addToAddressList(uint8_t u8OptId, RTNETADDRIPV4& address)
-    {
-        switch(u8OptId)
-        {
-            case RTNET_DHCP_OPT_DNS:
-                m_nameservers.push_back(address);
-                break;
-            case RTNET_DHCP_OPT_ROUTERS:
-                m_routers.push_back(address);
-                break;
-            default:
-                Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
-        }
-        return VINF_SUCCESS;
-    }
-
-    int flushAddressList(uint8_t u8OptId)
-    {
-       switch(u8OptId)
-       {
-           case RTNET_DHCP_OPT_DNS:
-                m_nameservers.clear();
-                break;
-           case RTNET_DHCP_OPT_ROUTERS:
-               m_routers.clear();
-               break;
-           default:
-               Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
-       }
-       return VINF_SUCCESS;
-    }
-
-    const Ipv4AddressContainer& getAddressList(uint8_t u8OptId)
-    {
-       switch(u8OptId)
-       {
-           case RTNET_DHCP_OPT_DNS:
-               return m_nameservers;
-
-           case RTNET_DHCP_OPT_ROUTERS:
-               return m_routers;
-
-       }
-       /* XXX: Grrr !!! */
-       return m_empty;
-    }
-
-    private:
-    ConfigurationManager(){}
-    virtual ~ConfigurationManager(){}
-    MapSession2Ip4Address m_allocations;
-    /*
-     *
-     */
-    Ipv4AddressContainer m_nameservers;
-    Ipv4AddressContainer m_routers;
-    Ipv4AddressContainer m_empty;
-
-};
-
-
-class NetworkManager
-{
-    public:
-    static NetworkManager *getNetworkManager();
-
-    int offer4Session(Session& ses);
-    int ack(Session& ses);
-    int nak(Session& ses);
-
-    const RTNETADDRIPV4& getOurAddress(){ return m_OurAddress;}
-    const RTNETADDRIPV4& getOurNetmask(){ return m_OurNetmask;}
-    const RTMAC& getOurMac() {return m_OurMac;}
-
-    void setOurAddress(const RTNETADDRIPV4& aAddress){ m_OurAddress = aAddress;}
-    void setOurNetmask(const RTNETADDRIPV4& aNetmask){ m_OurNetmask = aNetmask;}
-    void setOurMac(const RTMAC& aMac) {m_OurMac = aMac;}
-
-    /* XXX: artifacts should be hidden or removed from here. */
-    PSUPDRVSESSION m_pSession;
-    INTNETIFHANDLE m_hIf;
-    PINTNETBUF m_pIfBuf;
-
-    private:
-    int prepareReplyPacket4Session(const Session& session);
-    int doReply(const Session& session);
-    int processParameterReqList(Session& session);
-
-    union {
-        RTNETBOOTP BootPHeader;
-        uint8_t au8Storage[1024];
-    } BootPReplyMsg;
-    int cbBooPReplyMsg;
-
-    RTNETADDRIPV4 m_OurAddress;
-    RTNETADDRIPV4 m_OurNetmask;
-    RTMAC m_OurMac;
-
-    NetworkManager(){}
-    virtual ~NetworkManager(){}
-};
 
 /**
  *
@@ -475,7 +183,7 @@ class BaseConfigEntity
 {
 public:
     BaseConfigEntity(const ClientMatchCriteria *criteria = NULL,
-                     int matchingLevel = 0)
+      int matchingLevel = 0)
       : m_criteria(criteria),
       m_MatchLevel(matchingLevel){};
     virtual ~BaseConfigEntity(){};
@@ -487,7 +195,7 @@ public:
     }
 
     /* Should return how strong matching */
-    virtual int match(const Client& client, const BaseConfigEntity **cfg) const
+    virtual int match(Client& client, BaseConfigEntity **cfg)
     {
         int iMatch = (m_criteria && m_criteria->check(client)? m_MatchLevel: 0);
         if (m_children.empty())
@@ -502,10 +210,10 @@ public:
         {
             *cfg = this;
             /* XXX: hack */
-            BaseConfigEntity const *matching = this;
+            BaseConfigEntity *matching = this;
             int matchingLevel = m_MatchLevel;
 
-            for (std::vector<const BaseConfigEntity *>::const_iterator it = m_children.begin();
+            for (std::vector<BaseConfigEntity *>::iterator it = m_children.begin();
                  it != m_children.end();
                  ++it)
             {
@@ -520,11 +228,11 @@ public:
         }
         return iMatch;
     }
-
+    virtual uint32_t expirationPeriod() const = 0;
     protected:
     const ClientMatchCriteria *m_criteria;
     int m_MatchLevel;
-    std::vector<const BaseConfigEntity *> m_children;
+    std::vector<BaseConfigEntity *> m_children;
 };
 
 
@@ -537,6 +245,7 @@ public:
     {
         return 0;
     }
+    virtual uint32_t expirationPeriod() const {return 0;}
 };
 
 
@@ -559,6 +268,16 @@ class ConfigEntity: public BaseConfigEntity
 
     std::string m_name;
     const BaseConfigEntity *m_parentCfg;
+    virtual uint32_t expirationPeriod() const
+    {
+        if (!m_u32ExpirationPeriod)
+            return m_parentCfg->expirationPeriod();
+        else
+            return m_u32ExpirationPeriod;
+    }
+
+    /* XXX: private:*/
+    uint32_t m_u32ExpirationPeriod;
 };
 
 
@@ -645,7 +364,7 @@ class HostConfigEntity: public NetworkConfigEntity
 class RootConfigEntity: public NetworkConfigEntity
 {
     public:
-    RootConfigEntity(std::string name);
+    RootConfigEntity(std::string name, uint32_t expirationPeriod);
     virtual ~RootConfigEntity(){};
 };
 
@@ -674,9 +393,209 @@ class SharedNetworkConfigEntity: public NetworkEntity
 };
 #endif
 
+class ConfigurationManager
+{
+    public:
+    static ConfigurationManager* getConfigurationManager();
+    static int extractRequestList(PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& rawOpt);
+
+    /**
+     * 
+     */
+    Client* getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg);
+
+    /**
+     * XXX: it's could be done on DHCPOFFER or on DHCPACK (rfc2131 gives freedom here
+     * 3.1.2, what is strict that allocation should do address check before real
+     * allocation)...
+     */
+    Lease* allocateLease4Client(Client *client, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg);
+
+    /**
+     * We call this before DHCPACK sent and after DHCPREQUEST received ...
+     * when requested configuration is acceptable.
+     */
+    int commitLease4Client(Client *client);
+    
+    /**
+     * Expires client lease.
+     */
+    int expireLease4Client(Client *client);
+
+    static int findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& opt);
+
+    NetworkConfigEntity *addNetwork(NetworkConfigEntity *pCfg,
+                                    const RTNETADDRIPV4& networkId,
+                                    const RTNETADDRIPV4& netmask,
+                                    RTNETADDRIPV4& UpperAddress,
+                                    RTNETADDRIPV4& LowerAddress);
+
+    HostConfigEntity *addHost(NetworkConfigEntity*, const RTNETADDRIPV4&, ClientMatchCriteria*);
+
+    int addToAddressList(uint8_t u8OptId, RTNETADDRIPV4& address)
+    {
+        switch(u8OptId)
+        {
+            case RTNET_DHCP_OPT_DNS:
+                m_nameservers.push_back(address);
+                break;
+            case RTNET_DHCP_OPT_ROUTERS:
+                m_routers.push_back(address);
+                break;
+            default:
+                Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
+        }
+        return VINF_SUCCESS;
+    }
+
+    int flushAddressList(uint8_t u8OptId)
+    {
+       switch(u8OptId)
+       {
+           case RTNET_DHCP_OPT_DNS:
+                m_nameservers.clear();
+                break;
+           case RTNET_DHCP_OPT_ROUTERS:
+               m_routers.clear();
+               break;
+           default:
+               Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
+       }
+       return VINF_SUCCESS;
+    }
+
+    const Ipv4AddressContainer& getAddressList(uint8_t u8OptId)
+    {
+       switch(u8OptId)
+       {
+           case RTNET_DHCP_OPT_DNS:
+               return m_nameservers;
+
+           case RTNET_DHCP_OPT_ROUTERS:
+               return m_routers;
+
+       }
+       /* XXX: Grrr !!! */
+       return m_empty;
+    }
+
+    private:
+    ConfigurationManager(){}
+    virtual ~ConfigurationManager(){}
+
+    bool isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppLease = NULL);
+    MapLease2Ip4Address m_allocations;
+    /**
+     * Here we can store expired Leases to do not re-allocate them latter.
+     */
+    /* XXX: MapLease2Ip4Address m_freed; */
+    /*
+     *
+     */
+    Ipv4AddressContainer m_nameservers;
+    Ipv4AddressContainer m_routers;
+    Ipv4AddressContainer m_empty;
+    VecClient m_clients;
+
+};
+
+
+class NetworkManager
+{
+    public:
+    static NetworkManager *getNetworkManager();
+
+    int offer4Client(Client* lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
+    int ack(Client *lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
+    int nak(Client *lease, uint32_t u32Xid);
+
+    const RTNETADDRIPV4& getOurAddress(){ return m_OurAddress;}
+    const RTNETADDRIPV4& getOurNetmask(){ return m_OurNetmask;}
+    const RTMAC& getOurMac() {return m_OurMac;}
+
+    void setOurAddress(const RTNETADDRIPV4& aAddress){ m_OurAddress = aAddress;}
+    void setOurNetmask(const RTNETADDRIPV4& aNetmask){ m_OurNetmask = aNetmask;}
+    void setOurMac(const RTMAC& aMac) {m_OurMac = aMac;}
+
+    /* XXX: artifacts should be hidden or removed from here. */
+    PSUPDRVSESSION m_pSession;
+    INTNETIFHANDLE m_hIf;
+    PINTNETBUF m_pIfBuf;
+
+    private:
+    int prepareReplyPacket4Client(Client *client, uint32_t u32Xid);
+    int doReply(Client *client);
+    int processParameterReqList(Client *client, uint8_t *pu8ReqList, int cReqList);
+
+    union {
+        RTNETBOOTP BootPHeader;
+        uint8_t au8Storage[1024];
+    } BootPReplyMsg;
+    int cbBooPReplyMsg;
+
+    RTNETADDRIPV4 m_OurAddress;
+    RTNETADDRIPV4 m_OurNetmask;
+    RTMAC m_OurMac;
+
+    NetworkManager(){}
+    virtual ~NetworkManager(){}
+};
+
+
+
+class Lease
+{
+public:
+    Lease()
+    {
+        m_address.u = 0;
+        m_client = NULL;
+        fBinding = false;
+        u64TimestampBindingStarted = 0;
+        u64TimestampLeasingStarted = 0;
+        u32LeaseExpirationPeriod = 0;
+        u32BindExpirationPeriod = 0;
+        pCfg = NULL;
+    }
+    virtual ~Lease(){}
+    
+    bool isExpired()
+    {
+        if (!fBinding)
+            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampLeasingStarted, 1000) 
+                    > u32LeaseExpirationPeriod);
+        else
+            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampBindingStarted, 1000) 
+                    > u32BindExpirationPeriod);
+
+    }
+
+    /* XXX private: */
+    RTNETADDRIPV4 m_address;
+    
+    /** lease isn't commited */
+    bool fBinding;
+    
+    /** Timestamp when lease commited. */
+    uint64_t u64TimestampLeasingStarted;
+    /** Period when lease is expired in secs. */
+    uint32_t u32LeaseExpirationPeriod;
+
+    /** timestamp when lease was bound */
+    uint64_t u64TimestampBindingStarted;
+    /* Period when binding is expired in secs. */
+    uint32_t u32BindExpirationPeriod;
+
+    NetworkConfigEntity *pCfg;
+    Client *m_client;
+};
+
+
+
+
 
 extern const ClientMatchCriteria *g_AnyClient;
-extern const RootConfigEntity *g_RootConfig;
+extern RootConfigEntity *g_RootConfig;
 extern const NullConfigEntity *g_NullConfig;
 
 /**
