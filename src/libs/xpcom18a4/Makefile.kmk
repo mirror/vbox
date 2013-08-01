@@ -1356,8 +1356,8 @@ $(PATH_TARGET)/xpcom-namespace-cleanup.map foo.map: $$(VBoxXPCOM_LIBS) $$(VBoxXP
 ifeq ($(KBUILD_TARGET),solaris)
  # Temporary gcc 4.5.2 hack on Solaris which emits unknown mangled symbols for ctors/dtors for certain objects. See @bugref{5838}.
  if $(VBOX_GCC_VERSION_CXX) == 40502
-	#$(QUIET)$(SED) -re '/^_Z.*[C-D]5E/d' $@ > $@-sedtmp
-	#$(QUIET)$(MV) $@-sedtmp $@
+	$(QUIET)$(SED) -re '/^_Z.*[C-D]5E/d' $@ > $@-sedtmp
+	$(QUIET)$(MV) $@-sedtmp $@
  endif
 endif
 
