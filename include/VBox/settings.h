@@ -372,6 +372,9 @@ public:
     DHCPServersList         llDhcpServers;
     NATNetworksList         llNATNetworks;
     StringsMap              mapExtraDataItems;
+
+private:
+    void bumpSettingsVersionIfNeeded();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
