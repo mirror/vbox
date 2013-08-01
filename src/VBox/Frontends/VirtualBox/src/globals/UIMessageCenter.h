@@ -63,9 +63,6 @@ signals:
                              const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                              const QString &strAutoConfirmId) const;
 
-    /* Notifiers: Synchronization stuff: */
-    void sigRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
-
 public:
 
     /* Static API: Create/destroy stuff: */
@@ -281,11 +278,7 @@ public:
     bool cannotStartWithoutNetworkIf(const QString &strMachineName, const QString &strIfNames) const;
     void cannotStartMachine(const CConsole &console, const QString &strName) const;
     void cannotStartMachine(const CProgress &progress, const QString &strName) const;
-    void cannotSendACPIToMachine() const;
     bool confirmInputCapture(bool &fAutoConfirmed) const;
-    void remindAboutAutoCapture() const;
-    void remindAboutMouseIntegration(bool fSupportsAbsolute) const;
-    void remindAboutPausedVMInput() const;
     bool confirmGoingFullscreen(const QString &strHotKey) const;
     bool confirmGoingSeamless(const QString &strHotKey) const;
     bool confirmGoingScale(const QString &strHotKey) const;
@@ -357,9 +350,6 @@ public:
     static QString formatErrorInfo(const COMBaseWithEI &wrapper);
     static QString formatErrorInfo(const COMResult &rc);
 
-    /* API: Async stuff: */
-    void remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
-
 public slots:
 
     /* Handlers: Help menu stuff: */
@@ -377,9 +367,6 @@ private slots:
                            int iButton1, int iButton2, int iButton3,
                            const QString &strButtonText1, const QString &strButtonText2, const QString &strButtonText3,
                            const QString &strAutoConfirmId) const;
-
-    /* Handlers: Synchronization stuff: */
-    void sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const;
 
 private:
 
