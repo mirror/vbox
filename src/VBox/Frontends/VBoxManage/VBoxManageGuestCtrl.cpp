@@ -1031,7 +1031,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
      * access and/or kill detached guest process lateron.
      */
     if (   fWaitForExit
-        || rcExit != EXITCODEEXEC_SUCCESS)
+        || rcExit != RTEXITCODE_SUCCESS)
     {
         if (fVerbose)
             RTPrintf("Closing guest session ...\n");
