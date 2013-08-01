@@ -88,6 +88,13 @@ bool UIMachineLogicSeamless::hasHostScreenForGuestScreen(int iScreenId) const
     return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
 }
 
+void UIMachineLogicSeamless::notifyAbout3DOverlayVisibilityChange(bool)
+{
+    /* Ignore this event in seamless mode.
+     * We have to keep popup-stack integration type 'top-level'.
+     * S.A. UIMachineLogicSeamless::prepareRequiredFeatures(). */
+}
+
 void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
     LogRelFlow(("UIMachineLogicSeamless::GuestScreenCountChanged.\n"));
