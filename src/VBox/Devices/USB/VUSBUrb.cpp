@@ -1476,7 +1476,7 @@ static bool vusbMsgSetup(PVUSBPIPE pPipe, const void *pvBuf, uint32_t cbBuf)
     pSetup->wIndex          = RT_LE2H_U16(pSetupIn->wIndex);
     pSetup->wLength         = RT_LE2H_U16(pSetupIn->wLength);
 
-    LogFlow(("vusbMsgSetup(%p,,%d): bmRequestType=%#04x bRequest=%#04x wValue=%#06x wIndex=%#06x wLength=%d\n",
+    LogFlow(("vusbMsgSetup(%p,,%d): bmRequestType=%#04x bRequest=%#04x wValue=%#06x wIndex=%#06x wLength=0x%.4x\n",
              pPipe, cbBuf, pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue, pSetup->wIndex, pSetup->wLength));
     return true;
 }
@@ -1964,13 +1964,13 @@ void vusbUrbDoReapAsync(PVUSBURB pHead, RTMSINTERVAL cMillies)
              * Reap most URBs pending on a single device.
              */
             PVUSBURB pRipe;
-            
+
             /**
-             * This is workaround for race(should be fixed) detach on one EMT thread and frame boundary timer on other 
+             * This is workaround for race(should be fixed) detach on one EMT thread and frame boundary timer on other
              * and leaked URBs (shouldn't be affected by leaked URBs).
              */
             Assert(pDev->pUsbIns);
-            while (   pDev->pUsbIns 
+            while (   pDev->pUsbIns
                    && ((pRipe = pDev->pUsbIns->pReg->pfnUrbReap(pDev->pUsbIns, cMillies)) != NULL))
             {
                 vusbUrbAssert(pRipe);
