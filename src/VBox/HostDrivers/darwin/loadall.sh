@@ -23,8 +23,8 @@ if [ ! -d "${MY_DIR}" ]; then
 fi
 
 set -e
-${MY_DIR}/load.sh "$*"
-${MY_DIR}/loadusb.sh "$*"
-${MY_DIR}/loadnetflt.sh "$*"
-${MY_DIR}/loadnetadp.sh "$*"
+"${MY_DIR}/load.sh" "$*"
+"${MY_DIR}/loadusb.sh" "$*"
+"${MY_DIR}/loadnetflt.sh" "$*"
+"${MY_DIR}/loadnetadp.sh" "$*"
 
