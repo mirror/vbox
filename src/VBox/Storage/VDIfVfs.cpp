@@ -87,7 +87,8 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
      */
     int rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = off + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
+        pThis->offCurPos = (off == -1 ? pThis->offCurPos : off)
+                         + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
     return rc;
 }
 
@@ -105,7 +106,8 @@ static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pS
      */
     int rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbWritten);
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
+        pThis->offCurPos = (off == -1 ? pThis->offCurPos : off)
+                         + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
     return rc;
 }
 
