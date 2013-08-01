@@ -60,6 +60,8 @@
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
 
+#define DRVNAT_MAXFRAMESIZE (16 * 1024)
+
 /**
  * @todo: This is a bad hack to prevent freezing the guest during high network
  *        activity. Windows host only. This needs to be fixed properly.
@@ -465,6 +467,16 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
         return VERR_NO_MEMORY;
     if (!pGso)
     {
+        /*
+         * Drop the frame if it is too big.
+         */
+        if (cbMin >= DRVNAT_MAXFRAMESIZE)
+        {
+            Log(("drvNATNetowrkUp_AllocBuf: drops over-sized frame (%u bytes), returns VERR_INVALID_PARAMETER\n",
+                 cbMin));
+            return VERR_INVALID_PARAMETER;
+        }
+
         pSgBuf->pvUser      = NULL;
         pSgBuf->pvAllocator = slirp_ext_m_get(pThis->pNATState, cbMin,
                                               &pSgBuf->aSegs[0].pvSeg, &pSgBuf->aSegs[0].cbSeg);
@@ -476,6 +488,16 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
     }
     else
     {
+        /*
+         * Drop the frame if its segment is too big.
+         */
+        if (pGso->cbHdrsTotal + pGso->cbMaxSeg >= DRVNAT_MAXFRAMESIZE)
+        {
+            Log(("drvNATNetowrkUp_AllocBuf: drops over-sized frame (%u bytes), returns VERR_INVALID_PARAMETER\n",
+                 pGso->cbHdrsTotal + pGso->cbMaxSeg));
+            return VERR_INVALID_PARAMETER;
+        }
+
         pSgBuf->pvUser      = RTMemDup(pGso, sizeof(*pGso));
         pSgBuf->pvAllocator = NULL;
         pSgBuf->aSegs[0].cbSeg = RT_ALIGN_Z(cbMin, 16);

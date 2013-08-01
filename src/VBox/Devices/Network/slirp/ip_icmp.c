@@ -612,6 +612,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     register struct ip *ip;
     register struct icmp *icp;
     register struct mbuf *m;
+    int new_ip_size = 0;
     int new_m_size = 0;
     int size = 0;
 
@@ -652,7 +653,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
             goto end_error;
     }
 
-    new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
+    new_ip_size = sizeof(struct ip) + ICMP_MINLEN + ICMP_MAXDATALEN;
+    new_m_size = if_maxlinkhdr + new_ip_size;
     if (new_m_size < MSIZE)
         size = MCLBYTES;
     else if (new_m_size < MCLBYTES)
@@ -670,8 +672,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
     m->m_data += if_maxlinkhdr;
     m->m_pkthdr.header = mtod(m, void *);
 
-    memcpy(m->m_data, msrc->m_data, msrc->m_len);
-    m->m_len = msrc->m_len;                /* copy msrc to m */
+    m->m_len = msrc->m_len < new_ip_size ? msrc->m_len : new_ip_size;
+    memcpy(m->m_data, msrc->m_data, m->m_len);   /* copy msrc to m */
 
     /* make the header of the reply packet */
     ip   = mtod(m, struct ip *);
