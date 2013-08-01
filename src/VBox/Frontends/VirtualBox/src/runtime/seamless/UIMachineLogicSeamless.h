@@ -43,6 +43,9 @@ protected:
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
 
+    /* API: 3D overlay visibility stuff: */
+    void notifyAbout3DOverlayVisibilityChange(bool fVisible);
+
 private slots:
 
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);

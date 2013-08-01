@@ -101,7 +101,7 @@ public:
     void powerOff(bool fDiscardingState);
 
     /* API: 3D overlay visibility stuff: */
-    void notifyAbout3DOverlayVisibilityChange(bool fVisible);
+    virtual void notifyAbout3DOverlayVisibilityChange(bool fVisible);
 
 protected slots:
 
