@@ -307,6 +307,14 @@ void UIMouseHandler::sltMachineStateChanged()
             break;
     }
 
+    /* Recall reminder about paused VM input
+     * if we are not in paused VM state already: */
+    if (machineLogic()->activeMachineWindow() &&
+        state != KMachineState_Paused &&
+        state != KMachineState_TeleportingPausedVM)
+        popupCenter().forgetAboutPausedVMInput(machineLogic()->activeMachineWindow());
+
+    // TODO: Is it really required?
     /* Notify all listeners: */
     emit mouseStateChanged(mouseState());
 }

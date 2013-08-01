@@ -103,6 +103,7 @@ public:
     void remindAboutAutoCapture(QWidget *pParent);
     void remindAboutMouseIntegration(QWidget *pParent, bool fSupportsAbsolute);
     void remindAboutPausedVMInput(QWidget *pParent);
+    void forgetAboutPausedVMInput(QWidget *pParent);
     void remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP);
     void forgetAboutWrongColorDepth(QWidget *pParent);
 
