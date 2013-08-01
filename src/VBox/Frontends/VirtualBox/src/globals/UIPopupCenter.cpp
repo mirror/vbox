@@ -503,6 +503,11 @@ void UIPopupCenter::remindAboutPausedVMInput(QWidget *pParent)
           true);
 }
 
+void UIPopupCenter::forgetAboutPausedVMInput(QWidget *pParent)
+{
+    recall(pParent, "remindAboutPausedVMInput");
+}
+
 void UIPopupCenter::remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP)
 {
     alert(pParent, "remindAboutWrongColorDepth",
