@@ -560,6 +560,7 @@ static int hmR3InitCPU(PVM pVM)
     STAM_REG(pVM, &pVM->hm.s.StatTprPatchFailure,   STAMTYPE_COUNTER, "/HM/TPR/Patch/Failed",   STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
     STAM_REG(pVM, &pVM->hm.s.StatTprReplaceSuccess, STAMTYPE_COUNTER, "/HM/TPR/Replace/Success",STAMUNIT_OCCURENCES, "Number of times an instruction was successfully patched.");
     STAM_REG(pVM, &pVM->hm.s.StatTprReplaceFailure, STAMTYPE_COUNTER, "/HM/TPR/Replace/Failed", STAMUNIT_OCCURENCES, "Number of unsuccessful patch attempts.");
+#endif
 
     /*
      * Statistics.
@@ -569,6 +570,7 @@ static int hmR3InitCPU(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         int    rc;
 
+#ifdef VBOX_WITH_STATISTICS
         rc = STAMR3RegisterF(pVM, &pVCpu->hm.s.StatPoke, STAMTYPE_PROFILE, STAMVISIBILITY_USED, STAMUNIT_TICKS_PER_CALL,
                              "Profiling of RTMpPokeCpu",
                              "/PROF/CPU%d/HM/Poke", i);
@@ -630,10 +632,12 @@ static int hmR3InitCPU(PVM pVM)
         AssertRC(rc);
 # endif
 
+#endif
 # define HM_REG_COUNTER(a, b, desc) \
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES, desc, b, i); \
         AssertRC(rc);
 
+#ifdef VBOX_WITH_STATISTICS
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowNM,           "/HM/CPU%d/Exit/Trap/Shw/#NM", "Shadow #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestNM,            "/HM/CPU%d/Exit/Trap/Gst/#NM", "Guest #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowPF,           "/HM/CPU%d/Exit/Trap/Shw/#PF", "Shadow #PF (page fault) exception.");
@@ -681,7 +685,9 @@ static int hmR3InitCPU(PVM pVM)
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitIntWindow,          "/HM/CPU%d/Exit/IntWindow", "Interrupt-window exit. Guest is ready to receive interrupts again.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitMaxResume,          "/HM/CPU%d/Exit/MaxResume", "Maximum VMRESUME inner-loop counter reached.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitExtInt,             "/HM/CPU%d/Exit/ExtInt", "Host interrupt received.");
+#endif
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitHostNmi,            "/HM/CPU%d/Exit/HostNmi", "Host NMI received.");
+#ifdef VBOX_WITH_STATISTICS
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitPreemptTimer,       "/HM/CPU%d/Exit/PreemptTimer", "VMX-preemption timer expired.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTprBelowThreshold,  "/HM/CPU%d/Exit/TprBelowThreshold", "TPR lowered below threshold by the guest.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitTaskSwitch,         "/HM/CPU%d/Exit/TaskSwitch", "Guest attempted a task switch.");
@@ -795,8 +801,8 @@ static int hmR3InitCPU(PVM pVM)
                             (j < 0x20) ? "/HM/CPU%d/EventInject/Event/Trap/%02X" : "/HM/CPU%d/EventInject/Event/IRQ/%02X", i, j);
         }
 
-    }
 #endif /* VBOX_WITH_STATISTICS */
+    }
 
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
     /*
