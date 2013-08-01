@@ -172,6 +172,11 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
                                   QString strButtonText1, QString strButtonText2,
                                   bool fProposeAutoConfirmation)
 {
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
     /* Make sure at least one button is valid: */
     if (iButton1 == 0 && iButton2 == 0)
     {
@@ -194,11 +199,6 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
             return;
         }
     }
-
-    /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
-    if (!pParent)
-        return;
 
     /* Looking for the corresponding popup-stack: */
     const QString strPopupStackID(popupStackID(pParent));
@@ -441,7 +441,7 @@ QString UIPopupCenter::popupStackID(QWidget *pParent)
 
 void UIPopupCenter::cannotSendACPIToMachine(QWidget *pParent)
 {
-    alert(pParent,  "cannotSendACPIToMachine",
+    alert(pParent, "cannotSendACPIToMachine",
           QApplication::translate("UIMessageCenter", "You are trying to shut down the guest with the ACPI power button. "
                                                      "This is currently not possible because the guest does not support software shutdown."));
 }
@@ -503,18 +503,7 @@ void UIPopupCenter::remindAboutPausedVMInput(QWidget *pParent)
           true);
 }
 
-void UIPopupCenter::remindAboutGuestAdditionsAreNotActive(QWidget *pParent)
-{
-    alert(pParent, "remindAboutGuestAdditionsAreNotActive",
-          QApplication::translate("UIMessageCenter", "<p>The VirtualBox Guest Additions do not appear to be available on this virtual machine, "
-                                                     "and shared folders cannot be used without them. To use shared folders inside the virtual machine, "
-                                                     "please install the Guest Additions if they are not installed, or re-install them if they are "
-                                                     "not working correctly, by selecting <b>Install Guest Additions</b> from the <b>Devices</b> menu. "
-                                                     "If they are installed but the machine is not yet fully started then shared folders will be available once it is.</p>"),
-          true);
-}
-
-void UIPopupCenter::updatePopupAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP)
+void UIPopupCenter::remindAboutWrongColorDepth(QWidget *pParent, ulong uRealBPP, ulong uWantedBPP)
 {
     alert(pParent, "remindAboutWrongColorDepth",
           QApplication::translate("UIMessageCenter", "<p>The virtual machine window is optimized to work in <b>%1&nbsp;bit</b> color mode "
@@ -529,7 +518,7 @@ void UIPopupCenter::updatePopupAboutWrongColorDepth(QWidget *pParent, ulong uRea
           true);
 }
 
-void UIPopupCenter::recallPopupAboutWrongColorDepth(QWidget *pParent)
+void UIPopupCenter::forgetAboutWrongColorDepth(QWidget *pParent)
 {
     recall(pParent, "remindAboutWrongColorDepth");
 }

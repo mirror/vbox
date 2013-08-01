@@ -30,6 +30,7 @@
 /* GUI includes: */
 #include "VBoxFBOverlay.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "VBoxGlobal.h"
 
 /* COM includes: */
@@ -3921,7 +3922,9 @@ void VBoxVHWAImage::resize(const VBoxFBSizeInfo & size)
 //    }
 
     if (remind)
-        msgCenter().remindAboutWrongColorDepth(size.bitsPerPixel(), 32);
+        popupCenter().remindAboutWrongColorDepth(vboxGlobal().activeMachineWindow(), size.bitsPerPixel(), 32);
+    else
+        popupCenter().forgetAboutWrongColorDepth(vboxGlobal().activeMachineWindow());
 }
 
 VBoxVHWAColorFormat::VBoxVHWAColorFormat (uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b) :

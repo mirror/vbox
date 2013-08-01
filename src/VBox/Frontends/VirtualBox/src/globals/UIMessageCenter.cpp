@@ -1765,13 +1765,6 @@ void UIMessageCenter::cannotStartMachine(const CProgress &progress, const QStrin
           formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotSendACPIToMachine() const
-{
-    alert(0,  MessageType_Warning,
-          tr("You are trying to shut down the guest with the ACPI power button. "
-             "This is currently not possible because the guest does not support software shutdown."));
-}
-
 bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
 {
     int rc = question(0, MessageType_Info,
@@ -1795,76 +1788,6 @@ bool UIMessageCenter::confirmInputCapture(bool &fAutoConfirmed) const
     fAutoConfirmed = (rc & AlertOption_AutoConfirmed);
     /* True if "Ok" was pressed: */
     return (rc & AlertButtonMask) == AlertButton_Ok;
-}
-
-void UIMessageCenter::remindAboutAutoCapture() const
-{
-    alert(0, MessageType_Info,
-          tr("<p>You have the <b>Auto capture keyboard</b> option turned on. "
-             "This will cause the Virtual Machine to automatically <b>capture</b> "
-             "the keyboard every time the VM window is activated and make it "
-             "unavailable to other applications running on your host machine: "
-             "when the keyboard is captured, all keystrokes (including system ones "
-             "like Alt-Tab) will be directed to the VM.</p>"
-             "<p>You can press the <b>host key</b> at any time to <b>uncapture</b> the "
-             "keyboard and mouse (if it is captured) and return them to normal "
-             "operation. The currently assigned host key is shown on the status bar "
-             "at the bottom of the Virtual Machine window, next to the&nbsp;"
-             "<img src=:/hostkey_16px.png/>&nbsp;icon. This icon, together "
-             "with the mouse icon placed nearby, indicate the current keyboard "
-             "and mouse capture state.</p>") +
-          tr("<p>The host key is currently defined as <b>%1</b>.</p>",
-             "additional message box paragraph")
-             .arg(UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
-          "remindAboutAutoCapture");
-}
-
-void UIMessageCenter::remindAboutMouseIntegration(bool fSupportsAbsolute) const
-{
-    if (warningShown("remindAboutMouseIntegration"))
-        return;
-    setWarningShown("remindAboutMouseIntegration", true);
-
-    /* Show one of warnings, do not close outdated, not possible in current archi: */
-    static const char *kNames [2] =
-    {
-        "remindAboutMouseIntegrationOff",
-        "remindAboutMouseIntegrationOn"
-    };
-    if (fSupportsAbsolute)
-    {
-        alert(0, MessageType_Info,
-              tr("<p>The Virtual Machine reports that the guest OS supports <b>mouse pointer integration</b>. "
-                 "This means that you do not need to <i>capture</i> the mouse pointer to be able to use it in your guest OS -- "
-                 "all mouse actions you perform when the mouse pointer is over the Virtual Machine's display "
-                 "are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.</p>"
-                 "<p>The mouse icon on the status bar will look like&nbsp;<img src=:/mouse_seamless_16px.png/>&nbsp;to inform you "
-                 "that mouse pointer integration is supported by the guest OS and is currently turned on.</p>"
-                 "<p><b>Note</b>: Some applications may behave incorrectly in mouse pointer integration mode. "
-                 "You can always disable it for the current session (and enable it again) "
-                 "by selecting the corresponding action from the menu bar.</p>"),
-              kNames [1] /* auto-confirm id */);
-    }
-    else
-    {
-        alert(0, MessageType_Info,
-              tr("<p>The Virtual Machine reports that the guest OS does not support <b>mouse pointer integration</b> "
-                 "in the current video mode. You need to capture the mouse (by clicking over the VM display "
-                 "or pressing the host key) in order to use the mouse inside the guest OS.</p>"),
-              kNames [0] /* auto-confirm id */);
-    }
-
-    setWarningShown("remindAboutMouseIntegration", false);
-}
-
-void UIMessageCenter::remindAboutPausedVMInput() const
-{
-    alert(0, MessageType_Info,
-          tr("<p>The Virtual Machine is currently in the <b>Paused</b> state and "
-             "not able to see any keyboard or mouse input. If you want to "
-             "continue to work inside the VM, you need to resume it by selecting the "
-             "corresponding action from the menu bar.</p>"),
-             "remindAboutPausedVMInput");
 }
 
 bool UIMessageCenter::confirmGoingFullscreen(const QString &strHotKey) const
@@ -2478,11 +2401,6 @@ QString UIMessageCenter::formatErrorInfo(const COMResult &rc)
     return formatErrorInfo(rc.errorInfo(), rc.rc());
 }
 
-void UIMessageCenter::remindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const
-{
-    emit sigRemindAboutWrongColorDepth(uRealBPP, uWantedBPP);
-}
-
 void UIMessageCenter::sltShowHelpWebDialog()
 {
     vboxGlobal().openURL("http://www.virtualbox.org");
@@ -2581,25 +2499,6 @@ void UIMessageCenter::sltShowMessageBox(QWidget *pParent, MessageType type,
                    strAutoConfirmId);
 }
 
-void UIMessageCenter::sltRemindAboutWrongColorDepth(ulong uRealBPP, ulong uWantedBPP) const
-{
-    alert(0, MessageType_Info,
-          tr("<p>The virtual machine window is optimized to work in "
-             "<b>%1&nbsp;bit</b> color mode but the "
-             "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
-             "<p>Please open the display properties dialog of the guest OS and "
-             "select a <b>%3&nbsp;bit</b> color mode, if it is available, for "
-             "best possible performance of the virtual video subsystem.</p>"
-             "<p><b>Note</b>. Some operating systems, like OS/2, may actually "
-             "work in 32&nbsp;bit mode but report it as 24&nbsp;bit "
-             "(16 million colors). You may try to select a different color "
-             "mode to see if this message disappears or you can simply "
-             "disable the message now if you are sure the required color "
-             "mode (%4&nbsp;bit) is not available in the guest OS.</p>")
-             .arg(uWantedBPP).arg(uRealBPP).arg(uWantedBPP).arg(uWantedBPP),
-          "remindAboutWrongColorDepth");
-}
-
 UIMessageCenter::UIMessageCenter()
 {
     /* Assign instance: */
@@ -2636,10 +2535,6 @@ void UIMessageCenter::prepare()
                                          const QString&, const QString&, const QString&,
                                          const QString&)),
             Qt::BlockingQueuedConnection);
-
-    /* Prepare synchronization connection: */
-    connect(this, SIGNAL(sigRemindAboutWrongColorDepth(ulong, ulong)),
-            this, SLOT(sltRemindAboutWrongColorDepth(ulong, ulong)), Qt::QueuedConnection);
 
     /* Translations for Main.
      * Please make sure they corresponds to the strings coming from Main one-by-one symbol! */
