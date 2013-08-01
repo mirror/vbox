@@ -615,46 +615,6 @@ static DECLCALLBACK(int) rtZipZlibDecompress(PRTZIPDECOMP pZip, void *pvBuf, siz
     return VINF_SUCCESS;
 }
 
-/** 
- * pZip->u.Zlib.avail_in must be correctly initialized before 
- * calling this function 
- * pZip->u.Zlib.next_in must be correctly initialized before 
- * calling this function 
- *  
- * @param pZip The decompressor instance. 
- * @param pvBufOut    Where to store the decompressed data.
- * @param cbBufOut    Number of bytes to produce. 
- * @param pcbWritten  Number of bytes actually written to the 
- *                    buffer
- * 
- * @return iprt status code. 
- */
-static DECLCALLBACK(int) rtZipZlibBufferDecompress(PRTZIPDECOMP pZip, void *pvBufOut, size_t cbBufOut, size_t *pcbWritten)
-{
-    int rc = VINF_SUCCESS;
-    pZip->u.Zlib.next_out = (Bytef *)pvBufOut;
-    pZip->u.Zlib.avail_out = (uInt)cbBufOut;
-    int sh = pZip->u.Zlib.avail_out;
-
-    *pcbWritten = 0;
-
-    do
-    {
-        rc = inflate(&pZip->u.Zlib, Z_SYNC_FLUSH);
-
-        if (rc != Z_OK && rc != Z_STREAM_END)
-        {
-            rc = zipErrConvertFromZlib(rc, false /*fCompressing*/);
-            break;
-        }
-
-        *pcbWritten += (sh - pZip->u.Zlib.avail_out);
-        sh = pZip->u.Zlib.avail_out;
-    }
-    while (pZip->u.Zlib.avail_out > 0 && pZip->u.Zlib.avail_in > 0 );
-
-    return rc;
-}
 
 /**
  * @copydoc RTZipDecompDestroy
@@ -1676,86 +1636,6 @@ static int rtzipDecompInit(PRTZIPDECOMP pZip)
     return rc;
 }
 
-/**
- * Lazy init of the decompressor for the Gzip file.
- * @return iprt status code.
- * @param   pZip  The decompressor instance.
- */
-static int rtzipGzipFileDecompInit(PRTZIPDECOMP pZip)
-{
-    int rc = 0;
-#ifdef RTZIP_USE_ZLIB
-    pZip->pfnDecompress = rtZipZlibBufferDecompress;
-    pZip->pfnDestroy = rtZipZlibDecompDestroy;
-
-    memset(&pZip->u.Zlib, 0, sizeof(pZip->u.Zlib));
-    pZip->enmType = RTZIPTYPE_ZLIB;
-    pZip->u.Zlib.opaque    = pZip;
-
-    rc = inflateInit2(&pZip->u.Zlib, MAX_WBITS + 16 /* autodetect gzip header */);
-    rc >= 0 ? VINF_SUCCESS : zipErrConvertFromZlib(rc, false /*fCompressing*/);
-#else
-    AssertMsgFailed(("Zlib is not include in this build!\n"));
-#endif
-
-    if (RT_FAILURE(rc))
-    {
-        pZip->pfnDecompress = rtZipStubDecompress;
-        pZip->pfnDestroy = rtZipStubDecompDestroy;
-    }
-
-    return rc;
-}
-
-/**
- * Decompresses a chunk of Gzip file.
- *
- * @returns iprt status code.
- * @param   pZip        The stream decompressor instance. 
- * @param   pvBufIn     Where to read the compressed data from.
- * @param   cbBufIn     Number of bytes to read. 
- * @param   pcbRead     Number of bytes actually read from the 
- *                      buffer
- * @param   pvBufOut    Where to store the decompressed data.
- * @param   cbBufOut    Number of bytes to produce. 
- * @param   pcbWritten  Number of bytes actually written to the 
- *                      buffer.
- */
-RTDECL(int)     RTZipGzipFileBufferDecompress(PRTZIPDECOMP pZip, 
-                                        void *pvBufIn, 
-                                        size_t cbBufIn, 
-                                        size_t *pcbRead,
-                                        void *pvBufOut, 
-                                        size_t cbBufOut, 
-                                        size_t *pcbWritten)
-{
-    int rc;
-    /*
-     * Skip empty requests.
-     */
-    if (!cbBufIn)
-        return VINF_SUCCESS;
-
-    if (!pZip->pfnDecompress)
-    {
-        rc = rtzipGzipFileDecompInit(pZip);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    pZip->u.Zlib.avail_in = (uInt)cbBufIn;
-    pZip->u.Zlib.next_in = (Bytef *)pvBufIn;
-
-    /*
-     * 'Read' the decompressed stream.
-     */
-    rc = pZip->pfnDecompress(pZip, pvBufOut, cbBufOut, pcbWritten);
-
-    *pcbRead = cbBufIn - pZip->u.Zlib.avail_in;
-
-    return rc;
-}
-RT_EXPORT_SYMBOL(RTZipGzipFileBufferDecompress);
 
 /**
  * Decompresses a chunk of memory.

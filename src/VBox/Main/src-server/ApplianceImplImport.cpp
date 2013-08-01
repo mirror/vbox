@@ -976,7 +976,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                     uint64_t cbFile = 0;
                     uint64_t maxFileSize = _1M;
                     size_t cbRead = 0;
-                    void  *pBuf;
+                    void  *pBuf; /** @todo r=bird: You leak this buffer! throwing stuff is evil. */
 
                     vrc = RTFileGetSize(pFile, &cbFile);
                     if (cbFile > maxFileSize)
@@ -1007,12 +1007,10 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                     RTDIGESTTYPE digestType;
                     vrc = RTManifestVerifyDigestType(pBuf, cbRead, &digestType);
 
-                    /* pBuf isn't needed more. Here we free the memory allocated by the pBuf */
-                    if (pBuf)
-                        RTMemFree(pBuf);
-
                     if (RT_FAILURE(vrc))
                     {
+                        if (pBuf)
+                            RTMemFree(pBuf);
                         throw setError(VBOX_E_FILE_ERROR,
                                tr("Could not verify supported digest types in the manifest file '%s' (%Rrc)"),
                                RTPathFilename(strMfFile.c_str()), vrc);
@@ -1560,13 +1558,15 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             if (FAILED(rc)) throw rc;
 
             size_t cbCertSize = 0;
-            /* Save the SHA digest of the manifest file for the next validation */
-            Utf8Str manifestShaDigest = storage.strDigest;
+            Utf8Str manifestShaDigest;
             Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".cert");
             if (RTFileExists(strCertFile.c_str()))
             {
                 rc = readFileToBuf(strCertFile, &pvCertBuf, &cbCertSize, false, pShaIo, &storage);
                 if (FAILED(rc)) throw rc;
+
+                /* Save the SHA digest of the manifest file for the next validation */
+                manifestShaDigest = storage.strDigest;
 
                 /* verify Certificate */
             }
@@ -2258,11 +2258,18 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
     else
     {
         /* check read file to GZIP compression */
-        bool fGzipUsed = !(di.strCompression.compare("gzip",Utf8Str::CaseInsensitive));
         try
         {
-            if (fGzipUsed == true)
+            if (di.strCompression.compare("gzip",Utf8Str::CaseInsensitive) == 0)
             {
+                /*
+                 * 1. extract a file to the local/temporary folder
+                 * 2. apply GZIP decompression for the file
+                 * 3. replace the value of strSrcFilePath with a new path to the file
+                 * 4. replace SHA-TAR I/O interface with File I/O interface
+                 * 5. save calculated SHA digest of GZIPed file for later validation
+                 */
+
                 /* Decompress the GZIP file and save a new file in the target path */
                 strTargetDir = strTargetDir.stripFilename();
                 strTargetDir.append("/temp_");
@@ -2281,13 +2288,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    tr("Could not read the file '%s' (%Rrc)"),
                                    RTPathFilename(strSrcFilePath.c_str()), vrc);
 
-                /* 
-                 * Create the necessary file access interfaces. 
-                 * For the next step: 
-                 * We need to replace the previously created chain of SHA-TAR or SHA-FILE interfaces 
-                 * with simple FILE interface because we don't need SHA or TAR interfaces here anymore. 
-                 * But we mustn't delete the chain of SHA-TAR or SHA-FILE interfaces.
-                 */
+                /* Create the necessary file access interfaces. */
                 pFileIo = FileCreateInterface();
                 if (!pFileIo)
                     throw setError(E_OUTOFMEMORY);
@@ -2301,7 +2302,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                     throw setError(VBOX_E_IPRT_ERROR,
                                    tr("Creation of the VD interface failed (%Rrc)"), vrc);
 
-                /* Correct the source and the target with the actual values */
                 strSrcFilePath = strTargetDir;
                 strTargetDir = strTargetDir.stripFilename();
                 strTargetDir.append(RTPATH_SLASH_STR);
@@ -2314,12 +2314,9 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             Utf8Str strTrgFormat = "VMDK";
             ULONG lCabs = 0;
 
-            char *pszExt = NULL;
-
             if (RTPathHaveExt(strTargetPath->c_str()))
             {
-                pszExt = RTPathExt(strTargetPath->c_str());
-
+                char *pszExt = RTPathExt(strTargetPath->c_str());
                 /* Figure out which format the user like to have. Default is VMDK. */
                 ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
                 if (trgFormat.isNull())
@@ -2349,12 +2346,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 if (FAILED(rc)) throw rc;
                 strTrgFormat = Utf8Str(bstrFormatName);
             }
-            else
-            {
-                throw setError(VBOX_E_FILE_ERROR,
-                               tr("The target disk '%s' has no extension "),
-                               strTargetPath->c_str(), VERR_INVALID_NAME);
-            }
 
             /* Create an IMedium object. */
             pTargetHD.createObject();
@@ -2363,38 +2354,53 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             if (strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) == 0)
             {
                 void *pvTmpBuf = 0;
-
+                size_t cbSize = 0;
                 try
                 {
-                    if (fGzipUsed == true)
-                    {
-                        /* 
-                         * The source and target pathes are the same. 
-                         * It means that we have the needed file already.
-                         * For example, in GZIP case, we decompress the file and save it in the target path, 
-                         * but with some prefix like "temp_". See part "check read file to GZIP compression" earlier 
-                         * in this function.
-                         * Just rename the file by deleting "temp_" from it's name 
-                         */
-                        vrc = RTFileRename(strSrcFilePath.c_str(), strTargetPath->c_str(), RTPATHRENAME_FLAGS_NO_REPLACE);
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not rename the file '%s' (%Rrc)"),
-                                           RTPathFilename(strSourceOVF.c_str()), vrc);
+                    /* Read the ISO file into a memory buffer */
+                    vrc = ShaReadBuf(strSrcFilePath.c_str(), &pvTmpBuf, &cbSize, pCallbacks, pRealUsedStorage);
 
-                    }
-                    else
-                    {
-                        /* Calculating SHA digest for ISO file while copying one */
-                        vrc = copyFileAndCalcShaDigest(strSrcFilePath.c_str(), 
-                                                       strTargetPath->c_str(), 
-                                                       pCallbacks, 
-                                                       pRealUsedStorage);
+                    if ( RT_FAILURE(vrc) || !pvTmpBuf)
+                        throw setError(VBOX_E_FILE_ERROR,
+                                       tr("Could not read ISO file '%s' listed in the OVF file (%Rrc)"),
+                                       RTPathFilename(strSourceOVF.c_str()), vrc);
 
-                        if (RT_FAILURE(vrc))
-                            throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not copy ISO file '%s' listed in the OVF file (%Rrc)"),
-                                           RTPathFilename(strSourceOVF.c_str()), vrc);
+                    if (RTFileExists(strTargetPath->c_str()) == false)
+                    {
+
+                        /* ensure the directory exists */
+                        if (lCabs & MediumFormatCapabilities_File)
+                        {
+                            rc = VirtualBox::ensureFilePathExists(*strTargetPath, true);
+                            if (FAILED(rc))
+                                throw rc;
+                        }
+
+                        // create a new file and copy raw data into one from buffer pvTmpBuf
+                        RTFILE pFile = NULL;
+                        vrc = RTFileOpen(&pFile,
+                                         strTargetPath->c_str(),
+                                         RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
+
+                        if (RT_SUCCESS(vrc) && pFile != NULL)
+                        {
+                            size_t cbWritten = 0;
+
+                            vrc = RTFileWrite(pFile, pvTmpBuf, cbSize, &cbWritten);
+
+                            if (RT_FAILURE(vrc))
+                            {
+                                Utf8Str path(*strTargetPath);
+                                path = path.stripFilename();
+
+                                throw setError(VBOX_E_FILE_ERROR,
+                                               tr("Could not write the ISO file '%s' into the folder %s (%Rrc)"),
+                                               strSrcFilePath.stripPath().c_str(),
+                                               path.c_str(),
+                                               vrc);
+                            }
+                        }
+                        RTFileClose(pFile);
                     }
                 }
                 catch (HRESULT arc)
@@ -2486,18 +2492,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                  * HRESULTs on error. */
                 ComPtr<IProgress> pp(pProgress);
                 waitForAsyncProgress(stack.pProgress, pp);
-
-                if (fGzipUsed == true)
-                {
-                    /* 
-                     * Just delete the temporary file
-                     */
-                    vrc = RTFileDelete(strSrcFilePath.c_str());
-                    if (RT_FAILURE(vrc))
-                        setWarning(VBOX_E_FILE_ERROR,
-                                   tr("Could not delete the file '%s' (%Rrc)"),
-                                   RTPathFilename(strSrcFilePath.c_str()), vrc);
-                }
             }
         }
         catch (...)
