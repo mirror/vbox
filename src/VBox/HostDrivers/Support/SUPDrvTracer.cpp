@@ -345,7 +345,9 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
 #ifdef RT_OS_DARWIN
         /* The loader and/or ld64-97.17 seems not to generate fixups for our
            __VTGObj section. Detect this by comparing them with the
-           u64VtgObjSectionStart member and assume max image size of 4MB. */
+           u64VtgObjSectionStart member and assume max image size of 4MB.
+           Seems to be worked around by the __VTGPrLc.End and __VTGPrLc.Begin
+           padding fudge, meaning that the linker misplaced the relocations. */
         if (   (int64_t)u64Tmp != (int32_t)u64Tmp
             && pVtgHdr->u64VtgObjSectionStart != uVtgHdrAddr
             && pVtgHdr->u64VtgObjSectionStart < _4M
