@@ -2799,8 +2799,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
 static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 {
     GLboolean fForcePresent;
-    uint32_t cRects;
-    const RTRECT *pRects;
+
     int rc = VINF_SUCCESS;
 
     fForcePresent = crServerVBoxCompositionPresentNeeded(pMI);
