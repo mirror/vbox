@@ -68,7 +68,7 @@ typedef struct TSTRTR0THREADCTXDATA
  * @param   enmEvent    The thread-context event.
  * @param   pvUser      Pointer to the user argument.
  */
-static void tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
+static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
     PTSTRTR0THREADCTXDATA pData = (PTSTRTR0THREADCTXDATA)pvUser;
     AssertPtrReturnVoid(pData);
