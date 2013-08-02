@@ -40,6 +40,9 @@
 #else
 # define LOG_GROUP LOG_GROUP_MAIN
 #endif
+#ifndef VBOXSVC_LOG_DEFAULT
+# define VBOXSVC_LOG_DEFAULT "all"
+#endif
 
 #include <VBox/log.h>
 
