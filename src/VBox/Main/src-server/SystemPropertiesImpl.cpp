@@ -654,8 +654,10 @@ STDMETHODIMP SystemProperties::COMGETTER(LoggingLevel)(BSTR *aLoggingLevel)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m->strLoggingLevel.cloneTo(aLoggingLevel);
+    Utf8Str useLoggingLevel(m->strLoggingLevel);
+    useLoggingLevel = (useLoggingLevel.isEmpty() ? VBOXSVC_LOG_DEFAULT : useLoggingLevel);
 
+    useLoggingLevel.cloneTo(aLoggingLevel);
     return S_OK;
 }
 
@@ -673,6 +675,10 @@ STDMETHODIMP SystemProperties::COMSETTER(LoggingLevel)(IN_BSTR aLoggingLevel)
     {
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         rc = mParent->saveSettings();
+    }
+    else
+    {
+        LogRel(("Cannot set passed logging level=%s, or the default one - Error=%Rrc \n", aLoggingLevel, rc));
     }
 
     return rc;
@@ -1276,8 +1282,26 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 
 HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
 {
-    m->strLoggingLevel = aLoggingLevel;
-    return S_OK;
+    HRESULT rc = S_OK;
+    Utf8Str useLoggingLevel(aLoggingLevel);
+    rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
+    //  If failed and not the default logging level - try to use the default logging level.
+    if (!SUCCEEDED(rc)){
+        // If failed write message to the release log.
+        LogRel(("Cannot set passed logging level=%s Error=%Rrc \n", useLoggingLevel.c_str(), rc));
+        //  If attempted logging level not the default one then try the default one.
+        if (!useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT)){
+            rc = RTLogGroupSettings(RTLogRelDefaultInstance(), VBOXSVC_LOG_DEFAULT);
+            // If failed report this to the release log.
+            if (!SUCCEEDED(rc))
+                LogRel(("Cannot set default logging level Error=%Rrc \n", rc));
+        }
+        // On any failure - set default level as the one to be stored.
+        useLoggingLevel = VBOXSVC_LOG_DEFAULT;
+    }
+    //  Set to passed value or if default used/attempted (even if error condition) use empty string.
+    m->strLoggingLevel = (useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT) ? "" : useLoggingLevel);
+    return rc;
 }
 
 HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)

@@ -346,7 +346,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*lpC
         char szError[RTPATH_MAX + 128];
         vrc = com::VBoxLogRelCreate("COM Server", szLogFile,
                                     RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG,
-                                    "all", "VBOXSVC_RELEASE_LOG",
+                                    VBOXSVC_LOG_DEFAULT, "VBOXSVC_RELEASE_LOG",
                                     RTLOGDEST_FILE, UINT32_MAX /* cMaxEntriesPerGroup */,
                                     cHistory, uHistoryFileTime, uHistoryFileSize,
                                     szError, sizeof(szError));
