@@ -72,12 +72,13 @@ UIPopupCenter::~UIPopupCenter()
 
 void UIPopupCenter::prepare()
 {
-    /* Embedded by default: */
-    m_type = UIPopupIntegrationType_Embedded;
 }
 
 void UIPopupCenter::cleanup()
 {
+    /* Make sure all the popup-stack types destroyed: */
+    foreach (const QString &strPopupStackTypeID, m_stackTypes.keys())
+        m_stackTypes.remove(strPopupStackTypeID);
     /* Make sure all the popup-stacks destroyed: */
     foreach (const QString &strPopupStackID, m_stacks.keys())
     {
@@ -86,14 +87,65 @@ void UIPopupCenter::cleanup()
     }
 }
 
-void UIPopupCenter::setStackIntegrationType(UIPopupIntegrationType type)
+void UIPopupCenter::showPopupStack(QWidget *pParent)
 {
-    /* Make sure type changed: */
-    if (m_type == type)
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
         return;
 
-    /* Assign new type:  */
-    m_type = type;
+    /* Make sure corresponding popup-stack *exists*: */
+    const QString strPopupStackID(popupStackID(pParent));
+    if (!m_stacks.contains(strPopupStackID))
+        return;
+
+    /* Assign stack with passed parent: */
+    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
+    assignPopupStackParent(pPopupStack, pParent, m_stackTypes[strPopupStackID]);
+    pPopupStack->show();
+}
+
+void UIPopupCenter::hidePopupStack(QWidget *pParent)
+{
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
+    /* Make sure corresponding popup-stack *exists*: */
+    const QString strPopupStackID(popupStackID(pParent));
+    if (!m_stacks.contains(strPopupStackID))
+        return;
+
+    /* Unassign stack with passed parent: */
+    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
+    pPopupStack->hide();
+    unassignPopupStackParent(pPopupStack, pParent);
+}
+
+void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStackType)
+{
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
+    /* Composing corresponding popup-stack: */
+    const QString strPopupStackID(popupStackID(pParent));
+
+    /* Looking for current popup-stack type, create if it doesn't exists: */
+    UIPopupStackType &stackType = m_stackTypes[strPopupStackID];
+
+    /* Make sure stack-type has changed: */
+    if (stackType == newStackType)
+        return;
+
+    /* Remember new stack type: */
+    LogRelFlow(("UIPopupCenter::setPopupStackType: Changing type of popup-stack with ID = '%s' from '%s' to '%s'.\n",
+                strPopupStackID.toAscii().constData(),
+                stackType == UIPopupStackType_Separate ? "separate window" : "embedded widget",
+                newStackType == UIPopupStackType_Separate ? "separate window" : "embedded widget"));
+    stackType = newStackType;
 }
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
@@ -200,33 +252,34 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         }
     }
 
-    /* Looking for the corresponding popup-stack: */
+    /* Looking for corresponding popup-stack: */
     const QString strPopupStackID(popupStackID(pParent));
     UIPopupStack *pPopupStack = 0;
-    /* Is there already popup-stack with the same ID? */
+    /* If there is already popup-stack with such ID: */
     if (m_stacks.contains(strPopupStackID))
     {
-        /* Get existing one: */
+        /* Just get existing one: */
         pPopupStack = m_stacks[strPopupStackID];
     }
-    /* There is no popup-stack with the same ID? */
+    /* If there is no popup-stack with such ID: */
     else
     {
         /* Create new one: */
-        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack;
+        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack(strPopupStackID);
         /* Attach popup-stack connections: */
         connect(pPopupStack, SIGNAL(sigPopupPaneDone(QString, int)), this, SLOT(sltPopupPaneDone(QString, int)));
-        connect(pPopupStack, SIGNAL(sigRemove()), this, SLOT(sltRemovePopupStack()));
+        connect(pPopupStack, SIGNAL(sigRemove(QString)), this, SLOT(sltRemovePopupStack(QString)));
         /* Show popup-stack: */
         showPopupStack(pParent);
     }
 
-    /* Looking for the corresponding popup-pane: */
+    /* If there is already popup-pane with such ID: */
     if (pPopupStack->exists(strPopupPaneID))
     {
-        /* Update existing one: */
+        /* Just update existing one: */
         pPopupStack->updatePopupPane(strPopupPaneID, strMessage, strDetails);
     }
+    /* If there is no popup-pane with such ID: */
     else
     {
         /* Compose button description map: */
@@ -262,112 +315,6 @@ void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneI
     pPopupStack->recallPopupPane(strPopupPaneID);
 }
 
-void UIPopupCenter::showPopupStack(QWidget *pParent)
-{
-    /* Make sure passed parent is valid: */
-    if (!pParent)
-    {
-        AssertMsgFailed(("Passed parent is NULL"));
-        return;
-    }
-
-    /* Do we have a stack for passed parent? */
-    const QString strPopupStackID(popupStackID(pParent));
-    if (!m_stacks.contains(strPopupStackID))
-        return;
-
-    /* Assign stack with passed parent: */
-    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
-    assignPopupStackParent(pPopupStack, pParent);
-    pPopupStack->show();
-}
-
-void UIPopupCenter::hidePopupStack(QWidget *pParent)
-{
-    /* Make sure passed parent is valid: */
-    if (!pParent)
-    {
-        AssertMsgFailed(("Passed parent is NULL"));
-        return;
-    }
-
-    /* Do we have a stack for passed parent? */
-    const QString strPopupStackID(popupStackID(pParent));
-    if (!m_stacks.contains(strPopupStackID))
-        return;
-
-    /* Unassign stack with passed parent: */
-    UIPopupStack *pPopupStack = m_stacks[strPopupStackID];
-    pPopupStack->hide();
-    unassignPopupStackParent(pPopupStack, pParent);
-}
-
-void UIPopupCenter::reinstallPopupStack(QWidget *pParent, bool fAsTopLevel)
-{
-    /* Make sure passed parent is valid: */
-    if (!pParent)
-        return;
-
-    /* Do we have a stack for passed parent? */
-    const QString strPopupStackID(popupStackID(pParent));
-    if (!m_stacks.contains(strPopupStackID))
-        return;
-
-    /* Make sure we should really reinstall stack: */
-    if ((fAsTopLevel && m_type == UIPopupIntegrationType_Toplevel) ||
-        (!fAsTopLevel && m_type == UIPopupIntegrationType_Embedded))
-        return;
-
-    LogRelFlow(("UIPopupCenter::reinstallPopupStack: Reinstalling popup-stack as %s.\n",
-                fAsTopLevel ? "top level window" : "embedded widget"));
-
-    /* Remove stack: */
-    hidePopupStack(pParent);
-
-    /* Make sure integration type is correct: */
-    setStackIntegrationType(fAsTopLevel ? UIPopupIntegrationType_Toplevel : UIPopupIntegrationType_Embedded);
-
-    /* Return stack again: */
-    showPopupStack(pParent);
-}
-
-void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
-{
-    /* Make sure parent is not NULL: */
-    AssertMsg(pParent, ("Invalid parent passed!"));
-
-    /* Assign event-filter: */
-    pParent->installEventFilter(pPopupStack);
-
-    /* Assign parent depending on *integration* type: */
-    switch (m_type)
-    {
-        case UIPopupIntegrationType_Embedded:
-        {
-            pPopupStack->setParent(pParent);
-            break;
-        }
-        case UIPopupIntegrationType_Toplevel:
-        {
-            pPopupStack->setParent(pParent, Qt::Tool | Qt::FramelessWindowHint);
-            break;
-        }
-        default: break;
-    }
-}
-
-void UIPopupCenter::unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
-{
-    /* Make sure parent is not NULL: */
-    AssertMsg(pParent, ("Invalid parent passed!"));
-
-    /* Unassign parent: */
-    pPopupStack->setParent(0);
-
-    /* Unassign event-filter: */
-    pParent->removeEventFilter(pPopupStack);
-}
-
 void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)
 {
     /* Was the result auto-confirmated? */
@@ -383,53 +330,27 @@ void UIPopupCenter::sltPopupPaneDone(QString strPopupPaneID, int iResultCode)
     emit sigPopupPaneDone(strPopupPaneID, iResultCode);
 }
 
-void UIPopupCenter::sltShowPopupStack()
+void UIPopupCenter::sltRemovePopupStack(QString strPopupStackID)
 {
-    showPopupStack(vboxGlobal().activeMachineWindow());
-}
-
-void UIPopupCenter::sltHidePopupStack()
-{
-    hidePopupStack(vboxGlobal().activeMachineWindow());
-}
-
-void UIPopupCenter::sltReinstallPopupStack(bool fAsTopLevel)
-{
-    reinstallPopupStack(vboxGlobal().activeMachineWindow(), fAsTopLevel);
-}
-
-void UIPopupCenter::sltRemovePopupStack()
-{
-    /* Make sure the sender is the popup-stack: */
-    UIPopupStack *pPopupStack = qobject_cast<UIPopupStack*>(sender());
-    if (!pPopupStack)
-    {
-        AssertMsgFailed(("Should be called by popup-stack only!"));
-        return;
-    }
-
-    /* Make sure the popup-stack still exists: */
-    const QString strPopupStackID(m_stacks.key(pPopupStack, QString()));
-    if (strPopupStackID.isNull())
+    /* Make sure corresponding popup-stack *exists*: */
+    if (!m_stacks.contains(strPopupStackID))
     {
         AssertMsgFailed(("Popup-stack already destroyed!"));
         return;
     }
 
-    /* Cleanup the popup-stack: */
+    /* Delete popup-stack: */
+    delete m_stacks[strPopupStackID];
     m_stacks.remove(strPopupStackID);
-    delete pPopupStack;
 }
 
 /* static */
 QString UIPopupCenter::popupStackID(QWidget *pParent)
 {
-    /* Make sure passed parent is always valid: */
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
     if (!pParent)
-    {
-        AssertMsgFailed(("Passed parent is NULL"));
         return QString();
-    }
 
     /* Special handling for Runtime UI: */
     if (qobject_cast<UIMachineWindow*>(pParent))
@@ -437,6 +358,49 @@ QString UIPopupCenter::popupStackID(QWidget *pParent)
 
     /* Common handling for other cases: */
     return pParent->metaObject()->className();
+}
+
+/* static */
+void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent, UIPopupStackType stackType)
+{
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
+    /* Assign event-filter: */
+    pParent->installEventFilter(pPopupStack);
+
+    /* Assign parent depending on passed *stack* type: */
+    switch (stackType)
+    {
+        case UIPopupStackType_Embedded:
+        {
+            pPopupStack->setParent(pParent);
+            break;
+        }
+        case UIPopupStackType_Separate:
+        {
+            pPopupStack->setParent(pParent, Qt::Tool | Qt::FramelessWindowHint);
+            break;
+        }
+        default: break;
+    }
+}
+
+/* static */
+void UIPopupCenter::unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
+{
+    /* Make sure parent is set! */
+    AssertMsg(pParent, ("Parent is NULL!"));
+    if (!pParent)
+        return;
+
+    /* Unassign parent: */
+    pPopupStack->setParent(0);
+
+    /* Unassign event-filter: */
+    pParent->removeEventFilter(pPopupStack);
 }
 
 void UIPopupCenter::cannotSendACPIToMachine(QWidget *pParent)

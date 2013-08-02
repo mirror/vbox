@@ -40,9 +40,7 @@ signals:
     /* Notifiers: Popup-pane stuff: */
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
     void sigPopupPaneRemoved(QString strPopupPaneID);
-
-    /* Notifier: Popup-stack stuff: */
-    void sigRemove();
+    void sigPopupPanesRemoved();
 
 public:
 

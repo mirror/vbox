@@ -154,7 +154,7 @@ void UIPopupStackViewport::sltPopupPaneDone(int iResultCode)
         return;
 
     /* Notify listeners about popup-stack: */
-    emit sigRemove();
+    emit sigPopupPanesRemoved();
 }
 
 void UIPopupStackViewport::updateSizeHint()

@@ -52,13 +52,6 @@ class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
-signals:
-
-    /* Notifiers: Machine-window(s) stuff: */
-    void sigMachineWindowsCreated();
-    void sigMachineWindowsDestroyed();
-    void sigNotifyAbout3DOverlayVisibilityChange(bool fVisible);
-
 public:
 
     /* Factory functions to create/destroy required logic sub-child: */
@@ -121,9 +114,8 @@ protected slots:
 
 protected:
 
-    /* Constructor/destructor: */
+    /* Constructor: */
     UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType);
-    ~UIMachineLogic();
 
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }

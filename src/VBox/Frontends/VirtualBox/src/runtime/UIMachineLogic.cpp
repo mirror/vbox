@@ -352,8 +352,14 @@ void UIMachineLogic::powerOff(bool fDiscardingState)
 
 void UIMachineLogic::notifyAbout3DOverlayVisibilityChange(bool fVisible)
 {
-    /* Notify listener about 3D overlay visibility change: */
-    emit sigNotifyAbout3DOverlayVisibilityChange(fVisible);
+    /* If active machine-window is defined now: */
+    if (activeMachineWindow())
+    {
+        /* Reinstall corresponding popup-stack according 3D overlay visibility status: */
+        popupCenter().hidePopupStack(activeMachineWindow());
+        popupCenter().setPopupStackType(activeMachineWindow(), fVisible ? UIPopupStackType_Separate : UIPopupStackType_Embedded);
+        popupCenter().showPopupStack(activeMachineWindow());
+    }
 }
 
 void UIMachineLogic::sltMachineStateChanged()
@@ -543,24 +549,6 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_DockIconPreviewMonitor(0)
 #endif /* Q_WS_MAC */
 {
-    /* Register popup-center connections: */
-    connect(this, SIGNAL(sigMachineWindowsCreated()),
-            &popupCenter(), SLOT(sltShowPopupStack()));
-    connect(this, SIGNAL(sigMachineWindowsDestroyed()),
-            &popupCenter(), SLOT(sltHidePopupStack()));
-    connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-            &popupCenter(), SLOT(sltReinstallPopupStack(bool)));
-}
-
-UIMachineLogic::~UIMachineLogic()
-{
-    /* Unregister popup-center connections: */
-    disconnect(this, SIGNAL(sigMachineWindowsCreated()),
-               &popupCenter(), SLOT(sltShowPopupStack()));
-    disconnect(this, SIGNAL(sigMachineWindowsDestroyed()),
-               &popupCenter(), SLOT(sltHidePopupStack()));
-    disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-               &popupCenter(), SLOT(sltReinstallPopupStack(bool)));
 }
 
 void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
@@ -572,9 +560,9 @@ void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
     /* Special handling for 'destroyed' case: */
     if (!fIsWindowsCreated)
     {
-        /* We emit this signal *before* the remembering new value
+        /* We ask popup-center to hide corresponding popup-stack *before* the remembering new value
          * because we want UIMachineLogic::activeMachineWindow() to be yet alive. */
-        emit sigMachineWindowsDestroyed();
+        popupCenter().hidePopupStack(activeMachineWindow());
     }
 
     /* Remember new value: */
@@ -583,9 +571,12 @@ void UIMachineLogic::setMachineWindowsCreated(bool fIsWindowsCreated)
     /* Special handling for 'created' case: */
     if (fIsWindowsCreated)
     {
-        /* We emit this signal *after* the remembering new value
+        /* We ask popup-center to show corresponding popup-stack *after* the remembering new value
          * because we want UIMachineLogic::activeMachineWindow() to be already alive. */
-        emit sigMachineWindowsCreated();
+        popupCenter().setPopupStackType(activeMachineWindow(),
+                                        visualStateType() == UIVisualStateType_Seamless ?
+                                        UIPopupStackType_Separate : UIPopupStackType_Embedded);
+        popupCenter().showPopupStack(activeMachineWindow());
     }
 }
 
@@ -662,9 +653,6 @@ void UIMachineLogic::prepareRequiredFeatures()
     initSharedAVManager();
 # endif /* VBOX_WITH_ICHAT_THEATER */
 #endif /* Q_WS_MAC */
-
-    /* Switch popup-center into default integration mode: */
-    popupCenter().setStackIntegrationType(UIPopupIntegrationType_Embedded);
 }
 
 void UIMachineLogic::prepareSessionConnections()

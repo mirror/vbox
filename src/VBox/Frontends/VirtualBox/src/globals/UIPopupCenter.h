@@ -28,11 +28,11 @@
 class QWidget;
 class UIPopupStack;
 
-/* Popup integration types: */
-enum UIPopupIntegrationType
+/* Popup-stack types: */
+enum UIPopupStackType
 {
-    UIPopupIntegrationType_Embedded,
-    UIPopupIntegrationType_Toplevel
+    UIPopupStackType_Embedded,
+    UIPopupStackType_Separate
 };
 
 /* Popup-center singleton: */
@@ -51,8 +51,10 @@ public:
     static void create();
     static void destroy();
 
-    /* API: Stack layout stuff: */
-    void setStackIntegrationType(UIPopupIntegrationType type);
+    /* API: Popup-stack stuff: */
+    void showPopupStack(QWidget *pParent);
+    void hidePopupStack(QWidget *pParent);
+    void setPopupStackType(QWidget *pParent, UIPopupStackType newStackType);
 
     /* API: Main message function.
      * Provides one-two buttons.
@@ -112,11 +114,8 @@ private slots:
     /* Handler: Popup-pane stuff: */
     void sltPopupPaneDone(QString strPopupPaneID, int iResultCode);
 
-    /* Handlers: Popup-stack stuff: */
-    void sltShowPopupStack();
-    void sltHidePopupStack();
-    void sltReinstallPopupStack(bool fAsTopLevel);
-    void sltRemovePopupStack();
+    /* Handler: Popup-stack stuff: */
+    void sltRemovePopupStack(QString strPopupStackID);
 
 private:
 
@@ -136,18 +135,13 @@ private:
                        bool fProposeAutoConfirmation);
     void hidePopupPane(QWidget *pParent, const QString &strPopupPaneID);
 
-    /* Helpers: Popup-stack stuff: */
-    void showPopupStack(QWidget *pParent);
-    void hidePopupStack(QWidget *pParent);
-    void reinstallPopupStack(QWidget *pParent, bool fAsTopLevel);
-    void assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
-    void unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
-
     /* Static helper: Popup-stack stuff: */
     static QString popupStackID(QWidget *pParent);
+    static void assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent, UIPopupStackType stackType);
+    static void unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent);
 
-    /* Variable: Popup-stack stuff: */
-    UIPopupIntegrationType m_type;
+    /* Variables: Popup-stack stuff: */
+    QMap<QString, UIPopupStackType> m_stackTypes;
     QMap<QString, QPointer<UIPopupStack> > m_stacks;
 
     /* Instance stuff: */
