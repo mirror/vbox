@@ -42,12 +42,12 @@ signals:
     void sigPopupPaneDone(QString strPopupPaneID, int iResultCode);
 
     /* Notifier: Popup-stack stuff: */
-    void sigRemove();
+    void sigRemove(QString strID);
 
 public:
 
     /* Constructor: */
-    UIPopupStack();
+    UIPopupStack(const QString &strID);
 
     /* API: Popup-pane stuff: */
     bool exists(const QString &strPopupPaneID) const;
@@ -68,8 +68,9 @@ private slots:
     /* Handler: Layout stuff: */
     void sltAdjustGeometry();
 
-    /* Handler: Popuyp-pane stuff: */
+    /* Handlers: Popup-pane stuff: */
     void sltPopupPaneRemoved(QString strPopupPaneID);
+    void sltPopupPanesRemoved();
 
 private:
 
@@ -89,6 +90,9 @@ private:
     /* Static helpers: Prepare stuff: */
     static int parentMenuBarHeight(QWidget *pParent);
     static int parentStatusBarHeight(QWidget *pParent);
+
+    /* Variable: General stuff: */
+    QString m_strID;
 
     /* Variables: Widget stuff: */
     QVBoxLayout *m_pMainLayout;

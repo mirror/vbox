@@ -29,8 +29,9 @@
 #include "UIPopupStack.h"
 #include "UIPopupStackViewport.h"
 
-UIPopupStack::UIPopupStack()
-    : m_pScrollArea(0)
+UIPopupStack::UIPopupStack(const QString &strID)
+    : m_strID(strID)
+    , m_pScrollArea(0)
     , m_pScrollViewport(0)
     , m_iParentMenuBarHeight(0)
     , m_iParentStatusBarHeight(0)
@@ -139,6 +140,12 @@ void UIPopupStack::sltPopupPaneRemoved(QString)
         parentWidget()->setFocus();
 }
 
+void UIPopupStack::sltPopupPanesRemoved()
+{
+    /* Ask popup-center to remove us: */
+    emit sigRemove(m_strID);
+}
+
 void UIPopupStack::prepare()
 {
     /* Configure background: */
@@ -193,8 +200,8 @@ void UIPopupStack::prepareContent()
                         this, SIGNAL(sigPopupPaneDone(QString, int)));
                 connect(m_pScrollViewport, SIGNAL(sigPopupPaneRemoved(QString)),
                         this, SLOT(sltPopupPaneRemoved(QString)));
-                connect(m_pScrollViewport, SIGNAL(sigRemove()),
-                        this, SIGNAL(sigRemove()));
+                connect(m_pScrollViewport, SIGNAL(sigPopupPanesRemoved()),
+                        this, SLOT(sltPopupPanesRemoved()));
             }
             /* Assign scroll-viewport to scroll-area: */
             m_pScrollArea->setWidget(m_pScrollViewport);
