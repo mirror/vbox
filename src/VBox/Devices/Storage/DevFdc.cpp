@@ -2119,8 +2119,10 @@ static void fdctrl_result_timer(void *opaque)
     }
     /* READ_ID can't automatically succeed! */
 #ifdef VBOX
-    if (/* !cur_drv->fMediaPresent || */
-        ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate)) {
+    if (!cur_drv->max_track) {
+        FLOPPY_DPRINTF("read id when no disk in drive\n");
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+    } else if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
         fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
