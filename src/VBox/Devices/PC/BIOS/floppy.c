@@ -1111,8 +1111,9 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         CLEAR_CF(); // successful, not present
         if (drive_type==0) {
             SET_AH(0); // drive not present
-        }
-        else {
+        } else if (drive_type > 1) {
+            SET_AH(2); // drive present, supports change line
+        } else {
             SET_AH(1); // drive present, does not support change line
         }
         
