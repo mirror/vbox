@@ -47,6 +47,7 @@ typedef struct TSTRTR0THREADCTXDATA
 {
     uint32_t volatile   u32Magic;
     RTCPUID             uSourceCpuId;
+    RTNATIVETHREAD      hSourceThread;
     RTTHREADCTX         hThreadCtx;
 
     /* For RTTHREADCTXEVENT_PREEMPTING. */
@@ -95,6 +96,14 @@ static void tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
                 break;
             }
 
+            RTNATIVETHREAD hCurrentThread = RTThreadNativeSelf();
+            if (pData->hSourceThread != hCurrentThread)
+            {
+                RTStrPrintf(pData->achResult, sizeof(pData->achResult),
+                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
+                            pData->hSourceThread, hCurrentThread);
+            }
+
             RTCPUID uCurrentCpuId = RTMpCpuId();
             if (pData->uSourceCpuId != uCurrentCpuId)
             {
@@ -120,6 +129,14 @@ static void tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pvUser)
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
                             "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Called before preempting callback was invoked.");
+            }
+
+            RTNATIVETHREAD hCurrentThread = RTThreadNativeSelf();
+            if (pData->hSourceThread != hCurrentThread)
+            {
+                RTStrPrintf(pData->achResult, sizeof(pData->achResult),
+                            "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
+                            pData->hSourceThread, hCurrentThread);
             }
 
             ASMAtomicWriteBool(&pData->fResumedSuccess, true);
@@ -300,6 +317,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             pCtxData->fPreemptingInvoked = false;
             pCtxData->fResumedInvoked    = false;
             pCtxData->fResumedSuccess    = false;
+            pCtxData->hSourceThread      = RTThreadNativeSelf();
             RT_ZERO(pCtxData->achResult);
 
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
