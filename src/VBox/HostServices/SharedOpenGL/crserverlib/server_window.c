@@ -328,6 +328,9 @@ static void crServerVBoxRootVrTranslateForMural(CRMuralInfo *mural)
     int32_t dx = cr_server.RootVrCurPoint.x - mural->gX;
     int32_t dy = cr_server.RootVrCurPoint.y - mural->gY;
 
+    cr_server.RootVrCurPoint.x = mural->gX;
+    cr_server.RootVrCurPoint.y = mural->gY;
+
     VBoxVrListTranslate(&cr_server.RootVr, dx, dy);
 }
 
@@ -493,6 +496,7 @@ crServerDispatchWindowDestroy( GLint window )
 static DECLCALLBACK(VBOXVR_SCR_COMPOSITOR_ENTRY*) crServerMuralGetRootVrCEntry(VBOXVR_SCR_COMPOSITOR_ENTRY*pEntry, void *pvContext)
 {
     CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
+    Assert(!CrVrScrCompositorEntryIsUsed(&pDEntry->RootVrCEntry));
     CrVrScrCompositorEntryInit(&pDEntry->RootVrCEntry, CrVrScrCompositorEntryTexGet(pEntry), NULL);
     return &pDEntry->RootVrCEntry;
 }
