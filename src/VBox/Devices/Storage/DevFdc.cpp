@@ -1089,7 +1089,12 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
     uint32_t retval = 0;
 
 #ifdef VBOX
-    if (fdctrl_media_changed(get_cur_drv(fdctrl)))
+    /* The change line signal is reported by the currently selected
+     * drive. If the corresponding motor on bit is not set, the drive 
+     * is *not* selected! 
+     */
+    if (fdctrl_media_changed(get_cur_drv(fdctrl))
+     && (fdctrl->dor & (0x10 << fdctrl->cur_drv)))
 #else
     if (fdctrl_media_changed(drv0(fdctrl))
      || fdctrl_media_changed(drv1(fdctrl))
