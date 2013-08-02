@@ -1001,7 +1001,7 @@ typedef PPGMPAGE *PPPGMPAGE;
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_SET_WRITTEN_TO(a_pVM, a_pPage) \
-    do { (a_pPage)->au8[1] |= UINT8_C(0x80); PGM_PAGE_ASSERT_LOCK(a_pVM); } while (0) /// FIXME FIXME
+    do { (a_pPage)->s.fWrittenToY = 1; PGM_PAGE_ASSERT_LOCK(a_pVM); } while (0) /// FIXME FIXME
 
 /**
  * Clears the written-to indicator.
