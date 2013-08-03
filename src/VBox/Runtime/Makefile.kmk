@@ -583,6 +583,8 @@ RuntimeR3_SOURCES.win = \
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
 	nt/RTErrConvertFromNtStatus.cpp \
+ 	r3/nt/fs-nt.cpp \
+ 	r3/nt/pathint-nt.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/RTHandleGetStandard-win.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
@@ -594,7 +596,6 @@ RuntimeR3_SOURCES.win = \
 	r3/win/dir-win.cpp \
 	r3/win/errvars-win.cpp \
 	r3/win/fileio-win.cpp \
-	r3/win/fs-win.cpp \
 	r3/win/init-win.cpp \
 	r3/win/ldrNative-win.cpp \
 	r3/win/localipc-win.cpp \

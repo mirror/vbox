@@ -36,6 +36,7 @@ typedef INT     FILE_INFORMATION_CLASS;
 typedef INT     FS_INFORMATION_CLASS;
 typedef INT     MEMORY_INFORMATION_CLASS;
 typedef INT     PROCESSINFOCLASS;
+typedef PVOID   POBJECT_ATTRIBUTES;
 
 
 /* Error/status conversion: */
@@ -111,4 +112,27 @@ NTSYSAPI LONG NTAPI NtSetTimerResolution(IN ULONG DesiredResolution,
     return -1;
 }
 
+
+
+/* Handles: */
+
+NTSYSAPI NTSTATUS NTAPI NtCreateFile(OUT PHANDLE FileHandle,
+                                     IN ACCESS_MASK DesiredAccess,
+                                     IN POBJECT_ATTRIBUTES ObjectAttributes,
+                                     OUT PIO_STATUS_BLOCK IoStatusBlock,
+                                     IN PLARGE_INTEGER AllocationSize OPTIONAL,
+                                     IN ULONG FileAttributes,
+                                     IN ULONG ShareAccess,
+                                     IN ULONG CreateDisposition,
+                                     IN ULONG CreateOptions,
+                                     IN PVOID EaBuffer,
+                                     IN ULONG EaLength)
+{
+    return -1;
+}
+
+NTSYSAPI NTSTATUS NTAPI NtClose(IN HANDLE Handle)
+{
+    return -1;
+}
 

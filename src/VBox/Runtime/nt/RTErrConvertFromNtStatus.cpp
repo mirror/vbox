@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,17 +40,23 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
 {
     switch (lNativeCode)
     {
-        case STATUS_SUCCESS:
-            return VINF_SUCCESS;
-        case STATUS_ALERTED:
-        case STATUS_USER_APC:
-            return VERR_INTERRUPTED;
-        case STATUS_OBJECT_NAME_NOT_FOUND:
-            return VERR_FILE_NOT_FOUND;
+        case STATUS_SUCCESS:                return VINF_SUCCESS;
+
+        case STATUS_ALERTED:                return VERR_INTERRUPTED;
+        case STATUS_USER_APC:               return VERR_INTERRUPTED;
+
+        case STATUS_INVALID_HANDLE:         return VERR_INVALID_HANDLE;
+        case STATUS_INVALID_PARAMETER:      return VERR_INVALID_PARAMETER;
+        case STATUS_INVALID_DEVICE_REQUEST: return VERR_IO_BAD_COMMAND;
+        case STATUS_ACCESS_DENIED:          return VERR_ACCESS_DENIED;
+        case STATUS_OBJECT_NAME_INVALID:    return VERR_INVALID_NAME;
+        case STATUS_OBJECT_NAME_NOT_FOUND:  return VERR_FILE_NOT_FOUND;
+        case STATUS_OBJECT_PATH_INVALID:    return VERR_INVALID_NAME;
+        case STATUS_OBJECT_PATH_NOT_FOUND:  return VERR_PATH_NOT_FOUND;
     }
 
     /* unknown error. */
-    AssertMsgFailed(("Unhandled error %ld\n", lNativeCode));
+    AssertMsgFailed(("Unhandled error %#lx (%lu)\n", lNativeCode, lNativeCode));
     return VERR_UNRESOLVED_ERROR;
 }
 
