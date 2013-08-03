@@ -811,7 +811,11 @@ Console::teleporterSrcThreadWrapper(RTTHREAD hThread, void *pvUser)
         ptrVM.release();
 
         pState->mptrConsole->mVMIsAlreadyPoweringOff = true; /* (Make sure we stick in the TeleportingPausedVM state.) */
+        autoLock.release();
+
         hrc = pState->mptrConsole->powerDown();
+
+        autoLock.acquire();
         pState->mptrConsole->mVMIsAlreadyPoweringOff = false;
 
         pState->mptrProgress->notifyComplete(hrc);
