@@ -622,7 +622,7 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
     /*
      * Close the session.
      */
-    supdrvCloseSession(&g_DevExt, pSession);
+    supdrvSessionRelease(pSession);
     return 0;
 }
 

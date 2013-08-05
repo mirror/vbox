@@ -549,7 +549,7 @@ static int VBoxDrvLinuxClose(struct inode *pInode, struct file *pFilp)
 {
     Log(("VBoxDrvLinuxClose: pFilp=%p pSession=%p pid=%d/%d %s\n",
          pFilp, pFilp->private_data, RTProcSelf(), current->pid, current->comm));
-    supdrvCloseSession(&g_DevExt, (PSUPDRVSESSION)pFilp->private_data);
+    supdrvSessionRelease((PSUPDRVSESSION)pFilp->private_data);
     pFilp->private_data = NULL;
     return 0;
 }
