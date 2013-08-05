@@ -1619,7 +1619,11 @@ Virtual system 0:
     of the current state of the virtual machine. You must supply a name for
     the snapshot and can optionally supply a description. The new snapshot is
     inserted into the snapshots tree as a child of the current snapshot and
-    then becomes the new current snapshot.</para>
+    then becomes the new current snapshot. The
+    <computeroutput>--description</computeroutput> parameter allows to
+    describe the snapshot. If <computeroutput>--live</computeroutput>
+    is specified, the VM will not be stopped during the snapshot creation
+    (live smapshotting).</para>
 
     <para>The <computeroutput>delete</computeroutput> operation deletes a
     snapshot (specified by name or by UUID). This can take a while to finish
