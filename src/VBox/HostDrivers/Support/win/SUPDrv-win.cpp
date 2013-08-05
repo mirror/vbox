@@ -413,7 +413,7 @@ NTSTATUS _stdcall VBoxDrvNtClose(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     Log(("VBoxDrvNtClose: pDevExt=%p pFileObj=%p pSession=%p\n", pDevExt, pFileObj, pSession));
     if (pSession)
     {
-        supdrvCloseSession(pDevExt, (PSUPDRVSESSION)pFileObj->FsContext);
+        supdrvSessionRelease((PSUPDRVSESSION)pFileObj->FsContext);
         pFileObj->FsContext = NULL;
     }
 
