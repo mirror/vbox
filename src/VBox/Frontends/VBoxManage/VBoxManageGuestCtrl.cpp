@@ -402,6 +402,36 @@ static int ctrlExecProcessStatusToExitCode(ProcessStatus_T enmStatus, ULONG uExi
     return vrc;
 }
 
+/**
+ * Translates a guest session status to a human readable
+ * string.
+ */
+static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus)
+{
+    switch (enmStatus)
+    {
+        case GuestSessionStatus_Starting:
+            return "starting";
+        case GuestSessionStatus_Started:
+            return "started";
+        case GuestSessionStatus_Terminating:
+            return "terminating";
+        case GuestSessionStatus_Terminated:
+            return "terminated";
+        case GuestSessionStatus_TimedOutKilled:
+            return "timed out";
+        case GuestSessionStatus_TimedOutAbnormally:
+            return "timed out, hanging";
+        case GuestSessionStatus_Down:
+            return "killed";
+        case GuestSessionStatus_Error:
+            return "error";
+        default:
+            break;
+    }
+    return "unknown";
+}
+
 static int ctrlPrintError(com::ErrorInfo &errorInfo)
 {
     if (   errorInfo.isFullAvailable()
@@ -2855,15 +2885,16 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                     ComPtr<IGuestSession> pCurSession = collSessions[i];
                     if (!pCurSession.isNull())
                     {
+                        ULONG uID;
+                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Id)(&uID));
                         Bstr strName;
                         CHECK_ERROR_BREAK(pCurSession, COMGETTER(Name)(strName.asOutParam()));
                         Bstr strUser;
                         CHECK_ERROR_BREAK(pCurSession, COMGETTER(User)(strUser.asOutParam()));
-                        ULONG uID;
-                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Id)(&uID));
-
-                        RTPrintf("\n\tSession #%-3zu ID=%-3RU32 User=%-16ls Name=%ls",
-                                 i, uID, strUser.raw(), strName.raw());
+                        GuestSessionStatus_T sessionStatus;
+                        CHECK_ERROR_BREAK(pCurSession, COMGETTER(Status)(&sessionStatus));
+                        RTPrintf("\n\tSession #%-3zu ID=%-3RU32 User=%-16ls Status=[%s] Name=%ls",
+                                 i, uID, strUser.raw(), ctrlSessionStatusToText(sessionStatus), strName.raw());
 
                         if (   fListAll
                             || fListProcesses)
@@ -2879,11 +2910,11 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                                     CHECK_ERROR_BREAK(pCurProcess, COMGETTER(PID)(&uPID));
                                     Bstr strExecPath;
                                     CHECK_ERROR_BREAK(pCurProcess, COMGETTER(ExecutablePath)(strExecPath.asOutParam()));
-                                    ProcessStatus_T status;
-                                    CHECK_ERROR_BREAK(pCurProcess, COMGETTER(Status)(&status));
+                                    ProcessStatus_T procStatus;
+                                    CHECK_ERROR_BREAK(pCurProcess, COMGETTER(Status)(&procStatus));
 
                                     RTPrintf("\n\t\tProcess #%-03zu PID=%-6RU32 Status=[%s] Command=%ls",
-                                             a, uPID, ctrlExecProcessStatusToText(status), strExecPath.raw());
+                                             a, uPID, ctrlExecProcessStatusToText(procStatus), strExecPath.raw());
                                 }
                             }
 
