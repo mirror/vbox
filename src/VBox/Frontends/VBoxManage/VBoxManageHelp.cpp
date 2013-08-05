@@ -498,7 +498,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_SNAPSHOT)
         RTStrmPrintf(pStrm,
                            "%s snapshot %s        <uuid|vmname>\n"
-                     "                            take <name> [--description <desc>] [--pause] |\n"
+                     "                            take <name> [--description <desc>] [--live] |\n"
                      "                            delete <uuid|snapname> |\n"
                      "                            restore <uuid|snapname> |\n"
                      "                            restorecurrent |\n"
