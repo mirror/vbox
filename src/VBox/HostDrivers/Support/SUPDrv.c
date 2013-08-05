@@ -1003,6 +1003,7 @@ uint32_t VBOXCALL supdrvSessionRetain(PSUPDRVSESSION pSession)
     return cRefs;
 }
 
+
 /**
  * Releases a given session.
  *
@@ -1021,6 +1022,7 @@ uint32_t VBOXCALL supdrvSessionRelease(PSUPDRVSESSION pSession)
         supdrvCloseSession(pSession->pDevExt, pSession);
     return cRefs;
 }
+
 
 /**
  * RTHandleTableDestroy callback used by supdrvCleanupSession.
