@@ -83,23 +83,55 @@ typedef struct RTDIR
 #endif
     /** The length of the converted filename. */
     size_t              cchName;
+    /** The size of this structure. */
+    size_t              cbSelf;
 
-#ifdef RT_OS_WINDOWS
+#ifndef RTDIR_AGNOSTIC
+# ifdef RT_OS_WINDOWS
     /** Handle to the opened directory search. */
     HANDLE              hDir;
+#  ifndef RT_USE_NATIVE_NT
     /** Find data buffer.
      * fDataUnread indicates valid data. */
     WIN32_FIND_DATAW    Data;
-
-#else /* 'POSIX': */
+#  else
+    /** The size of the name buffer pszName points to. */
+    size_t              cbNameAlloc;
+    /** NT filter string. */
+    UNICODE_STRING      NtFilterStr;
+    /** Pointer to NtFilterStr if applicable, otherwise NULL. */
+    PUNICODE_STRING     pNtFilterStr;
+    /** The information class we're using. */
+    FILE_INFORMATION_CLASS enmInfoClass;
+    /** Object directory context data. */
+    ULONG               uObjDirCtx;
+    /** Pointer to the current data entry in the buffer. */
+    union
+    {
+        /** Both file names, no file ID. */
+        PFILE_BOTH_DIR_INFORMATION      pBoth;
+        /** Both file names with file ID. */
+        PFILE_ID_BOTH_DIR_INFORMATION   pBothId;
+        /** Object directory info. */
+        POBJECT_DIRECTORY_INFORMATION   pObjDir;
+        /** Unsigned view. */
+        uintptr_t                       u;
+    }                   uCurData;
+    /** The amount of valid data in the buffer. */
+    uint32_t            cbBuffer;
+    /** The allocate buffer size. */
+    uint32_t            cbBufferAlloc;
+    /** Find data buffer containing multiple directory entries.
+     * fDataUnread indicates valid data. */
+    uint8_t            *pabBuffer;
+#  endif
+# else /* 'POSIX': */
     /** What opendir() returned. */
     DIR                *pDir;
-    /** The max size of the d_name member.
-     * This includes the 0 terminator of course.*/
-    size_t              cbMaxName;
     /** Find data buffer.
      * fDataUnread indicates valid data. */
     struct dirent       Data;
+# endif
 #endif
 } RTDIR;
 
@@ -129,5 +161,13 @@ DECLINLINE(bool) rtDirValidHandle(PRTDIR pDir)
  *                      wildcard expression.
  */
 int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf);
+
+/**
+ * Returns the size of the directory structure.
+ *
+ * @returns The size in bytes.
+ * @param   pszPath     The path to the directory we're about to open.
+ */
+size_t rtDirNativeGetStructSize(const char *pszPath);
 
 #endif

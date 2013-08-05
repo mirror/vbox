@@ -29,14 +29,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_DIR
-#ifdef RT_OS_WINDOWS /* PORTME: Assumes everyone else is using dir-posix.cpp */
-# include <Windows.h>
-#else
-# include <dirent.h>
-# include <unistd.h>
-# include <limits.h>
-#endif
-
 #include <iprt/dir.h>
 #include "internal/iprt.h"
 
@@ -49,6 +41,7 @@
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/uni.h>
+#define RTDIR_AGNOSTIC
 #include "internal/dir.h"
 #include "internal/path.h"
 
@@ -570,34 +563,19 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
      * The posix definition of Data.d_name allows it to be < NAME_MAX + 1,
      * thus the horrible ugliness here. Solaris uses d_name[1] for instance.
      */
-#ifndef RT_OS_WINDOWS
-    long cbNameMax = pathconf(szRealPath, _PC_NAME_MAX);
-# ifdef NAME_MAX
-    if (cbNameMax < NAME_MAX)           /* This is plain paranoia, but it doesn't hurt. */
-        cbNameMax = NAME_MAX;
-# endif
-# ifdef _XOPEN_NAME_MAX
-    if (cbNameMax < _XOPEN_NAME_MAX)    /* Ditto. */
-        cbNameMax = _XOPEN_NAME_MAX;
-# endif
-    size_t cbDir = RT_OFFSETOF(RTDIR, Data.d_name[cbNameMax + 1]);
-    if (cbDir < sizeof(RTDIR))          /* Ditto. */
-        cbDir = sizeof(RTDIR);
-    cbDir = RT_ALIGN_Z(cbDir, 8);
-#else
-    size_t cbDir = sizeof(RTDIR);
-#endif
+    size_t cbDir = rtDirNativeGetStructSize(szRealPath);
     size_t const cbAllocated = cbDir
                              + cucFilter0 * sizeof(RTUNICP)
                              + cbFilter
                              + cchRealPath + 1 + 4;
-    PRTDIR pDir = (PRTDIR)RTMemAlloc(cbAllocated);
+    PRTDIR pDir = (PRTDIR)RTMemAllocZ(cbAllocated);
     if (!pDir)
         return VERR_NO_MEMORY;
     uint8_t *pb = (uint8_t *)pDir + cbDir;
 
     /* initialize it */
     pDir->u32Magic = RTDIR_MAGIC;
+    pDir->cbSelf   = cbDir;
     if (cbFilter)
     {
         pDir->puszFilter = (PRTUNICP)pb;
@@ -638,9 +616,6 @@ static int rtDirOpenCommon(PRTDIR *ppDir, const char *pszPath, const char *pszFi
     pDir->fDataUnread = false;
     pDir->pszName = NULL;
     pDir->cchName = 0;
-#ifndef RT_OS_WINDOWS
-    pDir->cbMaxName = cbDir - RT_OFFSETOF(RTDIR, Data.d_name);
-#endif
 
     /*
      * Hand it over to the native part.

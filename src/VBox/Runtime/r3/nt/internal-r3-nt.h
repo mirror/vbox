@@ -47,15 +47,24 @@
 #else
 # include <ntifs.h>
 #endif
+#include "internal/iprt.h"
 
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** Indicates that we're targetting native NT in the current source. */
+#define RT_USE_NATIVE_NT                1
 /** Initializes a IO_STATUS_BLOCK. */
 #define MY_IO_STATUS_BLOCK_INITIALIZER  { STATUS_FAILED_DRIVER_ENTRY, ~(uintptr_t)42 }
 /** Similar to INVALID_HANDLE_VALUE in the Windows environment. */
 #define MY_INVALID_HANDLE_VALUE         ( (HANDLE)~(uintptr_t)0 )
+
+#ifdef DEBUG_bird
+/** Enables the "\\!\" NT path pass thru as well as hacks for listing NT object
+ * directories. */
+# define IPRT_WITH_NT_PATH_PASSTHRU 1
+#endif
 
 
 /*******************************************************************************
@@ -64,12 +73,40 @@
 int  rtNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fFileAttribs, ULONG fShareAccess,
                   ULONG fCreateDisposition, ULONG fCreateOptions, ULONG fObjAttribs,
                   PHANDLE phHandle, PULONG_PTR puDisposition);
+int  rtNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fShareAccess, ULONG fCreateOptions,
+                     ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir);
 int  rtNtPathClose(HANDLE hHandle);
+
+
+/**
+ * Internal helper for comparing a WCHAR string with a char string.
+ *
+ * @returns @c true if equal, @c false if not.
+ * @param   pwsz1               The first string.
+ * @param   cb1                 The length of the first string, in bytes.
+ * @param   psz2                The second string.
+ * @param   cch2                The length of the second string.
+ */
+DECLINLINE(bool) rtNtCompWideStrAndAscii(WCHAR const *pwsz1, size_t cch1, const char *psz2, size_t cch2)
+{
+    if (cch1 != cch2 * 2)
+        return false;
+    while (cch2-- > 0)
+    {
+        unsigned ch1 = *pwsz1++;
+        unsigned ch2 = (unsigned char)*psz2++;
+        if (ch1 != ch2)
+            return false;
+    }
+    return true;
+}
 
 
 /*******************************************************************************
 *   NT APIs                                                                    *
 *******************************************************************************/
+
+RT_C_DECLS_BEGIN
 
 #ifdef IPRT_NT_NEED_API_GROUP_1
 
@@ -85,6 +122,19 @@ extern "C" NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK,
 
 #endif
 
+NTSTATUS NTAPI NtOpenDirectoryObject(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
+
+typedef struct _OBJECT_DIRECTORY_INFORMATION
+{
+    UNICODE_STRING Name;
+    UNICODE_STRING TypeName;
+} OBJECT_DIRECTORY_INFORMATION;
+typedef OBJECT_DIRECTORY_INFORMATION *POBJECT_DIRECTORY_INFORMATION;
+
+NTSTATUS NTAPI NtQueryDirectoryObject(HANDLE, PVOID, ULONG, BOOLEAN, BOOLEAN, PULONG, PULONG);
+
+
+RT_C_DECLS_END
 
 #endif
 

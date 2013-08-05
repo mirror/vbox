@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -37,6 +37,8 @@ typedef INT     FS_INFORMATION_CLASS;
 typedef INT     MEMORY_INFORMATION_CLASS;
 typedef INT     PROCESSINFOCLASS;
 typedef PVOID   POBJECT_ATTRIBUTES;
+typedef PVOID   PIO_APC_ROUTINE;
+typedef PVOID   PUNICODE_STRING;
 
 
 /* Error/status conversion: */
@@ -52,6 +54,32 @@ NTSYSAPI ULONG NTAPI RtlNtStatusToDosError(IN NTSTATUS Status)
 NTSYSAPI LONG NTAPI NtQueryTimerResolution(OUT PULONG MaximumResolution,
                                            OUT PULONG MinimumResolution,
                                            OUT PULONG CurrentResolution)
+{
+    return -1;
+}
+
+NTSYSAPI LONG NTAPI NtQueryDirectoryFile(IN HANDLE FileHandle,
+                                         IN HANDLE Event OPTIONAL,
+                                         IN PIO_APC_ROUTINE ApcRoutine OPTIONAL,
+                                         IN PVOID ApcContext OPTIONAL,
+                                         OUT PIO_STATUS_BLOCK IoStatusBlock,
+                                         OUT PVOID FileInformation,
+                                         IN ULONG Length,
+                                         IN FILE_INFORMATION_CLASS FileInformationClass,
+                                         IN BOOLEAN ReturnSingleEntry,
+                                         IN PUNICODE_STRING FileName OPTIONAL,
+                                         IN BOOLEAN RestartScan)
+{
+    return -1;
+}
+
+NTSYSAPI LONG NTAPI NtQueryDirectoryObject(IN HANDLE ObjectHandle,
+                                           OUT PVOID Buffer,
+                                           IN ULONG Length,
+                                           IN BOOLEAN ReturnSingleEntry,
+                                           IN BOOLEAN RestartScan,
+                                           IN OUT PULONG Context,
+                                           OUT PULONG ReturneLength)
 {
     return -1;
 }
@@ -127,6 +155,13 @@ NTSYSAPI NTSTATUS NTAPI NtCreateFile(OUT PHANDLE FileHandle,
                                      IN ULONG CreateOptions,
                                      IN PVOID EaBuffer,
                                      IN ULONG EaLength)
+{
+    return -1;
+}
+
+NTSYSAPI NTSTATUS NTAPI NtOpenDirectoryObject(OUT PHANDLE ObjectHandle,
+                                              IN ACCESS_MASK DesiredAccess,
+                                              IN POBJECT_ATTRIBUTES ObjectAttributes)
 {
     return -1;
 }

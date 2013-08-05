@@ -192,6 +192,26 @@ RTDECL(int) RTDirFlush(const char *pszPath)
 }
 
 
+size_t rtDirNativeGetStructSize(const char *pszPath)
+{
+    long cbNameMax = pathconf(pszPath, _PC_NAME_MAX);
+# ifdef NAME_MAX
+    if (cbNameMax < NAME_MAX)           /* This is plain paranoia, but it doesn't hurt. */
+        cbNameMax = NAME_MAX;
+# endif
+# ifdef _XOPEN_NAME_MAX
+    if (cbNameMax < _XOPEN_NAME_MAX)    /* Ditto. */
+        cbNameMax = _XOPEN_NAME_MAX;
+# endif
+    size_t cbDir = RT_OFFSETOF(RTDIR, Data.d_name[cbNameMax + 1]);
+    if (cbDir < sizeof(RTDIR))          /* Ditto. */
+        cbDir = sizeof(RTDIR);
+    cbDir = RT_ALIGN_Z(cbDir, 8);
+
+    return cbDir;
+}
+
+
 int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
 {
     NOREF(pszPathBuf); /* only used on windows */
@@ -207,11 +227,9 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
         if (pDir->pDir)
         {
             /*
-             * Init data.
+             * Init data (allocated as all zeros).
              */
-            pDir->fDataUnread = false;
-            memset(&pDir->Data, 0, RT_OFFSETOF(RTDIR, Data.d_name)); /* not strictly necessary */
-            memset(&pDir->Data.d_name[0], 0, pDir->cbMaxName);
+            pDir->fDataUnread = false; /* spelling it out */
         }
         else
             rc = RTErrConvertFromErrno(errno);
