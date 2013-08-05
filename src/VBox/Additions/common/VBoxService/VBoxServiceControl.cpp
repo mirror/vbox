@@ -209,15 +209,18 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
         rc = VbglR3GuestCtrlMsgWaitFor(g_uControlSvcClientID, &uMsg, &cParms);
         if (rc == VERR_TOO_MUCH_DATA)
         {
+#ifdef DEBUG
             VBoxServiceVerbose(4, "Message requires %ld parameters, but only 2 supplied -- retrying request (no error!)...\n", cParms);
+#endif
             rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
         }
         else if (RT_FAILURE(rc))
             VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
         if (RT_SUCCESS(rc))
         {
+#ifdef DEBUG
             VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
-
+#endif
             /* Set number of parameters for current host context. */
             ctxHost.uNumParms = cParms;
 
@@ -274,7 +277,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                          * skip all not wanted messages here.
                          */
                         rc = VbglR3GuestCtrlMsgSkip(g_uControlSvcClientID);
-                        VBoxServiceVerbose(3, "Skipping msg=%RU32, rc=%Rrc\n", uMsg, rc);
+                        VBoxServiceVerbose(3, "Skipping uMsg=%RU32, cParms=%RU32, rc=%Rrc\n",
+                                           uMsg, cParms, rc);
                     }
                     break;
                 }
@@ -468,8 +472,7 @@ VBOXSERVICE g_Control =
 #ifdef DEBUG
     "              [--control-dump-stderr] [--control-dump-stdout]\n"
 #endif
-    "              [--control-interval <ms>]\n"
-    "              [--control-procs-mem-std[in|out|err] <KB>]"
+    "              [--control-interval <ms>]"
     ,
     /* pszOptions. */
 #ifdef DEBUG
