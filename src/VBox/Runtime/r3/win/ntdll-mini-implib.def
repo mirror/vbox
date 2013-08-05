@@ -28,6 +28,7 @@ LIBRARY ntdll.dll
 EXPORTS
     RtlNtStatusToDosError
     NtQueryTimerResolution
+    NtQueryDirectoryFile
     NtQueryInformationFile
     NtQueryInformationProcess
     NtSetInformationFile
@@ -36,3 +37,4 @@ EXPORTS
     NtQueryVirtualMemory
     NtCreateFile
     NtClose
+    NtOpenDirectoryObject

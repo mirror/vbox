@@ -39,8 +39,10 @@ int main(int argc, char **argv)
     /*
      * Iterate arguments.
      */
-    bool fLong = false;
+    bool fLong      = false;
     bool fShortName = false;
+    bool fFiltered  = false;
+    bool fQuiet     = false;
     for (int i = 1; i < argc; i++)
     {
         if (argv[i][0] == '-')
@@ -55,6 +57,12 @@ int main(int argc, char **argv)
                     case 's':
                         fShortName = true;
                         break;
+                    case 'f':
+                        fFiltered = true;
+                        break;
+                    case 'q':
+                        fQuiet = true;
+                        break;
                     default:
                         RTPrintf("Unknown option '%c' ignored!\n", argv[i][j]);
                         break;
@@ -65,7 +73,11 @@ int main(int argc, char **argv)
         {
             /* open */
             PRTDIR pDir;
-            int rc = RTDirOpen(&pDir, argv[i]);
+            int rc;
+            if (!fFiltered)
+                rc = RTDirOpen(&pDir, argv[i]);
+            else
+                rc = RTDirOpenFiltered(&pDir, argv[i], RTDIRFILTER_WINNT, 0);
             if (RT_SUCCESS(rc))
             {
                 /* list */
@@ -77,24 +89,27 @@ int main(int argc, char **argv)
                         rc = RTDirRead(pDir, &DirEntry, NULL);
                         if (RT_FAILURE(rc))
                             break;
-                        switch (DirEntry.enmType)
+                        if (!fQuiet)
                         {
-                            case RTDIRENTRYTYPE_UNKNOWN:     RTPrintf("u"); break;
-                            case RTDIRENTRYTYPE_FIFO:        RTPrintf("f"); break;
-                            case RTDIRENTRYTYPE_DEV_CHAR:    RTPrintf("c"); break;
-                            case RTDIRENTRYTYPE_DIRECTORY:   RTPrintf("d"); break;
-                            case RTDIRENTRYTYPE_DEV_BLOCK:   RTPrintf("b"); break;
-                            case RTDIRENTRYTYPE_FILE:        RTPrintf("-"); break;
-                            case RTDIRENTRYTYPE_SYMLINK:     RTPrintf("l"); break;
-                            case RTDIRENTRYTYPE_SOCKET:      RTPrintf("s"); break;
-                            case RTDIRENTRYTYPE_WHITEOUT:    RTPrintf("w"); break;
-                            default:
-                                rcRet = 1;
-                                RTPrintf("?");
-                                break;
+                            switch (DirEntry.enmType)
+                            {
+                                case RTDIRENTRYTYPE_UNKNOWN:     RTPrintf("u"); break;
+                                case RTDIRENTRYTYPE_FIFO:        RTPrintf("f"); break;
+                                case RTDIRENTRYTYPE_DEV_CHAR:    RTPrintf("c"); break;
+                                case RTDIRENTRYTYPE_DIRECTORY:   RTPrintf("d"); break;
+                                case RTDIRENTRYTYPE_DEV_BLOCK:   RTPrintf("b"); break;
+                                case RTDIRENTRYTYPE_FILE:        RTPrintf("-"); break;
+                                case RTDIRENTRYTYPE_SYMLINK:     RTPrintf("l"); break;
+                                case RTDIRENTRYTYPE_SOCKET:      RTPrintf("s"); break;
+                                case RTDIRENTRYTYPE_WHITEOUT:    RTPrintf("w"); break;
+                                default:
+                                    rcRet = 1;
+                                    RTPrintf("?");
+                                    break;
+                            }
+                            RTPrintf(" %#18llx  %3d %s\n", (uint64_t)DirEntry.INodeId,
+                                     DirEntry.cbName, DirEntry.szName);
                         }
-                        RTPrintf(" %#18llx  %3d %s\n", (uint64_t)DirEntry.INodeId,
-                                 DirEntry.cbName, DirEntry.szName);
                     }
                 }
                 else
@@ -106,64 +121,66 @@ int main(int argc, char **argv)
                         if (RT_FAILURE(rc))
                             break;
 
-                        RTFMODE fMode = DirEntry.Info.Attr.fMode;
-                        switch (fMode & RTFS_TYPE_MASK)
+                        if (!fQuiet)
                         {
-                            case RTFS_TYPE_FIFO:        RTPrintf("f"); break;
-                            case RTFS_TYPE_DEV_CHAR:    RTPrintf("c"); break;
-                            case RTFS_TYPE_DIRECTORY:   RTPrintf("d"); break;
-                            case RTFS_TYPE_DEV_BLOCK:   RTPrintf("b"); break;
-                            case RTFS_TYPE_FILE:        RTPrintf("-"); break;
-                            case RTFS_TYPE_SYMLINK:     RTPrintf("l"); break;
-                            case RTFS_TYPE_SOCKET:      RTPrintf("s"); break;
-                            case RTFS_TYPE_WHITEOUT:    RTPrintf("w"); break;
-                            default:
-                                rcRet = 1;
-                                RTPrintf("?");
-                                break;
-                        }
-                        /** @todo sticy bits++ */
-                        RTPrintf("%c%c%c",
-                                 fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
-                                 fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
-                                 fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
-                        RTPrintf("%c%c%c",
-                                 fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
-                                 fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
-                                 fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
-                        RTPrintf("%c%c%c",
-                                 fMode & RTFS_UNIX_IROTH ? 'r' : '-',
-                                 fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
-                                 fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
-                        RTPrintf(" %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
-                                 fMode & RTFS_DOS_READONLY          ? 'R' : '-',
-                                 fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
-                                 fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
-                                 fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
-                                 fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
-                                 fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
-                                 fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
-                                 fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
-                                 fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
-                                 fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
-                                 fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
-                                 fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
-                                 fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
-                                 fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
-                        RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
-                                 DirEntry.Info.Attr.u.Unix.cHardlinks,
-                                 DirEntry.Info.Attr.u.Unix.uid,
-                                 DirEntry.Info.Attr.u.Unix.gid,
-                                 DirEntry.Info.cbObject,
-                                 DirEntry.Info.cbAllocated,
-                                 DirEntry.Info.BirthTime,
-                                 DirEntry.Info.ChangeTime,
-                                 DirEntry.Info.ModificationTime,
-                                 DirEntry.Info.AccessTime);
-                        if (fShortName && DirEntry.cwcShortName)
-                            RTPrintf(" %2d %ls\n", DirEntry.cwcShortName, DirEntry.wszShortName);
-                        else
+                            RTFMODE fMode = DirEntry.Info.Attr.fMode;
+                            switch (fMode & RTFS_TYPE_MASK)
+                            {
+                                case RTFS_TYPE_FIFO:        RTPrintf("f"); break;
+                                case RTFS_TYPE_DEV_CHAR:    RTPrintf("c"); break;
+                                case RTFS_TYPE_DIRECTORY:   RTPrintf("d"); break;
+                                case RTFS_TYPE_DEV_BLOCK:   RTPrintf("b"); break;
+                                case RTFS_TYPE_FILE:        RTPrintf("-"); break;
+                                case RTFS_TYPE_SYMLINK:     RTPrintf("l"); break;
+                                case RTFS_TYPE_SOCKET:      RTPrintf("s"); break;
+                                case RTFS_TYPE_WHITEOUT:    RTPrintf("w"); break;
+                                default:
+                                    rcRet = 1;
+                                    RTPrintf("?");
+                                    break;
+                            }
+                            /** @todo sticy bits++ */
+                            RTPrintf("%c%c%c",
+                                     fMode & RTFS_UNIX_IRUSR ? 'r' : '-',
+                                     fMode & RTFS_UNIX_IWUSR ? 'w' : '-',
+                                     fMode & RTFS_UNIX_IXUSR ? 'x' : '-');
+                            RTPrintf("%c%c%c",
+                                     fMode & RTFS_UNIX_IRGRP ? 'r' : '-',
+                                     fMode & RTFS_UNIX_IWGRP ? 'w' : '-',
+                                     fMode & RTFS_UNIX_IXGRP ? 'x' : '-');
+                            RTPrintf("%c%c%c",
+                                     fMode & RTFS_UNIX_IROTH ? 'r' : '-',
+                                     fMode & RTFS_UNIX_IWOTH ? 'w' : '-',
+                                     fMode & RTFS_UNIX_IXOTH ? 'x' : '-');
+                            RTPrintf(" %c%c%c%c%c%c%c%c%c%c%c%c%c%c",
+                                     fMode & RTFS_DOS_READONLY          ? 'R' : '-',
+                                     fMode & RTFS_DOS_HIDDEN            ? 'H' : '-',
+                                     fMode & RTFS_DOS_SYSTEM            ? 'S' : '-',
+                                     fMode & RTFS_DOS_DIRECTORY         ? 'D' : '-',
+                                     fMode & RTFS_DOS_ARCHIVED          ? 'A' : '-',
+                                     fMode & RTFS_DOS_NT_DEVICE         ? 'd' : '-',
+                                     fMode & RTFS_DOS_NT_NORMAL         ? 'N' : '-',
+                                     fMode & RTFS_DOS_NT_TEMPORARY      ? 'T' : '-',
+                                     fMode & RTFS_DOS_NT_SPARSE_FILE    ? 'P' : '-',
+                                     fMode & RTFS_DOS_NT_REPARSE_POINT  ? 'J' : '-',
+                                     fMode & RTFS_DOS_NT_COMPRESSED     ? 'C' : '-',
+                                     fMode & RTFS_DOS_NT_OFFLINE        ? 'O' : '-',
+                                     fMode & RTFS_DOS_NT_NOT_CONTENT_INDEXED ? 'I' : '-',
+                                     fMode & RTFS_DOS_NT_ENCRYPTED      ? 'E' : '-');
+                            RTPrintf(" %d %4d %4d %10lld %10lld %#llx %#llx %#llx %#llx",
+                                     DirEntry.Info.Attr.u.Unix.cHardlinks,
+                                     DirEntry.Info.Attr.u.Unix.uid,
+                                     DirEntry.Info.Attr.u.Unix.gid,
+                                     DirEntry.Info.cbObject,
+                                     DirEntry.Info.cbAllocated,
+                                     DirEntry.Info.BirthTime,
+                                     DirEntry.Info.ChangeTime,
+                                     DirEntry.Info.ModificationTime,
+                                     DirEntry.Info.AccessTime);
+                            if (fShortName)
+                                RTPrintf(" %2d %-12ls ", DirEntry.cwcShortName, DirEntry.wszShortName);
                             RTPrintf(" %2d %s\n", DirEntry.cbName, DirEntry.szName);
+                        }
                         if (rc != VINF_SUCCESS)
                             RTPrintf("^^ %Rrc\n", rc);
                     }

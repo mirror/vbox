@@ -45,14 +45,21 @@ RTDECL(int)  RTErrConvertFromNtStatus(long lNativeCode)
         case STATUS_ALERTED:                return VERR_INTERRUPTED;
         case STATUS_USER_APC:               return VERR_INTERRUPTED;
 
+        case STATUS_DATATYPE_MISALIGNMENT:  return VERR_INVALID_POINTER;
+        case STATUS_NO_MORE_FILES:          return VERR_NO_MORE_FILES;
+        case STATUS_NO_MORE_ENTRIES:        return VERR_NO_MORE_FILES;
+
         case STATUS_INVALID_HANDLE:         return VERR_INVALID_HANDLE;
         case STATUS_INVALID_PARAMETER:      return VERR_INVALID_PARAMETER;
         case STATUS_INVALID_DEVICE_REQUEST: return VERR_IO_BAD_COMMAND;
         case STATUS_ACCESS_DENIED:          return VERR_ACCESS_DENIED;
+        case STATUS_OBJECT_TYPE_MISMATCH:   return VERR_UNEXPECTED_FS_OBJ_TYPE;
         case STATUS_OBJECT_NAME_INVALID:    return VERR_INVALID_NAME;
         case STATUS_OBJECT_NAME_NOT_FOUND:  return VERR_FILE_NOT_FOUND;
         case STATUS_OBJECT_PATH_INVALID:    return VERR_INVALID_NAME;
         case STATUS_OBJECT_PATH_NOT_FOUND:  return VERR_PATH_NOT_FOUND;
+        case STATUS_BAD_NETWORK_PATH:       return VERR_NET_PATH_NOT_FOUND;
+        case STATUS_NOT_A_DIRECTORY:        return VERR_NOT_A_DIRECTORY;
     }
 
     /* unknown error. */

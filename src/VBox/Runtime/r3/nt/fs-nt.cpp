@@ -225,29 +225,6 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
 }
 
 
-/**
- * Internal helper for comparing a WCHAR string with a char string.
- *
- * @returns @c true if equal, @c false if not.
- * @param   pwsz1               The first string.
- * @param   cb1                 The length of the first string, in bytes.
- * @param   psz2                The second string.
- * @param   cch2                The length of the second string.
- */
-static bool rtFsCompWideStrAndAscii(WCHAR const *pwsz1, size_t cch1, const char *psz2, size_t cch2)
-{
-    if (cch1 != cch2 * 2)
-        return false;
-    while (cch2-- > 0)
-    {
-        unsigned ch1 = *pwsz1++;
-        unsigned ch2 = (unsigned char)*psz2++;
-        if (ch1 != ch2)
-            return false;
-    }
-    return true;
-}
-
 
 RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
 {
@@ -286,7 +263,7 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
         if (NT_SUCCESS(rcNt))
         {
 #define IS_FS(a_szName) \
-rtFsCompWideStrAndAscii(u.FsAttrInfo.FileSystemName, u.FsAttrInfo.FileSystemNameLength, RT_STR_TUPLE(a_szName))
+    rtNtCompWideStrAndAscii(u.FsAttrInfo.FileSystemName, u.FsAttrInfo.FileSystemNameLength, RT_STR_TUPLE(a_szName))
             if (IS_FS("NTFS"))
                 *penmType = RTFSTYPE_NTFS;
             else if (IS_FS("FAT"))
