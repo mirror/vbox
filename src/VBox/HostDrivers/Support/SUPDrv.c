@@ -696,6 +696,7 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, bool fUnrest
                 pSession->pDevExt           = pDevExt;
                 pSession->u32Cookie         = BIRD_INV;
                 pSession->fUnrestricted     = fUnrestricted;
+                pSession->cRefs             = 1;
                 /*pSession->pLdrUsage         = NULL;
                 pSession->pVM               = NULL;
                 pSession->pUsage            = NULL;
@@ -741,33 +742,6 @@ int VBOXCALL supdrvCreateSession(PSUPDRVDEVEXT pDevExt, bool fUser, bool fUnrest
 
 
 /**
- * Shared code for cleaning up a session.
- *
- * @param   pDevExt     Device extension.
- * @param   pSession    Session data.
- *                      This data will be freed by this routine.
- */
-void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
-{
-    VBOXDRV_SESSION_CLOSE(pSession);
-
-    /*
-     * Cleanup the session first.
-     */
-    supdrvCleanupSession(pDevExt, pSession);
-
-    /*
-     * Free the rest of the session stuff.
-     */
-    RTSpinlockDestroy(pSession->Spinlock);
-    pSession->Spinlock = NIL_RTSPINLOCK;
-    pSession->pDevExt = NULL;
-    RTMemFree(pSession);
-    LogFlow(("supdrvCloseSession: returns\n"));
-}
-
-
-/**
  * Shared code for cleaning up a session (but not quite freeing it).
  *
  * This is primarily intended for MAC OS X where we have to clean up the memory
@@ -777,7 +751,7 @@ void VBOXCALL supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
  * @param   pSession    Session data.
  *                      This data will be freed by this routine.
  */
-void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+static void supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
 {
     int                 rc;
     PSUPDRVBUNDLE       pBundle;
@@ -984,6 +958,67 @@ void VBOXCALL supdrvCleanupSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSessio
     Log2(("umapping GIP - done\n"));
 }
 
+
+/**
+ * Shared code for cleaning up a session.
+ *
+ * @param   pDevExt     Device extension.
+ * @param   pSession    Session data.
+ *                      This data will be freed by this routine.
+ */
+static void supdrvCloseSession(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession)
+{
+    VBOXDRV_SESSION_CLOSE(pSession);
+
+    /*
+     * Cleanup the session first.
+     */
+    supdrvCleanupSession(pDevExt, pSession);
+
+    /*
+     * Free the rest of the session stuff.
+     */
+    RTSpinlockDestroy(pSession->Spinlock);
+    pSession->Spinlock = NIL_RTSPINLOCK;
+    pSession->pDevExt = NULL;
+    RTMemFree(pSession);
+    LogFlow(("supdrvCloseSession: returns\n"));
+}
+
+
+/**
+ * Retain a session to make sure it doesn't go away while it is in use.
+ *
+ * @returns New reference count on success, UINT32_MAX on failure.
+ * @param   pSession    Session data.
+ */
+uint32_t VBOXCALL supdrvSessionRetain(PSUPDRVSESSION pSession)
+{
+    AssertPtrReturn(pSession, UINT32_MAX);
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicIncU32(&pSession->cRefs);
+    AssertMsg(cRefs > 1 && cRefs < _1M, ("%#x %p\n", cRefs, pSession));
+    return cRefs;
+}
+
+/**
+ * Releases a given session.
+ *
+ * @returns New reference count on success (0 if closed), UINT32_MAX on failure.
+ * @param   pSession    Session data.
+ */
+uint32_t VBOXCALL supdrvSessionRelease(PSUPDRVSESSION pSession)
+{
+    AssertPtrReturn(pSession, UINT32_MAX);
+    AssertReturn(SUP_IS_SESSION_VALID(pSession), UINT32_MAX);
+
+    uint32_t cRefs = ASMAtomicDecU32(&pSession->cRefs);
+    AssertMsg(cRefs < _1M, ("%#x %p\n", cRefs, pSession));
+    if (cRefs == 0)
+        supdrvCloseSession(pSession->pDevExt, pSession);
+    return cRefs;
+}
 
 /**
  * RTHandleTableDestroy callback used by supdrvCleanupSession.
@@ -2120,7 +2155,7 @@ int VBOXCALL supdrvIDC(uintptr_t uReq, PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSe
         {
             REQ_CHECK_IDC_SIZE(SUPDRV_IDC_REQ_DISCONNECT, sizeof(*pReqHdr));
 
-            supdrvCloseSession(pDevExt, pSession);
+            supdrvSessionRelease(pSession);
             return pReqHdr->rc = VINF_SUCCESS;
         }
 

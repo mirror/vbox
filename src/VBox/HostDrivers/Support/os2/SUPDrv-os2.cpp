@@ -221,7 +221,7 @@ DECLASM(int) VBoxDrvClose(uint16_t sfn)
     /*
      * Close the session.
      */
-    supdrvCloseSession(&g_DevExt, pSession);
+    supdrvSessionRelease(pSession);
     return 0;
 }
 
@@ -243,6 +243,9 @@ DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
         while (     pSession
                &&   (   pSession->sfn != sfn
                      || pSession->Process != Process));
+
+        if (RT_LIKELY(pSession))
+            supdrvSessionRetain(pSession);
     }
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (RT_UNLIKELY(!pSession))
@@ -255,6 +258,7 @@ DECLASM(int) VBoxDrvIOCtlFast(uint16_t sfn, uint8_t iFunction)
      * Dispatch the fast IOCtl.
      */
     supdrvIOCtlFast(iFunction, 0, &g_DevExt, pSession);
+    supdrvSessionRelease(pSession);
     return 0;
 }
 
@@ -276,6 +280,9 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
         while (     pSession
                &&   (   pSession->sfn != sfn
                      || pSession->Process != Process));
+
+        if (RT_LIKELY(pSession))
+            supdrvSessionRetain(pSession);
     }
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
@@ -345,12 +352,14 @@ DECLASM(int) VBoxDrvIOCtl(uint16_t sfn, uint8_t iCat, uint8_t iFunction, void *p
          * Unlock and return.
          */
         int rc2 = KernVMUnlock(&Lock);
-        AssertMsg(!rc2, ("rc2=%d\n", rc2)); NOREF(rc2);
-
-        Log2(("VBoxDrvIOCtl: returns %d\n", rc));
-        return rc;
+        AssertMsg(!rc2, ("rc2=%d\n", rc2)); NOREF(rc2);s
     }
-    return VERR_NOT_SUPPORTED;
+    else
+        rc = VERR_NOT_SUPPORTED;
+
+    supdrvSessionRelease(pSession);
+    Log2(("VBoxDrvIOCtl: returns %d\n", rc));
+    return rc;
 }
 
 

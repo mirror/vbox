@@ -523,6 +523,9 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
     pSession = g_apSessionHashTab[iHash];
     while (pSession && pSession->Process != Process && pSession->fUnrestricted == fUnrestricted && pSession->fOpened)
         pSession = pSession->pNextHash;
+
+    if (RT_LIKELY(pSession))
+        supdrvSessionRetain(pSession);
     RTSpinlockReleaseNoInts(g_Spinlock);
     if (!pSession)
     {
@@ -535,12 +538,17 @@ static int VBoxDrvDarwinIOCtl(dev_t Dev, u_long iCmd, caddr_t pData, int fFlags,
      * Deal with the two high-speed IOCtl that takes it's arguments from
      * the session and iCmd, and only returns a VBox status code.
      */
+    int rc;
     if (   (    iCmd == SUP_IOCTL_FAST_DO_RAW_RUN
             ||  iCmd == SUP_IOCTL_FAST_DO_HM_RUN
             ||  iCmd == SUP_IOCTL_FAST_DO_NOP)
         && fUnrestricted)
-        return supdrvIOCtlFast(iCmd, *(uint32_t *)pData, &g_DevExt, pSession);
-    return VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
+        rc = supdrvIOCtlFast(iCmd, *(uint32_t *)pData, &g_DevExt, pSession);
+    else
+        rc = VBoxDrvDarwinIOCtlSlow(pSession, iCmd, pData, pProcess);
+
+    supdrvSessionRelease(pSession);
+    return rc;
 }
 
 
@@ -1154,7 +1162,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
                 }
 
                 LogFlow(("org_virtualbox_SupDrvClient::start: already got a session for this process (%p)\n", pCur));
-                supdrvCloseSession(&g_DevExt, m_pSession);
+                supdrvSessionRelease(m_pSession);
             }
 
             m_pSession = NULL;
@@ -1230,7 +1238,7 @@ bool org_virtualbox_SupDrvClient::start(IOService *pProvider)
     /*
      * Close the session.
      */
-    supdrvCloseSession(&g_DevExt, pSession);
+    supdrvSessionRelease(pSession);
 }
 
 
