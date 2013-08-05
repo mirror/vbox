@@ -249,6 +249,11 @@ class PlatformMSCOM:
         pythoncom.CoUninitialize()
 
     def createListener(self, impl, arg):
+        if True:
+            raise Exception('no active listeners on Windows as PyGatewayBase::QueryInterface() '
+                            'returns new gateway objects all the time, thus breaking EventQueue '
+                            'assumptions about the listener interface pointer being constants between calls ');
+        # Did this code ever really work?
         d = {}
         d['BaseClass'] = impl
         d['arg'] = arg
