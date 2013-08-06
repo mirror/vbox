@@ -83,7 +83,7 @@ VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 #
 # Note: not spaces please in "Devices,$("
 #
-$(foreach file,$(LWIP_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
+$(foreach file,$(LWIP_SOURCES) $(LWIP_NAT_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
 
 $(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBoxNetLwipNAT, ../../Devices,$(incs))))
 
