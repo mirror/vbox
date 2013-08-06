@@ -70,6 +70,10 @@ void UIGlobalSettingsProxy::getFromCache()
     m_pHostEditor->setText(m_cache.m_strProxyHost);
     m_pPortEditor->setText(m_cache.m_strProxyPort);
     sltProxyToggled();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -99,7 +103,11 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIGlobalSettingsProxy::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 void UIGlobalSettingsProxy::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;

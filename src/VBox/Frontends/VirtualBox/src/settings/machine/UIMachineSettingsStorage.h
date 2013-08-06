@@ -672,7 +672,12 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    void setValidator (QIWidgetValidator *aVal);
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate (QString &aWarning, QString &aTitle);
 
     void retranslateUi();
@@ -755,7 +760,12 @@ private:
     void setDialogType(SettingsDialogType settingsDialogType);
     void polishPage();
 
-    QIWidgetValidator *mValidator;
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     QString m_strMachineId;
     QString m_strMachineSettingsFilePath;

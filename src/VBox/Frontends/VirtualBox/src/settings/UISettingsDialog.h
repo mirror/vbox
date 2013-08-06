@@ -26,7 +26,11 @@
 #include "UISettingsDefs.h"
 
 /* Forward declarations: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+class UIPageValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 class QIWidgetValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 class QProgressBar;
 class QStackedWidget;
 class QTimer;
@@ -53,8 +57,10 @@ public:
 
 protected slots:
 
+#ifndef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     /* Validation handler: */
     virtual void sltRevalidate(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Category-change slot: */
     virtual void sltCategoryChanged(int cId);
@@ -95,8 +101,12 @@ protected:
                  int cId, const QString &strLink,
                  UISettingsPage* pSettingsPage = 0, int iParentId = -1);
 
-    /* Settings page correlator: */
+    /* Helpers: Validation stuff: */
     virtual void recorrelate(UISettingsPage *pSettingsPage) { Q_UNUSED(pSettingsPage); }
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void revalidate(UIPageValidator *pValidator);
+    void revalidate();
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Protected variables: */
     VBoxSettingsSelector *m_pSelector;
@@ -104,8 +114,13 @@ protected:
 
 private slots:
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Handler: Validation stuff: */
+    void sltHandleValidityChange(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     /* Slot to handle validity-changes: */
     void sltHandleValidityChanged(const QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Slot to update whats-this: */
     void sltUpdateWhatsThis(bool fGotFocus = false);
@@ -119,6 +134,7 @@ private:
     bool eventFilter(QObject *pObject, QEvent *pEvent);
     void showEvent(QShowEvent *pEvent);
 
+    /* Helper: Validation stuff: */
     void assignValidator(UISettingsPage *pPage);
 
     /* Global Flags: */

@@ -83,7 +83,12 @@ public:
     void fetchPortData(const UICacheSettingsMachineParallelPort &portCache);
     void uploadPortData(UICacheSettingsMachineParallelPort &portCache);
 
-    void setValidator (QIWidgetValidator *aVal);
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     QWidget* setOrderAfter (QWidget *aAfter);
 
@@ -101,8 +106,14 @@ private slots:
 
 private:
 
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
     UIMachineSettingsParallelPage *m_pParent;
-    QIWidgetValidator *mValidator;
     int m_iSlot;
 };
 
@@ -134,7 +145,12 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    void setValidator (QIWidgetValidator *aVal);
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate (QString &aWarning, QString &aTitle);
 
     void retranslateUi();
@@ -143,7 +159,13 @@ private:
 
     void polishPage();
 
-    QIWidgetValidator *mValidator;
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
     QITabWidget *mTabWidget;
 
     /* Cache: */

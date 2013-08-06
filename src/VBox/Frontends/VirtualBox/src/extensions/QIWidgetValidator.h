@@ -19,12 +19,59 @@
 #ifndef __QIWidgetValidator_h__
 #define __QIWidgetValidator_h__
 
+/* Qt includes: */
+#include <QValidator>
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+
+/* Forward declarations: */
+class UISettingsPage;
+
+/* Page validator prototype: */
+class UIPageValidator : public QObject
+{
+    Q_OBJECT;
+
+signals:
+
+    /* Notifier: Validation stuff: */
+    void sigValidityChanged(UIPageValidator *pValidator);
+
+public:
+
+    /* Constructor: */
+    UIPageValidator(QObject *pParent, UISettingsPage *pPage);
+
+    /* API: Page stuff: */
+    UISettingsPage* page() const { return m_pPage; }
+
+    /* API: Validity stuff: */
+    bool isValid() const { return m_fIsValid; }
+    void setValid(bool fIsValid) { m_fIsValid = fIsValid; }
+
+    /* API: Message stuff: */
+    QString lastMessage() const { return m_strLastMessage; }
+    void setLastMessage(const QString &strLastMessage) { m_strLastMessage = strLastMessage; }
+
+public slots:
+
+    /* API/Handler: Validation stuff: */
+    void revalidate();
+
+private:
+
+    /* Variables: */
+    UISettingsPage *m_pPage;
+    bool m_fIsValid;
+    QString m_strLastMessage;
+};
+
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
+/* General includes: */
 #include <limits.h>
 
-/* Qt includes */
-#include <QObject>
-#include <QValidator>
-#include <QList>
+/* Qt includes: */
 #include <QPointer>
 
 class QIWidgetValidator : public QObject
@@ -86,6 +133,7 @@ private slots:
 
     void doRevalidate() { emit validityChanged (this); }
 };
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 class QIULongValidator : public QValidator
 {

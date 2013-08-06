@@ -141,7 +141,12 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    void setValidator (QIWidgetValidator *aVal);
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate(QString &strWarningText, QString &strTitle);
 
     void setOrderAfter (QWidget *aWidget);
@@ -178,6 +183,13 @@ private:
 
     void polishPage();
 
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
     /* Global data source: */
     CSystemProperties m_properties;
     VBoxGlobalSettings m_settings;
@@ -187,7 +199,6 @@ private:
     CConsole m_console;
 
     /* Other variables: */
-    QIWidgetValidator *mValidator;
     UIToolBar *m_pToolBar;
     QAction *mNewAction;
     QAction *mAddAction;

@@ -108,8 +108,12 @@ public:
     void fetchAdapterCache(const UICacheSettingsMachineNetworkAdapter &adapterCache);
     void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
 
-    /* Validation stuff: */
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate(QString &strWarning, QString &strTitle);
 
     /* Navigation stuff: */
@@ -156,8 +160,12 @@ private:
     /* Parent page: */
     UIMachineSettingsNetworkPage *m_pParent;
 
-    /* Validator: */
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Other variables: */
     int m_iSlot;
@@ -206,8 +214,12 @@ protected:
     /* Page changed: */
     bool changed() const { return m_cache.wasChanged(); }
 
-    /* Validation stuff: */
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate(QString &strWarning, QString &strTitle);
 
     /* Translation stuff: */
@@ -233,8 +245,12 @@ private:
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
     static void updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText);
 
-    /* Validator: */
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Tab holder: */
     QITabWidget *m_pTwAdapters;
