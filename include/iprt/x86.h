@@ -195,6 +195,10 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_VIP         RT_BIT(20)
 /** Bit 21 - ID - CPUID flag - System flag. If this responds to flipping CPUID is supported. */
 #define X86_EFL_ID          RT_BIT(21)
+/** All live bits. */
+#define X86_EFL_LIVE_MASK   UINT32_C(0x003f7fd5)
+/** Read as 1 bits. */
+#define X86_EFL_RA1_MASK    RT_BIT_32(1)
 /** IOPL shift. */
 #define X86_EFL_IOPL_SHIFT  12
 /** The the IOPL level from the flags. */
