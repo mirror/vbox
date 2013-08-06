@@ -188,11 +188,10 @@ static uint32_t volatile g_cErrors;
  * Same as RTR0TESTR0_SKIP + break.
  */
 #define RTR0TESTR0_SKIP_BREAK() \
-    if (1) \
-    { \
+    do { \
         RTR0TestR0Skip("line %u: SKIPPED", __LINE__); \
         break; \
-    } else do { } while (0)
+    } while (0)
 
 
 /**
