@@ -466,7 +466,7 @@ static DECLCALLBACK(int) dbgcHlpMemRead(PDBGCCMDHLP pCmdHlp, void *pvBuffer, siz
         if (!cbLeft)
             break;
         pvBuffer = (char *)pvBuffer + cb;
-        rc = DBGCCmdHlpEval(pCmdHlp, &Var, "%DV + %d", &Var, cb);
+        rc = DBGCCmdHlpEval(pCmdHlp, &Var, "%DV + %#zx", &Var, cb);
         if (RT_FAILURE(rc))
         {
             if (pcbRead && (*pcbRead = cbRead - cbLeft) > 0)
