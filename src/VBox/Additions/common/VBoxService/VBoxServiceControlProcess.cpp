@@ -1381,6 +1381,40 @@ static int gstcntlProcessCreateProcess(const char *pszExec, const char * const *
     return rc;
 }
 
+
+#ifdef DEBUG
+static int gstcntlProcessDumpToFile(const char *pszFileName, void *pvBuf, size_t cbBuf)
+{
+    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+
+    if (!cbBuf)
+        return VINF_SUCCESS;
+
+    char szFile[RTPATH_MAX];
+
+    int rc = RTPathTemp(szFile, sizeof(szFile));
+    if (RT_SUCCESS(rc))
+        rc = RTPathAppend(szFile, sizeof(szFile), pszFileName);
+
+    if (RT_SUCCESS(rc))
+    {
+        VBoxServiceVerbose(4, "Dumping %ld bytes to \"%s\"\n", cbBuf, szFile);
+
+        RTFILE fh;
+        rc = RTFileOpen(&fh, szFile, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTFileWrite(fh, pvBuf, cbBuf, NULL /* pcbWritten */);
+            RTFileClose(fh);
+        }
+    }
+
+    return rc;
+}
+#endif
+
+
 /**
  * The actual worker routine (loop) for a started guest process.
  *
@@ -1893,29 +1927,32 @@ static DECLCALLBACK(int) gstcntlProcessOnOutput(PVBOXSERVICECTRLPROCESS pThis,
         else
             rc = VINF_EOF;
 
-#if 0
+#ifdef DEBUG
         if (RT_SUCCESS(rc))
         {
-            if (   (pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
-                && (uHandle == OUTPUT_HANDLE_ID_STDERR))
+            if (   pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT
+                && (   uHandle == OUTPUT_HANDLE_ID_STDOUT
+                    || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
+               )
             {
+                VBoxServiceVerbose(3, "[PID %RU32]: dump stdout\n",
+                                   pThis->uPID);
                 char szDumpFile[RTPATH_MAX];
                 if (!RTStrPrintf(szDumpFile, sizeof(szDumpFile), "VBoxService_Session%RU32_PID%RU32_StdOut.txt",
                                  pSession->StartupInfo.uSessionID, pThis->uPID)) rc = VERR_BUFFER_UNDERFLOW;
                 if (RT_SUCCESS(rc))
-                    rc = gstcntlSessionDumpToFile(szDumpFile, pvBuf, cbRead);
+                    rc = gstcntlProcessDumpToFile(szDumpFile, pvBuf, cbRead);
                 AssertRC(rc);
             }
-            else if (   (pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
-                     && (   uHandle == OUTPUT_HANDLE_ID_STDOUT
-                         || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED))
+            else if (   pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR
+                     && uHandle == OUTPUT_HANDLE_ID_STDERR)
             {
                 char szDumpFile[RTPATH_MAX];
                 if (!RTStrPrintf(szDumpFile, sizeof(szDumpFile), "VBoxService_Session%RU32_PID%RU32_StdErr.txt",
                                  pSession->StartupInfo.uSessionID, pThis->uPID))
                     rc = VERR_BUFFER_UNDERFLOW;
                 if (RT_SUCCESS(rc))
-                    rc = gstcntlSessionDumpToFile(szDumpFile, pvBuf, cbRead);
+                    rc = gstcntlProcessDumpToFile(szDumpFile, pvBuf, cbRead);
                 AssertRC(rc);
             }
         }

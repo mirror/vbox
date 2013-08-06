@@ -75,13 +75,14 @@ static void VBoxServiceControlShutdown(void);
 /** @copydoc VBOXSERVICE::pfnPreInit */
 static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
 {
+    int rc;
 #ifdef VBOX_WITH_GUEST_PROPS
     /*
      * Read the service options from the VM's guest properties.
      * Note that these options can be overridden by the command line options later.
      */
     uint32_t uGuestPropSvcClientID;
-    int rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
+    rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_HGCM_SERVICE_NOT_FOUND) /* Host service is not available. */
@@ -90,7 +91,7 @@ static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
             rc = VINF_SUCCESS;
         }
         else
-            VBoxServiceError("Failed to connect to the guest property service! Error: %Rrc\n", rc);
+            VBoxServiceError("Failed to connect to the guest property service, rc=%Rrc\n", rc);
     }
     else
     {
@@ -99,11 +100,18 @@ static DECLCALLBACK(int) VBoxServiceControlPreInit(void)
 
     if (rc == VERR_NOT_FOUND) /* If a value is not found, don't be sad! */
         rc = VINF_SUCCESS;
-    return rc;
 #else
     /* Nothing to do here yet. */
-    return VINF_SUCCESS;
+    rc = VINF_SUCCESS;
 #endif
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Init session object. */
+        rc = GstCntlSessionInit(&g_Session, 0 /* Flags */);
+    }
+
+    return rc;
 }
 
 
@@ -148,8 +156,6 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     VbglR3GetSessionId(&g_idControlSession);
     /* The status code is ignored as this information is not available with VBox < 3.2.10. */
 
-    /* Init session object. */
-    rc = GstCntlSessionInit(&g_Session, 0 /* Flags */);
     if (RT_SUCCESS(rc))
         rc = VbglR3GuestCtrlConnect(&g_uControlSvcClientID);
     if (RT_SUCCESS(rc))
@@ -328,7 +334,7 @@ static int gstcntlHandleSessionOpen(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
                            pHostCtx->uClientID, pHostCtx->uProtocol);
 
         rc = GstCntlSessionThreadCreate(&g_lstControlSessionThreads,
-                                        &ssInfo, NULL /* Session */);
+                                        &ssInfo, NULL /* ppSessionThread */);
     }
 
     if (RT_FAILURE(rc))
