@@ -73,7 +73,12 @@ extern int                  gstcntlSessionHandleProcWaitFor(const PVBOXSERVICECT
 /** Generic option indices for session fork arguments. */
 enum
 {
-    VBOXSERVICESESSIONOPT_LOG_FILE = 1000,
+    VBOXSERVICESESSIONOPT_FIRST = 1000, /* For initialization. */
+#ifdef DEBUG
+    VBOXSERVICESESSIONOPT_DUMP_STDOUT,
+    VBOXSERVICESESSIONOPT_DUMP_STDERR,
+#endif
+    VBOXSERVICESESSIONOPT_LOG_FILE,
     VBOXSERVICESESSIONOPT_USERNAME,
     VBOXSERVICESESSIONOPT_SESSION_ID,
     VBOXSERVICESESSIONOPT_SESSION_PROTO,
@@ -113,39 +118,6 @@ static PVBOXSERVICECTRLFILE gstcntlSessionFileGetLocked(const PVBOXSERVICECTRLSE
 
     return NULL;
 }
-
-
-#ifdef DEBUG
-static int gstcntlSessionDumpToFile(const char *pszFileName, void *pvBuf, size_t cbBuf)
-{
-    AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
-    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
-
-    if (!cbBuf)
-        return VINF_SUCCESS;
-
-    char szFile[RTPATH_MAX];
-
-    int rc = RTPathTemp(szFile, sizeof(szFile));
-    if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szFile, sizeof(szFile), pszFileName);
-
-    if (RT_SUCCESS(rc))
-    {
-        VBoxServiceVerbose(4, "Dumping %ld bytes to \"%s\"\n", cbBuf, szFile);
-
-        RTFILE fh;
-        rc = RTFileOpen(&fh, szFile, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTFileWrite(fh, pvBuf, cbBuf, NULL /* pcbWritten */);
-            RTFileClose(fh);
-        }
-    }
-
-    return rc;
-}
-#endif
 
 
 static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
@@ -1378,15 +1350,6 @@ int GstCntlSessionInit(PVBOXSERVICECTRLSESSION pSession, uint32_t uFlags)
 
     pSession->uFlags = uFlags;
 
-    if (pSession->uFlags & VBOXSERVICECTRLSESSION_FLAG_FORK)
-    {
-        /* Protocol must be specified explicitly. */
-        pSession->StartupInfo.uProtocol = UINT32_MAX;
-
-        /* Session ID must be specified explicitly. */
-        pSession->StartupInfo.uSessionID = UINT32_MAX;
-    }
-
     /* Init critical section for protecting the thread lists. */
     int rc = RTCritSectInit(&pSession->CritSect);
     AssertRC(rc);
@@ -1706,10 +1669,34 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     }
                     if (RT_SUCCESS(rc2))
                         papszArgs[iOptIdx++] = szParmLogFile;
-                    papszArgs[iOptIdx++] = NULL;
+
+                    rc = rc2;
                 }
-                else
-                    papszArgs[iOptIdx++] = NULL;
+                else if (RT_FAILURE(rc2))
+                    rc = rc2;
+#ifdef DEBUG
+                VBoxServiceVerbose(4, "rc=%Rrc, session flags=%x\n",
+                                   rc, g_Session.uFlags);
+                char szParmDumpStdOut[32];
+                if (   RT_SUCCESS(rc)
+                    && g_Session.uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT)
+                {
+                    if (!RTStrPrintf(szParmDumpStdOut, sizeof(szParmDumpStdOut), "--dump-stdout"))
+                        rc = VERR_BUFFER_OVERFLOW;
+                    if (RT_SUCCESS(rc))
+                        papszArgs[iOptIdx++] = szParmDumpStdOut;
+                }
+                char szParmDumpStdErr[32];
+                if (   RT_SUCCESS(rc)
+                    && g_Session.uFlags & VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR)
+                {
+                    if (!RTStrPrintf(szParmDumpStdErr, sizeof(szParmDumpStdErr), "--dump-stderr"))
+                        rc = VERR_BUFFER_OVERFLOW;
+                    if (RT_SUCCESS(rc))
+                        papszArgs[iOptIdx++] = szParmDumpStdErr;
+                }
+#endif
+                papszArgs[iOptIdx++] = NULL;
 
                 if (g_cVerbosity > 3)
                 {
@@ -1776,7 +1763,8 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                 }
 #else
                 RTHANDLE hStdIn;
-                rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
+                if (RT_SUCCESS(rc))
+                    rc = RTFileOpenBitBucket(&hStdIn.u.hFile, RTFILE_O_READ);
                 if (RT_SUCCESS(rc))
                 {
                     hStdIn.enmType = RTHANDLETYPE_FILE;
@@ -1972,6 +1960,10 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 {
     static const RTGETOPTDEF s_aOptions[] =
     {
+#ifdef DEBUG
+        { "--dump-stdout",     VBOXSERVICESESSIONOPT_DUMP_STDOUT,     RTGETOPT_REQ_NOTHING },
+        { "--dump-stderr",     VBOXSERVICESESSIONOPT_DUMP_STDERR,     RTGETOPT_REQ_NOTHING },
+#endif
         { "--logfile",         VBOXSERVICESESSIONOPT_LOG_FILE,        RTGETOPT_REQ_STRING },
         { "--user",            VBOXSERVICESESSIONOPT_USERNAME,        RTGETOPT_REQ_STRING },
         { "--session-id",      VBOXSERVICESESSIONOPT_SESSION_ID,      RTGETOPT_REQ_UINT32 },
@@ -1991,10 +1983,11 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 
     uint32_t uSessionFlags = VBOXSERVICECTRLSESSION_FLAG_FORK;
 
-    /* Init the session object. */
-    int rc = GstCntlSessionInit(&g_Session, uSessionFlags);
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize session object, rc=%Rrc\n", rc);
+    /* Protocol and session ID must be specified explicitly. */
+    g_Session.StartupInfo.uProtocol  = UINT32_MAX;
+    g_Session.StartupInfo.uSessionID = UINT32_MAX;
+
+    int rc = VINF_SUCCESS;
 
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
            && RT_SUCCESS(rc))
@@ -2007,9 +2000,17 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
                     return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to set logfile name to '%s'",
                                           ValueUnion.psz);
                 break;
+#ifdef DEBUG
+            case VBOXSERVICESESSIONOPT_DUMP_STDOUT:
+                uSessionFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT;
+                break;
 
+            case VBOXSERVICESESSIONOPT_DUMP_STDERR:
+                uSessionFlags |= VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR;
+                break;
+#endif
             case VBOXSERVICESESSIONOPT_USERNAME:
-                /** @todo. */
+                /** @todo Information not needed right now, skip. */
                 break;
 
             case VBOXSERVICESESSIONOPT_SESSION_ID:
@@ -2048,6 +2049,11 @@ RTEXITCODE VBoxServiceControlSessionForkInit(int argc, char **argv)
 
     if (g_Session.StartupInfo.uSessionID == UINT32_MAX)
         return RTMsgErrorExit(RTEXITCODE_SYNTAX, "No session ID specified");
+
+    /* Init the session object. */
+    rc = GstCntlSessionInit(&g_Session, uSessionFlags);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize session object, rc=%Rrc\n", rc);
 
     rc = VBoxServiceLogCreate(strlen(g_szLogFile) ? g_szLogFile : NULL);
     if (RT_FAILURE(rc))

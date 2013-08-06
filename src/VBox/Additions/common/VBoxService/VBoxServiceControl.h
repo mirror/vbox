@@ -142,10 +142,10 @@ typedef VBOXSERVICECTRLSESSIONTHREAD *PVBOXSERVICECTRLSESSIONTHREAD;
  *  it will run start guest processes with the same credentials
  *  as the main executable. */
 #define VBOXSERVICECTRLSESSION_FLAG_ANONYMOUS            RT_BIT(1)
-/** Flag indicating that start guest processes will dump their
+/** Flag indicating that started guest processes will dump their
  *  stdout output to a separate file on disk. For debugging. */
 #define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDOUT           RT_BIT(2)
-/** Flag indicating that start guest processes will dump their
+/** Flag indicating that started guest processes will dump their
  *  stderr output to a separate file on disk. For debugging. */
 #define VBOXSERVICECTRLSESSION_FLAG_DUMPSTDERR           RT_BIT(3)
 
@@ -173,7 +173,9 @@ typedef struct VBOXSERVICECTRLSESSION
     RTLISTANCHOR                    lstFiles;
     /** The session's critical section. */
     RTCRITSECT                      CritSect;
-    /** Session flags. */
+    /** Internal session flags, not related
+     *  to StartupInfo stuff.
+     *  @sa VBOXSERVICECTRLSESSION_FLAG_* flags. */
     uint32_t                        uFlags;
     /** How many processes do we allow keeping around at a time? */
     uint32_t                        uProcsMaxKept;
