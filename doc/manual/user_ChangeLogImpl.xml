@@ -58,7 +58,18 @@
 
       <listitem>
         <para>VBoxManage: added support for closing active guest sessions via
-          <computeroutput>guestcontrol session close --session-id &lt;ID&gt;|--session-name &lt;name or pattern&gt;|--all</computeroutput>
+          <computeroutput>guestcontrol session close --session-id &lt;ID&gt;|
+            --session-name &lt;name or pattern&gt;|--all</computeroutput>
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage: added support for terminating active guest processes via
+          <computeroutput>guestcontrol process kill|close|terminate --session-id &lt;ID&gt;|
+            --session-name &lt;name or pattern&gt; &lt;PID&gt; ... &lt;PID n&gt;</computeroutput>
+          or
+          <computeroutput>guestcontrol [p[s]]kill --session-id &lt;ID&gt;|
+            --session-name &lt;name or pattern&gt; &lt;PID&gt; ... &lt;PID n&gt;</computeroutput>
         </para>
       </listitem>
 
