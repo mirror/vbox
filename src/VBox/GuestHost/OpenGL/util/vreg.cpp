@@ -1748,23 +1748,21 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
     uint32_t cRects = VBoxVrListRectsCount(&pCEntry->Vr);
     Assert(cRects);
     Assert(cRects <= pData->cRects);
-    int rc = VBoxVrListRectsGet(&pCEntry->Vr, cRects, pEntry->paDstRects);
+    int rc = VBoxVrListRectsGet(&pCEntry->Vr, cRects, pEntry->paDstUnstretchedRects);
     AssertRC(rc);
-
-    memcpy(pEntry->paDstUnstretchedRects, pEntry->paDstRects, cRects * sizeof (*pEntry->paDstUnstretchedRects));
 
     if (!pEntry->Pos.x && !pEntry->Pos.y)
     {
-        memcpy(pEntry->paSrcRects, pEntry->paDstRects, cRects * sizeof (*pEntry->paSrcRects));
+        memcpy(pEntry->paSrcRects, pEntry->paDstUnstretchedRects, cRects * sizeof (*pEntry->paSrcRects));
     }
     else
     {
         for (uint32_t i = 0; i < cRects; ++i)
         {
-            pEntry->paSrcRects[i].xLeft = (int32_t)((pEntry->paDstRects[i].xLeft - pEntry->Pos.x));
-            pEntry->paSrcRects[i].yTop = (int32_t)((pEntry->paDstRects[i].yTop - pEntry->Pos.y));
-            pEntry->paSrcRects[i].xRight = (int32_t)((pEntry->paDstRects[i].xRight - pEntry->Pos.x));
-            pEntry->paSrcRects[i].yBottom = (int32_t)((pEntry->paDstRects[i].yBottom - pEntry->Pos.y));
+            pEntry->paSrcRects[i].xLeft = (int32_t)((pEntry->paDstUnstretchedRects[i].xLeft - pEntry->Pos.x));
+            pEntry->paSrcRects[i].yTop = (int32_t)((pEntry->paDstUnstretchedRects[i].yTop - pEntry->Pos.y));
+            pEntry->paSrcRects[i].xRight = (int32_t)((pEntry->paDstUnstretchedRects[i].xRight - pEntry->Pos.x));
+            pEntry->paSrcRects[i].yBottom = (int32_t)((pEntry->paDstUnstretchedRects[i].yBottom - pEntry->Pos.y));
         }
     }
 
@@ -1775,17 +1773,23 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
         {
             if (pCompositor->StretchX != 1.)
             {
-                pEntry->paDstRects[i].xLeft = (int32_t)(pEntry->paDstRects[i].xLeft * pCompositor->StretchX);
-                pEntry->paDstRects[i].xRight = (int32_t)(pEntry->paDstRects[i].xRight * pCompositor->StretchX);
+                pEntry->paDstRects[i].xLeft = (int32_t)(pEntry->paDstUnstretchedRects[i].xLeft * pCompositor->StretchX);
+                pEntry->paDstRects[i].xRight = (int32_t)(pEntry->paDstUnstretchedRects[i].xRight * pCompositor->StretchX);
             }
             if (pCompositor->StretchY != 1.)
             {
-                pEntry->paDstRects[i].yTop = (int32_t)(pEntry->paDstRects[i].yTop * pCompositor->StretchY);
-                pEntry->paDstRects[i].yBottom = (int32_t)(pEntry->paDstRects[i].yBottom * pCompositor->StretchY);
+                pEntry->paDstRects[i].yTop = (int32_t)(pEntry->paDstUnstretchedRects[i].yTop * pCompositor->StretchY);
+                pEntry->paDstRects[i].yBottom = (int32_t)(pEntry->paDstUnstretchedRects[i].yBottom * pCompositor->StretchY);
             }
         }
     }
+    else
+#endif
+    {
+        memcpy(pEntry->paDstRects, pEntry->paDstUnstretchedRects, cRects * sizeof (*pEntry->paDstUnstretchedRects));
+    }
 
+#if 0//ndef IN_RING0
     bool canZeroX = (pCompositor->StretchX < 1.);
     bool canZeroY = (pCompositor->StretchY < 1.);
     if (canZeroX && canZeroY)
@@ -1794,9 +1798,9 @@ static DECLCALLBACK(bool) crVrScrCompositorRectsAssignerCb(PVBOXVR_COMPOSITOR pC
         uint32_t iOrig, iNew;
         for (iOrig = 0, iNew = 0; iOrig < cRects; ++iOrig)
         {
-            PRTRECT pOrigRect = &pEntry->paSrcRects[iOrig];
-            if (pOrigRect->xLeft == pOrigRect->xRight
-                    || pOrigRect->yTop == pOrigRect->yBottom)
+            PRTRECT pOrigRect = &pEntry->paDstRects[iOrig];
+            if (pOrigRect->xLeft != pOrigRect->xRight
+                    && pOrigRect->yTop != pOrigRect->yBottom)
                 continue;
 
             if (iNew != iOrig)
@@ -2293,7 +2297,7 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompo
     return VINF_SUCCESS;
 }
 
-VBOXVREGDECL(uint32_t) CrVrScrCompositorEntryFlagsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+VBOXVREGDECL(uint32_t) CrVrScrCompositorEntryFlagsCombinedGet(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
 {
     return CRBLT_FOP_COMBINE(pCompositor->fFlags, pEntry->fFlags);
 }

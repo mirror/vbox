@@ -491,8 +491,6 @@ crServerDispatchWindowDestroy( GLint window )
     crHashtableDelete(cr_server.muralTable, window, crFree);
 }
 
-#define CR_DENTRY_FROM_CENTRY(_pCentry) ((CR_DISPLAY_ENTRY*)((uint8_t*)(_pCentry) - RT_OFFSETOF(CR_DISPLAY_ENTRY, CEntry)))
-
 static DECLCALLBACK(VBOXVR_SCR_COMPOSITOR_ENTRY*) crServerMuralGetRootVrCEntry(VBOXVR_SCR_COMPOSITOR_ENTRY*pEntry, void *pvContext)
 {
     CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
@@ -705,8 +703,6 @@ void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y)
 
             if (mural->fRootVrOn)
             {
-                uint32_t cRects;
-                const RTRECT *pRects;
                 int rc = crServerMuralSynchRootVr(mural);
                 if (RT_SUCCESS(rc))
                 {

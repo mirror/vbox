@@ -381,14 +381,14 @@ void crServerPerformMakeCurrent( CRMuralInfo *mural, CRContextInfo *ctxInfo )
         GLuint id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.drawBuffer);
         if (id != mural->iCurDrawBuffer)
         {
-            crWarning("DBO draw buffer changed on make current");
+            crDebug("DBO draw buffer changed on make current");
             mural->iCurDrawBuffer = id;
         }
 
         id = crServerMuralFBOIdxFromBufferName(mural, ctx->buffer.readBuffer);
         if (id != mural->iCurReadBuffer)
         {
-            crWarning("DBO read buffer changed on make current");
+            crDebug("DBO read buffer changed on make current");
             mural->iCurReadBuffer = id;
         }
 

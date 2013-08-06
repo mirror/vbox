@@ -188,6 +188,7 @@ static void crServerTearDown( void )
 
     crServerDisplayTermAll();
     CrDemTerm(&cr_server.PresentTexturepMap);
+    CrDemTeGlobalTerm();
     memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
     memset(cr_server.aDispplays, 0, sizeof (cr_server.aDispplays));
 
@@ -347,7 +348,7 @@ crServerInit(int argc, char *argv[])
     {
         cr_server.u32Caps = 0;
 #ifdef DEBUG_misha
-//        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
 #endif
     }
 
@@ -379,6 +380,8 @@ crServerInit(int argc, char *argv[])
     cr_server.curClient->currentCtxInfo = &cr_server.MainContextInfo;
 
     cr_server.dummyMuralTable = crAllocHashtable();
+
+    CrDemGlobalInit();
 
     CrDemInit(&cr_server.PresentTexturepMap);
     memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
@@ -459,7 +462,7 @@ GLboolean crVBoxServerInit(void)
     {
         cr_server.u32Caps = 0;
 #ifdef DEBUG_misha
-//        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
 #endif
     }
 
@@ -500,6 +503,8 @@ GLboolean crVBoxServerInit(void)
     cr_server.contextTable = crAllocHashtable();
 
     cr_server.dummyMuralTable = crAllocHashtable();
+
+    CrDemGlobalInit();
 
     CrDemInit(&cr_server.PresentTexturepMap);
     memset(cr_server.DisplaysInitMap, 0, sizeof (cr_server.DisplaysInitMap));
@@ -1724,6 +1729,9 @@ DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM)
         }
     }
 
+    rc = crServerDisplaySaveState(pSSM);
+    AssertRCReturn(rc, rc);
+
     /* all context gl error states should have now be synced with chromium erro states,
      * reset the error if any */
     while ((err = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR)
@@ -2610,6 +2618,12 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     //crServerDispatchMakeCurrent(-1, 0, -1);
 
     cr_server.curClient = NULL;
+
+    if (version >= SHCROGL_SSM_VERSION_WITH_SCREEN_INFO)
+    {
+        rc = crServerDisplayLoadState(pSSM, version);
+        AssertRCReturn(rc, rc);
+    }
 
     while ((err = cr_server.head_spu->dispatch_table.GetError()) != GL_NO_ERROR)
         crWarning("crServer: glGetError %d after loading snapshot", err);

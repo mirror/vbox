@@ -208,8 +208,6 @@ typedef struct CR_DISPLAY_ENTRY
 {
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
-    void *pvUserData1;
-    void *pvUserData2;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 /**/
 
@@ -348,6 +346,9 @@ typedef struct {
 
 /* DISPLAY */
 
+#define CR_DENTRY_FROM_CENTRY(_pCentry) ((CR_DISPLAY_ENTRY*)((uint8_t*)(_pCentry) - RT_OFFSETOF(CR_DISPLAY_ENTRY, CEntry)))
+
+
 /* @todo:
  * 1. use compositor stored inside mural to use current MuralFBO and window-related API
  * 2. CR_SERVER_REDIR_F_NONE and CR_SERVER_REDIR_F_FBO should be trated identically for presented window
@@ -358,34 +359,12 @@ typedef struct CR_DISPLAY
     GLboolean fForcePresent;
 } CR_DISPLAY, *PCR_DISPLAY;
 
-int CrDpInit(PCR_DISPLAY pDisplay);
-void CrDpTerm(PCR_DISPLAY pDisplay);
-void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, void *pvUserData);
-void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
-int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-void CrDpEntryRegionsClear(PCR_DISPLAY pDisplay);
-DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
-{
-    return CrVrScrCompositorEntryIsInList(&pEntry->CEntry);
-}
-
-DECLINLINE(CRMuralInfo*) CrDpGetMural(PCR_DISPLAY pDisplay)
-{
-    return &pDisplay->Mural;
-}
 
 typedef struct CR_DISPLAY_ENTRY_MAP
 {
-    CRHashTable * pTextureMap;
+    CRHashTable * pTexIdToDemInfoMap;
 } CR_DISPLAY_ENTRY_MAP, *PCR_DISPLAY_ENTRY_MAP;
 
-int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
-void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
-PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
-void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry);
-//void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
 
 /* */
 

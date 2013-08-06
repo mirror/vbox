@@ -668,7 +668,7 @@ void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pComp
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
         int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
-        uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
+        uint32_t fFlags = CrVrScrCompositorEntryFlagsCombinedGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
             uint32_t i;
@@ -699,7 +699,7 @@ void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, P
         uint32_t cRegions;
         const RTRECT *paSrcRegions, *paDstRegions;
         int rc = CrVrScrCompositorEntryRegionsGet(pCompositor, pEntry, &cRegions, &paSrcRegions, &paDstRegions, NULL);
-        uint32_t fFlags = CrVrScrCompositorEntryFlagsGet(pCompositor, pEntry);
+        uint32_t fFlags = CrVrScrCompositorEntryFlagsCombinedGet(pCompositor, pEntry);
         if (RT_SUCCESS(rc))
         {
             CrBltBlitTexMural(pBlitter, true, &pEntry->Tex, paSrcRegions, paDstRegions, cRegions, fFlags);
