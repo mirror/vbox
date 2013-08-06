@@ -590,6 +590,10 @@ VBGLR3DECL(int)     VbglR3SharedFolderGetMountDir(char **ppszDir);
  */
 typedef struct VBGLR3GUESTCTRLCMDCTX
 {
+    /** @todo This struct could be handy if we want to implement
+     *        a second communication channel, e.g. via TCP/IP.
+     *        Use a union for the HGCM stuff then. */
+
     /** IN: HGCM client ID to use for
      *      communication. */
     uint32_t uClientID;
