@@ -837,7 +837,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     rc = pGuest->CreateSession(Bstr(strUsername).raw(),
                                Bstr(strPassword).raw(),
                                Bstr(strDomain).raw(),
-                               Bstr("VBoxManage Guest Control Exec").raw(),
+                               Bstr("VBoxManage Guest Control").raw(),
                                pGuestSession.asOutParam());
     if (FAILED(rc))
     {
@@ -3049,12 +3049,14 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     ComPtr<IGuestProcess> pProcess;
     do
     {
+        uint32_t uProcsTerminated = 0;
         bool fSessionFound = false;
 
         SafeIfaceArray <IGuestSession> collSessions;
         CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
         size_t cSessions = collSessions.size();
 
+        uint32_t uSessionsHandled = 0;
         for (size_t i = 0; i < cSessions; i++)
         {
             pSession = collSessions[i];
@@ -3065,7 +3067,6 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
             Bstr strName;
             CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
             Utf8Str strNameUtf8(strName); /* Session name */
-
             if (strSessionName.isEmpty()) /* Search by ID. Slow lookup. */
             {
                 fSessionFound = uID == ulSessionID;
@@ -3078,7 +3079,8 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             if (fSessionFound)
             {
-                Assert(!pSession.isNull());
+                AssertStmt(!pSession.isNull(), break);
+                uSessionsHandled++;
 
                 SafeIfaceArray <IGuestProcess> collProcs;
                 CHECK_ERROR_BREAK(pSession, COMGETTER(Processes)(ComSafeArrayAsOutParam(collProcs)));
@@ -3106,6 +3108,13 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                             RTPrintf("Terminating process PID=%RU32 (session ID=%RU32) ...\n",
                                      uPID, uID);
                         CHECK_ERROR_BREAK(pProcess, Terminate());
+                        uProcsTerminated++;
+                    }
+                    else
+                    {
+                        if (ulSessionID != UINT32_MAX)
+                            RTPrintf("No matching process(es) for session %RU32 found\n",
+                                     ulSessionID);
                     }
 
                     pProcess.setNull();
@@ -3115,11 +3124,12 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
             }
         }
 
-        if (!fSessionFound)
-        {
-            RTPrintf("No guest session(s) found\n");
-            rc = E_ABORT; /* To set exit code accordingly. */
-        }
+        if (!uSessionsHandled)
+            RTPrintf("No matching session(s) found\n");
+
+        if (uProcsTerminated)
+            RTPrintf("%RU32 %s terminated\n",
+                     uProcsTerminated, uProcsTerminated == 1 ? "process" : "processes");
 
     } while (0);
 
