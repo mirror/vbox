@@ -959,6 +959,10 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
 
     if (load_segment(&e1, &e2, selector) != 0)
         raise_exception_err(EXCP0D_GPF, selector & 0xfffc);
+#ifdef VBOX /** @todo figure out when this is done one day... */
+    if (!(e2 & DESC_A_MASK))
+        e2 = set_segment_accessed(selector, e2);
+#endif
     if (!(e2 & DESC_S_MASK) || !(e2 & (DESC_CS_MASK)))
         raise_exception_err(EXCP0D_GPF, selector & 0xfffc);
     dpl = (e2 >> DESC_DPL_SHIFT) & 3;
@@ -975,6 +979,10 @@ static void do_interrupt_protected(int intno, int is_int, int error_code,
             raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
         if (load_segment(&ss_e1, &ss_e2, ss) != 0)
             raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
+#ifdef VBOX /** @todo figure out when this is done one day... */
+        if (!(ss_e2 & DESC_A_MASK))
+            ss_e2 = set_segment_accessed(ss, ss_e2);
+#endif
         ss_dpl = (ss_e2 >> DESC_DPL_SHIFT) & 3;
         if (ss_dpl != dpl)
             raise_exception_err(EXCP0A_TSS, ss & 0xfffc);
@@ -2767,6 +2775,10 @@ void helper_ljmp_protected(int new_cs, target_ulong new_eip,
         if (new_eip > limit &&
             !(env->hflags & HF_LMA_MASK) && !(e2 & DESC_L_MASK))
             raise_exception_err(EXCP0D_GPF, new_cs & 0xfffc);
+#ifdef VBOX
+        if (!(e2 & DESC_A_MASK))
+            e2 = set_segment_accessed(new_cs, e2);
+#endif
         cpu_x86_load_seg_cache(env, R_CS, (new_cs & 0xfffc) | cpl,
                        get_seg_base(e1, e2), limit, e2);
         EIP = new_eip;
@@ -2892,6 +2904,10 @@ void helper_lcall_protected(int new_cs, target_ulong new_eip,
         }
         if (!(e2 & DESC_P_MASK))
             raise_exception_err(EXCP0B_NOSEG, new_cs & 0xfffc);
+#ifdef VBOX
+        if (!(e2 & DESC_A_MASK))
+            e2 = set_segment_accessed(new_cs, e2);
+#endif
 
 #ifdef TARGET_X86_64
         /* XXX: check 16/32 bit cases in long mode */

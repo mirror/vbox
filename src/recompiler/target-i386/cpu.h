@@ -951,7 +951,7 @@ static inline void cpu_x86_load_seg_cache(CPUX86State *env,
 #else
     if (flags & DESC_P_MASK)
         flags |= DESC_A_MASK;           /* Make sure the A bit is set to avoid trouble. */
-    if (selector < 4U && (env->hflags & HF_CS64_MASK))
+    else if (selector < 4U)
         flags |= DESC_INTEL_UNUSABLE;
     else
         flags &= ~DESC_INTEL_UNUSABLE;
