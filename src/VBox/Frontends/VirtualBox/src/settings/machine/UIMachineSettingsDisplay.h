@@ -145,11 +145,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     void setValidator(UIPageValidator *pValidator);
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-    void setValidator(QIWidgetValidator *pValidator);
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
@@ -200,11 +196,7 @@ private:
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
 
     /* Variable: Validation stuff: */
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     UIPageValidator *m_pValidator;
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-    QIWidgetValidator *m_pValidator;
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     /* Guest OS type id: */
     CGuestOSType m_guestOSType;

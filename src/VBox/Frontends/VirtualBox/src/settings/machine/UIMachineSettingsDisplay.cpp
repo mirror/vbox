@@ -70,11 +70,9 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
     /* Recheck video RAM requirement: */
     checkVRAMRequirements();
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     /* Revalidate if possible: */
     if (m_pValidator)
         m_pValidator->revalidate();
-#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -305,11 +303,7 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UIMachineSettingsDisplay::setValidator(UIPageValidator *pValidator)
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-void UIMachineSettingsDisplay::setValidator(QIWidgetValidator *pValidator)
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;
@@ -394,7 +388,6 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTi
     }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     /* Check VRDE server port: */
     if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
     {
@@ -408,7 +401,6 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTi
         strWarning = tr("authentication timeout value was not specified.");
         return false;
     }
-#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     return true;
 }
