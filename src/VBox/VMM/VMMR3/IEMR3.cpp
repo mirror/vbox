@@ -87,6 +87,13 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
             pVCpu->iem.s.fHostCpuIdStdFeaturesEdx = pVM->aCpus[0].iem.s.fHostCpuIdStdFeaturesEdx;
             pVCpu->iem.s.enmHostCpuVendor         = pVM->aCpus[0].iem.s.enmHostCpuVendor;
         }
+
+        /*
+         * Mark all buffers free.
+         */
+        uint32_t iMemMap = RT_ELEMENTS(pVCpu->iem.s.aMemMappings);
+        while (iMemMap-- > 0)
+            pVCpu->iem.s.aMemMappings[iMemMap].fAccess = IEM_ACCESS_INVALID;
     }
     return VINF_SUCCESS;
 }

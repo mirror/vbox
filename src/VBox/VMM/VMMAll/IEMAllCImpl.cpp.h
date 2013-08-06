@@ -1030,7 +1030,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
 
     /* Fetch the descriptor. */
     IEMSELDESC Desc;
-    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel);
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1207,7 +1207,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
 
     /* Fetch the descriptor. */
     IEMSELDESC Desc;
-    rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel);
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1433,7 +1433,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
     /* Fetch the descriptor. */
     IEMSELDESC DescCs;
-    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCs, uNewCs);
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCs, uNewCs, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -1534,7 +1534,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         else
         {
             /* Fetch the descriptor for the new stack segment. */
-            rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSs, uNewOuterSs);
+            rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSs, uNewOuterSs, X86_XCPT_GP);
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
         }
@@ -2011,7 +2011,8 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
     /*
      * iret throws an exception if VME isn't enabled.
      */
-    if (   pCtx->eflags.Bits.u1VM
+    if (   Efl.Bits.u1VM
+        && Efl.Bits.u2IOPL != 3
         && !(pCtx->cr4 & X86_CR4_VME))
         return iemRaiseGeneralProtectionFault0(pIemCpu);
 
@@ -2032,6 +2033,9 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
         if (rcStrict != VINF_SUCCESS)
             return rcStrict;
         uNewEip    = uFrame.pu32[0];
+        if (uNewEip > UINT16_MAX)
+            return iemRaiseGeneralProtectionFault0(pIemCpu);
+
         uNewCs     = (uint16_t)uFrame.pu32[1];
         uNewFlags  = uFrame.pu32[2];
         uNewFlags &= X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
@@ -2136,6 +2140,8 @@ static void iemCImplCommonV8086LoadSeg(PCPUMSELREG pSReg, uint16_t uSeg)
  * @param   uNewCs          The new CS.
  * @param   uNewFlags       The new EFLAGS.
  * @param   uNewRsp         The RSP after the initial IRET frame.
+ *
+ * @note    This can only be a 32-bit iret du to the X86_EFL_VM position.
  */
 IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
@@ -2178,7 +2184,9 @@ IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uin
     iemCImplCommonV8086LoadSeg(&pCtx->gs, uNewGs);
     pCtx->rip      = uNewEip;
     pCtx->rsp      = uNewEsp;
-    pCtx->rflags.u = uNewFlags;
+    uNewFlags &= X86_EFL_LIVE_MASK;
+    uNewFlags |= X86_EFL_RA1_MASK;
+    IEMMISC_SET_EFL(pIemCpu, pCtx, uNewFlags);
     pIemCpu->uCpl  = 3;
 
     return VINF_SUCCESS;
@@ -2268,7 +2276,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
     }
 
     IEMSELDESC DescCS;
-    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCs);
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCs, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
     {
         Log(("iret %04x:%08x - rcStrict=%Rrc when fetching CS\n", uNewCs, uNewEip, VBOXSTRICTRC_VAL(rcStrict)));
@@ -2344,7 +2352,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         }
 
         IEMSELDESC DescSS;
-        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSS);
+        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSS, X86_XCPT_GP); /** @todo Correct exception? */
         if (rcStrict != VINF_SUCCESS)
         {
             Log(("iret %04x:%08x/%04x:%08x - %Rrc when fetching SS\n",
@@ -2430,7 +2438,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->ss.u32Limit   = cbLimitSs;
         pCtx->ss.u64Base    = X86DESC_BASE(&DescSS.Legacy);
 
-        uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
+        uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                              | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
         if (enmEffOpSize != IEMMODE_16BIT)
             fEFlagsMask |= X86_EFL_RF | X86_EFL_AC | X86_EFL_ID;
@@ -2486,7 +2494,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
 
         X86EFLAGS NewEfl;
         NewEfl.u = IEMMISC_GET_EFL(pIemCpu, pCtx);
-        uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
+        uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                              | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
         if (enmEffOpSize != IEMMODE_16BIT)
             fEFlagsMask |= X86_EFL_RF | X86_EFL_AC | X86_EFL_ID;
@@ -2586,7 +2594,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     }
 
     IEMSELDESC DescCS;
-    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCs);
+    rcStrict = iemMemFetchSelDesc(pIemCpu, &DescCS, uNewCs, X86_XCPT_GP);
     if (rcStrict != VINF_SUCCESS)
     {
         Log(("iret %04x:%016RX64/%04x:%016RX64 - rcStrict=%Rrc when fetching CS\n",
@@ -2642,7 +2650,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     }
     else
     {
-        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSs);
+        rcStrict = iemMemFetchSelDesc(pIemCpu, &DescSS, uNewSs, X86_XCPT_GP); /** @todo Correct exception? */
         if (rcStrict != VINF_SUCCESS)
         {
             Log(("iret %04x:%016RX64/%04x:%016RX64 - %Rrc when fetching SS\n",
@@ -2760,7 +2768,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
         Log2(("iretq new SS: base=%#RX64 lim=%#x attr=%#x\n", pCtx->ss.u64Base, pCtx->ss.u32Limit, pCtx->ss.Attr.u));
     }
 
-    uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF  | X86_EFL_SF
+    uint32_t fEFlagsMask = X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF
                          | X86_EFL_TF | X86_EFL_DF | X86_EFL_OF | X86_EFL_NT;
     if (enmEffOpSize != IEMMODE_16BIT)
         fEFlagsMask |= X86_EFL_RF | X86_EFL_AC | X86_EFL_ID;
@@ -2796,8 +2804,7 @@ IEM_CIMPL_DEF_1(iemCImpl_iret, IEMMODE, enmEffOpSize)
     /*
      * Call a mode specific worker.
      */
-    if (   pIemCpu->enmCpuMode == IEMMODE_16BIT
-        && IEM_IS_REAL_OR_V86_MODE(pIemCpu))
+    if (IEM_IS_REAL_OR_V86_MODE(pIemCpu))
         return IEM_CIMPL_CALL_1(iemCImpl_iret_real_v8086, enmEffOpSize);
     if (IEM_IS_LONG_MODE(pIemCpu))
         return IEM_CIMPL_CALL_1(iemCImpl_iret_long, enmEffOpSize);
@@ -3087,7 +3094,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
 
     /* Fetch the descriptor. */
     IEMSELDESC Desc;
-    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel);
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uSel, X86_XCPT_GP); /** @todo Correct exception? */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -3488,7 +3495,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
      * Read the descriptor.
      */
     IEMSELDESC Desc;
-    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uNewLdt);
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uNewLdt, X86_XCPT_GP); /** @todo Correct exception? */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
@@ -3585,7 +3592,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
      * Read the descriptor.
      */
     IEMSELDESC Desc;
-    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uNewTr);
+    VBOXSTRICTRC rcStrict = iemMemFetchSelDesc(pIemCpu, &Desc, uNewTr, X86_XCPT_GP); /** @todo Correct exception? */
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
