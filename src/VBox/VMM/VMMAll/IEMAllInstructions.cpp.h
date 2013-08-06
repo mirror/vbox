@@ -670,9 +670,9 @@ FNIEMOP_DEF_1(iemOp_Grp6_lldt, uint8_t, bRm)
         IEM_MC_BEGIN(1, 1);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DECODED_NL_1(OP_LLDT, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS);
+        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO(); /** @todo test order */
         IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_CIMPL_1(iemCImpl_lldt, u16Sel);
         IEM_MC_END();
@@ -701,9 +701,9 @@ FNIEMOP_DEF_1(iemOp_Grp6_ltr, uint8_t, bRm)
         IEM_MC_BEGIN(1, 1);
         IEM_MC_ARG(uint16_t, u16Sel, 0);
         IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
-        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO();
         IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
         IEMOP_HLP_DONE_DECODING_NO_LOCK_PREFIX();
+        IEM_MC_RAISE_GP0_IF_CPL_NOT_ZERO(); /** @todo test ordre */
         IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc);
         IEM_MC_CALL_CIMPL_1(iemCImpl_ltr, u16Sel);
         IEM_MC_END();
@@ -712,12 +712,51 @@ FNIEMOP_DEF_1(iemOp_Grp6_ltr, uint8_t, bRm)
 }
 
 
+/** Opcode 0x0f 0x00 /3. */
+FNIEMOP_DEF_2(iemOpCommonGrp6VerX, uint8_t, bRm, uint8_t, fWrite)
+{
+    IEMOP_HLP_NO_REAL_OR_V86_MODE();
+
+    if ((bRm & X86_MODRM_MOD_MASK) == (3 << X86_MODRM_MOD_SHIFT))
+    {
+        IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEM_MC_BEGIN(2, 0);
+        IEM_MC_ARG(uint16_t,    u16Sel,            0);
+        IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
+        IEM_MC_FETCH_GREG_U16(u16Sel, (bRm & X86_MODRM_RM_MASK) | pIemCpu->uRexB);
+        IEM_MC_CALL_CIMPL_2(iemCImpl_VerX, u16Sel, fWriteArg);
+        IEM_MC_END();
+    }
+    else
+    {
+        IEM_MC_BEGIN(2, 1);
+        IEM_MC_ARG(uint16_t,    u16Sel,            0);
+        IEM_MC_ARG_CONST(bool,  fWriteArg, fWrite, 1);
+        IEM_MC_LOCAL(RTGCPTR, GCPtrEffSrc);
+        IEM_MC_CALC_RM_EFF_ADDR(GCPtrEffSrc, bRm, 0);
+        IEMOP_HLP_DECODED_NL_1(fWrite ? OP_VERW : OP_VERR, IEMOPFORM_M_MEM, OP_PARM_Ew, DISOPTYPE_DANGEROUS | DISOPTYPE_PRIVILEGED_NOTRAP);
+        IEM_MC_FETCH_MEM_U16(u16Sel, pIemCpu->iEffSeg, GCPtrEffSrc);
+        IEM_MC_CALL_CIMPL_2(iemCImpl_VerX, u16Sel, fWriteArg);
+        IEM_MC_END();
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** Opcode 0x0f 0x00 /4. */
-FNIEMOP_STUB_1(iemOp_Grp6_verr, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp6_verr, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("verr Ew");
+    return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, false);
+}
 
 
 /** Opcode 0x0f 0x00 /5. */
-FNIEMOP_STUB_1(iemOp_Grp6_verw, uint8_t, bRm);
+FNIEMOP_DEF_1(iemOp_Grp6_verw, uint8_t, bRm)
+{
+    IEMOP_MNEMONIC("verr Ew");
+    return FNIEMOP_CALL_2(iemOpCommonGrp6VerX, bRm, true);
+}
 
 
 /** Opcode 0x0f 0x00. */
