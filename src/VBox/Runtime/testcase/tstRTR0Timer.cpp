@@ -725,7 +725,9 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                                    | RTTIMER_FLAGS_CPU_ALL;
             int             rc = RTTimerCreateEx(&pTimer, cNsInterval, fFlags, tstRTR0TimerCallbackOmni, paStates);
             if (rc == VERR_NOT_SUPPORTED)
+            {
                 RTR0TESTR0_SKIP_BREAK();
+            }
             RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
 
             for (uint32_t iTest = 0; iTest < 3 && !RTR0TestR0HaveErrors(); iTest++)
