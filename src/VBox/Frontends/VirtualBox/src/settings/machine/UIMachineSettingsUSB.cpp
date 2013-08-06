@@ -139,7 +139,7 @@ private:
 
 UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
-    , mValidator(0)
+    , m_pValidator(0)
     , m_pToolBar(0)
     , mNewAction(0), mAddAction(0), mEdtAction(0), mDelAction(0)
     , mMupAction(0), mMdnAction(0)
@@ -386,8 +386,8 @@ void UIMachineSettingsUSB::getFromCache()
     polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -563,11 +563,16 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     uploadData(data);
 }
 
-void UIMachineSettingsUSB::setValidator (QIWidgetValidator *aVal)
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsUSB::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+void UIMachineSettingsUSB::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
-    mValidator = aVal;
-    connect (mGbUSB, SIGNAL (stateChanged (int)), mValidator, SLOT (revalidate()));
-    connect(mCbUSB2, SIGNAL(stateChanged(int)), mValidator, SLOT(revalidate()));
+    /* Configure validation: */
+    m_pValidator = pValidator;
+    connect(mGbUSB, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
+    connect(mCbUSB2, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 }
 
 bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTitle */)
@@ -711,8 +716,8 @@ void UIMachineSettingsUSB::newClicked()
     addUSBFilter(usbFilterData, true /* its new? */);
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsUSB::addClicked()
@@ -759,8 +764,8 @@ void UIMachineSettingsUSB::addConfirmed(QAction *pAction)
     addUSBFilter(usbFilterData, true /* its new? */);
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsUSB::edtClicked()
@@ -859,10 +864,15 @@ void UIMachineSettingsUSB::delClicked()
     /* Revalidate if possible: */
     if (!mTwFilters->topLevelItemCount())
     {
-        if (mValidator)
+        /* Revalidate if possible: */
+        if (m_pValidator)
         {
-            mValidator->rescan();
-            mValidator->revalidate();
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+            m_pValidator->revalidate();
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+            m_pValidator->rescan();
+            m_pValidator->revalidate();
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
         }
     }
 }

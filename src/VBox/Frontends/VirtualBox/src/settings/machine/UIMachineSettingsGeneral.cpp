@@ -28,7 +28,7 @@
 #include "UIConverter.h"
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
-    : mValidator(0)
+    : m_pValidator(0)
     , m_fHWVirtExEnabled(false)
 {
     /* Apply UI decorations */
@@ -62,10 +62,28 @@ CGuestOSType UIMachineSettingsGeneral::guestOSType() const
     return m_pNameAndSystemEditor->type();
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
+{
+    /* Make sure hardware virtualization extension has changed: */
+    if (m_fHWVirtExEnabled == fEnabled)
+        return;
+
+    /* Update hardware virtualization extension value: */
+    m_fHWVirtExEnabled = fEnabled;
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
+}
+
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
 void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
 {
     m_fHWVirtExEnabled = fEnabled;
 }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
 {
@@ -137,8 +155,8 @@ void UIMachineSettingsGeneral::getFromCache()
     polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -214,14 +232,29 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsGeneral::setValidator (QIWidgetValidator *aVal)
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsGeneral::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+void UIMachineSettingsGeneral::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
-    mValidator = aVal;
-    connect (m_pNameAndSystemEditor, SIGNAL (sigOsTypeChanged()), mValidator, SLOT (revalidate()));
+    /* Configure validation: */
+    m_pValidator = pValidator;
+    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), m_pValidator, SLOT(revalidate()));
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), m_pValidator, SLOT(revalidate()));
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 bool UIMachineSettingsGeneral::revalidate(QString &strWarning, QString& /* strTitle */)
 {
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    if (m_pNameAndSystemEditor->name().trimmed().isEmpty())
+    {
+        strWarning = tr("you have not specified name for this VM.");
+        return false;
+    }
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     if (is64BitOSTypeSelected() && !m_fHWVirtExEnabled)
         strWarning = tr("you have selected a 64-bit guest OS type for this VM. As such guests "
                         "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "

@@ -58,10 +58,28 @@ KChipsetType UIMachineSettingsSystem::chipsetType() const
     return (KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt();
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsSystem::setOHCIEnabled(bool fEnabled)
+{
+    /* Make sure OHCI status has changed: */
+    if (m_fOHCIEnabled == fEnabled)
+        return;
+
+    /* Update OHCI status value: */
+    m_fOHCIEnabled = fEnabled;
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
+}
+
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
 void UIMachineSettingsSystem::setOHCIEnabled(bool fEnabled)
 {
     m_fOHCIEnabled = fEnabled;
 }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 /* Load data to cache from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
@@ -278,7 +296,11 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsSystem::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 void UIMachineSettingsSystem::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;

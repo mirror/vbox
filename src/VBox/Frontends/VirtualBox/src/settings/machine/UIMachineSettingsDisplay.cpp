@@ -69,6 +69,12 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
 
     /* Recheck video RAM requirement: */
     checkVRAMRequirements();
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -299,8 +305,13 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsDisplay::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 void UIMachineSettingsDisplay::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
+    /* Configure validation: */
     m_pValidator = pValidator;
     connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -382,6 +393,22 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTi
         return true;
     }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Check VRDE server port: */
+    if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
+    {
+        strWarning = tr("server port value was not specified.");
+        return false;
+    }
+
+    /* Check VRDE server timeout: */
+    if (m_pEditorRemoteDisplayTimeout->text().trimmed().isEmpty())
+    {
+        strWarning = tr("authentication timeout value was not specified.");
+        return false;
+    }
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
     return true;
 }

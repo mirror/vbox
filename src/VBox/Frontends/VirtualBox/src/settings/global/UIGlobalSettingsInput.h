@@ -138,8 +138,12 @@ protected:
      * this task COULD be performed in other than GUI thread: */
     void saveFromCacheTo(QVariant &data);
 
-    /* Helpers: Validation stuff: */
+    /* API: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    void setValidator(UIPageValidator *pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     void setValidator(QIWidgetValidator *pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     bool revalidate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
@@ -150,8 +154,14 @@ protected:
 
 private:
 
-    /* Cache: */
+    /* Variable: Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    UIPageValidator *m_pValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QIWidgetValidator *m_pValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
+    /* Cache: */
     UISettingsCacheGlobalInput m_cache;
     QTabWidget *m_pTabWidget;
     QLineEdit *m_pSelectorFilterEditor;

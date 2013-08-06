@@ -274,6 +274,10 @@ void UIGlobalSettingsNetwork::getFromCache()
     /* Set first list item as current: */
     m_pInterfacesTree->setCurrentItem(m_pInterfacesTree->topLevelItem(0));
     sltUpdateCurrentItem();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -367,9 +371,13 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-/* Validation assignments: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIGlobalSettingsNetwork::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 void UIGlobalSettingsNetwork::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
+    /* Configure validation: */
     m_pValidator = pValidator;
 }
 
@@ -498,8 +506,11 @@ void UIGlobalSettingsNetwork::sltEditInterface()
         details.putBackToItem();
         pItem->updateInfo();
         sltUpdateCurrentItem();
-        m_pValidator->revalidate();
         m_fChanged = true;
+
+        /* Revalidate if possible: */
+        if (m_pValidator)
+            m_pValidator->revalidate();
     }
 }
 

@@ -34,6 +34,7 @@
 #include "UISettingsPage.h"
 #include "UIToolBar.h"
 #include "UIIconPool.h"
+#include "UIConverter.h"
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 # if MAC_LEOPARD_STYLE
@@ -163,6 +164,7 @@ void UISettingsDialog::execute()
     saveData();
 }
 
+#ifndef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UISettingsDialog::sltRevalidate(QIWidgetValidator *pValidator)
 {
     /* Get related settings page: */
@@ -188,6 +190,7 @@ void UISettingsDialog::sltRevalidate(QIWidgetValidator *pValidator)
     /* Remember validation status: */
     pValidator->setOtherValid(fValid);
 }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 void UISettingsDialog::sltCategoryChanged(int cId)
 {
@@ -272,6 +275,12 @@ void UISettingsDialog::retranslateUi()
     m_pLbTitle->setText(m_pSelector->itemText(m_pSelector->currentId()));
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Retranslate all validators: */
+    foreach (UIPageValidator *pValidator, findChildren<UIPageValidator*>())
+        if (!pValidator->lastMessage().isEmpty())
+            sltHandleValidityChange(pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     /* Get the list of validators: */
     QList<QIWidgetValidator*> validatorsList = findChildren<QIWidgetValidator*>();
     /* Retranslate all validators: */
@@ -287,6 +296,7 @@ void UISettingsDialog::retranslateUi()
         if (!pValidator->isValid())
             sltRevalidate(pValidator);
     }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 void UISettingsDialog::setDialogType(SettingsDialogType settingsDialogType)
@@ -364,6 +374,124 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     if (pSettingsPage)
         assignValidator(pSettingsPage);
 }
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UISettingsDialog::revalidate(UIPageValidator *pValidator)
+{
+    /* Perform page revalidation: */
+    UISettingsPage *pSettingsPage = pValidator->page();
+    QString strPageTitle = m_pSelector->itemTextByPage(pSettingsPage);
+    QString strMessageText;
+    bool fIsValid = pSettingsPage->revalidate(strMessageText, strPageTitle);
+
+    /* Remember revalidation result: */
+    pValidator->setValid(fIsValid);
+
+    /* Remember warning/error message: */
+    if (strMessageText.isEmpty())
+        pValidator->setLastMessage(QString());
+    else
+    {
+        pValidator->setLastMessage(tr("On the <b>%1</b> page, %2").arg(strPageTitle, strMessageText));
+        printf("UISettingsDialog:  Page validation failed!\n");
+    }
+}
+
+void UISettingsDialog::revalidate()
+{
+    /* Perform dialog revalidation: */
+    m_fValid = true;
+    m_fSilent = true;
+
+    /* Enumerating all the validators we have: */
+    QList<UIPageValidator*> validators(findChildren<UIPageValidator*>());
+    foreach (UIPageValidator *pValidator, validators)
+    {
+        /* Is current validator have something to say? */
+        if (!pValidator->lastMessage().isEmpty())
+        {
+            /* What page is it related to? */
+            UISettingsPage *pFailedSettingsPage = pValidator->page();
+            printf("UISettingsDialog:  Dialog validation failed on page #%d (%s)\n"
+//                   "Message: %s\n"
+                   , pFailedSettingsPage->id()
+                   , gpConverter->toInternalString((MachineSettingsPageType)pFailedSettingsPage->id()).toAscii().constData()
+//                   , pValidator->lastMessage().toAscii().constData()
+                   );
+
+            /* Show error first: */
+            if (!pValidator->isValid())
+            {
+                m_fValid = false;
+                setError(pValidator->lastMessage());
+                m_pWarningPane->setWarningPixmap(m_errorIcon);
+                m_pWarningPane->setWarningText(m_strErrorHint);
+#ifdef Q_WS_MAC
+                m_pWarningPane->setToolTip(m_strErrorString);
+#endif /* Q_WS_MAC */
+            }
+            /* Show warning if message is not an error: */
+            else
+            {
+                m_fSilent = false;
+                setWarning(pValidator->lastMessage());
+                m_pWarningPane->setWarningPixmap(m_warningIcon);
+                m_pWarningPane->setWarningText(m_strWarningHint);
+#ifdef Q_WS_MAC
+                m_pWarningPane->setToolTip(m_strWarningString);
+#endif /* Q_WS_MAC */
+            }
+
+            /* Stop dialog revalidation on first error/warning: */
+            if (!m_fValid || !m_fSilent)
+                break;
+        }
+    }
+
+    /* Make sure message-pane visible if necessary: */
+    if ((!m_fValid || !m_fSilent) && m_pStatusBar->currentIndex() == 0)
+        m_pStatusBar->setCurrentWidget(m_pWarningPane);
+    /* Make sure whats-this-pane visible otherwise: */
+    else if (m_fValid && m_fSilent && m_pStatusBar->currentWidget() == m_pWarningPane)
+        m_pStatusBar->setCurrentIndex(0);
+
+    /* Lock/unlock settings-page OK button according global validity status: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setEnabled(m_fValid);
+}
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
+{
+    printf("UISettingsDialog: Revalidation requested.\n");
+
+    /* Determine which settings-page had called for revalidation: */
+    UISettingsPage *pSettingsPage = pValidator->page();
+    const QString strPageName(gpConverter->toInternalString((MachineSettingsPageType)pSettingsPage->id()));
+
+    /* Perform page revalidation: */
+    printf("UISettingsDialog:  *%s* page revalidation in progress...\n",
+           strPageName.toAscii().constData());
+    revalidate(pValidator);
+    printf("UISettingsDialog:  *%s* page revalidation complete!\n",
+           strPageName.toAscii().constData());
+
+    /* Perform inter-page recorrelation: */
+    printf("UISettingsDialog:  *%s* page recorrelation in progress...\n",
+           strPageName.toAscii().constData());
+    recorrelate(pSettingsPage);
+    printf("UISettingsDialog:  *%s* page recorrelation complete!\n",
+           strPageName.toAscii().constData());
+
+    /* Perform dialog revalidation: */
+    printf("UISettingsDialog:  Dialog revalidation in progress...\n");
+    revalidate();
+    printf("UISettingsDialog:  Dialog revalidation complete!\n");
+
+    printf("UISettingsDialog: Revalidation processed.\n");
+}
+
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 void UISettingsDialog::sltHandleValidityChanged(const QIWidgetValidator * /* pValidator */)
 {
@@ -444,6 +572,7 @@ void UISettingsDialog::sltHandleValidityChanged(const QIWidgetValidator * /* pVa
             m_pStatusBar->setCurrentWidget(m_pWarningPane);
     }
 }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
 {
@@ -595,10 +724,21 @@ void UISettingsDialog::showEvent(QShowEvent *pEvent)
 
 void UISettingsDialog::assignValidator(UISettingsPage *pPage)
 {
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Assign validator: */
+    UIPageValidator *pValidator = new UIPageValidator(this, pPage);
+    connect(pValidator, SIGNAL(sigValidityChanged(UIPageValidator*)), this, SLOT(sltHandleValidityChange(UIPageValidator*)));
+    pPage->setValidator(pValidator);
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+    /* Assign validator: */
     QIWidgetValidator *pValidator = new QIWidgetValidator(m_pSelector->itemTextByPage(pPage), pPage, this);
     connect(pValidator, SIGNAL(validityChanged(const QIWidgetValidator*)), this, SLOT(sltHandleValidityChanged(const QIWidgetValidator*)));
     connect(pValidator, SIGNAL(isValidRequested(QIWidgetValidator*)), this, SLOT(sltRevalidate(QIWidgetValidator*)));
     pPage->setValidator(pValidator);
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
+    // TODO: Why here?
+    /* Configure navigation (tab-order): */
     pPage->setOrderAfter(m_pSelector->widget());
 }
 

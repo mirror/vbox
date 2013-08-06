@@ -1718,7 +1718,7 @@ private:
  * Used as HD Settings widget.
  */
 UIMachineSettingsStorage::UIMachineSettingsStorage()
-    : mValidator(0)
+    : m_pValidator(0)
     , mStorageModel(0)
     , mAddCtrAction(0), mDelCtrAction(0)
     , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0)
@@ -1885,11 +1885,30 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
 }
 
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
+{
+    /* Make sure chipset type has changed: */
+    if (mStorageModel->chipsetType() == type)
+        return;
+
+    /* Update chipset type value: */
+    mStorageModel->setChipsetType(type);
+    updateActionsState();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
+}
+
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+
 void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
 {
     mStorageModel->setChipsetType(type);
     updateActionsState();
 }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 /* Load data to cache from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
@@ -2028,8 +2047,8 @@ void UIMachineSettingsStorage::getFromCache()
     polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -2097,9 +2116,14 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsStorage::setValidator (QIWidgetValidator *aVal)
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsStorage::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+void UIMachineSettingsStorage::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
-    mValidator = aVal;
+    /* Configure validation: */
+    m_pValidator = pValidator;
 }
 
 bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strTitle */)
@@ -2268,7 +2292,10 @@ void UIMachineSettingsStorage::mediumUpdated (const UIMedium &aMedium)
             if (attMediumId == aMedium.id())
             {
                 mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
-                if (mValidator) mValidator->revalidate();
+
+                /* Revalidate if possible: */
+                if (m_pValidator)
+                    m_pValidator->revalidate();
             }
         }
     }
@@ -2287,7 +2314,10 @@ void UIMachineSettingsStorage::mediumRemoved (UIMediumType /* aType */, const QS
             if (attMediumId == aMediumId)
             {
                 mStorageModel->setData (attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
-                if (mValidator) mValidator->revalidate();
+
+                /* Revalidate if possible: */
+                if (m_pValidator)
+                    m_pValidator->revalidate();
             }
         }
     }
@@ -2336,7 +2366,10 @@ void UIMachineSettingsStorage::delController()
 
     mStorageModel->delController (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
-    if (mValidator) mValidator->revalidate();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsStorage::addAttachment()
@@ -2415,7 +2448,10 @@ void UIMachineSettingsStorage::delAttachment()
     mStorageModel->delAttachment (QUuid (mStorageModel->data (parent, StorageModel::R_ItemId).toString()),
                                   QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
-    if (mValidator) mValidator->revalidate();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsStorage::getInformation()
@@ -2541,7 +2577,9 @@ void UIMachineSettingsStorage::getInformation()
         }
     }
 
-    if (mValidator) mValidator->revalidate();
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 
     mIsLoadingInProgress = false;
 }
@@ -3076,8 +3114,10 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         mStorageModel->addAttachment(QUuid(mStorageModel->data(index, StorageModel::R_ItemId).toString()), deviceType, strMediumId);
         mStorageModel->sort();
         emit storageChanged();
-        if (mValidator)
-            mValidator->revalidate();
+
+        /* Revalidate if possible: */
+        if (m_pValidator)
+            m_pValidator->revalidate();
     }
 }
 

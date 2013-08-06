@@ -35,7 +35,11 @@
 #include "CSystemProperties.h"
 
 /* Forward declarations: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+class UIPageValidator;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 class QIWidgetValidator;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 class QShowEvent;
 
 /* Using declarations: */
@@ -92,7 +96,11 @@ public:
     virtual void saveFromCacheTo(QVariant &data) = 0;
 
     /* Validation stuff: */
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    virtual void setValidator(UIPageValidator* /* pValidator */) {}
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     virtual void setValidator(QIWidgetValidator* /* pValidator */) {}
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     virtual bool revalidate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
 
     /* Navigation stuff: */

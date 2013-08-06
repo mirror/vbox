@@ -32,8 +32,8 @@
 /* UIMachineSettingsParallel stuff */
 UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
+    , m_pValidator(0)
     , m_pParent(pParent)
-    , mValidator(0)
     , m_iSlot(-1)
 {
     /* Apply UI decorations */
@@ -113,17 +113,17 @@ void UIMachineSettingsParallel::uploadPortData(UICacheSettingsMachineParallelPor
     portCache.cacheCurrentData(portData);
 }
 
-void UIMachineSettingsParallel::setValidator (QIWidgetValidator *aVal)
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsParallel::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+void UIMachineSettingsParallel::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
-    Assert (aVal);
-    mValidator = aVal;
-    connect (mLeIRQ, SIGNAL (textChanged (const QString &)),
-             mValidator, SLOT (revalidate()));
-    connect (mLeIOPort, SIGNAL (textChanged (const QString &)),
-             mValidator, SLOT (revalidate()));
-    connect (mLePath, SIGNAL (textChanged (const QString &)),
-             mValidator, SLOT (revalidate()));
-    mValidator->revalidate();
+    /* Configure validation: */
+    m_pValidator = pValidator;
+    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
+    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
+    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
 }
 
 QWidget* UIMachineSettingsParallel::setOrderAfter (QWidget *aAfter)
@@ -159,8 +159,10 @@ void UIMachineSettingsParallel::mGbParallelToggled (bool aOn)
 {
     if (aOn)
         mCbNumberActivated (mCbNumber->currentText());
-    if (mValidator)
-        mValidator->revalidate();
+
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 void UIMachineSettingsParallel::mCbNumberActivated (const QString &aText)
@@ -175,12 +177,18 @@ void UIMachineSettingsParallel::mCbNumberActivated (const QString &aText)
         mLeIRQ->setText (QString::number (IRQ));
         mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
     }
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    /* Revalidate if possible: */
+    if (m_pValidator)
+        m_pValidator->revalidate();
+#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 
 /* UIMachineSettingsParallelPage stuff */
 UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
-    : mValidator(0)
+    : m_pValidator(0)
     , mTabWidget(0)
 {
     /* TabWidget creation */
@@ -255,7 +263,7 @@ void UIMachineSettingsParallelPage::getFromCache()
         pPage->fetchPortData(m_cache.child(iPort));
 
         /* Setup page validation: */
-        pPage->setValidator(mValidator);
+        pPage->setValidator(m_pValidator);
 
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
@@ -268,8 +276,8 @@ void UIMachineSettingsParallelPage::getFromCache()
     polishPage();
 
     /* Revalidate if possible: */
-    if (mValidator)
-        mValidator->revalidate();
+    if (m_pValidator)
+        m_pValidator->revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -328,15 +336,24 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsParallelPage::setValidator (QIWidgetValidator *aVal)
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+void UIMachineSettingsParallelPage::setValidator(UIPageValidator *pValidator)
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
+void UIMachineSettingsParallelPage::setValidator(QIWidgetValidator *pValidator)
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
-    mValidator = aVal;
+    /* Configure validation: */
+    m_pValidator = pValidator;
 }
 
 bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTitle)
 {
     bool valid = true;
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+    QList<QPair<QString, QString> > ports;
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QStringList ports;
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QStringList paths;
 
     int index = 0;
@@ -346,8 +363,32 @@ bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTit
         UIMachineSettingsParallel *page =
             static_cast<UIMachineSettingsParallel*> (tab);
 
+        if (!page->mGbParallel->isChecked())
+            continue;
+
+#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
+        /* Check the predefined port attributes uniqueness: */
+        {
+            QString strIRQ = page->mLeIRQ->text();
+            QString strIOPort = page->mLeIOPort->text();
+            QPair<QString, QString> pair(strIRQ, strIOPort);
+            valid = !strIRQ.isEmpty() && !strIOPort.isEmpty() && !ports.contains(pair);
+            if (!valid)
+            {
+                if (strIRQ.isEmpty())
+                    aWarning = tr("IRC not specified.");
+                else if (strIOPort.isEmpty())
+                    aWarning = tr("IO port not specified.");
+                else
+                    aWarning = tr ("duplicate port attributes specified.");
+                aTitle += ": " +
+                    vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(tab)));
+            }
+            ports << pair;
+        }
+#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
         /* Check the predefined port number unicity */
-        if (page->mGbParallel->isChecked() && !page->isUserDefined())
+        if (!page->isUserDefined())
         {
             QString port = page->mCbNumber->currentText();
             valid = !ports.contains (port);
@@ -360,9 +401,9 @@ bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTit
             }
             ports << port;
         }
+#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
         /* Check the port path emptiness & unicity */
-        if (page->mGbParallel->isChecked())
         {
             QString path = page->mLePath->text();
             valid = !path.isEmpty() && !paths.contains (path);
