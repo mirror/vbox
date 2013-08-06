@@ -46,7 +46,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX
     if (RT_UNLIKELY(   pCtx->tr.Attr.n.u4Type != AMD64_SEL_TYPE_SYS_TSS_BUSY
                     && pCtx->tr.Attr.n.u4Type != AMD64_SEL_TYPE_SYS_TSS_AVAIL))
     {
-        Log(("iomInterpretCheckPortIOAccess: Port=%#x cb=%d - TSS type %#x (attr=%#x) has no I/O bitmap -> #GP(0)\n",
+        Log(("iemHlpCheckPortIOPermissionBitmap: Port=%#x cb=%d - TSS type %#x (attr=%#x) has no I/O bitmap -> #GP(0)\n",
              u16Port, cbOperand, pCtx->tr.Attr.n.u4Type, pCtx->tr.Attr.u));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
@@ -59,7 +59,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX
                                               pCtx->tr.u64Base + RT_OFFSETOF(X86TSS64, offIoBitmap));
     if (rcStrict != VINF_SUCCESS)
     {
-        Log(("iomInterpretCheckPortIOAccess: Error reading offIoBitmap (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
+        Log(("iemHlpCheckPortIOPermissionBitmap: Error reading offIoBitmap (%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
@@ -73,7 +73,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX
      *        for instance sizeof(X86TSS32). */
     if (offFirstBit + 1 > pCtx->tr.u32Limit) /* the limit is inclusive */
     {
-        Log(("iomInterpretCheckPortIOAccess: offFirstBit=%#x + 1 is beyond u32Limit=%#x -> #GP(0)\n",
+        Log(("iemHlpCheckPortIOPermissionBitmap: offFirstBit=%#x + 1 is beyond u32Limit=%#x -> #GP(0)\n",
              offFirstBit, pCtx->tr.u32Limit));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
@@ -88,7 +88,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX
     rcStrict = iemMemFetchSysU16(pIemCpu, &bmBytes, UINT8_MAX, pCtx->tr.u64Base + offFirstBit);
     if (rcStrict != VINF_SUCCESS)
     {
-        Log(("iomInterpretCheckPortIOAccess: Error reading I/O bitmap @%#x (%Rrc)\n", offFirstBit, VBOXSTRICTRC_VAL(rcStrict)));
+        Log(("iemHlpCheckPortIOPermissionBitmap: Error reading I/O bitmap @%#x (%Rrc)\n", offFirstBit, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
 
@@ -99,7 +99,7 @@ static VBOXSTRICTRC iemHlpCheckPortIOPermissionBitmap(PIEMCPU pIemCpu, PCCPUMCTX
     bmBytes >>= (u16Port & 7);
     if (bmBytes & fPortMask)
     {
-        Log(("iomInterpretCheckPortIOAccess: u16Port=%#x LB %u - access denied (bm=%#x mask=%#x) -> #GP(0)\n",
+        Log(("iemHlpCheckPortIOPermissionBitmap: u16Port=%#x LB %u - access denied (bm=%#x mask=%#x) -> #GP(0)\n",
              u16Port, cbOperand, bmBytes, fPortMask));
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
