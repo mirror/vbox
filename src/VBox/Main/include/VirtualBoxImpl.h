@@ -19,6 +19,7 @@
 #define ____H_VIRTUALBOXIMPL
 
 #include "VirtualBoxBase.h"
+#include "objectslist.h"
 
 #ifdef RT_OS_WINDOWS
 # include "win/resource.h"
@@ -32,13 +33,11 @@ namespace com
 
 class SessionMachine;
 class GuestOSType;
-class SharedFolder;
 class Progress;
 class Host;
 class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
-class VirtualBoxCallbackRegistration; /* see VirtualBoxImpl.cpp */
 #ifdef VBOX_WITH_EXTPACK
 class ExtPackManager;
 #endif
@@ -51,8 +50,6 @@ typedef std::list<ComObjPtr<SessionMachine> > SessionMachinesList;
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
 #endif
-
-struct VMClientWatcherData;
 
 namespace settings
 {
@@ -70,6 +67,7 @@ class ATL_NO_VTABLE VirtualBox :
 public:
 
     typedef std::list<ComPtr<IInternalSessionControl> > InternalControlList;
+    typedef ObjectsList<Machine> MachinesOList;
 
     class CallbackEvent;
     friend class CallbackEvent;
@@ -215,7 +213,6 @@ public:
     void onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
     void onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                IN_BSTR aFlags);
-    void onMachineUninit(Machine *aMachine);
     void onNatRedirectChange(const Guid &aMachineId, ULONG ulSlot, bool fRemove, IN_BSTR aName,
                                    NATProtocol_T aProto, IN_BSTR aHostIp, uint16_t aHostPort,
                                    IN_BSTR aGuestIp, uint16_t aGuestPort);
@@ -233,6 +230,7 @@ public:
 
     void getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);
+    MachinesOList &getMachinesList();
 
     HRESULT findMachine(const Guid &aId,
                         bool fPermitInaccessible,
@@ -321,6 +319,7 @@ public:
     bool isMediaUuidInUse(const Guid &aId, DeviceType_T deviceType);
 
 private:
+    class ClientWatcher;
 
     static HRESULT setErrorStatic(HRESULT aResultCode,
                                   const Utf8Str &aText)
@@ -360,7 +359,6 @@ private:
     static Bstr sPackageType;
     static Bstr sAPIVersion;
 
-    static DECLCALLBACK(int) ClientWatcher(RTTHREAD thread, void *pvUser);
     static DECLCALLBACK(int) AsyncEventHandler(RTTHREAD thread, void *pvUser);
 
 #ifdef RT_OS_WINDOWS

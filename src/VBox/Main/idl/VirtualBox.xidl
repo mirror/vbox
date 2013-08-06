@@ -3363,7 +3363,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="dca36a92-703c-4649-98a4-f40c1ef0c336"
+    uuid="aca30121-e06b-4ace-bc22-d18506a8ba2b"
     internal="yes"
     wsmap="suppress"
     >
@@ -3385,10 +3385,6 @@
         </note>
       </desc>
       <param name="state" type="MachineState" dir="in"/>
-    </method>
-
-    <method name="getIPCId">
-      <param name="id" type="wstring" dir="return"/>
     </method>
 
     <method name="beginPowerUp">
@@ -17330,7 +17326,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="cddf451c-a006-4c33-8245-63b3c9ae6586"
+    uuid="3eeeb8e7-374f-4e0a-a5fd-f548742da8d4"
     internal="yes"
     wsmap="suppress"
     >
@@ -17371,6 +17367,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
       <param name="lockType" type="LockType" dir="in"/>
+      <param name="tokenId" type="wstring" dir="in"/>
     </method>
 
     <method name="assignRemoteMachine">

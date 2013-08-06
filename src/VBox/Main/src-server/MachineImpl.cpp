@@ -23,17 +23,10 @@
 # define __STDC_CONSTANT_MACROS
 #endif
 
-#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
-# include <errno.h>
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <sys/ipc.h>
-# include <sys/sem.h>
-#endif
-
 #include "Logging.h"
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
+#include "ClientToken.h"
 #include "ProgressImpl.h"
 #include "ProgressProxyImpl.h"
 #include "MediumAttachmentImpl.h"
@@ -3711,6 +3704,11 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             SessionState_T origState = mData->mSession.mState;
             mData->mSession.mState = SessionState_Spawning;
 
+            /* Get the client token ID to be passed to the client process */
+            Utf8Str strTokenId;
+            sessionMachine->getTokenId(strTokenId);
+            Assert(!strTokenId.isEmpty());
+
             /*
              *  Release the lock before calling the client process -- it will call
              *  Machine/SessionMachine methods. Releasing the lock here is quite safe
@@ -3724,7 +3722,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             alock.release();
 
             LogFlowThisFunc(("Calling AssignMachine()...\n"));
-            rc = pSessionControl->AssignMachine(sessionMachine, lockType);
+            rc = pSessionControl->AssignMachine(sessionMachine, lockType, Bstr(strTokenId).raw());
             LogFlowThisFunc(("AssignMachine() returned %08X\n", rc));
 
             /* The failure may occur w/o any error info (from RPC), so provide one */
@@ -3791,7 +3789,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             {
                 /* Close the remote session, remove the remote control from the list
                  * and reset session state to Closed (@note keep the code in sync
-                 * with the relevant part in openSession()). */
+                 * with the relevant part in checkForSpawnFailure()). */
 
                 Assert(mData->mSession.mRemoteControls.size() == 1);
                 if (mData->mSession.mRemoteControls.size() == 1)
@@ -8095,13 +8093,13 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
      *  because it doesn't need to call us back if called with a NULL argument.
      *  Releasing the lock here is dangerous because we didn't prepare the
      *  launch data yet, but the client we've just started may happen to be
-     *  too fast and call openSession() that will fail (because of PID, etc.),
+     *  too fast and call LockMachine() that will fail (because of PID, etc.),
      *  so that the Machine will never get out of the Spawning session state.
      */
 
     /* inform the session that it will be a remote one */
     LogFlowThisFunc(("Calling AssignMachine (NULL)...\n"));
-    HRESULT rc = aControl->AssignMachine(NULL, LockType_Write);
+    HRESULT rc = aControl->AssignMachine(NULL, LockType_Write, Bstr::Empty.raw());
     LogFlowThisFunc(("AssignMachine (NULL) returned %08X\n", rc));
 
     if (FAILED(rc))
@@ -8126,33 +8124,22 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
 }
 
 /**
- * Returns @c true if the given machine has an open direct session and returns
- * the session machine instance and additional session data (on some platforms)
- * if so.
+ * Returns @c true if the given session machine instance has an open direct
+ * session (and optionally also for direct sessions which are closing) and
+ * returns the session control machine instance if so.
  *
  * Note that when the method returns @c false, the arguments remain unchanged.
  *
- * @param aMachine  Session machine object.
- * @param aControl  Direct session control object (optional).
- * @param aIPCSem   Mutex IPC semaphore handle for this machine (optional).
+ * @param aMachine      Session machine object.
+ * @param aControl      Direct session control object (optional).
+ * @param aAllowClosing If true then additionally a session which is currently
+ *                      being closed will also be allowed.
  *
  * @note locks this object for reading.
  */
-#if defined(RT_OS_WINDOWS)
-bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                            ComPtr<IInternalSessionControl> *aControl /*= NULL*/,
-                            HANDLE *aIPCSem /*= NULL*/,
-                            bool aAllowClosing /*= false*/)
-#elif defined(RT_OS_OS2)
-bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                            ComPtr<IInternalSessionControl> *aControl /*= NULL*/,
-                            HMTX *aIPCSem /*= NULL*/,
-                            bool aAllowClosing /*= false*/)
-#else
 bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                             ComPtr<IInternalSessionControl> *aControl /*= NULL*/,
                             bool aAllowClosing /*= false*/)
-#endif
 {
     AutoLimitedCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
@@ -8174,11 +8161,6 @@ bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
         if (aControl != NULL)
             *aControl = mData->mSession.mDirectControl;
 
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        /* Additional session data */
-        if (aIPCSem != NULL)
-            *aIPCSem = aMachine->mIPCSem;
-#endif
         return true;
     }
 
@@ -8186,20 +8168,11 @@ bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
 }
 
 /**
- * Returns @c true if the given machine has an spawning direct session and
- * returns and additional session data (on some platforms) if so.
- *
- * Note that when the method returns @c false, the arguments remain unchanged.
- *
- * @param aPID  PID of the spawned direct session process.
+ * Returns @c true if the given machine has an spawning direct session.
  *
  * @note locks this object for reading.
  */
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-bool Machine::isSessionSpawning(RTPROCESS *aPID /*= NULL*/)
-#else
 bool Machine::isSessionSpawning()
-#endif
 {
     AutoLimitedCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), false);
@@ -8211,17 +8184,7 @@ bool Machine::isSessionSpawning()
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mSession.mState == SessionState_Spawning)
-    {
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-        /* Additional session data */
-        if (aPID != NULL)
-        {
-            AssertReturn(mData->mSession.mPID != NIL_RTPROCESS, false);
-            *aPID = mData->mSession.mPID;
-        }
-#endif
         return true;
-    }
 
     return false;
 }
@@ -8250,8 +8213,7 @@ bool Machine::checkForSpawnFailure()
         return true;
     }
 
-    /* VirtualBox::addProcessToReap() needs a write lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mSession.mState != SessionState_Spawning)
     {
@@ -8262,22 +8224,12 @@ bool Machine::checkForSpawnFailure()
 
     HRESULT rc = S_OK;
 
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-
-    /* the process was already unexpectedly terminated, we just need to set an
-     * error and finalize session spawning */
-    rc = setError(E_FAIL,
-                  tr("The virtual machine '%s' has terminated unexpectedly during startup"),
-                  getName().c_str());
-#else
-
     /* PID not yet initialized, skip check. */
     if (mData->mSession.mPID == NIL_RTPROCESS)
         return false;
 
     RTPROCSTATUS status;
-    int vrc = ::RTProcWait(mData->mSession.mPID, RTPROCWAIT_FLAGS_NOBLOCK,
-                           &status);
+    int vrc = RTProcWait(mData->mSession.mPID, RTPROCWAIT_FLAGS_NOBLOCK, &status);
 
     if (vrc != VERR_PROCESS_RUNNING)
     {
@@ -8299,13 +8251,11 @@ bool Machine::checkForSpawnFailure()
                           getName().c_str(), rc);
     }
 
-#endif
-
     if (FAILED(rc))
     {
         /* Close the remote session, remove the remote control from the list
          * and reset session state to Closed (@note keep the code in sync with
-         * the relevant part in checkForSpawnFailure()). */
+         * the relevant part in LockMachine()). */
 
         Assert(mData->mSession.mRemoteControls.size() == 1);
         if (mData->mSession.mRemoteControls.size() == 1)
@@ -8324,7 +8274,6 @@ bool Machine::checkForSpawnFailure()
             mData->mSession.mProgress.setNull();
         }
 
-        mParent->addProcessToReap(mData->mSession.mPID);
         mData->mSession.mPID = NIL_RTPROCESS;
 
         mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
@@ -12679,15 +12628,7 @@ HRESULT SessionMachine::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-#if defined(RT_OS_WINDOWS)
-    mIPCSem = NULL;
-#elif defined(RT_OS_OS2)
-    mIPCSem = NULLHANDLE;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    mIPCSem = -1;
-#else
-# error "Port me!"
-#endif
+    mClientToken = NULL;
 
     return BaseFinalConstruct();
 }
@@ -12696,13 +12637,21 @@ void SessionMachine::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
 
+    Assert(!mClientToken);
+    /* paranoia, should not hang around any more */
+    if (mClientToken)
+    {
+        delete mClientToken;
+        mClientToken = NULL;
+    }
+
     uninit(Uninit::Unexpected);
 
     BaseFinalRelease();
 }
 
 /**
- *  @note Must be called only by Machine::openSession() from its own write lock.
+ *  @note Must be called only by Machine::LockMachine() from its own write lock.
  */
 HRESULT SessionMachine::init(Machine *aMachine)
 {
@@ -12717,96 +12666,25 @@ HRESULT SessionMachine::init(Machine *aMachine)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    /* create the interprocess semaphore */
-#if defined(RT_OS_WINDOWS)
-    mIPCSemName = aMachine->mData->m_strConfigFileFull;
-    for (size_t i = 0; i < mIPCSemName.length(); i++)
-        if (mIPCSemName.raw()[i] == '\\')
-            mIPCSemName.raw()[i] = '/';
-    mIPCSem = ::CreateMutex(NULL, FALSE, mIPCSemName.raw());
-    ComAssertMsgRet(mIPCSem,
-                    ("Cannot create IPC mutex '%ls', err=%d",
-                     mIPCSemName.raw(), ::GetLastError()),
-                    E_FAIL);
-#elif defined(RT_OS_OS2)
-    Utf8Str ipcSem = Utf8StrFmt("\\SEM32\\VBOX\\VM\\{%RTuuid}",
-                                aMachine->mData->mUuid.raw());
-    mIPCSemName = ipcSem;
-    APIRET arc = ::DosCreateMutexSem((PSZ)ipcSem.c_str(), &mIPCSem, 0, FALSE);
-    ComAssertMsgRet(arc == NO_ERROR,
-                    ("Cannot create IPC mutex '%s', arc=%ld",
-                     ipcSem.c_str(), arc),
-                    E_FAIL);
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
-#  if defined(RT_OS_FREEBSD) && (HC_ARCH_BITS == 64)
-    /** @todo Check that this still works correctly. */
-    AssertCompileSize(key_t, 8);
-#  else
-    AssertCompileSize(key_t, 4);
-#  endif
-    key_t key;
-    mIPCSem = -1;
-    mIPCKey = "0";
-    for (uint32_t i = 0; i < 1 << 24; i++)
+    HRESULT rc = S_OK;
+
+    /* create the machine client token */
+    try
     {
-        key = ((uint32_t)'V' << 24) | i;
-        int sem = ::semget(key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
-        if (sem >= 0 || (errno != EEXIST && errno != EACCES))
+        mClientToken = new ClientToken(aMachine);
+        if (!mClientToken->isReady())
         {
-            mIPCSem = sem;
-            if (sem >= 0)
-                mIPCKey = BstrFmt("%u", key);
-            break;
+            delete mClientToken;
+            mClientToken = NULL;
+            rc = E_FAIL;
         }
     }
-# else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-    Utf8Str semName = aMachine->mData->m_strConfigFileFull;
-    char *pszSemName = NULL;
-    RTStrUtf8ToCurrentCP(&pszSemName, semName);
-    key_t key = ::ftok(pszSemName, 'V');
-    RTStrFree(pszSemName);
-
-    mIPCSem = ::semget(key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
-# endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-
-    int errnoSave = errno;
-    if (mIPCSem < 0 && errnoSave == ENOSYS)
+    catch (std::bad_alloc &)
     {
-        setError(E_FAIL,
-                 tr("Cannot create IPC semaphore. Most likely your host kernel lacks "
-                    "support for SysV IPC. Check the host kernel configuration for "
-                    "CONFIG_SYSVIPC=y"));
-        return E_FAIL;
+        rc = E_OUTOFMEMORY;
     }
-    /* ENOSPC can also be the result of VBoxSVC crashes without properly freeing
-     * the IPC semaphores */
-    if (mIPCSem < 0 && errnoSave == ENOSPC)
-    {
-#ifdef RT_OS_LINUX
-        setError(E_FAIL,
-                 tr("Cannot create IPC semaphore because the system limit for the "
-                    "maximum number of semaphore sets (SEMMNI), or the system wide "
-                    "maximum number of semaphores (SEMMNS) would be exceeded. The "
-                    "current set of SysV IPC semaphores can be determined from "
-                    "the file /proc/sysvipc/sem"));
-#else
-        setError(E_FAIL,
-                 tr("Cannot create IPC semaphore because the system-imposed limit "
-                    "on the maximum number of allowed  semaphores or semaphore "
-                    "identifiers system-wide would be exceeded"));
-#endif
-        return E_FAIL;
-    }
-    ComAssertMsgRet(mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errnoSave),
-                    E_FAIL);
-    /* set the initial value to 1 */
-    int rv = ::semctl(mIPCSem, 0, SETVAL, 1);
-    ComAssertMsgRet(rv == 0, ("Cannot init IPC semaphore, errno=%d", errno),
-                    E_FAIL);
-#else
-# error "Port me!"
-#endif
+    if (FAILED(rc))
+        return rc;
 
     /* memorize the peer Machine */
     unconst(mPeer) = aMachine;
@@ -12887,7 +12765,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
     autoInitSpan.setSucceeded();
 
     LogFlowThisFuncLeave();
-    return S_OK;
+    return rc;
 }
 
 /**
@@ -12928,24 +12806,12 @@ void SessionMachine::uninit(Uninit::Reason aReason)
          * below, the following is enough.
          */
         LogFlowThisFunc(("Initialization failed.\n"));
-#if defined(RT_OS_WINDOWS)
-        if (mIPCSem)
-            ::CloseHandle(mIPCSem);
-        mIPCSem = NULL;
-#elif defined(RT_OS_OS2)
-        if (mIPCSem != NULLHANDLE)
-            ::DosCloseMutexSem(mIPCSem);
-        mIPCSem = NULLHANDLE;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-        if (mIPCSem >= 0)
-            ::semctl(mIPCSem, 0, IPC_RMID);
-        mIPCSem = -1;
-# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
-        mIPCKey = "0";
-# endif /* VBOX_WITH_NEW_SYS_V_KEYGEN */
-#else
-# error "Port me!"
-#endif
+        /* destroy the machine client token */
+        if (mClientToken)
+        {
+            delete mClientToken;
+            mClientToken = NULL;
+        }
         uninitDataAndChildObjects();
         mData.free();
         unconst(mParent) = NULL;
@@ -13133,25 +12999,12 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     mData->mSession.mState = SessionState_Unlocked;
     mData->mSession.mType.setNull();
 
-    /* close the interprocess semaphore before leaving the exclusive lock */
-#if defined(RT_OS_WINDOWS)
-    if (mIPCSem)
-        ::CloseHandle(mIPCSem);
-    mIPCSem = NULL;
-#elif defined(RT_OS_OS2)
-    if (mIPCSem != NULLHANDLE)
-        ::DosCloseMutexSem(mIPCSem);
-    mIPCSem = NULLHANDLE;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    if (mIPCSem >= 0)
-        ::semctl(mIPCSem, 0, IPC_RMID);
-    mIPCSem = -1;
-# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
-    mIPCKey = "0";
-# endif /* VBOX_WITH_NEW_SYS_V_KEYGEN */
-#else
-# error "Port me!"
-#endif
+    /* destroy the machine client token before leaving the exclusive lock */
+    if (mClientToken)
+    {
+        delete mClientToken;
+        mClientToken = NULL;
+    }
 
     /* fire an event */
     mParent->onSessionStateChange(mData->mUuid, SessionState_Unlocked);
@@ -13164,6 +13017,10 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     /* release the exclusive lock before setting the below two to NULL */
     multilock.release();
 
+    RTThreadSleep(500);
+    mParent->AddRef();
+    LONG c = mParent->Release();
+    LogFlowThisFunc(("vbox ref=%d\n", c));
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
 
@@ -13248,31 +13105,6 @@ STDMETHODIMP SessionMachine::SetRemoveSavedStateFile(BOOL aRemove)
 STDMETHODIMP SessionMachine::UpdateState(MachineState_T aMachineState)
 {
     return setMachineState(aMachineState);
-}
-
-/**
- *  @note Locks this object for reading.
- */
-STDMETHODIMP SessionMachine::GetIPCId(BSTR *aId)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    mIPCSemName.cloneTo(aId);
-    return S_OK;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
-    mIPCKey.cloneTo(aId);
-# else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-    mData->m_strConfigFileFull.cloneTo(aId);
-# endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
-    return S_OK;
-#else
-# error "Port me!"
-#endif
 }
 
 /**
@@ -14077,39 +13909,8 @@ bool SessionMachine::checkForDeath()
                  Uninit::Normal :
                  Uninit::Abnormal;
 
-#if defined(RT_OS_WINDOWS)
-
-        AssertMsg(mIPCSem, ("semaphore must be created"));
-
-        /* release the IPC mutex */
-        ::ReleaseMutex(mIPCSem);
-
-        terminated = true;
-
-#elif defined(RT_OS_OS2)
-
-        AssertMsg(mIPCSem, ("semaphore must be created"));
-
-        /* release the IPC mutex */
-        ::DosReleaseMutexSem(mIPCSem);
-
-        terminated = true;
-
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-
-        AssertMsg(mIPCSem >= 0, ("semaphore must be created"));
-
-        int val = ::semctl(mIPCSem, 0, GETVAL);
-        if (val > 0)
-        {
-            /* the semaphore is signaled, meaning the session is terminated */
-            terminated = true;
-        }
-
-#else
-# error "Port me!"
-#endif
-
+        if (mClientToken)
+            terminated = mClientToken->release();
     } /* AutoCaller block */
 
     if (terminated)
@@ -14117,6 +13918,31 @@ bool SessionMachine::checkForDeath()
 
     return terminated;
 }
+
+void SessionMachine::getTokenId(Utf8Str &strTokenId)
+{
+    LogFlowThisFunc(("\n"));
+
+    strTokenId.setNull();
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    Assert(mClientToken);
+    if (mClientToken)
+        mClientToken->getId(strTokenId);
+}
+
+Machine::ClientToken *SessionMachine::getClientToken()
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), NULL);
+
+    return mClientToken;
+}
+
 
 /**
  *  @note Locks this object for reading.

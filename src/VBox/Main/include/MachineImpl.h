@@ -782,33 +782,6 @@ public:
         return rc;
     }
 
-#if defined(RT_OS_WINDOWS)
-
-    bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                       ComPtr<IInternalSessionControl> *aControl = NULL,
-                       HANDLE *aIPCSem = NULL, bool aAllowClosing = false);
-    bool isSessionSpawning(RTPROCESS *aPID = NULL);
-
-    bool isSessionOpenOrClosing(ComObjPtr<SessionMachine> &aMachine,
-                                ComPtr<IInternalSessionControl> *aControl = NULL,
-                                HANDLE *aIPCSem = NULL)
-    { return isSessionOpen(aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
-
-#elif defined(RT_OS_OS2)
-
-    bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                       ComPtr<IInternalSessionControl> *aControl = NULL,
-                       HMTX *aIPCSem = NULL, bool aAllowClosing = false);
-
-    bool isSessionSpawning(RTPROCESS *aPID = NULL);
-
-    bool isSessionOpenOrClosing(ComObjPtr<SessionMachine> &aMachine,
-                                 ComPtr<IInternalSessionControl> *aControl = NULL,
-                                 HMTX *aIPCSem = NULL)
-    { return isSessionOpen(aMachine, aControl, aIPCSem, true /* aAllowClosing */); }
-
-#else
-
     bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
                        ComPtr<IInternalSessionControl> *aControl = NULL,
                        bool aAllowClosing = false);
@@ -817,8 +790,6 @@ public:
     bool isSessionOpenOrClosing(ComObjPtr<SessionMachine> &aMachine,
                                 ComPtr<IInternalSessionControl> *aControl = NULL)
     { return isSessionOpen(aMachine, aControl, true /* aAllowClosing */); }
-
-#endif
 
     bool checkForSpawnFailure();
 
@@ -847,6 +818,8 @@ public:
     }
 
 protected:
+
+    class ClientToken;
 
     HRESULT checkStateDependency(StateDependency aDepType);
 
@@ -1074,7 +1047,6 @@ public:
     // IInternalMachineControl methods
     STDMETHOD(SetRemoveSavedStateFile)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
-    STDMETHOD(GetIPCId)(BSTR *id);
     STDMETHOD(BeginPowerUp)(IProgress *aProgress);
     STDMETHOD(EndPowerUp)(LONG iResult);
     STDMETHOD(BeginPoweringDown)(IProgress **aProgress);
@@ -1132,6 +1104,11 @@ public:
     }
 
     bool checkForDeath();
+
+    void getTokenId(Utf8Str &strTokenId);
+    // getClientToken must be only used by callers who can guarantee that
+    // the object cannot be deleted in the mean time, i.e. have a caller/lock.
+    ClientToken *getClientToken();
 
     HRESULT onNetworkAdapterChange(INetworkAdapter *networkAdapter, BOOL changeAdapter);
     HRESULT onNATRedirectRuleChange(ULONG ulSlot, BOOL aNatRuleRemove, IN_BSTR aRuleName,
@@ -1235,27 +1212,8 @@ private:
 
     ConsoleTaskData mConsoleTaskData;
 
-    /** interprocess semaphore handle for this machine */
-#if defined(RT_OS_WINDOWS)
-    HANDLE mIPCSem;
-    Bstr mIPCSemName;
-    friend bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                                       ComPtr<IInternalSessionControl> *aControl,
-                                       HANDLE *aIPCSem, bool aAllowClosing);
-#elif defined(RT_OS_OS2)
-    HMTX mIPCSem;
-    Bstr mIPCSemName;
-    friend bool Machine::isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
-                                       ComPtr<IInternalSessionControl> *aControl,
-                                       HMTX *aIPCSem, bool aAllowClosing);
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    int mIPCSem;
-# ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
-    Bstr mIPCKey;
-# endif /*VBOX_WITH_NEW_SYS_V_KEYGEN */
-#else
-# error "Port me!"
-#endif
+    /** client token for this machine */
+    ClientToken *mClientToken;
 
     static DECLCALLBACK(int) taskHandler(RTTHREAD thread, void *pvUser);
 };
