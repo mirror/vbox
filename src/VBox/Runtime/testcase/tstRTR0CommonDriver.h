@@ -177,7 +177,8 @@ static bool rtR3TestR0ProcessMessages(PRTTSTR0REQ pReq)
      *
      * We can have multiple failures and info messages packed into szMsg.  They
      * are separated by a double newline.  The kind of message is indicated by
-     * the first character, '!' means error and '?' means info message.
+     * the first character, '!' means error and '?' means info message. '$' means
+     * the test was skipped because a feature is not supported on the host.
      */
     bool fRc = true;
     if (pReq->szMsg[0])
@@ -189,7 +190,7 @@ static bool rtR3TestR0ProcessMessages(PRTTSTR0REQ pReq)
         {
             char *pszCur = pszNext;
             do
-                pszNext = strpbrk(pszNext + 1, "!?");
+                pszNext = strpbrk(pszNext + 1, "!?$");
             while (pszNext && (pszNext[-1] != '\n' || pszNext[-2] != '\n'));
 
             char *pszEnd = pszNext ? pszNext - 1 : strchr(pszCur, '\0');
@@ -201,6 +202,10 @@ static bool rtR3TestR0ProcessMessages(PRTTSTR0REQ pReq)
             {
                 RTTestFailed(g_hTest, "%s", pszCur + 1);
                 fRc = false;
+            }
+            else if (*pszCur == '$')
+            {
+                RTTestSkipped(g_hTest, "%s", pszCur + 1);
             }
             else
                 RTTestPrintfNl(g_hTest, RTTESTLVL_ALWAYS, "%s", pszCur + 1);

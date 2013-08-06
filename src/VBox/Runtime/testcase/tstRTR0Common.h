@@ -176,6 +176,24 @@ static uint32_t volatile g_cErrors;
         } \
     } while (0)
 
+/**
+ * Macro for skipping a test in the ring-0 testcase.
+ */
+#define RTR0TESTR0_SKIP() \
+    do { \
+        RTR0TestR0Skip("line %u: SKIPPED", __LINE__); \
+    } while (0)
+
+/**
+ * Same as RTR0TESTR0_SKIP + break.
+ */
+#define RTR0TESTR0_SKIP_BREAK() \
+    if (1) \
+    { \
+        RTR0TestR0Skip("line %u: SKIPPED", __LINE__); \
+        break; \
+    } else do { } while (0)
+
 
 /**
  * Report an error.
@@ -243,6 +261,35 @@ void RTR0TestR0Info(const char *pszFormat, ...)
         va_end(va);
     }
 }
+
+
+/**
+ * Report an error.
+ */
+void RTR0TestR0Skip(const char *pszFormat, ...)
+{
+    size_t off = RTStrNLen(g_szErr, sizeof(g_szErr) - 1);
+    size_t cbLeft = sizeof(g_szErr) - off;
+    if (cbLeft > 10)
+    {
+        char *psz = &g_szErr[off];
+        if (off)
+        {
+            *psz++  = '\n';
+            *psz++  = '\n';
+            cbLeft -= 2;
+        }
+        *psz++ = '$';
+        cbLeft--;
+
+        va_list va;
+        va_start(va, pszFormat);
+        RTStrPrintfV(psz, cbLeft, pszFormat, va);
+        va_end(va);
+    }
+    ASMAtomicIncU32(&g_cErrors);
+}
+
 
 /**
  * Checks if we have any error reports.
