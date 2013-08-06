@@ -25,14 +25,6 @@
 # include "win/resource.h"
 #endif
 
-/** @def VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
- *  Use SYS V IPC for watching a session.
- *  This is defined in the Makefile since it's also used by MachineImpl.h/cpp.
- */
-#ifdef DOXYGEN_RUNNING
-# define VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
-#endif
-
 #ifdef RT_OS_WINDOWS
 [threading(free)]
 #endif
@@ -80,7 +72,7 @@ public:
     // IInternalSessionControl methods
     STDMETHOD(GetPID)(ULONG *aPid);
     STDMETHOD(GetRemoteConsole)(IConsole **aConsole);
-    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType);
+    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IN_BSTR aTokenId);
     STDMETHOD(AssignRemoteMachine)(IMachine *aMachine, IConsole *aConsole);
     STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();
@@ -123,8 +115,6 @@ public:
 private:
 
     HRESULT unlockMachine(bool aFinalRelease, bool aFromServer);
-    HRESULT grabIPCSemaphore();
-    void releaseIPCSemaphore();
 
     SessionState_T mState;
     SessionType_T mType;
@@ -138,18 +128,9 @@ private:
 
     ComPtr<IVirtualBox> mVirtualBox;
 
-    /* interprocess semaphore handle (id) for the opened machine */
-#if defined(RT_OS_WINDOWS)
-    HANDLE mIPCSem;
-    HANDLE mIPCThreadSem;
-#elif defined(RT_OS_OS2)
-    RTTHREAD mIPCThread;
-    RTSEMEVENT mIPCThreadSem;
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-    int mIPCSem;
-#else
-# error "Port me!"
-#endif
+    class ClientTokenHolder;
+
+    ClientTokenHolder *mClientTokenHolder;
 };
 
 #endif // ____H_SESSIONIMPL
