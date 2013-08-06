@@ -397,8 +397,48 @@ DECLINLINE(void) crServerCtxSwitchPostprocess(CR_SERVER_CTX_SWITCH *pData)
 void crServerInitTmpCtxDispatch();
 
 int crServerVBoxParseNumerics(const char *pszStr, const int defaultVal);
+
+
 void CrDpEnter(PCR_DISPLAY pDisplay);
 void CrDpLeave(PCR_DISPLAY pDisplay);
+int CrDpInit(PCR_DISPLAY pDisplay);
+void CrDpTerm(PCR_DISPLAY pDisplay);
+
+DECLINLINE(bool) CrDpIsEmpty(PCR_DISPLAY pDisplay)
+{
+    return CrVrScrCompositorIsEmpty(&pDisplay->Mural.Compositor);
+}
+
+int CrDpSaveState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM);
+int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version);
+
+void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData);
+void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
+int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+void CrDpEntryRegionsClear(PCR_DISPLAY pDisplay);
+DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
+{
+    return CrVrScrCompositorEntryIsInList(&pEntry->CEntry);
+}
+
+DECLINLINE(CRMuralInfo*) CrDpGetMural(PCR_DISPLAY pDisplay)
+{
+    return &pDisplay->Mural;
+}
+
+int CrDemGlobalInit();
+void CrDemTeGlobalTerm();
+int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
+void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
+PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
+void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry);
+int CrDemEntrySaveState(PCR_DISPLAY_ENTRY pEntry, PSSMHANDLE pSSM);
+int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, PSSMHANDLE pSSM);
+
+int crServerDisplaySaveState(PSSMHANDLE pSSM);
+int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version);
 
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER

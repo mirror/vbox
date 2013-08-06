@@ -269,7 +269,7 @@ NTSTATUS vboxWddmGhDisplayUpdateScreenPos(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOUR
     return Status;
 }
 
-NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos)
+NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pRealFbAlloc, const VBOXWDDM_ALLOC_DATA *pAllocData, const POINT * pVScreenPos)
 {
     NTSTATUS Status = vboxWddmGhDisplaySetMode(pDevExt, pAllocData);
     if (NT_SUCCESS(Status))
@@ -282,7 +282,7 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_D
             {
                 if (pDevExt->f3DEnabled)
                 {
-                    Status = vboxVdmaTexPresentSetAlloc(pDevExt, pAllocData);
+                    Status = vboxVdmaTexPresentSetAlloc(pDevExt, pRealFbAlloc);
                     if (NT_SUCCESS(Status))
                         return STATUS_SUCCESS;
                     else
@@ -310,6 +310,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_S
 
     char fGhSynced = 1;
     PVBOXWDDM_ALLOCATION pFbAlloc = VBOXWDDM_FB_ALLOCATION(pDevExt, pSource);
+    PVBOXWDDM_ALLOCATION pRealFbAlloc = pSource->pPrimaryAllocation;
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
 # ifdef VBOX_WDDM_WIN8
     if (!g_VBoxDisplayOnly)
@@ -338,7 +339,7 @@ bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_S
 #endif
     Assert(!pFbAlloc || pFbAlloc->AllocData.Addr.SegmentId == pSource->AllocData.Addr.SegmentId);
 
-    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pFbAlloc ? &pFbAlloc->AllocData : &pSource->AllocData, &pSource->VScreenPos);
+    NTSTATUS Status = vboxWddmGhDisplaySetInfo(pDevExt, pRealFbAlloc, pFbAlloc ? &pFbAlloc->AllocData : &pSource->AllocData, &pSource->VScreenPos);
     if (NT_SUCCESS(Status))
         pSource->fGhSynced = fGhSynced;
     else
@@ -1427,6 +1428,10 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
         uint32_t flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
         bOur = (flags & HGSMIHOSTFLAGS_IRQ);
+
+        if (bOur)
+            VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pDevExt)->hostCtx);
+
         do
         {
             if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
@@ -1558,7 +1563,6 @@ BOOLEAN DxgkDdiInterruptRoutine(
                 bNeedDpc = TRUE;
             }
 
-            VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pDevExt)->hostCtx);
 #if 0 //def DEBUG_misha
             /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
              * still this allows to check that the host flags are correctly cleared after the ISR */

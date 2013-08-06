@@ -991,24 +991,24 @@ static NTSTATUS vboxVdmaCrCtlGetDefaultClientId(PVBOXMP_DEVEXT pDevExt, uint32_t
 static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
         VBOXMP_CRPACKER *pCrPacker,
         uint32_t u32CrConClientID,
-        const VBOXWDDM_ALLOC_DATA *pSrcAllocData,
-        const VBOXWDDM_ALLOC_DATA *pDstAllocData,
+        const VBOXWDDM_ALLOCATION *pSrcAlloc,
+        const VBOXWDDM_ALLOCATION *pDstAlloc,
         const RECT *pSrcRect, const VBOXVDMAPIPE_RECTS *pDstRects)
 {
-    D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId = pDstAllocData->SurfDesc.VidPnSourceId;
+    D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId = pDstAlloc->AllocData.SurfDesc.VidPnSourceId;
     VBOXWDDM_SOURCE *pSource = &pDevExt->aSources[srcId];
     NTSTATUS Status = STATUS_SUCCESS;
 
     if (pDevExt->fTexPresentEnabled)
     {
         /* we care only about screen regions */
-        if (pDstAllocData != &pSource->pPrimaryAllocation->AllocData)
+        if (pDstAlloc != pSource->pPrimaryAllocation)
         {
             WARN(("non-primary allocation passed to vboxWddmSubmitBltCmd!"));
             return STATUS_NOT_SUPPORTED;
         }
 
-        uint32_t hostID = pSrcAllocData->hostID;
+        uint32_t hostID = pSrcAlloc->AllocData.hostID;
         int rc;
         if (hostID)
         {
@@ -1028,7 +1028,7 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
             else
                 WARN(("vboxVdmaTexPresentSubmit failed Status 0x%x", Status));
         }
-        else if (&pSource->pPrimaryAllocation->AllocData == pDstAllocData)
+        else if (pSource->pPrimaryAllocation == pDstAlloc)
         {
             bool fChanged = false;
             Assert(pSource->pPrimaryAllocation->bVisible);
@@ -1048,8 +1048,8 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
                                 VBoxVrListRectsGet(&pSource->VrList, 1, &Rect);
                                 if (Rect.xLeft == 0
                                         && Rect.yTop == 0
-                                        && Rect.xRight == pDstAllocData->SurfDesc.width
-                                        && Rect.yBottom == pDstAllocData->SurfDesc.height)
+                                        && Rect.xRight == pDstAlloc->AllocData.SurfDesc.width
+                                        && Rect.yBottom == pDstAlloc->AllocData.SurfDesc.height)
                                 {
                                     pSource->fHas3DVrs = FALSE;
                                 }
@@ -1071,12 +1071,12 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
     }
     else
     {
-        PVBOXWDDM_SWAPCHAIN pSwapchain = vboxWddmSwapchainRetainByAllocData(pDevExt, pSrcAllocData);
+        PVBOXWDDM_SWAPCHAIN pSwapchain = vboxWddmSwapchainRetainByAlloc(pDevExt, pSrcAlloc);
 
         if (pSwapchain)
         {
-            Assert(pSrcAllocData->SurfDesc.width == pSwapchain->width);
-            Assert(pSrcAllocData->SurfDesc.height == pSwapchain->height);
+            Assert(pSrcAlloc->AllocData.SurfDesc.width == pSwapchain->width);
+            Assert(pSrcAlloc->AllocData.SurfDesc.height == pSwapchain->height);
         }
 
         Status = vboxVdmaProcessVRegCmdLegacy(pDevExt, pCrPacker, u32CrConClientID, pSource, pSwapchain, pSrcRect, pDstRects);
@@ -1090,7 +1090,7 @@ static NTSTATUS vboxVdmaProcessVReg(PVBOXMP_DEVEXT pDevExt,
     return Status;
 }
 
-NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData)
+NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_ALLOCATION pRealFbAlloc)
 {
     VBOXMP_CRPACKER CrPacker;
     VBoxMpCrPackerInit(&CrPacker);
@@ -1106,8 +1106,8 @@ NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC
     RECT Rect;
     Rect.left = 0;
     Rect.top = 0;
-    Rect.right = pAllocData->SurfDesc.width;
-    Rect.bottom = pAllocData->SurfDesc.height;
+    Rect.right = pRealFbAlloc->AllocData.SurfDesc.width;
+    Rect.bottom = pRealFbAlloc->AllocData.SurfDesc.height;
 
     VBOXVDMAPIPE_RECTS RectInfo;
     RectInfo.ContextRect = Rect;
@@ -1115,7 +1115,7 @@ NTSTATUS vboxVdmaTexPresentSetAlloc(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC
     RectInfo.UpdateRects.aRects[0] = Rect;
 
     return vboxVdmaProcessVReg(pDevExt, &CrPacker, u32CrConClientID,
-            pAllocData, pAllocData,
+            pRealFbAlloc, pRealFbAlloc,
             &Rect, &RectInfo);
 }
 
@@ -1125,7 +1125,7 @@ static NTSTATUS vboxVdmaProcessVRegCmd(PVBOXMP_DEVEXT pDevExt, VBOXWDDM_CONTEXT 
         const RECT *pSrcRect, const VBOXVDMAPIPE_RECTS *pDstRects)
 {
     return vboxVdmaProcessVReg(pDevExt, &pContext->CrPacker, pContext->u32CrConClientID,
-            &pSrcAllocInfo->pAlloc->AllocData, &pDstAllocInfo->pAlloc->AllocData,
+            pSrcAllocInfo->pAlloc, pDstAllocInfo->pAlloc,
             pSrcRect, pDstRects);
 }
 

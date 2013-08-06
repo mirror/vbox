@@ -36,7 +36,8 @@
 #define SHCROGL_SSM_VERSION_WITHOUT_DIRTY_BITS                      38
 /* dummy windows and contexts have 0 external IDs, so never get stored to the state */
 #define SHCROGL_SSM_VERSION_WITH_FIXED_DUMMYIDS                     39
-#define SHCROGL_SSM_VERSION                                         39
+#define SHCROGL_SSM_VERSION_WITH_SCREEN_INFO                        40
+#define SHCROGL_SSM_VERSION                                         40
 
 /* These define the Chromium release number.
  * Alpha Release = 0.1.0, Beta Release = 0.2.0

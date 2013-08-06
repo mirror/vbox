@@ -30,6 +30,8 @@
 #include <iprt/types.h>
 #include <iprt/asm.h>
 #include <iprt/mem.h>
+#include <iprt/list.h>
+#include <iprt/memcache.h>
 
 
 /* DISPLAY */
@@ -62,7 +64,7 @@
 int CrDpInit(PCR_DISPLAY pDisplay)
 {
     const GLint visBits = cr_server.MainContextInfo.CreateInfo.visualBits;
-    if (crServerMuralInit(&pDisplay->Mural, "", visBits, 0, GL_FALSE) < 0)
+    if (crServerMuralInit(&pDisplay->Mural, "", visBits, -1, GL_FALSE) < 0)
     {
         crWarning("crServerMuralInit failed!");
         return VERR_GENERAL_FAILURE;
@@ -84,6 +86,112 @@ void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width
     crServerMuralShow(&pDisplay->Mural, GL_TRUE);
     CrVrScrCompositorSetStretching(&pDisplay->Mural.Compositor, 1., 1.);
 }
+
+int CrDpSaveState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM)
+{
+    VBOXVR_SCR_COMPOSITOR_ITERATOR Iter;
+    CrVrScrCompositorIterInit(&pDisplay->Mural.Compositor, &Iter);
+    PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry;
+    uint32_t u32 = 0;
+    while ((pEntry = CrVrScrCompositorIterNext(&Iter)) != NULL)
+    {
+        ++u32;
+    }
+
+    int rc = SSMR3PutU32(pSSM, u32);
+    AssertRCReturn(rc, rc);
+
+    CrVrScrCompositorIterInit(&pDisplay->Mural.Compositor, &Iter);
+
+    while ((pEntry = CrVrScrCompositorIterNext(&Iter)) != NULL)
+    {
+        CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
+        rc = CrDemEntrySaveState(pDEntry, pSSM);
+        AssertRCReturn(rc, rc);
+
+        u32 = CrVrScrCompositorEntryFlagsGet(&pDEntry->CEntry);
+        rc = SSMR3PutU32(pSSM, u32);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutS32(pSSM, CrVrScrCompositorEntryPosGet(&pDEntry->CEntry)->x);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutS32(pSSM, CrVrScrCompositorEntryPosGet(&pDEntry->CEntry)->y);
+        AssertRCReturn(rc, rc);
+
+        const RTRECT * pRects;
+        rc = CrVrScrCompositorEntryRegionsGet(&pDisplay->Mural.Compositor, &pDEntry->CEntry, &u32, NULL, NULL, &pRects);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, u32);
+        AssertRCReturn(rc, rc);
+
+        if (u32)
+        {
+            rc = SSMR3PutMem(pSSM, pRects, u32 * sizeof (*pRects));
+            AssertRCReturn(rc, rc);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version)
+{
+    uint32_t u32 = 0;
+    int rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+
+    if (!u32)
+        return VINF_SUCCESS;
+
+    CrDpEnter(pDisplay);
+
+    for (uint32_t i = 0; i < u32; ++i)
+    {
+        CR_DISPLAY_ENTRY *pDEntry;
+        rc = CrDemEntryLoadState(&cr_server.PresentTexturepMap, &pDEntry, pSSM);
+        AssertRCReturn(rc, rc);
+
+        uint32_t fFlags;
+        rc = SSMR3GetU32(pSSM, &fFlags);
+        AssertRCReturn(rc, rc);
+
+        CrVrScrCompositorEntryFlagsSet(&pDEntry->CEntry, fFlags);
+
+        RTPOINT Pos;
+        rc = SSMR3GetS32(pSSM, &Pos.x);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetS32(pSSM, &Pos.y);
+        AssertRCReturn(rc, rc);
+
+        uint32_t cRects;
+        rc = SSMR3GetU32(pSSM, &cRects);
+        AssertRCReturn(rc, rc);
+
+        RTRECT * pRects = NULL;
+        if (cRects)
+        {
+            pRects = (RTRECT *)crAlloc(cRects * sizeof (*pRects));
+            AssertReturn(pRects, VERR_NO_MEMORY);
+
+            rc = SSMR3GetMem(pSSM, pRects, cRects * sizeof (*pRects));
+            AssertRCReturn(rc, rc);
+        }
+
+        rc = CrDpEntryRegionsAdd(pDisplay, pDEntry, &Pos, (uint32_t)cRects, (const RTRECT*)pRects);
+        AssertRCReturn(rc, rc);
+
+        if (pRects)
+            crFree(pRects);
+    }
+
+    CrDpLeave(pDisplay);
+
+    return VINF_SUCCESS;
+}
+
 
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
 {
@@ -146,14 +254,12 @@ static DECLCALLBACK(void) crDpEntryCEntryReleaseCB(const struct VBOXVR_SCR_COMPO
     CrDemEntryRelease(pCEntry);
 }
 
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, void *pvUserData1, void *pvUserData2)
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
 {
     CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData, crDpEntryCEntryReleaseCB);
     CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, CRBLT_F_INVERT_SRC_YCOORDS);
     CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, pTextureData, NULL);
     CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, CRBLT_F_INVERT_SRC_YCOORDS);
-    pEntry->pvUserData1 = pvUserData1;
-    pEntry->pvUserData2 = pvUserData2;
 }
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
@@ -173,29 +279,97 @@ void CrDpLeave(PCR_DISPLAY pDisplay)
     crServerVBoxCompositionDisableLeave(&pDisplay->Mural, pDisplay->fForcePresent);
 }
 
-int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
+typedef struct CR_DEM_ENTRY_INFO
 {
-    pMap->pTextureMap = crAllocHashtable();
-    if (pMap->pTextureMap)
-        return VINF_SUCCESS;
+    CRTextureObj *pTobj;
+    uint32_t cEntries;
+} CR_DEM_ENTRY_INFO;
 
-    crWarning("crAllocHashtable failed!");
-    return VERR_NO_MEMORY;
+typedef struct CR_DEM_ENTRY
+{
+    CR_DISPLAY_ENTRY Entry;
+    CR_DEM_ENTRY_INFO *pInfo;
+    CR_DISPLAY_ENTRY_MAP *pMap;
+} CR_DEM_ENTRY;
+
+#define PCR_DEM_ENTRY_FROM_ENTRY(_pEntry) ((CR_DEM_ENTRY*)((uint8_t*)(_pEntry) - RT_OFFSETOF(CR_DEM_ENTRY, Entry)))
+
+static RTMEMCACHE g_VBoxCrDemLookasideList;
+static RTMEMCACHE g_VBoxCrDemInfoLookasideList;
+
+int CrDemGlobalInit()
+{
+    int rc = RTMemCacheCreate(&g_VBoxCrDemLookasideList, sizeof (CR_DEM_ENTRY),
+                            0, /* size_t cbAlignment */
+                            UINT32_MAX, /* uint32_t cMaxObjects */
+                            NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                            NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                            NULL, /* void *pvUser*/
+                            0 /* uint32_t fFlags*/
+                            );
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTMemCacheCreate(&g_VBoxCrDemInfoLookasideList, sizeof (CR_DEM_ENTRY_INFO),
+                                    0, /* size_t cbAlignment */
+                                    UINT32_MAX, /* uint32_t cMaxObjects */
+                                    NULL, /* PFNMEMCACHECTOR pfnCtor*/
+                                    NULL, /* PFNMEMCACHEDTOR pfnDtor*/
+                                    NULL, /* void *pvUser*/
+                                    0 /* uint32_t fFlags*/
+                                    );
+        if (RT_SUCCESS(rc))
+            return VINF_SUCCESS;
+        else
+            crWarning("RTMemCacheCreate failed rc %d", rc);
+
+        RTMemCacheDestroy(g_VBoxCrDemLookasideList);
+    }
+    else
+        crWarning("RTMemCacheCreate failed rc %d", rc);
+    return VINF_SUCCESS;
 }
 
-void crDemEntryRelease(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY pEntry, bool fForceDelete)
+void CrDemTeGlobalTerm()
 {
-    CRTextureObj *pTobj = (CRTextureObj *)pEntry->pvUserData2;
-    if (!pTobj)
+    RTMemCacheDestroy(g_VBoxCrDemLookasideList);
+    RTMemCacheDestroy(g_VBoxCrDemInfoLookasideList);
+}
+
+static CR_DEM_ENTRY* crDemEntryAlloc()
+{
+    return (CR_DEM_ENTRY*)RTMemCacheAlloc(g_VBoxCrDemLookasideList);
+}
+
+static CR_DEM_ENTRY_INFO* crDemEntryInfoAlloc()
+{
+    return (CR_DEM_ENTRY_INFO*)RTMemCacheAlloc(g_VBoxCrDemInfoLookasideList);
+}
+
+static void crDemEntryFree(CR_DEM_ENTRY* pDemEntry)
+{
+    RTMemCacheFree(g_VBoxCrDemLookasideList, pDemEntry);
+}
+
+static void crDemEntryInfoFree(CR_DEM_ENTRY_INFO* pDemEntryInfo)
+{
+    RTMemCacheFree(g_VBoxCrDemInfoLookasideList, pDemEntryInfo);
+}
+
+void crDemEntryRelease(PCR_DISPLAY_ENTRY_MAP pMap, CR_DEM_ENTRY *pDemEntry)
+{
+    CR_DEM_ENTRY_INFO *pInfo = pDemEntry->pInfo;
+    CRTextureObj *pTobj = pInfo->pTobj;
+
+    --pInfo->cEntries;
+
+    if (!pInfo->cEntries)
     {
-        crWarning("Trying to release entry that does not have tobj specified");
-        return;
+        CR_STATE_SHAREDOBJ_USAGE_CLEAR(pInfo->pTobj, cr_server.MainContextInfo.pContext);
+
+        crHashtableDelete(pMap->pTexIdToDemInfoMap, pTobj->id, NULL);
+
+        crDemEntryInfoFree(pInfo);
     }
-
-    CR_STATE_SHAREDOBJ_USAGE_CLEAR(pTobj, cr_server.MainContextInfo.pContext);
-
-    bool fDeleteEntry = fForceDelete;
-    GLuint idTexture = pTobj->id;
 
     if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pTobj))
     {
@@ -204,51 +378,66 @@ void crDemEntryRelease(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY pEntry, boo
         CRASSERT(pShared);
         /* on the host side, we need to delete an ogl texture object here as well, which crStateDeleteTextureCallback will do
          * in addition to calling crStateDeleteTextureObject to delete a state object */
-        crHashtableDelete(pShared->textureTable, idTexture, crStateDeleteTextureCallback);
-
-        crStateGlobalSharedRelease();
-
-        fDeleteEntry = true;
-    }
-    else
-    {
-        /* this is something we would not generally expect */
-        CRASSERT(!fForceDelete);
-    }
-
-    if (fDeleteEntry)
-    {
-        if (pMap)
-            crHashtableDelete(pMap->pTextureMap, idTexture, crFree);
-        else
-            crFree(pEntry); /* <- when called from crDemTermEntryCb */
+        crHashtableDelete(pShared->textureTable, pTobj->id, crStateDeleteTextureCallback);
 
         crStateGlobalSharedRelease();
     }
+
+    crDemEntryFree(pDemEntry);
+
+    crStateGlobalSharedRelease();
 }
 
-void crDemTermEntryCb(void *pvEntry)
+int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
 {
-    crDemEntryRelease(NULL, (PCR_DISPLAY_ENTRY)pvEntry, true);
+    pMap->pTexIdToDemInfoMap = crAllocHashtable();
+    if (pMap->pTexIdToDemInfoMap)
+        return VINF_SUCCESS;
+
+    crWarning("crAllocHashtable failed");
+    return VERR_NO_MEMORY;
 }
 
 void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap)
 {
-    crFreeHashtable(pMap->pTextureMap, crDemTermEntryCb);
+    crFreeHashtable(pMap->pTexIdToDemInfoMap, NULL);
+    pMap->pTexIdToDemInfoMap = NULL;
 }
 
 void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry)
 {
-    PCR_DISPLAY_ENTRY_MAP pMap = (PCR_DISPLAY_ENTRY_MAP)pEntry->pvUserData1;
-    Assert(pMap);
-    crDemEntryRelease(pMap, pEntry, false);
+    CR_DEM_ENTRY *pDemEntry = PCR_DEM_ENTRY_FROM_ENTRY(pEntry);
+    crDemEntryRelease(pDemEntry->pMap, pDemEntry);
+}
+
+int CrDemEntrySaveState(PCR_DISPLAY_ENTRY pEntry, PSSMHANDLE pSSM)
+{
+    CR_DEM_ENTRY *pDemEntry = PCR_DEM_ENTRY_FROM_ENTRY(pEntry);
+    int  rc = SSMR3PutU32(pSSM, pDemEntry->pInfo->pTobj->id);
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, PSSMHANDLE pSSM)
+{
+    uint32_t u32;
+    int  rc = SSMR3GetU32(pSSM, &u32);
+    AssertRCReturn(rc, rc);
+
+    PCR_DISPLAY_ENTRY pEntry = CrDemEntryAcquire(pMap, u32);
+    if (!pEntry)
+    {
+        crWarning("CrDemEntryAcquire failed");
+        return VERR_NO_MEMORY;
+    }
+
+    *ppEntry = pEntry;
+    return VINF_SUCCESS;
 }
 
 PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture)
 {
-    PCR_DISPLAY_ENTRY pEntry = (PCR_DISPLAY_ENTRY)crHashtableSearch(pMap->pTextureMap, idTexture);
-    if (pEntry)
-        return pEntry;
+    CR_DEM_ENTRY *pDemEntry = NULL;
 
     CRSharedState *pShared = crStateGlobalSharedAcquire();
     if (!pShared)
@@ -281,41 +470,36 @@ PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture
     TextureData.target = pTobj->target;
     TextureData.hwid = hwId;
 
-    pEntry = (PCR_DISPLAY_ENTRY)crAlloc(sizeof (*pEntry));
-    if (!pEntry)
+    pDemEntry = crDemEntryAlloc();
+    if (!pDemEntry)
     {
-        crWarning("crAlloc failed allocating CR_DISPLAY_ENTRY");
+        crWarning("crDemEntryAlloc failed allocating CR_DEM_ENTRY");
         crStateGlobalSharedRelease();
         return NULL;
     }
 
-    CrDpEntryInit(pEntry, &TextureData, pMap, pTobj);
+    CrDpEntryInit(&pDemEntry->Entry, &TextureData);
+
+    CR_DEM_ENTRY_INFO *pInfo = (CR_DEM_ENTRY_INFO*)crHashtableSearch(pMap->pTexIdToDemInfoMap, pTobj->id);
+    if (!pInfo)
+    {
+        pInfo = crDemEntryInfoAlloc();
+        CRASSERT(pInfo);
+        crHashtableAdd(pMap->pTexIdToDemInfoMap, pTobj->id, pInfo);
+        pInfo->cEntries = 0;
+        pInfo->pTobj = pTobj;
+    }
+
+    ++pInfo->cEntries;
+    pDemEntry->pInfo = pInfo;
+    pDemEntry->pMap = pMap;
 
     /* just use main context info's context to hold the texture reference */
     CR_STATE_SHAREDOBJ_USAGE_SET(pTobj, cr_server.MainContextInfo.pContext);
 
-    crHashtableAdd(pMap->pTextureMap, idTexture, pEntry);
-    return pEntry;
-
+    return &pDemEntry->Entry;
 }
-#if 0
-void CrDemEntryDestroy(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture)
-{
-#ifdef DEBUG
-    {
-        PCR_DISPLAY_ENTRY pEntry = (PCR_DISPLAY_ENTRY)crHashtableSearch(pMap->pTextureMap, idTexture);
-        if (!pEntry)
-        {
-            crWarning("request to delete inexistent entry");
-            return;
-        }
 
-        Assert(!CrDpEntryIsUsed(pEntry));
-    }
-#endif
-    crHashtableDelete(pMap->pTextureMap, idTexture, crFree);
-}
-#endif
 PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen)
 {
     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
@@ -349,6 +533,63 @@ static PCR_DISPLAY crServerDisplayGet(uint32_t idScreen)
      }
 
     return NULL;
+}
+
+int crServerDisplaySaveState(PSSMHANDLE pSSM)
+{
+    int rc;
+    int cDisplays = 0, i;
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        if (ASMBitTest(cr_server.DisplaysInitMap, i) && !CrDpIsEmpty(&cr_server.aDispplays[i]))
+            ++cDisplays;
+    }
+
+    rc = SSMR3PutS32(pSSM, cDisplays);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        if (ASMBitTest(cr_server.DisplaysInitMap, i) && !CrDpIsEmpty(&cr_server.aDispplays[i]))
+        {
+            rc = SSMR3PutS32(pSSM, i);
+            AssertRCReturn(rc, rc);
+
+            rc = CrDpSaveState(&cr_server.aDispplays[i], pSSM);
+            AssertRCReturn(rc, rc);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
+{
+    int rc;
+    int s32, i;
+
+    rc = SSMR3GetS32(pSSM, &s32);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < s32; ++i)
+    {
+        int iScreen;
+
+        rc = SSMR3GetS32(pSSM, &iScreen);
+        AssertRCReturn(rc, rc);
+
+        PCR_DISPLAY pDisplay = crServerDisplayGet((uint32_t)iScreen);
+        if (!pDisplay)
+        {
+            crWarning("crServerDisplayGet failed");
+            return VERR_GENERAL_FAILURE;
+        }
+
+        rc = CrDpLoadState(pDisplay, pSSM, u32Version);
+        AssertRCReturn(rc, rc);
+    }
+
+    return VINF_SUCCESS;
 }
 
 void crServerDisplayTermAll()

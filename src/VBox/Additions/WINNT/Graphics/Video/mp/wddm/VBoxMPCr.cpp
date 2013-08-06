@@ -892,7 +892,7 @@ void VBoxMpCrCtlConInit()
         g_VBoxMpCrHostCaps = 0;
     }
 
-#if 1 //ndef DEBUG_misha
+#ifndef DEBUG_misha
     /* zero it up temporary to avoid new code activation */
     g_VBoxMpCrHostCaps = 0;
 #endif
