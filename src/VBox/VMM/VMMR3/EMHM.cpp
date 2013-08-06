@@ -365,6 +365,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         {
             pCtx->rip += Cpu.cbInstr;
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+            LogFlow(("emR3ExecuteIOInstruction: %Rrc 1\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_TODO(rcStrict);
         }
 
@@ -373,6 +374,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
             /* The active trap will be dispatched. */
             Assert(TRPMHasTrap(pVCpu));
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+            LogFlow(("emR3ExecuteIOInstruction: VINF_SUCCESS 2\n"));
             return VINF_SUCCESS;
         }
         AssertMsg(rcStrict != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
@@ -380,13 +382,16 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         if (RT_FAILURE(rcStrict))
         {
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
+            LogFlow(("emR3ExecuteIOInstruction: %Rrc 3\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_TODO(rcStrict);
         }
         AssertMsg(rcStrict == VINF_EM_RAW_EMULATE_INSTR || rcStrict == VINF_EM_RESCHEDULE_REM, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-    return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
+    int rc3 = emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
+    LogFlow(("emR3ExecuteIOInstruction: %Rrc 4 (rc2=%Rrc, rc3=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict), rc2, rc3));
+    return rc3;
 #endif
 }
 
