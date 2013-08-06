@@ -129,11 +129,7 @@ void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &p
     portCache.cacheCurrentData(portData);
 }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UIMachineSettingsSerial::setValidator(UIPageValidator *pValidator)
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-void UIMachineSettingsSerial::setValidator(QIWidgetValidator *pValidator)
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;
@@ -204,11 +200,9 @@ void UIMachineSettingsSerial::mCbNumberActivated (const QString &aText)
         mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
     }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     /* Revalidate if possible: */
     if (m_pValidator)
         m_pValidator->revalidate();
-#endif /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 }
 
 void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
@@ -380,11 +374,7 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UIMachineSettingsSerialPage::setValidator(UIPageValidator *pValidator)
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-void UIMachineSettingsSerialPage::setValidator(QIWidgetValidator *pValidator)
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;
@@ -393,11 +383,7 @@ void UIMachineSettingsSerialPage::setValidator(QIWidgetValidator *pValidator)
 bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
 {
     bool valid = true;
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
     QList<QPair<QString, QString> > ports;
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-    QStringList ports;
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
     QStringList paths;
 
     int index = 0;
@@ -410,7 +396,6 @@ bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle
         if (!page->mGbSerial->isChecked())
             continue;
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
         /* Check the predefined port attributes uniqueness: */
         {
             QString strIRQ = page->mLeIRQ->text();
@@ -430,22 +415,6 @@ bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle
             }
             ports << pair;
         }
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-        /* Check the predefined port number unicity */
-        if (!page->isUserDefined())
-        {
-            QString port = page->mCbNumber->currentText();
-            valid = !ports.contains (port);
-            if (!valid)
-            {
-                aWarning = tr ("duplicate port number specified.");
-                aTitle += ": " +
-                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
-                break;
-            }
-            ports << port;
-        }
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
         /* Check the port path emptiness & unicity */
         KPortMode mode =

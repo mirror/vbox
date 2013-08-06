@@ -22,8 +22,6 @@
 /* Qt includes: */
 #include <QValidator>
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
-
 /* Forward declarations: */
 class UISettingsPage;
 
@@ -66,75 +64,6 @@ private:
     QString m_strLastMessage;
 };
 
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-
-/* General includes: */
-#include <limits.h>
-
-/* Qt includes: */
-#include <QPointer>
-
-class QIWidgetValidator : public QObject
-{
-    Q_OBJECT
-
-public:
-
-    QIWidgetValidator (QWidget *aWidget, QObject *aParent = 0);
-    QIWidgetValidator (const QString &aCaption,
-                       QWidget *aWidget, QObject *aParent = 0);
-    ~QIWidgetValidator();
-
-    QWidget *widget() const { return mWidget; }
-    bool isValid() const;
-    void rescan();
-
-    void setCaption (const QString& aCaption) { mCaption = aCaption; }
-    QString caption() const { return mCaption; }
-
-    QString warningText() const;
-
-    QString lastWarning() const { return mLastWarning; }
-    void setLastWarning (const QString &aLastWarning) { mLastWarning = aLastWarning; }
-
-    void setOtherValid (bool aValid) { mOtherValid = aValid; }
-    bool isOtherValid() const { return mOtherValid; }
-
-signals:
-
-    void validityChanged (const QIWidgetValidator *aValidator);
-    void isValidRequested (QIWidgetValidator *aValidator);
-
-public slots:
-
-    void revalidate() { doRevalidate(); }
-
-private:
-
-    QString mLastWarning;
-    QString mCaption;
-    QWidget *mWidget;
-    bool mOtherValid;
-
-    struct Watched
-    {
-        Watched()
-            : state (QValidator::Acceptable) {}
-
-        QPointer<QWidget> widget;
-        QPointer<QWidget> buddy;
-        QValidator::State state;
-    };
-
-    QList <Watched> mWatched;
-    Watched mLastInvalid;
-
-private slots:
-
-    void doRevalidate() { emit validityChanged (this); }
-};
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-
 class QIULongValidator : public QValidator
 {
 public:
@@ -164,4 +93,3 @@ private:
 };
 
 #endif // __QIWidgetValidator_h__
-

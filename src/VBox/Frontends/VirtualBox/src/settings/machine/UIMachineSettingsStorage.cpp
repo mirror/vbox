@@ -1885,7 +1885,6 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mSplitter->setSizes (QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
 }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
 {
     /* Make sure chipset type has changed: */
@@ -1900,15 +1899,6 @@ void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
     if (m_pValidator)
         m_pValidator->revalidate();
 }
-
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-
-void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
-{
-    mStorageModel->setChipsetType(type);
-    updateActionsState();
-}
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 
 /* Load data to cache from corresponding external object(s),
  * this task COULD be performed in other than GUI thread: */
@@ -2116,11 +2106,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-#ifdef VBOX_WITH_NEW_SETTINGS_VALIDATOR
 void UIMachineSettingsStorage::setValidator(UIPageValidator *pValidator)
-#else /* VBOX_WITH_NEW_SETTINGS_VALIDATOR */
-void UIMachineSettingsStorage::setValidator(QIWidgetValidator *pValidator)
-#endif /* !VBOX_WITH_NEW_SETTINGS_VALIDATOR */
 {
     /* Configure validation: */
     m_pValidator = pValidator;
