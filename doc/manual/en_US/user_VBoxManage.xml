@@ -3297,6 +3297,116 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
+          <para><emphasis role="bold"><computeroutput>process kill</computeroutput></emphasis>,
+          which terminates specific guest processes of a guest session, based on either the
+          session's ID or the session's name.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; process kill
+            --session-id &lt;ID&gt;
+          | --session-name &lt;name or pattern&gt;
+          [--verbose]
+          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+
+          <para>where the parameters mean: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+              <glossdef>
+                <para>The VM UUID or VM name. Mandatory.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Specifies the guest session to use by its ID.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Specifies the guest session to use by its name. Multiple
+                  sessions can be closed when specifying * or ? wildcards.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Tells VBoxManage to be more verbose.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
+
+              <glossdef>
+                <para>List of process identifiers (PIDs) to terminate.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>[p[s]]kill</computeroutput></emphasis>,
+          which terminates specific guest processes of a guest session, based on either the
+          session's ID or the session's name.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; process kill
+            --session-id &lt;ID&gt;
+          | --session-name &lt;name or pattern&gt;
+          [--verbose]
+          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+
+          <para>where the parameters mean: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+              <glossdef>
+                <para>The VM UUID or VM name. Mandatory.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Specifies the guest session to use by its ID.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Specifies the guest session to use by its name. Multiple
+                  sessions can be closed when specifying * or ? wildcards.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Tells VBoxManage to be more verbose.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
+
+              <glossdef>
+                <para>List of process identifiers (PIDs) to terminate.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
           <para><emphasis role="bold"><computeroutput>session close</computeroutput></emphasis>,
           which closes specific guest sessions, based on either the session's ID or the
           session's name.</para>

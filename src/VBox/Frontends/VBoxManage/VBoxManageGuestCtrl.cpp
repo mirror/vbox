@@ -265,6 +265,17 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "\n"
                  "                            list <all|sessions|processes> [--verbose]\n"
                  "\n"
+                 /** @todo Add an own help group for "session" and "process" sub commands. */
+                 "                            process kill --session-id <ID>\n"
+                 "                                         | --session-name <name or pattern>\n"
+                 "                                         [--verbose]\n"
+                 "                                         <PID> ... <PID n>\n"
+                 "\n"
+                 "                            [p[s]]kill --session-id <ID>\n"
+                 "                                       | --session-name <name or pattern>\n"
+                 "                                       [--verbose]\n"
+                 "                                       <PID> ... <PID n>\n"
+                 "\n"
                  "                            session close  --session-id <ID>\n"
                  "                                         | --session-name <name or pattern>\n"
                  "                                         | --all\n"
@@ -2940,12 +2951,213 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
     return rcExit;
 }
 
+static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+
+    if (pArg->argc < 1)
+        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a PID to close");
+
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--session-id",          'i',                             RTGETOPT_REQ_UINT32  },
+        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  },
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    std::vector < uint32_t > vecPID;
+    ULONG ulSessionID = UINT32_MAX;
+    Utf8Str strSessionName;
+    bool fVerbose = false;
+
+    int vrc = VINF_SUCCESS;
+
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && RT_SUCCESS(vrc))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'n': /* Session name (or pattern) */
+                strSessionName = ValueUnion.psz;
+                break;
+
+            case 'i': /* Session ID */
+                ulSessionID = ValueUnion.u32;
+                break;
+
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                if (pArg->argc == GetState.iNext)
+                {
+                    /* Treat every else specified as a PID to kill. */
+                    try
+                    {
+                        uint32_t uPID = RTStrToUInt32(ValueUnion.psz);
+                        if (uPID) /** @todo Is this what we want? If specifying PID 0
+                                            this is not going to work on most systems anyway. */
+                            vecPID.push_back(uPID);
+                        else
+                            vrc = VERR_INVALID_PARAMETER;
+                    }
+                    catch(std::bad_alloc &)
+                    {
+                        vrc = VERR_NO_MEMORY;
+                    }
+                }
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+
+    if (vecPID.empty())
+        return errorSyntax(USAGE_GUESTCONTROL, "At least one PID must be specified to kill!");
+    else if (   strSessionName.isEmpty()
+             && ulSessionID == UINT32_MAX)
+    {
+        return errorSyntax(USAGE_GUESTCONTROL, "No session ID specified!");
+    }
+    else if (   !strSessionName.isEmpty()
+             && ulSessionID != UINT32_MAX)
+    {
+        return errorSyntax(USAGE_GUESTCONTROL, "Either session ID or name (pattern) must be specified");
+    }
+
+    if (RT_FAILURE(vrc))
+        return errorSyntax(USAGE_GUESTCONTROL, "Invalid parameters specified");
+
+    HRESULT rc = S_OK;
+
+    ComPtr<IGuestSession> pSession;
+    ComPtr<IGuestProcess> pProcess;
+    do
+    {
+        bool fSessionFound = false;
+
+        SafeIfaceArray <IGuestSession> collSessions;
+        CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+        size_t cSessions = collSessions.size();
+
+        for (size_t i = 0; i < cSessions; i++)
+        {
+            pSession = collSessions[i];
+            Assert(!pSession.isNull());
+
+            ULONG uID; /* Session ID */
+            CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
+            Bstr strName;
+            CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
+            Utf8Str strNameUtf8(strName); /* Session name */
+
+            if (strSessionName.isEmpty()) /* Search by ID. Slow lookup. */
+            {
+                fSessionFound = uID == ulSessionID;
+            }
+            else /* ... or by naming pattern. */
+            {
+                if (RTStrSimplePatternMatch(strSessionName.c_str(), strNameUtf8.c_str()))
+                    fSessionFound = true;
+            }
+
+            if (fSessionFound)
+            {
+                Assert(!pSession.isNull());
+
+                SafeIfaceArray <IGuestProcess> collProcs;
+                CHECK_ERROR_BREAK(pSession, COMGETTER(Processes)(ComSafeArrayAsOutParam(collProcs)));
+
+                size_t cProcs = collProcs.size();
+                for (size_t p = 0; p < cProcs; p++)
+                {
+                    pProcess = collProcs[p];
+                    Assert(!pProcess.isNull());
+
+                    ULONG uPID; /* Process ID */
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
+
+                    bool fProcFound = false;
+                    for (size_t a = 0; a < vecPID.size(); a++) /* Slow, but works. */
+                    {
+                        fProcFound = vecPID[a] == uPID;
+                        if (fProcFound)
+                            break;
+                    }
+
+                    if (fProcFound)
+                    {
+                        if (fVerbose)
+                            RTPrintf("Terminating process PID=%RU32 (session ID=%RU32) ...\n",
+                                     uPID, uID);
+                        CHECK_ERROR_BREAK(pProcess, Terminate());
+                    }
+
+                    pProcess.setNull();
+                }
+
+                pSession.setNull();
+            }
+        }
+
+        if (!fSessionFound)
+        {
+            RTPrintf("No guest session(s) found\n");
+            rc = E_ABORT; /* To set exit code accordingly. */
+        }
+
+    } while (0);
+
+    pProcess.setNull();
+    pSession.setNull();
+
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
+static RTEXITCODE handleCtrlProcess(ComPtr<IGuest> guest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+
+    if (pArg->argc < 1)
+        return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
+
+    /** Use RTGetOpt here when handling command line args gets more complex. */
+
+    HandlerArg argSub = *pArg;
+    argSub.argc = pArg->argc - 1; /* Skip session action. */
+    argSub.argv = pArg->argv + 1; /* Same here. */
+
+    if (   !RTStrICmp(pArg->argv[0], "close")
+        || !RTStrICmp(pArg->argv[0], "kill")
+        || !RTStrICmp(pArg->argv[0], "terminate"))
+    {
+        return handleCtrlProcessClose(guest, &argSub);
+    }
+
+    return errorSyntax(USAGE_GUESTCONTROL, "Invalid process action '%s'", pArg->argv[0]);
+}
+
 static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
 
     if (pArg->argc < 1)
-        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least session ID to close");
+        return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a session ID to close");
 
     /*
      * Parse arguments.
@@ -2957,7 +3169,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     {
         { "--all",                 GETOPTDEF_SESSIONCLOSE_ALL,      RTGETOPT_REQ_NOTHING  },
         { "--session-id",          'i',                             RTGETOPT_REQ_UINT32  },
-        { "--session-name",        'n',                             RTGETOPT_REQ_UINT32  },
+        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  },
         { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
     };
 
@@ -2968,7 +3180,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                  s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     ULONG ulSessionID = UINT32_MAX;
-    Utf8Str strNamePattern;
+    Utf8Str strSessionName;
     bool fVerbose = false;
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
@@ -2977,21 +3189,19 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
         switch (ch)
         {
             case 'n': /* Session name pattern */
-                strNamePattern = ValueUnion.psz;
+                strSessionName = ValueUnion.psz;
                 break;
 
             case 'i': /* Session ID */
                 ulSessionID = ValueUnion.u32;
                 break;
 
-            /** @todo Add an option for finding all session by a name pattern. */
-
             case 'v': /* Verbose */
                 fVerbose = true;
                 break;
 
             case GETOPTDEF_SESSIONCLOSE_ALL:
-                strNamePattern = "*";
+                strSessionName = "*";
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
@@ -3003,12 +3213,12 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
         }
     }
 
-    if (   strNamePattern.isEmpty()
+    if (   strSessionName.isEmpty()
         && ulSessionID == UINT32_MAX)
     {
         return errorSyntax(USAGE_GUESTCONTROL, "No session ID specified!");
     }
-    else if (   !strNamePattern.isEmpty()
+    else if (   !strSessionName.isEmpty()
              && ulSessionID != UINT32_MAX)
     {
         return errorSyntax(USAGE_GUESTCONTROL, "Either session ID or name (pattern) must be specified");
@@ -3036,13 +3246,13 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
             CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
             Utf8Str strNameUtf8(strName); /* Session name */
 
-            if (strNamePattern.isEmpty()) /* Search by ID. Slow lookup. */
+            if (strSessionName.isEmpty()) /* Search by ID. Slow lookup. */
             {
                 fSessionFound = uID == ulSessionID;
             }
             else /* ... or by naming pattern. */
             {
-                if (RTStrSimplePatternMatch(strNamePattern.c_str(), strNameUtf8.c_str()))
+                if (RTStrSimplePatternMatch(strSessionName.c_str(), strNameUtf8.c_str()))
                     fSessionFound = true;
             }
 
@@ -3137,6 +3347,14 @@ int handleGuestControl(HandlerArg *pArg)
                  || !RTStrICmp(pArg->argv[1], "createtemp")
                  || !RTStrICmp(pArg->argv[1], "mktemp"))
             rcExit = handleCtrlCreateTemp(guest, &arg);
+        else if (   !RTStrICmp(pArg->argv[1], "kill")    /* Linux. */
+                 || !RTStrICmp(pArg->argv[1], "pkill")   /* Solaris / *BSD. */
+                 || !RTStrICmp(pArg->argv[1], "pskill")) /* SysInternals version. */
+        {
+            /** @todo What about "taskkill" on Windows? */
+            rcExit = handleCtrlProcessClose(guest, &arg);
+        }
+        /** @todo Implement "killall"? */
         else if (   !RTStrICmp(pArg->argv[1], "stat"))
             rcExit = handleCtrlStat(guest, &arg);
         else if (   !RTStrICmp(pArg->argv[1], "updateadditions")
@@ -3146,6 +3364,8 @@ int handleGuestControl(HandlerArg *pArg)
             rcExit = handleCtrlList(guest, &arg);
         else if (   !RTStrICmp(pArg->argv[1], "session"))
             rcExit = handleCtrlSession(guest, &arg);
+        else if (   !RTStrICmp(pArg->argv[1], "process"))
+            rcExit = handleCtrlProcess(guest, &arg);
         else
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
