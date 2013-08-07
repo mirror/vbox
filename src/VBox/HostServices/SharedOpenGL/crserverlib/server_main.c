@@ -346,10 +346,7 @@ crServerInit(int argc, char *argv[])
     }
     else
     {
-        cr_server.u32Caps = 0;
-#ifdef DEBUG_misha
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
-#endif
     }
 
     cr_server.firstCallCreateContext = GL_TRUE;
@@ -460,10 +457,7 @@ GLboolean crVBoxServerInit(void)
     }
     else
     {
-        cr_server.u32Caps = 0;
-#ifdef DEBUG_misha
         cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
-#endif
     }
 
     crNetInit(crServerRecv, crServerClose);
