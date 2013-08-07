@@ -25,22 +25,17 @@
 #include "UIMachineSettingsUSB.h"
 
 class UIMachineSettingsUSBFilterDetails : public QIWithRetranslateUI2<QIDialog>,
-                                       public Ui::UIMachineSettingsUSBFilterDetails
+                                          public Ui::UIMachineSettingsUSBFilterDetails
 {
     Q_OBJECT;
 
 public:
 
-    UIMachineSettingsUSBFilterDetails(UISettingsPageType type, QWidget *pParent = 0);
-
-protected:
-
-    void retranslateUi();
+    UIMachineSettingsUSBFilterDetails(QWidget *pParent = 0);
 
 private:
 
-    /* Private member vars */
-    UISettingsPageType m_type;
+    void retranslateUi();
 };
 
 #endif /* __UIMachineSettingsUSBFilterDetails_h__ */
