@@ -233,7 +233,11 @@ static int sf_getdent(struct file *dir, char d_name[NAME_MAX])
  * b. failure to compute fake inode number
  * c. filldir returns an error (see comment on that)
  */
-static int sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+static int sf_dir_iterate(struct file *dir, struct dir_context *ctx)
+#else
+static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
+#endif
 {
     TRACE();
     for (;;)
@@ -257,12 +261,19 @@ static int sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
                 /* skip erroneous entry and proceed */
                 LogFunc(("sf_getdent error %d\n", err));
                 dir->f_pos += 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+                ctx->pos += 1;
+#endif
                 continue;
         }
 
         /* d_name now contains a valid entry name */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+        sanity = ctx->pos + 0xbeef;
+#else
         sanity = dir->f_pos + 0xbeef;
+#endif
         fake_ino = sanity;
         if (sanity - fake_ino)
         {
@@ -270,8 +281,11 @@ static int sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
             return -EINVAL;
         }
 
-        err = filldir(opaque, d_name, strlen(d_name),
-                      dir->f_pos, fake_ino, DT_UNKNOWN);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+        err = dir_emit(ctx, d_name, strlen(d_name), fake_ino, DT_UNKNOWN);
+#else
+        err = filldir(opaque, d_name, strlen(d_name), dir->f_pos, fake_ino, DT_UNKNOWN);
+#endif
         if (err)
         {
             LogFunc(("filldir returned error %d\n", err));
@@ -281,6 +295,9 @@ static int sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
         }
 
         dir->f_pos += 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+        ctx->pos += 1;
+#endif
     }
 
     BUG();
@@ -289,7 +306,11 @@ static int sf_dir_read (struct file *dir, void *opaque, filldir_t filldir)
 struct file_operations sf_dir_fops =
 {
     .open    = sf_dir_open,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+    .iterate = sf_dir_iterate,
+#else
     .readdir = sf_dir_read,
+#endif
     .release = sf_dir_release,
     .read    = generic_read_dir
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
