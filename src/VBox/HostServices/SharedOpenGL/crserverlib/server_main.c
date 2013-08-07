@@ -2665,6 +2665,32 @@ void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData)
     cr_server.pfnNotifyEventCB(idScreen, uEvent, pvData);
 }
 
+void crVBoxServerCheckVisibilityEvent(int32_t idScreen)
+{
+    if (cr_server.cDisableEvents)
+        return;
+
+    if (idScreen < 0)
+    {
+        int32_t i = 0;
+        for (; i < cr_server.screenCount; ++i)
+        {
+            crVBoxServerCheckVisibilityEvent(i);
+        }
+        return;
+    }
+
+    CRASSERT(idScreen < cr_server.screenCount);
+
+    if (!cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows == !cr_server.aWinVisibilityInfos[idScreen].fLastReportedVisible)
+        return;
+
+    crVBoxServerNotifyEvent(idScreen, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA,
+            cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows ? (void*)1 : NULL);
+
+    cr_server.aWinVisibilityInfos[idScreen].fLastReportedVisible = cr_server.aWinVisibilityInfos[idScreen].cVisibleWindows ? 1 : 0;
+}
+
 static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
 {
     CRMuralInfo *pMI = (CRMuralInfo*) data1;

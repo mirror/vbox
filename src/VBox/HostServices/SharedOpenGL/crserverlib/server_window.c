@@ -40,21 +40,19 @@ void crServerWindowSetIsVisible(CRMuralInfo *pMural, GLboolean fIsVisible)
 
     pMural->fIsVisible = fIsVisible;
 
-    CRASSERT(pMural->screenId < RT_ELEMENTS(cr_server.acVisibleWindows));
+    CRASSERT(pMural->screenId < cr_server.screenCount);
 
     if (fIsVisible)
     {
-        ++cr_server.acVisibleWindows[pMural->screenId];
-        if (cr_server.acVisibleWindows[pMural->screenId] == 1)
-            crVBoxServerNotifyEvent(pMural->screenId, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, (void*)1);
+        ++cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows;
     }
     else
     {
-        --cr_server.acVisibleWindows[pMural->screenId];
-        CRASSERT(cr_server.acVisibleWindows[pMural->screenId] < UINT32_MAX/2);
-        if (cr_server.acVisibleWindows[pMural->screenId] == 0)
-            crVBoxServerNotifyEvent(pMural->screenId, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, NULL);
+        --cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows;
+        CRASSERT(cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows < UINT32_MAX/2);
     }
+
+    crVBoxServerCheckVisibilityEvent(pMural->screenId);
 }
 
 void crServerWindowCheckIsVisible(CRMuralInfo *pMural)

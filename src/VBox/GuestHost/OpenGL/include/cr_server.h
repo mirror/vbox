@@ -366,6 +366,12 @@ typedef struct CR_DISPLAY_ENTRY_MAP
 } CR_DISPLAY_ENTRY_MAP, *PCR_DISPLAY_ENTRY_MAP;
 
 
+typedef struct CRWinVisibilityInfo
+{
+    uint32_t cVisibleWindows        : 31;
+    uint32_t fLastReportedVisible   : 1;
+} CRWinVisibilityInfo;
+
 /* */
 
 /* helpers */
@@ -520,7 +526,8 @@ typedef struct {
      * that the TexPresent mechanism is available and enabled */
     uint32_t              u32Caps;
 
-    uint32_t              acVisibleWindows[CR_MAX_GUEST_MONITORS];
+    uint32_t cDisableEvents;
+    CRWinVisibilityInfo  aWinVisibilityInfos[CR_MAX_GUEST_MONITORS];
 
     PFNCRSERVERNOTIFYEVENT pfnNotifyEventCB;
 

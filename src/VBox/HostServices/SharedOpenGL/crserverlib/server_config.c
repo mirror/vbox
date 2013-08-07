@@ -58,7 +58,8 @@ setDefaults(void)
     cr_server.bUseOutputRedirect = GL_FALSE;
     cr_server.bWindowsInitiallyHidden = GL_FALSE;
 
-    memset(cr_server.acVisibleWindows, 0, sizeof (cr_server.acVisibleWindows));
+    cr_server.cDisableEvents = 0;
+    memset(cr_server.aWinVisibilityInfos, 0, sizeof (cr_server.aWinVisibilityInfos));
 
     cr_server.pfnNotifyEventCB = NULL;
 }
