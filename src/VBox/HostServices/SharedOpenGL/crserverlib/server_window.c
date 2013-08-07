@@ -93,6 +93,17 @@ void crServerWindowVisibleRegion(CRMuralInfo *pMural)
 
 }
 
+void crServerWindowReparent(CRMuralInfo *pMural)
+{
+    crServerVBoxCompositionDisableEnter(pMural);
+
+    pMural->fHasParentWindow = !!cr_server.screen[pMural->screenId].winID;
+
+    renderspuReparentWindow(pMural->spuWindow);
+
+    crServerVBoxCompositionDisableLeave(pMural, GL_FALSE);
+}
+
 GLint SERVER_DISPATCH_APIENTRY
 crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
 {
@@ -517,7 +528,7 @@ int crServerMuralSynchRootVr(CRMuralInfo *mural)
     return VINF_SUCCESS;
 }
 
-void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
+GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 {
     RTRECT Rect;
     VBOXVR_TEXTURE Tex;
@@ -528,7 +539,7 @@ void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
     Tex.hwid = 0;
 
     if (mural->width == width && mural->height == height)
-        return;
+        return GL_FALSE;
 
 
     /* since we're going to change the current compositor & the window we need to avoid
@@ -641,6 +652,7 @@ end:
     */
     crServerVBoxCompositionDisableLeave(mural, GL_FALSE);
 
+    return GL_TRUE;
 }
 
 void SERVER_DISPATCH_APIENTRY
@@ -665,7 +677,7 @@ crServerDispatchWindowSize( GLint window, GLint width, GLint height )
     }
 }
 
-void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y)
+void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkipCheckGeometry)
 {
     GLboolean fForcePresent = GL_FALSE;
     /*  crDebug("CRServer: Window %d pos %d, %d", window, x, y);*/
@@ -713,7 +725,8 @@ void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y)
             }
         }
 
-        crServerCheckMuralGeometry(mural);
+        if (!fSkipCheckGeometry)
+            crServerCheckMuralGeometry(mural);
 
         /* 3. re-set the compositor (see above comment) */
         crServerVBoxCompositionDisableLeave(mural, fForcePresent);
@@ -730,7 +743,7 @@ crServerDispatchWindowPosition( GLint window, GLint x, GLint y )
 #endif
          return;
     }
-    crServerMutalPosition(mural, x, y);
+    crServerMuralPosition(mural, x, y, GL_FALSE);
 }
 
 void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects )
