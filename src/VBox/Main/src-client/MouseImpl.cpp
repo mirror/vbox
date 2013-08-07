@@ -730,8 +730,8 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
             {
                 uint32_t u32Lo = RT_LO_U32(pau64Contacts[i]);
                 uint32_t u32Hi = RT_HI_U32(pau64Contacts[i]);
-                int32_t x = (int16_t)RT_LO_U16(u32Lo);
-                int32_t y = (int16_t)RT_HI_U16(u32Lo);
+                int32_t x = (int16_t)u32Lo;
+                int32_t y = (int16_t)(u32Lo >> 16);
                 uint8_t contactId =  RT_BYTE1(u32Hi);
                 bool fInContact   = (RT_BYTE2(u32Hi) & 0x1) != 0;
                 bool fInRange     = (RT_BYTE2(u32Hi) & 0x2) != 0;

@@ -1473,8 +1473,8 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface
     {
         uint32_t u32Lo = RT_LO_U32(pau64Contacts[i]);
         uint32_t u32Hi = RT_HI_U32(pau64Contacts[i]);
-        paNewContacts[i].x      = RT_LO_U16(u32Lo);
-        paNewContacts[i].y      = RT_HI_U16(u32Lo);
+        paNewContacts[i].x      = (uint16_t)u32Lo;
+        paNewContacts[i].y      = (uint16_t)(u32Lo >> 16);
         paNewContacts[i].id     = RT_BYTE1(u32Hi);
         paNewContacts[i].flags  = RT_BYTE2(u32Hi) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
         paNewContacts[i].status = MT_CONTACT_S_DIRTY;
