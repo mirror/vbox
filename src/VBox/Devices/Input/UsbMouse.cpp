@@ -731,7 +731,8 @@ static const uint8_t g_UsbHidMTIfHidDesc[] =
     /* .bCountryCode = */           0,
     /* .bNumDescriptors = */        1,
     /* .bDescriptorType = */        0x22,       /* Report */
-    /* .wDescriptorLength = */      RT_LO_U8(sizeof(g_UsbHidMTReportDesc)), RT_HI_U8(sizeof(g_UsbHidMTReportDesc))
+    /* .wDescriptorLength = */      (uint8_t)(sizeof(g_UsbHidMTReportDesc) & 0xFF),
+                                    (uint8_t)((sizeof(g_UsbHidMTReportDesc) >> 8) & 0xFF)
 };
 
 static const VUSBDESCINTERFACEEX g_UsbHidMInterfaceDesc =
@@ -1196,6 +1197,9 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
                  pReport->m.dx, pReport->m.dy, pReport->m.dz,
                  pReport->m.fButtons, cbCopy));
         break;
+    default:
+        AssertFailed(); /* Unexpected here. */
+        break;
     }
 
     /* Clear the accumulated movement. */
@@ -1467,10 +1471,12 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface
 
     for (i = 0; i < cContacts; i++)
     {
-        paNewContacts[i].x      = RT_LO_U16(RT_LO_U32(pau64Contacts[i]));
-        paNewContacts[i].y      = RT_HI_U16(RT_LO_U32(pau64Contacts[i]));
-        paNewContacts[i].id     = RT_BYTE1(RT_HI_U32(pau64Contacts[i]));
-        paNewContacts[i].flags  = RT_BYTE2(RT_HI_U32(pau64Contacts[i])) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
+        uint32_t u32Lo = RT_LO_U32(pau64Contacts[i]);
+        uint32_t u32Hi = RT_HI_U32(pau64Contacts[i]);
+        paNewContacts[i].x      = RT_LO_U16(u32Lo);
+        paNewContacts[i].y      = RT_HI_U16(u32Lo);
+        paNewContacts[i].id     = RT_BYTE1(u32Hi);
+        paNewContacts[i].flags  = RT_BYTE2(u32Hi) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
         paNewContacts[i].status = MT_CONTACT_S_DIRTY;
         paNewContacts[i].oldId  = 0; /* Not used. */
     }
