@@ -366,6 +366,7 @@ static SUPFUNC g_aFunctions[] =
     { "RTStrPrintfExV",                         (void *)RTStrPrintfExV },
     { "RTStrPrintfV",                           (void *)RTStrPrintfV },
     { "RTThreadCreate",                         (void *)RTThreadCreate },
+    { "RTThreadCtxHooksAreRegistered",          (void *)RTThreadCtxHooksAreRegistered },
     { "RTThreadCtxHooksCreate",                 (void *)RTThreadCtxHooksCreate },
     { "RTThreadCtxHooksDeregister",             (void *)RTThreadCtxHooksDeregister },
     { "RTThreadCtxHooksRegister",               (void *)RTThreadCtxHooksRegister },
