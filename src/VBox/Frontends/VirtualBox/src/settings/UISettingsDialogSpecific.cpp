@@ -381,15 +381,6 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                             iPageIndex, "#display", pSettingsPage);
                     break;
                 }
-                /* USB page: */
-                case GlobalSettingsPageType_USB:
-                {
-                    pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Global);
-                    addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
-                            ":/usb_16px.png", ":/usb_disabled_16px.png",
-                            iPageIndex, "#usb", pSettingsPage);
-                    break;
-                }
                 /* Network page: */
                 case GlobalSettingsPageType_Network:
                 {
@@ -510,9 +501,6 @@ void UISettingsDialogGlobal::retranslateUi()
     /* Display page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Display, tr("Display"));
 
-    /* USB page: */
-    m_pSelector->setItemText(GlobalSettingsPageType_USB, tr("USB"));
-
     /* Network page: */
     m_pSelector->setItemText(GlobalSettingsPageType_Network, tr("Network"));
 
@@ -541,24 +529,6 @@ bool UISettingsDialogGlobal::isPageAvailable(int iPageId)
 {
     switch (iPageId)
     {
-        case GlobalSettingsPageType_USB:
-        {
-#ifdef ENABLE_GLOBAL_USB
-            /* Get the host object: */
-            CHost host = vboxGlobal().host();
-            /* Show the host error message if any: */
-            if (!host.isReallyOk())
-                msgCenter().warnAboutUnaccessibleUSB(host, this);
-            /* Check if USB is implemented: */
-            CHostUSBDeviceFilterVector filters = host.GetUSBDeviceFilters();
-            Q_UNUSED(filters);
-            if (host.lastRC() == E_NOTIMPL)
-                return false;
-#else /* ENABLE_GLOBAL_USB */
-            return false;
-#endif /* !ENABLE_GLOBAL_USB */
-            break;
-        }
         case GlobalSettingsPageType_Network:
         {
 #ifndef VBOX_WITH_NETFLT
@@ -693,7 +663,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                 /* USB page: */
                 case MachineSettingsPageType_USB:
                 {
-                    pSettingsPage = new UIMachineSettingsUSB(UISettingsPageType_Machine);
+                    pSettingsPage = new UIMachineSettingsUSB;
                     addItem(":/usb_32px.png", ":/usb_disabled_32px.png",
                             ":/usb_16px.png", ":/usb_disabled_16px.png",
                             iPageIndex, "#usb", pSettingsPage, MachineSettingsPageType_Ports);

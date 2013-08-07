@@ -21,9 +21,8 @@
 #include "UIMachineSettingsUSBFilterDetails.h"
 #include "UIConverter.h"
 
-UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(UISettingsPageType type, QWidget *pParent /* = 0 */)
+UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(QWidget *pParent /* = 0 */)
     : QIWithRetranslateUI2<QIDialog>(pParent, Qt::Sheet)
-    , m_type(type)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsUSBFilterDetails::setupUi (this);
@@ -31,13 +30,6 @@ UIMachineSettingsUSBFilterDetails::UIMachineSettingsUSBFilterDetails(UISettingsP
     mCbRemote->insertItem (UIMachineSettingsUSB::ModeAny, ""); /* Any */
     mCbRemote->insertItem (UIMachineSettingsUSB::ModeOn,  ""); /* Yes */
     mCbRemote->insertItem (UIMachineSettingsUSB::ModeOff, ""); /* No */
-    mLbRemote->setHidden (m_type != UISettingsPageType_Machine);
-    mCbRemote->setHidden (m_type != UISettingsPageType_Machine);
-
-    mCbAction->insertItem (0, ""); /* KUSBDeviceFilterAction_Ignore */
-    mCbAction->insertItem (1, ""); /* KUSBDeviceFilterAction_Hold */
-    mLbAction->setHidden (m_type != UISettingsPageType_Global);
-    mCbAction->setHidden (m_type != UISettingsPageType_Global);
 
     mLeName->setValidator (new QRegExpValidator (QRegExp (".+"), this));
     mLeVendorID->setValidator (new QRegExpValidator (QRegExp ("[0-9a-fA-F]{0,4}"), this));
@@ -60,10 +52,5 @@ void UIMachineSettingsUSBFilterDetails::retranslateUi()
     mCbRemote->setItemText (UIMachineSettingsUSB::ModeAny, tr ("Any", "remote"));
     mCbRemote->setItemText (UIMachineSettingsUSB::ModeOn,  tr ("Yes", "remote"));
     mCbRemote->setItemText (UIMachineSettingsUSB::ModeOff, tr ("No",  "remote"));
-
-    mCbAction->setItemText (0,
-        gpConverter->toString (KUSBDeviceFilterAction_Ignore));
-    mCbAction->setItemText (1,
-        gpConverter->toString (KUSBDeviceFilterAction_Hold));
 }
 

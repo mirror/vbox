@@ -104,8 +104,8 @@ struct UIDataSettingsMachineUSB
 typedef UISettingsCachePool<UIDataSettingsMachineUSB, UICacheSettingsMachineUSBFilter> UICacheSettingsMachineUSB;
 
 /* Common settings / USB page: */
-class UIMachineSettingsUSB : public UISettingsPage,
-                          public Ui::UIMachineSettingsUSB
+class UIMachineSettingsUSB : public UISettingsPageMachine,
+                             public Ui::UIMachineSettingsUSB
 {
     Q_OBJECT;
 
@@ -118,7 +118,7 @@ public:
         ModeOff
     };
 
-    UIMachineSettingsUSB(UISettingsPageType type);
+    UIMachineSettingsUSB();
 
     bool isOHCIEnabled() const;
 
@@ -170,24 +170,10 @@ private:
 
     void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew);
 
-    /* Fetch data to m_properties, m_settings or m_machine: */
-    void fetchData(const QVariant &data);
-
-    /* Upload m_properties, m_settings or m_machine to data: */
-    void uploadData(QVariant &data) const;
-
     /* Returns the multi-line description of the given USB filter: */
     static QString toolTipFor(const UIDataSettingsMachineUSBFilter &data);
 
     void polishPage();
-
-    /* Global data source: */
-    CSystemProperties m_properties;
-    VBoxGlobalSettings m_settings;
-
-    /* Machine data source: */
-    CMachine m_machine;
-    CConsole m_console;
 
     /* Other variables: */
     UIToolBar *m_pToolBar;

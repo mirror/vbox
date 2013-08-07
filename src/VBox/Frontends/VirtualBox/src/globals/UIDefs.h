@@ -280,7 +280,6 @@ enum GlobalSettingsPageType
     GlobalSettingsPageType_Update,
     GlobalSettingsPageType_Language,
     GlobalSettingsPageType_Display,
-    GlobalSettingsPageType_USB,
     GlobalSettingsPageType_Network,
     GlobalSettingsPageType_Extensions,
     GlobalSettingsPageType_Proxy,
