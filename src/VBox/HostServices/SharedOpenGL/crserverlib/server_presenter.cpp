@@ -33,6 +33,7 @@
 #include <iprt/list.h>
 #include <iprt/memcache.h>
 
+#include "render/renderspu.h"
 
 /* DISPLAY */
 
@@ -69,6 +70,10 @@ int CrDpInit(PCR_DISPLAY pDisplay)
         crWarning("crServerMuralInit failed!");
         return VERR_GENERAL_FAILURE;
     }
+
+    crServerMuralVisibleRegion(&pDisplay->Mural, 0, NULL);
+    crServerMuralShow(&pDisplay->Mural, GL_TRUE);
+
     pDisplay->fForcePresent = GL_FALSE;
     return VINF_SUCCESS;
 }
@@ -80,12 +85,28 @@ void CrDpTerm(PCR_DISPLAY pDisplay)
 
 void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height)
 {
-    crServerMuralVisibleRegion(&pDisplay->Mural, 0, NULL);
-    crServerMutalPosition(&pDisplay->Mural, xPos, yPos);
-    crServerMuralSize(&pDisplay->Mural, width, height);
-    crServerMuralShow(&pDisplay->Mural, GL_TRUE);
-    CrVrScrCompositorSetStretching(&pDisplay->Mural.Compositor, 1., 1.);
+    if (xPos != pDisplay->Mural.gX
+            || yPos != pDisplay->Mural.gY
+            || width != pDisplay->Mural.width
+            || height != pDisplay->Mural.height)
+    {
+        crServerMuralPosition(&pDisplay->Mural, xPos, yPos, GL_TRUE);
+        if (!crServerMuralSize(&pDisplay->Mural, width, height))
+            crServerCheckMuralGeometry(&pDisplay->Mural);
+    }
+    else
+        crServerCheckMuralGeometry(&pDisplay->Mural);
 }
+
+void CrDpReparent(PCR_DISPLAY pDisplay, CRScreenInfo *pScreen)
+{
+    renderspuSetWindowId(pScreen->winID);
+    crServerWindowReparent(&pDisplay->Mural);
+    renderspuSetWindowId(cr_server.screen[0].winID);
+
+    CrDpResize(pDisplay, pScreen->x, pScreen->y, pScreen->w, pScreen->h);
+}
+
 
 int CrDpSaveState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM)
 {
@@ -269,7 +290,7 @@ void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
 
 void CrDpEnter(PCR_DISPLAY pDisplay)
 {
-    pDisplay->fForcePresent = crServerVBoxCompositionPresentNeeded(&pDisplay->Mural);
+    pDisplay->fForcePresent |= crServerVBoxCompositionPresentNeeded(&pDisplay->Mural);
     crServerVBoxCompositionDisableEnter(&pDisplay->Mural);
 }
 
@@ -277,6 +298,7 @@ void CrDpLeave(PCR_DISPLAY pDisplay)
 {
     pDisplay->Mural.fDataPresented = GL_TRUE;
     crServerVBoxCompositionDisableLeave(&pDisplay->Mural, pDisplay->fForcePresent);
+    pDisplay->fForcePresent = GL_FALSE;
 }
 
 typedef struct CR_DEM_ENTRY_INFO
@@ -502,8 +524,17 @@ PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture
 
 PCR_DISPLAY crServerDisplayGetInitialized(uint32_t idScreen)
 {
+    if (idScreen >= CR_MAX_GUEST_MONITORS)
+    {
+        crWarning("invalid idScreen %d", idScreen);
+        return NULL;
+    }
+
     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
+    {
+        Assert(cr_server.aDispplays[idScreen].Mural.screenId == idScreen);
         return &cr_server.aDispplays[idScreen];
+    }
     return NULL;
 }
 
@@ -516,7 +547,10 @@ static PCR_DISPLAY crServerDisplayGet(uint32_t idScreen)
     }
 
     if (ASMBitTest(cr_server.DisplaysInitMap, idScreen))
+    {
+        Assert(cr_server.aDispplays[idScreen].Mural.screenId == idScreen);
         return &cr_server.aDispplays[idScreen];
+    }
 
      int rc = CrDpInit(&cr_server.aDispplays[idScreen]);
      if (RT_SUCCESS(rc))
@@ -548,6 +582,27 @@ int crServerDisplaySaveState(PSSMHANDLE pSSM)
     rc = SSMR3PutS32(pSSM, cDisplays);
     AssertRCReturn(rc, rc);
 
+    if (!cDisplays)
+        return VINF_SUCCESS;
+
+    rc = SSMR3PutS32(pSSM, cr_server.screenCount);
+    AssertRCReturn(rc, rc);
+
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        rc = SSMR3PutS32(pSSM, cr_server.screen[i].x);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutS32(pSSM, cr_server.screen[i].y);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, cr_server.screen[i].w);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutU32(pSSM, cr_server.screen[i].h);
+        AssertRCReturn(rc, rc);
+    }
+
     for (i = 0; i < cr_server.screenCount; ++i)
     {
         if (ASMBitTest(cr_server.DisplaysInitMap, i) && !CrDpIsEmpty(&cr_server.aDispplays[i]))
@@ -566,12 +621,44 @@ int crServerDisplaySaveState(PSSMHANDLE pSSM)
 int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version)
 {
     int rc;
-    int s32, i;
+    int cDisplays, screenCount, i;
 
-    rc = SSMR3GetS32(pSSM, &s32);
+    rc = SSMR3GetS32(pSSM, &cDisplays);
     AssertRCReturn(rc, rc);
 
-    for (i = 0; i < s32; ++i)
+    if (!cDisplays)
+        return VINF_SUCCESS;
+
+    rc = SSMR3GetS32(pSSM, &screenCount);
+    AssertRCReturn(rc, rc);
+
+    CRASSERT(screenCount == cr_server.screenCount);
+
+    crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
+
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        int32_t    x, y;
+        uint32_t   w, h;
+        rc = SSMR3GetS32(pSSM, &x);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetS32(pSSM, &y);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetU32(pSSM, &w);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3GetU32(pSSM, &h);
+        AssertRCReturn(rc, rc);
+
+        rc = crVBoxServerMapScreen(i, x, y, w, h, cr_server.screen[i].winID);
+        AssertRCReturn(rc, rc);
+    }
+
+    crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
+
+    for (i = 0; i < cDisplays; ++i)
     {
         int iScreen;
 
@@ -715,20 +802,37 @@ void SERVER_DISPATCH_APIENTRY
 crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPos, GLint cRects, const GLint *pRects)
 {
     uint32_t idScreen = CR_PRESENT_GET_SCREEN(cfg);
-    PCR_DISPLAY pDisplay = crServerDisplayGet(idScreen);
-    if (!pDisplay)
+    if (idScreen >= CR_MAX_GUEST_MONITORS)
     {
-        crWarning("crServerDisplayGet Failed");
+        crWarning("Invalid guest screen");
         return;
     }
 
+    PCR_DISPLAY pDisplay;
     PCR_DISPLAY_ENTRY pEntry = NULL;
+
     if (texture)
     {
         pEntry = CrDemEntryAcquire(&cr_server.PresentTexturepMap, texture);
         if (!pEntry)
         {
             crWarning("CrDemEntryAcquire Failed");
+            return;
+        }
+
+        pDisplay = crServerDisplayGet(idScreen);
+        if (!pDisplay)
+        {
+            crWarning("crServerDisplayGet Failed");
+            return;
+        }
+    }
+    else
+    {
+        pDisplay = crServerDisplayGetInitialized(idScreen);
+        if (!pDisplay)
+        {
+            /* no display initialized, and nothing to present */
             return;
         }
     }

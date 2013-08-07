@@ -2700,13 +2700,7 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
 
     if (pMI->screenId == *sIndex)
     {
-        crServerVBoxCompositionDisableEnter(pMI);
-
-        pMI->fHasParentWindow = !!cr_server.screen[pMI->screenId].winID;
-
-        renderspuReparentWindow(pMI->spuWindow);
-
-        crServerVBoxCompositionDisableLeave(pMI, GL_FALSE);
+        crServerWindowReparent(pMI);
     }
 }
 
@@ -2752,12 +2746,17 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
     if (MAPPED(SCREEN(sIndex)))
     {
+        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
+
         SCREEN(sIndex).winID = 0;
         renderspuSetWindowId(0);
 
         crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
 
         crHashtableWalk(cr_server.dummyMuralTable, crVBoxServerReparentMuralCB, &sIndex);
+
+        if (pDisplay)
+            CrDpReparent(pDisplay, &SCREEN(sIndex));
     }
 
     renderspuSetWindowId(SCREEN(0).winID);
@@ -2830,7 +2829,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     {
         PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
         if (pDisplay)
-            CrDpResize(pDisplay, x, y, w, h);
+            CrDpReparent(pDisplay, &SCREEN(sIndex));
     }
 
     return VINF_SUCCESS;
@@ -3035,6 +3034,13 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
         pVieport->h = h;
 
         /* no need to do anything here actually */
+    }
+
+    if (fPosChanged || fSizeChanged)
+    {
+        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized(sIndex);
+        if (pDisplay)
+            CrDpResize(pDisplay, SCREEN(sIndex).x, SCREEN(sIndex).y, SCREEN(sIndex).w, SCREEN(sIndex).h);
     }
     return VINF_SUCCESS;
 }
