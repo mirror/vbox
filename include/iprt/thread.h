@@ -636,12 +636,11 @@ RTDECL(uint32_t) RTThreadCtxHooksRetain(RTTHREADCTX hThreadCtx);
  * Releases a reference to a thread-context hook.
  *
  * @returns New reference count.
- * @retval  0 if the thread-context hook was freed or the handle was
+ * @retval  0 if the thread-context hook was freed or @a hThreadCtx is
  *          NIL_RTTHREADCTX.
  * @retval  UINT32_MAX is returned if the handle is invalid (asserted).
  *
- * @param   phThreadCtx         Pointer to the thread-context handle (can be
- *                              NIL_RTTHREADCTX).
+ * @param   hThreadCtx          The thread-context handle.
  *
  * @remarks This can be called from any thread but must be called with
  *          preemption enabled!
@@ -653,7 +652,7 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx);
  * notifications for all supported thread-context events.
  *
  * @returns IPRT status code.
- * @param   phThreadCtx         Poinner to the thread-context handle.
+ * @param   hThreadCtx          The thread-context handle.
  * @param   pfnThreadHook       Pointer to a thread-context hook (a callback)
  *                              for all thread-context events.
  * @param   pvUser              User argument (optional, can be NULL).
@@ -666,11 +665,22 @@ RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK 
  * Deregisters the thread-context hook for the current thread.
  *
  * @returns IPRT status code.
- * @param   phThreadCtx         Pointer to the thread-context handle.
+ * @param   hThreadCtx          The thread-context handle.
  *
  * @remarks Can be called with preemption disabled.
  */
 RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx);
+
+/**
+ * Are thread-context hooks registered for the thread?
+ *
+ * @returns true if registered, false if not supported or not registered.
+ * @param   hThreadCtx          The thread-context handle.
+ *
+ * @remarks Can be called from any thread (but possibility of races when
+ *          it's not the current thread!)
+ */
+RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx);
 
 # endif /* IN_RING0 */
 

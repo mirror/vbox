@@ -74,3 +74,11 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHooksDeregister);
 
+
+RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx)
+{
+    NOREF(hThreadCtx);
+    return false;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHooksAreRegistered);
+

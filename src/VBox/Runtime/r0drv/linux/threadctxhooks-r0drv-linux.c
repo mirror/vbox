@@ -211,7 +211,7 @@ RTDECL(int) RTThreadCtxHooksRegister(RTTHREADCTX hThreadCtx, PFNRTTHREADCTXHOOK 
      */
     PRTTHREADCTXINT pThis = hThreadCtx;
     if (pThis == NIL_RTTHREADCTX)
-        return VINF_SUCCESS;
+        return VERR_INVALID_HANDLE;
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
@@ -241,7 +241,7 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
      */
     PRTTHREADCTXINT pThis = hThreadCtx;
     if (pThis == NIL_RTTHREADCTX)
-        return VINF_SUCCESS;
+        return VERR_INVALID_HANDLE;
     AssertPtr(pThis);
     AssertMsgReturn(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis),
                     VERR_INVALID_HANDLE);
@@ -255,6 +255,21 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHooksDeregister);
+
+
+RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx)
+{
+    /*
+     * Validate input.
+     */
+    PRTTHREADCTXINT pThis = hThreadCtx;
+    if (pThis == NIL_RTTHREADCTX)
+        return false;
+    AssertPtr(pThis);
+    AssertMsg(pThis->u32Magic == RTTHREADCTXINT_MAGIC, ("pThis->u32Magic=%RX32 pThis=%p\n", pThis->u32Magic, pThis));
+
+    return pThis->fRegistered;
+}
 
 #else    /* Not supported / Not needed */
 
@@ -298,6 +313,14 @@ RTDECL(int) RTThreadCtxHooksDeregister(RTTHREADCTX hThreadCtx)
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTThreadCtxHooksDeregister);
+
+
+RTDECL(bool) RTThreadCtxHooksAreRegistered(RTTHREADCTX hThreadCtx)
+{
+    NOREF(hThreadCtx);
+    return false;
+}
+RT_EXPORT_SYMBOL(RTThreadCtxHooksAreRegistered);
 
 #endif   /* Not supported / Not needed */
 
