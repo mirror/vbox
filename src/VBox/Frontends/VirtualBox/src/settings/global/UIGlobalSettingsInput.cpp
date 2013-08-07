@@ -35,8 +35,7 @@
 
 /* Input page constructor: */
 UIGlobalSettingsInput::UIGlobalSettingsInput()
-    : m_pValidator(0)
-    , m_pTabWidget(0)
+    : m_pTabWidget(0)
     , m_pSelectorFilterEditor(0), m_pSelectorModel(0), m_pSelectorTable(0)
     , m_pMachineFilterEditor(0), m_pMachineModel(0), m_pMachineTable(0)
 {
@@ -80,6 +79,9 @@ UIGlobalSettingsInput::UIGlobalSettingsInput()
     setTabOrder(m_pSelectorTable, m_pMachineFilterEditor);
     setTabOrder(m_pMachineFilterEditor, m_pMachineTable);
 
+    /* Prepare validation: */
+    prepareValidation();
+
     /* Apply language settings: */
     retranslateUi();
 }
@@ -119,9 +121,8 @@ void UIGlobalSettingsInput::getFromCache()
     m_pMachineModel->load(m_cache.m_shortcuts);
     m_pEnableAutoGrabCheckbox->setChecked(m_cache.m_fAutoCapture);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -159,15 +160,7 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsInput::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), m_pValidator, SLOT(revalidate()));
-    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), m_pValidator, SLOT(revalidate()));
-}
-
-bool UIGlobalSettingsInput::revalidate(QString &strWarning, QString &strTitle)
+bool UIGlobalSettingsInput::validate(QString &strWarning, QString &strTitle)
 {
     /* Check for unique shortcuts: */
     if (!m_pSelectorModel->isAllShortcutsUnique())
@@ -183,6 +176,7 @@ bool UIGlobalSettingsInput::revalidate(QString &strWarning, QString &strTitle)
         return false;
     }
 
+    /* Pass by default: */
     return true;
 }
 
@@ -208,6 +202,13 @@ void UIGlobalSettingsInput::retranslateUi()
                                      "which can be configured."));
     m_pSelectorFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
     m_pMachineFilterEditor->setWhatsThis(tr("Enter a sequence to filter the shortcut list."));
+}
+
+void UIGlobalSettingsInput::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
 }
 
 

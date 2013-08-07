@@ -57,7 +57,7 @@ void UIHostInterfaceItem::uploadNetworkData(UIHostNetworkData &data)
 }
 
 /* Validation stuff: */
-bool UIHostInterfaceItem::revalidate(QString &strWarning, QString & /* strTitle */)
+bool UIHostInterfaceItem::validate(QString &strWarning, QString&)
 {
     /* Host-only interface validation: */
     if (!m_data.m_interface.m_fDhcpClientEnabled)
@@ -195,8 +195,7 @@ QString UIHostInterfaceItem::updateInfo()
 
 /* Network page constructor: */
 UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
-    : m_pValidator(0)
-    , m_pAddAction(0), m_pDelAction(0), m_pEditAction(0)
+    : m_pAddAction(0), m_pDelAction(0), m_pEditAction(0)
     , m_fChanged(false)
 {
     /* Apply UI decorations: */
@@ -275,9 +274,8 @@ void UIGlobalSettingsNetwork::getFromCache()
     m_pInterfacesTree->setCurrentItem(m_pInterfacesTree->topLevelItem(0));
     sltUpdateCurrentItem();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -371,17 +369,12 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsNetwork::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-}
-
 /* Validation processing: */
-bool UIGlobalSettingsNetwork::revalidate(QString &strWarning, QString &strTitle)
+bool UIGlobalSettingsNetwork::validate(QString &strWarning, QString &strTitle)
 {
+    /* Redirect validation to items: */
     UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
-    return pItem ? pItem->revalidate(strWarning, strTitle) : true;
+    return pItem ? pItem->validate(strWarning, strTitle) : true;
 }
 
 /* Navigation stuff: */
@@ -504,9 +497,8 @@ void UIGlobalSettingsNetwork::sltEditInterface()
         sltUpdateCurrentItem();
         m_fChanged = true;
 
-        /* Revalidate if possible: */
-        if (m_pValidator)
-            m_pValidator->revalidate();
+        /* Revalidate: */
+        revalidate();
     }
 }
 

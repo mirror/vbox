@@ -34,8 +34,7 @@
 #include <iprt/cdefs.h>
 
 UIMachineSettingsSystem::UIMachineSettingsSystem()
-    : m_pValidator(0)
-    , m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
+    : m_uMinGuestCPU(0), m_uMaxGuestCPU(0)
     , m_uMinGuestCPUExecCap(0), m_uMedGuestCPUExecCap(0), m_uMaxGuestCPUExecCap(0)
     , m_fOHCIEnabled(false)
 {
@@ -67,9 +66,8 @@ void UIMachineSettingsSystem::setOHCIEnabled(bool fEnabled)
     /* Update OHCI status value: */
     m_fOHCIEnabled = fEnabled;
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Load data to cache from corresponding external object(s),
@@ -186,9 +184,8 @@ void UIMachineSettingsSystem::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -287,17 +284,7 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSystem::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), m_pValidator, SLOT(revalidate()));
-    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), m_pValidator, SLOT(revalidate()));
-    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-    connect(m_pCheckBoxVirtualization, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-}
-
-bool UIMachineSettingsSystem::revalidate(QString &strWarning, QString& /* strTitle */)
+bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
 {
     /* RAM amount test: */
     ulong uFullSize = vboxGlobal().host().GetMemorySize();
@@ -505,9 +492,8 @@ void UIMachineSettingsSystem::sltHandleMemorySizeSliderChange()
     m_pEditorMemorySize->setValue(m_pSliderMemorySize->value());
     m_pEditorMemorySize->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
@@ -517,9 +503,8 @@ void UIMachineSettingsSystem::sltHandleMemorySizeEditorChange()
     m_pSliderMemorySize->setValue(m_pEditorMemorySize->value());
     m_pSliderMemorySize->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::sltCurrentBootItemChanged(int iCurrentItem)
@@ -541,9 +526,8 @@ void UIMachineSettingsSystem::sltHandleCPUCountSliderChange()
     m_pEditorCPUCount->setValue(m_pSliderCPUCount->value());
     m_pEditorCPUCount->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleCPUCountEditorChange()
@@ -553,9 +537,8 @@ void UIMachineSettingsSystem::sltHandleCPUCountEditorChange()
     m_pSliderCPUCount->setValue(m_pEditorCPUCount->value());
     m_pSliderCPUCount->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange()
@@ -565,9 +548,8 @@ void UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange()
     m_pEditorCPUExecCap->setValue(m_pSliderCPUExecCap->value());
     m_pEditorCPUExecCap->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
@@ -577,9 +559,8 @@ void UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange()
     m_pSliderCPUExecCap->setValue(m_pEditorCPUExecCap->value());
     m_pSliderCPUExecCap->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsSystem::prepare()
@@ -587,11 +568,12 @@ void UIMachineSettingsSystem::prepare()
     /* Apply UI decorations: */
     Ui::UIMachineSettingsSystem::setupUi(this);
 
-    /* Prepare 'motherboard' tab: */
+    /* Prepare tabs: */
     prepareTabMotherboard();
-
-    /* Prepare 'processor' tab: */
     prepareTabProcessor();
+
+    /* Prepare validation: */
+    prepareValidation();
 
     /* Retranslate finally: */
     retranslateUi();
@@ -710,6 +692,15 @@ void UIMachineSettingsSystem::prepareTabProcessor()
     connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
     connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
     connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
+}
+
+void UIMachineSettingsSystem::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
+    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
+    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(m_pCheckBoxVirtualization, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsSystem::repopulateComboPointingHIDType()

@@ -142,8 +142,7 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarningText, QString &strTitle);
+    bool validate(QString &strWarningText, QString &strTitle);
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -166,6 +165,9 @@ private slots:
 
 private:
 
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
+
     void addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew);
 
     /* Fetch data to m_properties, m_settings or m_machine: */
@@ -178,9 +180,6 @@ private:
     static QString toolTipFor(const UIDataSettingsMachineUSBFilter &data);
 
     void polishPage();
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Global data source: */
     CSystemProperties m_properties;

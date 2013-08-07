@@ -27,7 +27,6 @@
 
 /* General page constructor: */
 UIGlobalSettingsProxy::UIGlobalSettingsProxy()
-    : m_pValidator(0)
 {
     /* Apply UI decorations: */
     Ui::UIGlobalSettingsProxy::setupUi(this);
@@ -71,9 +70,8 @@ void UIGlobalSettingsProxy::getFromCache()
     m_pPortEditor->setText(m_cache.m_strProxyPort);
     sltProxyToggled();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -103,10 +101,26 @@ void UIGlobalSettingsProxy::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-void UIGlobalSettingsProxy::setValidator(UIPageValidator *pValidator)
+bool UIGlobalSettingsProxy::validate(QString &strWarning, QString&)
 {
-    /* Configure validation: */
-    m_pValidator = pValidator;
+    /* Pass if proxy is disabled: */
+    if (!m_pCheckboxProxy->isChecked())
+        return true;
+
+    /* Check for host/port values: */
+    if (m_pHostEditor->text().trimmed().isEmpty())
+    {
+        strWarning = tr("host is not specified.");
+        return false;
+    }
+    else if (m_pPortEditor->text().trimmed().isEmpty())
+    {
+        strWarning = tr("port is not specified.");
+        return false;
+    }
+
+    /* Pass by default: */
+    return true;
 }
 
 void UIGlobalSettingsProxy::setOrderAfter(QWidget *pWidget)
@@ -128,8 +142,7 @@ void UIGlobalSettingsProxy::sltProxyToggled()
     /* Update widgets availability: */
     m_pContainerProxy->setEnabled(m_pCheckboxProxy->isChecked());
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 

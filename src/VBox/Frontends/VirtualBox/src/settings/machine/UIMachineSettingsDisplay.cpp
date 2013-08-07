@@ -31,8 +31,7 @@
 #include "CVRDEServer.h"
 
 UIMachineSettingsDisplay::UIMachineSettingsDisplay()
-    : m_pValidator(0)
-    , m_iMinVRAM(0)
+    : m_iMinVRAM(0)
     , m_iMaxVRAM(0)
     , m_iMaxVRAMVisible(0)
     , m_iInitialVRAM(0)
@@ -70,9 +69,8 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType guestOSType)
     /* Recheck video RAM requirement: */
     checkVRAMRequirements();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -176,9 +174,8 @@ void UIMachineSettingsDisplay::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -303,20 +300,7 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsDisplay::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-#endif /* VBOX_WITH_VIDEOHWACCEL */
-    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), m_pValidator, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-}
-
-bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTitle */)
+bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
 {
     /* Check if video RAM requirement changed first: */
     checkVRAMRequirements();
@@ -402,6 +386,7 @@ bool UIMachineSettingsDisplay::revalidate(QString &strWarning, QString& /* strTi
         return false;
     }
 
+    /* Pass by default: */
     return true;
 }
 
@@ -497,9 +482,8 @@ void UIMachineSettingsDisplay::sltHandleVideoMemorySizeSliderChange()
     m_pEditorVideoMemorySize->setValue(m_pSliderVideoMemorySize->value());
     m_pEditorVideoMemorySize->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoMemorySizeEditorChange()
@@ -509,9 +493,8 @@ void UIMachineSettingsDisplay::sltHandleVideoMemorySizeEditorChange()
     m_pSliderVideoMemorySize->setValue(m_pEditorVideoMemorySize->value());
     m_pSliderVideoMemorySize->blockSignals(false);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoScreenCountSliderChange()
@@ -527,9 +510,8 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountSliderChange()
     /* Update Video Capture tab screen count: */
     updateVideoCaptureScreenCount();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
@@ -545,9 +527,8 @@ void UIMachineSettingsDisplay::sltHandleVideoScreenCountEditorChange()
     /* Update Video Capture tab screen count: */
     updateVideoCaptureScreenCount();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsDisplay::sltHandleVideoCaptureCheckboxToggle()
@@ -666,6 +647,9 @@ void UIMachineSettingsDisplay::prepare()
     prepareVideoTab();
     prepareRemoteDisplayTab();
     prepareVideoCaptureTab();
+
+    /* Prepare validation: */
+    prepareValidation();
 
     /* Translate finally: */
     retranslateUi();
@@ -809,6 +793,18 @@ void UIMachineSettingsDisplay::prepareVideoCaptureTab()
     m_pEditorVideoCaptureBitRate->setMinimum(32);
     m_pEditorVideoCaptureBitRate->setMaximum(2048);
     connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleVideoCaptureBitRateEditorChange()));
+}
+
+void UIMachineSettingsDisplay::prepareValidation()
+{
+    /* Configure validation: */
+    connect(m_pCheckbox3D, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    connect(m_pCheckbox2DVideo, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
+    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
+    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString&)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsDisplay::checkVRAMRequirements()

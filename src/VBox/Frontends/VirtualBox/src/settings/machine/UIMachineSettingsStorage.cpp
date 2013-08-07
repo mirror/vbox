@@ -1718,8 +1718,7 @@ private:
  * Used as HD Settings widget.
  */
 UIMachineSettingsStorage::UIMachineSettingsStorage()
-    : m_pValidator(0)
-    , mStorageModel(0)
+    : mStorageModel(0)
     , mAddCtrAction(0), mDelCtrAction(0)
     , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0)
     , mAddAttAction(0), mDelAttAction(0)
@@ -1895,9 +1894,8 @@ void UIMachineSettingsStorage::setChipsetType(KChipsetType type)
     mStorageModel->setChipsetType(type);
     updateActionsState();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Load data to cache from corresponding external object(s),
@@ -2036,9 +2034,8 @@ void UIMachineSettingsStorage::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -2106,13 +2103,7 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsStorage::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-}
-
-bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strTitle */)
+bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
 {
     /* Check controllers for name emptiness & coincidence.
      * Check attachments for the hd presence / uniqueness. */
@@ -2190,6 +2181,7 @@ bool UIMachineSettingsStorage::revalidate (QString &strWarning, QString& /* strT
         return false;
     }
 
+    /* Pass by default: */
     return true;
 }
 
@@ -2279,9 +2271,8 @@ void UIMachineSettingsStorage::mediumUpdated (const UIMedium &aMedium)
             {
                 mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
 
-                /* Revalidate if possible: */
-                if (m_pValidator)
-                    m_pValidator->revalidate();
+                /* Revalidate: */
+                revalidate();
             }
         }
     }
@@ -2301,9 +2292,8 @@ void UIMachineSettingsStorage::mediumRemoved (UIMediumType /* aType */, const QS
             {
                 mStorageModel->setData (attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
 
-                /* Revalidate if possible: */
-                if (m_pValidator)
-                    m_pValidator->revalidate();
+                /* Revalidate: */
+                revalidate();
             }
         }
     }
@@ -2353,9 +2343,8 @@ void UIMachineSettingsStorage::delController()
     mStorageModel->delController (QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsStorage::addAttachment()
@@ -2435,9 +2424,8 @@ void UIMachineSettingsStorage::delAttachment()
                                   QUuid (mStorageModel->data (index, StorageModel::R_ItemId).toString()));
     emit storageChanged();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsStorage::getInformation()
@@ -2563,9 +2551,8 @@ void UIMachineSettingsStorage::getInformation()
         }
     }
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 
     mIsLoadingInProgress = false;
 }
@@ -3101,9 +3088,8 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         mStorageModel->sort();
         emit storageChanged();
 
-        /* Revalidate if possible: */
-        if (m_pValidator)
-            m_pValidator->revalidate();
+        /* Revalidate: */
+        revalidate();
     }
 }
 

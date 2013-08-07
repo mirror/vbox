@@ -336,7 +336,7 @@ void UISettingsDialog::revalidate(UIPageValidator *pValidator)
     UISettingsPage *pSettingsPage = pValidator->page();
     QString strPageTitle = m_pSelector->itemTextByPage(pSettingsPage);
     QString strMessageText;
-    bool fIsValid = pSettingsPage->revalidate(strMessageText, strPageTitle);
+    bool fIsValid = pSettingsPage->validate(strMessageText, strPageTitle);
 
     /* Remember revalidation result: */
     pValidator->setValid(fIsValid);

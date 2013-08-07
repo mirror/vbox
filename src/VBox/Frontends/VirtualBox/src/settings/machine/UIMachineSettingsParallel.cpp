@@ -32,7 +32,6 @@
 /* UIMachineSettingsParallel stuff */
 UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
-    , m_pValidator(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
 {
@@ -58,6 +57,9 @@ UIMachineSettingsParallel::UIMachineSettingsParallel(UIMachineSettingsParallelPa
              this, SLOT (mGbParallelToggled (bool)));
     connect (mCbNumber, SIGNAL (activated (const QString &)),
              this, SLOT (mCbNumberActivated (const QString &)));
+
+    /* Prepare validation: */
+    prepareValidation();
 
     /* Applying language settings */
     retranslateUi();
@@ -113,15 +115,6 @@ void UIMachineSettingsParallel::uploadPortData(UICacheSettingsMachineParallelPor
     portCache.cacheCurrentData(portData);
 }
 
-void UIMachineSettingsParallel::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-}
-
 QWidget* UIMachineSettingsParallel::setOrderAfter (QWidget *aAfter)
 {
     setTabOrder (aAfter, mGbParallel);
@@ -156,9 +149,8 @@ void UIMachineSettingsParallel::mGbParallelToggled (bool aOn)
     if (aOn)
         mCbNumberActivated (mCbNumber->currentText());
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    m_pParent->revalidate();
 }
 
 void UIMachineSettingsParallel::mCbNumberActivated (const QString &aText)
@@ -174,16 +166,22 @@ void UIMachineSettingsParallel::mCbNumberActivated (const QString &aText)
         mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
     }
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    m_pParent->revalidate();
+}
+
+void UIMachineSettingsParallel::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
+    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
+    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
 }
 
 
 /* UIMachineSettingsParallelPage stuff */
 UIMachineSettingsParallelPage::UIMachineSettingsParallelPage()
-    : m_pValidator(0)
-    , mTabWidget(0)
+    : mTabWidget(0)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);
@@ -256,9 +254,6 @@ void UIMachineSettingsParallelPage::getFromCache()
         /* Load port data to page: */
         pPage->fetchPortData(m_cache.child(iPort));
 
-        /* Setup page validation: */
-        pPage->setValidator(m_pValidator);
-
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
     }
@@ -269,9 +264,8 @@ void UIMachineSettingsParallelPage::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -330,13 +324,7 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsParallelPage::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-}
-
-bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTitle)
+bool UIMachineSettingsParallelPage::validate(QString &strWarning, QString &strTitle)
 {
     bool valid = true;
     QList<QPair<QString, QString> > ports;
@@ -361,12 +349,12 @@ bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTit
             if (!valid)
             {
                 if (strIRQ.isEmpty())
-                    aWarning = tr("IRC not specified.");
+                    strWarning = tr("IRC not specified.");
                 else if (strIOPort.isEmpty())
-                    aWarning = tr("IO port not specified.");
+                    strWarning = tr("IO port not specified.");
                 else
-                    aWarning = tr ("duplicate port attributes specified.");
-                aTitle += ": " +
+                    strWarning = tr ("duplicate port attributes specified.");
+                strTitle += ": " +
                     vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(tab)));
             }
             ports << pair;
@@ -378,10 +366,10 @@ bool UIMachineSettingsParallelPage::revalidate (QString &aWarning, QString &aTit
             valid = !path.isEmpty() && !paths.contains (path);
             if (!valid)
             {
-                aWarning = path.isEmpty() ?
+                strWarning = path.isEmpty() ?
                     tr ("Port path not specified ") :
                     tr ("Duplicate port path entered ");
-                aTitle += ": " +
+                strTitle += ": " +
                     vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                 break;
             }
