@@ -2174,6 +2174,9 @@
 #define VERR_IEM_INVALID_EFF_SEG                    (-5303)
 /** Invalid instruction length passed to an IEM function. */
 #define VERR_IEM_INVALID_INSTR_LENGTH               (-5304)
+/** Internal status code for indicating that a selector isn't valid (LAR, LSL,
+ *  VERR, VERW).  This is not used outside the instruction implementations. */
+#define VINF_IEM_SELECTOR_NOT_OK                    (5305)
 /** This particular aspect of the instruction is not yet implemented by IEM. */
 #define VERR_IEM_ASPECT_NOT_IMPLEMENTED             (-5391)
 /** Internal processing error \#1 in the IEM code.. */

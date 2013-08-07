@@ -58,3 +58,17 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
 
 #endif /* RT_ARCH_X86 */
 
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pEFlags))
+{
+    if ((*pu16Dst & X86_SEL_RPL) < (u16Src & X86_SEL_RPL))
+    {
+        *pu16Dst &= X86_SEL_MASK_OFF_RPL;
+        *pu16Dst |= u16Src & X86_SEL_RPL;
+
+        *pEFlags |= X86_EFL_ZF;
+    }
+    else
+        *pEFlags &= ~X86_EFL_ZF;
+}
+

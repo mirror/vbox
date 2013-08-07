@@ -895,6 +895,11 @@ IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u32,(uint32_t *pu32Dst));
 IEM_DECL_IMPL_TYPE(void, iemAImpl_bswap_u64,(uint64_t *pu64Dst));
 /** @}  */
 
+/** @name Misc.
+ * @{ */
+FNIEMAIMPLBINU16 iemAImpl_arpl;
+/** @} */
+
 
 /** @name FPU operations taking a 32-bit float argument
  * @{ */
