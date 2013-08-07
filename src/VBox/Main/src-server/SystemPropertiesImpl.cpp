@@ -1283,7 +1283,7 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 
 HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
 {
-    int rc = S_OK;
+    int rc;
     Utf8Str useLoggingLevel(aLoggingLevel);
     rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
     //  If failed and not the default logging level - try to use the default logging level.
@@ -1304,7 +1304,7 @@ HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
     }
     //  Set to passed value or if default used/attempted (even if error condition) use empty string.
     m->strLoggingLevel = (useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT) ? "" : useLoggingLevel);
-    return (RT_SUCCESS(rc) ? S_OK : E_FAIL);
+    return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
 
 HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
