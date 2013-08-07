@@ -133,6 +133,8 @@ void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
 
 void crVBoxServerNotifyEvent(int32_t idScreen, uint32_t uEvent, void*pvData);
+void crVBoxServerCheckVisibilityEvent(int32_t idScreen);
+
 void crServerDisplayTermAll();
 
 void crServerWindowSize(CRMuralInfo *pMural);
