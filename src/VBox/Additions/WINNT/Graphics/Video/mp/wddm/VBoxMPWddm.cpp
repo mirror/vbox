@@ -1180,7 +1180,6 @@ NTSTATUS DxgkDdiStartDevice(
                     if (pDevExt->f3DEnabled)
                     {
                         pDevExt->fTexPresentEnabled = !!(VBoxMpCrGetHostCaps() & CR_VBOX_CAP_TEX_PRESENT);
-                        Assert(!pDevExt->fTexPresentEnabled);
                     }
                     else
                         pDevExt->fTexPresentEnabled = FALSE;
