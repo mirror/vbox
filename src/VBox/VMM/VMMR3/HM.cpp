@@ -981,7 +981,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM: MSR_IA32_FEATURE_CONTROL      = %#RX64\n", pVM->hm.s.vmx.msr.feature_ctrl));
     LogRel(("HM: MSR_IA32_VMX_BASIC_INFO       = %#RX64\n", pVM->hm.s.vmx.msr.vmx_basic_info));
     LogRel(("HM: VMCS id                       = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info)));
-    LogRel(("HM: VMCS size                     = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.msr.vmx_basic_info)));
+    LogRel(("HM: VMCS size                     = %u\n", MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.msr.vmx_basic_info)));
     LogRel(("HM: VMCS physical address limit   = %s\n", MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.msr.vmx_basic_info) ? "< 4 GB" : "None"));
     LogRel(("HM: VMCS memory type              = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(pVM->hm.s.vmx.msr.vmx_basic_info)));
     LogRel(("HM: Dual-monitor treatment        = %RTbool\n", !!MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.msr.vmx_basic_info)));
