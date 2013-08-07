@@ -22,6 +22,11 @@
 /* Qt includes: */
 #include <QValidator>
 
+/* External includes: */
+#ifdef Q_WS_X11
+#include <limits.h>
+#endif /* Q_WS_X11 */
+
 /* Forward declarations: */
 class UISettingsPage;
 
