@@ -2458,7 +2458,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
         pCtx->cs.u32Limit   = cbLimitCS;
         pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-        pCtx->rsp           = uNewESP;
+        if (!pCtx->cs.Attr.n.u1DefBig)
+            pCtx->sp        = (uint16_t)uNewESP;
+        else
+            pCtx->rsp       = uNewESP;
         pCtx->ss.Sel        = uNewSS;
         pCtx->ss.ValidSel   = uNewSS;
         pCtx->ss.fFlags     = CPUMSELREG_FLAGS_VALID;
@@ -2785,7 +2788,10 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_long, IEMMODE, enmEffOpSize)
     pCtx->cs.Attr.u     = X86DESC_GET_HID_ATTR(&DescCS.Legacy);
     pCtx->cs.u32Limit   = cbLimitCS;
     pCtx->cs.u64Base    = X86DESC_BASE(&DescCS.Legacy);
-    pCtx->rsp           = uNewRsp;
+    if (pCtx->cs.Attr.n.u1Long || pCtx->cs.Attr.n.u1DefBig)
+        pCtx->rsp       = uNewRsp;
+    else
+        pCtx->sp        = (uint16_t)uNewRsp;
     pCtx->ss.Sel        = uNewSs;
     pCtx->ss.ValidSel   = uNewSs;
     if (!(uNewSs & X86_SEL_MASK_OFF_RPL))
