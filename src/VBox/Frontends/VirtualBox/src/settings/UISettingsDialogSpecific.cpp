@@ -642,7 +642,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                     pSettingsPage = new UIMachineSettingsStorage;
                     connect(pSettingsPage, SIGNAL(storageChanged()), this, SLOT(sltResetFirstRunFlag()));
                     addItem(":/hd_32px.png", ":/hd_disabled_32px.png",
-                            ":/attachment_16px.png", ":/attachment_disabled_16px.png",
+                            ":/hd_16px.png", ":/hd_disabled_16px.png",
                             iPageIndex, "#storage", pSettingsPage);
                     break;
                 }
