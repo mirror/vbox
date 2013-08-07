@@ -1282,9 +1282,8 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 
 HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
 {
-    int rc;
     Utf8Str useLoggingLevel(aLoggingLevel);
-    rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
+    int rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
     //  If failed and not the default logging level - try to use the default logging level.
     if (RT_FAILURE(rc))
     {
