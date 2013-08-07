@@ -142,8 +142,6 @@ private:
     QString m_strWarningHint;
     QString m_strErrorString;
     QString m_strWarningString;
-    QPixmap m_errorIcon;
-    QPixmap m_warningIcon;
     VBoxWarningPane *m_pWarningPane;
 
     /* Whats-This stuff: */

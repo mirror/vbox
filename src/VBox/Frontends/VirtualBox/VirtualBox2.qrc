@@ -199,5 +199,20 @@
         <file alias="nw_settings_disabled_16px.png">images/nw_settings_disabled_16px.png</file>
         <file alias="sf_settings_16px.png">images/sf_settings_16px.png</file>
         <file alias="sf_settings_disabled_16px.png">images/sf_settings_disabled_16px.png</file>
+        <file alias="chipset_warning_16px.png">images/chipset_warning_16px.png</file>
+        <file alias="extension_pack_warning_16px.png">images/extension_pack_warning_16px.png</file>
+        <file alias="hd_warning_16px.png">images/hd_warning_16px.png</file>
+        <file alias="hostkey_warning_16px.png">images/hostkey_warning_16px.png</file>
+        <file alias="machine_warning_16px.png">images/machine_warning_16px.png</file>
+        <file alias="nw_warning_16px.png">images/nw_warning_16px.png</file>
+        <file alias="parallel_port_warning_16px.png">images/parallel_port_warning_16px.png</file>
+        <file alias="proxy_warning_16px.png">images/proxy_warning_16px.png</file>
+        <file alias="refresh_warning_16px.png">images/refresh_warning_16px.png</file>
+        <file alias="serial_port_warning_16px.png">images/serial_port_warning_16px.png</file>
+        <file alias="sf_warning_16px.png">images/sf_warning_16px.png</file>
+        <file alias="site_warning_16px.png">images/site_warning_16px.png</file>
+        <file alias="sound_warning_16px.png">images/sound_warning_16px.png</file>
+        <file alias="usb_warning_16px.png">images/usb_warning_16px.png</file>
+        <file alias="vrdp_warning_16px.png">images/vrdp_warning_16px.png</file>
     </qresource>
 </RCC>
