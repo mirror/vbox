@@ -587,6 +587,7 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfUSBControllerType(ChipsetType_T 
                                                                   USBControllerType_T aType,
                                                                   ULONG *aMaxInstances)
 {
+    NOREF(aChipset);
     CheckComArgOutPointerValid(aMaxInstances);
 
     AutoCaller autoCaller(this);
