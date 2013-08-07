@@ -93,6 +93,7 @@ public:
 
     /* Validation stuff: */
     void setValidator(UIPageValidator *pValidator);
+    void setValidatorBlocked(bool fIsValidatorBlocked) { m_fIsValidatorBlocked = fIsValidatorBlocked; }
     virtual bool validate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
 
     /* Navigation stuff: */
@@ -148,6 +149,7 @@ private:
     bool m_fFailed;
     QWidget *m_pFirstWidget;
     UIPageValidator *m_pValidator;
+    bool m_fIsValidatorBlocked;
 };
 
 /* Global settings page class: */
