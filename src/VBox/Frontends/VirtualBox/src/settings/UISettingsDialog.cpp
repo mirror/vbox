@@ -357,6 +357,8 @@ void UISettingsDialog::revalidate()
     /* Perform dialog revalidation: */
     m_fValid = true;
     m_fSilent = true;
+    setError(QString());
+    setWarning(QString());
 
     /* Enumerating all the validators we have: */
     QList<UIPageValidator*> validators(findChildren<UIPageValidator*>());
