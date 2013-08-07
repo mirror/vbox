@@ -139,6 +139,8 @@ typedef struct DBGC
 
     /** Current disassembler position. */
     DBGCVAR             DisasmPos;
+    /** The flags that goes with DisasmPos. */
+    uint32_t            fDisasm;
     /** Current source position. (flat GC) */
     DBGCVAR             SourcePos;
     /** Current memory dump position. */

@@ -379,6 +379,10 @@ VMMDECL(bool) CPUMIsGuestIn64BitCode(PVMCPU pVCpu)
     return false;
 }
 
+VMMDECL(uint32_t) CPUMGetGuestEFlags(PVMCPU pVCpu)
+{
+    return 2;
+}
 
 #include <VBox/vmm/hm.h>
 VMMR3DECL(bool) HMR3IsEnabled(PUVM pUVM)
