@@ -761,7 +761,7 @@ void crServerVBoxCompositionDisableEnter(CRMuralInfo *mural)
 
 void crServerVBoxCompositionDisableLeave(CRMuralInfo *mural, GLboolean fForcePresentOnEnabled)
 {
-    mural->fForcePresentState = fForcePresentOnEnabled;
+    mural->fForcePresentState |= fForcePresentOnEnabled;
     --mural->cDisabled;
     Assert(mural->cDisabled < UINT32_MAX/2);
     if (!mural->cDisabled)
@@ -787,9 +787,23 @@ static void crServerVBoxCompositionSetEnableStateGlobalCB(unsigned long key, voi
 
 DECLEXPORT(void) crServerVBoxCompositionSetEnableStateGlobal(GLboolean fEnable)
 {
+    int i;
+
     crHashtableWalk(cr_server.muralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)(uintptr_t)fEnable);
 
     crHashtableWalk(cr_server.dummyMuralTable, crServerVBoxCompositionSetEnableStateGlobalCB, (void*)(uintptr_t)fEnable);
+
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized((uint32_t)i);
+        if (!pDisplay)
+            continue;
+
+        if (!fEnable)
+            CrDpEnter(pDisplay);
+        else
+            CrDpLeave(pDisplay);
+    }
 }
 
 static void crServerPresentMuralVRAM(CRMuralInfo *mural, char *pixels)

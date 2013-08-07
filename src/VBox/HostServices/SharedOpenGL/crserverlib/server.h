@@ -114,8 +114,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 GLint crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preloadWinID);
 GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fUseDefaultDEntry);
 void crServerMuralTerm(CRMuralInfo *mural);
-void crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
-void crServerMutalPosition(CRMuralInfo *mural, GLint x, GLint y);
+GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
+void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkipCheckGeometry);
 void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects );
 void crServerMuralShow( CRMuralInfo *mural, GLint state );
 int crServerMuralSynchRootVr(CRMuralInfo *mural);
@@ -140,6 +140,7 @@ void crServerDisplayTermAll();
 void crServerWindowSize(CRMuralInfo *pMural);
 void crServerWindowShow(CRMuralInfo *pMural);
 void crServerWindowVisibleRegion(CRMuralInfo *pMural);
+void crServerWindowReparent(CRMuralInfo *pMural);
 
 void crServerWindowSetIsVisible(CRMuralInfo *pMural, GLboolean fIsVisible);
 void crServerWindowCheckIsVisible(CRMuralInfo *pMural);
@@ -413,6 +414,8 @@ DECLINLINE(bool) CrDpIsEmpty(PCR_DISPLAY pDisplay)
 
 int CrDpSaveState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM);
 int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version);
+
+void CrDpReparent(PCR_DISPLAY pDisplay, CRScreenInfo *pScreen);
 
 void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
 void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData);
