@@ -938,7 +938,7 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     {
         if (!DBGCVAR_ISPOINTER(pDbgc->DisasmPos.enmType))
         {
-            /** @todo Batch query CS, RIP & CPU mode. */
+            /** @todo Batch query CS, RIP, CPU mode and flags. */
             PVMCPU pVCpu = VMMR3GetCpuByIdU(pUVM, pDbgc->idCpu);
             if (    pDbgc->fRegCtxGuest
                 &&  CPUMIsGuestIn64BitCode(pVCpu))
@@ -951,12 +951,24 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
                 pDbgc->DisasmPos.enmType     = DBGCVAR_TYPE_GC_FAR;
                 pDbgc->SourcePos.u.GCFar.off = pDbgc->fRegCtxGuest ? CPUMGetGuestEIP(pVCpu) : CPUMGetHyperEIP(pVCpu);
                 pDbgc->SourcePos.u.GCFar.sel = pDbgc->fRegCtxGuest ? CPUMGetGuestCS(pVCpu)  : CPUMGetHyperCS(pVCpu);
+                if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE
+                    && pDbgc->fRegCtxGuest
+                    && (CPUMGetGuestEFlags(pVCpu) & X86_EFL_VM))
+                {
+                    fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+                    fFlags |= DBGF_DISAS_FLAGS_16BIT_REAL_MODE;
+                }
             }
 
             if (pDbgc->fRegCtxGuest)
                 fFlags |= DBGF_DISAS_FLAGS_CURRENT_GUEST;
             else
                 fFlags |= DBGF_DISAS_FLAGS_CURRENT_HYPER | DBGF_DISAS_FLAGS_HYPER;
+        }
+        else if ((fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_DEFAULT_MODE && pDbgc->fDisasm)
+        {
+            fFlags &= ~DBGF_DISAS_FLAGS_MODE_MASK;
+            fFlags |= pDbgc->fDisasm & (DBGF_DISAS_FLAGS_MODE_MASK | DBGF_DISAS_FLAGS_HYPER);
         }
         pDbgc->DisasmPos.enmRangeType = DBGCVAR_RANGE_NONE;
     }
@@ -1014,12 +1026,19 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
     }
 
     DBGFADDRESS CurAddr;
-    rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
-    if (RT_FAILURE(rc))
-        return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
+    if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
+        && pDbgc->DisasmPos.enmType == DBGCVAR_TYPE_GC_FAR)
+        DBGFR3AddrFromFlat(pUVM, &CurAddr, ((uint32_t)pDbgc->DisasmPos.u.GCFar.sel << 4) + pDbgc->DisasmPos.u.GCFar.off);
+    else
+    {
+        rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "DBGCCmdHlpVarToDbgfAddr failed on '%Dv'", &pDbgc->DisasmPos);
+    }
 
     if (CurAddr.fFlags & DBGFADDRESS_FLAGS_HMA)
         fFlags |= DBGF_DISAS_FLAGS_HYPER; /* This crap is due to not using DBGFADDRESS as DBGFR3Disas* input. */
+    pDbgc->fDisasm = fFlags;
 
     /*
      * Figure out where we are and display it.  Also calculate when we need to
@@ -1083,7 +1102,11 @@ static DECLCALLBACK(int) dbgcCmdUnassemble(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
         /* Print next symbol? */
         if (cbCheckSymbol <= cbInstr)
         {
-            rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
+            if (   (fFlags & DBGF_DISAS_FLAGS_MODE_MASK) == DBGF_DISAS_FLAGS_16BIT_REAL_MODE
+                && pDbgc->DisasmPos.enmType == DBGCVAR_TYPE_GC_FAR)
+                DBGFR3AddrFromFlat(pUVM, &CurAddr, ((uint32_t)pDbgc->DisasmPos.u.GCFar.sel << 4) + pDbgc->DisasmPos.u.GCFar.off);
+            else
+                rc = DBGCCmdHlpVarToDbgfAddr(pCmdHlp, &pDbgc->DisasmPos, &CurAddr);
             if (RT_SUCCESS(rc))
                 dbgcCmdUnassambleHelpListNear(pUVM, pCmdHlp, hDbgAs, &CurAddr, &cbCheckSymbol);
             else
@@ -1485,6 +1508,8 @@ static DECLCALLBACK(int) dbgcCmdRegGuest(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PU
         /*
          * Disassemble one instruction at cs:[r|e]ip.
          */
+        if (!f64BitMode && strstr(pszRegs, " vm ")) /* a big ugly... */
+            return pCmdHlp->pfnExec(pCmdHlp, "uv86 %s", szDisAndRegs + 2);
         return pCmdHlp->pfnExec(pCmdHlp, "%s", szDisAndRegs);
     }
     return dbgcCmdRegCommon(pCmd, pCmdHlp, pUVM, paArgs, cArgs, "");
