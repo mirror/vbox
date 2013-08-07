@@ -138,15 +138,30 @@ typedef struct USBHIDM_ACCUM
             uint32_t    y;
             uint32_t    fButtons;
         } Absolute;
-        struct
-        {
-            uint32_t    fContact;
-            uint32_t    x;
-            uint32_t    y;
-            uint32_t    cContact;
-        } MultiTouch;
     } u;
 } USBHIDM_ACCUM, *PUSBHIDM_ACCUM;
+
+#define MT_CONTACTS_PER_REPORT 5
+
+#define MT_CONTACT_MAX_COUNT 10
+
+#define MT_CONTACT_F_IN_CONTACT 0x01
+#define MT_CONTACT_F_IN_RANGE   0x02
+
+#define MT_CONTACT_S_ACTIVE    0x01 /* Contact must be reported to the guest. */
+#define MT_CONTACT_S_CANCELLED 0x02 /* Contact loss must be reported to the guest. */
+#define MT_CONTACT_S_REUSED    0x04 /* Report contact loss for the oldId and then new contact for the id. */
+#define MT_CONTACT_S_DIRTY     0x08 /* Temporary flag used to track already processed elements. */
+
+typedef struct MTCONTACT
+{
+    uint16_t x;
+    uint16_t y;
+    uint8_t  id;
+    uint8_t  flags;
+    uint8_t  status;
+    uint8_t  oldId; /* Valid only if MT_CONTACT_S_REUSED is set. */
+} MTCONTACT;
 
 
 /**
@@ -210,10 +225,15 @@ typedef struct USBHID
         R3PTRTYPE(PPDMIMOUSECONNECTOR)      pDrv;
     } Lun0;
 
+    MTCONTACT aCurrentContactState[MT_CONTACT_MAX_COUNT];
+    MTCONTACT aReportingContactState[MT_CONTACT_MAX_COUNT];
+    uint32_t u32LastTouchScanTime;
+    bool fTouchReporting;
 } USBHID;
 /** Pointer to the USB HID instance data. */
 typedef USBHID *PUSBHID;
 
+#pragma pack(1)
 /**
  * The USB HID report structure for relative device.
  */
@@ -237,28 +257,32 @@ typedef struct USBHIDT_REPORT
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
 
 /**
- * The USB HID report structure for the multi-touch device.
- */
-
-typedef struct USBHIDMT_REPORT
-{
-    uint8_t     idReport;
-    uint8_t     fContact;
-    uint16_t    x;
-    uint16_t    y;
-    uint8_t     cContact;
-} USBHIDMT_REPORT, *PUSBHIDMT_REPORT;
-
-/**
- * The combined USB HID report union for relative, absolute and multi-touch
+ * The combined USB HID report union for relative and absolute
  * devices.
  */
 typedef union USBHIDTM_REPORT
 {
     USBHIDM_REPORT      m;
     USBHIDT_REPORT      t;
-    USBHIDMT_REPORT     mt;
 } USBHIDTM_REPORT, *PUSBHIDTM_REPORT;
+
+/**
+ * The USB HID report structure for the multi-touch device.
+ */
+typedef struct USBHIDMT_REPORT
+{
+    uint8_t     idReport;
+    uint8_t     cContacts;
+    struct
+    {
+        uint8_t     fContact;
+        uint8_t     cContact;
+        uint16_t    x;
+        uint16_t    y;
+    } aContacts[MT_CONTACTS_PER_REPORT];
+    uint32_t    u32ScanTime;
+} USBHIDMT_REPORT, *PUSBHIDMT_REPORT;
+#pragma pack()
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -302,6 +326,23 @@ static const VUSBDESCENDPOINTEX g_aUsbHidTEndpointDescs[] =
             /* .bEndpointAddress = */   0x81 /* ep=1, in */,
             /* .bmAttributes = */       3 /* interrupt */,
             /* .wMaxPacketSize = */     6,
+            /* .bInterval = */          10,
+        },
+        /* .pvMore = */     NULL,
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0
+    },
+};
+
+static const VUSBDESCENDPOINTEX g_aUsbHidMTEndpointDescs[] =
+{
+    {
+        {
+            /* .bLength = */            sizeof(VUSBDESCENDPOINT),
+            /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
+            /* .bEndpointAddress = */   0x81 /* ep=1, in */,
+            /* .bmAttributes = */       3 /* interrupt */,
+            /* .wMaxPacketSize = */     64,
             /* .bInterval = */          10,
         },
         /* .pvMore = */     NULL,
@@ -383,45 +424,277 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* End Collection */            0xC0,
 };
 
+/*
+ * Multi-touch device implementation based on "Windows Pointer Device Data Delivery Protocol"
+ * specification.
+ */
+
+#define REPORTID_TOUCH_POINTER   1
+#define REPORTID_TOUCH_EVENT     2
+#define REPORTID_TOUCH_MAX_COUNT 3
+#define REPORTID_TOUCH_QABLOB    4
+#define REPORTID_TOUCH_DEVCONFIG 5
+
 static const uint8_t g_UsbHidMTReportDesc[] =
 {
-    /* Usage Page */                0x05, 0x0D,     /* Digitisers */
-    /* Usage */                     0x09, 0x04,     /* Touch Screen */
-    /* Collection */                0xA1, 0x01,     /* Application */
-    /* Report ID */                 0x85, REPORTID_MOUSE,
-    /* Usage */                     0x09, 0x22,     /* Finger */
-    /* Collection */                0xA1, 0x00,     /* Physical */
-    /* Usage */                     0x09, 0x42,     /* Tip Switch */
-    /* Usage */                     0x09, 0x32,     /* In Range */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x25, 0x01,     /* 1 */
-    /* Report Count */              0x95, 0x02,     /* 2 */
-    /* Report Size */               0x75, 0x01,     /* 1 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
-    /* Report Count */              0x95, 0x06,     /* 6 (padding bits) */
-    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
-    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
-    /* Usage */                     0x09, 0x30,     /* X */
-    /* Usage */                     0x09, 0x31,     /* Y */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
-    /* Physical Minimum */          0x35, 0x00,     /* 0 */
-    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
-    /* Report Size */               0x75, 0x10,     /* 16 */
-    /* Report Count */              0x95, 0x02,     /* 2 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
-    /* Usage Page */                0x05, 0x0D,     /* Digitisers */
-    /* Usage */                     0x09, 0x51,     /* Contact Identifier */
-    /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Report Size */               0x75, 0x08,     /* 8 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
-    /* End Collection */            0xC0,
-    /* Report ID */                 0x85, REPORTID_MAX_COUNT,
-    /* Usage */                     0x09, 0x55,     /* Contact Count Maximum */
-    /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Logical Maximum */           0x25, 0x40,     /* 64 */
-    /* Feature */                   0xB1, 0x03,     /* Constant, Value, Absolute, Bit field */
-    /* End Collection */            0xC0
+/* Usage Page (Digitizer)                */ 0x05, 0x0D,
+/* Usage (Touch Screen)                  */ 0x09, 0x04,
+/* Collection (Application)              */ 0xA1, 0x01,
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_EVENT,
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Usage (Contact count)             */ 0x09, 0x54,
+/*     Report Size (8)                   */ 0x75, 0x08,
+/*     Logical Minimum (0)               */ 0x15, 0x00,
+/*     Logical Maximum (12)              */ 0x25, 0x0C,
+/*     Report Count (1)                  */ 0x95, 0x01,
+/*     Input (Var)                       */ 0x81, 0x02,
+
+/* MT_CONTACTS_PER_REPORT structs u8TipSwitch, u8ContactIdentifier, u16X, u16Y */
+/* 1 of 5 */
+/*     Usage (Finger)                    */ 0x09, 0x22,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Tip Switch)            */ 0x09, 0x42,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+
+/*         Usage (In Range)              */ 0x09, 0x32,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+
+/*         Report Count (6)              */ 0x95, 0x06,
+/*         Input (Cnst,Var)              */ 0x81, 0x03,
+
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Usage (Contact identifier)    */ 0x09, 0x51,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (32)          */ 0x25, 0x20,
+/*         Input (Var)                   */ 0x81, 0x02,
+
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Input (Var)                   */ 0x81, 0x02,
+
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+/* 2 of 5 */
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Usage (Finger)                    */ 0x09, 0x22,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Tip Switch)            */ 0x09, 0x42,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (In Range)              */ 0x09, 0x32,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Report Count (6)              */ 0x95, 0x06,
+/*         Input (Cnst,Var)              */ 0x81, 0x03,
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Usage (Contact identifier)    */ 0x09, 0x51,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (32)          */ 0x25, 0x20,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+/* 3 of 5 */
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Usage (Finger)                    */ 0x09, 0x22,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Tip Switch)            */ 0x09, 0x42,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (In Range)              */ 0x09, 0x32,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Report Count (6)              */ 0x95, 0x06,
+/*         Input (Cnst,Var)              */ 0x81, 0x03,
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Usage (Contact identifier)    */ 0x09, 0x51,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (32)          */ 0x25, 0x20,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+/* 4 of 5 */
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Usage (Finger)                    */ 0x09, 0x22,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Tip Switch)            */ 0x09, 0x42,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (In Range)              */ 0x09, 0x32,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Report Count (6)              */ 0x95, 0x06,
+/*         Input (Cnst,Var)              */ 0x81, 0x03,
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Usage (Contact identifier)    */ 0x09, 0x51,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (32)          */ 0x25, 0x20,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+/* 5 of 5 */
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Usage (Finger)                    */ 0x09, 0x22,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Tip Switch)            */ 0x09, 0x42,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (In Range)              */ 0x09, 0x32,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Report Count (6)              */ 0x95, 0x06,
+/*         Input (Cnst,Var)              */ 0x81, 0x03,
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Usage (Contact identifier)    */ 0x09, 0x51,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (32)          */ 0x25, 0x20,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+
+/* Note: "Scan time" usage is required for all touch devices (in 100microseconds units). */
+/*     Usage Page (Digitizer)            */ 0x05, 0x0D,
+/*     Logical Minimum (0)               */ 0x17, 0x00, 0x00, 0x00, 0x00,
+/*     Logical Maximum (2147483647)      */ 0x27, 0xFF, 0xFF, 0xFF, 0x7F,
+/*     Report Size (32)                  */ 0x75, 0x20,
+/*     Report Count (1)                  */ 0x95, 0x01,
+/*     Unit Exponent (0)                 */ 0x55, 0x00,
+/*     Unit (None)                       */ 0x65, 0x00,
+/*     Usage (Scan time)                 */ 0x09, 0x56,
+/*     Input (Var)                       */ 0x81, 0x02,
+
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_MAX_COUNT,
+/*     Usage (Contact count maximum)     */ 0x09, 0x55,  
+/*     Usage (Device identifier)         */ 0x09, 0x53,  
+/*     Report Size (8)                   */ 0x75, 0x08,  
+/*     Report Count (2)                  */ 0x95, 0x02,  
+/*     Logical Maximum (255)             */ 0x26, 0xFF, 0x00,
+/*     Feature (Var)                     */ 0xB1, 0x02,  
+
+/*     Usage Page (Vendor-Defined 1)     */ 0x06, 0x00, 0xFF,
+/*     Usage (QA blob)                   */ 0x09, 0xC5,
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_QABLOB,
+/*     Logical Minimum (0)               */ 0x15, 0x00,
+/*     Logical Maximum (255)             */ 0x26, 0xFF, 0x00,
+/*     Report Size (8)                   */ 0x75, 0x08,
+/*     Report Count (256)                */ 0x96, 0x00, 0x01,
+/*     Feature (Var)                     */ 0xB1, 0x02,
+/* End Collection                        */ 0xC0,
+
+/* Note: the pointer report is required by specification:
+ * "The report descriptor for a multiple input device must include at least
+ * one top-level collection for the primary device and a separate top-level
+ * collection for the mouse."
+ */
+/* Usage Page (Generic Desktop)          */ 0x05, 0x01,
+/* Usage (Pointer)                       */ 0x09, 0x01,
+/* Collection (Application)              */ 0xA1, 0x01,
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_POINTER,
+/*     Usage (Pointer)                   */ 0x09, 0x01,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage Page (Button)           */ 0x05, 0x09,
+/*         Usage Minimum (Button 1)      */ 0x19, 0x01,
+/*         Usage Maximum (Button 2)      */ 0x29, 0x02,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (1)           */ 0x25, 0x01,
+/*         Report Count (2)              */ 0x95, 0x02,
+/*         Report Size (1)               */ 0x75, 0x01,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*         Report Count (1)              */ 0x95, 0x01,
+/*         Report Size (6)               */ 0x75, 0x06,
+/*         Input (Cnst,Ary,Abs)          */ 0x81, 0x01,
+/*         Usage Page (Generic Desktop)  */ 0x05, 0x01,
+/*         Usage (X)                     */ 0x09, 0x30,
+/*         Usage (Y)                     */ 0x09, 0x31,
+/*         Logical Minimum (0)           */ 0x16, 0x00, 0x00,
+/*         Logical Maximum (32K)         */ 0x26, 0xFF, 0x7F,
+/*         Physical Minimum (0)          */ 0x36, 0x00, 0x00,
+/*         Physical Maximum (32K)        */ 0x46, 0xFF, 0x7F,
+/*         Unit (None)                   */ 0x66, 0x00, 0x00,
+/*         Report Size (16)              */ 0x75, 0x10,
+/*         Report Count (2)              */ 0x95, 0x02,
+/*         Input (Var)                   */ 0x81, 0x02,
+/*     End Collection                    */ 0xC0,
+/* End Collection                        */ 0xC0,
+
+/* Usage Page (Digitizer)                */ 0x05, 0x0D,  
+/* Usage (Device configuration)          */ 0x09, 0x0E,  
+/* Collection (Application)              */ 0xA1, 0x01,  
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_DEVCONFIG,  
+/*     Usage (Device settings)           */ 0x09, 0x23,  
+/*     Collection (Logical)              */ 0xA1, 0x02,  
+/*         Usage (Device mode)           */ 0x09, 0x52,  
+/*         Usage (Device identifier)     */ 0x09, 0x53,  
+/*         Logical Minimum (0)           */ 0x15, 0x00,  
+/*         Logical Maximum (10)          */ 0x25, 0x0A,  
+/*         Report Size (8)               */ 0x75, 0x08,  
+/*         Report Count (2)              */ 0x95, 0x02,  
+/*         Feature (Var)                 */ 0xB1, 0x02,  
+/*     End Collection                    */ 0xC0,  
+/* End Collection                        */ 0xC0
 };
 
 /** @todo Do these really have to all be duplicated three times? */
@@ -454,11 +727,11 @@ static const uint8_t g_UsbHidMTIfHidDesc[] =
 {
     /* .bLength = */                0x09,
     /* .bDescriptorType = */        0x21,       /* HID */
-    /* .bcdHID = */                 0x10, 0x01, /* 1.1 */
+    /* .bcdHID = */                 0x10, 0x02, /* 2.1 */
     /* .bCountryCode = */           0,
     /* .bNumDescriptors = */        1,
     /* .bDescriptorType = */        0x22,       /* Report */
-    /* .wDescriptorLength = */      sizeof(g_UsbHidMTReportDesc), 0x00
+    /* .wDescriptorLength = */      RT_LO_U8(sizeof(g_UsbHidMTReportDesc)), RT_HI_U8(sizeof(g_UsbHidMTReportDesc))
 };
 
 static const VUSBDESCINTERFACEEX g_UsbHidMInterfaceDesc =
@@ -519,7 +792,7 @@ static const VUSBDESCINTERFACEEX g_UsbHidMTInterfaceDesc =
     /* .pvMore = */     NULL,
     /* .pvClass = */    &g_UsbHidMTIfHidDesc,
     /* .cbClass = */    sizeof(g_UsbHidMTIfHidDesc),
-    &g_aUsbHidTEndpointDescs[0],
+    &g_aUsbHidMTEndpointDescs[0],
     /* .pIAD = */ NULL,
     /* .cbIAD = */ 0
 };
@@ -739,7 +1012,11 @@ DECLINLINE(bool) usbHidQueueRemove(PUSBHIDURBQUEUE pQueue, PVUSBURB pUrb)
 {
     PVUSBURB pCur = pQueue->pHead;
     if (pCur == pUrb)
+    {
         pQueue->pHead = pUrb->Dev.pNext;
+        if (!pUrb->Dev.pNext)
+            pQueue->ppTail = &pQueue->pHead;
+    }
     else
     {
         while (pCur)
@@ -753,9 +1030,10 @@ DECLINLINE(bool) usbHidQueueRemove(PUSBHIDURBQUEUE pQueue, PVUSBURB pUrb)
         }
         if (!pCur)
             return false;
+        if (!pUrb->Dev.pNext)
+            pQueue->ppTail = &pCur->Dev.pNext;
     }
-    if (!pUrb->Dev.pNext)
-        pQueue->ppTail = &pQueue->pHead;
+    pUrb->Dev.pNext = NULL;
     return true;
 }
 
@@ -918,19 +1196,6 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
                  pReport->m.dx, pReport->m.dy, pReport->m.dz,
                  pReport->m.fButtons, cbCopy));
         break;
-    case USBHIDMODE_MULTI_TOUCH:
-        pReport->mt.idReport         = REPORTID_MOUSE;
-        pReport->mt.cContact         = pAccumulated->u.MultiTouch.cContact;
-        pReport->mt.x                = pAccumulated->u.MultiTouch.x;
-        pReport->mt.y                = pAccumulated->u.MultiTouch.y;
-        pReport->mt.fContact         = pAccumulated->u.MultiTouch.fContact;
-
-        cbCopy = sizeof(pReport->mt);
-        LogRel3(("Multi-touch event, x=%u, y=%u, cContact=%u, fContact=%02x, report size %d\n",
-                 (unsigned)pReport->mt.x, (unsigned)pReport->mt.y,
-                 (unsigned)pReport->mt.cContact, (unsigned)pReport->mt.fContact,
-                 cbCopy));
-        break;
     }
 
     /* Clear the accumulated movement. */
@@ -939,12 +1204,168 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     return cbCopy;
 }
 
+DECLINLINE(MTCONTACT *) usbHidFindMTContact(MTCONTACT *paContacts, size_t cContacts,
+                                            uint8_t u8Mask, uint8_t u8Value)
+{
+    size_t i;
+    for (i = 0; i < cContacts; i++)
+    {
+        if ((paContacts[i].status & u8Mask) == u8Value)
+        {
+            return &paContacts[i];
+        }
+    }
+
+    return NULL;
+}
+
+static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
+{
+    uint8_t i;
+    MTCONTACT *pRepContact;
+    MTCONTACT *pCurContact;
+
+    /* Number of contacts to be reported. In hybrid mode the first report contains
+     * total number of contacts and subsequent reports contain 0.
+     */
+    uint8_t cContacts = 0;
+
+    Assert(pThis->fHasPendingChanges);
+
+    if (!pThis->fTouchReporting)
+    {
+        pThis->fTouchReporting = true;
+
+        /* Update the reporting state with the new current state.
+         * Also mark all active contacts in reporting state as dirty,
+         * that is they must be reported to the guest.
+         */
+        for (i = 0; i < MT_CONTACT_MAX_COUNT; i++)
+        {
+            pRepContact = &pThis->aReportingContactState[i];
+            pCurContact = &pThis->aCurrentContactState[i];
+
+            if (pCurContact->status & MT_CONTACT_S_ACTIVE)
+            {
+                if (pCurContact->status & MT_CONTACT_S_REUSED)
+                {
+                    pCurContact->status &= ~MT_CONTACT_S_REUSED;
+
+                    /* Keep x,y. Will report lost contact at this point. */
+                    pRepContact->id     = pCurContact->oldId;
+                    pRepContact->flags  = 0;
+                    pRepContact->status = MT_CONTACT_S_REUSED;
+                }
+                else if (pThis->aCurrentContactState[i].status & MT_CONTACT_S_CANCELLED)
+                {
+                    pCurContact->status &= ~(MT_CONTACT_S_CANCELLED | MT_CONTACT_S_ACTIVE);
+
+                    /* Keep x,y. Will report lost contact at this point. */
+                    pRepContact->id     = pCurContact->id;
+                    pRepContact->flags  = 0;
+                    pRepContact->status = 0;
+                }
+                else
+                {
+                    if (pCurContact->flags == 0)
+                    {
+                        pCurContact->status &= ~MT_CONTACT_S_ACTIVE; /* Contact disapeared. */
+                    }
+
+                    pRepContact->x      = pCurContact->x;
+                    pRepContact->y      = pCurContact->y;
+                    pRepContact->id     = pCurContact->id;
+                    pRepContact->flags  = pCurContact->flags;
+                    pRepContact->status = 0;
+                }
+
+                cContacts++;
+
+                pRepContact->status |= MT_CONTACT_S_DIRTY;
+            }
+            else
+            {
+                pRepContact->status = 0;
+            }
+        }
+    }
+
+    /* Report current state. */
+    USBHIDMT_REPORT *p = (USBHIDMT_REPORT *)&pUrb->abData[0];
+    RT_ZERO(*p);
+
+    p->idReport = REPORTID_TOUCH_EVENT;
+    p->cContacts = cContacts;
+
+    uint8_t iReportedContact;
+    for (iReportedContact = 0; iReportedContact < MT_CONTACTS_PER_REPORT; iReportedContact++)
+    {
+        /* Find the next not reported contact. */
+        pRepContact = usbHidFindMTContact(pThis->aReportingContactState, RT_ELEMENTS(pThis->aReportingContactState),
+                                          MT_CONTACT_S_DIRTY, MT_CONTACT_S_DIRTY);
+
+        if (!pRepContact)
+        {
+            LogRel3(("usbHid: no more touch contacts to report\n"));
+            break;
+        }
+
+        if (pRepContact->status & MT_CONTACT_S_REUSED)
+        {
+            /* Do not clear DIRTY flag for contacts which were reused.
+             * Because two reports must be generated:
+             * one for old contact off, and the second for new contact on.
+             */
+            pRepContact->status &= ~MT_CONTACT_S_REUSED;
+        }
+        else
+        {
+            pRepContact->status &= ~MT_CONTACT_S_DIRTY;
+        }
+
+        p->aContacts[iReportedContact].fContact = pRepContact->flags;
+        p->aContacts[iReportedContact].cContact = pRepContact->id;
+        p->aContacts[iReportedContact].x = pRepContact->x >> pThis->u8CoordShift;
+        p->aContacts[iReportedContact].y = pRepContact->y >> pThis->u8CoordShift;
+    }
+
+    p->u32ScanTime = pThis->u32LastTouchScanTime * 10;
+
+    Assert(iReportedContact > 0);
+
+    /* Reset TouchReporting if all contacts reported. */
+    pRepContact = usbHidFindMTContact(pThis->aReportingContactState, RT_ELEMENTS(pThis->aReportingContactState),
+                                      MT_CONTACT_S_DIRTY, MT_CONTACT_S_DIRTY);
+
+    if (!pRepContact)
+    {
+        LogRel3(("usbHid: all touch contacts reported\n"));
+        pThis->fTouchReporting = false;
+        pThis->fHasPendingChanges = false;
+    }
+    else
+    {
+        pThis->fHasPendingChanges = true;
+    }
+
+    LogRel3(("usbHid: reporting touch contact:\n%.*Rhxd\n", sizeof(USBHIDMT_REPORT), p));
+    return usbHidCompleteOk(pThis, pUrb, sizeof(USBHIDMT_REPORT));
+}
+
 /**
  * Sends a state report to the host if there is a pending URB.
  */
 static int usbHidSendReport(PUSBHID pThis)
 {
     PVUSBURB    pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
+
+    if (pThis->enmMode == USBHIDMODE_MULTI_TOUCH)
+    {
+        /* This device uses a different reporting method and fHasPendingChanges maintenance. */
+        if (pUrb)
+            return usbHidSendMultiTouchReport(pThis, pUrb);
+        return VINF_SUCCESS;
+    }
 
     if (pUrb)
     {
@@ -1029,34 +1450,168 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMT}
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMultiTouch}
  */
-static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
-                                               uint32_t x, uint32_t y,
-                                               uint32_t cContact,
-                                               uint32_t fContact)
+static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface,
+                                                       uint8_t cContacts,
+                                                       const uint64_t *pau64Contacts,
+                                                       uint32_t u32ScanTime)
 {
+    uint8_t i;
+    uint8_t j;
+
+    /* Make a copy of new contacts */
+    MTCONTACT *paNewContacts = (MTCONTACT *)RTMemTmpAlloc(sizeof(MTCONTACT) * cContacts);
+    if (!paNewContacts)
+        return VERR_NO_MEMORY;
+
+    for (i = 0; i < cContacts; i++)
+    {
+        paNewContacts[i].x      = RT_LO_U16(RT_LO_U32(pau64Contacts[i]));
+        paNewContacts[i].y      = RT_HI_U16(RT_LO_U32(pau64Contacts[i]));
+        paNewContacts[i].id     = RT_BYTE1(RT_HI_U32(pau64Contacts[i]));
+        paNewContacts[i].flags  = RT_BYTE2(RT_HI_U32(pau64Contacts[i])) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
+        paNewContacts[i].status = MT_CONTACT_S_DIRTY;
+        paNewContacts[i].oldId  = 0; /* Not used. */
+    }
+
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
-    if (pThis->fHasPendingChanges)
-        return VERR_TRY_AGAIN;
+    MTCONTACT *pCurContact = NULL;
+    MTCONTACT *pNewContact = NULL;
+
     RTCritSectEnter(&pThis->CritSect);
 
     Assert(pThis->enmMode == USBHIDMODE_MULTI_TOUCH);
 
-    /* Accumulate movement - the events from the front end may arrive
-     * at a much higher rate than USB can handle. Probably not a real issue
-     * when only the Z axis is relative (X/Y movement isn't technically
-     * accumulated and only the last value is used).
+    /* Maintain a state of all current contacts.
+     * Intr URBs will be completed according to the state.
      */
-    pThis->PtrDelta.u.MultiTouch.fContact = fContact;
-    pThis->PtrDelta.u.MultiTouch.x        = x >> pThis->u8CoordShift;
-    pThis->PtrDelta.u.MultiTouch.y        = y >> pThis->u8CoordShift;
-    pThis->PtrDelta.u.MultiTouch.cContact = cContact;
+
+    /* Mark all existing contacts as dirty. */
+    for (i = 0; i < RT_ELEMENTS(pThis->aCurrentContactState); i++)
+        pThis->aCurrentContactState[i].status |= MT_CONTACT_S_DIRTY;
+
+    /* Update existing contacts and mark new contacts. */
+    for (i = 0; i < cContacts; i++)
+    {
+        pNewContact = &paNewContacts[i];
+
+        /* Find existing contact with the same id. */
+        pCurContact = NULL;
+        for (j = 0; j < RT_ELEMENTS(pThis->aCurrentContactState); j++)
+        {
+            if (   (pThis->aCurrentContactState[j].status & MT_CONTACT_S_ACTIVE) != 0
+                && pThis->aCurrentContactState[j].id == pNewContact->id)
+            {
+                pCurContact = &pThis->aCurrentContactState[j];
+                break;
+            }
+        }
+
+        if (pCurContact)
+        {
+            pNewContact->status &= ~MT_CONTACT_S_DIRTY;
+
+            pCurContact->x = pNewContact->x;
+            pCurContact->y = pNewContact->y;
+            if (pCurContact->flags == 0) /* Contact disappeared already. */
+            {
+                if ((pCurContact->status & MT_CONTACT_S_REUSED) == 0)
+                {
+                    pCurContact->status |= MT_CONTACT_S_REUSED; /* Report to the guest that the contact not in touch. */
+                    pCurContact->oldId = pCurContact->id;
+                }
+            }
+            pCurContact->flags = pNewContact->flags;
+            pCurContact->status &= ~MT_CONTACT_S_DIRTY;
+        }
+    }
+
+    /* Append new contacts (the dirty one in the paNewContacts). */
+    for (i = 0; i < cContacts; i++)
+    {
+        pNewContact = &paNewContacts[i];
+
+        if (pNewContact->status & MT_CONTACT_S_DIRTY)
+        {
+            /* It is a new contact, copy is to one of not ACTIVE or not updated existing contacts. */
+            pCurContact = usbHidFindMTContact(pThis->aCurrentContactState, RT_ELEMENTS(pThis->aCurrentContactState),
+                                              MT_CONTACT_S_ACTIVE, 0);
+
+            if (pCurContact)
+            {
+                *pCurContact = *pNewContact;
+                pCurContact->status = MT_CONTACT_S_ACTIVE; /* Reset status. */
+            }
+            else
+            {
+                /* Dirty existing contacts can be reused. */
+                pCurContact = usbHidFindMTContact(pThis->aCurrentContactState, RT_ELEMENTS(pThis->aCurrentContactState),
+                                                  MT_CONTACT_S_ACTIVE | MT_CONTACT_S_DIRTY,
+                                                  MT_CONTACT_S_ACTIVE | MT_CONTACT_S_DIRTY);
+
+                if (pCurContact)
+                {
+                    pCurContact->x = pNewContact->x;
+                    pCurContact->y = pNewContact->y;
+                    if ((pCurContact->status & MT_CONTACT_S_REUSED) == 0)
+                    {
+                        pCurContact->status |= MT_CONTACT_S_REUSED; /* Report to the guest that the contact not in touch. */
+                        pCurContact->oldId = pCurContact->id;
+                    }
+                    pCurContact->flags = pNewContact->flags;
+                    pCurContact->status &= ~MT_CONTACT_S_DIRTY;
+                }
+                else
+                {
+                    LogRel3(("usbHid: dropped new contact: %d,%d id %d flags %RX8 status %RX8 oldId %d\n",
+                             pNewContact->x,
+                             pNewContact->y,
+                             pNewContact->id,
+                             pNewContact->flags,
+                             pNewContact->status,
+                             pNewContact->oldId
+                           ));
+                }
+            }
+        }
+    }
+
+    /* Mark still dirty existing contacts as cancelled, because a new set of contacts does not include them. */
+    for (i = 0; i < RT_ELEMENTS(pThis->aCurrentContactState); i++)
+    {
+        pCurContact = &pThis->aCurrentContactState[i];
+        if (pCurContact->status & MT_CONTACT_S_DIRTY)
+        {
+            pCurContact->status |= MT_CONTACT_S_CANCELLED;
+            pCurContact->status &= ~MT_CONTACT_S_DIRTY;
+        }
+    }
+
+    pThis->u32LastTouchScanTime = u32ScanTime;
+
+    LogRel3(("usbHid: scanTime (ms): %d\n", pThis->u32LastTouchScanTime));
+    for (i = 0; i < RT_ELEMENTS(pThis->aCurrentContactState); i++)
+    {
+        LogRel3(("usbHid: contact state[%d]: %d,%d id %d flags %RX8 status %RX8 oldId %d\n",
+                  i,
+                  pThis->aCurrentContactState[i].x,
+                  pThis->aCurrentContactState[i].y,
+                  pThis->aCurrentContactState[i].id,
+                  pThis->aCurrentContactState[i].flags,
+                  pThis->aCurrentContactState[i].status,
+                  pThis->aCurrentContactState[i].oldId
+                ));
+    }
+
+    pThis->fHasPendingChanges = true;
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
 
     RTCritSectLeave(&pThis->CritSect);
+
+    RTMemTmpFree(paNewContacts);
     return VINF_SUCCESS;
 }
 
@@ -1066,7 +1621,6 @@ static DECLCALLBACK(int) usbHidMousePutEventMT(PPDMIMOUSEPORT pInterface,
 static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
-    LogRelFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pUsbIns->iInstance, cMillies));
 
     RTCritSectEnter(&pThis->CritSect);
 
@@ -1156,11 +1710,11 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
 
         case USBHIDREQSTATE_READY:
             usbHidQueueAddTail(&pThis->ToHostQueue, pUrb);
+            LogRelFlow(("usbHidHandleIntrDevToHost: Added %p:%s to the queue\n",
+                        pUrb, pUrb->pszDesc));
             /* If a report is pending, send it right away. */
             if (pThis->fHasPendingChanges)
                 usbHidSendReport(pThis);
-            LogRelFlow(("usbHidHandleIntrDevToHost: Added %p:%s to the queue\n",
-                        pUrb, pUrb->pszDesc));
             return VINF_SUCCESS;
 
         /*
@@ -1173,6 +1727,107 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
     }
 }
 
+#define GET_REPORT   0x01
+#define GET_IDLE     0x02
+#define GET_PROTOCOL 0x03
+#define SET_REPORT   0x09
+#define SET_IDLE     0x0A
+#define SET_PROTOCOL 0x0B
+
+static uint8_t sau8QASampleBlob[256] = 
+{
+    0xfc, 0x28, 0xfe, 0x84, 0x40, 0xcb, 0x9a, 0x87,
+    0x0d, 0xbe, 0x57, 0x3c, 0xb6, 0x70, 0x09, 0x88,
+    0x07, 0x97, 0x2d, 0x2b, 0xe3, 0x38, 0x34, 0xb6,
+    0x6c, 0xed, 0xb0, 0xf7, 0xe5, 0x9c, 0xf6, 0xc2,
+    0x2e, 0x84, 0x1b, 0xe8, 0xb4, 0x51, 0x78, 0x43,
+    0x1f, 0x28, 0x4b, 0x7c, 0x2d, 0x53, 0xaf, 0xfc,
+    0x47, 0x70, 0x1b, 0x59, 0x6f, 0x74, 0x43, 0xc4,
+    0xf3, 0x47, 0x18, 0x53, 0x1a, 0xa2, 0xa1, 0x71,
+    0xc7, 0x95, 0x0e, 0x31, 0x55, 0x21, 0xd3, 0xb5,
+    0x1e, 0xe9, 0x0c, 0xba, 0xec, 0xb8, 0x89, 0x19,
+    0x3e, 0xb3, 0xaf, 0x75, 0x81, 0x9d, 0x53, 0xb9,
+    0x41, 0x57, 0xf4, 0x6d, 0x39, 0x25, 0x29, 0x7c,
+    0x87, 0xd9, 0xb4, 0x98, 0x45, 0x7d, 0xa7, 0x26,
+    0x9c, 0x65, 0x3b, 0x85, 0x68, 0x89, 0xd7, 0x3b,
+    0xbd, 0xff, 0x14, 0x67, 0xf2, 0x2b, 0xf0, 0x2a,
+    0x41, 0x54, 0xf0, 0xfd, 0x2c, 0x66, 0x7c, 0xf8,
+    0xc0, 0x8f, 0x33, 0x13, 0x03, 0xf1, 0xd3, 0xc1,
+    0x0b, 0x89, 0xd9, 0x1b, 0x62, 0xcd, 0x51, 0xb7,
+    0x80, 0xb8, 0xaf, 0x3a, 0x10, 0xc1, 0x8a, 0x5b,
+    0xe8, 0x8a, 0x56, 0xf0, 0x8c, 0xaa, 0xfa, 0x35,
+    0xe9, 0x42, 0xc4, 0xd8, 0x55, 0xc3, 0x38, 0xcc,
+    0x2b, 0x53, 0x5c, 0x69, 0x52, 0xd5, 0xc8, 0x73,
+    0x02, 0x38, 0x7c, 0x73, 0xb6, 0x41, 0xe7, 0xff,
+    0x05, 0xd8, 0x2b, 0x79, 0x9a, 0xe2, 0x34, 0x60,
+    0x8f, 0xa3, 0x32, 0x1f, 0x09, 0x78, 0x62, 0xbc,
+    0x80, 0xe3, 0x0f, 0xbd, 0x65, 0x20, 0x08, 0x13,
+    0xc1, 0xe2, 0xee, 0x53, 0x2d, 0x86, 0x7e, 0xa7,
+    0x5a, 0xc5, 0xd3, 0x7d, 0x98, 0xbe, 0x31, 0x48,
+    0x1f, 0xfb, 0xda, 0xaf, 0xa2, 0xa8, 0x6a, 0x89,
+    0xd6, 0xbf, 0xf2, 0xd3, 0x32, 0x2a, 0x9a, 0xe4,
+    0xcf, 0x17, 0xb7, 0xb8, 0xf4, 0xe1, 0x33, 0x08,
+    0x24, 0x8b, 0xc4, 0x43, 0xa5, 0xe5, 0x24, 0xc2
+};
+
+static int usbHidRequestClass(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
+{
+    PVUSBSETUP pSetup = (PVUSBSETUP)&pUrb->abData[0];
+
+    if (pThis->enmMode != USBHIDMODE_MULTI_TOUCH)
+    {
+        LogRelFlow(("usbHid: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
+                    pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
+                    pSetup->wIndex, pSetup->wLength));
+        return usbHidCompleteStall(pThis, pEp, pUrb, "Unsupported class req");
+    }
+
+    int rc = VINF_SUCCESS;
+
+    switch (pSetup->bRequest)
+    {
+        case SET_REPORT:
+        case GET_REPORT:
+        {
+            uint8_t u8ReportType = RT_HI_U8(pSetup->wValue);
+            uint8_t u8ReportID = RT_LO_U8(pSetup->wValue);
+            LogRelFlow(("usbHid: %s: type %d, ID %d, data\n%.*Rhxd\n",
+                        pSetup->bRequest == GET_REPORT? "GET_REPORT": "SET_REPORT",
+                        u8ReportType, u8ReportID,
+                        pUrb->cbData - sizeof(VUSBSETUP), &pUrb->abData[sizeof(VUSBSETUP)]));
+            uint32_t cbData = 0;
+            if (pSetup->bRequest == GET_REPORT)
+            {
+                if (u8ReportType == 3 && u8ReportID == REPORTID_TOUCH_MAX_COUNT)
+                {
+                    pUrb->abData[sizeof(VUSBSETUP) + 0] = REPORTID_TOUCH_MAX_COUNT;
+                    pUrb->abData[sizeof(VUSBSETUP) + 1] = MT_CONTACT_MAX_COUNT; /* Contact count maximum. */
+                    pUrb->abData[sizeof(VUSBSETUP) + 2] = 0;  /* Device identifier */
+                    cbData = 3;
+                }
+                else if (u8ReportType == 3 && u8ReportID == REPORTID_TOUCH_QABLOB)
+                {
+                    uint32_t cbLeft = pUrb->cbData;
+                    pUrb->abData[sizeof(VUSBSETUP) + 0] = REPORTID_TOUCH_QABLOB;  /* Report Id. */
+                    memcpy(&pUrb->abData[sizeof(VUSBSETUP) + 1],
+                           sau8QASampleBlob, sizeof(sau8QASampleBlob));
+                    cbData = sizeof(sau8QASampleBlob) + 1;
+                }
+            }
+
+            rc = usbHidCompleteOk(pThis, pUrb, sizeof(VUSBSETUP) + cbData);
+        } break;
+        default:
+        {
+            LogRelFlow(("usbHid: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
+                        pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
+                        pSetup->wIndex, pSetup->wLength));
+            rc = usbHidCompleteStall(pThis, pEp, pUrb, "Unsupported class req MT");
+        }
+    }
+
+    return rc;
+}
 
 /**
  * Handles request sent to the default control pipe.
@@ -1361,6 +2016,19 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     pSetup->wIndex, pSetup->wLength));
 
         usbHidCompleteStall(pThis, pEp, pUrb, "TODO: standard request stuff");
+    }
+    else if ((pSetup->bmRequestType & VUSB_REQ_MASK) == VUSB_REQ_CLASS)
+    {
+        /* Only VUSB_TO_INTERFACE is allowed. */
+        if ((pSetup->bmRequestType & VUSB_RECIP_MASK) == VUSB_TO_INTERFACE)
+        {
+            return usbHidRequestClass(pThis, pEp, pUrb);
+        }
+
+        LogRelFlow(("usbHid: invalid recipient of class req: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
+                    pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue,
+                    pSetup->wIndex, pSetup->wLength));
+        return usbHidCompleteStall(pThis, pEp, pUrb, "Invalid recip");
     }
     else
     {
@@ -1581,7 +2249,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;
     pThis->Lun0.IPort.pfnPutEventAbs    = usbHidMousePutEventAbs;
-    pThis->Lun0.IPort.pfnPutEventMT     = usbHidMousePutEventMT;
+    pThis->Lun0.IPort.pfnPutEventMultiTouch = usbHidMousePutEventMultiTouch;
 
     /*
      * Attach the mouse driver.

@@ -355,6 +355,7 @@ private:
                                                      uint32_t u32Method,
                                                      const void *pvEvent,
                                                      uint32_t cbEvent);
+    uint64_t mu64TouchInputTimestampMCS;
 };
 
 

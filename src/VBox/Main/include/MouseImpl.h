@@ -65,8 +65,8 @@ public:
                              LONG buttonState);
     STDMETHOD(PutMouseEventAbsolute)(LONG x, LONG y, LONG dz, LONG dw,
                                      LONG buttonState);
-    STDMETHOD(PutMouseEventMultiTouch)(LONG x, LONG y, LONG contactID,
-                                       LONG contactState);
+    STDMETHOD(PutEventMultiTouch)(LONG aCount, ComSafeArrayIn(LONG64, aContacts), ULONG aScanTime);
+    STDMETHOD(PutEventMultiTouchString)(LONG aCount, IN_BSTR aContacts, ULONG aScanTime);
     STDMETHOD(COMGETTER(EventSource)) (IEventSource ** aEventSource);
 
     static const PDMDRVREG  DrvReg;
@@ -97,11 +97,13 @@ private:
                                      int32_t dw, uint32_t fButtons);
     HRESULT reportMTEventToMouseDev(int32_t x, int32_t z, uint32_t cContact,
                                     uint32_t fContact);
+    HRESULT reportMultiTouchEventToDevice(uint8_t cContacts, const uint64_t *pau64Contacts, uint32_t u32ScanTime);
     HRESULT reportAbsEventToVMMDev(int32_t x, int32_t y);
     HRESULT reportAbsEvent(int32_t x, int32_t y, int32_t dz, int32_t dw,
                            uint32_t fButtons, bool fUsesVMMDevEvent);
     HRESULT convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
                               bool *pfValid);
+    HRESULT putEventMultiTouch(LONG aCount, LONG64 *paContacts, ULONG aScanTime);
 
     void getDeviceCaps(bool *pfAbs, bool *pfRel, bool *fMT);
     void sendMouseCapsNotifications(void);

@@ -327,26 +327,33 @@ typedef struct PDMIMOUSEPORT
                                               int32_t dz, int32_t dw,
                                               uint32_t fButtons));
     /**
-     * Puts a multi-touch pointer event.
+     * Puts a multi-touch event.
      *
-     * This is called by the source of mouse events.  The event will be passed up
-     * until the topmost driver, which then calls the registered event handler.
-     *
-     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     * @returns VBox status code. Return VERR_TRY_AGAIN if you cannot process the
      *          event now and want it to be repeated at a later point.
      *
      * @param   pInterface          Pointer to this interface structure.
-     * @param   x                   The X value, in the range 0 to 0xffff.
-     * @param   y                   The Y value, in the range 0 to 0xffff.
-     * @param   cContact            The number of the touch contact.
-     * @param   fContact            Whether the touch is currently in contact.
+     * @param   cContacts           How many touch contacts in this event.
+     * @param   pau64Contacts       Pointer to array of packed contact information.
+     *                              Each 64bit element contains:
+     *                              Bits 0..15:  X coordinate in pixels (signed).
+     *                              Bits 16..31: Y coordinate in pixels (signed).
+     *                              Bits 32..39: contact identifier.
+     *                              Bit 40:      "in contact" flag, which indicates that
+     *                                           there is a contact with the touch surface.
+     *                              Bit 41:      "in range" flag, the contact is close enough
+     *                                           to the touch surface.
+     *                              All other bits are reserved for future use and must be set to 0.
+     * @param   u32ScanTime         Timestamp of this event in milliseconds. Only relative
+     *                              time between event is important.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventMT,(PPDMIMOUSEPORT pInterface,
-                                             uint32_t x, uint32_t y,
-                                             uint32_t cContact, uint32_t fContact));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventMultiTouch,(PPDMIMOUSEPORT pInterface,
+                                                     uint8_t cContacts,
+                                                     const uint64_t *pau64Contacts,
+                                                     uint32_t u32ScanTime));
 } PDMIMOUSEPORT;
 /** PDMIMOUSEPORT interface ID. */
-#define PDMIMOUSEPORT_IID                       "7abcf389-3f7c-4a62-8d19-65102da58ef3"
+#define PDMIMOUSEPORT_IID                       "359364f0-9fa3-4490-a6b4-7ed771901c93"
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
  * @{ */

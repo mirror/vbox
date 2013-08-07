@@ -1390,15 +1390,15 @@ static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 /**
- * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventMT}
+ * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventMultiTouch}
  */
-static DECLCALLBACK(int) kbdMousePutEventMT(PPDMIMOUSEPORT pInterface,
-                                            uint32_t x, uint32_t y,
-                                            uint32_t cContact,
-                                            uint32_t fContact)
+static DECLCALLBACK(int) kbdMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface,
+                                                    uint8_t cContacts,
+                                                    const uint64_t *pau64Contacts,
+                                                    uint32_t u32ScanTime)
 {
     AssertFailedReturn(VERR_NOT_SUPPORTED);
-    NOREF(pInterface); NOREF(x); NOREF(y); NOREF(cContact); NOREF(fContact);
+    NOREF(pInterface); NOREF(cContacts); NOREF(pau64Contacts); NOREF(u32ScanTime);
 }
 
 
@@ -1567,7 +1567,7 @@ static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     pThis->Mouse.IBase.pfnQueryInterface    = kbdMouseQueryInterface;
     pThis->Mouse.IPort.pfnPutEvent          = kbdMousePutEvent;
     pThis->Mouse.IPort.pfnPutEventAbs       = kbdMousePutEventAbs;
-    pThis->Mouse.IPort.pfnPutEventMT        = kbdMousePutEventMT;
+    pThis->Mouse.IPort.pfnPutEventMultiTouch = kbdMousePutEventMultiTouch;
 
     /*
      * Register I/O ports, save state, keyboard event handler and mouse event handlers.
