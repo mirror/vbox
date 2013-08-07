@@ -1304,7 +1304,7 @@ HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
     }
     //  Set to passed value or if default used/attempted (even if error condition) use empty string.
     m->strLoggingLevel = (useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT) ? "" : useLoggingLevel);
-    return rc;
+    return (RT_SUCCESS(rc) ? S_OK : E_FAIL);
 }
 
 HRESULT SystemProperties::setDefaultHardDiskFormat(const Utf8Str &aFormat)
