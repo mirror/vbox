@@ -62,6 +62,8 @@ const int XKeyRelease = KeyRelease;
 #include "CFramebuffer.h"
 #include "CDisplay.h"
 
+#include <iprt/time.h>
+
 /* Factory function to create mouse-handler: */
 UIMouseHandler* UIMouseHandler::create(UIMachineLogic *pMachineLogic,
                                        UIVisualStateType visualStateType)
@@ -906,7 +908,10 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
     /* Get mouse: */
     CMouse mouse = session().GetConsole().GetMouse();
 
+    QVector<LONG64> contacts(pTouchEvent->touchPoints().size());
+
     /* Pass all multi-touch events into guest: */
+    int i = 0;
     foreach (const QTouchEvent::TouchPoint &touchPoint, pTouchEvent->touchPoints())
     {
         /* Get touch-point origin: */
@@ -928,9 +933,16 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         /* Pass absolute touch-point data: */
         LogRelFlow(("UIMouseHandler::multiTouchEvent: Origin: %dx%d, State: %d\n",
                     currentTouchPoint.x(), currentTouchPoint.y(), iTouchPointState));
-        mouse.PutMouseEventMultiTouch((LONG)currentTouchPoint.x(), (LONG)currentTouchPoint.y(),
-                                      (LONG)touchPoint.id(), iTouchPointState);
+
+        contacts[i++] = RT_MAKE_U64_FROM_U16((uint16_t)currentTouchPoint.x(),
+                                             (uint16_t)currentTouchPoint.y(),
+                                             RT_MAKE_U16(touchPoint.id(), iTouchPointState),
+                                             0);
     }
+
+    mouse.PutEventMultiTouch(pTouchEvent->touchPoints().size(),
+                             contacts,
+                             (ULONG)RTTimeMilliTS());
 
     /* Eat by default? */
     return true;

@@ -60,7 +60,7 @@ typedef struct DRVMOUSEQUEUE
 /**
  * Event type for @a DRVMOUSEQUEUEITEM
  */
-enum EVENTTYPE { RELATIVE, ABSOLUTE, MULTITOUCH };
+enum EVENTTYPE { RELATIVE, ABSOLUTE };
 
 /**
  * Mouse queue item.
@@ -89,13 +89,6 @@ typedef struct DRVMOUSEQUEUEITEM
             int32_t     dz;
             int32_t     dw;
         } Absolute;
-        struct
-        {
-            uint32_t    fContact;
-            uint32_t    x;
-            uint32_t    y;
-            uint32_t    cContact;
-        } MultiTouch;
     } u;
 } DRVMOUSEQUEUEITEM, *PDRVMOUSEQUEUEITEM;
 
@@ -180,33 +173,14 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface,
 }
 
 
-/**
- * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventMT}
- */
-static DECLCALLBACK(int) drvMouseQueuePutEventMT(PPDMIMOUSEPORT pInterface,
-                                                 uint32_t x, uint32_t y,
-                                                 uint32_t cContact,
-                                                 uint32_t fContact)
+static DECLCALLBACK(int) drvMouseQueuePutEventMultiTouch(PPDMIMOUSEPORT pInterface,
+                                                         uint8_t cContacts,
+                                                         const uint64_t *pau64Contacts,
+                                                         uint32_t u32ScanTime)
 {
-    PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
-    if (pDrv->fInactive)
-        return VINF_SUCCESS;
-
-    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
-    if (pItem)
-    {
-        RT_ZERO(pItem->u.padding);
-        pItem->enmType               = MULTITOUCH;
-        pItem->u.MultiTouch.x        = x;
-        pItem->u.MultiTouch.y        = y;
-        pItem->u.MultiTouch.cContact = cContact;
-        pItem->u.MultiTouch.fContact = fContact;
-        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
-        return VINF_SUCCESS;
-    }
-    return VERR_PDM_NO_QUEUE_ITEMS;
+    PDRVMOUSEQUEUE pThis = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
+    return pThis->pUpPort->pfnPutEventMultiTouch(pThis->pUpPort, cContacts, pau64Contacts, u32ScanTime);
 }
-
 
 /* -=-=-=-=- IConnector -=-=-=-=- */
 
@@ -259,12 +233,6 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
                                             pItem->u.Absolute.dz,
                                             pItem->u.Absolute.dw,
                                             pItem->u.Absolute.fButtons);
-    else if (pItem->enmType == MULTITOUCH)
-        rc = pThis->pUpPort->pfnPutEventMT(pThis->pUpPort,
-                                           pItem->u.MultiTouch.x,
-                                           pItem->u.MultiTouch.y,
-                                           pItem->u.MultiTouch.cContact,
-                                           pItem->u.MultiTouch.fContact);
     else
         return false;
     return RT_SUCCESS(rc);
@@ -365,7 +333,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IMousePort. */
     pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
     pDrv->IPort.pfnPutEventAbs              = drvMouseQueuePutEventAbs;
-    pDrv->IPort.pfnPutEventMT               = drvMouseQueuePutEventMT;
+    pDrv->IPort.pfnPutEventMultiTouch       = drvMouseQueuePutEventMultiTouch;
 
     /*
      * Get the IMousePort interface of the above driver/device.

@@ -2814,6 +2814,8 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
 
             if (pHeader->u16EventId == VRDEINPUT_EVENTID_TOUCH)
             {
+                IMouse *pMouse = pThis->mConsole->getMouse();
+
                 VRDEINPUT_TOUCH_EVENT_PDU *p = (VRDEINPUT_TOUCH_EVENT_PDU *)pHeader;
 
                 uint16_t iFrame;
@@ -2821,17 +2823,18 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
                 {
                     VRDEINPUT_TOUCH_FRAME *pFrame = &p->aFrames[iFrame];
 
+                    com::SafeArray<LONG64> aContacts(pFrame->u16ContactCount);
+
                     uint16_t iContact;
                     for (iContact = 0; iContact < pFrame->u16ContactCount; iContact++)
                     {
                         VRDEINPUT_CONTACT_DATA *pContact = &pFrame->aContacts[iContact];
 
-                        LONG x = pContact->i32X;
-                        LONG y = pContact->i32Y;
-                        LONG cContact = pContact->u8ContactId;
-                        LONG contactState = TouchContactState_None;
+                        int16_t x = (int16_t)(pContact->i32X + 1);
+                        int16_t y = (int16_t)(pContact->i32Y + 1);
+                        uint8_t contactId = pContact->u8ContactId;
+                        uint8_t contactState = TouchContactState_None;
 
-                        /* @todo */
                         if (pContact->u32ContactFlags & VRDEINPUT_CONTACT_FLAG_INRANGE)
                         {
                             contactState |= TouchContactState_InRange;
@@ -2840,9 +2843,25 @@ int ConsoleVRDPServer::VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDL
                         {
                             contactState |= TouchContactState_InContact;
                         }
-	
-                        HRESULT hrc = pThis->mConsole->getMouse()->PutMouseEventMultiTouch(x, y, cContact, contactState);
+
+                        aContacts[iContact] = RT_MAKE_U64_FROM_U16((uint16_t)x,
+                                                                   (uint16_t)y,
+                                                                   RT_MAKE_U16(contactId, contactState),
+                                                                   0);
                     }
+
+                    if (pFrame->u64FrameOffset == 0)
+                    {
+                        pThis->mu64TouchInputTimestampMCS = 0;
+                    }
+                    else
+                    {
+                        pThis->mu64TouchInputTimestampMCS += pFrame->u64FrameOffset;
+                    }
+
+                    pMouse->PutEventMultiTouch(pFrame->u16ContactCount,
+                                               ComSafeArrayAsInParam(aContacts),
+                                               (ULONG)(pThis->mu64TouchInputTimestampMCS / 1000)); /* Micro->milliseconds. */
                 }
             }
             else if (pHeader->u16EventId == VRDEINPUT_EVENTID_DISMISS_HOVERING_CONTACT)

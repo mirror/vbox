@@ -361,42 +361,42 @@ HRESULT Mouse::reportAbsEventToMouseDev(int32_t x, int32_t y,
     return S_OK;
 }
 
-
-/**
- * Send a multi-touch event to the first enabled emulated multi-touch device.
- *
- * @returns   COM status code
- */
-HRESULT Mouse::reportMTEventToMouseDev(int32_t x, int32_t y,
-                                       uint32_t cContact, uint32_t fContact)
+HRESULT Mouse::reportMultiTouchEventToDevice(uint8_t cContacts,
+                                             const uint64_t *pau64Contacts,
+                                             uint32_t u32ScanTime)
 {
-    if (   x < VMMDEV_MOUSE_RANGE_MIN
-        || x > VMMDEV_MOUSE_RANGE_MAX)
-        return S_OK;
-    if (   y < VMMDEV_MOUSE_RANGE_MIN
-        || y > VMMDEV_MOUSE_RANGE_MAX)
-        return S_OK;
+    HRESULT hrc = S_OK;
+
     PPDMIMOUSEPORT pUpPort = NULL;
     {
         AutoReadLock aLock(this COMMA_LOCKVAL_SRC_POS);
 
-        for (unsigned i = 0; !pUpPort && i < MOUSE_MAX_DEVICES; ++i)
+        unsigned i;
+        for (i = 0; i < MOUSE_MAX_DEVICES; ++i)
         {
             if (   mpDrv[i]
                 && (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_MULTI_TOUCH))
+            {
                 pUpPort = mpDrv[i]->pUpPort;
+                break;
+            }
         }
     }
-    if (!pUpPort)
-        return S_OK;
 
-    int vrc = pUpPort->pfnPutEventMT(pUpPort, x, y,
-                                     cContact, fContact);
-    if (RT_FAILURE(vrc))
-        return setError(VBOX_E_IPRT_ERROR,
-                        tr("Could not send the touch event to the virtual device (%Rrc)"),
-                        vrc);
-    return S_OK;
+    if (pUpPort)
+    {
+        int vrc = pUpPort->pfnPutEventMultiTouch(pUpPort, cContacts, pau64Contacts, u32ScanTime);
+        if (RT_FAILURE(vrc))
+            hrc = setError(VBOX_E_IPRT_ERROR,
+                           tr("Could not send the multi-touch event to the virtual device (%Rrc)"),
+                           vrc);
+    }
+    else
+    {
+        hrc = E_UNEXPECTED;
+    }
+
+    return hrc;
 }
 
 
@@ -637,38 +637,149 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 }
 
 /**
- * @interface_method_impl{IMouse,putMouseEventMultiTouch}
+ * Send a multi-touch event. This requires multi-touch pointing device emulation.
+ * @note all calls out of this object are made with no locks held!
+ *
+ * @returns COM status code.
+ * @param aCount     Number of contacts.
+ * @param aContacts  Information about each contact.
+ * @param aScanTime  Timestamp.
  */
-STDMETHODIMP Mouse::PutMouseEventMultiTouch(LONG x, LONG y, LONG cContact,
-                                            LONG contactState)
+STDMETHODIMP Mouse::PutEventMultiTouch(LONG aCount,
+                                       ComSafeArrayIn(LONG64, aContacts),
+                                       ULONG aScanTime)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    LogRel3(("%s: x=%d, y=%d, cContact=%d, contactState=%d\n",
-             __PRETTY_FUNCTION__, x, y, cContact, contactState));
+    com::SafeArray <LONG64> arrayContacts(ComSafeArrayInArg(aContacts));
 
-    int32_t xAdj, yAdj;
-    bool fValid;
+    LogRel3(("%s: aCount %d(actual %d), aScanTime %u\n",
+             __FUNCTION__, aCount, arrayContacts.size(), aScanTime));
 
-    /** @todo the front end should do this conversion to avoid races */
-    /** @note Or maybe not... races are pretty inherent in everything done in
-     *        this object and not really bad as far as I can see. */
-    HRESULT rc = convertDisplayRes(x, y, &xAdj, &yAdj, &fValid);
-    if (FAILED(rc)) return rc;
+    HRESULT rc = S_OK;
 
-    if (fValid)
+    if ((LONG)arrayContacts.size() >= aCount)
     {
-        rc = reportMTEventToMouseDev(xAdj, yAdj, cContact, contactState);
+        LONG64* paContacts = arrayContacts.raw();
 
-        fireMouseEvent(true, x, y, 0, 0, cContact, contactState);
+        rc = putEventMultiTouch(aCount, paContacts, aScanTime);
+    }
+    else
+    {
+        rc = E_INVALIDARG;
     }
 
     return rc;
 }
 
+/**
+ * Send a multi-touch event. Version for scripting languages.
+ *
+ * @returns COM status code.
+ * @param aCount     Number of contacts.
+ * @param aContacts  Information about each contact.
+ * @param aScanTime  Timestamp.
+ */
+STDMETHODIMP Mouse::PutEventMultiTouchString(LONG aCount,
+                                             IN_BSTR aContacts,
+                                             ULONG aScanTime)
+{
+    /** @todo implement: convert the string to LONG64 array and call putEventMultiTouch. */
+    NOREF(aCount);
+    NOREF(aContacts);
+    NOREF(aScanTime);
+    return E_NOTIMPL;
+}
+
+
 // private methods
 /////////////////////////////////////////////////////////////////////////////
+
+/* Used by PutEventMultiTouch and PutEventMultiTouchString. */
+HRESULT Mouse::putEventMultiTouch(LONG aCount,
+                                  LONG64 *paContacts,
+                                  ULONG aScanTime)
+{
+    if (aCount >= 256)
+    {
+         return E_INVALIDARG;
+    }
+
+    DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
+    ComAssertRet(pDisplay, E_FAIL);
+
+    HRESULT rc = S_OK;
+
+    uint64_t* pau64Contacts = NULL;
+    uint8_t cContacts = 0;
+
+    /* Deliver 0 contacts too, touch device may use this to reset the state. */
+    if (aCount > 0)
+    {
+        /* Create a copy with converted coords. */
+        pau64Contacts = (uint64_t *)RTMemTmpAlloc(aCount * sizeof(uint64_t));
+        if (pau64Contacts)
+        {
+            int32_t x1, y1, x2, y2;
+            /* Takes the display lock */
+            pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
+
+            LONG i;
+            for (i = 0; i < aCount; i++)
+            {
+                int32_t x = (int16_t)RT_LO_U16(RT_LO_U32(paContacts[i]));
+                int32_t y = (int16_t)RT_HI_U16(RT_LO_U32(paContacts[i]));
+                uint8_t contactId =  RT_BYTE1(RT_HI_U32(paContacts[i]));
+                bool fInContact   = (RT_BYTE2(RT_HI_U32(paContacts[i])) & 0x1) != 0;
+                bool fInRange     = (RT_BYTE2(RT_HI_U32(paContacts[i])) & 0x2) != 0;
+
+                LogRel3(("%s: [%d] %d,%d id %d, inContact %d, inRange %d\n",
+                         __FUNCTION__, i, x, y, fInContact, fInRange));
+
+                /* Framebuffer dimensions are 0,0 width, height, that is x2,y2 are exclusive,
+                 * while coords are inclusive.
+                 */
+                int32_t xAdj = x1 < x2 ?   ((x - 1 - x1) * VMMDEV_MOUSE_RANGE)
+                                         / (x2 - x1) : 0;
+                int32_t yAdj = y1 < y2 ?   ((y - 1 - y1) * VMMDEV_MOUSE_RANGE)
+                                         / (y2 - y1) : 0;
+
+                bool fValid = (   xAdj >= VMMDEV_MOUSE_RANGE_MIN
+                               && xAdj <= VMMDEV_MOUSE_RANGE_MAX
+                               && yAdj >= VMMDEV_MOUSE_RANGE_MIN
+                               && yAdj <= VMMDEV_MOUSE_RANGE_MAX);
+
+                if (fValid)
+                {
+                    uint8_t fu8 =   (fInContact? 0x01: 0x00)
+                                  | (fInRange?   0x02: 0x00);
+                    pau64Contacts[cContacts] = RT_MAKE_U64_FROM_U16((uint16_t)xAdj,
+                                                                    (uint16_t)yAdj,
+                                                                    RT_MAKE_U16(contactId, fu8),
+                                                                    0);
+                    cContacts++;
+                }
+            }
+        }
+        else
+        {
+            rc = E_OUTOFMEMORY;
+        }
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        rc = reportMultiTouchEventToDevice(cContacts, cContacts? pau64Contacts: NULL, (uint32_t)aScanTime);
+
+        // @todo Implement. Maybe using a new TouchEvent rather than extending the mouse event.
+        // fireMouseEvent(true, x, y, 0, 0, cContact, contactState);
+    }
+
+    RTMemTmpFree(pau64Contacts);
+
+    return rc;
+}
 
 
 /** Does the guest currently rely on the host to draw the mouse cursor or
