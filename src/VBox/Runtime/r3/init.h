@@ -32,27 +32,7 @@
 
 DECLHIDDEN(int)  rtR3InitNativeFirst(uint32_t fFlags);
 DECLHIDDEN(int)  rtR3InitNativeFinal(uint32_t fFlags);
-DECLHIDDEN(void) rtR3InitNativeObtrusive();
-
-#ifdef RT_OS_WINDOWS
-/*
- * Windows specific stuff.
- */
-typedef enum RTR3WINLDRPROT
-{
-    RTR3WINLDRPROT_INVALID = 0,
-    RTR3WINLDRPROT_NONE,
-    RTR3WINLDRPROT_NO_CWD,
-    RTR3WINLDRPROT_SAFE
-} RTR3WINLDRPROT;
-
-extern DECLHIDDEN(RTR3WINLDRPROT)  g_enmWinLdrProt;
-# ifdef _WINDEF_
-extern DECLHIDDEN(HMODULE)         g_hModKernel32;
-extern DECLHIDDEN(HMODULE)         g_hModNtDll;
-# endif
-
-#endif /* RT_OS_WINDOWS */
+DECLHIDDEN(void) rtR3InitNativeObtrusive(void);
 
 #endif
 

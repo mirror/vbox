@@ -29,8 +29,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_SYMLINK
+#include <Windows.h>
 
 #include <iprt/symlink.h>
+#include "internal-r3-win.h"
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -40,8 +42,6 @@
 #include <iprt/string.h>
 #include "internal/path.h"
 
-#include <Windows.h>
-#include "../init.h"
 
 
 /*******************************************************************************
