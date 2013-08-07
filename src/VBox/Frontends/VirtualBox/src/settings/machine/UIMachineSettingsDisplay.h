@@ -145,8 +145,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
@@ -182,6 +181,7 @@ private:
     void prepareVideoTab();
     void prepareRemoteDisplayTab();
     void prepareVideoCaptureTab();
+    void prepareValidation();
 
     /* Helpers: Video stuff: */
     void checkVRAMRequirements();
@@ -194,9 +194,6 @@ private:
     static void lookForCorrespondingPreset(QComboBox *pWhere, const QVariant &whichData);
     static int calculateBitRate(int iFrameWidth, int iFrameHeight, int iFrameRate, int iQuality);
     static int calculateQuality(int iFrameWidth, int iFrameHeight, int iFrameRate, int iBitRate);
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Guest OS type id: */
     CGuestOSType m_guestOSType;

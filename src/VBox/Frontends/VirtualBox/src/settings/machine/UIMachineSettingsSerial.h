@@ -89,9 +89,6 @@ public:
     void fetchPortData(const UICacheSettingsMachineSerialPort &data);
     void uploadPortData(UICacheSettingsMachineSerialPort &data);
 
-    /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-
     QWidget* setOrderAfter (QWidget *aAfter);
 
     QString pageTitle() const;
@@ -109,8 +106,8 @@ private slots:
 
 private:
 
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
 
     UIMachineSettingsSerialPage *m_pParent;
     int m_iSlot;
@@ -145,17 +142,13 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     void retranslateUi();
 
 private:
 
     void polishPage();
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     QITabWidget *mTabWidget;
 

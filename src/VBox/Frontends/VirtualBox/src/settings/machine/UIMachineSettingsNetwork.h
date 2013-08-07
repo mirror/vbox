@@ -109,8 +109,7 @@ public:
     void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Navigation stuff: */
     QWidget* setOrderAfter(QWidget *pAfter);
@@ -144,6 +143,9 @@ private slots:
 
 private:
 
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
+
     /* Helping stuff: */
     void populateComboboxes();
     void updateAlternativeList();
@@ -155,9 +157,6 @@ private:
 
     /* Parent page: */
     UIMachineSettingsNetworkPage *m_pParent;
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Other variables: */
     int m_iSlot;
@@ -207,8 +206,7 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Translation stuff: */
     void retranslateUi();
@@ -232,9 +230,6 @@ private:
     static QStringList otherGenericDriverList();
     static QString summarizeGenericProperties(const CNetworkAdapter &adapter);
     static void updateGenericProperties(CNetworkAdapter &adapter, const QString &strPropText);
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Tab holder: */
     QITabWidget *m_pTwAdapters;

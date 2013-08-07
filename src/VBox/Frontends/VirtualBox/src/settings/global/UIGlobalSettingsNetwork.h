@@ -96,7 +96,7 @@ public:
     void uploadNetworkData(UIHostNetworkData &data);
 
     /* API: Validation stuff: */
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* API: Update stuff: */
     QString updateInfo();
@@ -163,8 +163,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Navigation stuff: */
     void setOrderAfter (QWidget *aWidget);
@@ -188,9 +187,6 @@ private:
     void removeCacheItem(const QString &strInterfaceName);
     void appendListItem(const UIHostNetworkData &data, bool fChooseItem = false);
     void removeListItem(UIHostInterfaceItem *pItem);
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Helper actions: */
     QAction *m_pAddAction;

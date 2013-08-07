@@ -152,8 +152,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
@@ -185,6 +184,7 @@ private:
     void prepare();
     void prepareTabMotherboard();
     void prepareTabProcessor();
+    void prepareValidation();
 
     /* Helper: Pointing HID type combo stuff: */
     void repopulateComboPointingHIDType();
@@ -198,9 +198,6 @@ private:
 
     /* Handler: Event-filtration stuff: */
     bool eventFilter(QObject *aObject, QEvent *aEvent);
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     /* Variable: Boot-table stuff: */
     QList<KDeviceType> m_possibleBootItems;

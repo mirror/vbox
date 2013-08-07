@@ -92,8 +92,8 @@ public:
     virtual void saveFromCacheTo(QVariant &data) = 0;
 
     /* Validation stuff: */
-    virtual void setValidator(UIPageValidator* /* pValidator */) {}
-    virtual bool revalidate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
+    void setValidator(UIPageValidator *pValidator);
+    virtual bool validate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
 
     /* Navigation stuff: */
     QWidget* firstWidget() const { return m_pFirstWidget; }
@@ -128,6 +128,11 @@ public:
     /* Virtual function to polish page content: */
     virtual void polishPage() {}
 
+public slots:
+
+    /* Handler: Validation stuff: */
+    void revalidate();
+
 protected:
 
     /* Settings page constructor, hidden: */
@@ -135,13 +140,14 @@ protected:
 
 private:
 
-    /* Private variables: */
+    /* Variables: */
     UISettingsPageType m_pageType;
     SettingsDialogType m_dialogType;
     int m_cId;
     bool m_fProcessed;
     bool m_fFailed;
     QWidget *m_pFirstWidget;
+    UIPageValidator *m_pValidator;
 };
 
 /* Global settings page class: */

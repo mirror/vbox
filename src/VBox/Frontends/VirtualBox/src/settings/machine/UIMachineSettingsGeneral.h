@@ -106,8 +106,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     void setOrderAfter (QWidget *aWidget);
 
@@ -115,10 +114,10 @@ protected:
 
 private:
 
-    void polishPage();
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
 
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
+    void polishPage();
 
     /* Cache: */
     bool m_fHWVirtExEnabled;

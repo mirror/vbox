@@ -28,8 +28,7 @@
 #include "UIConverter.h"
 
 UIMachineSettingsGeneral::UIMachineSettingsGeneral()
-    : m_pValidator(0)
-    , m_fHWVirtExEnabled(false)
+    : m_fHWVirtExEnabled(false)
 {
     /* Apply UI decorations */
     Ui::UIMachineSettingsGeneral::setupUi (this);
@@ -53,6 +52,9 @@ UIMachineSettingsGeneral::UIMachineSettingsGeneral()
     mTeDescription->setMinimumHeight (150);
 #endif /* Q_WS_MAC */
 
+    /* Prepare validation: */
+    prepareValidation();
+
     /* Applying language settings */
     retranslateUi();
 }
@@ -71,9 +73,8 @@ void UIMachineSettingsGeneral::setHWVirtExEnabled(bool fEnabled)
     /* Update hardware virtualization extension value: */
     m_fHWVirtExEnabled = fEnabled;
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 bool UIMachineSettingsGeneral::is64BitOSTypeSelected() const
@@ -145,9 +146,8 @@ void UIMachineSettingsGeneral::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -223,15 +223,7 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsGeneral::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), m_pValidator, SLOT(revalidate()));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-}
-
-bool UIMachineSettingsGeneral::revalidate(QString &strWarning, QString& /* strTitle */)
+bool UIMachineSettingsGeneral::validate(QString &strWarning, QString&)
 {
     /* VM name validation: */
     if (m_pNameAndSystemEditor->name().trimmed().isEmpty())
@@ -249,6 +241,7 @@ bool UIMachineSettingsGeneral::revalidate(QString &strWarning, QString& /* strTi
         return true;
     }
 
+    /* Pass by default: */
     return true;
 }
 
@@ -292,6 +285,13 @@ void UIMachineSettingsGeneral::retranslateUi()
     mCbDragAndDrop->setItemText (1, gpConverter->toString (KDragAndDropMode_HostToGuest));
     mCbDragAndDrop->setItemText (2, gpConverter->toString (KDragAndDropMode_GuestToHost));
     mCbDragAndDrop->setItemText (3, gpConverter->toString (KDragAndDropMode_Bidirectional));
+}
+
+void UIMachineSettingsGeneral::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()), this, SLOT(revalidate()));
+    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString&)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsGeneral::polishPage()

@@ -673,8 +673,7 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate (QString &aWarning, QString &aTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     void retranslateUi();
 
@@ -755,9 +754,6 @@ private:
 
     void setDialogType(SettingsDialogType settingsDialogType);
     void polishPage();
-
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
 
     QString m_strMachineId;
     QString m_strMachineSettingsFilePath;

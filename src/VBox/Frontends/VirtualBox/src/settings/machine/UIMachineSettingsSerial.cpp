@@ -33,7 +33,6 @@
 /* UIMachineSettingsSerial stuff */
 UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pParent)
     : QIWithRetranslateUI<QWidget> (0)
-    , m_pValidator(0)
     , m_pParent(pParent)
     , m_iSlot(-1)
 {
@@ -66,6 +65,9 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
              this, SLOT (mCbNumberActivated (const QString &)));
     connect (mCbMode, SIGNAL (activated (const QString &)),
              this, SLOT (mCbModeActivated (const QString &)));
+
+    /* Prepare validation: */
+    prepareValidation();
 
     /* Applying language settings */
     retranslateUi();
@@ -129,15 +131,6 @@ void UIMachineSettingsSerial::uploadPortData(UICacheSettingsMachineSerialPort &p
     portCache.cacheCurrentData(portData);
 }
 
-void UIMachineSettingsSerial::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pValidator, SLOT(revalidate()));
-}
-
 QWidget* UIMachineSettingsSerial::setOrderAfter (QWidget *aAfter)
 {
     setTabOrder (aAfter, mGbSerial);
@@ -182,9 +175,8 @@ void UIMachineSettingsSerial::mGbSerialToggled (bool aOn)
         mCbModeActivated (mCbMode->currentText());
     }
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    m_pParent->revalidate();
 }
 
 void UIMachineSettingsSerial::mCbNumberActivated (const QString &aText)
@@ -200,9 +192,8 @@ void UIMachineSettingsSerial::mCbNumberActivated (const QString &aText)
         mLeIOPort->setText ("0x" + QString::number (IOBase, 16).toUpper());
     }
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    m_pParent->revalidate();
 }
 
 void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
@@ -211,16 +202,22 @@ void UIMachineSettingsSerial::mCbModeActivated (const QString &aText)
     mCbPipe->setEnabled (mode == KPortMode_HostPipe);
     mLePath->setEnabled (mode != KPortMode_Disconnected);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    m_pParent->revalidate();
+}
+
+void UIMachineSettingsSerial::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
+    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
+    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
 }
 
 
 /* UIMachineSettingsSerialPage stuff */
 UIMachineSettingsSerialPage::UIMachineSettingsSerialPage()
-    : m_pValidator(0)
-    , mTabWidget(0)
+    : mTabWidget(0)
 {
     /* TabWidget creation */
     mTabWidget = new QITabWidget (this);
@@ -295,9 +292,6 @@ void UIMachineSettingsSerialPage::getFromCache()
         /* Load port data to page: */
         pPage->fetchPortData(m_cache.child(iPort));
 
-        /* Setup page validation: */
-        pPage->setValidator(m_pValidator);
-
         /* Setup tab order: */
         pLastFocusWidget = pPage->setOrderAfter(pLastFocusWidget);
     }
@@ -308,9 +302,8 @@ void UIMachineSettingsSerialPage::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -374,13 +367,7 @@ void UIMachineSettingsSerialPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-void UIMachineSettingsSerialPage::setValidator(UIPageValidator *pValidator)
-{
-    /* Configure validation: */
-    m_pValidator = pValidator;
-}
-
-bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle)
+bool UIMachineSettingsSerialPage::validate(QString &strWarning, QString &strTitle)
 {
     bool valid = true;
     QList<QPair<QString, QString> > ports;
@@ -405,12 +392,12 @@ bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle
             if (!valid)
             {
                 if (strIRQ.isEmpty())
-                    aWarning = tr("IRC not specified.");
+                    strWarning = tr("IRC not specified.");
                 else if (strIOPort.isEmpty())
-                    aWarning = tr("IO port not specified.");
+                    strWarning = tr("IO port not specified.");
                 else
-                    aWarning = tr ("duplicate port attributes specified.");
-                aTitle += ": " +
+                    strWarning = tr ("duplicate port attributes specified.");
+                strTitle += ": " +
                     vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(tab)));
             }
             ports << pair;
@@ -429,10 +416,10 @@ bool UIMachineSettingsSerialPage::revalidate (QString &aWarning, QString &aTitle
                     page->mCbMode->setCurrentIndex (KPortMode_Disconnected);
                 else
                 {
-                    aWarning = path.isEmpty() ?
+                    strWarning = path.isEmpty() ?
                         tr ("port path not specified.") :
                         tr ("duplicate port path entered.");
-                    aTitle += ": " +
+                    strTitle += ": " +
                         vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
                     break;
                 }

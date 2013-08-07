@@ -139,8 +139,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    void setValidator(UIPageValidator *pValidator);
-    bool revalidate(QString &strWarning, QString &strTitle);
+    bool validate(QString &strWarning, QString &strTitle);
 
     /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);
@@ -150,8 +149,8 @@ protected:
 
 private:
 
-    /* Variable: Validation stuff: */
-    UIPageValidator *m_pValidator;
+    /* Helper: Prepare stuff: */
+    void prepareValidation();
 
     /* Cache: */
     UISettingsCacheGlobalInput m_cache;

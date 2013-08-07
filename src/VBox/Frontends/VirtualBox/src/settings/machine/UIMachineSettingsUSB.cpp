@@ -139,7 +139,6 @@ private:
 
 UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
     : UISettingsPage(type)
-    , m_pValidator(0)
     , m_pToolBar(0)
     , mNewAction(0), mAddAction(0), mEdtAction(0), mDelAction(0)
     , mMupAction(0), mMdnAction(0)
@@ -217,6 +216,9 @@ UIMachineSettingsUSB::UIMachineSettingsUSB(UISettingsPageType type)
 
     /* Setup dialog */
     mTwFilters->header()->hide();
+
+    /* Prepare validation: */
+    prepareValidation();
 
     /* Applying language settings */
     retranslateUi();
@@ -385,9 +387,8 @@ void UIMachineSettingsUSB::getFromCache()
     /* Polish page finally: */
     polishPage();
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 /* Save data from corresponding widgets to cache,
@@ -563,19 +564,12 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     uploadData(data);
 }
 
-void UIMachineSettingsUSB::setValidator(UIPageValidator *pValidator)
+bool UIMachineSettingsUSB::validate(QString &strWarningText, QString&)
 {
-    /* Configure validation: */
-    m_pValidator = pValidator;
-    connect(mGbUSB, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-    connect(mCbUSB2, SIGNAL(stateChanged(int)), m_pValidator, SLOT(revalidate()));
-}
-
-bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTitle */)
-{
-    /* USB 2.0 Extension Pack presence test: */
     NOREF(strWarningText);
+
 #ifdef VBOX_WITH_EXTPACK
+    /* USB 2.0 Extension Pack presence test: */
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
@@ -589,7 +583,9 @@ bool UIMachineSettingsUSB::revalidate(QString &strWarningText, QString& /* strTi
         mCbUSB2->setChecked(false);
         return true;
     }
-#endif
+#endif /* VBOX_WITH_EXTPACK */
+
+    /* Pass by default: */
     return true;
 }
 
@@ -711,9 +707,8 @@ void UIMachineSettingsUSB::newClicked()
     /* Add new USB filter data: */
     addUSBFilter(usbFilterData, true /* its new? */);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsUSB::addClicked()
@@ -759,9 +754,8 @@ void UIMachineSettingsUSB::addConfirmed(QAction *pAction)
     /* Add new USB filter data: */
     addUSBFilter(usbFilterData, true /* its new? */);
 
-    /* Revalidate if possible: */
-    if (m_pValidator)
-        m_pValidator->revalidate();
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsUSB::edtClicked()
@@ -857,13 +851,9 @@ void UIMachineSettingsUSB::delClicked()
 
     /* Update current item: */
     currentChanged(mTwFilters->currentItem());
-    /* Revalidate if possible: */
-    if (!mTwFilters->topLevelItemCount())
-    {
-        /* Revalidate if possible: */
-        if (m_pValidator)
-            m_pValidator->revalidate();
-    }
+
+    /* Revalidate: */
+    revalidate();
 }
 
 void UIMachineSettingsUSB::mupClicked()
@@ -921,6 +911,13 @@ void UIMachineSettingsUSB::sltUpdateActivityState(QTreeWidgetItem *pChangedItem)
     /* Delete corresponding items: */
     UIDataSettingsMachineUSBFilter &data = m_filters[mTwFilters->indexOfTopLevelItem(pChangedItem)];
     data.m_fActive = pChangedItem->checkState(0) == Qt::Checked;
+}
+
+void UIMachineSettingsUSB::prepareValidation()
+{
+    /* Prepare validation: */
+    connect(mGbUSB, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(mCbUSB2, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
 }
 
 void UIMachineSettingsUSB::addUSBFilter(const UIDataSettingsMachineUSBFilter &usbFilterData, bool fIsNew)
