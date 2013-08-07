@@ -90,6 +90,7 @@
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/dbgftrace.h>
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 # include <VBox/vmm/patm.h>
 #endif
@@ -897,6 +898,21 @@ DECLINLINE(void) iemInitDecoder(PIEMCPU pIemCpu, bool fBypassHandlers)
                                && PATMIsPatchGCAddr(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
     if (!pIemCpu->fInPatchCode)
         CPUMRawLeave(pVCpu, CPUMCTX2CORE(pCtx), VINF_SUCCESS);
+#endif
+
+#ifdef DBGFTRACE_ENABLED
+    switch (enmMode)
+    {
+        case IEMMODE_64BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I64/%u %08llx", pIemCpu->uCpl, pCtx->rip);
+            break;
+        case IEMMODE_32BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I32/%u %04x:%08x", pIemCpu->uCpl, pCtx->cs.Sel, pCtx->eip);
+            break;
+        case IEMMODE_16BIT:
+            RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "I16/%u %04x:%04x", pIemCpu->uCpl, pCtx->cs.Sel, pCtx->eip);
+            break;
+    }
 #endif
 }
 
@@ -2861,6 +2877,11 @@ iemRaiseXcptOrInt(PIEMCPU     pIemCpu,
         u8Vector = X86_XCPT_GP;
         uErr     = 0;
     }
+#ifdef DBGFTRACE_ENABLED
+    RTTraceBufAddMsgF(IEMCPU_TO_VM(pIemCpu)->CTX_SUFF(hTraceBuf), "Xcpt/%u: %02x %u %x %x %llx %04x:%04llx %04x:%04llx",
+                      pIemCpu->cXcptRecursions, u8Vector, cbInstr, fFlags, uErr, uCr2,
+                      pCtx->cs.Sel, pCtx->rip, pCtx->ss.Sel, pCtx->rsp);
+#endif
 
     /*
      * Do recursion accounting.
@@ -7563,7 +7584,7 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
- * and returns, taking two arguments in addition to the standard ones.
+ * and returns, taking three arguments in addition to the standard ones.
  *
  * @param   a_pfnCImpl      The pointer to the C routine.
  * @param   a0              The first extra argument.
@@ -7571,6 +7592,18 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
  * @param   a2              The third extra argument.
  */
 #define IEM_MC_CALL_CIMPL_3(a_pfnCImpl, a0, a1, a2)     return (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2)
+
+/**
+ * Defers the rest of the instruction emulation to a C implementation routine
+ * and returns, taking four arguments in addition to the standard ones.
+ *
+ * @param   a_pfnCImpl      The pointer to the C routine.
+ * @param   a0              The first extra argument.
+ * @param   a1              The second extra argument.
+ * @param   a2              The third extra argument.
+ * @param   a3              The fourth extra argument.
+ */
+#define IEM_MC_CALL_CIMPL_4(a_pfnCImpl, a0, a1, a2, a3)     return (a_pfnCImpl)(pIemCpu, pIemCpu->offOpcode, a0, a1, a2, a3)
 
 /**
  * Defers the rest of the instruction emulation to a C implementation routine
@@ -8365,8 +8398,8 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
     /*
      * Enable verification and/or logging.
      */
-    pIemCpu->fNoRem  = !LogIs6Enabled(); /* logging triggers the no-rem/rem verification stuff */
-    if (    pIemCpu->fNoRem
+    bool fNewNoRem = !LogIs6Enabled(); /* logging triggers the no-rem/rem verification stuff */;
+    if (    fNewNoRem
         && (   0
 #if 0 /* auto enable on first paged protected mode interrupt */
             || (   pOrgCtx->eflags.Bits.u1IF
@@ -8437,15 +8470,30 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #if 0 /* linux 3.7 64-bit boot - '000000000215e240'. */
             || (pOrgCtx->rip == 0x000000000215e240)
 #endif
-#if 1 /* DOS's size-overridden iret to v8086. */
+#if 0 /* DOS's size-overridden iret to v8086. */
             || (pOrgCtx->rip == 0x427 && pOrgCtx->cs.Sel == 0xb8)
+#endif
+#if 1 /* Win3.1: port 64 interception in v8086 mofr */
+            || (pOrgCtx->rip == 0xe9d6 && pOrgCtx->cs.Sel == 0xf000 && pOrgCtx->eflags.Bits.u1VM
+                && pOrgCtx->tr.u64Base == 0x80049e8c && pOrgCtx->tr.u32Limit == 0x2069)
 #endif
            )
        )
     {
         RTLogGroupSettings(NULL, "iem.eo.l6.l2");
         RTLogFlags(NULL, "enabled");
-        pIemCpu->fNoRem = false;
+        fNewNoRem = false;
+    }
+    if (fNewNoRem != pIemCpu->fNoRem)
+    {
+        pIemCpu->fNoRem = fNewNoRem;
+        if (!fNewNoRem)
+        {
+            LogAlways(("Enabling verification mode!\n"));
+            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+        }
+        else
+            LogAlways(("Disabling verification mode!\n"));
     }
 
     /*
@@ -9591,6 +9639,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
 VMM_INT_DECL(VBOXSTRICTRC) IEMInjectTrap(PVMCPU pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType, uint16_t uErrCode, RTGCPTR uCr2)
 {
     iemInitDecoder(&pVCpu->iem.s, false);
+#ifdef DBGFTRACE_ENABLED
+    RTTraceBufAddMsgF(pVCpu->CTX_SUFF(pVM)->CTX_SUFF(hTraceBuf), "IEMInjectTrap: %x %d %x %llx",
+                      u8TrapNo, enmType, uErrCode, uCr2);
+#endif
 
     uint32_t fFlags;
     switch (enmType)
