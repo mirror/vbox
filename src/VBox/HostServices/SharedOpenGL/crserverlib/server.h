@@ -418,7 +418,7 @@ int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version);
 void CrDpReparent(PCR_DISPLAY pDisplay, CRScreenInfo *pScreen);
 
 void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width, uint32_t height);
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData);
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags);
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
 int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
@@ -437,7 +437,7 @@ int CrDemGlobalInit();
 void CrDemTeGlobalTerm();
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
 void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
-PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture);
+PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture, uint32_t fFlags);
 void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry);
 int CrDemEntrySaveState(PCR_DISPLAY_ENTRY pEntry, PSSMHANDLE pSSM);
 int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, PSSMHANDLE pSSM);

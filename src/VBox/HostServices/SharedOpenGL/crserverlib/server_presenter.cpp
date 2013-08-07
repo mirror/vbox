@@ -275,12 +275,12 @@ static DECLCALLBACK(void) crDpEntryCEntryReleaseCB(const struct VBOXVR_SCR_COMPO
     CrDemEntryRelease(pCEntry);
 }
 
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData)
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags)
 {
     CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData, crDpEntryCEntryReleaseCB);
-    CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, CRBLT_F_INVERT_SRC_YCOORDS);
+    CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, fFlags);
     CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, pTextureData, NULL);
-    CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, CRBLT_F_INVERT_SRC_YCOORDS);
+    CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, fFlags);
 }
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
@@ -446,7 +446,7 @@ int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, 
     int  rc = SSMR3GetU32(pSSM, &u32);
     AssertRCReturn(rc, rc);
 
-    PCR_DISPLAY_ENTRY pEntry = CrDemEntryAcquire(pMap, u32);
+    PCR_DISPLAY_ENTRY pEntry = CrDemEntryAcquire(pMap, u32, CRBLT_F_INVERT_SRC_YCOORDS);
     if (!pEntry)
     {
         crWarning("CrDemEntryAcquire failed");
@@ -457,7 +457,7 @@ int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, 
     return VINF_SUCCESS;
 }
 
-PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture)
+PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture, uint32_t fFlags)
 {
     CR_DEM_ENTRY *pDemEntry = NULL;
 
@@ -500,7 +500,7 @@ PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture
         return NULL;
     }
 
-    CrDpEntryInit(&pDemEntry->Entry, &TextureData);
+    CrDpEntryInit(&pDemEntry->Entry, &TextureData, fFlags);
 
     CR_DEM_ENTRY_INFO *pInfo = (CR_DEM_ENTRY_INFO*)crHashtableSearch(pMap->pTexIdToDemInfoMap, pTobj->id);
     if (!pInfo)
@@ -813,7 +813,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
 
     if (texture)
     {
-        pEntry = CrDemEntryAcquire(&cr_server.PresentTexturepMap, texture);
+        pEntry = CrDemEntryAcquire(&cr_server.PresentTexturepMap, texture, (cfg & CR_PRESENT_FLAG_TEX_NONINVERT_YCOORD) ? 0 : CRBLT_F_INVERT_SRC_YCOORDS);
         if (!pEntry)
         {
             crWarning("CrDemEntryAcquire Failed");
