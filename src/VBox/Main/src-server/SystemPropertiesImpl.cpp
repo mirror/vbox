@@ -679,7 +679,7 @@ STDMETHODIMP SystemProperties::COMSETTER(LoggingLevel)(IN_BSTR aLoggingLevel)
     }
     else
     {
-        LogRel(("Cannot set passed logging level=%s, or the default one - Error=%Rrc \n", aLoggingLevel, rc));
+        LogRel(("Cannot set passed logging level=%ls, or the default one - Error=%Rrc \n", aLoggingLevel, rc));
     }
 
     return rc;
@@ -1283,18 +1283,20 @@ HRESULT SystemProperties::setDefaultMachineFolder(const Utf8Str &strPath)
 
 HRESULT SystemProperties::setLoggingLevel(const Utf8Str &aLoggingLevel)
 {
-    HRESULT rc = S_OK;
+    int rc = S_OK;
     Utf8Str useLoggingLevel(aLoggingLevel);
     rc = RTLogGroupSettings(RTLogRelDefaultInstance(), useLoggingLevel.c_str());
     //  If failed and not the default logging level - try to use the default logging level.
-    if (!SUCCEEDED(rc)){
+    if (!RT_SUCCESS(rc))
+    {
         // If failed write message to the release log.
         LogRel(("Cannot set passed logging level=%s Error=%Rrc \n", useLoggingLevel.c_str(), rc));
         //  If attempted logging level not the default one then try the default one.
-        if (!useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT)){
+        if (!useLoggingLevel.equals(VBOXSVC_LOG_DEFAULT))
+        {
             rc = RTLogGroupSettings(RTLogRelDefaultInstance(), VBOXSVC_LOG_DEFAULT);
             // If failed report this to the release log.
-            if (!SUCCEEDED(rc))
+            if (!RT_SUCCESS(rc))
                 LogRel(("Cannot set default logging level Error=%Rrc \n", rc));
         }
         // On any failure - set default level as the one to be stored.
