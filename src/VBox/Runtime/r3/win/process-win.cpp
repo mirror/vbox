@@ -40,7 +40,7 @@
 #include <Lmcons.h>
 
 #include <iprt/process.h>
-#include "internal/iprt.h"
+#include "internal-r3-win.h"
 
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
@@ -58,7 +58,6 @@
 #include <iprt/string.h>
 #include <iprt/socket.h>
 
-#include "../init.h"
 
 
 /*******************************************************************************

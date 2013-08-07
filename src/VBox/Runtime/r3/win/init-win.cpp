@@ -35,21 +35,137 @@
 # define LOAD_LIBRARY_SEARCH_SYSTEM32           0x800
 #endif
 
-#include "internal/iprt.h"
+#include "internal-r3-win.h"
 #include <iprt/initterm.h>
+#include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/string.h>
 #include "../init.h"
 
 
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** Windows DLL loader protection level. */
+DECLHIDDEN(RTR3WINLDRPROT)  g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
+/** Our simplified windows version.    */
+DECLHIDDEN(RTWINOSTYPE)     g_enmWinVer = kRTWinOSType_UNKNOWN;
+/** Extended windows version information. */
+DECLHIDDEN(OSVERSIONINFOEX) g_WinOsInfoEx;
 /** The native kernel32.dll handle. */
 DECLHIDDEN(HMODULE)         g_hModKernel32 = NULL;
 /** The native ntdll.dll handle. */
 DECLHIDDEN(HMODULE)         g_hModNtDll = NULL;
-/** Windows DLL loader protection level. */
-DECLHIDDEN(RTR3WINLDRPROT)  g_enmWinLdrProt = RTR3WINLDRPROT_NONE;
+
+
+
+/**
+ * Translates OSVERSIONINOFEX into a Windows OS type.
+ *
+ * @returns The Windows OS type.
+ * @param   pOSInfoEx       The OS info returned by Windows.
+ *
+ * @remarks This table has been assembled from Usenet postings, personal
+ *          observations, and reading other people's code.  Please feel
+ *          free to add to it or correct it.
+ * <pre>
+         dwPlatFormID  dwMajorVersion  dwMinorVersion  dwBuildNumber
+95             1              4               0             950
+95 SP1         1              4               0        >950 && <=1080
+95 OSR2        1              4             <10           >1080
+98             1              4              10            1998
+98 SP1         1              4              10       >1998 && <2183
+98 SE          1              4              10          >=2183
+ME             1              4              90            3000
+
+NT 3.51        2              3              51            1057
+NT 4           2              4               0            1381
+2000           2              5               0            2195
+XP             2              5               1            2600
+2003           2              5               2            3790
+Vista          2              6               0
+
+CE 1.0         3              1               0
+CE 2.0         3              2               0
+CE 2.1         3              2               1
+CE 3.0         3              3               0
+</pre>
+ */
+static RTWINOSTYPE rtR3InitWinSimplifiedVersion(OSVERSIONINFOEX const *pOSInfoEx)
+{
+    RTWINOSTYPE enmVer         = kRTWinOSType_UNKNOWN;
+    BYTE  const bProductType   = pOSInfoEx->wProductType;
+    DWORD const dwPlatformId   = pOSInfoEx->dwPlatformId;
+    DWORD const dwMinorVersion = pOSInfoEx->dwMinorVersion;
+    DWORD const dwMajorVersion = pOSInfoEx->dwMajorVersion;
+    DWORD const dwBuildNumber  = pOSInfoEx->dwBuildNumber & 0xFFFF;   /* Win 9x needs this. */
+
+    if (    dwPlatformId == VER_PLATFORM_WIN32_WINDOWS
+        &&  dwMajorVersion == 4)
+    {
+        if (        dwMinorVersion < 10
+                 && dwBuildNumber == 950)
+            enmVer = kRTWinOSType_95;
+        else if (   dwMinorVersion < 10
+                 && dwBuildNumber > 950
+                 && dwBuildNumber <= 1080)
+            enmVer = kRTWinOSType_95SP1;
+        else if (   dwMinorVersion < 10
+                 && dwBuildNumber > 1080)
+            enmVer = kRTWinOSType_95OSR2;
+        else if (   dwMinorVersion == 10
+                 && dwBuildNumber == 1998)
+            enmVer = kRTWinOSType_98;
+        else if (   dwMinorVersion == 10
+                 && dwBuildNumber > 1998
+                 && dwBuildNumber < 2183)
+            enmVer = kRTWinOSType_98SP1;
+        else if (   dwMinorVersion == 10
+                 && dwBuildNumber >= 2183)
+            enmVer = kRTWinOSType_98SE;
+        else if (dwMinorVersion == 90)
+            enmVer = kRTWinOSType_ME;
+    }
+    else if (dwPlatformId == VER_PLATFORM_WIN32_NT)
+    {
+        if (        dwMajorVersion == 3
+                 && dwMinorVersion == 51)
+            enmVer = kRTWinOSType_NT351;
+        else if (   dwMajorVersion == 4
+                 && dwMinorVersion == 0)
+            enmVer = kRTWinOSType_NT4;
+        else if (   dwMajorVersion == 5
+                 && dwMinorVersion == 0)
+            enmVer = kRTWinOSType_2K;
+        else if (   dwMajorVersion == 5
+                 && dwMinorVersion == 1)
+            enmVer = kRTWinOSType_XP;
+        else if (   dwMajorVersion == 5
+                 && dwMinorVersion == 2)
+            enmVer = kRTWinOSType_2003;
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 0)
+        {
+            if (bProductType != VER_NT_WORKSTATION)
+                enmVer = kRTWinOSType_2008;
+            else
+                enmVer = kRTWinOSType_VISTA;
+        }
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 1)
+            enmVer = kRTWinOSType_7;
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 2)
+            enmVer = kRTWinOSType_8;
+        else if (   dwMajorVersion == 6
+                 && dwMinorVersion == 3)
+            enmVer = kRTWinOSType_81;
+        else
+            enmVer = kRTWinOSType_NT_UNKNOWN;
+    }
+
+    return enmVer;
+}
 
 
 DECLHIDDEN(int) rtR3InitNativeObtrusiveWorker(void)
@@ -59,6 +175,30 @@ DECLHIDDEN(int) rtR3InitNativeObtrusiveWorker(void)
      */
     UINT fOldErrMode = SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX);
     SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOOPENFILEERRORBOX | fOldErrMode);
+
+    /*
+     * Query the Windows version.
+     * ASSUMES OSVERSIONINFOEX starts with the exact same layout as OSVERSIONINFO (safe).
+     */
+    AssertCompileMembersSameSizeAndOffset(OSVERSIONINFOEX, szCSDVersion, OSVERSIONINFO, szCSDVersion);
+    AssertCompileMemberOffset(OSVERSIONINFOEX, wServicePackMajor, sizeof(OSVERSIONINFO));
+    RT_ZERO(g_WinOsInfoEx);
+    g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    if (!GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
+    {
+        /* Fallback, just get the basic info. */
+        RT_ZERO(g_WinOsInfoEx);
+        g_WinOsInfoEx.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+        if (GetVersionExA((POSVERSIONINFOA)&g_WinOsInfoEx))
+            Assert(g_WinOsInfoEx.dwPlatformId != VER_PLATFORM_WIN32_NT || g_WinOsInfoEx.dwMajorVersion < 5);
+        else
+        {
+            AssertBreakpoint();
+            RT_ZERO(g_WinOsInfoEx);
+        }
+    }
+    if (g_WinOsInfoEx.dwOSVersionInfoSize)
+        g_enmWinVer = rtR3InitWinSimplifiedVersion(&g_WinOsInfoEx);
 
     /*
      * Restrict DLL searching for the process on windows versions which allow
@@ -80,15 +220,20 @@ DECLHIDDEN(int) rtR3InitNativeObtrusiveWorker(void)
             rc = VERR_INTERNAL_ERROR_3;
     }
 
-    typedef BOOL (WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);
-    PFNSETDEFAULTDLLDIRECTORIES pfnSetDefDllDirs;
-    pfnSetDefDllDirs = (PFNSETDEFAULTDLLDIRECTORIES)GetProcAddress(g_hModKernel32, "SetDefaultDllDirectories");
-    if (pfnSetDefDllDirs)
+#if ARCH_BITS == 32
+    if (g_enmWinVer > kRTWinOSType_VISTA) /* Observed GUI issues on 32-bit Vista. */
+#endif
     {
-        if (pfnSetDefDllDirs(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32))
-            g_enmWinLdrProt = RTR3WINLDRPROT_SAFE;
-        else if (RT_SUCCESS(rc))
-            rc = VERR_INTERNAL_ERROR_4;
+        typedef BOOL(WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);
+        PFNSETDEFAULTDLLDIRECTORIES pfnSetDefDllDirs;
+        pfnSetDefDllDirs = (PFNSETDEFAULTDLLDIRECTORIES)GetProcAddress(g_hModKernel32, "SetDefaultDllDirectories");
+        if (pfnSetDefDllDirs)
+        {
+            if (pfnSetDefDllDirs(LOAD_LIBRARY_SEARCH_APPLICATION_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32))
+                g_enmWinLdrProt = RTR3WINLDRPROT_SAFE;
+            else if (RT_SUCCESS(rc))
+                rc = VERR_INTERNAL_ERROR_4;
+        }
     }
 
     return rc;
