@@ -38,6 +38,9 @@ template<class X> QColor toColor(const X & /* xobject */) { Assert(0); return QC
 /* Converts passed 'Object X' to QPixmap.
  * This function returns null QPixmap for any object type until re-determined for specific one. */
 template<class X> QPixmap toPixmap(const X & /* xobject */) { Assert(0); return QPixmap(); }
+/* Converts passed 'Object X' to QPixmap.
+ * This function returns null QPixmap for any object type until re-determined for specific one. */
+template<class X> QPixmap toWarningPixmap(const X & /* xobject */) { Assert(0); return QPixmap(); }
 
 /* Converts passed 'Object of type X' to QString.
  * This function returns null QString for any object type until re-determined for specific one. */
@@ -99,8 +102,10 @@ template<> QString toInternalString(const DetailsElementType &detailsElementType
 template<> DetailsElementType fromInternalString<DetailsElementType>(const QString &strDetailsElementType);
 template<> QString toInternalString(const GlobalSettingsPageType &globalSettingsPageType);
 template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(const QString &strGlobalSettingsPageType);
+template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &globalSettingsPageType);
 template<> QString toInternalString(const MachineSettingsPageType &machineSettingsPageType);
 template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(const QString &strMachineSettingsPageType);
+template<> QPixmap toWarningPixmap(const MachineSettingsPageType &machineSettingsPageType);
 template<> QString toInternalString(const IndicatorType &indicatorType);
 template<> IndicatorType fromInternalString<IndicatorType>(const QString &strIndicatorType);
 template<> QString toInternalString(const MachineCloseAction &machineCloseAction);

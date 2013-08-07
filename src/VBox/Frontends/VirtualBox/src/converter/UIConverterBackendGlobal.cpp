@@ -497,6 +497,24 @@ template<> GlobalSettingsPageType fromInternalString<GlobalSettingsPageType>(con
     return values.at(keys.indexOf(QRegExp(strGlobalSettingsPageType, Qt::CaseInsensitive)));
 }
 
+/* QPixmap <= GlobalSettingsPageType: */
+template<> QPixmap toWarningPixmap(const GlobalSettingsPageType &type)
+{
+    switch (type)
+    {
+        case GlobalSettingsPageType_General:    return QPixmap(":/machine_warning_16px.png");
+        case GlobalSettingsPageType_Input:      return QPixmap(":/hostkey_warning_16px.png");
+        case GlobalSettingsPageType_Update:     return QPixmap(":/refresh_warning_16px.png");
+        case GlobalSettingsPageType_Language:   return QPixmap(":/site_warning_16px.png");
+        case GlobalSettingsPageType_Display:    return QPixmap(":/vrdp_warning_16px.png");
+        case GlobalSettingsPageType_Network:    return QPixmap(":/nw_warning_16px.png");
+        case GlobalSettingsPageType_Extensions: return QPixmap(":/extension_pack_warning_16px.png");
+        case GlobalSettingsPageType_Proxy:      return QPixmap(":/proxy_warning_16px.png");
+        default: AssertMsgFailed(("No pixmap for %d", type)); break;
+    }
+    return QPixmap();
+}
+
 /* QString <= MachineSettingsPageType: */
 template<> QString toInternalString(const MachineSettingsPageType &machineSettingsPageType)
 {
@@ -545,6 +563,27 @@ template<> MachineSettingsPageType fromInternalString<MachineSettingsPageType>(c
         return MachineSettingsPageType_Invalid;
     /* Corresponding type for known words: */
     return values.at(keys.indexOf(QRegExp(strMachineSettingsPageType, Qt::CaseInsensitive)));
+}
+
+/* QPixmap <= MachineSettingsPageType: */
+template<> QPixmap toWarningPixmap(const MachineSettingsPageType &type)
+{
+    switch (type)
+    {
+        case MachineSettingsPageType_General:  return QPixmap(":/machine_warning_16px.png");
+        case MachineSettingsPageType_System:   return QPixmap(":/chipset_warning_16px.png");
+        case MachineSettingsPageType_Display:  return QPixmap(":/vrdp_warning_16px.png");
+        case MachineSettingsPageType_Storage:  return QPixmap(":/hd_warning_16px.png");
+        case MachineSettingsPageType_Audio:    return QPixmap(":/sound_warning_16px.png");
+        case MachineSettingsPageType_Network:  return QPixmap(":/nw_warning_16px.png");
+        case MachineSettingsPageType_Ports:    return QPixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Serial:   return QPixmap(":/serial_port_warning_16px.png");
+        case MachineSettingsPageType_Parallel: return QPixmap(":/parallel_port_warning_16px.png");
+        case MachineSettingsPageType_USB:      return QPixmap(":/usb_warning_16px.png");
+        case MachineSettingsPageType_SF:       return QPixmap(":/sf_warning_16px.png");
+        default: AssertMsgFailed(("No pixmap for %d", type)); break;
+    }
+    return QPixmap();
 }
 
 /* QString <= IndicatorType: */

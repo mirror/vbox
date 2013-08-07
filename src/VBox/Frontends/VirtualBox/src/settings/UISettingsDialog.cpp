@@ -119,8 +119,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
     /* Setup error & warning stuff: */
     m_pStatusBar->addWidget(m_pWarningPane);
-    m_errorIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon, this).pixmap(16, 16);
-    m_warningIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxWarningIcon, this).pixmap(16, 16);
 
     /* Setup whatsthis stuff: */
     qApp->installEventFilter(this);
@@ -370,14 +368,13 @@ void UISettingsDialog::revalidate()
             /* What page is it related to? */
             UISettingsPage *pFailedSettingsPage = pValidator->page();
             LogRel(("Settings Dialog:  Dialog validation FAILED: Page *%s*\n",
-                    gpConverter->toInternalString((MachineSettingsPageType)pFailedSettingsPage->id()).toUtf8().constData()));
+                    pFailedSettingsPage->internalName().toUtf8().constData()));
 
             /* Show error first: */
             if (!pValidator->isValid())
             {
                 m_fValid = false;
                 setError(pValidator->lastMessage());
-                m_pWarningPane->setWarningPixmap(m_errorIcon);
                 m_pWarningPane->setWarningText(m_strErrorHint);
 #ifdef Q_WS_MAC
                 m_pWarningPane->setToolTip(m_strErrorString);
@@ -388,16 +385,17 @@ void UISettingsDialog::revalidate()
             {
                 m_fSilent = false;
                 setWarning(pValidator->lastMessage());
-                m_pWarningPane->setWarningPixmap(m_warningIcon);
                 m_pWarningPane->setWarningText(m_strWarningHint);
 #ifdef Q_WS_MAC
                 m_pWarningPane->setToolTip(m_strWarningString);
 #endif /* Q_WS_MAC */
             }
 
+            /* Configure warning pixmap: */
+            m_pWarningPane->setWarningPixmap(pFailedSettingsPage->warningPixmap());
+
             /* Stop dialog revalidation on first error/warning: */
-            if (!m_fValid || !m_fSilent)
-                break;
+            break;
         }
     }
 
@@ -418,7 +416,7 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
     if (UISettingsPage *pSettingsPage = pValidator->page())
     {
         /* Determine settings-page name: */
-        const QString strPageName(gpConverter->toInternalString((MachineSettingsPageType)pSettingsPage->id()));
+        const QString strPageName(pSettingsPage->internalName());
 
         LogRel(("Settings Dialog: %s Page: Revalidation in progress..\n",
                 strPageName.toUtf8().constData()));

@@ -25,6 +25,7 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
+#include "UIDefs.h"
 #include "UISettingsDefs.h"
 #include "VBoxGlobalSettings.h"
 
@@ -118,6 +119,12 @@ public:
     int id() const { return m_cId; }
     void setId(int cId) { m_cId = cId; }
 
+    /* Page 'name' stuff: */
+    virtual QString internalName() const = 0;
+
+    /* Page 'warning pixmap' stuff: */
+    virtual QPixmap warningPixmap() const = 0;
+
     /* Page 'processed' stuff: */
     bool processed() const { return m_fProcessed; }
     void setProcessed(bool fProcessed) { m_fProcessed = fProcessed; }
@@ -162,6 +169,15 @@ protected:
     /* Global settings page constructor, hidden: */
     UISettingsPageGlobal();
 
+    /* Page 'ID' stuff: */
+    GlobalSettingsPageType internalID() const;
+
+    /* Page 'name' stuff: */
+    QString internalName() const;
+
+    /* Page 'warning pixmap' stuff: */
+    QPixmap warningPixmap() const;
+
     /* Fetch data to m_properties & m_settings: */
     void fetchData(const QVariant &data);
 
@@ -185,6 +201,15 @@ protected:
 
     /* Machine settings page constructor, hidden: */
     UISettingsPageMachine();
+
+    /* Page 'ID' stuff: */
+    MachineSettingsPageType internalID() const;
+
+    /* Page 'name' stuff: */
+    QString internalName() const;
+
+    /* Page 'warning pixmap' stuff: */
+    QPixmap warningPixmap() const;
 
     /* Fetch data to m_machine: */
     void fetchData(const QVariant &data);

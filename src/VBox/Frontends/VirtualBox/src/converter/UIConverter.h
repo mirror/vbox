@@ -49,6 +49,13 @@ public:
             return ::toPixmap(data);
         Assert(0); return QPixmap();
     }
+    /* QPixmap <= template class: */
+    template<class T> QPixmap toWarningPixmap(const T &data) const
+    {
+        if (canConvert<T>())
+            return ::toWarningPixmap(data);
+        Assert(0); return QPixmap();
+    }
 
     /* QString <= template class: */
     template<class T> QString toString(const T &data) const
