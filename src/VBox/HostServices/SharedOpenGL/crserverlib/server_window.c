@@ -10,6 +10,8 @@
 #include "cr_rand.h"
 #include "cr_string.h"
 
+#include "render/renderspu.h"
+
 static GLboolean crServerWindowCalcIsVisible(CRMuralInfo *pMural)
 {
     uint32_t cRegions;
