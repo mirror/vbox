@@ -1436,6 +1436,18 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         return rc;
     }
 
+    VBoxServiceVerbose(3, "Guest process \"%s\" got client ID=%u, flags=0x%x\n",
+                       pProcess->StartupInfo.szCmd, pProcess->uClientID, pProcess->StartupInfo.uFlags);
+
+    /* The process thread is not interested in receiving any commands;
+     * tell the host service. */
+    rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */, 0);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Unable to set message filter, rc=%Rrc\n", rc);
+        /* Non-critical. */
+    }
+
     rc = GstCntlSessionProcessAdd(pProcess->pSession, pProcess);
     if (RT_FAILURE(rc))
     {
@@ -1444,9 +1456,6 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
         RTThreadUserSignal(RTThreadSelf());
         return rc;
     }
-
-    VBoxServiceVerbose(3, "Guest process \"%s\" got client ID=%u, flags=0x%x\n",
-                       pProcess->StartupInfo.szCmd, pProcess->uClientID, pProcess->StartupInfo.uFlags);
 
     bool fSignalled = false; /* Indicator whether we signalled the thread user event already. */
 
@@ -1935,8 +1944,6 @@ static DECLCALLBACK(int) gstcntlProcessOnOutput(PVBOXSERVICECTRLPROCESS pThis,
                     || uHandle == OUTPUT_HANDLE_ID_STDOUT_DEPRECATED)
                )
             {
-                VBoxServiceVerbose(3, "[PID %RU32]: dump stdout\n",
-                                   pThis->uPID);
                 char szDumpFile[RTPATH_MAX];
                 if (!RTStrPrintf(szDumpFile, sizeof(szDumpFile), "VBoxService_Session%RU32_PID%RU32_StdOut.txt",
                                  pSession->StartupInfo.uSessionID, pThis->uPID)) rc = VERR_BUFFER_UNDERFLOW;
