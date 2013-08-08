@@ -395,7 +395,13 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
  
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr  = req->dns_server->de_addr.s_addr;
+    if (req->dns_server->de_addr.s_addr == pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS)) {
+        /* undo loopback remapping done in get_dns_addr_domain() */
+        addr.sin_addr.s_addr = RT_N2H_U32_C(INADDR_LOOPBACK);
+    }
+    else {
+        addr.sin_addr.s_addr = req->dns_server->de_addr.s_addr;
+    }
     addr.sin_port = htons(53);
 
     /* send it to our authoritative server */
