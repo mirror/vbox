@@ -26,7 +26,7 @@
 
 /* Local includes */
 #include "UISettingsDialog.h"
-#include "VBoxWarningPane.h"
+#include "UIWarningPane.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
 #include "QIWidgetValidator.h"
@@ -62,7 +62,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Error/Warning stuff: */
     , m_fValid(true)
     , m_fSilent(true)
-    , m_pWarningPane(new VBoxWarningPane(this))
+    , m_pWarningPane(new UIWarningPane(this))
     /* Whats-this stuff: */
     , m_pWhatsThisTimer(new QTimer(this))
     , m_pWhatsThisCandidate(0)
