@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; VMXM - R0 vmx helpers
+; HM - Ring-0 VMX, SVM world-switch and helper routines
 ;
 
 ;

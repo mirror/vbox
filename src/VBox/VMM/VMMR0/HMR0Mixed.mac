@@ -1,8 +1,9 @@
 ; $Id$
 ;; @file
-; HMR0Mixed.mac - Stuff that darwin needs to build two versions of.
+; HM - Ring-0 Host 32/64, Guest 32/64 world-switch routines
 ;
-; Included by HMR0A.asm with RT_ARCH_AMD64 defined or or undefined.
+; Darwin uses this to build two versions in the hybrid case.
+; Included by HMR0A.asm with RT_ARCH_AMD64 defined or undefined.
 ;
 
 ;
@@ -21,7 +22,7 @@
  %ifdef RT_ARCH_AMD64
   ;;
   ; Keep these macro definitions in this file as it gets included and compiled
-  ; with RT_ARCH_AMD64 or RT_ARCH_X86.
+  ; with RT_ARCH_AMD64 once and RT_ARCH_X86 once.
   %define VMX_SKIP_GDTR
   %define VMX_SKIP_IDTR
   %define VMX_SKIP_TR
