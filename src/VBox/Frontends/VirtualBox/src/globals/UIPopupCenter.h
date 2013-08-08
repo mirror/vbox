@@ -57,44 +57,32 @@ public:
     void setPopupStackType(QWidget *pParent, UIPopupStackType newStackType);
 
     /* API: Main message function.
-     * Provides one-two buttons.
-     * Used directly only in exceptional cases: */
+     * Provides up to two buttons.
+     * Its interface, do NOT use it directly! */
     void message(QWidget *pParent, const QString &strPopupPaneID,
                  const QString &strMessage, const QString &strDetails,
-                 int iButton1 = 0, int iButton2 = 0,
                  const QString &strButtonText1 = QString(),
                  const QString &strButtonText2 = QString(),
                  bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'message' function.
-     * Provides single OK button: */
-    void error(QWidget *pParent, const QString &strPopupPaneID,
-               const QString &strMessage, const QString &strDetails,
-               bool fProposeAutoConfirmation = false);
+     * Omits details, provides no buttons: */
+    void popup(QWidget *pParent, const QString &strPopupPaneID,
+               const QString &strMessage);
 
-    /* API: Wrapper to 'error' function.
-     * Omits details: */
+    /* API: Wrapper to 'message' function.
+     * Omits details, provides one button: */
     void alert(QWidget *pParent, const QString &strPopupPaneID,
                const QString &strMessage,
                bool fProposeAutoConfirmation = false);
 
     /* API: Wrapper to 'message' function.
-     * Omits details, provides up to two buttons.
-     * Used directly only in exceptional cases: */
+     * Omits details, provides up to two buttons: */
     void question(QWidget *pParent, const QString &strPopupPaneID,
                   const QString &strMessage,
-                  int iButton1 = 0, int iButton2 = 0,
                   const QString &strButtonText1 = QString(),
                   const QString &strButtonText2 = QString(),
                   bool fProposeAutoConfirmation = false);
-
-    /* API: Wrapper to 'question' function,
-     * Question providing two buttons (OK and Cancel by default): */
-    void questionBinary(QWidget *pParent, const QString &strPopupPaneID,
-                        const QString &strMessage,
-                        const QString &strOkButtonText = QString(),
-                        const QString &strCancelButtonText = QString(),
-                        bool fProposeAutoConfirmation = false);
 
     /* API: Recall function,
      * Close corresponding popup of passed parent: */
@@ -130,9 +118,8 @@ private:
     /* Helpers: Popup-pane stuff: */
     void showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                        const QString &strMessage, const QString &strDetails,
-                       int iButton1, int iButton2,
-                       QString strButtonText1, QString strButtonText2,
-                       bool fProposeAutoConfirmation);
+                       QString strButtonText1 = QString(), QString strButtonText2 = QString(),
+                       bool fProposeAutoConfirmation = false);
     void hidePopupPane(QWidget *pParent, const QString &strPopupPaneID);
 
     /* Static helper: Popup-stack stuff: */
