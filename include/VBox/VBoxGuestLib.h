@@ -609,8 +609,9 @@ typedef struct VBGLR3GUESTCTRLCMDCTX
 /* General message handling on the guest. */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uFilterAdd, uint32_t uFilterRemove);
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, uint32_t *puNumParms);
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId, uint32_t uFilterAdd, uint32_t uFilterRemove);
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId);
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t u32ClientId);
 /* Guest session handling. */
