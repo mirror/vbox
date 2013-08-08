@@ -24,7 +24,10 @@
   ; Keep these macro definitions in this file as it gets included and compiled
   ; with RT_ARCH_AMD64 once and RT_ARCH_X86 once.
   %define VMX_SKIP_GDTR
-  %define VMX_SKIP_IDTR
+  %ifndef RT_OS_DARWIN
+   ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always. See @bugref{6875}.
+   %define VMX_SKIP_IDTR
+  %endif
   %define VMX_SKIP_TR
  %endif
 %endif
