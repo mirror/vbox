@@ -1958,7 +1958,7 @@ static int32_t crVBoxServerLoadMurals(CR_SERVER_LOADSTATE_READER *pReader, uint3
 
         if (!ui && version == SHCROGL_SSM_VERSION_WITH_BUGGY_MURAL_INFO)
         {
-            /* Lookahead buffer used to determine whether the data erroneously storred root visible regions data */
+            /* Lookahead buffer used to determine whether the data erroneously stored root visible regions data */
             union
             {
                 void * apv[1];
@@ -1970,11 +1970,10 @@ static int32_t crVBoxServerLoadMurals(CR_SERVER_LOADSTATE_READER *pReader, uint3
 
             do {
                 /* first value is bool (uint8_t) value followed by pointer-size-based alignment.
-                 * the mural memory is zero-initialized initially, so we can be sure the padding is zeroed,
-                 * i.e. possible values for visible regions data are 0 or (1 << (sizeof (void*) - 8)) */
+                 * the mural memory is zero-initialized initially, so we can be sure the padding is zeroed */
                 rc = crServerLsrDataGetMem(pReader, &LaBuf, sizeof (LaBuf));
                 AssertRCReturn(rc, rc);
-                if (LaBuf.apv[0] != NULL && LaBuf.apv[0] != ((void*)(1 << (sizeof (void*) - 8))))
+                if (LaBuf.apv[0] != NULL && LaBuf.apv[0] != ((void*)1))
                     break;
 
                 /* check that the pointers are either valid or NULL */
