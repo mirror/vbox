@@ -562,14 +562,6 @@ typedef struct ClientState
         if (pHostCmd->mTimestamp <= mHostCmdTS)
             return false;
 
-#ifdef DEBUG
-        LogFlowFunc(("[Client %RU32] mFlags=0x%x, mContextID=%RU32 (session %RU32), mContextFilter=0x%x (result=%x -> %RTbool)\n",
-                     mID, mFlags, pHostCmd->mContextID,
-                     VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID),
-                     mContextFilter,
-                     pHostCmd->mContextID & pHostCmd->mContextID,
-                     (pHostCmd->mContextID & mContextFilter) == pHostCmd->mContextID));
-#endif
         /*
          * If a sesseion filter is set, only obey those commands we're interested in
          * by applying our context ID filter mask and compare the result with the
@@ -583,6 +575,11 @@ typedef struct ClientState
         }
         else /* Client is interested in all commands. */
             fWant = true;
+
+        LogFlowFunc(("[Client %RU32] mFlags=0x%x, mContextID=%RU32 (session %RU32), mContextFilter=0x%x, fWant=%RTbool\n",
+                     mID, mFlags, pHostCmd->mContextID,
+                     VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID),
+                     mContextFilter, fWant));
 
         return fWant;
     }
@@ -1220,7 +1217,7 @@ int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
     if (cParms != 1)
         return VERR_INVALID_PARAMETER;
 
-    LogFlowFunc(("Client ID=%RU32 skipping message ...\n", u32ClientID));
+    LogFlowFunc(("[Client %RU32] Skipping current message ...\n", u32ClientID));
 
     itClientState->second.DequeueCurrent();
 
