@@ -19,7 +19,11 @@
 
 %ifndef VBOX_WITH_OLD_VTX_CODE
  %ifdef RT_ARCH_AMD64
-  %define VMX_SKIP_GDTR_IDTR
+  ;;
+  ; Keep these macro definitions in this file as it gets included and compiled
+  ; with RT_ARCH_AMD64 or RT_ARCH_X86.
+  %define VMX_SKIP_GDTR
+  %define VMX_SKIP_IDTR
   %define VMX_SKIP_TR
  %endif
 %endif
@@ -112,11 +116,12 @@ ALIGN(16)
     push    xAX
 %endif
 
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_GDTR
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xCB * 2
     sgdt    [xSP]
-
+%endif
+%ifndef VMX_SKIP_IDTR
     sub     xSP, xCB * 2
     sidt    [xSP]
 %endif
@@ -166,9 +171,11 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     jz      near .vmxstart_start_failed
 
     ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
@@ -263,9 +270,11 @@ ALIGN(16)
 
 .vmxstart_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
@@ -304,9 +313,11 @@ ALIGN(16)
 
 .vmxstart_start_failed:
     ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
@@ -437,10 +448,11 @@ ALIGN(16)
 %endif
 
     ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_GDTR
     sub     xSP, xCB * 2
     sgdt    [xSP]
-
+%endif
+%ifndef VMX_SKIP_IDTR
     sub     xSP, xCB * 2
     sidt    [xSP]
 %endif
@@ -498,9 +510,11 @@ ALIGNCODE(16)
     jz      near .vmxstart64_start_failed
 
     ; Restore base and limit of the IDTR & GDTR
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
@@ -610,9 +624,11 @@ ALIGN(16)
 
 .vmxstart64_invalid_vmcs_ptr:
     ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
@@ -664,9 +680,11 @@ ALIGN(16)
 
 .vmxstart64_start_failed:
     ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_GDTR_IDTR
+%ifndef VMX_SKIP_IDTR
     lidt    [xSP]
     add     xSP, xCB * 2
+%endif
+%ifndef VMX_SKIP_GDTR
     lgdt    [xSP]
     add     xSP, xCB * 2
 %endif
