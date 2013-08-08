@@ -305,13 +305,17 @@ enum eGuestFn
      * context ID scheme (that is, a specific session, object etc).
      * Since VBox 4.3+.
      */
-    GUEST_MSG_FILTER = 4,
+    GUEST_MSG_FILTER_SET = 4,
+    /**
+     * Unsets (and resets) a previously set message filter.
+     */
+    GUEST_MSG_FILTER_UNSET = 5,
     /**
      * Skips the current assigned message returned by GUEST_MSG_WAIT.
      * Needed for telling the host service to not keep stale
      * host commands in the queue.
      */
-    GUEST_MSG_SKIP = 5,
+    GUEST_MSG_SKIP = 10,
     /**
      * Guest reports back a guest session status.
      */
@@ -423,16 +427,30 @@ typedef struct HGCMMsgCmdWaitFor
  * deliver messages to the client which match the
  * wanted context ID (ranges).
  */
-typedef struct HGCMMsgCmdSetFilter
+typedef struct HGCMMsgCmdFilterSet
 {
     VBoxGuestHGCMCallInfo hdr;
 
-    /* Mask of context IDs to be filtered. */
+    /** Mask to add to the current set filter. */
     HGCMFunctionParameter add;      /* IN uint32_t */
-    /* Exclude masked; unused. */
+    /** Mask to remove from the current set filter. */
     HGCMFunctionParameter remove;   /* IN uint32_t */
+    /** Filter flags; currently unused. */
+    HGCMFunctionParameter flags;    /* IN uint32_t */
 
-} HGCMMsgCmdSetFilter;
+} HGCMMsgCmdFilterSet;
+
+/**
+ * Asks the guest control host service to disable
+ * a previously set message filter again.
+ */
+typedef struct HGCMMsgCmdFilterUnset
+{
+    VBoxGuestHGCMCallInfo hdr;
+
+    /** Unset flags; currently unused. */
+    HGCMFunctionParameter flags;    /* IN uint32_t */
+} HGCMMsgCmdFilterUnset;
 
 /**
  * Asks the guest control host service to skip the
@@ -443,6 +461,8 @@ typedef struct HGCMMsgCmdSkip
 {
     VBoxGuestHGCMCallInfo hdr;
 
+    /** Skip flags; currently unused. */
+    HGCMFunctionParameter flags;    /* IN uint32_t */
 } HGCMMsgCmdSkip;
 
 /**

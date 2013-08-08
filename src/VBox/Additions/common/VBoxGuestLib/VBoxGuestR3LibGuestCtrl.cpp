@@ -49,7 +49,7 @@ using namespace guestControl;
  * Connects to the guest control service.
  *
  * @returns VBox status code
- * @param   puClientId    Where to put the client id on success. The client id
+ * @param   puClientId    Where to put The client ID on success. The client ID
  *                        must be passed to all the other calls to the service.
  */
 VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId)
@@ -76,7 +76,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlConnect(uint32_t *puClientId)
  * Disconnect from the guest control service.
  *
  * @returns VBox status code.
- * @param   uClientId     The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uClientId     The client ID returned by VbglR3GuestCtrlConnect().
  */
 VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId)
 {
@@ -96,7 +96,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t uClientId)
  * This will block until a message becomes available.
  *
  * @returns VBox status code.
- * @param   uClientId       The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
  * @param   puMsg           Where to store the message id.
  * @param   puNumParms      Where to store the number  of parameters which will be received
  *                          in a second call to the host.
@@ -133,24 +133,50 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
 /**
  * Asks the host guest control service to set a command filter to this
  * client so that it only will receive certain commands in the future.
+ * The filter(s) are a bitmask for the context IDs, served from the host.
  *
  * @return  IPRT status code.
- * @param   uClientId       The client id returned by VbglR3GuestCtrlConnect().
- * @param   uFilterAdd      Filter mask to add.
- * @param   uFilterRemove   Filter mask to remove.
+ * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
+ * @param   uFilterAdd      Context ID filter mask to add.
+ * @param   uFilterRemove   Context ID filter mask to remove.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId,
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId,
                                             uint32_t uFilterAdd, uint32_t uFilterRemove)
 {
-    HGCMMsgCmdSetFilter Msg;
+    HGCMMsgCmdFilterSet Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = uClientId;
-    Msg.hdr.u32Function = GUEST_MSG_FILTER; /* Tell the host we want to set a filter. */
-    Msg.hdr.cParms      = 2;
+    Msg.hdr.u32Function = GUEST_MSG_FILTER_SET; /* Tell the host we want to set a filter. */
+    Msg.hdr.cParms      = 3;
 
     VbglHGCMParmUInt32Set(&Msg.add, uFilterAdd);
     VbglHGCMParmUInt32Set(&Msg.remove, uFilterRemove);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+        rc = Msg.hdr.result;
+    return rc;
+}
+
+
+/**
+ * Disables a previously set message filter.
+ *
+ * @return  IPRT status code.
+ * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId)
+{
+    HGCMMsgCmdFilterUnset Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = uClientId;
+    Msg.hdr.u32Function = GUEST_MSG_FILTER_UNSET; /* Tell the host we want to unset the filter. */
+    Msg.hdr.cParms      = 1;
+
+    VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -164,7 +190,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSetFilter(uint32_t uClientId,
  * VbglR3GuestCtrlMsgWaitFor().
  *
  * @return  IPRT status code.
- * @param   uClientId       The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
  */
 VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
 {
@@ -174,7 +200,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
     Msg.hdr.u32ClientID = uClientId;
     Msg.hdr.u32Function = GUEST_MSG_SKIP; /* Tell the host we want to skip
                                              the current assigned command. */
-    Msg.hdr.cParms      = 0;              /* No parameters needed. */
+    Msg.hdr.cParms      = 1;
+
+    VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -188,7 +216,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgSkip(uint32_t uClientId)
  * Asks the host to cancel (release) all pending waits which were deferred.
  *
  * @returns VBox status code.
- * @param   uClientId     The client id returned by VbglR3GuestCtrlConnect().
+ * @param   uClientId     The client ID returned by VbglR3GuestCtrlConnect().
  */
 VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
 {

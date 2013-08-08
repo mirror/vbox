@@ -562,19 +562,24 @@ typedef struct ClientState
         if (pHostCmd->mTimestamp <= mHostCmdTS)
             return false;
 
-#ifdef DEBUG_andy
-            LogFlowFunc(("[Client %RU32] mFlags=%x, mContextID=%RU32, mContextFilter=%x, filterRes=%x, sessionID=%RU32\n",
-                         mID, mFlags, pHostCmd->mContextID, mContextFilter,
-                         pHostCmd->mContextID & mContextFilter, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID)));
+#ifdef DEBUG
+        LogFlowFunc(("[Client %RU32] mFlags=0x%x, mContextID=%RU32 (session %RU32), mContextFilter=0x%x (result=%x -> %RTbool)\n",
+                     mID, mFlags, pHostCmd->mContextID,
+                     VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID),
+                     mContextFilter,
+                     pHostCmd->mContextID & pHostCmd->mContextID,
+                     (pHostCmd->mContextID & mContextFilter) == pHostCmd->mContextID));
 #endif
         /*
-         * If a sesseion filter is set, only obey those sessions we're interested in.
+         * If a sesseion filter is set, only obey those commands we're interested in
+         * by applying our context ID filter mask and compare the result with the
+         * original context ID.
          */
-        bool fWant = false;
+        bool fWant;
         if (mFlags & CLIENTSTATE_FLAG_CONTEXTFILTER)
         {
-            if ((pHostCmd->mContextID & mContextFilter) == mContextFilter)
-                fWant = true;
+            fWant =
+                (pHostCmd->mContextID & mContextFilter) == pHostCmd->mContextID;
         }
         else /* Client is interested in all commands. */
             fWant = true;
@@ -994,7 +999,8 @@ private:
     int clientConnect(uint32_t u32ClientID, void *pvClient);
     int clientDisconnect(uint32_t u32ClientID, void *pvClient);
     int clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int cancelHostCmd(uint32_t u32ContextID);
     int cancelPendingWaits(uint32_t u32ClientID, int rcPending);
@@ -1135,8 +1141,8 @@ int Service::clientGetCommand(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandl
     return clientState.RunCurrent(&thisCon);
 }
 
-int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
-                                uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                                   uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Lookup client in our list so that we can assign the context ID of
@@ -1148,7 +1154,7 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
     if (itClientState == mClientStateMap.end())
         return VERR_NOT_FOUND; /* Should never happen. */
 
-    if (cParms != 2)
+    if (cParms != 3)
         return VERR_INVALID_PARAMETER;
 
     uint32_t uMaskAdd, uMaskRemove;
@@ -1165,12 +1171,37 @@ int Service::clientSetMsgFilter(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHan
         if (uMaskRemove)
             clientState.mContextFilter &= ~uMaskRemove;
 
-        LogFlowFunc(("Client ID=%RU32 now has filter=%x enabled (flags=%x, maskAdd=%x, maskRemove=%x)\n",
+        LogFlowFunc(("[Client %RU32] Setting message filter=0x%x set (flags=0x%x, maskAdd=0x%x, maskRemove=0x%x)\n",
                      u32ClientID, clientState.mContextFilter, clientState.mFlags,
                      uMaskAdd, uMaskRemove));
     }
 
     return rc;
+}
+
+int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
+                                     uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Lookup client in our list so that we can assign the context ID of
+     * a command to that client.
+     */
+    ClientStateMapIter itClientState = mClientStateMap.find(u32ClientID);
+    AssertMsg(itClientState != mClientStateMap.end(), ("Client with ID=%RU32 not found when it should be present\n",
+                                                       u32ClientID));
+    if (itClientState == mClientStateMap.end())
+        return VERR_NOT_FOUND; /* Should never happen. */
+
+    if (cParms != 1)
+        return VERR_INVALID_PARAMETER;
+
+    ClientState &clientState = itClientState->second;
+
+    clientState.mFlags &= ~CLIENTSTATE_FLAG_CONTEXTFILTER;
+    clientState.mContextFilter = 0;
+
+    LogFlowFunc(("[Client %RU32} Unset message filter\n", u32ClientID));
+    return VINF_SUCCESS;
 }
 
 int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
@@ -1186,7 +1217,7 @@ int Service::clientSkipMsg(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle,
     if (itClientState == mClientStateMap.end())
         return VERR_NOT_FOUND; /* Should never happen. */
 
-    if (cParms != 0)
+    if (cParms != 1)
         return VERR_INVALID_PARAMETER;
 
     LogFlowFunc(("Client ID=%RU32 skipping message ...\n", u32ClientID));
@@ -1324,7 +1355,7 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
                 if (RT_FAILURE(rc2))
                     LogFlowFunc(("Waking up client ID=%RU32 failed with rc=%Rrc\n",
                                  itClientState->first, rc2));
-#ifdef DEBUG_andy
+#ifdef DEBUG
                 uClientsWokenUp++;
 #endif
             }
@@ -1332,7 +1363,7 @@ int Service::hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVC
             itClientState++;
         }
 
-#ifdef DEBUG_andy
+#ifdef DEBUG
         LogFlowFunc(("%RU32 clients have been woken up\n", uClientsWokenUp));
 #endif
     }
@@ -1384,9 +1415,17 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                  * The guest only wants certain messages set by the filter mask(s).
                  * Since VBox 4.3+.
                  */
-                case GUEST_MSG_FILTER:
-                    LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER\n", u32ClientID));
-                    rc = clientSetMsgFilter(u32ClientID, callHandle, cParms, paParms);
+                case GUEST_MSG_FILTER_SET:
+                    LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER_SET\n", u32ClientID));
+                    rc = clientSetMsgFilterSet(u32ClientID, callHandle, cParms, paParms);
+                    break;
+
+                /*
+                 * Unsetting the message filter flag.
+                 */
+                case GUEST_MSG_FILTER_UNSET:
+                    LogFlowFunc(("[Client %RU32] GUEST_MSG_FILTER_UNSET\n", u32ClientID));
+                    rc = clientSetMsgFilterUnset(u32ClientID, callHandle, cParms, paParms);
                     break;
 
                 /*
