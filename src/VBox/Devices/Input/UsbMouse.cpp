@@ -1199,6 +1199,7 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         break;
     default:
         AssertFailed(); /* Unexpected here. */
+        cbCopy = 0;
         break;
     }
 
@@ -1891,6 +1892,10 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                     cbDesc = sizeof(g_UsbHidMTIfHidDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidMTIfHidDesc;
                                     break;
+                                default:
+                                    cbDesc = 0;
+                                    pDesc = 0;
+                                    break;
                                 }
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);
@@ -1907,23 +1912,21 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                                 switch (pThis->enmMode)
                                 {
                                 case USBHIDMODE_ABSOLUTE:
-                                {
                                     cbDesc = sizeof(g_UsbHidTReportDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidTReportDesc;
                                     break;
-                                }
                                 case USBHIDMODE_RELATIVE:
-                                {
                                     cbDesc = sizeof(g_UsbHidMReportDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidMReportDesc;
                                     break;
-                                }
                                 case USBHIDMODE_MULTI_TOUCH:
-                                {
                                     cbDesc = sizeof(g_UsbHidMTReportDesc);
                                     pDesc = (const uint8_t *)&g_UsbHidMTReportDesc;
                                     break;
-                                }
+                                default:
+                                    cbDesc = 0;
+                                    pDesc = 0;
+                                    break;
                                 }
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);
