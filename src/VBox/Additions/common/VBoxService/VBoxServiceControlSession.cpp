@@ -62,12 +62,11 @@ static int                  gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLS
 static int                  gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
 static int                  gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 static int                  gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
-extern int                  gstcntlSessionHandleProcExec(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
-extern int                  gstcntlSessionHandleProcInput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
-extern int                  gstcntlSessionHandleProcOutput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
-extern int                  gstcntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
-extern int                  gstcntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
-/* Guest -> Host handlers. */
+static int                  gstcntlSessionHandleProcExec(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleProcInput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx, void *pvScratchBuf, size_t cbScratchBuf);
+static int                  gstcntlSessionHandleProcOutput(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleProcTerminate(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
+static int                  gstcntlSessionHandleProcWaitFor(const PVBOXSERVICECTRLSESSION pSession, PVBGLR3GUESTCTRLCMDCTX pHostCtx);
 
 
 /** Generic option indices for session fork arguments. */
@@ -512,12 +511,27 @@ int gstcntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    int rc;
+    int rc = VINF_SUCCESS;
     bool fStartAllowed = false; /* Flag indicating whether starting a process is allowed or not. */
 
-    if (   (pHostCtx->uProtocol <  2 && pHostCtx->uNumParms == 11)
-        || (pHostCtx->uProtocol >= 2 && pHostCtx->uNumParms == 12)
-       )
+    switch (pHostCtx->uProtocol)
+    {
+        case 1: /* Guest Additions < 4.3. */
+            if (pHostCtx->uNumParms != 11)
+                rc = VERR_NOT_SUPPORTED;
+            break;
+
+        case 2: /* Guest Additions >= 4.3. */
+            if (pHostCtx->uNumParms != 12)
+                rc = VERR_NOT_SUPPORTED;
+            break;
+
+        default:
+            rc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+    if (RT_SUCCESS(rc))
     {
         VBOXSERVICECTRLPROCSTARTUPINFO startupInfo;
         RT_ZERO(startupInfo);
@@ -567,8 +581,6 @@ int gstcntlSessionHandleProcExec(PVBOXSERVICECTRLSESSION pSession,
             }
         }
     }
-    else
-        rc = VERR_NOT_SUPPORTED; /* Unsupported number of parameters. */
 
     /* In case of an error we need to notify the host to not wait forever for our response. */
     if (RT_FAILURE(rc))
@@ -647,7 +659,7 @@ int gstcntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
         {
             fPendingClose = true;
 #ifdef DEBUG_andy
-            VBoxServiceVerbose(4, "Got last process input block for PID=%RU32 of size %RU32 ...\n",
+            VBoxServiceVerbose(4, "Got last process input block for PID=%RU32 (%RU32 bytes) ...\n",
                                uPID, cbSize);
 #endif
         }
@@ -794,11 +806,6 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pfShutdown, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
-
-    /** @todo Implement asynchronous handling of all commands to speed up overall
-     *        performance for handling multiple guest processes at once. At the moment
-     *        only one guest process at a time can and will be served. */
-
     /**
      * Only anonymous sessions (that is, sessions which run with local
      * service privileges) or forked session processes can do certain
@@ -925,6 +932,15 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
     {
         VBoxServiceVerbose(3, "Session ID=%RU32 thread running, client ID=%RU32\n",
                            uSessionID, uClientID);
+
+        /* The session thread is not interested in receiving any commands;
+         * tell the host service. */
+        rc = VbglR3GuestCtrlMsgFilterSet(uClientID, 0 /* Skip all */, 0);
+        if (RT_FAILURE(rc))
+        {
+            VBoxServiceError("Unable to set message filter, rc=%Rrc\n", rc);
+            /* Non-critical. */
+        }
     }
     else
     {
@@ -1139,15 +1155,18 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
             rc = VbglR3GuestCtrlMsgWaitFor(uClientID, &uMsg, &cParms);
             if (rc == VERR_TOO_MUCH_DATA)
             {
+#ifdef DEBUG
                 VBoxServiceVerbose(4, "Message requires %RU32 parameters, but only 2 supplied -- retrying request (no error!)...\n", cParms);
+#endif
                 rc = VINF_SUCCESS; /* Try to get "real" message in next block below. */
             }
             else if (RT_FAILURE(rc))
                 VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
             if (RT_SUCCESS(rc))
             {
+#ifdef DEBUG
                 VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
-
+#endif
                 /* Set number of parameters for current host context. */
                 ctxHost.uNumParms = cParms;
 
