@@ -90,7 +90,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 #if defined(LOG_ENABLED) || defined(VBOX_STRICT)
 static const char *emR3GetStateName(EMSTATE enmState);
 #endif
-static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
+static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
@@ -774,6 +774,8 @@ static const char *emR3GetStateName(EMSTATE enmState)
         case EMSTATE_SUSPENDED:         return "EMSTATE_SUSPENDED";
         case EMSTATE_TERMINATING:       return "EMSTATE_TERMINATING";
         case EMSTATE_DEBUG_GUEST_RAW:   return "EMSTATE_DEBUG_GUEST_RAW";
+        case EMSTATE_DEBUG_GUEST_HM:    return "EMSTATE_DEBUG_GUEST_HM";
+        case EMSTATE_DEBUG_GUEST_IEM:   return "EMSTATE_DEBUG_GUEST_IEM";
         case EMSTATE_DEBUG_GUEST_REM:   return "EMSTATE_DEBUG_GUEST_REM";
         case EMSTATE_DEBUG_HYPER:       return "EMSTATE_DEBUG_HYPER";
         case EMSTATE_GURU_MEDITATION:   return "EMSTATE_GURU_MEDITATION";
@@ -791,36 +793,42 @@ static const char *emR3GetStateName(EMSTATE enmState)
  * @param   pVCpu   Pointer to the VMCPU.
  * @param   rc      Current EM VBox status code.
  */
-static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
+static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
 {
     for (;;)
     {
-        Log(("emR3Debug: rc=%Rrc\n", rc));
-        const int rcLast = rc;
+        Log(("emR3Debug: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
+        const VBOXSTRICTRC rcLast = rc;
 
         /*
          * Debug related RC.
          */
-        switch (rc)
+        switch (VBOXSTRICTRC_VAL(rc))
         {
             /*
              * Single step an instruction.
              */
             case VINF_EM_DBG_STEP:
+                if (   pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
+                    || pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
+                    || pVCpu->em.s.fForceRAW /* paranoia */)
 #ifdef VBOX_WITH_RAW_MODE
-                if (    pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_RAW
-                    ||  pVCpu->em.s.enmState == EMSTATE_DEBUG_HYPER
-                    ||  pVCpu->em.s.fForceRAW /* paranoia */)
                     rc = emR3RawStep(pVM, pVCpu);
+#else
+                    AssertLogRelMsgFailedStmt(("Bad EM state."), VERR_EM_INTERNAL_ERROR);
+#endif
+                else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
+                    rc = EMR3HmSingleInstruction(pVM, pVCpu);
+#ifdef VBOX_WITH_REM
+                else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM)
+                    rc = emR3RemStep(pVM, pVCpu);
+#endif
                 else
                 {
-                    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM);
-                    rc = emR3RemStep(pVM, pVCpu);
+                    rc = IEMExecOne(pVCpu); /** @todo add dedicated interface... */
+                    if (rc == VINF_SUCCESS || rc == VINF_EM_RESCHEDULE)
+                        rc = VINF_EM_DBG_STEPPED;
                 }
-#else
-                AssertLogRelMsgFailed(("%Rrc\n", rc));
-                rc = VERR_EM_INTERNAL_ERROR;
-#endif
                 break;
 
             /*
@@ -872,7 +880,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
          */
         do
         {
-            switch (rc)
+            switch (VBOXSTRICTRC_VAL(rc))
             {
                 /*
                  * Continue the debugging loop.
@@ -904,7 +912,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                         if (rc != VINF_SUCCESS && RT_SUCCESS(rc))
                             continue;
 #else
-                        AssertLogRelMsgFailedReturn(("Not implemented\n", rc), VERR_EM_INTERNAL_ERROR);
+                        AssertLogRelMsgFailedReturn(("Not implemented\n"), VERR_EM_INTERNAL_ERROR);
 #endif
                     }
                     if (rc == VINF_SUCCESS)
@@ -916,7 +924,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                  * We'll simply turn the thing off since that's the easiest thing to do.
                  */
                 case VERR_DBGF_NOT_ATTACHED:
-                    switch (rcLast)
+                    switch (VBOXSTRICTRC_VAL(rcLast))
                     {
                         case VINF_EM_DBG_HYPER_STEPPED:
                         case VINF_EM_DBG_HYPER_BREAKPOINT:
@@ -960,7 +968,7 @@ static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc)
                  * The rest is unexpected, and will keep us here.
                  */
                 default:
-                    AssertMsgFailed(("Unexpected rc %Rrc!\n", rc));
+                    AssertMsgFailed(("Unexpected rc %Rrc!\n", VBOXSTRICTRC_VAL(rc)));
                     break;
             }
         } while (false);
@@ -1839,7 +1847,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 /* Note: it's important to make sure the return code from TRPMR3InjectEvent isn't ignored! */
                 /** @todo this really isn't nice, should properly handle this */
                 rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT);
-                if (pVM->em.s.fIemExecutesAll && rc2 == VINF_EM_RESCHEDULE_REM)
+                if (pVM->em.s.fIemExecutesAll && (rc2 == VINF_EM_RESCHEDULE_REM || rc2 == VINF_EM_RESCHEDULE_HM || rc2 == VINF_EM_RESCHEDULE_RAW))
                     rc2 = VINF_EM_RESCHEDULE;
 #ifdef VBOX_STRICT
                 rcIrq = rc2;
@@ -2248,11 +2256,6 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Guest debug events.
                  */
                 case VINF_EM_DBG_STEPPED:
-                    /* Commenting this assertion for now as it hinders with single-stepping in new AMD-V code
-                     * (using guest EFLAGS.TF) and returning VINF_EM_DBG_STEPPED in the #DB handler. */
-#if 0
-                    AssertMsgFailed(("VINF_EM_DBG_STEPPED cannot be here!"));
-#endif
                 case VINF_EM_DBG_STOP:
                 case VINF_EM_DBG_BREAKPOINT:
                 case VINF_EM_DBG_STEP:
@@ -2261,10 +2264,20 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_RAW));
                         pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_RAW;
                     }
-                    else
+                    else if (enmOldState == EMSTATE_HM)
+                    {
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_HM));
+                        pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_HM;
+                    }
+                    else if (enmOldState == EMSTATE_REM)
                     {
                         Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_REM));
                         pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_REM;
+                    }
+                    else
+                    {
+                        Log2(("EMR3ExecuteVM: %Rrc: %d -> %d\n", rc, enmOldState, EMSTATE_DEBUG_GUEST_IEM));
+                        pVCpu->em.s.enmState = EMSTATE_DEBUG_GUEST_IEM;
                     }
                     break;
 
@@ -2321,6 +2334,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         || enmNewState == EMSTATE_REM
                         || enmNewState == EMSTATE_DEBUG_GUEST_RAW
                         || enmNewState == EMSTATE_DEBUG_GUEST_HM
+                        || enmNewState == EMSTATE_DEBUG_GUEST_IEM
                         || enmNewState == EMSTATE_DEBUG_GUEST_REM) )
                 {
                     LogFlow(("EMR3ExecuteVM: Clearing MWAIT\n"));
@@ -2383,7 +2397,13 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute in the interpreter.
                  */
                 case EMSTATE_IEM:
-                    rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu));
+#if 0 /* For testing purposes. */
+                    rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu));
+                    if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_HM || rc == VINF_EM_RESCHEDULE_REM || rc == VINF_EM_RESCHEDULE_RAW)
+                        rc = VINF_SUCCESS;
+                    else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
+#endif
+                        rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu));
                     if (pVM->em.s.fIemExecutesAll)
                     {
                         Assert(rc != VINF_EM_RESCHEDULE_REM);
@@ -2436,10 +2456,12 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Debugging in the guest.
                  */
-                case EMSTATE_DEBUG_GUEST_REM:
                 case EMSTATE_DEBUG_GUEST_RAW:
+                case EMSTATE_DEBUG_GUEST_HM:
+                case EMSTATE_DEBUG_GUEST_IEM:
+                case EMSTATE_DEBUG_GUEST_REM:
                     TMR3NotifySuspend(pVM, pVCpu);
-                    rc = emR3Debug(pVM, pVCpu, rc);
+                    rc = VBOXSTRICTRC_TODO(emR3Debug(pVM, pVCpu, rc));
                     TMR3NotifyResume(pVM, pVCpu);
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     break;
@@ -2452,7 +2474,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     TMR3NotifySuspend(pVM, pVCpu);
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
-                    rc = emR3Debug(pVM, pVCpu, rc);
+                    rc = VBOXSTRICTRC_TODO(emR3Debug(pVM, pVCpu, rc));
                     Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     if (rc != VINF_SUCCESS)
                     {

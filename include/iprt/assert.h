@@ -1471,6 +1471,23 @@ RT_C_DECLS_END
         RTAssertPanic(); \
     } while (0)
 
+/** @def AssertLogRelMsgFailedStmt
+ * An assertion failed, execute @a stmt.
+ *
+ * Strict builds will hit a breakpoint, non-strict will only do LogRel. The
+ * statement will be executed in regardless of build type.
+ *
+ * @param   a       printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute after raising/logging the assertion.
+ */
+#define AssertLogRelMsgFailedStmt(a, stmt) \
+    do { \
+        RTAssertLogRelMsg1((const char *)0, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+        RTAssertLogRelMsg2(a); \
+        RTAssertPanic(); \
+        stmt; \
+    } while (0)
+
 /** @def AssertLogRelMsgFailedReturn
  * An assertion failed, return \a rc.
  * Strict builds will hit a breakpoint, non-strict will only do LogRel.

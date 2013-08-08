@@ -32,6 +32,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/thread.h>
 #include <iprt/x86.h>
 #include <iprt/asm-amd64-x86.h>
 
@@ -423,5 +424,26 @@ VMM_INT_DECL(int) HMAmdIsSubjectToErratum170(uint32_t *pu32Family, uint32_t *pu3
         *pu32Stepping = u32Stepping;
 
     return fErratumApplies;
+}
+
+
+/**
+ * Sets or clears the single instruction flag.
+ *
+ * When set, HM will try its best to return to ring-3 after executing a single
+ * instruction.  This can be used for debugging.  See also
+ * EMR3HmSingleInstruction.
+ *
+ * @returns The old flag state.
+ * @param   pVCpu               Pointer to the cross context CPU structure of
+ *                              the calling EMT.
+ * @param   fEnable             The new flag state.
+ */
+VMM_INT_DECL(bool) HMSetSingleInstruction(PVMCPU pVCpu, bool fEnable)
+{
+    VMCPU_ASSERT_EMT(pVCpu);
+    bool fOld = pVCpu->hm.s.fSingleInstruction;
+    pVCpu->hm.s.fSingleInstruction = fEnable;
+    return fOld;
 }
 

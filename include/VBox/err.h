@@ -243,6 +243,9 @@
 /** Reason for leaving RC: A triple-fault condition. Currently, causes
  *  a guru meditation. */
 #define VINF_EM_TRIPLE_FAULT                1155
+/** The specified execution engine cannot execute guest code in the current
+ *  state. */
+#define VERR_EM_CANNOT_EXEC_GUEST           (-1156)
 /** @} */
 
 
