@@ -68,6 +68,8 @@ typedef enum EMSTATE
     EMSTATE_DEBUG_GUEST_RAW,
     /** Guest debug event from hardware accelerated mode is being processed. */
     EMSTATE_DEBUG_GUEST_HM,
+    /** Guest debug event from interpreted execution mode is being processed. */
+    EMSTATE_DEBUG_GUEST_IEM,
     /** Guest debug event from recompiled-mode is being processed. */
     EMSTATE_DEBUG_GUEST_REM,
     /** Hypervisor debug event being processed. */
@@ -271,6 +273,8 @@ VMMR3_INT_DECL(int)             EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3NotifyResume(PVM pVM);
 VMMR3_INT_DECL(int)             EMR3NotifySuspend(PVM pVM);
+VMMR3_INT_DECL(VBOXSTRICTRC)    EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu);
+
 /** @} */
 #endif /* IN_RING3 */
 

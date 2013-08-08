@@ -154,6 +154,71 @@ static int emR3SingleStepExecHm(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 
 
 /**
+ * Executes instruction in HM mode if we can.
+ *
+ * This is somewhat comparable to REMR3EmulateInstruction.
+ *
+ * @returns VBox strict status code.
+ * @retval  VINF_EM_DBG_STEPPED on success.
+ * @retval  VERR_EM_CANNOT_EXEC_GUEST if we cannot execute guest instructions in
+ *          HM right now.
+ *
+ * @param   pVM                 Pointer to the cross context VM structure.
+ * @param   pVCpu               Pointer to the cross context CPU structure for
+ *                              the calling EMT.
+ * @thread  EMT.
+ */
+VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu)
+{
+    if (!HMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
+        return VINF_EM_RESCHEDULE;
+
+    /*
+     * Service necessary FFs before going into HM.
+     */
+    PCPUMCTX pCtx = pVCpu->em.s.pCtx;
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
+        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
+    {
+        VBOXSTRICTRC rcStrict = emR3HmForcedActions(pVM, pVCpu, pCtx);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            Log(("EMR3HmSingleInstruction: FFs before -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+            return rcStrict;
+        }
+    }
+
+    /*
+     * Go execute it.
+     */
+    bool fOld = HMSetSingleInstruction(pVCpu, true);
+    VBOXSTRICTRC rcStrict = VMMR3HmRunGC(pVM, pVCpu);
+    HMSetSingleInstruction(pVCpu, fOld);
+    LogFlow(("EMR3HmSingleInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+
+    /*
+     * Handle high priority FFs and informational status codes.  We don't do
+     * normal FF processing the caller or the next call can deal with them.
+     */
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
+    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
+        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+    {
+        rcStrict = emR3HighPriorityPostForcedActions(pVM, pVCpu, VBOXSTRICTRC_TODO(rcStrict));
+        LogFlow(("EMR3HmSingleInstruction: FFs after -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
+    if (rcStrict != VINF_SUCCESS && (rcStrict < VINF_EM_FIRST || rcStrict > VINF_EM_LAST))
+    {
+        rcStrict = emR3HmHandleRC(pVM, pVCpu, pCtx, VBOXSTRICTRC_TODO(rcStrict));
+        Log(("EMR3HmSingleInstruction: emR3HmHandleRC -> %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    }
+
+    return rcStrict;
+}
+
+
+/**
  * Executes one (or perhaps a few more) instruction(s).
  *
  * @returns VBox status code suitable for EM.

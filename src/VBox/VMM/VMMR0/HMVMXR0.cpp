@@ -3316,7 +3316,7 @@ static int hmR0VmxLoadGuestDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     PVM pVM               = pVCpu->CTX_SUFF(pVM);
     bool fInterceptDB     = false;
     bool fInterceptMovDRx = false;
-    if (DBGFIsStepping(pVCpu))
+    if (DBGFIsStepping(pVCpu) || pVCpu->hm.s.fSingleInstruction)
     {
         /* If the CPU supports the monitor trap flag, use it for single stepping in DBGF and avoid intercepting #DB. */
         if (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG)
@@ -6281,8 +6281,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (pMixedCtx->eflags.Bits.u1TF)    /* We don't have any IA32_DEBUGCTL MSR for guests. Treat as all bits 0. */
             {
                 /*
-                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD, VMX_EXIT_MTF
-                 * VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
+                 * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
+                 * VMX_EXIT_MTF VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
                  */
                 rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
                 AssertRCReturn(rc, rc);
@@ -8664,7 +8664,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMtf(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
     int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMtf);
-    return VINF_EM_DBG_STOP;
+    return VINF_EM_DBG_STEPPED;
 }
 
 
@@ -8759,6 +8759,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     int rc = VERR_INTERNAL_ERROR_5;
     if (   !DBGFIsStepping(pVCpu)
+        && !pVCpu->hm.s.fSingleInstruction
         && !CPUMIsHyperDebugStateActive(pVCpu))
     {
         /* Don't intercept MOV DRx. */

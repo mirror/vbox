@@ -537,7 +537,9 @@ typedef struct HMCPU
     bool                        fActive;
     /** Set when the TLB has been checked until we return from the world switch. */
     volatile bool               fCheckedTLBFlush;
-    uint8_t                     u8Alignment[4];
+    /** Whether we're executing a single instruction. */
+    bool                        fSingleInstruction;
+    uint8_t                     abAlignment[3];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
