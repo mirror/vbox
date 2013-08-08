@@ -90,7 +90,7 @@ void UIPopupCenter::cleanup()
 void UIPopupCenter::showPopupStack(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
@@ -108,7 +108,7 @@ void UIPopupCenter::showPopupStack(QWidget *pParent)
 void UIPopupCenter::hidePopupStack(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
@@ -126,7 +126,7 @@ void UIPopupCenter::hidePopupStack(QWidget *pParent)
 void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStackType)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
@@ -150,67 +150,41 @@ void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStac
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
                             const QString &strMessage, const QString &strDetails,
-                            int iButton1 /*= 0*/, int iButton2 /*= 0*/,
                             const QString &strButtonText1 /*= QString()*/,
                             const QString &strButtonText2 /*= QString()*/,
                             bool fProposeAutoConfirmation /*= false*/)
 {
     showPopupPane(pParent, strPopupPaneID,
                   strMessage, strDetails,
-                  iButton1, iButton2,
                   strButtonText1, strButtonText2,
                   fProposeAutoConfirmation);
 }
 
-void UIPopupCenter::error(QWidget *pParent, const QString &strPopupPaneID,
-                          const QString &strMessage, const QString &strDetails,
-                          bool fProposeAutoConfirmation /*= false*/)
+void UIPopupCenter::popup(QWidget *pParent, const QString &strPopupPaneID,
+                          const QString &strMessage)
 {
-    message(pParent, strPopupPaneID,
-            strMessage, strDetails,
-            AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape /* 1st button */,
-            0 /* 2nd button */,
-            QApplication::translate("UIMessageCenter", "Close") /* 1st button text */,
-            QString() /* 2nd button text */,
-            fProposeAutoConfirmation);
+    message(pParent, strPopupPaneID, strMessage, QString());
 }
 
 void UIPopupCenter::alert(QWidget *pParent, const QString &strPopupPaneID,
                           const QString &strMessage,
                           bool fProposeAutoConfirmation /*= false*/)
 {
-    error(pParent, strPopupPaneID,
-          strMessage, QString(),
-          fProposeAutoConfirmation);
+    message(pParent, strPopupPaneID, strMessage, QString(),
+            QApplication::translate("UIMessageCenter", "Close") /* 1st button text */,
+            QString() /* 2nd button text */,
+            fProposeAutoConfirmation);
 }
 
 void UIPopupCenter::question(QWidget *pParent, const QString &strPopupPaneID,
                              const QString &strMessage,
-                             int iButton1 /*= 0*/, int iButton2 /*= 0*/,
                              const QString &strButtonText1 /*= QString()*/,
                              const QString &strButtonText2 /*= QString()*/,
                              bool fProposeAutoConfirmation /*= false*/)
 {
-    message(pParent, strPopupPaneID,
-            strMessage, QString(),
-            iButton1, iButton2,
+    message(pParent, strPopupPaneID, strMessage, QString(),
             strButtonText1, strButtonText2,
             fProposeAutoConfirmation);
-}
-
-void UIPopupCenter::questionBinary(QWidget *pParent, const QString &strPopupPaneID,
-                                   const QString &strMessage,
-                                   const QString &strOkButtonText /*= QString()*/,
-                                   const QString &strCancelButtonText /*= QString()*/,
-                                   bool fProposeAutoConfirmation /*= false*/)
-{
-    question(pParent, strPopupPaneID,
-             strMessage,
-             AlertButton_Ok | AlertButtonOption_Default,
-             AlertButton_Cancel | AlertButtonOption_Escape,
-             strOkButtonText,
-             strCancelButtonText,
-             fProposeAutoConfirmation);
 }
 
 void UIPopupCenter::recall(QWidget *pParent, const QString &strPopupPaneID)
@@ -220,24 +194,37 @@ void UIPopupCenter::recall(QWidget *pParent, const QString &strPopupPaneID)
 
 void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                                   const QString &strMessage, const QString &strDetails,
-                                  int iButton1, int iButton2,
-                                  QString strButtonText1, QString strButtonText2,
-                                  bool fProposeAutoConfirmation)
+                                  QString strButtonText1 /*= QString()*/, QString strButtonText2 /*= QString()*/,
+                                  bool fProposeAutoConfirmation /*= false*/)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
-    /* Make sure at least one button is valid: */
-    if (iButton1 == 0 && iButton2 == 0)
-    {
+    /* Prepare buttons: */
+    int iButton1 = 0;
+    int iButton2 = 0;
+    /* Make sure single button is properly configured: */
+    if (!strButtonText1.isEmpty() && strButtonText2.isEmpty())
         iButton1 = AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape;
-        strButtonText1 = QApplication::translate("UIMessageCenter", "Close");
+    else if (strButtonText1.isEmpty() && !strButtonText2.isEmpty())
+        iButton2 = AlertButton_Cancel | AlertButtonOption_Default | AlertButtonOption_Escape;
+    /* Make sure buttons are unique if set both: */
+    else if (!strButtonText1.isEmpty() && !strButtonText2.isEmpty())
+    {
+        iButton1 = AlertButton_Ok | AlertButtonOption_Default;
+        iButton2 = AlertButton_Cancel | AlertButtonOption_Escape;
+        /* If user made a mistake in button names, we will fix that: */
+        if (strButtonText1 == strButtonText2)
+        {
+            strButtonText1 = QApplication::translate("UIMessageCenter", "Ok");
+            strButtonText1 = QApplication::translate("UIMessageCenter", "Cancel");
+        }
     }
 
     /* Check if popup-pane was auto-confirmed before: */
-    if (fProposeAutoConfirmation)
+    if ((iButton1 || iButton2) && fProposeAutoConfirmation)
     {
         QStringList confirmedPopupList = vboxGlobal().virtualBox().GetExtraData(GUI_SuppressMessages).split(',');
         if (confirmedPopupList.contains(strPopupPaneID))
@@ -284,9 +271,9 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     {
         /* Compose button description map: */
         QMap<int, QString> buttonDescriptions;
-        if (iButton1 != 0 && !buttonDescriptions.contains(iButton1))
+        if (iButton1 != 0)
             buttonDescriptions[iButton1] = strButtonText1;
-        if (iButton2 != 0 && !buttonDescriptions.contains(iButton2))
+        if (iButton2 != 0)
             buttonDescriptions[iButton2] = strButtonText2;
         /* Create new one: */
         pPopupStack->createPopupPane(strPopupPaneID, strMessage, strDetails,
@@ -297,7 +284,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
 void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneID)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
@@ -335,7 +322,7 @@ void UIPopupCenter::sltRemovePopupStack(QString strPopupStackID)
     /* Make sure corresponding popup-stack *exists*: */
     if (!m_stacks.contains(strPopupStackID))
     {
-        AssertMsgFailed(("Popup-stack already destroyed!"));
+        AssertMsgFailed(("Popup-stack already destroyed!\n"));
         return;
     }
 
@@ -350,7 +337,7 @@ void UIPopupCenter::sltRemovePopupStack(QString strPopupStackID)
 QString UIPopupCenter::popupStackID(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return QString();
 
@@ -366,7 +353,7 @@ QString UIPopupCenter::popupStackID(QWidget *pParent)
 void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent, UIPopupStackType stackType)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
@@ -394,7 +381,7 @@ void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *p
 void UIPopupCenter::unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!"));
+    AssertMsg(pParent, ("Parent is NULL!\n"));
     if (!pParent)
         return;
 
