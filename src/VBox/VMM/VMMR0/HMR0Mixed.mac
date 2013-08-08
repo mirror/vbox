@@ -507,7 +507,7 @@ ALIGNCODE(16)
 
     push    xDI
 %ifndef VMX_SKIP_TR
-    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, LDTR, TR)
+    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, TR, LDTR)
 %else
     mov     xDI, [xSP + xCB * 2]        ; pCtx (*2 to skip the saved xDI, LDTR)
 %endif
