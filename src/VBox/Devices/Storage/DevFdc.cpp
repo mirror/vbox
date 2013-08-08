@@ -321,6 +321,8 @@ static fd_format_t fd_formats[] = {
     { FDRIVE_DRV_144, FDRIVE_DISK_144, 22, 80, 1, FDRIVE_RATE_500K, "1.76 MB 3\"1/2", },
     { FDRIVE_DRV_144, FDRIVE_DISK_144, 23, 80, 1, FDRIVE_RATE_500K, "1.84 MB 3\"1/2", },
     { FDRIVE_DRV_144, FDRIVE_DISK_144, 24, 80, 1, FDRIVE_RATE_500K, "1.92 MB 3\"1/2", },
+    /* 1.2 MB 3"1/2 floppy disks */
+    { FDRIVE_DRV_144, FDRIVE_DISK_144, 15, 80, 1, FDRIVE_RATE_500K, " 1.2 MB 3\"1/2", },
     /* 2.88 MB 3"1/2 floppy disks */
     { FDRIVE_DRV_288, FDRIVE_DISK_288, 36, 80, 1, FDRIVE_RATE_1M,   "2.88 MB 3\"1/2", },
     { FDRIVE_DRV_288, FDRIVE_DISK_288, 39, 80, 1, FDRIVE_RATE_1M,   "3.12 MB 3\"1/2", },
