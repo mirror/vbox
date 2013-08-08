@@ -22,6 +22,7 @@
 #include "UINetworkManagerDialog.h"
 #include "UINetworkManager.h"
 #include "UISelectorWindow.h"
+#include "UIProgressDialog.h"
 #include "VBoxGlobal.h"
 
 /* Other VBox includes: */
@@ -125,15 +126,16 @@ QWidget* UIModalWindowManager::realParentWindow(QWidget *pWidget)
             if (pIteratedWindow == pTopLevelWindow)
             {
                 /* Return the 'top' of the iterated-window-stack as the result: */
-                return iteratedWindowStack.last();
+                QWidget *pTopWindow = iteratedWindowStack.last();
+                preprocessRealParent(pTopWindow);
+                return pTopWindow;
             }
         }
     }
 
     /* If we unable to found the possible-parent-window among all ours,
      * we have to add it as the new-window-stack only element: */
-    QList<QWidget*> newWindowStack(QList<QWidget*>() << pTopLevelWindow);
-    m_windows << newWindowStack;
+    registerNewParent(pTopLevelWindow);
     /* And return as the result: */
     return pTopLevelWindow;
 }
@@ -289,5 +291,14 @@ bool UIModalWindowManager::contains(QWidget *pParentWindow, bool fAsTheTopOfStac
 
     /* False by default: */
     return false;
+}
+
+/* static */
+void UIModalWindowManager::preprocessRealParent(QWidget *pParent)
+{
+    /* Progress dialog can be hidden while we are trying to use it as top-most modal parent,
+     * We should show it in such cases because else on MacOS X there will be a problem. */
+    if (UIProgressDialog *pProgressDialog = qobject_cast<UIProgressDialog*>(pParent))
+        pProgressDialog->show();
 }
 
