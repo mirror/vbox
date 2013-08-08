@@ -1861,7 +1861,7 @@ static int crVrScrCompositorRectsCheckInit(PVBOXVR_SCR_COMPOSITOR pCompositor)
 }
 
 
-static int crVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, uint32_t *pfChangedFlags)
+static int crVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, uint32_t cRegions, const RTRECT *paRegions, VBOXVR_SCR_COMPOSITOR_ENTRY **ppReplacedScrEntry, uint32_t *pfChangedFlags)
 {
     uint32_t fChangedFlags = 0;
     PVBOXVR_COMPOSITOR_ENTRY pReplacedEntry;
@@ -1899,6 +1899,10 @@ static int crVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, 
 
     if (pfChangedFlags)
         *pfChangedFlags = fChangedFlags;
+
+    if (ppReplacedScrEntry)
+        *ppReplacedScrEntry = pReplacedScrEntry;
+
     return VINF_SUCCESS;
 }
 
@@ -1986,7 +1990,7 @@ static int crVrScrCompositorEntryEnsureRegionsInTex(PVBOXVR_SCR_COMPOSITOR pComp
     return rc;
 }
 
-VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool fPosRelated, uint32_t *pfChangeFlags)
+VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, bool fPosRelated, VBOXVR_SCR_COMPOSITOR_ENTRY **ppReplacedScrEntry, uint32_t *pfChangeFlags)
 {
     int rc;
     uint32_t fChangeFlags = 0;
@@ -2027,7 +2031,7 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompo
         }
     }
 
-    rc = crVrScrCompositorEntryRegionsAdd(pCompositor, pEntry, cRegions, paRegions, &fChangeFlags);
+    rc = crVrScrCompositorEntryRegionsAdd(pCompositor, pEntry, cRegions, paRegions, ppReplacedScrEntry, &fChangeFlags);
     if (!RT_SUCCESS(rc))
     {
         WARN(("crVrScrCompositorEntryRegionsAdd failed, rc %d", rc));
@@ -2053,6 +2057,8 @@ VBOXVREGDECL(int) CrVrScrCompositorEntryRegionsAdd(PVBOXVR_SCR_COMPOSITOR pCompo
 
     if (fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED)
         fPosChanged = false;
+    else if (ppReplacedScrEntry)
+        *ppReplacedScrEntry = NULL;
 
     if (pfChangeFlags)
     {

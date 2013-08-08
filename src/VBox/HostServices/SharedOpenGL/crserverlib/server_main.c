@@ -2956,7 +2956,13 @@ static void crVBoxServerOutputRedirectCB(unsigned long key, void *data1, void *d
 {
     CRMuralInfo *mural = (CRMuralInfo*) data1;
 
-    crServerSetupOutputRedirect(mural);
+    if (!mural->CreateInfo.externalID)
+        return;
+
+    if (cr_server.bUseOutputRedirect)
+        crServerPresentOutputRedirect(mural);
+    else
+        crServerOutputRedirectCheckEnableDisable(mural);
 }
 
 DECLEXPORT(int32_t) crVBoxServerOutputRedirectSet(const CROutputRedirect *pCallbacks)

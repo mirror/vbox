@@ -128,7 +128,9 @@ GLuint crServerTranslateProgramID(GLuint id);
 
 CRMuralInfo * crServerGetDummyMural(GLint visualBits);
 
-void crServerSetupOutputRedirect(CRMuralInfo *mural);
+void crServerPresentOutputRedirect(CRMuralInfo *pMural);
+void crServerOutputRedirectCheckEnableDisable(CRMuralInfo *pMural);
+
 void crServerCheckMuralGeometry(CRMuralInfo *mural);
 GLboolean crServerSupportRedirMuralFBO(void);
 
@@ -421,7 +423,7 @@ void CrDpResize(PCR_DISPLAY pDisplay, int32_t xPos, int32_t yPos, uint32_t width
 void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags);
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry);
 int CrDpEntryRegionsSet(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
-int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions);
+int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, CR_DISPLAY_ENTRY_MAP *pMap);
 void CrDpEntryRegionsClear(PCR_DISPLAY pDisplay);
 DECLINLINE(bool) CrDpEntryIsUsed(PCR_DISPLAY_ENTRY pEntry)
 {
@@ -435,6 +437,8 @@ DECLINLINE(CRMuralInfo*) CrDpGetMural(PCR_DISPLAY pDisplay)
 
 int CrDemGlobalInit();
 void CrDemTeGlobalTerm();
+void CrDemEnter(PCR_DISPLAY_ENTRY_MAP pMap);
+void CrDemLeave(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY pNewEntry, PCR_DISPLAY_ENTRY pReplacedEntry);
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap);
 void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap);
 PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture, uint32_t fFlags);
@@ -444,6 +448,17 @@ int CrDemEntryLoadState(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY *ppEntry, 
 
 int crServerDisplaySaveState(PSSMHANDLE pSSM);
 int crServerDisplayLoadState(PSSMHANDLE pSSM, uint32_t u32Version);
+
+
+void crServerDEntryResized(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
+void crServerDEntryMoved(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
+void crServerDEntryVibleRegions(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry);
+void crServerDEntryCheckFBO(CRMuralInfo *pMural, CR_DISPLAY_ENTRY *pDEntry, CRContext *ctx);
+void crServerDEntryCleanup(CR_DISPLAY_ENTRY *pDEntry);
+
+void crServerDEntryAllResized(CRMuralInfo *pMural);
+void crServerDEntryAllMoved(CRMuralInfo *pMural);
+void crServerDEntryAllVibleRegions(CRMuralInfo *pMural);
 
 //#define VBOX_WITH_CRSERVER_DUMPER
 #ifdef VBOX_WITH_CRSERVER_DUMPER

@@ -37,31 +37,6 @@
 
 /* DISPLAY */
 
-//static DECLCALLBACK(int) crDpCbRegionsChanged(struct CR_PRESENTER *pPresenter)
-//{
-//    uint32_t cRegions;
-//    const RTRECT *paRegions;
-//    int rc = CrPtGetRegions(pPresenter, &cRegions, &paRegions);
-//    if (!RT_SUCCESS(rc))
-//    {
-//        crWarning("CrPtGetRegions failed, rc %d", rc);
-//        return rc;
-//    }
-//
-//    PCR_DISPLAY pDisplay = CR_DISPLAY_FROM_PRESENTER(pPresenter);
-//
-//    cr_server.head_spu->dispatch_table.WindowVisibleRegion(pDisplay->Mural.spuWindow, cRegions, (GLint*)paRegions);
-//
-//    if (pDisplay->Mural.pvOutputRedirectInstance)
-//    {
-//        /* @todo the code assumes that RTRECT == four GLInts. */
-//        cr_server.outputRedirect.CRORVisibleRegion(pDisplay->Mural.pvOutputRedirectInstance,
-//                                                        cRegions, paRegions);
-//    }
-//
-//    return VINF_SUCCESS;
-//}
-
 int CrDpInit(PCR_DISPLAY pDisplay)
 {
     const GLint visBits = cr_server.MainContextInfo.CreateInfo.visualBits;
@@ -201,7 +176,7 @@ int CrDpLoadState(PCR_DISPLAY pDisplay, PSSMHANDLE pSSM, uint32_t version)
             AssertRCReturn(rc, rc);
         }
 
-        rc = CrDpEntryRegionsAdd(pDisplay, pDEntry, &Pos, (uint32_t)cRects, (const RTRECT*)pRects);
+        rc = CrDpEntryRegionsAdd(pDisplay, pDEntry, &Pos, (uint32_t)cRects, (const RTRECT*)pRects, NULL);
         AssertRCReturn(rc, rc);
 
         if (pRects)
@@ -235,10 +210,15 @@ void crDbgDumpRects(uint32_t cRects, const RTRECT *paRects)
     crDebug("End Dumping rects (%d)", cRects);
 }
 
-int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions)
+int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RTPOINT *pPos, uint32_t cRegions, const RTRECT *paRegions, CR_DISPLAY_ENTRY_MAP *pMap)
 {
     uint32_t fChangeFlags = 0;
-    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, false, &fChangeFlags);
+    VBOXVR_SCR_COMPOSITOR_ENTRY *pReplacedScrEntry = NULL;
+
+    if (pMap)
+        CrDemEnter(pMap);
+
+    int rc = CrVrScrCompositorEntryRegionsAdd(&pDisplay->Mural.Compositor, pEntry ? &pEntry->CEntry : NULL, pPos, cRegions, paRegions, false, &pReplacedScrEntry, &fChangeFlags);
     if (RT_SUCCESS(rc))
     {
         if (fChangeFlags & VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED)
@@ -250,10 +230,23 @@ int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RT
                 crServerMuralVisibleRegion(&pDisplay->Mural, cRects, (GLint *)pRects);
             else
                 crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
+
+            Assert(!pReplacedScrEntry);
+        }
+        else if (fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED)
+        {
+            Assert(pReplacedScrEntry);
+        }
+        else
+        {
+            Assert(!pReplacedScrEntry);
         }
     }
     else
         crWarning("CrVrScrCompositorEntryRegionsAdd failed, rc %d", rc);
+
+    if (pMap)
+        CrDemLeave(pMap, CR_DENTRY_FROM_CENTRY(pEntry), CR_DENTRY_FROM_CENTRY(pReplacedScrEntry));
 
     return rc;
 }
@@ -281,6 +274,7 @@ void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData,
     CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, fFlags);
     CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, pTextureData, NULL);
     CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, fFlags);
+    pEntry->pvORInstance = NULL;
 }
 
 void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
@@ -297,6 +291,7 @@ void CrDpEnter(PCR_DISPLAY pDisplay)
 void CrDpLeave(PCR_DISPLAY pDisplay)
 {
     pDisplay->Mural.fDataPresented = GL_TRUE;
+    pDisplay->Mural.fOrPresentOnReenable = GL_TRUE;
     crServerVBoxCompositionDisableLeave(&pDisplay->Mural, pDisplay->fForcePresent);
     pDisplay->fForcePresent = GL_FALSE;
 }
@@ -312,6 +307,7 @@ typedef struct CR_DEM_ENTRY
     CR_DISPLAY_ENTRY Entry;
     CR_DEM_ENTRY_INFO *pInfo;
     CR_DISPLAY_ENTRY_MAP *pMap;
+    RTLISTNODE Node;
 } CR_DEM_ENTRY;
 
 #define PCR_DEM_ENTRY_FROM_ENTRY(_pEntry) ((CR_DEM_ENTRY*)((uint8_t*)(_pEntry) - RT_OFFSETOF(CR_DEM_ENTRY, Entry)))
@@ -369,6 +365,7 @@ static CR_DEM_ENTRY_INFO* crDemEntryInfoAlloc()
 
 static void crDemEntryFree(CR_DEM_ENTRY* pDemEntry)
 {
+    crServerDEntryCleanup(&pDemEntry->Entry);
     RTMemCacheFree(g_VBoxCrDemLookasideList, pDemEntry);
 }
 
@@ -405,16 +402,22 @@ void crDemEntryRelease(PCR_DISPLAY_ENTRY_MAP pMap, CR_DEM_ENTRY *pDemEntry)
         crStateGlobalSharedRelease();
     }
 
-    crDemEntryFree(pDemEntry);
-
     crStateGlobalSharedRelease();
+
+    if (!pMap->cEntered)
+        crDemEntryFree(pDemEntry);
+    else
+        RTListNodeInsertAfter(&pMap->ReleasedList, &pDemEntry->Node);
 }
 
 int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
 {
     pMap->pTexIdToDemInfoMap = crAllocHashtable();
     if (pMap->pTexIdToDemInfoMap)
+    {
+        RTListInit(&pMap->ReleasedList);
         return VINF_SUCCESS;
+    }
 
     crWarning("crAllocHashtable failed");
     return VERR_NO_MEMORY;
@@ -422,8 +425,49 @@ int CrDemInit(PCR_DISPLAY_ENTRY_MAP pMap)
 
 void CrDemTerm(PCR_DISPLAY_ENTRY_MAP pMap)
 {
+    CRASSERT(RTListIsEmpty(&pMap->ReleasedList));
+    CRASSERT(!pMap->cEntered);
     crFreeHashtable(pMap->pTexIdToDemInfoMap, NULL);
     pMap->pTexIdToDemInfoMap = NULL;
+}
+
+void CrDemEnter(PCR_DISPLAY_ENTRY_MAP pMap)
+{
+    ++pMap->cEntered;
+    Assert(pMap->cEntered);
+}
+
+void CrDemLeave(PCR_DISPLAY_ENTRY_MAP pMap, PCR_DISPLAY_ENTRY pNewEntry, PCR_DISPLAY_ENTRY pReplacedEntry)
+{
+    Assert(pMap->cEntered);
+    --pMap->cEntered;
+    Assert(!pReplacedEntry || pNewEntry);
+    if (pNewEntry && pReplacedEntry)
+    {
+        CR_DEM_ENTRY *pNewDemEntry = PCR_DEM_ENTRY_FROM_ENTRY(pNewEntry);
+        CR_DEM_ENTRY *pReplacedDemEntry = PCR_DEM_ENTRY_FROM_ENTRY(pReplacedEntry);
+        Assert(!RTListIsEmpty(&pMap->ReleasedList));
+        Assert(!RTListIsEmpty(&pReplacedDemEntry->Node));
+        Assert(RTListIsEmpty(&pNewDemEntry->Node));
+        Assert(!pNewDemEntry->Entry.pvORInstance);
+        if (!pNewDemEntry->Entry.pvORInstance)
+        {
+            pNewDemEntry->Entry.pvORInstance = pReplacedDemEntry->Entry.pvORInstance;
+            pReplacedDemEntry->Entry.pvORInstance = NULL;
+        }
+        RTListNodeRemove(&pReplacedDemEntry->Node);
+        crDemEntryFree(pReplacedDemEntry);
+    }
+
+    if (!pMap->cEntered)
+    {
+        CR_DEM_ENTRY *pCurEntry, *pNextEntry;
+        RTListForEachSafe(&pMap->ReleasedList, pCurEntry, pNextEntry, CR_DEM_ENTRY, Node)
+        {
+            RTListNodeRemove(&pCurEntry->Node);
+            crDemEntryFree(pCurEntry);
+        }
+    }
 }
 
 void CrDemEntryRelease(PCR_DISPLAY_ENTRY pEntry)
@@ -515,6 +559,7 @@ PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture
     ++pInfo->cEntries;
     pDemEntry->pInfo = pInfo;
     pDemEntry->pMap = pMap;
+    RTListInit(&pDemEntry->Node);
 
     /* just use main context info's context to hold the texture reference */
     CR_STATE_SHAREDOBJ_USAGE_SET(pTobj, cr_server.MainContextInfo.pContext);
@@ -710,7 +755,7 @@ void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData)
     }
 }
 
-void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFormat, void *pvData)
+void CrHlpPutTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLenum enmFormat, void *pvData)
 {
     CRASSERT(pTexture->hwid);
     cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, pTexture->hwid);
@@ -742,7 +787,7 @@ void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFo
         cr_server.head_spu->dispatch_table.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pCurCtx->bufferobject.unpackBuffer->hwid);
 }
 
-void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO, GLenum enmFormat)
+void* CrHlpGetTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLuint idPBO, GLenum enmFormat)
 {
     void *pvData = NULL;
     cr_server.head_spu->dispatch_table.BindTexture(pTexture->target, pTexture->hwid);
@@ -842,7 +887,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
     if (!(cfg & CR_PRESENT_FLAG_CLEAR_RECTS))
     {
         RTPOINT Point = {xPos, yPos};
-        int rc = CrDpEntryRegionsAdd(pDisplay, pEntry, &Point, (uint32_t)cRects, (const RTRECT*)pRects);
+        int rc = CrDpEntryRegionsAdd(pDisplay, pEntry, &Point, (uint32_t)cRects, (const RTRECT*)pRects, &cr_server.PresentTexturepMap);
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrDpEntryRegionsAdd Failed rc %d", rc);
