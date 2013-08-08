@@ -112,6 +112,12 @@ crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
     return crServerDispatchWindowCreateEx(dpyName, visBits, -1);
 }
 
+static DECLCALLBACK(void) crServerMuralDefaultEntryReleasedCB(const struct VBOXVR_SCR_COMPOSITOR *pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pReplacingEntry)
+{
+    CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
+    crServerDEntryCleanup(pDEntry);
+}
+
 GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fUseDefaultDEntry)
 {
     CRMuralInfo *defaultMural;
@@ -152,13 +158,15 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
         Tex.height = dims[1];
         Tex.target = GL_TEXTURE_2D;
         Tex.hwid = 0;
-        CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex, NULL);
+        CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex, crServerMuralDefaultEntryReleasedCB);
 
         if (cr_server.fRootVrOn)
         {
             CrVrScrCompositorEntryInit(&mural->DefaultDEntry.RootVrCEntry, &Tex, NULL);
             mural->fRootVrOn = GL_TRUE;
         }
+
+        mural->DefaultDEntry.pvORInstance = NULL;
     }
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
@@ -177,8 +185,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     mural->cVisibleRects = 0;
     mural->pVisibleRects = NULL;
     mural->bReceivedRects = GL_FALSE;
-
-    mural->pvOutputRedirectInstance = NULL;
 
     /* generate ID for this new window/mural (special-case for file conns) */
     if (cr_server.curClient && cr_server.curClient->conn->type == CR_FILE)
@@ -206,8 +212,6 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
             return -1;
         }
     }
-
-    crServerSetupOutputRedirect(mural);
 
     if (mural->fRootVrOn)
     {
@@ -363,12 +367,6 @@ static int crServerRemoveClientWindow(CRClient *pClient, GLint window)
 
 void crServerMuralTerm(CRMuralInfo *mural)
 {
-    if (mural->pvOutputRedirectInstance)
-    {
-        cr_server.outputRedirect.CROREnd(mural->pvOutputRedirectInstance);
-        mural->pvOutputRedirectInstance = NULL;
-    }
-
     crServerRedirMuralFBO(mural, CR_SERVER_REDIR_F_NONE);
     crServerDeleteMuralFBO(mural);
 
@@ -626,26 +624,7 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 
     crServerWindowVisibleRegion(mural);
 
-    if (mural->pvOutputRedirectInstance)
-    {
-        uint32_t cRects;
-        const RTRECT *pRects;
-
-        /* always get non-stretched rects for output redirect */
-//        if (mural->fRootVrOn)
-        {
-            rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRects, NULL, NULL, &pRects);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                goto end;
-            }
-        }
-        /* @todo the code assumes that RTRECT == four GLInts. */
-        cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance,
-                cRects, pRects);
-    }
-
+    crServerDEntryAllResized(mural);
 end:
     /* 3. (so far not needed for resize, but in case it is in the future) re-set the compositor (see above comment) */
     /* uncomment when needed */
@@ -729,6 +708,8 @@ void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkip
 
         if (!fSkipCheckGeometry)
             crServerCheckMuralGeometry(mural);
+
+        crServerDEntryAllMoved(mural);
 
         /* 3. re-set the compositor (see above comment) */
         crServerVBoxCompositionDisableLeave(mural, fForcePresent);
@@ -816,22 +797,7 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
 
         crServerWindowVisibleRegion(mural);
 
-        if (mural->pvOutputRedirectInstance)
-        {
-            const RTRECT * pRealRects;
-            uint32_t cRealRects;
-
-            /* always get unstretched regions here */
-            rc = CrVrScrCompositorRegionsGet(&mural->Compositor, &cRealRects, NULL, NULL, &pRealRects);
-            if (!RT_SUCCESS(rc))
-            {
-                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
-                goto end;
-            }
-
-            /* @todo the code assumes that RTRECT == four GLInts. */
-            cr_server.outputRedirect.CRORVisibleRegion(mural->pvOutputRedirectInstance, cRealRects, pRealRects);
-        }
+        crServerDEntryAllVibleRegions(mural);
     }
 end:
     /* 3. re-set the compositor (see above comment) */

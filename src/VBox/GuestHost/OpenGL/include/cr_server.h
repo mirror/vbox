@@ -208,6 +208,8 @@ typedef struct CR_DISPLAY_ENTRY
 {
     VBOXVR_SCR_COMPOSITOR_ENTRY CEntry;
     VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
+    void *pvORInstance;
+    GLuint idPBO;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 /**/
 
@@ -237,7 +239,7 @@ typedef struct {
     GLuint aidFBOs[2];
     GLuint aidColorTexs[2];
 
-    void *pvOutputRedirectInstance;
+    void *pvReserved;
 
     CRCreateInfo_t CreateInfo;
 
@@ -249,7 +251,6 @@ typedef struct {
 
     GLuint idDepthStencilRB;
     GLuint fboWidth, fboHeight;
-    GLuint idPBO;
 
     GLuint cDisabled;
 
@@ -259,6 +260,7 @@ typedef struct {
 
     GLboolean fRootVrOn;
     GLboolean fForcePresentState;
+    GLboolean fOrPresentOnReenable;
 
     GLboolean fUseDefaultDEntry;
 
@@ -363,6 +365,8 @@ typedef struct CR_DISPLAY
 typedef struct CR_DISPLAY_ENTRY_MAP
 {
     CRHashTable * pTexIdToDemInfoMap;
+    uint32_t cEntered;
+    RTLISTNODE ReleasedList;
 } CR_DISPLAY_ENTRY_MAP, *PCR_DISPLAY_ENTRY_MAP;
 
 
@@ -377,8 +381,8 @@ typedef struct CRWinVisibilityInfo
 /* helpers */
 
 void CrHlpFreeTexImage(CRContext *pCurCtx, GLuint idPBO, void *pvData);
-void* CrHlpGetTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLuint idPBO, GLenum enmFormat);
-void CrHlpPutTexImage(CRContext *pCurCtx, PVBOXVR_TEXTURE pTexture, GLenum enmFormat, void *pvData);
+void* CrHlpGetTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLuint idPBO, GLenum enmFormat);
+void CrHlpPutTexImage(CRContext *pCurCtx, const VBOXVR_TEXTURE *pTexture, GLenum enmFormat, void *pvData);
 
 /* */
 
