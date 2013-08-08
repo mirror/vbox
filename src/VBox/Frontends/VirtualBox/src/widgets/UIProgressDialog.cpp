@@ -123,7 +123,7 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
 
     /* The progress dialog will be shown automatically after
      * the duration is over if progress is not finished yet. */
-    QTimer::singleShot(cMinDuration, this, SLOT(showDialog()));
+    QTimer::singleShot(cMinDuration, this, SLOT(show()));
 }
 
 void UIProgressDialog::retranslateUi()
