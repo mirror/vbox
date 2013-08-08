@@ -1338,7 +1338,7 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
 
         report += sectionTpl
             .arg (rows) /* rows */
-            .arg (":/attachment_16px.png", /* icon */
+            .arg (":/hd_16px.png", /* icon */
                   "#storage", /* link */
                   tr ("Storage", "details report"), /* title */
                   item); /* items */

@@ -531,7 +531,7 @@ void VBoxVMInformationDlg::refreshStatistics()
     {
         QString storageStat;
 
-        result += hdrRow.arg (":/attachment_16px.png").arg (tr ("Storage Statistics"));
+        result += hdrRow.arg (":/hd_16px.png").arg (tr ("Storage Statistics"));
 
         CStorageControllerVector controllers = mSession.GetMachine().GetStorageControllers();
         int ideCount = 0, sataCount = 0, scsiCount = 0;
