@@ -30,7 +30,7 @@ class UIPageValidator;
 class QProgressBar;
 class QStackedWidget;
 class QTimer;
-class VBoxWarningPane;
+class UIWarningPane;
 class VBoxSettingsSelector;
 class UISettingsPage;
 
@@ -142,7 +142,7 @@ private:
     QString m_strWarningHint;
     QString m_strErrorString;
     QString m_strWarningString;
-    VBoxWarningPane *m_pWarningPane;
+    UIWarningPane *m_pWarningPane;
 
     /* Whats-This stuff: */
     QTimer *m_pWhatsThisTimer;

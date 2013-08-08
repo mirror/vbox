@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxWarningPane class declaration
+ * UIWarningPane class declaration
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -16,29 +16,38 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxWarningPane_h__
-#define __VBoxWarningPane_h__
+#ifndef __UIWarningPane_h__
+#define __UIWarningPane_h__
 
 /* Global includes */
 #include <QWidget>
-#include <QLabel>
 
-class VBoxWarningPane: public QWidget
+/* Forward declarations: */
+class QLabel;
+
+/* Warning-pane prototype: */
+class UIWarningPane: public QWidget
 {
     Q_OBJECT;
 
 public:
 
-    VBoxWarningPane(QWidget *pParent = 0);
+    /* Constructor: */
+    UIWarningPane(QWidget *pParent = 0);
 
-    void setWarningPixmap(const QPixmap &imgPixmap);
+    /* API: Warning stuff: */
+    void setWarningPixmap(const QPixmap &pixmap);
     void setWarningText(const QString &strText);
 
 private:
 
-    QLabel m_icon;
-    QLabel m_label;
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    void prepareContent();
+
+    /* Variables: Widgets: */
+    QLabel *m_pLabelIcon;
+    QLabel *m_pLabelText;
 };
 
-#endif // __VBoxWarningPane_h__
-
+#endif /* __UIWarningPane_h__ */

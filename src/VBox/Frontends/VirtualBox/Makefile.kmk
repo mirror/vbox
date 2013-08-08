@@ -386,7 +386,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIMiniToolBar.h \
 	src/widgets/VBoxOSTypeSelectorButton.h \
 	src/widgets/UINameAndSystemEditor.h \
-	src/widgets/VBoxWarningPane.h \
+    src/widgets/UIWarningPane.h \
 	src/widgets/UIFilmContainer.h \
 	src/widgets/graphics/UIGraphicsButton.h \
 	src/widgets/graphics/UIGraphicsRotatorButton.h \
@@ -636,7 +636,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIMiniToolBar.cpp \
 	src/widgets/VBoxOSTypeSelectorButton.cpp \
 	src/widgets/UINameAndSystemEditor.cpp \
-	src/widgets/VBoxWarningPane.cpp \
+    src/widgets/UIWarningPane.cpp \
 	src/widgets/UIFilmContainer.cpp \
 	src/widgets/graphics/UIGraphicsButton.cpp \
 	src/widgets/graphics/UIGraphicsRotatorButton.cpp \
