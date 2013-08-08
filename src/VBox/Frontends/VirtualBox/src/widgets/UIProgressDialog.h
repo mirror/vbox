@@ -56,6 +56,11 @@ public:
     /* API: Run stuff: */
     int run(int aRefreshInterval);
 
+public slots:
+
+    /* Handler: Show stuff: */
+    void show();
+
 protected:
 
     /* Helper: Translate stuff: */
@@ -70,8 +75,7 @@ protected:
 
 private slots:
 
-    /* Handlers: */
-    void sltShowDialog();
+    /* Handler: Cancel stuff: */
     void sltCancelOperation();
 
 private:

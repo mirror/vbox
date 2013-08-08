@@ -55,7 +55,6 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
     , m_fEnded(false)
 {
     /* Setup dialog: */
-    setModal(true);
     setWindowTitle(QString("%1: %2").arg(strTitle, m_progress.GetDescription()));
     setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
@@ -124,7 +123,7 @@ UIProgressDialog::UIProgressDialog(CProgress &progress,
 
     /* The progress dialog will be shown automatically after
      * the duration is over if progress is not finished yet. */
-    QTimer::singleShot(cMinDuration, this, SLOT(sltShowDialog()));
+    QTimer::singleShot(cMinDuration, this, SLOT(showDialog()));
 }
 
 void UIProgressDialog::retranslateUi()
@@ -177,6 +176,17 @@ int UIProgressDialog::run(int cRefreshInterval)
         return result();
     }
     return Rejected;
+}
+
+void UIProgressDialog::show()
+{
+    /* We should not show progress-dialog
+     * if it was already finalized but not yet closed.
+     * This could happens in case of some other
+     * modal dialog prevents our event-loop from
+     * being exit overlapping 'this'. */
+    if (!m_fEnded)
+        QIDialog::show();
 }
 
 void UIProgressDialog::reject()
@@ -304,17 +314,6 @@ void UIProgressDialog::closeEvent(QCloseEvent *pEvent)
         sltCancelOperation();
     else
         pEvent->ignore();
-}
-
-void UIProgressDialog::sltShowDialog()
-{
-    /* We should not show progress-dialog
-     * if it was already finalized but not yet closed.
-     * This could happens in case of some other
-     * modal dialog prevents our event-loop from
-     * being exit overlapping 'this'. */
-    if (!m_fEnded)
-        show();
 }
 
 void UIProgressDialog::sltCancelOperation()

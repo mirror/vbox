@@ -63,6 +63,9 @@ private:
     /* Helper: Stack stuff: */
     bool contains(QWidget *pParentWindow, bool fAsTheTopOfStack = false);
 
+    /* Static helper: Access stuff: */
+    static void preprocessRealParent(QWidget *pParent);
+
     /* Variables: */
     QList<QList<QWidget*> > m_windows;
 
