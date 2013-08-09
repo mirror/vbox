@@ -23,6 +23,9 @@
 #include <QWidget>
 #include <QMap>
 
+/* GUI includes: */
+#include "UIPopupCenter.h"
+
 /* Forward declaration: */
 class QVBoxLayout;
 class QScrollArea;
@@ -47,7 +50,7 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupStack(const QString &strID);
+    UIPopupStack(const QString &strID, UIPopupStackOrientation orientation);
 
     /* API: Popup-pane stuff: */
     bool exists(const QString &strPopupPaneID) const;
@@ -58,6 +61,7 @@ public:
     void updatePopupPane(const QString &strPopupPaneID,
                          const QString &strMessage, const QString &strDetails);
     void recallPopupPane(const QString &strPopupPaneID);
+    void setOrientation(UIPopupStackOrientation orientation);
 
     /* API: Parent stuff: */
     void setParent(QWidget *pParent);
@@ -93,6 +97,7 @@ private:
 
     /* Variable: General stuff: */
     QString m_strID;
+    UIPopupStackOrientation m_orientation;
 
     /* Variables: Widget stuff: */
     QVBoxLayout *m_pMainLayout;
