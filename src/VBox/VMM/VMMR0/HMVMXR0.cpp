@@ -7487,6 +7487,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * 64-bit checks.
          */
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
@@ -7519,6 +7520,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRCBreak(rc);
             HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
         }
+#endif
 
         /*
          * PERF_GLOBAL MSR.
@@ -7675,6 +7677,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                   || (pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_GS_ATTR_TYPE_INVALID);
             }
             /* 64-bit capable CPUs. */
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
@@ -7682,6 +7685,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
                 HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
             }
+#endif
         }
         else if (   CPUMIsGuestInV86ModeEx(pCtx)
                  || (   CPUMIsGuestInRealModeEx(pCtx)
@@ -7727,6 +7731,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK(pCtx->gs.u32Limit == 0xffff, VMX_IGS_V86_GS_LIMIT_INVALID);
             HMVMX_CHECK_BREAK(u32GSAttr == 0xf3, VMX_IGS_V86_GS_ATTR_INVALID);
             /* 64-bit capable CPUs. */
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
@@ -7734,11 +7739,13 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
                 HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
             }
+#endif
         }
 
         /*
          * GDTR and IDTR.
          */
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
@@ -7749,6 +7756,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             AssertRCBreak(rc);
             HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
         }
+#endif
 
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);
         AssertRCBreak(rc);
@@ -7762,6 +7770,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * RIP and RFLAGS.
          */
         uint32_t u32EFlags;
+# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
@@ -7770,7 +7779,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
                 || !pCtx->cs.Attr.n.u1Long )
             {
-                HMVMX_CHECK_BREAK(!(u64Val & 0xffffffff00000000), VMX_IGS_LONGMODE_RIP_INVALID);
+                HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
             }
             /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
              *        must be identical if the "IA32e mode guest" VM-entry control is 1
@@ -7785,6 +7794,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             u32EFlags = u64Val;
         }
         else
+#endif
         {
             rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32EFlags);
             AssertRCBreak(rc);
