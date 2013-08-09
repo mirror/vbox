@@ -37,9 +37,7 @@
 # define VBOX_ENABLE_64_BITS_GUESTS
 #endif
 
-#ifdef VBOX_WITH_OLD_VTX_CODE
-# define VMX_USE_CACHED_VMCS_ACCESSES
-#elif HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 # define VMX_USE_CACHED_VMCS_ACCESSES
 #endif
 
@@ -87,46 +85,37 @@ RT_C_DECLS_BEGIN
 #define HM_CHANGED_GUEST_IDTR                    RT_BIT(4)
 #define HM_CHANGED_GUEST_LDTR                    RT_BIT(5)
 #define HM_CHANGED_GUEST_TR                      RT_BIT(6)
-#define HM_CHANGED_GUEST_MSR                     RT_BIT(7)  /* Unused in new VT-x, AMD-V code. */
-#define HM_CHANGED_GUEST_SEGMENT_REGS            RT_BIT(8)
-#define HM_CHANGED_GUEST_DEBUG                   RT_BIT(9)
-#define HM_CHANGED_ALL_GUEST_BASE                (  HM_CHANGED_GUEST_CR0          \
-                                                  | HM_CHANGED_GUEST_CR3          \
-                                                  | HM_CHANGED_GUEST_CR4          \
-                                                  | HM_CHANGED_GUEST_GDTR         \
-                                                  | HM_CHANGED_GUEST_IDTR         \
-                                                  | HM_CHANGED_GUEST_LDTR         \
-                                                  | HM_CHANGED_GUEST_TR           \
-                                                  | HM_CHANGED_GUEST_MSR          \
-                                                  | HM_CHANGED_GUEST_SEGMENT_REGS \
-                                                  | HM_CHANGED_GUEST_DEBUG)
-#define HM_CHANGED_ALL_GUEST                     HM_CHANGED_ALL_GUEST_BASE
-
-/** New VT-x, AMD-V code uses extra flags for more fine-grained state
- *  tracking. */
-#if !defined(VBOX_WITH_OLD_VTX_CODE) || !defined(VBOX_WITH_OLD_AMDV_CODE)
-# define HM_CHANGED_GUEST_RIP                    RT_BIT(10)
-# define HM_CHANGED_GUEST_RSP                    RT_BIT(11)
-# define HM_CHANGED_GUEST_RFLAGS                 RT_BIT(12)
-# define HM_CHANGED_GUEST_CR2                    RT_BIT(13)
-# define HM_CHANGED_GUEST_SYSENTER_CS_MSR        RT_BIT(14)
-# define HM_CHANGED_GUEST_SYSENTER_EIP_MSR       RT_BIT(15)
-# define HM_CHANGED_GUEST_SYSENTER_ESP_MSR       RT_BIT(16)
+#define HM_CHANGED_GUEST_SEGMENT_REGS            RT_BIT(7)
+#define HM_CHANGED_GUEST_DEBUG                   RT_BIT(8)
+# define HM_CHANGED_GUEST_RIP                    RT_BIT(9)
+# define HM_CHANGED_GUEST_RSP                    RT_BIT(10)
+# define HM_CHANGED_GUEST_RFLAGS                 RT_BIT(11)
+# define HM_CHANGED_GUEST_CR2                    RT_BIT(12)
+# define HM_CHANGED_GUEST_SYSENTER_CS_MSR        RT_BIT(13)
+# define HM_CHANGED_GUEST_SYSENTER_EIP_MSR       RT_BIT(14)
+# define HM_CHANGED_GUEST_SYSENTER_ESP_MSR       RT_BIT(15)
 /* VT-x specific state. */
-# define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(17)
-# define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(18)
-# define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(19)
-# define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(20)
-# define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(21)
+# define HM_CHANGED_VMX_GUEST_AUTO_MSRS          RT_BIT(16)
+# define HM_CHANGED_VMX_GUEST_ACTIVITY_STATE     RT_BIT(17)
+# define HM_CHANGED_VMX_GUEST_APIC_STATE         RT_BIT(18)
+# define HM_CHANGED_VMX_ENTRY_CTLS               RT_BIT(19)
+# define HM_CHANGED_VMX_EXIT_CTLS                RT_BIT(20)
 /* AMD-V specific state. */
-# define HM_CHANGED_SVM_GUEST_EFER_MSR           RT_BIT(17)
-# define HM_CHANGED_SVM_GUEST_APIC_STATE         RT_BIT(18)
-# define HM_CHANGED_SVM_RESERVED1                RT_BIT(19)
-# define HM_CHANGED_SVM_RESERVED2                RT_BIT(20)
-# define HM_CHANGED_SVM_RESERVED3                RT_BIT(21)
+# define HM_CHANGED_SVM_GUEST_EFER_MSR           RT_BIT(16)
+# define HM_CHANGED_SVM_GUEST_APIC_STATE         RT_BIT(17)
+# define HM_CHANGED_SVM_RESERVED1                RT_BIT(18)
+# define HM_CHANGED_SVM_RESERVED2                RT_BIT(19)
+# define HM_CHANGED_SVM_RESERVED3                RT_BIT(20)
 
-# undef  HM_CHANGED_ALL_GUEST
-# define HM_CHANGED_ALL_GUEST                   (  HM_CHANGED_ALL_GUEST_BASE           \
+# define HM_CHANGED_ALL_GUEST                   (  HM_CHANGED_GUEST_CR0                \
+                                                 | HM_CHANGED_GUEST_CR3                \
+                                                 | HM_CHANGED_GUEST_CR4                \
+                                                 | HM_CHANGED_GUEST_GDTR               \
+                                                 | HM_CHANGED_GUEST_IDTR               \
+                                                 | HM_CHANGED_GUEST_LDTR               \
+                                                 | HM_CHANGED_GUEST_TR                 \
+                                                 | HM_CHANGED_GUEST_SEGMENT_REGS       \
+                                                 | HM_CHANGED_GUEST_DEBUG              \
                                                  | HM_CHANGED_GUEST_RIP                \
                                                  | HM_CHANGED_GUEST_RSP                \
                                                  | HM_CHANGED_GUEST_RFLAGS             \
@@ -139,9 +128,8 @@ RT_C_DECLS_BEGIN
                                                  | HM_CHANGED_VMX_GUEST_APIC_STATE     \
                                                  | HM_CHANGED_VMX_ENTRY_CTLS           \
                                                  | HM_CHANGED_VMX_EXIT_CTLS)
-#endif
 
-#define HM_CHANGED_HOST_CONTEXT                 RT_BIT(22)
+#define HM_CHANGED_HOST_CONTEXT                 RT_BIT(21)
 /** @} */
 
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
@@ -354,12 +342,8 @@ typedef struct HM
         R0PTRTYPE(uint8_t *)        pbScratch;
 #endif
 
-#ifndef VBOX_WITH_OLD_VTX_CODE
+        /** Internal Id of which flush-handler to use for tagged-TLB entries. */
         unsigned                    uFlushTaggedTlb;
-#else
-        /** Ring 0 handlers for VT-x. */
-        DECLR0CALLBACKMEMBER(void, pfnFlushTaggedTlb, (PVM pVM, PVMCPU pVCpu));
-#endif
 
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS)
         uint32_t                    u32Alignment;
@@ -664,21 +648,12 @@ typedef struct HMCPU
             uint32_t                padding;
         } LastError;
 
-#ifdef VBOX_WITH_OLD_VTX_CODE
-        /** The last seen guest paging mode (by VT-x). */
-        PGMMODE                     enmLastSeenGuestMode;
-        /** Current guest paging mode (as seen by HMR3PagingModeChanged). */
-        PGMMODE                     enmCurrGuestMode;
-        /** Previous guest paging mode (as seen by HMR3PagingModeChanged). */
-        PGMMODE                     enmPrevGuestMode;
-#else
         /** Which host-state bits to restore before being preempted. */
         uint32_t                    fRestoreHostFlags;
         /** The host-state restoration structure. */
         VMXRESTOREHOST              RestoreHost;
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
-#endif
     } vmx;
 
     struct

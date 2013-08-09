@@ -706,7 +706,7 @@ ALIGN(16)
 
     ; Manual save and restore:
     ;  - General purpose registers except RIP, RSP
-    ; 
+    ;
     ; Trashed:
     ;  - CR2 (we don't care)
     ;  - LDTR (reset to 0)
@@ -720,11 +720,6 @@ ALIGN(16)
     LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%endif
 %endif
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
@@ -791,10 +786,8 @@ ALIGNCODE(16)
     mov     qword [rdi + CPUMCTX.r13], r13
     mov     qword [rdi + CPUMCTX.r14], r14
     mov     qword [rdi + CPUMCTX.r15], r15
-%ifndef VBOX_WITH_OLD_VTX_CODE
     mov     rax, cr2
     mov     qword [rdi + CPUMCTX.cr2], rax
-%endif
 
     pop     rax         ; The guest edi we pushed above
     mov     qword [rdi + CPUMCTX.edi], rax
@@ -806,11 +799,6 @@ ALIGNCODE(16)
     SAVEGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     SAVEGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
     SAVEGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    SAVEGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%endif
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -839,12 +827,6 @@ ALIGN(16)
     cmp     rcx, 0
     jnz     .cached_read
 .no_cached_reads:
-
- %ifdef VBOX_WITH_OLD_VTX_CODE
-    ; Restore CR2 into VMCS-cache field (for EPT).
-    mov     rax, cr2
-    mov     [rdi + VMCSCACHE.cr2], rax
- %endif
  %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     dword [rdi + VMCSCACHE.uPos], 8
  %endif
@@ -954,7 +936,7 @@ BEGINPROC SVMRCVMRun64
 
     ; Manual save and restore:
     ;  - General purpose registers except RIP, RSP, RAX
-    ; 
+    ;
     ; Trashed:
     ;  - CR2 (we don't care)
     ;  - LDTR (reset to 0)

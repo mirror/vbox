@@ -14,15 +14,11 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-%ifdef VBOX_WITH_OLD_VTX_CODE
-%define VMX_USE_CACHED_VMCS_ACCESSES
-%else
 %if HC_ARCH_BITS == 32
-%ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
-%define VMX_USE_CACHED_VMCS_ACCESSES
-%endif  ; VBOX_WITH_HYBRID_32BIT_KERNEL
-%endif   ; HC_ARCH_BITS == 32
-%endif    ; VBOX_WITH_OLD_VTX_CODE
+ %ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
+  %define VMX_USE_CACHED_VMCS_ACCESSES
+ %endif
+%endif
 
 %define VBOX_WITH_AUTO_MSR_LOAD_RESTORE
 

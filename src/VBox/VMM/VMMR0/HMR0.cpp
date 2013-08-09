@@ -1514,13 +1514,8 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
     /* We don't pass on invlpg information to the recompiler for nested paging
        guests, so we must make sure the recompiler flushes its TLB the next
        time it executes code. */
-    if (    pVM->hm.s.fNestedPaging
-#ifdef VBOX_WITH_OLD_VTX_CODE
-        &&  CPUMIsGuestInPagedProtectedModeEx(pCtx)
-#else
-        &&  CPUMIsGuestPagingEnabledEx(pCtx)
-#endif
-       )
+    if (   pVM->hm.s.fNestedPaging
+        && CPUMIsGuestPagingEnabledEx(pCtx))
     {
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
     }

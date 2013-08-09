@@ -974,9 +974,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     uint64_t    zap;
     RTGCPHYS    GCPhys = 0;
 
-#ifndef VBOX_WITH_OLD_VTX_CODE
     LogRel(("HM: Using VT-x implementation 2.0!\n"));
-#endif
     LogRel(("HM: Host CR4                      = %#RX64\n", pVM->hm.s.vmx.hostCR4));
     LogRel(("HM: MSR_IA32_FEATURE_CONTROL      = %#RX64\n", pVM->hm.s.vmx.msr.feature_ctrl));
     LogRel(("HM: MSR_IA32_VMX_BASIC_INFO       = %#RX64\n", pVM->hm.s.vmx.msr.vmx_basic_info));
@@ -1320,38 +1318,6 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     else if (pVM->hm.s.vmx.enmFlushVpid == VMX_FLUSH_VPID_NOT_SUPPORTED)
         LogRel(("HM: Ignoring VPID capabilities of CPU.\n"));
 
-    /** TPR patching would never have worked on Intel. Leaving it here for the old
-     *  code's sake. See @bugref{6398}. */
-#ifdef VBOX_WITH_OLD_VTX_CODE
-    /*
-     * TPR patching status logging.
-     */
-    if (pVM->hm.s.fTRPPatchingAllowed)
-    {
-        if (    (pVM->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
-            &&  (pVM->hm.s.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
-        {
-            pVM->hm.s.fTRPPatchingAllowed = false;  /* not necessary as we have a hardware solution. */
-            LogRel(("HM: TPR Patching not required (VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC).\n"));
-        }
-        else
-        {
-            uint32_t u32Eax, u32Dummy;
-
-            /* TPR patching needs access to the MSR_K8_LSTAR msr. */
-            ASMCpuId(0x80000000, &u32Eax, &u32Dummy, &u32Dummy, &u32Dummy);
-            if (    u32Eax < 0x80000001
-                ||  !(ASMCpuId_EDX(0x80000001) & X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
-            {
-                pVM->hm.s.fTRPPatchingAllowed = false;
-                LogRel(("HM: TPR patching disabled (long mode not supported).\n"));
-            }
-        }
-    }
-    LogRel(("HM: TPR Patching %s.\n", (pVM->hm.s.fTRPPatchingAllowed) ? "enabled" : "disabled"));
-#endif
-
-
     /*
      * Check for preemption timer config override and log the state of it.
      */
@@ -1380,9 +1346,7 @@ static int hmR3InitFinalizeR0Amd(PVM pVM)
 {
     Log(("pVM->hm.s.svm.fSupported = %d\n", pVM->hm.s.svm.fSupported));
 
-#ifndef VBOX_WITH_OLD_AMDV_CODE
     LogRel(("HM: Using AMD-V implementation 2.0!\n"));
-#endif
 
     uint32_t u32Family;
     uint32_t u32Model;
@@ -1509,12 +1473,7 @@ VMMR3_INT_DECL(void) HMR3Relocate(PVM pVM)
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-
-            pVCpu->hm.s.enmShadowMode            = PGMGetShadowMode(pVCpu);
-#ifdef VBOX_WITH_OLD_VTX_CODE
-            Assert(pVCpu->hm.s.vmx.enmCurrGuestMode == PGMGetGuestMode(pVCpu));
-            pVCpu->hm.s.vmx.enmCurrGuestMode     = PGMGetGuestMode(pVCpu);
-#endif
+            pVCpu->hm.s.enmShadowMode = PGMGetShadowMode(pVCpu);
         }
     }
 #if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -1560,54 +1519,25 @@ VMMR3_INT_DECL(void) HMR3PagingModeChanged(PVM pVM, PVMCPU pVCpu, PGMMODE enmSha
 
     pVCpu->hm.s.enmShadowMode = enmShadowMode;
 
-#ifdef VBOX_WITH_OLD_VTX_CODE
-    if (   pVM->hm.s.vmx.fEnabled
-        && HMIsEnabled(pVM))
-    {
-        if (    pVCpu->hm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-            &&  enmGuestMode >= PGMMODE_PROTECTED)
-        {
-            PCPUMCTX pCtx;
-
-            pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-
-            /* After a real mode switch to protected mode we must force
-               CPL to 0. Our real mode emulation had to set it to 3. */
-            pCtx->ss.Attr.n.u2Dpl  = 0;
-        }
-    }
-
-    if (pVCpu->hm.s.vmx.enmCurrGuestMode != enmGuestMode)
-    {
-        /* Keep track of paging mode changes. */
-        pVCpu->hm.s.vmx.enmPrevGuestMode = pVCpu->hm.s.vmx.enmCurrGuestMode;
-        pVCpu->hm.s.vmx.enmCurrGuestMode = enmGuestMode;
-
-        /* Did we miss a change, because all code was executed in the recompiler? */
-        if (pVCpu->hm.s.vmx.enmLastSeenGuestMode == enmGuestMode)
-        {
-            Log(("HMR3PagingModeChanged missed %s->%s transition (prev %s)\n", PGMGetModeName(pVCpu->hm.s.vmx.enmPrevGuestMode),
-                 PGMGetModeName(pVCpu->hm.s.vmx.enmCurrGuestMode), PGMGetModeName(pVCpu->hm.s.vmx.enmLastSeenGuestMode)));
-            pVCpu->hm.s.vmx.enmLastSeenGuestMode = pVCpu->hm.s.vmx.enmPrevGuestMode;
-        }
-    }
-#else
-    /* If the guest left protected mode VMX execution, we'll have to be extra
-     * careful if/when the guest switches back to protected mode.
+    /*
+     * If the guest left protected mode VMX execution, we'll have to be
+     * extra careful if/when the guest switches back to protected mode.
      */
     if (enmGuestMode == PGMMODE_REAL)
     {
         Log(("HMR3PagingModeChanged indicates real mode execution\n"));
         pVCpu->hm.s.vmx.fWasInRealMode = true;
     }
-#endif
 
-    /** @todo r=ramshankar: Why do we need to do this? */
+    /** @todo r=ramshankar: Disabling for now. If nothing breaks remove it
+     *        eventually. (Test platforms that use the cache ofc). */
+#if 0
 #ifdef VMX_USE_CACHED_VMCS_ACCESSES
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
     for (unsigned j = 0; j < pCache->Read.cValidEntries; j++)
         pCache->Read.aFieldVal[j] = 0;
+#endif
 #endif
 }
 
@@ -1682,20 +1612,11 @@ VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
     /* On first entry we'll sync everything. */
     pVCpu->hm.s.fContextUseFlags = (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
-    pVCpu->hm.s.vmx.u32CR0Mask = 0;
-    pVCpu->hm.s.vmx.u32CR4Mask = 0;
-
-    pVCpu->hm.s.fActive        = false;
-    pVCpu->hm.s.Event.fPending = false;
-
-#ifdef VBOX_WITH_OLD_VTX_CODE
-    /* Reset state information for real-mode emulation in VT-x. */
-    pVCpu->hm.s.vmx.enmLastSeenGuestMode = PGMMODE_REAL;
-    pVCpu->hm.s.vmx.enmPrevGuestMode     = PGMMODE_REAL;
-    pVCpu->hm.s.vmx.enmCurrGuestMode     = PGMMODE_REAL;
-#else
+    pVCpu->hm.s.vmx.u32CR0Mask     = 0;
+    pVCpu->hm.s.vmx.u32CR4Mask     = 0;
+    pVCpu->hm.s.fActive            = false;
+    pVCpu->hm.s.Event.fPending     = false;
     pVCpu->hm.s.vmx.fWasInRealMode = true;
-#endif
 
     /* Reset the contents of the read cache. */
     PVMCSCACHE pCache = &pVCpu->hm.s.vmx.VMCSCache;
@@ -2565,27 +2486,10 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                 PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
                 /* Verify the requirements for executing code in protected
                    mode. VT-x can't handle the CPU state right after a switch
-                   from real to protected mode. (all sorts of RPL & DPL assumptions) */
-#if VBOX_WITH_OLD_VTX_CODE
-                if (    pVCpu->hm.s.vmx.enmLastSeenGuestMode == PGMMODE_REAL
-                    &&  enmGuestMode >= PGMMODE_PROTECTED)
-#else
+                   from real to protected mode. (all sorts of RPL & DPL assumptions). */
                 if (pVCpu->hm.s.vmx.fWasInRealMode)
-#endif
                 {
-                    //@todo: If guest is in V86 mode, these checks should be different!
-#if VBOX_WITH_OLD_VTX_CODE
-                    if (   (pCtx->cs.Sel & X86_SEL_RPL)
-                        || (pCtx->ds.Sel & X86_SEL_RPL)
-                        || (pCtx->es.Sel & X86_SEL_RPL)
-                        || (pCtx->fs.Sel & X86_SEL_RPL)
-                        || (pCtx->gs.Sel & X86_SEL_RPL)
-                        || (pCtx->ss.Sel & X86_SEL_RPL))
-                    {
-                        STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadSel);
-                        return false;
-                    }
-#else
+                    /** @todo If guest is in V86 mode, these checks should be different! */
                     if ((pCtx->cs.Sel & X86_SEL_RPL) != (pCtx->ss.Sel & X86_SEL_RPL))
                     {
                         STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadRpl);
@@ -2601,9 +2505,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                         STAM_COUNTER_INC(&pVCpu->hm.s.StatVmxCheckBadSel);
                         return false;
                     }
-#endif
                 }
-                /* VT-x also chokes on invalid tr or ldtr selectors (minix) */
+                /* VT-x also chokes on invalid TR or LDTR selectors (minix). */
                 if (pCtx->gdtr.cbGdt)
                 {
                     if (pCtx->tr.Sel > pCtx->gdtr.cbGdt)
@@ -2625,18 +2528,8 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             if (    !CPUMIsGuestInLongModeEx(pCtx)
                 &&  !pVM->hm.s.vmx.fUnrestrictedGuest)
             {
-#ifdef VBOX_WITH_OLD_VTX_CODE
-                /** @todo   This should (probably) be set on every excursion to the REM,
-                 *          however it's too risky right now. So, only apply it when we go
-                 *          back to REM for real mode execution. (The XP hack below doesn't
-                 *          work reliably without this.)
-                 *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HM.  */
-                for (uint32_t i = 0; i < pVM->cCpus; i++)
-                    pVM->aCpus[i].hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
-#endif
-
-                if (    !pVM->hm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
-                    ||  CPUMIsGuestInRealModeEx(pCtx))  /* requires a fake TSS for real mode - stored in the VMM device heap */
+                if (    !pVM->hm.s.fNestedPaging        /* Requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap */
+                    ||  CPUMIsGuestInRealModeEx(pCtx))  /* Requires a fake TSS for real mode - stored in the VMM device heap */
                     return false;
 
                 /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
@@ -2657,15 +2550,6 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
                  *        stack segment into account. But, it does the job for now. */
                 if (pCtx->rsp >= pCtx->ss.u32Limit)
                     return false;
-#if 0
-                if (    pCtx->cs.Sel >= pCtx->gdtr.cbGdt
-                    ||  pCtx->ss.Sel >= pCtx->gdtr.cbGdt
-                    ||  pCtx->ds.Sel >= pCtx->gdtr.cbGdt
-                    ||  pCtx->es.Sel >= pCtx->gdtr.cbGdt
-                    ||  pCtx->fs.Sel >= pCtx->gdtr.cbGdt
-                    ||  pCtx->gs.Sel >= pCtx->gdtr.cbGdt)
-                    return false;
-#endif
             }
         }
     }
@@ -2729,20 +2613,13 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
      * The VMM device heap is a requirement for emulating real-mode or protected-mode without paging
      * when the unrestricted guest execution feature is missing (VT-x only).
      */
-#ifdef VBOX_WITH_OLD_VTX_CODE
-    if (   pVM->hm.s.vmx.fEnabled
-        && !pVM->hm.s.vmx.fUnrestrictedGuest
-        && !CPUMIsGuestInPagedProtectedModeEx(pCtx)
-        && !PDMVmmDevHeapIsEnabled(pVM)
-        && (pVM->hm.s.fNestedPaging || CPUMIsGuestInRealModeEx(pCtx)))
-        return true;
-#else
     if (   pVM->hm.s.vmx.fEnabled
         && !pVM->hm.s.vmx.fUnrestrictedGuest
         && CPUMIsGuestInRealModeEx(pCtx)
         && !PDMVmmDevHeapIsEnabled(pVM))
+    {
         return true;
-#endif
+    }
 
     return false;
 }
@@ -3026,16 +2903,8 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         rc = SSMR3PutU64(pSSM, pVM->aCpus[i].hm.s.Event.u64IntrInfo);
         AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_OLD_VTX_CODE
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmCurrGuestMode);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pVM->aCpus[i].hm.s.vmx.enmPrevGuestMode);
-        AssertRCReturn(rc, rc);
-#else
-        //@todo: We only need to save pVM->aCpus[i].hm.s.vmx.fWasInRealMode and
-        // perhaps not even that (the initial value of 'true' is safe).
+        /** @todo We only need to save pVM->aCpus[i].hm.s.vmx.fWasInRealMode and
+         *        perhaps not even that (the initial value of @c true is safe. */
         uint32_t u32Dummy = PGMMODE_REAL;
         rc = SSMR3PutU32(pSSM, u32Dummy);
         AssertRCReturn(rc, rc);
@@ -3043,8 +2912,8 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         AssertRCReturn(rc, rc);
         rc = SSMR3PutU32(pSSM, u32Dummy);
         AssertRCReturn(rc, rc);
-#endif
     }
+
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
     rc = SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
     AssertRCReturn(rc, rc);
@@ -3135,28 +3004,13 @@ static DECLCALLBACK(int) hmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
         if (uVersion >= HM_SSM_VERSION_NO_PATCHING)
         {
             uint32_t val;
-
-#ifdef VBOX_WITH_OLD_VTX_CODE
-            rc = SSMR3GetU32(pSSM, &val);
-            AssertRCReturn(rc, rc);
-            pVM->aCpus[i].hm.s.vmx.enmLastSeenGuestMode = (PGMMODE)val;
-
-            rc = SSMR3GetU32(pSSM, &val);
-            AssertRCReturn(rc, rc);
-            pVM->aCpus[i].hm.s.vmx.enmCurrGuestMode = (PGMMODE)val;
-
-            rc = SSMR3GetU32(pSSM, &val);
-            AssertRCReturn(rc, rc);
-            pVM->aCpus[i].hm.s.vmx.enmPrevGuestMode = (PGMMODE)val;
-#else
-            //@todo: See note above re saving enmLastSeenGuestMode
+            /** @todo See note in hmR3Save(). */
             rc = SSMR3GetU32(pSSM, &val);
             AssertRCReturn(rc, rc);
             rc = SSMR3GetU32(pSSM, &val);
             AssertRCReturn(rc, rc);
             rc = SSMR3GetU32(pSSM, &val);
             AssertRCReturn(rc, rc);
-#endif
         }
     }
 #ifdef VBOX_HM_WITH_GUEST_PATCHING
