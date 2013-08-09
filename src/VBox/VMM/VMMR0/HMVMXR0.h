@@ -61,14 +61,6 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 }
 #endif
 
-#ifdef VBOX_WITH_OLD_VTX_CODE
-# ifdef VMX_USE_CACHED_VMCS_ACCESSES
-#  define VMXReadCachedVmcs(idxField, pVal)              VMXReadCachedVmcsEx(pVCpu, idxField##_CACHE_IDX, pVal)
-# else
-#  define VMXReadCachedVmcs                              VMXReadVmcsField
-# endif
-#  define VMXReadVmcs                                    VMXReadVmcsField
-#else /* !VBOX_WITH_OLD_VTX_CODE */
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 #  define VMXReadVmcsHstN(idxField, p64Val)               HMVMX_IS_64BIT_HOST_MODE() ?                      \
                                                             VMXReadVmcs64(idxField, p64Val)                 \
@@ -87,7 +79,6 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
 #  define VMXReadVmcsGstN                                 VMXReadVmcs64
 #  define VMXReadVmcsGstNByIdxVal                         VMXReadVmcs64
 # endif
-#endif  /* !VBOX_WITH_OLD_VTX_CODE */
 
 #endif /* IN_RING0 */
 

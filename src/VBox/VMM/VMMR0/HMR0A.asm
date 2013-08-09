@@ -60,10 +60,8 @@
  %endif
 %endif
 
-%ifndef VBOX_WITH_OLD_VTX_CODE
- %ifdef RT_ARCH_AMD64
-  %define VBOX_SKIP_RESTORE_SEG
- %endif
+%ifdef RT_ARCH_AMD64
+ %define VBOX_SKIP_RESTORE_SEG
 %endif
 
 ;; The offset of the XMM registers in X86FXSTATE.

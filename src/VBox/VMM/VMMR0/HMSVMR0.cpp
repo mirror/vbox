@@ -1327,7 +1327,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
 
     pCtx->dr[7] &= 0xffffffff;                                                /* Upper 32 bits MBZ. */
     pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* MBZ. */
-    pCtx->dr[7] |= 0x400;                                                     /* MB1. */
+    pCtx->dr[7] |= X86_DR7_INIT_VAL;                                          /* MB1. */
 
     /* Update DR6, DR7 with the guest values. */
     pVmcb->guest.u64DR7 = pCtx->dr[7];
@@ -1604,8 +1604,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
-    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_MSR                /* Unused (legacy). */
-                                      | HM_CHANGED_GUEST_RIP                /* Unused (loaded unconditionally). */
+    pVCpu->hm.s.fContextUseFlags &= ~(  HM_CHANGED_GUEST_RIP                /* Unused (loaded unconditionally). */
                                       | HM_CHANGED_GUEST_RSP
                                       | HM_CHANGED_GUEST_RFLAGS
                                       | HM_CHANGED_GUEST_SYSENTER_CS_MSR

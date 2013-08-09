@@ -18,18 +18,16 @@
 ; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 ;
 
-%ifndef VBOX_WITH_OLD_VTX_CODE
- %ifdef RT_ARCH_AMD64
-  ;;
-  ; Keep these macro definitions in this file as it gets included and compiled
-  ; with RT_ARCH_AMD64 once and RT_ARCH_X86 once.
-  %define VMX_SKIP_GDTR
-  %ifndef RT_OS_DARWIN
-   ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always. See @bugref{6875}.
-   %define VMX_SKIP_IDTR
-  %endif
-  %define VMX_SKIP_TR
+%ifdef RT_ARCH_AMD64
+ ;;
+ ; Keep these macro definitions in this file as it gets included and compiled
+ ; with RT_ARCH_AMD64 once and RT_ARCH_X86 once.
+ %define VMX_SKIP_GDTR
+ %ifndef RT_OS_DARWIN
+  ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always. See @bugref{6875}.
+  %define VMX_SKIP_IDTR
  %endif
+ %define VMX_SKIP_TR
 %endif
 
 ;/**
@@ -197,10 +195,8 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     mov     [ss:xDI + CPUMCTX.edx], edx
     mov     [ss:xDI + CPUMCTX.esi], esi
     mov     [ss:xDI + CPUMCTX.ebp], ebp
-%ifndef VBOX_WITH_OLD_VTX_CODE
     mov     xAX, cr2
     mov     [ss:xDI + CPUMCTX.cr2], xAX
-%endif
 
 %ifdef RT_ARCH_AMD64
     pop     xAX                                 ; The guest edi we pushed above.
@@ -250,12 +246,6 @@ ALIGN(16)
     cmp     xCX, 0
     jnz     .cached_read
 .no_cached_reads:
-
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; Restore CR2 into VMCS-cache field (for EPT).
-    mov     xAX, cr2
-    mov     [ss:xDX + VMCSCACHE.cr2], xAX
-%endif
 %endif
 
     ; Restore segment registers.
@@ -430,11 +420,6 @@ ALIGN(16)
     LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
     LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%endif
 %endif
 
     ; Save the pCtx pointer.
@@ -544,10 +529,8 @@ ALIGNCODE(16)
     mov     qword [xDI + CPUMCTX.r13], r13
     mov     qword [xDI + CPUMCTX.r14], r14
     mov     qword [xDI + CPUMCTX.r15], r15
-%ifndef VBOX_WITH_OLD_VTX_CODE
     mov     rax, cr2
     mov     qword [xDI + CPUMCTX.cr2], rax
-%endif
 
     pop     xAX                                 ; The guest edi we pushed above
     mov     qword [xDI + CPUMCTX.edi], rax
@@ -581,11 +564,6 @@ ALIGNCODE(16)
     LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
     LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
     LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-%endif
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -604,12 +582,6 @@ ALIGN(16)
     cmp      xCX, 0
     jnz     .cached_read
 .no_cached_reads:
-
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; Restore CR2 into VMCS-cache field (for EPT).
-    mov     xAX, cr2
-    mov     [xDX + VMCSCACHE.cr2], xAX
-%endif
 %endif
 
     ; Restore segment registers.
@@ -663,11 +635,6 @@ ALIGN(16)
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
     LOADHOSTMSR MSR_K8_LSTAR
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
-%endif
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -719,11 +686,6 @@ ALIGN(16)
     LOADHOSTMSR MSR_K8_SF_MASK
     LOADHOSTMSR MSR_K6_STAR
     LOADHOSTMSR MSR_K8_LSTAR
-%else
-%ifdef VBOX_WITH_OLD_VTX_CODE
-    ; The KERNEL_GS_BASE MSR does not work reliably with auto load/store. See @bugref{6208}
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
-%endif
 %endif
 
 %ifdef VMX_USE_CACHED_VMCS_ACCESSES
