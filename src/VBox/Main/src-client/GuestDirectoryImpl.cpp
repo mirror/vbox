@@ -211,7 +211,7 @@ STDMETHODIMP GuestDirectory::Close(void)
 
     uninit();
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -313,7 +313,7 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

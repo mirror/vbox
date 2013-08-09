@@ -340,7 +340,7 @@ STDMETHODIMP GuestSession::COMGETTER(User)(BSTR *aUser)
 
     mData.mCredentials.mUser.cloneTo(aUser);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -361,7 +361,7 @@ STDMETHODIMP GuestSession::COMGETTER(Domain)(BSTR *aDomain)
 
     mData.mCredentials.mDomain.cloneTo(aDomain);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -382,7 +382,7 @@ STDMETHODIMP GuestSession::COMGETTER(Name)(BSTR *aName)
 
     mData.mSession.mName.cloneTo(aName);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -403,7 +403,7 @@ STDMETHODIMP GuestSession::COMGETTER(Id)(ULONG *aId)
 
     *aId = mData.mSession.mID;
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -424,7 +424,7 @@ STDMETHODIMP GuestSession::COMGETTER(Status)(GuestSessionStatus_T *aStatus)
 
     *aStatus = mData.mStatus;
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -445,7 +445,7 @@ STDMETHODIMP GuestSession::COMGETTER(Timeout)(ULONG *aTimeout)
 
     *aTimeout = mData.mTimeout;
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -464,7 +464,7 @@ STDMETHODIMP GuestSession::COMSETTER(Timeout)(ULONG aTimeout)
 
     mData.mTimeout = aTimeout;
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -485,7 +485,7 @@ STDMETHODIMP GuestSession::COMGETTER(ProtocolVersion)(ULONG *aVersion)
 
     *aVersion = mData.mProtocolVersion;
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -516,7 +516,7 @@ STDMETHODIMP GuestSession::COMGETTER(Environment)(ComSafeArrayOut(BSTR, aEnviron
     }
     environment.detachTo(ComSafeArrayOutArg(aEnvironment));
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -630,7 +630,7 @@ STDMETHODIMP GuestSession::COMGETTER(EventSource)(IEventSource ** aEventSource)
     // no need to lock - lifetime constant
     mEventSource.queryInterfaceTo(aEventSource);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -684,14 +684,12 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     paParms[i++].setUInt32(pEvent->ContextID());
     paParms[i++].setUInt32(uFlags);
 
+    alock.release(); /* Drop the write lock before waiting. */
+
     vrc = sendCommand(HOST_SESSION_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
-    {
-        alock.release(); /* Drop the write lock before waiting. */
-
         vrc = waitForStatusChange(pEvent, GuestSessionWaitForFlag_Terminate, uTimeoutMS,
                                   NULL /* Session status */, pGuestRc);
-    }
 
     unregisterWaitEvent(pEvent);
 
@@ -990,21 +988,26 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
     {
         if (pFile == itFiles->second)
         {
-            GuestFile *pThis = itFiles->second;
-            AssertPtr(pThis);
+            /* Make sure to consume the pointer before the one of thfe
+             * iterator gets released. */
+            ComObjPtr<GuestFile> pCurFile = pFile;
 
             Bstr strName;
-            HRESULT hr = pThis->COMGETTER(FileName)(strName.asOutParam());
+            HRESULT hr = pCurFile->COMGETTER(FileName)(strName.asOutParam());
             ComAssertComRC(hr);
 
             Assert(mData.mNumObjects);
             LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 
+            itFiles->second->Release();
+
             mData.mFiles.erase(itFiles);
             mData.mNumObjects--;
 
-            fireGuestFileRegisteredEvent(mEventSource, this, pFile,
+            alock.release(); /* Release lock before firing off event. */
+
+            fireGuestFileRegisteredEvent(mEventSource, this, pCurFile,
                                          false /* Unregistered */);
             return VINF_SUCCESS;
         }
@@ -1106,6 +1109,8 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
 
         LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                      openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+
+        alock.release(); /* Release lock before firing off event. */
 
         fireGuestFileRegisteredEvent(mEventSource, this, pFile,
                                      true /* Registered */);
@@ -1333,12 +1338,8 @@ int GuestSession::onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
     }
 
     /* Set the session status. */
-    if (sessionStatus != GuestSessionStatus_Undefined)
-    {
-        int rc2 = setSessionStatus(sessionStatus, guestRc);
-        if (RT_SUCCESS(vrc))
-            vrc = rc2;
-    }
+    if (RT_SUCCESS(vrc))
+        vrc = setSessionStatus(sessionStatus, guestRc);
 
     LogFlowThisFunc(("ID=%RU32, guestRc=%Rrc\n", mData.mSession.mID, guestRc));
 
@@ -1404,15 +1405,13 @@ int GuestSession::startSessionInternal(int *pGuestRc)
                             (ULONG)mData.mCredentials.mDomain.length() + 1);
     paParms[i++].setUInt32(mData.mSession.mOpenFlags);
 
+    alock.release(); /* Drop write lock before sending. */
+
     vrc = sendCommand(HOST_SESSION_CREATE, i, paParms);
     if (RT_SUCCESS(vrc))
-    {
-        alock.release(); /* Drop write lock before waiting. */
-
         vrc = waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
                                   30 * 1000 /* 30s timeout */,
                                   NULL /* Session status */, pGuestRc);
-    }
 
     unregisterWaitEvent(pEvent);
 
@@ -1494,24 +1493,26 @@ int GuestSession::processRemoveFromList(GuestProcess *pProcess)
     {
         if (pProcess == itProcs->second)
         {
-            GuestProcess *pCurProc = itProcs->second;
-            AssertPtr(pCurProc);
+            /* Make sure to consume the pointer before the one of thfe
+             * iterator gets released. */
+            ComObjPtr<GuestProcess> pCurProcess = pProcess;
 
-            hr = pCurProc->COMGETTER(PID)(&uPID);
+            hr = pCurProcess->COMGETTER(PID)(&uPID);
             ComAssertComRC(hr);
 
             Assert(mData.mNumObjects);
             LogFlowFunc(("Removing process ID=%RU32 (Session: %RU32), guest PID=%RU32 (now total %ld processes, %ld objects)\n",
-                         pCurProc->getObjectID(), mData.mSession.mID, uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
+                         pProcess->getObjectID(), mData.mSession.mID, uPID, mData.mProcesses.size() - 1, mData.mNumObjects - 1));
 
-            pCurProc->cancelWaitEvents();
-
-            itProcs->second->Release();
+            pProcess->cancelWaitEvents();
+            pProcess->Release();
 
             mData.mProcesses.erase(itProcs);
             mData.mNumObjects--;
 
-            fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, NULL /* Process */,
+            alock.release(); /* Release lock before firing off event. */
+
+            fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pCurProcess,
                                             uPID, false /* Process unregistered */);
             rc = VINF_SUCCESS;
             break;
@@ -1814,6 +1815,10 @@ int GuestSession::queryInfo(void)
     uint32_t uVBoxMajor    = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
     uint32_t uVBoxMinor    = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
 
+#if 0
+    /* Hardcode the to-used protocol version; nice for testing side effects. */
+    mData.mProtocolVersion = 2;
+#else
     mData.mProtocolVersion = (
                               /* VBox 5.0 and up. */
                                  uVBoxMajor  >= 5
@@ -1822,13 +1827,15 @@ int GuestSession::queryInfo(void)
                            ? 2  /* Guest control 2.0. */
                            : 1; /* Legacy guest control (VBox < 4.3). */
     /* Build revision is ignored. */
+#endif
 
     LogFlowThisFunc(("uVerAdditions=%RU32 (%RU32.%RU32), mProtocolVersion=%RU32\n",
                      uVerAdditions, uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
 
     /* Tell the user but don't bitch too often. */
     static short s_gctrlLegacyWarning = 0;
-    if (s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
+    if (   mData.mProtocolVersion < 2
+        && s_gctrlLegacyWarning++ < 3) /** @todo Find a bit nicer text. */
         LogRel((tr("Warning: Guest Additions are older (%ld.%ld) than host capabilities for guest control, please upgrade them. Using protocol version %ld now\n"),
                 uVBoxMajor, uVBoxMinor, mData.mProtocolVersion));
 
@@ -1940,8 +1947,6 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
         return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
-    alock.release(); /* Release lock before waiting. */
-
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -1960,6 +1965,8 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
 
     if (RT_FAILURE(vrc))
         return vrc;
+
+    alock.release(); /* Release lock before waiting. */
 
     GuestSessionStatus_T sessionStatus;
     vrc = waitForStatusChange(pEvent, fWaitFlags,
@@ -2034,7 +2041,7 @@ int GuestSession::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t fWaitFlag
         if (pGuestRc)
             *pGuestRc = (int)lGuestRc;
 
-        LogFlowThisFunc(("Status changed event for session ID=%RU32: %ld (%Rrc)\n",
+        LogFlowThisFunc(("Status changed event for session ID=%RU32, new status is: %ld (%Rrc)\n",
                          mData.mSession.mID, sessionStatus,
                          RT_SUCCESS((int)lGuestRc) ? VINF_SUCCESS : (int)lGuestRc));
     }
@@ -2529,7 +2536,7 @@ STDMETHODIMP GuestSession::EnvironmentClear(void)
 
     mData.mEnvironment.Clear();
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -2554,7 +2561,7 @@ STDMETHODIMP GuestSession::EnvironmentGet(IN_BSTR aName, BSTR *aValue)
     Bstr strValue(mData.mEnvironment.Get(Utf8Str(aName)));
     strValue.cloneTo(aValue);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -2596,7 +2603,7 @@ STDMETHODIMP GuestSession::EnvironmentUnset(IN_BSTR aName)
 
     mData.mEnvironment.Unset(Utf8Str(aName));
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

@@ -76,7 +76,6 @@ public:
     int callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     inline int checkPID(uint32_t uPID);
     static Utf8Str guestErrorToString(int guestRc);
-    bool isReady(void);
     int readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead, int *pGuestRc);
     static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int startProcess(uint32_t uTimeoutMS, int *pGuestRc);
@@ -96,6 +95,7 @@ protected:
     /** @name Protected internal methods.
      * @{ */
     inline bool isAlive(void);
+    inline bool hasEnded(void);
     int onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int onProcessNotifyIO(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);

@@ -109,7 +109,8 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 
     VBOXGUESTCTRLHOSTCBCTX ctxCb = { u32Function, uContextID };
     rc = pGuest->dispatchToSession(&ctxCb, pSvcCb);
-    LogFlowFuncLeaveRC(rc);
+
+    LogFlowFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -321,7 +322,7 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -340,17 +341,20 @@ int Guest::sessionRemove(GuestSession *pSession)
     {
         if (pSession == itSessions->second)
         {
-            GuestSession *pCurSession = itSessions->second;
-            AssertPtr(pCurSession);
+            /* Make sure to consume the pointer before the one of the
+             * iterator gets released. */
+            ComObjPtr<GuestSession> pCurSession = pSession;
 
             LogFlowFunc(("Removing session (pSession=%p, ID=%RU32) (now total %ld sessions)\n",
-                         pCurSession, pCurSession->getId(), mData.mGuestSessions.size() - 1));
+                         pSession, pSession->getId(), mData.mGuestSessions.size() - 1));
 
             itSessions->second->Release();
 
             mData.mGuestSessions.erase(itSessions);
 
-            fireGuestSessionRegisteredEvent(mEventSource, pSession,
+            alock.release(); /* Release lock before firing off event. */
+
+            fireGuestSessionRegisteredEvent(mEventSource, pCurSession,
                                             false /* Unregistered */);
             rc = VINF_SUCCESS;
             break;
@@ -359,7 +363,7 @@ int Guest::sessionRemove(GuestSession *pSession)
         itSessions++;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -430,6 +434,8 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
          */
         mData.mGuestSessions[uNewSessionID] = pGuestSession;
 
+        alock.release(); /* Release lock before firing off event. */
+
         fireGuestSessionRegisteredEvent(mEventSource, pGuestSession,
                                         true /* Registered */);
     }
@@ -438,7 +444,7 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
         rc = rc2;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -451,7 +457,8 @@ inline bool Guest::sessionExists(uint32_t uSessionID)
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain, IN_BSTR aSessionName, IGuestSession **aGuestSession)
+STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDomain,
+                                  IN_BSTR aSessionName, IGuestSession **aGuestSession)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -514,7 +521,7 @@ STDMETHODIMP Guest::CreateSession(IN_BSTR aUser, IN_BSTR aPassword, IN_BSTR aDom
         }
     }
 
-    LogFlowFuncLeaveRC(rc);
+    LogFlowThisFunc(("Returning rc=%Rhrc\n", hr));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
