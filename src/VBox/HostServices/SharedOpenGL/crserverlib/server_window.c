@@ -115,7 +115,7 @@ crServerDispatchWindowCreate(const char *dpyName, GLint visBits)
 static DECLCALLBACK(void) crServerMuralDefaultEntryReleasedCB(const struct VBOXVR_SCR_COMPOSITOR *pCompositor, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pEntry, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pReplacingEntry)
 {
     CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
-    crServerDEntryCleanup(pDEntry);
+    CrDpEntryCleanup(pDEntry);
 }
 
 GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, GLint preloadWinID, GLboolean fUseDefaultDEntry)
@@ -158,15 +158,10 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
         Tex.height = dims[1];
         Tex.target = GL_TEXTURE_2D;
         Tex.hwid = 0;
-        CrVrScrCompositorEntryInit(&mural->DefaultDEntry.CEntry, &Tex, crServerMuralDefaultEntryReleasedCB);
 
-        if (cr_server.fRootVrOn)
-        {
-            CrVrScrCompositorEntryInit(&mural->DefaultDEntry.RootVrCEntry, &Tex, NULL);
-            mural->fRootVrOn = GL_TRUE;
-        }
+        CrDpEntryInit(&mural->DefaultDEntry, &Tex, 0, crServerMuralDefaultEntryReleasedCB);
 
-        mural->DefaultDEntry.pvORInstance = NULL;
+        mural->fRootVrOn = cr_server.fRootVrOn;
     }
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);

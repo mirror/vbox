@@ -210,6 +210,7 @@ typedef struct CR_DISPLAY_ENTRY
     VBOXVR_SCR_COMPOSITOR_ENTRY RootVrCEntry;
     void *pvORInstance;
     GLuint idPBO;
+    GLuint idInvertTex;
 } CR_DISPLAY_ENTRY, *PCR_DISPLAY_ENTRY;
 /**/
 
