@@ -465,6 +465,18 @@ $$(VBoxSVC_0_OUTDIR)/VBoxSVC-icon.rc: $(MAKEFILE_CURRENT) $(VBOX_WINDOWS_ICON_FI
 $$(VBoxSVC_0_OUTDIR)/VBoxSVC.rgs: $(VBOX_PATH_MAIN_SRC)/src-all/win/VirtualBox_rgs.xsl $(VBOX_XIDL_FILE) | $$(dir $$(@D))
 	$(VBOX_XSLTPROC) --stringparam Module VBoxSVC -o $@ $< $(VBOX_XIDL_FILE)
 
+## @todo r=klaus unfortunately we don't have xmllint everywhere, would be
+# good to check the validity for every VirtualBox.xidl change.
+#$(VBOX_XIDL_FILE).validated.ts: $(VBOX_XIDL_FILE_SRC)
+#	xmllint --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
+#	$(QUIET)$(CP) --changed -fv $< $(VBOX_XIDL_FILE).validated.ts
+#
+#OTHERS += $(VBOX_XIDL_FILE).validated.ts
+#OTHER_CLEAN += $(VBOX_XIDL_FILE).validated.ts
+
+testvalidxidl: $(VBOX_XIDL_FILE_SRC)
+	xmllint --dtdvalid $(VBOX_PATH_MAIN_SRC)/idl/VirtualBox.dtd --noout $<
+
 
 #
 # Embed some constraints from XML Schema file into VBoxSVC
