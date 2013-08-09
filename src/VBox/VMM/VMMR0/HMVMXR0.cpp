@@ -7681,9 +7681,12 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32), VMX_IGS_LONGMODE_SS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_SS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_DS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_ES_BASE_INVALID);
             }
 #endif
         }
@@ -7735,9 +7738,12 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32), VMX_IGS_LONGMODE_SS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
-                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_SS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_DS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32),
+                                  VMX_IGS_LONGMODE_ES_BASE_INVALID);
             }
 #endif
         }
@@ -7846,9 +7852,10 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Guest interruptibility-state. */
         HMVMX_CHECK_BREAK(!(u32IntrState & 0xfffffff0), VMX_IGS_INTERRUPTIBILITY_STATE_RESERVED);
-        HMVMX_CHECK_BREAK(  (u32IntrState
-                          & (VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS))
-                          != (VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
+        HMVMX_CHECK_BREAK((u32IntrState & (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
+                                           | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS))
+                            != (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
+                                | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID);
         HMVMX_CHECK_BREAK(   (u32EFlags & X86_EFL_IF)
                           || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
