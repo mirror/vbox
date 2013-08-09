@@ -2022,6 +2022,12 @@
         array.
 
         <note>
+          <link to="IMachine::settingsModified"/> will return
+          @c false for the created machine, until any of machine settings
+          are changed.
+        </note>
+
+        <note>
           There is no way to change the name of the settings file or
           subfolder of the created machine directly.
         </note>
@@ -2080,6 +2086,12 @@
         The file must exist and be a valid machine XML settings file
         whose contents will be used to construct the machine object.
 
+        <note>
+          <link to="IMachine::settingsModified"/> will return
+          @c false for the opened machine, until any of machine settings
+          are changed.
+        </note>
+
         <result name="VBOX_E_FILE_ERROR">
           Settings file name invalid, not found or sharing violation.
         </result>
@@ -2092,11 +2104,6 @@
       <param name="machine" type="IMachine" dir="return">
         <desc>Opened machine object.</desc>
       </param>
-      <note>
-        <link to="IMachine::settingsModified"/> will return
-        @c false for the created machine, until any of machine settings
-        are changed.
-      </note>
     </method>
 
     <method name="registerMachine">
@@ -2762,7 +2769,7 @@
   </interface>
 
   <enum
-    name="ImportOptions" extends="$unknown"
+    name="ImportOptions"
     uuid="0a981523-3b20-4004-8ee3-dfd322202ace"
     >
 
@@ -4051,7 +4058,7 @@
   </enum>
 
   <enum
-    name="CloneMode" extends="$unknown"
+    name="CloneMode"
     uuid="A7A159FE-5096-4B8D-8C3C-D033CB0B35A8"
     >
 
@@ -4072,7 +4079,7 @@
   </enum>
 
   <enum
-    name="CloneOptions" extends="$unknown"
+    name="CloneOptions"
     uuid="22243f8e-96ab-497c-8cf0-f40a566c630b"
     >
 
@@ -4096,7 +4103,7 @@
   </enum>
 
   <enum
-    name="AutostopType" extends="$unknown"
+    name="AutostopType"
     uuid="6bb96740-cf34-470d-aab2-2cd48ea2e10e"
     >
 
@@ -17372,6 +17379,28 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="console" type="IConsole" dir="return"/>
     </method>
 
+<if target="midl">
+    <method name="assignMachine">
+      <desc>
+        Assigns the machine object associated with this direct-type
+        session or informs the session that it will be a remote one
+        (if @a machine == @c null).
+
+        <result name="VBOX_E_INVALID_VM_STATE">
+          Session state prevents operation.
+        </result>
+        <result name="VBOX_E_INVALID_OBJECT_STATE">
+          Session type prevents operation.
+        </result>
+
+      </desc>
+      <param name="machine" type="IMachine" dir="in"/>
+      <param name="lockType" type="LockType" dir="in"/>
+      <param name="tokenId" type="wstring" dir="in"/>
+    </method>
+</if>
+<if target="xpidl">
+</if>
     <method name="assignMachine">
       <desc>
         Assigns the machine object associated with this direct-type
@@ -21239,7 +21268,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IExtraDataCanChangeEvent" extends="IVetoEvent"
     uuid="245d88bd-800a-40f8-87a6-170d02249a55"
     wsmap="managed" autogen="VBoxEvent" id="OnExtraDataCanChange"
-    waitable="true"
+    waitable="yes"
     >
     <desc>
       Notification when someone tries to change extra data for
@@ -21268,7 +21297,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="ICanShowWindowEvent" extends="IVetoEvent"
     uuid="adf292b0-92c9-4a77-9d35-e058b39fe0b9"
     wsmap="managed" autogen="VBoxEvent" id="OnCanShowWindow"
-    waitable="true"
+    waitable="yes"
     >
     <desc>
       Notification when a call to
@@ -21287,7 +21316,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     name="IShowWindowEvent" extends="IEvent"
     uuid="B0A0904D-2F05-4D28-855F-488F96BAD2B2"
     wsmap="managed" autogen="VBoxEvent" id="OnShowWindow"
-    waitable="true"
+    waitable="yes"
     >
     <desc>
       Notification when a call to
