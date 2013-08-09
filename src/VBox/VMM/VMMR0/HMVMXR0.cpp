@@ -7487,7 +7487,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * 64-bit checks.
          */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
@@ -7677,7 +7677,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                   || (pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_GS_ATTR_TYPE_INVALID);
             }
             /* 64-bit capable CPUs. */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
@@ -7731,7 +7731,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK(pCtx->gs.u32Limit == 0xffff, VMX_IGS_V86_GS_LIMIT_INVALID);
             HMVMX_CHECK_BREAK(u32GSAttr == 0xf3, VMX_IGS_V86_GS_ATTR_INVALID);
             /* 64-bit capable CPUs. */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
             if (HMVMX_IS_64BIT_HOST_MODE())
             {
                 HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
@@ -7745,7 +7745,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * GDTR and IDTR.
          */
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
@@ -7770,7 +7770,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * RIP and RFLAGS.
          */
         uint32_t u32EFlags;
-# if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+#if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
