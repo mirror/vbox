@@ -23,13 +23,14 @@
 
 #ifndef VBOX_ONLY_DOCS
 
-#include <VBox/com/com.h>
-#include <VBox/com/string.h>
 #include <VBox/com/array.h>
+#include <VBox/com/com.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
-#include <VBox/com/VirtualBox.h>
+#include <VBox/com/listeners.h>
 #include <VBox/com/NativeEventQueue.h>
+#include <VBox/com/string.h>
+#include <VBox/com/VirtualBox.h>
 
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -61,10 +62,70 @@
 using namespace com;
 
 /**
- * IVirtualBoxCallback implementation for handling the GuestControlCallback in
- * relation to the "guestcontrol * wait" command.
+ *  Handler for guest events.
  */
-/** @todo */
+class GuestEventListener
+{
+public:
+    GuestEventListener(void)
+    {
+    }
+
+    virtual ~GuestEventListener(void)
+    {
+    }
+
+    HRESULT init(void)
+    {
+        return S_OK;
+    }
+
+    void uninit(void)
+    {
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestSessionRegistered:
+            {
+                ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
+                Assert(!pEvent.isNull());
+
+                ComPtr<IGuestSession> pSession;
+                HRESULT rc = pEvent->COMGETTER(Session)(pSession.asOutParam());
+                AssertComRCBreakRC(rc);
+                AssertBreak(!pSession.isNull());
+
+                BOOL fRegistered;
+                rc = pEvent->COMGETTER(Registered)(&fRegistered);
+                AssertComRCBreakRC(rc);
+
+                Bstr strName;
+                rc = pSession->COMGETTER(Name)(strName.asOutParam());
+                AssertComRCBreakRC(rc);
+                ULONG uID;
+                rc = pSession->COMGETTER(Id)(&uID);
+                AssertComRCBreakRC(rc);
+
+                RTPrintf("Session ID=%RU32 \"%s\" %s\n",
+                         uID, Utf8Str(strName).c_str(),
+                         fRegistered ? "registered" : "unregistered");
+
+                pSession.setNull();
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+};
+typedef ListenerImpl<GuestEventListener> GuestEventListenerImpl;
+VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
 
 /** Set by the signal handler. */
 static volatile bool         g_fGuestCtrlCanceled = false;
@@ -293,6 +354,8 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                            [--source <guest additions .ISO>] [--verbose]\n"
                  "                            [--wait-start]\n"
                  "                            [-- [<argument1>] ... [<argumentN>]]\n"
+                 "\n"
+                 "                            watch [--verbose]\n"
                  "\n", pcszSep1, pcszSep2);
 }
 
@@ -3368,6 +3431,107 @@ static RTEXITCODE handleCtrlSession(ComPtr<IGuest> guest, HandlerArg *pArg)
     return errorSyntax(USAGE_GUESTCONTROL, "Invalid session action '%s'", pArg->argv[0]);
 }
 
+static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
+{
+    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+
+    /*
+     * Parse arguments.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    bool fVerbose = false;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case 'v': /* Verbose */
+                fVerbose = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+        }
+    }
+
+    /** @todo Specify categories to watch for. */
+    /** @todo Specify a --timeout for waiting only for a certain amount of time? */
+
+    HRESULT rc;
+
+    try
+    {
+        ComObjPtr<GuestEventListenerImpl> pGuestListener;
+
+
+
+        do
+        {
+            /* Listener creation. */
+            pGuestListener.createObject();
+            pGuestListener->init(new GuestEventListener());
+
+            /* Register for IGuest events. */
+            ComPtr<IEventSource> es;
+            CHECK_ERROR_BREAK(guest, COMGETTER(EventSource)(es.asOutParam()));
+            com::SafeArray<VBoxEventType_T> eventTypes;
+            eventTypes.push_back(VBoxEventType_OnGuestSessionRegistered);
+            /** @todo Also register for VBoxEventType_OnGuestUserStateChanged on demand? */
+            CHECK_ERROR_BREAK(es, RegisterListener(pGuestListener, ComSafeArrayAsInParam(eventTypes),
+                                                   true /* Active listener */));
+            /* Note: All other guest control events have to be registered
+             *       as their corresponding objects appear. */
+
+        } while (0);
+
+        ctrlSignalHandlerInstall();
+
+        if (fVerbose)
+            RTPrintf("Waiting for events ...\n");
+
+        while (!g_fGuestCtrlCanceled)
+        {
+            /** @todo Timeout handling (see above)? */
+            RTThreadYield();
+        }
+
+        if (fVerbose)
+            RTPrintf("Signal caught, exiting ...\n");
+
+        ctrlSignalHandlerUninstall();
+
+        if (!pGuestListener.isNull())
+        {
+            /* Guest callback unregistration. */
+            ComPtr<IEventSource> pES;
+            CHECK_ERROR(guest, COMGETTER(EventSource)(pES.asOutParam()));
+            if (!pES.isNull())
+                CHECK_ERROR(pES, UnregisterListener(pGuestListener));
+            pGuestListener.setNull();
+        }
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+
+    return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
+}
+
 /**
  * Access the guest control store.
  *
@@ -3430,6 +3594,8 @@ int handleGuestControl(HandlerArg *pArg)
             rcExit = handleCtrlSession(guest, &arg);
         else if (   !RTStrICmp(pArg->argv[1], "process"))
             rcExit = handleCtrlProcess(guest, &arg);
+        else if (   !RTStrICmp(pArg->argv[1], "watch"))
+            rcExit = handleCtrlWatch(guest, &arg);
         else
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
