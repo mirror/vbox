@@ -383,8 +383,9 @@ void UIPopupPane::polishEvent(QShowEvent*)
 
 void UIPopupPane::paintEvent(QPaintEvent*)
 {
-    /* Compose painting rectangle: */
-    const QRect rect(0, 0, width(), height());
+    /* Compose painting rectangle,
+     * Shifts are required for the antialiasing support: */
+    const QRect rect(1, 1, width() - 2, height() - 2);
 
     /* Create painter: */
     QPainter painter(this);
@@ -406,13 +407,13 @@ void UIPopupPane::configureClipping(const QRect &rect, QPainter &painter)
     QPainterPath path;
     int iDiameter = 6;
     QSizeF arcSize(2 * iDiameter, 2 * iDiameter);
-    path.moveTo(iDiameter, 0);
+    path.moveTo(rect.x() + iDiameter, rect.y());
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iDiameter, 0), 90, 90);
-    path.lineTo(path.currentPosition().x(), rect.height() - iDiameter);
+    path.lineTo(path.currentPosition().x(), rect.y() + rect.height() - iDiameter);
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(0, -iDiameter), 180, 90);
-    path.lineTo(rect.width() - iDiameter, path.currentPosition().y());
+    path.lineTo(rect.x() + rect.width() - iDiameter, path.currentPosition().y());
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-iDiameter, -2 * iDiameter), 270, 90);
-    path.lineTo(path.currentPosition().x(), iDiameter);
+    path.lineTo(path.currentPosition().x(), rect.y() + iDiameter);
     path.arcTo(QRectF(path.currentPosition(), arcSize).translated(-2 * iDiameter, -iDiameter), 0, 90);
     path.closeSubpath();
     painter.setClipPath(path);
