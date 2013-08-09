@@ -490,6 +490,7 @@ typedef struct GCFGMVALUEREQ
  */
 typedef GCFGMVALUEREQ *PGCFGMVALUEREQ;
 
+#ifdef IN_RING0
 VMMR0DECL(int)       VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg);
 VMMR0DECL(void)      VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation);
 VMMR0DECL(int)       VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation, PSUPVMMR0REQHDR pReq, uint64_t u64Arg, PSUPDRVSESSION);
@@ -497,17 +498,19 @@ VMMR0DECL(int)       VMMR0TermVM(PVM pVM, PGVM pGVM);
 VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu);
 VMMR0DECL(int)       VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu);
 VMMR0DECL(void)      VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu);
+VMMR0DECL(bool)      VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu);
+VMMR0DECL(bool)      VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu);
 
-
-#ifdef LOG_ENABLED
+# ifdef LOG_ENABLED
 VMMR0DECL(void)     VMMR0LogFlushDisable(PVMCPU pVCpu);
 VMMR0DECL(void)     VMMR0LogFlushEnable(PVMCPU pVCpu);
 VMMR0DECL(bool)     VMMR0IsLogFlushDisabled(PVMCPU pVCpu);
-#else
-#define             VMMR0LogFlushDisable(pVCpu)     do { } while(0)
-#define             VMMR0LogFlushEnable(pVCpu)      do { } while(0)
-#define             VMMR0IsLogFlushDisabled(pVCpu)  (true)
-#endif
+# else
+#  define           VMMR0LogFlushDisable(pVCpu)     do { } while(0)
+#  define           VMMR0LogFlushEnable(pVCpu)      do { } while(0)
+#  define           VMMR0IsLogFlushDisabled(pVCpu)  (true)
+# endif /* LOG_ENABLED */
+#endif /* IN_RING0 */
 
 /** @} */
 

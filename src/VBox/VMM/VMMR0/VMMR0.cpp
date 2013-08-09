@@ -464,6 +464,33 @@ VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
 }
 
 
+/**
+ * Whether thread-context hooks are created (implying they're supported) on this
+ * platform.
+ *
+ * @returns true if the hooks are created, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks Can be called from any thread.
+ */
+VMMR0DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
+{
+    return pVCpu->vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX;
+}
+
+
+/**
+ * Whether thread-context hooks are registered for this VCPU.
+ *
+ * @returns true if registered, false otherwise.
+ * @param   pVCpu       Pointer to the VMCPU.
+ */
+VMMR0DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
+{
+    return RTThreadCtxHooksAreRegistered(pVCpu->vmm.s.hR0ThreadCtx);
+}
+
+
 #ifdef VBOX_WITH_STATISTICS
 /**
  * Record return code statistics
