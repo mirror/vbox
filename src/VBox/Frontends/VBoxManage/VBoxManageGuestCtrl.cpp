@@ -67,7 +67,10 @@ using namespace com;
 /** @todo */
 
 /** Set by the signal handler. */
-static volatile bool    g_fGuestCtrlCanceled = false;
+static volatile bool         g_fGuestCtrlCanceled = false;
+/** Our global session object which is also used in the
+ *  signal handler to abort operations properly. */
+static ComPtr<IGuestSession> g_pGuestSession;
 
 typedef struct COPYCONTEXT
 {
@@ -295,6 +298,30 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
 
 #ifndef VBOX_ONLY_DOCS
 
+#ifdef RT_OS_WINDOWS
+static BOOL WINAPI guestCtrlSignalHandler(DWORD dwCtrlType)
+{
+    bool fEventHandled = FALSE;
+    switch (dwCtrlType)
+    {
+        /* User pressed CTRL+C or CTRL+BREAK or an external event was sent
+         * via GenerateConsoleCtrlEvent(). */
+        case CTRL_BREAK_EVENT:
+        case CTRL_CLOSE_EVENT:
+        case CTRL_C_EVENT:
+            ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+            if (!g_pGuestSession.isNull())
+                g_pGuestSession->Close();
+            fEventHandled = TRUE;
+            break;
+        default:
+            break;
+        /** @todo Add other events here. */
+    }
+
+    return fEventHandled;
+}
+#else /* !RT_OS_WINDOWS */
 /**
  * Signal handler that sets g_fGuestCtrlCanceled.
  *
@@ -306,29 +333,54 @@ static void guestCtrlSignalHandler(int iSignal)
 {
     NOREF(iSignal);
     ASMAtomicWriteBool(&g_fGuestCtrlCanceled, true);
+    if (!g_pGuestSession.isNull())
+        g_pGuestSession->Close();
 }
+#endif
 
 /**
  * Installs a custom signal handler to get notified
  * whenever the user wants to intercept the program.
+ *
+ ** @todo Make this handler available for all VBoxManage modules?
  */
-static void ctrlSignalHandlerInstall()
+static int ctrlSignalHandlerInstall(void)
 {
+    int rc = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)guestCtrlSignalHandler, TRUE /* Add handler */))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to install console control handler, rc=%Rrc\n", rc);
+    }
+#else
     signal(SIGINT,   guestCtrlSignalHandler);
-#ifdef SIGBREAK
+# ifdef SIGBREAK
     signal(SIGBREAK, guestCtrlSignalHandler);
+# endif
 #endif
+    return rc;
 }
 
 /**
  * Uninstalls a previously installed signal handler.
  */
-static void ctrlSignalHandlerUninstall()
+static int ctrlSignalHandlerUninstall(void)
 {
+    int rc = VINF_SUCCESS;
+#ifdef RT_OS_WINDOWS
+    if (!SetConsoleCtrlHandler((PHANDLER_ROUTINE)NULL, FALSE /* Remove handler */))
+    {
+        rc = RTErrConvertFromWin32(GetLastError());
+        RTMsgError("Unable to uninstall console control handler, rc=%Rrc\n", rc);
+    }
+#else
     signal(SIGINT,   SIG_DFL);
-#ifdef SIGBREAK
+# ifdef SIGBREAK
     signal(SIGBREAK, SIG_DFL);
+# endif
 #endif
+    return rc;
 }
 
 /**
@@ -834,6 +886,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (eOutputType != OUTPUTTYPE_UNDEFINED)
         return errorSyntax(USAGE_GUESTCONTROL, "Output conversion not implemented yet!");
 
+    ctrlSignalHandlerInstall();
+
     /*
      * Start with the real work.
      */
@@ -847,7 +901,6 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
      *        into this function already so that we don't need to mess around with closing
      *        the session all over the places below again. Later. */
 
-    ComPtr<IGuestSession> pGuestSession;
     try
     {
         do
@@ -859,7 +912,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                                       Bstr(strPassword).raw(),
                                       Bstr(strDomain).raw(),
                                       Bstr(strVBoxManage).raw(),
-                                      pGuestSession.asOutParam()));
+                                      g_pGuestSession.asOutParam()));
 
             /* Adjust process creation flags if we don't want to wait for process termination. */
             if (fDetached)
@@ -882,9 +935,9 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
             aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
             GuestSessionWaitResult_T sessionWaitResult;
-            CHECK_ERROR_BREAK(pGuestSession, WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult));
+            CHECK_ERROR_BREAK(g_pGuestSession, WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult));
             ULONG uSessionID;
-            CHECK_ERROR_BREAK(pGuestSession, COMGETTER(Id)(&uSessionID));
+            CHECK_ERROR_BREAK(g_pGuestSession, COMGETTER(Id)(&uSessionID));
 
             if (   sessionWaitResult == GuestSessionWaitResult_Start
                 /* Note: This might happen when Guest Additions < 4.3 are installed which don't
@@ -912,7 +965,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
              * Execute the process.
              */
             ComPtr<IGuestProcess> pProcess;
-            CHECK_ERROR_BREAK(pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
+            CHECK_ERROR_BREAK(g_pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
                                                            ComSafeArrayAsInParam(aArgs),
                                                            ComSafeArrayAsInParam(aEnv),
                                                            ComSafeArrayAsInParam(aCreateFlags),
@@ -989,7 +1042,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                         break;
                 }
 
-                if (FAILED(rc))
+                if (g_fGuestCtrlCanceled)
                     break;
 
                 if (fReadStdOut) /* Do we need to fetch stdout data? */
@@ -1008,7 +1061,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     fReadStdErr = false;
                 }
 
-                if (RT_FAILURE(vrc))
+                if (   RT_FAILURE(vrc)
+                    || g_fGuestCtrlCanceled)
                     break;
 
                 /* Did we run out of time? */
@@ -1021,7 +1075,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             } /* while */
 
             /* Report status back to the user. */
-            if (fCompleted)
+            if (   fCompleted
+                && !g_fGuestCtrlCanceled)
             {
                 ProcessStatus_T procStatus;
                 CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&procStatus));
@@ -1055,6 +1110,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         rc = E_OUTOFMEMORY;
     }
 
+    ctrlSignalHandlerUninstall();
+
     bool fCloseSession = false;
     if (SUCCEEDED(rc))
     {
@@ -1069,11 +1126,11 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         fCloseSession = true;
 
     if (   fCloseSession
-        && !pGuestSession.isNull())
+        && !g_pGuestSession.isNull())
     {
         if (fVerbose)
             RTPrintf("Closing guest session ...\n");
-        rc = pGuestSession->Close();
+        rc = g_pGuestSession->Close();
     }
     else if (!fCloseSession && fVerbose)
         RTPrintf("Guest session detached\n");
