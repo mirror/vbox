@@ -815,7 +815,7 @@ my_generate_project "VMM"           "src/VBox/VMM"                          --be
     "include/VBox/vmm/em.h" \
     "include/VBox/vmm/gmm.*" \
     "include/VBox/vmm/gvm.*" \
-    "include/VBox/vmm/hw*.*" \
+    "include/VBox/vmm/hm*.*" \
     "include/VBox/vmm/iom.h" \
     "include/VBox/vmm/mm.h" \
     "include/VBox/vmm/patm.*" \
