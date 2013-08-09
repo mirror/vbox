@@ -7791,11 +7791,12 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              *        and CS.L is 1. No check applies if the CPU supports 64
              *        linear-address bits. */
 
+            /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
             rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
             AssertRCBreak(rc);
-            /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
-            HMVMX_CHECK_BREAK(!(u64Val & (X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK)), VMX_IGS_RFLAGS_RESERVED);
-            HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffc08028)),                     /* Bit 63:22, Bit 15, 5, 3 MBZ. */
+                              VMX_IGS_RFLAGS_RESERVED);
+            HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);       /* Bit 1 MB1. */
             u32EFlags = u64Val;
         }
         else
@@ -7803,8 +7804,8 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         {
             rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32EFlags);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(!(u32EFlags & (X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK)), VMX_IGS_RFLAGS_RESERVED);
-            HMVMX_CHECK_BREAK((u32EFlags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);
+            HMVMX_CHECK_BREAK(!(u32EFlags & 0xffc08028), VMX_IGS_RFLAGS_RESERVED);          /* Bit 31:22, Bit 15, 5, 3 MBZ. */
+            HMVMX_CHECK_BREAK((u32EFlags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);    /* Bit 1 MB1. */
         }
 
         if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
