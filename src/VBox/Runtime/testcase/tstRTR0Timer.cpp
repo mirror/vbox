@@ -400,7 +400,14 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             do /* break loop */
             {
                 RT_ZERO(State); ASMAtomicWriteU32(&State.cShots, State.cShots);
-                RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
+                int rc = RTTimerStart(pTimer, 0);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
+                    RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                    break;
+                }
+                
+                RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
                 for (uint32_t i = 0; i < 1000 && !ASMAtomicUoReadU32(&State.cShots); i++)
                     RTThreadSleep(5);
                 RTR0TESTR0_CHECK_MSG_BREAK(ASMAtomicUoReadU32(&State.cShots) == 1, ("cShots=%u\n", State.cShots));
