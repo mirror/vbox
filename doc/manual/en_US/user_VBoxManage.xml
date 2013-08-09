@@ -3592,6 +3592,31 @@ Value: 2006.01.01</screen>
               </glossentry>
             </glosslist></para>
         </listitem>
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>session watch</computeroutput></emphasis>,
+          which prints current guest control activity.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; watch
+          [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+              <glossdef>
+                <para>The VM UUID or VM name. Mandatory.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Tells VBoxManage to be more verbose.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
       </itemizedlist></para>
   </sect1>
 

@@ -74,6 +74,12 @@
       </listitem>
 
       <listitem>
+        <para>VBoxManage: added support for watching guest sessions via
+          <computeroutput>guestcontrol watch</computeroutput>
+        </para>
+      </listitem>
+
+      <listitem>
         <para>3D support: several fixes for Mac OS X hosts</para>
       </listitem>
 
