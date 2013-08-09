@@ -24,6 +24,9 @@
 #include <VBox/com/ptr.h>
 #include <VBox/com/array.h>
 
+#include "AutoCaller.h"
+
+
 /**
  * Checks that the given pointer to an output argument is valid and throws
  * E_POINTER + extended error info otherwise.

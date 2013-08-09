@@ -151,8 +151,7 @@ public:
 <xsl:template match="interface" mode="codeheader">
     <xsl:value-of select="concat('#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_', translate(substring(@name, 2), $G_lowerCase, $G_upperCase), '&#10;&#10;')"/>
     <xsl:value-of select="concat('#include &quot;', substring(@name, 2), 'Wrap.h&quot;&#10;')"/>
-    <xsl:text>#include "AutoCaller.h"
-#include "Logging.h"
+    <xsl:text>#include "Logging.h"
 
 </xsl:text>
 </xsl:template>
@@ -173,6 +172,12 @@ public:
 <xsl:template name="tospace">
     <xsl:param name="str"/>
     <xsl:value-of select="translate($str, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_', '                                                               ')"/>
+</xsl:template>
+
+<xsl:template name="checkoption">
+    <xsl:param name="optionlist"/>
+    <xsl:param name="option"/>
+    <xsl:value-of select="string-length($option) > 0 and contains(concat(',', translate($optionlist, ' ', ''), ','), concat(',', $option, ','))"/>
 </xsl:template>
 
 <xsl:template name="translatepublictype">
@@ -661,6 +666,15 @@ public:
     </xsl:variable>
 
     <xsl:value-of select="concat('    virtual HRESULT get', $attrbasename, '(')"/>
+    <xsl:variable name="passAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'passcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:if test="$passAutoCaller = 'true'">
+        <xsl:text>AutoCaller &amp;aAutoCaller, </xsl:text>
+    </xsl:if>
     <xsl:apply-templates select="@type" mode="wrapped">
         <xsl:with-param name="dir" select="'out'"/>
     </xsl:apply-templates>
@@ -669,6 +683,9 @@ public:
 
     <xsl:if test="not(@readonly) or @readonly!='yes'">
         <xsl:value-of select="concat('    virtual HRESULT set', $attrbasename, '(')"/>
+        <xsl:if test="$passAutoCaller = 'true'">
+            <xsl:text>AutoCaller &amp;aAutoCaller, </xsl:text>
+        </xsl:if>
         <xsl:apply-templates select="@type" mode="wrapped">
             <xsl:with-param name="dir" select="'in'"/>
         </xsl:apply-templates>
@@ -721,6 +738,15 @@ public:
 
 </xsl:text>
     <xsl:value-of select="concat('        hrc = get', $attrbasename, '(')"/>
+    <xsl:variable name="passAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'passcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:if test="$passAutoCaller = 'true'">
+        <xsl:text>autoCaller, </xsl:text>
+    </xsl:if>
     <xsl:apply-templates select="@type" mode="paramvalconversion">
         <xsl:with-param name="dir" select="'out'"/>
     </xsl:apply-templates>
@@ -780,6 +806,9 @@ public:
 
 </xsl:text>
         <xsl:value-of select="concat('        hrc = set', $attrbasename, '(')"/>
+        <xsl:if test="$passAutoCaller = 'true'">
+            <xsl:text>autoCaller, </xsl:text>
+        </xsl:if>
         <xsl:apply-templates select="@type" mode="paramvalconversion">
             <xsl:with-param name="dir" select="'in'"/>
         </xsl:apply-templates>
@@ -894,6 +923,20 @@ public:
         <xsl:with-param name="str" select="@name"/>
     </xsl:call-template>
     <xsl:text>(</xsl:text>
+    <xsl:variable name="passAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'passcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:if test="$passAutoCaller = 'true'">
+        <xsl:text>AutoCaller &amp;aAutoCaller</xsl:text>
+        <xsl:if test="count(param) > 0">
+            <xsl:text>,
+                     </xsl:text>
+            <xsl:value-of select="$methodindent"/>
+        </xsl:if>
+    </xsl:if>
     <xsl:for-each select="param">
         <xsl:apply-templates select="@type" mode="wrapped">
             <xsl:with-param name="dir" select="@dir"/>
@@ -984,6 +1027,20 @@ public:
 
 </xsl:text>
     <xsl:value-of select="concat('        hrc = ', @name, '(')"/>
+    <xsl:variable name="passAutoCaller">
+        <xsl:call-template name="checkoption">
+            <xsl:with-param name="optionlist" select="@wrap-hint-server"/>
+            <xsl:with-param name="option" select="'passcaller'"/>
+        </xsl:call-template>
+    </xsl:variable>
+    <xsl:if test="$passAutoCaller = 'true'">
+        <xsl:text>autoCaller</xsl:text>
+        <xsl:if test="count(param) > 0">
+            <xsl:text>,
+               </xsl:text>
+            <xsl:value-of select="$methodindent"/>
+        </xsl:if>
+    </xsl:if>
     <xsl:for-each select="param">
         <xsl:apply-templates select="@type" mode="paramvalconversion">
             <xsl:with-param name="dir" select="@dir"/>
