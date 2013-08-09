@@ -2830,8 +2830,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: CPU[%u] Current pointer      %#RGp vs %#RGp\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u64VMCSPhys,
                                                                                 pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
                 LogRel(("HM: CPU[%u] Current VMCS version %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32VMCSRevision));
-                LogRel(("HM: CPU[%u] Entered Cpu          %u\n", i, pVM->aCpus[i].hm.s.vmx.LastError.idEnteredCpu));
-                LogRel(("HM: CPU[%u] Current Cpu          %u\n", i, pVM->aCpus[i].hm.s.vmx.LastError.idCurrentCpu));
+                LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idEnteredCpu));
+                LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idCurrentCpu));
                 break;
 
             case VERR_VMX_UNABLE_TO_START_VM:
