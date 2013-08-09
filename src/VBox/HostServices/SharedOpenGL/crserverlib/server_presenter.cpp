@@ -251,7 +251,7 @@ int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RT
     return rc;
 }
 
-void CrDpEntryRegionsClear(PCR_DISPLAY pDisplay)
+void CrDpRegionsClear(PCR_DISPLAY pDisplay)
 {
     bool fChanged = false;
     CrVrScrCompositorRegionsClear(&pDisplay->Mural.Compositor, &fChanged);
@@ -268,18 +268,37 @@ static DECLCALLBACK(void) crDpEntryCEntryReleaseCB(const struct VBOXVR_SCR_COMPO
     CrDemEntryRelease(pCEntry);
 }
 
-void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags)
+void CrDpEntryInit(PCR_DISPLAY_ENTRY pEntry, const VBOXVR_TEXTURE *pTextureData, uint32_t fFlags, PFNVBOXVRSCRCOMPOSITOR_ENTRY_RELEASED pfnEntryReleased)
 {
-    CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData, crDpEntryCEntryReleaseCB);
+    CrVrScrCompositorEntryInit(&pEntry->CEntry, pTextureData, pfnEntryReleased);
     CrVrScrCompositorEntryFlagsSet(&pEntry->CEntry, fFlags);
     CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, pTextureData, NULL);
     CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, fFlags);
     pEntry->pvORInstance = NULL;
+    pEntry->idPBO = 0;
+    pEntry->idInvertTex = 0;
 }
 
-void CrDpEntryCleanup(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry)
+void CrDpEntryCleanup(PCR_DISPLAY_ENTRY pDEntry)
 {
-    CrVrScrCompositorEntryRemove(&pDisplay->Mural.Compositor, &pEntry->CEntry);
+    if (pDEntry->idPBO)
+    {
+        CRASSERT(cr_server.bUsePBOForReadback);
+        cr_server.head_spu->dispatch_table.DeleteBuffersARB(1, &pDEntry->idPBO);
+        pDEntry->idPBO = 0;
+    }
+
+    if (pDEntry->idInvertTex)
+    {
+        cr_server.head_spu->dispatch_table.DeleteTextures(1, &pDEntry->idInvertTex);
+        pDEntry->idInvertTex = 0;
+    }
+
+    if (pDEntry->pvORInstance)
+    {
+        cr_server.outputRedirect.CROREnd(pDEntry->pvORInstance);
+        pDEntry->pvORInstance = NULL;
+    }
 }
 
 void CrDpEnter(PCR_DISPLAY pDisplay)
@@ -365,7 +384,7 @@ static CR_DEM_ENTRY_INFO* crDemEntryInfoAlloc()
 
 static void crDemEntryFree(CR_DEM_ENTRY* pDemEntry)
 {
-    crServerDEntryCleanup(&pDemEntry->Entry);
+    CrDpEntryCleanup(&pDemEntry->Entry);
     RTMemCacheFree(g_VBoxCrDemLookasideList, pDemEntry);
 }
 
@@ -544,7 +563,7 @@ PCR_DISPLAY_ENTRY CrDemEntryAcquire(PCR_DISPLAY_ENTRY_MAP pMap, GLuint idTexture
         return NULL;
     }
 
-    CrDpEntryInit(&pDemEntry->Entry, &TextureData, fFlags);
+    CrDpEntryInit(&pDemEntry->Entry, &TextureData, fFlags, crDpEntryCEntryReleaseCB);
 
     CR_DEM_ENTRY_INFO *pInfo = (CR_DEM_ENTRY_INFO*)crHashtableSearch(pMap->pTexIdToDemInfoMap, pTobj->id);
     if (!pInfo)
@@ -898,7 +917,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
     }
     else
     {
-        CrDpEntryRegionsClear(pDisplay);
+        CrDpRegionsClear(pDisplay);
     }
 
     CrDpLeave(pDisplay);
