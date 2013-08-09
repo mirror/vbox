@@ -29,8 +29,9 @@
 #include "UIPopupStack.h"
 #include "UIPopupStackViewport.h"
 
-UIPopupStack::UIPopupStack(const QString &strID)
+UIPopupStack::UIPopupStack(const QString &strID, UIPopupStackOrientation orientation)
     : m_strID(strID)
+    , m_orientation(orientation)
     , m_pScrollArea(0)
     , m_pScrollViewport(0)
     , m_iParentMenuBarHeight(0)
@@ -75,6 +76,17 @@ void UIPopupStack::recallPopupPane(const QString &strPopupPaneID)
     m_pScrollViewport->recallPopupPane(strPopupPaneID);
 }
 
+void UIPopupStack::setOrientation(UIPopupStackOrientation orientation)
+{
+    /* Make sure orientation has changed: */
+    if (m_orientation == orientation)
+        return;
+
+    /* Update orientation: */
+    m_orientation = orientation;
+    sltAdjustGeometry();
+}
+
 void UIPopupStack::setParent(QWidget *pParent)
 {
     /* Call to base-class: */
@@ -104,13 +116,6 @@ void UIPopupStack::sltAdjustGeometry()
     /* Read parent geometry: */
     QRect geo(parentWidget()->geometry());
 
-    /* Determine origin: */
-    bool fIsWindow = isWindow();
-    int iX = fIsWindow ? geo.x() : 0;
-    int iY = fIsWindow ? geo.y() : 0;
-    /* Add menu-bar height: */
-    iY += m_iParentMenuBarHeight;
-
     /* Determine size: */
     int iWidth = parentWidget()->width();
     int iHeight = parentWidget()->height();
@@ -127,6 +132,33 @@ void UIPopupStack::sltAdjustGeometry()
         iMinimumHeight += (iTop + iBottom);
         /* Compare minimum and current height: */
         iHeight = qMin(iHeight, iMinimumHeight);
+    }
+
+    /* Determine origin: */
+    int iX = 0;
+    int iY = 0;
+    /* Shift for top-level window: */
+    if (isWindow())
+    {
+        iX += geo.x();
+        iY += geo.y();
+    }
+    switch (m_orientation)
+    {
+        case UIPopupStackOrientation_Top:
+        {
+            /* Just add menu-bar height: */
+            iY += m_iParentMenuBarHeight;
+            break;
+        }
+        case UIPopupStackOrientation_Bottom:
+        {
+            /* Shift to bottom: */
+            iY += (geo.height() - iHeight);
+            /* And subtract status-bar height: */
+            iY -= m_iParentStatusBarHeight;
+            break;
+        }
     }
 
     /* Adjust geometry: */

@@ -35,6 +35,13 @@ enum UIPopupStackType
     UIPopupStackType_Separate
 };
 
+/* Popup-stack orientations: */
+enum UIPopupStackOrientation
+{
+    UIPopupStackOrientation_Top,
+    UIPopupStackOrientation_Bottom
+};
+
 /* Popup-center singleton: */
 class UIPopupCenter: public QObject
 {
@@ -55,6 +62,7 @@ public:
     void showPopupStack(QWidget *pParent);
     void hidePopupStack(QWidget *pParent);
     void setPopupStackType(QWidget *pParent, UIPopupStackType newStackType);
+    void setPopupStackOrientation(QWidget *pParent, UIPopupStackOrientation newStackOrientation);
 
     /* API: Main message function.
      * Provides up to two buttons.
@@ -129,6 +137,7 @@ private:
 
     /* Variables: Popup-stack stuff: */
     QMap<QString, UIPopupStackType> m_stackTypes;
+    QMap<QString, UIPopupStackOrientation> m_stackOrientations;
     QMap<QString, QPointer<UIPopupStack> > m_stacks;
 
     /* Instance stuff: */

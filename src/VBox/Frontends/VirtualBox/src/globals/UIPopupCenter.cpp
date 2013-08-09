@@ -124,7 +124,7 @@ void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStac
     /* Make sure parent is set! */
     AssertPtrReturnVoid(pParent);
 
-    /* Composing corresponding popup-stack: */
+    /* Composing corresponding popup-stack ID: */
     const QString strPopupStackID(popupStackID(pParent));
 
     /* Looking for current popup-stack type, create if it doesn't exists: */
@@ -140,6 +140,33 @@ void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStac
                 stackType == UIPopupStackType_Separate ? "separate window" : "embedded widget",
                 newStackType == UIPopupStackType_Separate ? "separate window" : "embedded widget"));
     stackType = newStackType;
+}
+
+void UIPopupCenter::setPopupStackOrientation(QWidget *pParent, UIPopupStackOrientation newStackOrientation)
+{
+    /* Make sure parent is set! */
+    AssertPtrReturnVoid(pParent);
+
+    /* Composing corresponding popup-stack ID: */
+    const QString strPopupStackID(popupStackID(pParent));
+
+    /* Looking for current popup-stack orientation, create if it doesn't exists: */
+    UIPopupStackOrientation &stackOrientation = m_stackOrientations[strPopupStackID];
+
+    /* Make sure stack-orientation has changed: */
+    if (stackOrientation == newStackOrientation)
+        return;
+
+    /* Remember new stack orientation: */
+    LogRelFlow(("UIPopupCenter::setPopupStackType: Changing orientation of popup-stack with ID = '%s' from '%s' to '%s'.\n",
+                strPopupStackID.toAscii().constData(),
+                stackOrientation == UIPopupStackOrientation_Top ? "top oriented" : "bottom oriented",
+                newStackOrientation == UIPopupStackOrientation_Top ? "top oriented" : "bottom oriented"));
+    stackOrientation = newStackOrientation;
+
+    /* Update orientation for popup-stack if it currently exists: */
+    if (m_stacks.contains(strPopupStackID))
+        m_stacks[strPopupStackID]->setOrientation(stackOrientation);
 }
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
@@ -244,7 +271,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     else
     {
         /* Create new one: */
-        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack(strPopupStackID);
+        pPopupStack = m_stacks[strPopupStackID] = new UIPopupStack(strPopupStackID, m_stackOrientations[strPopupStackID]);
         /* Attach popup-stack connections: */
         connect(pPopupStack, SIGNAL(sigPopupPaneDone(QString, int)), this, SLOT(sltPopupPaneDone(QString, int)));
         connect(pPopupStack, SIGNAL(sigRemove(QString)), this, SLOT(sltRemovePopupStack(QString)));
