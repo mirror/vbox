@@ -17400,7 +17400,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 </if>
 <if target="xpidl">
-</if>
     <method name="assignMachine">
       <desc>
         Assigns the machine object associated with this direct-type
@@ -17419,6 +17418,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="lockType" type="LockType" dir="in"/>
       <param name="tokenId" type="wstring" dir="in"/>
     </method>
+</if>
 
     <method name="assignRemoteMachine">
       <desc>
