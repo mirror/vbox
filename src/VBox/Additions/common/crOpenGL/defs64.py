@@ -9,7 +9,7 @@ import apiutil
 
 apiutil.CopyrightDef()
 
-print "LIBRARY VBoxOGL"
+#print "LIBRARY VBoxOGL"
 #print "DESCRIPTION \"\"" - warning LNK4017: DESCRIPTION statement not supported for the target platform; ignored
 print "EXPORTS"
 

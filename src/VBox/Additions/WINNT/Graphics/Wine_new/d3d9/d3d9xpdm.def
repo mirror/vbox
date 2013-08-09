@@ -1,4 +1,3 @@
-LIBRARY VBoxD3D9.dll
 
 EXPORTS
   Direct3DShaderValidatorCreate9
