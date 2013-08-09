@@ -90,9 +90,7 @@ void UIPopupCenter::cleanup()
 void UIPopupCenter::showPopupStack(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Make sure corresponding popup-stack *exists*: */
     const QString strPopupStackID(popupStackID(pParent));
@@ -108,9 +106,7 @@ void UIPopupCenter::showPopupStack(QWidget *pParent)
 void UIPopupCenter::hidePopupStack(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Make sure corresponding popup-stack *exists*: */
     const QString strPopupStackID(popupStackID(pParent));
@@ -126,9 +122,7 @@ void UIPopupCenter::hidePopupStack(QWidget *pParent)
 void UIPopupCenter::setPopupStackType(QWidget *pParent, UIPopupStackType newStackType)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Composing corresponding popup-stack: */
     const QString strPopupStackID(popupStackID(pParent));
@@ -198,9 +192,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
                                   bool fProposeAutoConfirmation /*= false*/)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Prepare buttons: */
     int iButton1 = 0;
@@ -284,9 +276,7 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
 void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneID)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Make sure corresponding popup-stack *exists*: */
     const QString strPopupStackID(popupStackID(pParent));
@@ -337,9 +327,7 @@ void UIPopupCenter::sltRemovePopupStack(QString strPopupStackID)
 QString UIPopupCenter::popupStackID(QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return QString();
+    AssertPtrReturn(pParent, QString());
 
     /* Special handling for Runtime UI: */
     if (qobject_cast<UIMachineWindow*>(pParent))
@@ -353,9 +341,7 @@ QString UIPopupCenter::popupStackID(QWidget *pParent)
 void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent, UIPopupStackType stackType)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Assign event-filter: */
     pParent->installEventFilter(pPopupStack);
@@ -381,9 +367,7 @@ void UIPopupCenter::assignPopupStackParent(UIPopupStack *pPopupStack, QWidget *p
 void UIPopupCenter::unassignPopupStackParent(UIPopupStack *pPopupStack, QWidget *pParent)
 {
     /* Make sure parent is set! */
-    AssertMsg(pParent, ("Parent is NULL!\n"));
-    if (!pParent)
-        return;
+    AssertPtrReturnVoid(pParent);
 
     /* Unassign parent: */
     pPopupStack->setParent(0);
