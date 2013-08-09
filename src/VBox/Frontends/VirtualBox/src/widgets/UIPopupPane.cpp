@@ -395,6 +395,9 @@ void UIPopupPane::paintEvent(QPaintEvent*)
 
     /* Paint background: */
     paintBackground(rect, painter);
+
+    /* Paint frame: */
+    paintFrame(painter);
 }
 
 void UIPopupPane::configureClipping(const QRect &rect, QPainter &painter)
@@ -425,6 +428,15 @@ void UIPopupPane::paintBackground(const QRect &rect, QPainter &painter)
     headerGradient.setColorAt(0, newColor1);
     headerGradient.setColorAt(1, newColor2);
     painter.fillRect(rect, headerGradient);
+}
+
+void UIPopupPane::paintFrame(QPainter &painter)
+{
+    /* Paint frame: */
+    QColor currentColor(palette().color(QPalette::Window).darker(150));
+    QPainterPath path = painter.clipPath();
+    painter.setClipping(false);
+    painter.strokePath(path, currentColor);
 }
 
 void UIPopupPane::done(int iResultCode)

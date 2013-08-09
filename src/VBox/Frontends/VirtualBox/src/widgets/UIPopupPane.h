@@ -123,6 +123,7 @@ private:
     /* Helpers: Paint stuff: */
     void configureClipping(const QRect &rect, QPainter &painter);
     void paintBackground(const QRect &rect, QPainter &painter);
+    void paintFrame(QPainter &painter);
 
     /* Helper: Complete stuff: */
     void done(int iResultCode);
