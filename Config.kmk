@@ -368,10 +368,6 @@ VBOX_WITH_DEBUGGER_GUI = 1
 # Enable the PDM Lock and let I/O threads call into the PICs.
 # TODO: Eliminate VBOX_WITH_PDM_LOCK.
 VBOX_WITH_PDM_LOCK = 1
-# Activate this to use the old VT-x code.
-VBOX_WITH_OLD_VTX_CODE =
-# Activate this to use the old AMD-V code.
-VBOX_WITH_OLD_AMDV_CODE =
 # Enables the first step using IEM (the interpreter).
 VBOX_WITH_FIRST_IEM_STEP = 1
 ## @}
