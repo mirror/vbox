@@ -1222,7 +1222,7 @@ DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser
                                      NULL /* Guest rc, ignored */);
     /* Nothing to do here anymore. */
 
-    LogFlowFunc(("pProcess=%p returning rc=%Rrc\n", pProcess, vrc));
+    LogFlowFunc(("pProcess=%p returning rc=%Rrc\n", (GuestProcess *)pProcess, vrc));
     return vrc;
 }
 
