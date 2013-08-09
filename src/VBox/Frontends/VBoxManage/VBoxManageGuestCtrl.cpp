@@ -41,6 +41,7 @@
 #include <iprt/getopt.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
+#include <iprt/process.h> /* For RTProcSelf(). */
 #include <iprt/thread.h>
 
 #include <map>
@@ -656,7 +657,7 @@ inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL c
 }
 
 /* <Missing documentation> */
-static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 {
     AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
 
@@ -688,7 +689,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     RTGETOPTSTATE           GetState;
     RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
 
-    Utf8Str                 strCmd;
+    Utf8Str                              strCmd;
     com::SafeArray<ProcessCreateFlag_T>  aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T> aWaitFlags;
     com::SafeArray<IN_BSTR>              aArgs;
@@ -698,119 +699,130 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     Utf8Str                              strDomain;
     RTMSINTERVAL                         cMsTimeout      = 0;
     OUTPUTTYPE                           eOutputType     = OUTPUTTYPE_UNDEFINED;
-    bool                                 fWaitForExit    = false;
+    bool                                 fDetached       = true;
     bool                                 fVerbose        = false;
     int                                  vrc             = VINF_SUCCESS;
 
-    /* Wait for process start in any case. This is useful for scripting VBoxManage
-     * when relying on its overall exit code. */
-    aWaitFlags.push_back(ProcessWaitForFlag_Start);
-
-    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
-           && RT_SUCCESS(vrc))
+    try
     {
-        /* For options that require an argument, ValueUnion has received the value. */
-        switch (ch)
+        /* Wait for process start in any case. This is useful for scripting VBoxManage
+         * when relying on its overall exit code. */
+        aWaitFlags.push_back(ProcessWaitForFlag_Start);
+
+        while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+               && RT_SUCCESS(vrc))
         {
-            case GETOPTDEF_EXEC_DOS2UNIX:
-                if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                    return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
-                eOutputType = OUTPUTTYPE_DOS2UNIX;
-                break;
-
-            case 'e': /* Environment */
+            /* For options that require an argument, ValueUnion has received the value. */
+            switch (ch)
             {
-                char **papszArg;
-                int cArgs;
+                case GETOPTDEF_EXEC_DOS2UNIX:
+                    if (eOutputType != OUTPUTTYPE_UNDEFINED)
+                        return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                    eOutputType = OUTPUTTYPE_DOS2UNIX;
+                    break;
 
-                vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
-                if (RT_FAILURE(vrc))
-                    return errorSyntax(USAGE_GUESTCONTROL, "Failed to parse environment value, rc=%Rrc", vrc);
-                for (int j = 0; j < cArgs; j++)
-                    aEnv.push_back(Bstr(papszArg[j]).raw());
+                case 'e': /* Environment */
+                {
+                    char **papszArg;
+                    int cArgs;
 
-                RTGetOptArgvFree(papszArg);
-                break;
-            }
+                    vrc = RTGetOptArgvFromString(&papszArg, &cArgs, ValueUnion.psz, NULL);
+                    if (RT_FAILURE(vrc))
+                        return errorSyntax(USAGE_GUESTCONTROL, "Failed to parse environment value, rc=%Rrc", vrc);
+                    for (int j = 0; j < cArgs; j++)
+                        aEnv.push_back(Bstr(papszArg[j]).raw());
 
-            case GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
-                aCreateFlags.push_back(ProcessCreateFlag_IgnoreOrphanedProcesses);
-                break;
+                    RTGetOptArgvFree(papszArg);
+                    break;
+                }
 
-            case GETOPTDEF_EXEC_NO_PROFILE:
-                aCreateFlags.push_back(ProcessCreateFlag_NoProfile);
-                break;
+                case GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES:
+                    aCreateFlags.push_back(ProcessCreateFlag_IgnoreOrphanedProcesses);
+                    break;
 
-            case 'i':
-                strCmd = ValueUnion.psz;
-                break;
+                case GETOPTDEF_EXEC_NO_PROFILE:
+                    aCreateFlags.push_back(ProcessCreateFlag_NoProfile);
+                    break;
 
-            /** @todo Add a hidden flag. */
-
-            case 'u': /* User name */
-                strUsername = ValueUnion.psz;
-                break;
-
-            case GETOPTDEF_EXEC_PASSWORD: /* Password */
-                strPassword = ValueUnion.psz;
-                break;
-
-            case 'p': /* Password file */
-            {
-                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'd': /* domain */
-                strDomain = ValueUnion.psz;
-                break;
-
-            case 't': /* Timeout */
-                cMsTimeout = ValueUnion.u32;
-                break;
-
-            case GETOPTDEF_EXEC_UNIX2DOS:
-                if (eOutputType != OUTPUTTYPE_UNDEFINED)
-                    return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
-                eOutputType = OUTPUTTYPE_UNIX2DOS;
-                break;
-
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
-            case GETOPTDEF_EXEC_WAITFOREXIT:
-                aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
-                fWaitForExit = true;
-                break;
-
-            case GETOPTDEF_EXEC_WAITFORSTDOUT:
-                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
-                aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
-                fWaitForExit = true;
-                break;
-
-            case GETOPTDEF_EXEC_WAITFORSTDERR:
-                aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
-                aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
-                fWaitForExit = true;
-                break;
-
-            case VINF_GETOPT_NOT_OPTION:
-            {
-                if (aArgs.size() == 0 && strCmd.isEmpty())
+                case 'i':
                     strCmd = ValueUnion.psz;
-                else
-                    aArgs.push_back(Bstr(ValueUnion.psz).raw());
-                break;
-            }
+                    break;
 
-            default:
-                return RTGetOptPrintError(ch, &ValueUnion);
-        }
+                /** @todo Add a hidden flag. */
+
+                case 'u': /* User name */
+                    strUsername = ValueUnion.psz;
+                    break;
+
+                case GETOPTDEF_EXEC_PASSWORD: /* Password */
+                    strPassword = ValueUnion.psz;
+                    break;
+
+                case 'p': /* Password file */
+                {
+                    RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
+                    if (rcExit != RTEXITCODE_SUCCESS)
+                        return rcExit;
+                    break;
+                }
+
+                case 'd': /* domain */
+                    strDomain = ValueUnion.psz;
+                    break;
+
+                case 't': /* Timeout */
+                    cMsTimeout = ValueUnion.u32;
+                    break;
+
+                case GETOPTDEF_EXEC_UNIX2DOS:
+                    if (eOutputType != OUTPUTTYPE_UNDEFINED)
+                        return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
+                    eOutputType = OUTPUTTYPE_UNIX2DOS;
+                    break;
+
+                case 'v': /* Verbose */
+                    fVerbose = true;
+                    break;
+
+                case GETOPTDEF_EXEC_WAITFOREXIT:
+                    aWaitFlags.push_back(ProcessWaitForFlag_Terminate);
+                    fDetached = false;
+                    break;
+
+                case GETOPTDEF_EXEC_WAITFORSTDOUT:
+                    aCreateFlags.push_back(ProcessCreateFlag_WaitForStdOut);
+                    aWaitFlags.push_back(ProcessWaitForFlag_StdOut);
+                    fDetached = false;
+                    break;
+
+                case GETOPTDEF_EXEC_WAITFORSTDERR:
+                    aCreateFlags.push_back(ProcessCreateFlag_WaitForStdErr);
+                    aWaitFlags.push_back(ProcessWaitForFlag_StdErr);
+                    fDetached = false;
+                    break;
+
+                case VINF_GETOPT_NOT_OPTION:
+                {
+                    if (aArgs.size() == 0 && strCmd.isEmpty())
+                        strCmd = ValueUnion.psz;
+                    else
+                        aArgs.push_back(Bstr(ValueUnion.psz).raw());
+                    break;
+                }
+
+                default:
+                    return RTGetOptPrintError(ch, &ValueUnion);
+
+            } /* switch */
+        } /* while RTGetOpt */
     }
+    catch (std::bad_alloc &)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_FAILURE(vrc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to initialize, rc=%Rrc\n", vrc);
 
     if (strCmd.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL, "No command to execute specified!");
@@ -818,7 +830,7 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (strUsername.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
-    /* Any output conversion not supported yet! */
+    /** @todo Any output conversion not supported yet! */
     if (eOutputType != OUTPUTTYPE_UNDEFINED)
         return errorSyntax(USAGE_GUESTCONTROL, "Output conversion not implemented yet!");
 
@@ -829,264 +841,249 @@ static RTEXITCODE handleCtrlExecProgram(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (fVerbose)
         RTPrintf("Opening guest session as user '%s' ...\n", strUsername.c_str());
 
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+
     /** @todo This eventually needs a bit of revamping so that a valid session gets passed
      *        into this function already so that we don't need to mess around with closing
      *        the session all over the places below again. Later. */
 
     ComPtr<IGuestSession> pGuestSession;
-    rc = pGuest->CreateSession(Bstr(strUsername).raw(),
-                               Bstr(strPassword).raw(),
-                               Bstr(strDomain).raw(),
-                               Bstr("VBoxManage Guest Control").raw(),
-                               pGuestSession.asOutParam());
-    if (FAILED(rc))
+    try
     {
-        ctrlPrintError(pGuest, COM_IIDOF(IGuest));
-        return RTEXITCODE_FAILURE;
-    }
-
-    /* Adjust process creation flags if we don't want to wait for process termination. */
-    if (!fWaitForExit)
-        aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
-
-    /* Get current time stamp to later calculate rest of timeout left. */
-    uint64_t u64StartMS = RTTimeMilliTS();
-
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    do
-    {
-        /*
-         * Wait for guest session to start.
-         */
-        if (fVerbose)
+        do
         {
-            if (cMsTimeout == 0)
-                RTPrintf("Waiting for guest session to start ...\n");
-            else
-                RTPrintf("Waiting for guest session to start (within %ums)\n", cMsTimeout);
-        }
+            Utf8Str strVBoxManage;
+            strVBoxManage.printf("VBoxManage Guest Control (PID %RU32)", RTProcSelf());
 
-        com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
-        aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
-        GuestSessionWaitResult_T sessionWaitResult;
-        rc = pGuestSession->WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult);
-        if (FAILED(rc))
-        {
-            ctrlPrintError(pGuestSession, COM_IIDOF(IGuestSession));
+            CHECK_ERROR_BREAK(pGuest, CreateSession(Bstr(strUsername).raw(),
+                                      Bstr(strPassword).raw(),
+                                      Bstr(strDomain).raw(),
+                                      Bstr(strVBoxManage).raw(),
+                                      pGuestSession.asOutParam()));
 
-            rcExit = RTEXITCODE_FAILURE;
-            break;
-        }
+            /* Adjust process creation flags if we don't want to wait for process termination. */
+            if (fDetached)
+                aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
 
-        Assert(   sessionWaitResult == GuestSessionWaitResult_Start
-               /* Note: This might happen when Guest Additions < 4.3 are installed which don't
-                *       support dedicated guest sessions. */
-               || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported);
-        if (fVerbose)
-            RTPrintf("Guest session has been started\n");
+            /* Get current time stamp to later calculate rest of timeout left. */
+            uint64_t u64StartMS = RTTimeMilliTS();
 
-        if (fVerbose)
-        {
-            if (cMsTimeout == 0)
-                RTPrintf("Waiting for guest process to start ...\n");
-            else
-                RTPrintf("Waiting for guest process to start (within %ums)\n", cMsTimeout);
-        }
-
-        /*
-         * Execute the process.
-         */
-        ComPtr<IGuestProcess> pProcess;
-        rc = pGuestSession->ProcessCreate(Bstr(strCmd).raw(),
-                                          ComSafeArrayAsInParam(aArgs),
-                                          ComSafeArrayAsInParam(aEnv),
-                                          ComSafeArrayAsInParam(aCreateFlags),
-                                          cMsTimeout,
-                                          pProcess.asOutParam());
-        if (FAILED(rc))
-        {
-            ctrlPrintError(pGuestSession, COM_IIDOF(IGuestSession));
-
-            rcExit = RTEXITCODE_FAILURE;
-            break;
-        }
-
-        /** @todo does this need signal handling? there's no progress object etc etc */
-
-        vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
-        if (RT_FAILURE(vrc))
-            RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
-        vrc = RTStrmSetMode(g_pStdErr, 1 /* Binary mode */, -1 /* Code set, unchanged */);
-        if (RT_FAILURE(vrc))
-            RTMsgError("Unable to set stderr's binary mode, rc=%Rrc\n", vrc);
-
-        /* Wait for process to exit ... */
-        RTMSINTERVAL cMsTimeLeft = 1;
-        bool fReadStdOut, fReadStdErr;
-        fReadStdOut = fReadStdErr = false;
-        bool fCompleted = false;
-        while (!fCompleted && cMsTimeLeft != 0)
-        {
-            cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-            ProcessWaitResult_T waitResult;
-            rc = pProcess->WaitForArray(ComSafeArrayAsInParam(aWaitFlags), cMsTimeLeft, &waitResult);
-            if (FAILED(rc))
+            /*
+             * Wait for guest session to start.
+             */
+            if (fVerbose)
             {
-                ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+                if (cMsTimeout == 0)
+                    RTPrintf("Waiting for guest session to start ...\n");
+                else
+                    RTPrintf("Waiting for guest session to start (within %ums)\n", cMsTimeout);
+            }
 
-                rcExit = RTEXITCODE_FAILURE;
+            com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
+            aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
+            GuestSessionWaitResult_T sessionWaitResult;
+            CHECK_ERROR_BREAK(pGuestSession, WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult));
+            ULONG uSessionID;
+            CHECK_ERROR_BREAK(pGuestSession, COMGETTER(Id)(&uSessionID));
+
+            if (   sessionWaitResult == GuestSessionWaitResult_Start
+                /* Note: This might happen when Guest Additions < 4.3 are installed which don't
+                 *       support dedicated guest sessions. */
+                || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported)
+            {
+                if (fVerbose)
+                    RTPrintf("Guest session (ID %RU32) has been started\n", uSessionID);
+            }
+            else
+            {
+                RTPrintf("Error starting guest session\n");
                 break;
             }
 
-            switch (waitResult)
+            if (fVerbose)
             {
-                case ProcessWaitResult_Start:
-                {
-                    ULONG uPID = 0;
-                    rc = pProcess->COMGETTER(PID)(&uPID);
-                    if (FAILED(rc))
-                    {
-                        ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+                if (cMsTimeout == 0)
+                    RTPrintf("Waiting for guest process to start ...\n");
+                else
+                    RTPrintf("Waiting for guest process to start (within %ums)\n", cMsTimeout);
+            }
 
-                        rcExit = RTEXITCODE_FAILURE;
+            /*
+             * Execute the process.
+             */
+            ComPtr<IGuestProcess> pProcess;
+            CHECK_ERROR_BREAK(pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
+                                                           ComSafeArrayAsInParam(aArgs),
+                                                           ComSafeArrayAsInParam(aEnv),
+                                                           ComSafeArrayAsInParam(aCreateFlags),
+                                                           cMsTimeout,
+                                                           pProcess.asOutParam()));
+
+            /** @todo does this need signal handling? there's no progress object etc etc */
+
+            vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
+            if (RT_FAILURE(vrc))
+                RTMsgError("Unable to set stdout's binary mode, rc=%Rrc\n", vrc);
+            vrc = RTStrmSetMode(g_pStdErr, 1 /* Binary mode */, -1 /* Code set, unchanged */);
+            if (RT_FAILURE(vrc))
+                RTMsgError("Unable to set stderr's binary mode, rc=%Rrc\n", vrc);
+
+            /* Wait for process to exit ... */
+            RTMSINTERVAL cMsTimeLeft = 1;
+            bool fReadStdOut, fReadStdErr;
+            fReadStdOut = fReadStdErr = false;
+
+            bool fCompleted = false;
+            while (!fCompleted && cMsTimeLeft != 0)
+            {
+                cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+                ProcessWaitResult_T waitResult;
+                CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitFlags),
+                                                         cMsTimeLeft, &waitResult));
+                switch (waitResult)
+                {
+                    case ProcessWaitResult_Start:
+                    {
+                        ULONG uPID = 0;
+                        CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
+                        if (fVerbose)
+                        {
+                            RTPrintf("Process '%s' (PID %RU32) started\n",
+                                     strCmd.c_str(), uPID);
+                        }
+                        else /** @todo Introduce a --quiet option for not printing this. */
+                        {
+                            /* Just print plain PID to make it easier for scripts
+                             * invoking VBoxManage. */
+                            RTPrintf("%RU32, session ID %RU32\n", uPID, uSessionID);
+                        }
+
+                        /* We're done here if we don't want to wait for termination. */
+                        if (fDetached)
+                            fCompleted = true;
+
                         break;
                     }
-
-                    if (fVerbose)
-                    {
-                        RTPrintf("Process '%s' (PID: %ld) %s\n",
-                                 strCmd.c_str(), uPID,
-                                 fWaitForExit ? "started" : "started (detached)");
-                    }
-                    else /** @todo Introduce a --quiet option for not printing this. */
-                    {
-                        /* Just print plain PID to make it easier for scripts
-                         * invoking VBoxManage. */
-                        RTPrintf("%ld\n", uPID);
-                    }
-
-                    /* We're done here if we don't want to wait for termination. */
-                    if (!fWaitForExit)
+                    case ProcessWaitResult_StdOut:
+                        fReadStdOut = true;
+                        break;
+                    case ProcessWaitResult_StdErr:
+                        fReadStdErr = true;
+                        break;
+                    case ProcessWaitResult_Terminate:
+                        /* Process terminated, we're done */
                         fCompleted = true;
+                        break;
+                    case ProcessWaitResult_WaitFlagNotSupported:
+                    {
+                        /* The guest does not support waiting for stdout/err, so
+                         * yield to reduce the CPU load due to busy waiting. */
+                        RTThreadYield(); /* Optional, don't check rc. */
 
-                    break;
+                        /* Try both, stdout + stderr. */
+                        fReadStdOut = fReadStdErr = true;
+                        break;
+                    }
+                    default:
+                        /* Ignore all other results, let the timeout expire */
+                        break;
                 }
-                case ProcessWaitResult_StdOut:
-                    fReadStdOut = true;
+
+                if (FAILED(rc))
                     break;
-                case ProcessWaitResult_StdErr:
-                    fReadStdErr = true;
-                    break;
-                case ProcessWaitResult_Terminate:
-                    /* Process terminated, we're done */
-                    fCompleted = true;
-                    break;
-                case ProcessWaitResult_WaitFlagNotSupported:
+
+                if (fReadStdOut) /* Do we need to fetch stdout data? */
                 {
-                    /* The guest does not support waiting for stdout/err, so
-                     * yield to reduce the CPU load due to busy waiting. */
-                    RTThreadYield(); /* Optional, don't check rc. */
-
-                    /* Try both, stdout + stderr. */
-                    fReadStdOut = fReadStdErr = true;
-                    break;
+                    cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+                    vrc = ctrlExecPrintOutput(pProcess, g_pStdOut,
+                                              1 /* StdOut */, cMsTimeLeft);
+                    fReadStdOut = false;
                 }
-                default:
-                    /* Ignore all other results, let the timeout expire */
+
+                if (fReadStdErr) /* Do we need to fetch stdout data? */
+                {
+                    cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
+                    vrc = ctrlExecPrintOutput(pProcess, g_pStdErr,
+                                              2 /* StdErr */, cMsTimeLeft);
+                    fReadStdErr = false;
+                }
+
+                if (RT_FAILURE(vrc))
                     break;
-            }
 
-            if (FAILED(rc))
-                break;
+                /* Did we run out of time? */
+                if (   cMsTimeout
+                    && RTTimeMilliTS() - u64StartMS > cMsTimeout)
+                    break;
 
-            if (fReadStdOut) /* Do we need to fetch stdout data? */
+                NativeEventQueue::getMainEventQueue()->processEventQueue(0);
+
+            } /* while */
+
+            /* Report status back to the user. */
+            if (fCompleted)
             {
-                cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-                vrc = ctrlExecPrintOutput(pProcess, g_pStdOut,
-                                          1 /* StdOut */, cMsTimeLeft);
-                fReadStdOut = false;
-            }
+                ProcessStatus_T procStatus;
+                CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&procStatus));
+                if (   procStatus == ProcessStatus_TerminatedNormally
+                    || procStatus == ProcessStatus_TerminatedAbnormally
+                    || procStatus == ProcessStatus_TerminatedSignal)
+                {
+                    LONG exitCode;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&exitCode));
+                    if (fVerbose)
+                        RTPrintf("Exit code=%u (Status=%u [%s])\n",
+                                 exitCode, procStatus, ctrlExecProcessStatusToText(procStatus));
 
-            if (fReadStdErr) /* Do we need to fetch stdout data? */
-            {
-                cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-                vrc = ctrlExecPrintOutput(pProcess, g_pStdErr,
-                                          2 /* StdErr */, cMsTimeLeft);
-                fReadStdErr = false;
-            }
-
-            if (RT_FAILURE(vrc))
-                break;
-
-            /* Did we run out of time? */
-            if (   cMsTimeout
-                && RTTimeMilliTS() - u64StartMS > cMsTimeout)
-                break;
-
-            NativeEventQueue::getMainEventQueue()->processEventQueue(0);
-
-        } /* while */
-
-        /* Report status back to the user. */
-        if (fCompleted)
-        {
-            ProcessStatus_T status;
-            rc = pProcess->COMGETTER(Status)(&status);
-            if (FAILED(rc))
-            {
-                ctrlPrintError(pProcess, COM_IIDOF(IProcess));
-
-                rcExit = RTEXITCODE_FAILURE;
+                    rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
+                }
+                else if (fVerbose)
+                    RTPrintf("Process now is in status [%s]\n", ctrlExecProcessStatusToText(procStatus));
             }
             else
             {
-                LONG exitCode;
-                rc = pProcess->COMGETTER(ExitCode)(&exitCode);
-                if (FAILED(rc))
-                {
-                    ctrlPrintError(pProcess, COM_IIDOF(IProcess));
+                if (fVerbose)
+                    RTPrintf("Process execution aborted!\n");
 
-                    rcExit = RTEXITCODE_FAILURE;
-                }
-                else
-                {
-                    if (fVerbose)
-                        RTPrintf("Exit code=%u (Status=%u [%s])\n", exitCode, status, ctrlExecProcessStatusToText(status));
-
-                    rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(status, exitCode);
-                }
+                rcExit = (RTEXITCODE)EXITCODEEXEC_TERM_ABEND;
             }
-        }
-        else
-        {
-            if (fVerbose)
-                RTPrintf("Process execution aborted!\n");
 
-            rcExit = (RTEXITCODE)EXITCODEEXEC_TERM_ABEND;
-        }
-    } while (0);
+        } while (0);
+    }
+    catch (std::bad_alloc)
+    {
+        rc = E_OUTOFMEMORY;
+    }
 
-    /*
-     * Only close the guest session if we waited for the guest
-     * process to exit. Otherwise we wouldn't have any chance to
-     * access and/or kill detached guest process lateron.
-     */
-    if (   fWaitForExit
-        || rcExit != RTEXITCODE_SUCCESS)
+    bool fCloseSession = false;
+    if (SUCCEEDED(rc))
+    {
+        /*
+         * Only close the guest session if we waited for the guest
+         * process to exit. Otherwise we wouldn't have any chance to
+         * access and/or kill detached guest process lateron.
+         */
+        fCloseSession = !fDetached;
+    }
+    else /* Close session on error. */
+        fCloseSession = true;
+
+    if (   fCloseSession
+        && !pGuestSession.isNull())
     {
         if (fVerbose)
             RTPrintf("Closing guest session ...\n");
         rc = pGuestSession->Close();
-        if (FAILED(rc))
-        {
-            ctrlPrintError(pGuestSession, COM_IIDOF(ISession));
-
-            if (rcExit == RTEXITCODE_SUCCESS)
-                rcExit = RTEXITCODE_FAILURE;
-        }
     }
-    else if (fVerbose)
+    else if (!fCloseSession && fVerbose)
         RTPrintf("Guest session detached\n");
+
+    if (   rcExit == RTEXITCODE_SUCCESS
+        && FAILED(rc))
+    {
+        /* Make sure an appropriate exit code is set on error. */
+        rcExit = RTEXITCODE_FAILURE;
+    }
 
     return rcExit;
 }
@@ -3105,7 +3102,7 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                     if (fProcFound)
                     {
                         if (fVerbose)
-                            RTPrintf("Terminating process PID=%RU32 (session ID=%RU32) ...\n",
+                            RTPrintf("Terminating process (PID %RU32) (session ID %RU32) ...\n",
                                      uPID, uID);
                         CHECK_ERROR_BREAK(pProcess, Terminate());
                         uProcsTerminated++;
@@ -3113,7 +3110,7 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                     else
                     {
                         if (ulSessionID != UINT32_MAX)
-                            RTPrintf("No matching process(es) for session %RU32 found\n",
+                            RTPrintf("No matching process(es) for session ID %RU32 found\n",
                                      ulSessionID);
                     }
 
@@ -3342,7 +3339,7 @@ int handleGuestControl(HandlerArg *pArg)
             rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
         else if (   !RTStrICmp(pArg->argv[1], "exec")
                  || !RTStrICmp(pArg->argv[1], "execute"))
-            rcExit = handleCtrlExecProgram(guest, &arg);
+            rcExit = handleCtrlProcessExec(guest, &arg);
         else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
             rcExit = handleCtrlCopy(guest, &arg, false /* Guest to host */);
         else if (   !RTStrICmp(pArg->argv[1], "copyto")
