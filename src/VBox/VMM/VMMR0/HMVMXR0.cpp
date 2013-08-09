@@ -38,6 +38,7 @@
 #ifdef DEBUG_ramshankar
 #define HMVMX_SAVE_FULL_GUEST_STATE
 #define HMVMX_SYNC_FULL_GUEST_STATE
+#define HMVMX_ALWAYS_CHECK_GUEST_STATE
 #define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 #define HMVMX_ALWAYS_TRAP_PF
 #endif
@@ -353,14 +354,14 @@ static FNVMEXITHANDLER hmR0VmxExitRdrand;
 static FNVMEXITHANDLER hmR0VmxExitInvpcid;
 /** @} */
 
-static int      hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-static int      hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
-
+static int          hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static int          hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+static uint32_t     hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -1875,6 +1876,12 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
 
         /* Update VCPU with the currently set secondary processor-based VM-execution controls. */
         pVCpu->hm.s.vmx.u32ProcCtls2 = val;
+    }
+    else if (RT_UNLIKELY(pVM->hm.s.vmx.fUnrestrictedGuest))
+    {
+        LogRel(("hmR0VmxSetupProcCtls: Unrestricted Guest set as true when secondary processor-based VM-execution controls not "
+                "available\n"));
+        return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
     }
 
     return VINF_SUCCESS;
@@ -5973,26 +5980,29 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 
 
 /**
- * Does the necessary state syncing before doing a longjmp to ring-3.
+ * Does the necessary state syncing before returning to ring-3 for any reason
+ * (longjmp, preemption, voluntary exits to ring-3) from VT-x.
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
- * @param   rcExit      The reason for exiting to ring-3. Can be
- *                      VINF_VMM_UNKNOWN_RING3_CALL.
  *
  * @remarks No-long-jmp zone!!!
  */
-static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcExit)
+static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
-    int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
-    AssertRC(rc);
+    /* Save the guest state if necessary. */
+    if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
+    {
+        int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+        AssertRC(rc);
+        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
+    }
 
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
     if (CPUMIsGuestFPUStateActive(pVCpu))
@@ -6030,9 +6040,27 @@ static void hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int
 
 
 /**
+ * Does the necessary state syncing before doing a longjmp to ring-3.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jmp zone!!!
+ */
+DECLINLINE(void) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
+}
+
+
+/**
  * An action requires us to go back to ring-3. This function does the necessary
  * steps before we can safely return to ring-3. This is not the same as longjmps
- * to ring-3, this is voluntary.
+ * to ring-3, this is voluntary and prepares the guest so it may continue
+ * executing outside HM (recompiler/IEM).
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
@@ -6074,10 +6102,11 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
-    /* Sync. the guest state. */
-    hmR0VmxLongJmpToRing3(pVM, pVCpu, pMixedCtx, rcExit);
+    /* Save guest state and restore host state bits. */
+    hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
+    /* Sync recompiler state. */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
     CPUMSetChangedFlags(pVCpu,  CPUM_CHANGED_SYSENTER_MSR
                               | CPUM_CHANGED_LDTR
@@ -6085,6 +6114,12 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
                               | CPUM_CHANGED_IDTR
                               | CPUM_CHANGED_TR
                               | CPUM_CHANGED_HIDDEN_SEL_REGS);
+    Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
+    if (    pVM->hm.s.fNestedPaging
+        &&  CPUMIsGuestPagingEnabledEx(pMixedCtx))
+    {
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+    }
 
     /* On our way back from ring-3 the following needs to be done. */
     /** @todo This can change with preemption hooks. */
@@ -6121,7 +6156,7 @@ DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3 pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
-    hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser, VINF_VMM_UNKNOWN_RING3_CALL);
+    hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
     VMMRZCallRing3Enable(pVCpu);
 }
 
@@ -6282,7 +6317,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             {
                 /*
                  * The pending-debug exceptions field is cleared on all VM-exits except VMX_EXIT_TPR_BELOW_THRESHOLD,
-                 * VMX_EXIT_MTF VMX_EXIT_APIC_WRITE, VMX_EXIT_VIRTUALIZED_EOI. See Intel spec. 27.3.4 "Saving Non-Register State".
+                 * VMX_EXIT_MTF, VMX_EXIT_APIC_WRITE and VMX_EXIT_VIRTUALIZED_EOI.
+                 * See Intel spec. 27.3.4 "Saving Non-Register State".
                  */
                 rc2 = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, VMX_VMCS_GUEST_DEBUG_EXCEPTIONS_BS);
                 AssertRCReturn(rc, rc);
@@ -7018,6 +7054,12 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     AssertRC(rc);
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
 
+#ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
+    uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVM, pVCpu, pMixedCtx);
+    if (uInvalidReason != VMX_IGS_REASON_NOT_FOUND)
+        Log4(("hmR0VmxCheckGuestState returned %#x\n", uInvalidReason));
+#endif
+
     /* Cache the TPR-shadow for checking on every VM-exit if it might have changed. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_TPR_SHADOW)
         pVmxTransient->u8GuestTpr = pVCpu->hm.s.vmx.pbVirtApic[0x80];
@@ -7368,6 +7410,530 @@ DECLINLINE(int) hmR0VmxAdvanceGuestRip(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     return rc;
 }
 
+
+/**
+ * Tries to determine what part of the guest-state VT-x has deemed as invalid
+ * and update error record fields accordingly.
+ *
+ * @return VMX_IGS_* return codes.
+ * @retval VMX_IGS_REASON_NOT_FOUND if this function could not find anything
+ *         wrong with the guest state.
+ *
+ * @param   pVM     Pointer to the VM.
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   pCtx    Pointer to the guest-CPU state.
+ */
+static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+#define HMVMX_ERROR_BREAK(err)              { uError = (err); break; }
+#define HMVMX_CHECK_BREAK(expr, err)        if (!(expr)) { \
+                                                uError = (err); \
+                                                break; \
+                                            } else do {} while (0)
+/* Duplicate of IEM_IS_CANONICAL(). */
+#define HMVMX_IS_CANONICAL(a_u64Addr)       ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
+
+    int      rc;
+    uint64_t u64Val;
+    uint32_t u32Val;
+    uint32_t uError             = VMX_IGS_ERROR;
+    bool     fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
+
+    do
+    {
+        /*
+         * CR0.
+         */
+        uint32_t uSetCR0 = (uint32_t)(pVM->hm.s.vmx.msr.vmx_cr0_fixed0 & pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
+        uint32_t uZapCR0 = (uint32_t)(pVM->hm.s.vmx.msr.vmx_cr0_fixed0 | pVM->hm.s.vmx.msr.vmx_cr0_fixed1);
+        /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
+           See Intel spec. 26.3.1 "Checks on guest Guest Control Registers, Debug Registers and MSRs." */
+        if (fUnrestrictedGuest)
+            uSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
+
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK((u32Val & uSetCR0) == uSetCR0, VMX_IGS_CR0_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32Val & ~uZapCR0), VMX_IGS_CR0_FIXED0);
+        if (   !fUnrestrictedGuest
+            && CPUMIsGuestPagingEnabledEx(pCtx)
+            && !CPUMIsGuestInProtectedMode(pVCpu))
+        {
+            HMVMX_ERROR_BREAK(VMX_IGS_CR0_PG_PE_COMBO);
+        }
+
+        /*
+         * CR4.
+         */
+        uint64_t uSetCR4 = (pVM->hm.s.vmx.msr.vmx_cr4_fixed0 & pVM->hm.s.vmx.msr.vmx_cr4_fixed1);
+        uint64_t uZapCR4 = (pVM->hm.s.vmx.msr.vmx_cr4_fixed0 | pVM->hm.s.vmx.msr.vmx_cr4_fixed1);
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK((u32Val & uSetCR4) == uSetCR4, VMX_IGS_CR4_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32Val & ~uZapCR4), VMX_IGS_CR4_FIXED0);
+
+        /*
+         * IA32_DEBUGCTL MSR.
+         */
+        rc = VMXReadVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, &u64Val);
+        AssertRCBreak(rc);
+        if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
+            && (u64Val & 0xfffffe3c))                           /* Bits 31-9, bits 2-5 MBZ. */
+        {
+            HMVMX_ERROR_BREAK(VMX_IGS_DEBUGCTL_MSR_RESERVED);
+        }
+        uint64_t u64DebugCtlMsr = u64Val;
+
+        /*
+         * 64-bit checks.
+         */
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
+                && !fUnrestrictedGuest)
+            {
+                HMVMX_CHECK_BREAK(CPUMIsGuestPagingEnabledEx(pCtx), VMX_IGS_CR0_PG_LONGMODE);
+                HMVMX_CHECK_BREAK((pCtx->cr4 & X86_CR4_PAE), VMX_IGS_CR4_PAE_LONGMODE);
+            }
+
+            if (   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
+                && (pCtx->cr4 & X86_CR4_PCIDE))
+            {
+                HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
+            }
+
+            /** @todo CR3 field must be such that bits 63:52 and bits in the range
+             *        51:32 beyond the processor's physical-address width are 0. */
+
+            if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
+                && (pCtx->dr[7] & X86_DR7_MBZ_MASK))
+            {
+                HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
+            }
+
+            rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_ESP_NOT_CANONICAL);
+
+            rc = VMXReadVmcs64(VMX_VMCS_HOST_SYSENTER_EIP, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_SYSENTER_EIP_NOT_CANONICAL);
+        }
+
+        /*
+         * PERF_GLOBAL MSR.
+         */
+        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR)
+        {
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PERF_GLOBAL_CTRL_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffff8fffffffc)),
+                              VMX_IGS_PERF_GLOBAL_MSR_RESERVED);        /* Bits 63-35, bits 31-2 MBZ. */
+        }
+
+        /*
+         * PAT MSR.
+         */
+        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR)
+        {
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_PAT_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0x707070707070707)), VMX_IGS_PAT_MSR_RESERVED);
+            for (unsigned i = 0; i < 8; i++)
+            {
+                uint8_t u8Val = (u64Val & 0x7);
+                if (   u8Val != 0 /* UC */
+                    || u8Val != 1 /* WC */
+                    || u8Val != 4 /* WT */
+                    || u8Val != 5 /* WP */
+                    || u8Val != 6 /* WB */
+                    || u8Val != 7 /* UC- */)
+                {
+                    HMVMX_ERROR_BREAK(VMX_IGS_PAT_MSR_INVALID);
+                }
+                u64Val >>= 3;
+            }
+        }
+
+        /*
+         * EFER MSR.
+         */
+        if (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR)
+        {
+            rc = VMXReadVmcs64(VMX_VMCS64_GUEST_EFER_FULL, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xfffffffffffff2fe)),
+                              VMX_IGS_EFER_MSR_RESERVED);               /* Bits 63-12, bit 9, bits 7-1 MBZ. */
+            HMVMX_CHECK_BREAK((u64Val & MSR_K6_EFER_LMA) == (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
+                              VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
+            HMVMX_CHECK_BREAK(   fUnrestrictedGuest
+                              || (u64Val & MSR_K6_EFER_LMA) == (pCtx->cr0 & X86_CR0_PG), VMX_IGS_EFER_LMA_PG_MISMATCH);
+        }
+
+        /*
+         * Segment registers.
+         */
+        if (   !pVM->hm.s.vmx.fUnrestrictedGuest
+            && (   !CPUMIsGuestInRealModeEx(pCtx)
+                && !CPUMIsGuestInV86ModeEx(pCtx)))
+        {
+            /* Protected mode checks */
+            /* CS */
+            HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u1Present, VMX_IGS_CS_ATTR_P_INVALID);
+            HMVMX_CHECK_BREAK(!(pCtx->cs.Attr.u & 0xf00), VMX_IGS_CS_ATTR_RESERVED);
+            HMVMX_CHECK_BREAK(!(pCtx->cs.Attr.u & 0xfffe0000), VMX_IGS_CS_ATTR_RESERVED);
+            HMVMX_CHECK_BREAK(   (pCtx->cs.u32Limit & 0xfff) == 0xfff
+                              || !(pCtx->cs.Attr.n.u1Granularity), VMX_IGS_CS_ATTR_G_INVALID);
+            HMVMX_CHECK_BREAK(   !(pCtx->cs.u32Limit & 0xfff00000)
+                              || (pCtx->cs.Attr.n.u1Granularity), VMX_IGS_CS_ATTR_G_INVALID);
+            /* CS cannot be loaded with NULL in protected mode. */
+            HMVMX_CHECK_BREAK(pCtx->cs.Attr.u && !(pCtx->cs.Attr.u & X86DESCATTR_UNUSABLE), VMX_IGS_CS_ATTR_UNUSABLE);
+            if (pCtx->cs.Attr.n.u4Type == 9 || pCtx->cs.Attr.n.u4Type == 11)
+                HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u2Dpl == pCtx->ss.Attr.n.u2Dpl, VMX_IGS_CS_SS_ATTR_DPL_UNEQUAL);
+            else if (pCtx->cs.Attr.n.u4Type == 13 || pCtx->cs.Attr.n.u4Type == 15)
+                HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u2Dpl <= pCtx->ss.Attr.n.u2Dpl, VMX_IGS_CS_SS_ATTR_DPL_MISMATCH);
+            else
+                HMVMX_ERROR_BREAK(VMX_IGS_CS_ATTR_TYPE_INVALID);
+            /* SS */
+            HMVMX_CHECK_BREAK((pCtx->ss.Sel & X86_SEL_RPL) == (pCtx->cs.Sel & X86_SEL_RPL), VMX_IGS_SS_CS_RPL_UNEQUAL);
+            HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL), VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL);
+            if (   !(pCtx->cr0 & X86_CR0_PE)
+                || pCtx->cs.Attr.n.u4Type == 3)
+            {
+                HMVMX_CHECK_BREAK(!pCtx->ss.Attr.n.u2Dpl, VMX_IGS_SS_ATTR_DPL_INVALID);
+            }
+            if (pCtx->ss.Attr.u && !(pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE))
+            {
+                HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u4Type == 3 || pCtx->ss.Attr.n.u4Type == 7, VMX_IGS_SS_ATTR_TYPE_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u1Present, VMX_IGS_SS_ATTR_P_INVALID);
+                HMVMX_CHECK_BREAK(!(pCtx->ss.Attr.u & 0xf00), VMX_IGS_SS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(!(pCtx->ss.Attr.u & 0xfffe0000), VMX_IGS_SS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(   (pCtx->ss.u32Limit & 0xfff) == 0xfff
+                                  || !(pCtx->ss.Attr.n.u1Granularity), VMX_IGS_SS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->ss.u32Limit & 0xfff00000)
+                                  || (pCtx->ss.Attr.n.u1Granularity), VMX_IGS_SS_ATTR_G_INVALID);
+            }
+            /* DS, ES, FS, GS - only check for usable selectors, see hmR0VmxWriteSegmentReg(). */
+            if (pCtx->ds.Attr.u && !(pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE))
+            {
+                HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_DS_ATTR_A_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u1Present, VMX_IGS_DS_ATTR_P_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->ds.Attr.n.u4Type > 11 || pCtx->ds.Attr.n.u2Dpl >= (pCtx->ds.Sel & X86_SEL_RPL),
+                                  VMX_IGS_DS_ATTR_DPL_RPL_UNEQUAL);
+                HMVMX_CHECK_BREAK(!(pCtx->ds.Attr.u & 0xf00), VMX_IGS_DS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(!(pCtx->ds.Attr.u & 0xfffe0000), VMX_IGS_DS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(   (pCtx->ds.u32Limit & 0xfff) == 0xfff
+                                  || !(pCtx->ds.Attr.n.u1Granularity), VMX_IGS_DS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->ds.u32Limit & 0xfff00000)
+                                  || (pCtx->ds.Attr.n.u1Granularity), VMX_IGS_DS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_CODE)
+                                  || (pCtx->ds.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_DS_ATTR_TYPE_INVALID);
+            }
+            if (pCtx->es.Attr.u && !(pCtx->es.Attr.u & X86DESCATTR_UNUSABLE))
+            {
+                HMVMX_CHECK_BREAK(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_ES_ATTR_A_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->es.Attr.n.u1Present, VMX_IGS_ES_ATTR_P_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->es.Attr.n.u4Type > 11 || pCtx->es.Attr.n.u2Dpl >= (pCtx->es.Sel & X86_SEL_RPL),
+                                  VMX_IGS_ES_ATTR_DPL_RPL_UNEQUAL);
+                HMVMX_CHECK_BREAK(!(pCtx->es.Attr.u & 0xf00), VMX_IGS_ES_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(!(pCtx->es.Attr.u & 0xfffe0000), VMX_IGS_ES_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(   (pCtx->es.u32Limit & 0xfff) == 0xfff
+                                  || !(pCtx->es.Attr.n.u1Granularity), VMX_IGS_ES_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->es.u32Limit & 0xfff00000)
+                                  || (pCtx->es.Attr.n.u1Granularity), VMX_IGS_ES_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_CODE)
+                                  || (pCtx->es.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_ES_ATTR_TYPE_INVALID);
+            }
+            if (pCtx->fs.Attr.u && !(pCtx->fs.Attr.u & X86DESCATTR_UNUSABLE))
+            {
+                HMVMX_CHECK_BREAK(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_FS_ATTR_A_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->fs.Attr.n.u1Present, VMX_IGS_FS_ATTR_P_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->fs.Attr.n.u4Type > 11 || pCtx->fs.Attr.n.u2Dpl >= (pCtx->fs.Sel & X86_SEL_RPL),
+                                  VMX_IGS_FS_ATTR_DPL_RPL_UNEQUAL);
+                HMVMX_CHECK_BREAK(!(pCtx->fs.Attr.u & 0xf00), VMX_IGS_FS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(!(pCtx->fs.Attr.u & 0xfffe0000), VMX_IGS_FS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(   (pCtx->fs.u32Limit & 0xfff) == 0xfff
+                                  || !(pCtx->fs.Attr.n.u1Granularity), VMX_IGS_FS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->fs.u32Limit & 0xfff00000)
+                                  || (pCtx->fs.Attr.n.u1Granularity), VMX_IGS_FS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_CODE)
+                                  || (pCtx->fs.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_FS_ATTR_TYPE_INVALID);
+            }
+            if (pCtx->gs.Attr.u && !(pCtx->gs.Attr.u & X86DESCATTR_UNUSABLE))
+            {
+                HMVMX_CHECK_BREAK(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_ACCESSED, VMX_IGS_GS_ATTR_A_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->gs.Attr.n.u1Present, VMX_IGS_GS_ATTR_P_INVALID);
+                HMVMX_CHECK_BREAK(pCtx->gs.Attr.n.u4Type > 11 || pCtx->gs.Attr.n.u2Dpl >= (pCtx->gs.Sel & X86_SEL_RPL),
+                                  VMX_IGS_GS_ATTR_DPL_RPL_UNEQUAL);
+                HMVMX_CHECK_BREAK(!(pCtx->gs.Attr.u & 0xf00), VMX_IGS_GS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(!(pCtx->gs.Attr.u & 0xfffe0000), VMX_IGS_GS_ATTR_RESERVED);
+                HMVMX_CHECK_BREAK(   (pCtx->gs.u32Limit & 0xfff) == 0xfff
+                                  || !(pCtx->gs.Attr.n.u1Granularity), VMX_IGS_GS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->gs.u32Limit & 0xfff00000)
+                                  || (pCtx->gs.Attr.n.u1Granularity), VMX_IGS_GS_ATTR_G_INVALID);
+                HMVMX_CHECK_BREAK(   !(pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_CODE)
+                                  || (pCtx->gs.Attr.n.u4Type & X86_SEL_TYPE_READ), VMX_IGS_GS_ATTR_TYPE_INVALID);
+            }
+            /* 64-bit capable CPUs. */
+            if (HMVMX_IS_64BIT_HOST_MODE())
+            {
+                HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32), VMX_IGS_LONGMODE_SS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
+            }
+        }
+        else if (   CPUMIsGuestInV86ModeEx(pCtx)
+                 || (   CPUMIsGuestInRealModeEx(pCtx)
+                     && !pVM->hm.s.vmx.fUnrestrictedGuest))
+        {
+            /* Real and v86 mode checks. */
+            uint32_t u32CSAttr, u32SSAttr, u32DSAttr, u32ESAttr, u32FSAttr, u32GSAttr;
+            if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+            {
+                u32CSAttr = 0xf3;   u32SSAttr = 0xf3;
+                u32DSAttr = 0xf3;   u32ESAttr = 0xf3;
+                u32FSAttr = 0xf3;   u32GSAttr = 0xf3;
+            }
+            else
+            {
+                u32CSAttr = pCtx->cs.Attr.u;   u32SSAttr = pCtx->ss.Attr.u;
+                u32DSAttr = pCtx->ds.Attr.u;   u32ESAttr = pCtx->es.Attr.u;
+                u32FSAttr = pCtx->fs.Attr.u;   u32GSAttr = pCtx->gs.Attr.u;
+            }
+
+            /* CS */
+            HMVMX_CHECK_BREAK((pCtx->cs.u64Base == (uint64_t)pCtx->cs.Sel << 4), VMX_IGS_V86_CS_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->cs.u32Limit == 0xffff, VMX_IGS_V86_CS_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32CSAttr == 0xf3, VMX_IGS_V86_CS_ATTR_INVALID);
+            /* SS */
+            HMVMX_CHECK_BREAK((pCtx->ss.u64Base == (uint64_t)pCtx->ss.Sel << 4), VMX_IGS_V86_SS_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->ss.u32Limit == 0xffff, VMX_IGS_V86_SS_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32SSAttr == 0xf3, VMX_IGS_V86_SS_ATTR_INVALID);
+            /* DS */
+            HMVMX_CHECK_BREAK((pCtx->ds.u64Base == (uint64_t)pCtx->ds.Sel << 4), VMX_IGS_V86_DS_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->ds.u32Limit == 0xffff, VMX_IGS_V86_DS_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32DSAttr == 0xf3, VMX_IGS_V86_DS_ATTR_INVALID);
+            /* ES */
+            HMVMX_CHECK_BREAK((pCtx->es.u64Base == (uint64_t)pCtx->es.Sel << 4), VMX_IGS_V86_ES_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->es.u32Limit == 0xffff, VMX_IGS_V86_ES_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32ESAttr == 0xf3, VMX_IGS_V86_ES_ATTR_INVALID);
+            /* FS */
+            HMVMX_CHECK_BREAK((pCtx->fs.u64Base == (uint64_t)pCtx->fs.Sel << 4), VMX_IGS_V86_FS_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->fs.u32Limit == 0xffff, VMX_IGS_V86_FS_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32FSAttr == 0xf3, VMX_IGS_V86_FS_ATTR_INVALID);
+            /* GS */
+            HMVMX_CHECK_BREAK((pCtx->gs.u64Base == (uint64_t)pCtx->gs.Sel << 4), VMX_IGS_V86_GS_BASE_INVALID);
+            HMVMX_CHECK_BREAK(pCtx->gs.u32Limit == 0xffff, VMX_IGS_V86_GS_LIMIT_INVALID);
+            HMVMX_CHECK_BREAK(u32GSAttr == 0xf3, VMX_IGS_V86_GS_ATTR_INVALID);
+            /* 64-bit capable CPUs. */
+            if (HMVMX_IS_64BIT_HOST_MODE())
+            {
+                HMVMX_CHECK_BREAK(!(pCtx->cs.u64Base >> 32), VMX_IGS_LONGMODE_CS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ss.u64Base >> 32), VMX_IGS_LONGMODE_SS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->ds.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->ds.u64Base >> 32), VMX_IGS_LONGMODE_DS_BASE_INVALID);
+                HMVMX_CHECK_BREAK((pCtx->es.Attr.u & X86DESCATTR_UNUSABLE) || !(pCtx->es.u64Base >> 32), VMX_IGS_LONGMODE_ES_BASE_INVALID);
+            }
+        }
+
+        /*
+         * GDTR and IDTR.
+         */
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            rc = VMXReadVmcs64(VMX_VMCS_GUEST_GDTR_BASE, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_GDTR_BASE_NOT_CANONICAL);
+
+            rc = VMXReadVmcs64(VMX_VMCS_GUEST_IDTR_BASE, &u64Val);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(HMVMX_IS_CANONICAL(u64Val), VMX_IGS_IDTR_BASE_NOT_CANONICAL);
+        }
+
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_GDTR_LIMIT, &u32Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(!(u32Val & 0xffff0000), VMX_IGS_GDTR_LIMIT_INVALID);      /* Bits 31:16 MBZ. */
+
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_IDTR_LIMIT, &u32Val);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(!(u32Val & 0xffff0000), VMX_IGS_IDTR_LIMIT_INVALID);      /* Bits 31:16 MBZ. */
+
+        /*
+         * RIP and RFLAGS.
+         */
+        uint32_t u32EFlags;
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            rc = VMXReadVmcs64(VMX_VMCS_GUEST_RIP, &u64Val);
+            AssertRCBreak(rc);
+            /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
+            if (   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
+                || !pCtx->cs.Attr.n.u1Long )
+            {
+                HMVMX_CHECK_BREAK(!(u64Val & 0xffffffff00000000), VMX_IGS_LONGMODE_RIP_INVALID);
+            }
+            /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
+             *        must be identical if the "IA32e mode guest" VM-entry control is 1
+             *        and CS.L is 1. No check applies if the CPU supports 64
+             *        linear-address bits. */
+
+            rc = VMXReadVmcs64(VMX_VMCS_GUEST_RFLAGS, &u64Val);
+            AssertRCBreak(rc);
+            /* Flags in pCtx can be different (real-on-v86 for instance). We are only concerned about the VMCS contents here. */
+            HMVMX_CHECK_BREAK(!(u64Val & (X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK)), VMX_IGS_RFLAGS_RESERVED);
+            HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);
+            u32EFlags = u64Val;
+        }
+        else
+        {
+            rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32EFlags);
+            AssertRCBreak(rc);
+            HMVMX_CHECK_BREAK(!(u32EFlags & (X86_EFL_LIVE_MASK | X86_EFL_RA1_MASK)), VMX_IGS_RFLAGS_RESERVED);
+            HMVMX_CHECK_BREAK((u32EFlags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);
+        }
+
+        if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST)
+            || !(pCtx->cr0 & X86_CR0_PE))
+        {
+            HMVMX_CHECK_BREAK(!(u32EFlags & X86_EFL_VM), VMX_IGS_RFLAGS_VM_INVALID);
+        }
+
+        uint32_t u32EntryInfo;
+        rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
+        AssertRCBreak(rc);
+        if (   VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo)
+            && VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+        {
+            HMVMX_CHECK_BREAK(u32Val & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
+        }
+
+        /*
+         * Guest Non-Register State.
+         */
+        /* Activity State. */
+        uint32_t u32ActivityState;
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_ACTIVITY_STATE, &u32ActivityState);
+        AssertRCBreak(rc);
+        HMVMX_CHECK_BREAK(   !u32ActivityState
+                          || (u32ActivityState & MSR_IA32_VMX_MISC_ACTIVITY_STATES(pVM->hm.s.vmx.msr.vmx_misc)),
+                             VMX_IGS_ACTIVITY_STATE_INVALID);
+        HMVMX_CHECK_BREAK(   !(pCtx->ss.Attr.n.u2Dpl)
+                          || u32ActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT, VMX_IGS_ACTIVITY_STATE_HLT_INVALID);
+        uint32_t u32IntrState;
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &u32IntrState);
+        AssertRCBreak(rc);
+        if (   u32IntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS
+            || u32IntrState == VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
+        {
+            HMVMX_CHECK_BREAK(u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_ACTIVE, VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID);
+        }
+
+        /** @todo Activity state and injecting interrupts. Left as a todo since we
+         *        currently don't use activity states but ACTIVE. */
+
+        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_ENTRY_SMM)
+                          || u32ActivityState != VMX_VMCS_GUEST_ACTIVITY_SIPI_WAIT, VMX_IGS_ACTIVITY_STATE_SIPI_WAIT_INVALID);
+
+        /* Guest interruptibility-state. */
+        HMVMX_CHECK_BREAK(!(u32IntrState & 0xfffffff0), VMX_IGS_INTERRUPTIBILITY_STATE_RESERVED);
+        HMVMX_CHECK_BREAK(  (u32IntrState
+                          & (VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS))
+                          != (VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
+                          VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID);
+        HMVMX_CHECK_BREAK(   (u32EFlags & X86_EFL_IF)
+                          || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
+                          VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID);
+        if (VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo))
+        {
+            if (VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+            {
+                HMVMX_CHECK_BREAK(   !(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
+                                  && !(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
+                                  VMX_IGS_INTERRUPTIBILITY_STATE_EXT_INT_INVALID);
+            }
+            else if (VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
+            {
+                HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
+                                  VMX_IGS_INTERRUPTIBILITY_STATE_MOVSS_INVALID);
+                HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
+                                  VMX_IGS_INTERRUPTIBILITY_STATE_STI_INVALID);
+            }
+        }
+        /** @todo Assumes the processor is not in SMM. */
+        HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI),
+                          VMX_IGS_INTERRUPTIBILITY_STATE_SMI_INVALID);
+        HMVMX_CHECK_BREAK(   !(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_ENTRY_SMM)
+                          || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI),
+                             VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
+        if (   (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
+            && VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo)
+            && VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
+        {
+            HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI),
+                              VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID);
+        }
+
+        /* Pending debug exceptions. */
+        if (HMVMX_IS_64BIT_HOST_MODE())
+        {
+            rc = VMXReadVmcs64(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u64Val);
+            AssertRCBreak(rc);
+            /* Bits 63-15, Bit 13, Bits 11-4 MBZ. */
+            HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffffaff0)), VMX_IGS_LONGMODE_PENDING_DEBUG_RESERVED);
+            u32Val = u64Val;    /* For pending debug exceptions checks below. */
+        }
+        else
+        {
+            rc = VMXReadVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, &u32Val);
+            AssertRCBreak(rc);
+            /* Bits 31-15, Bit 13, Bits 11-4 MBZ. */
+            HMVMX_CHECK_BREAK(!(u64Val & 0xffffaff0), VMX_IGS_PENDING_DEBUG_RESERVED);
+        }
+
+        if (   (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
+            || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS)
+            || u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_HLT)
+        {
+            if (   (u32EFlags & X86_EFL_TF)
+                && !(u64DebugCtlMsr & RT_BIT_64(1)))    /* Bit 1 is IA32_DEBUGCTL.BTF. */
+            {
+                /* Bit 14 is PendingDebug.BS. */
+                HMVMX_CHECK_BREAK(u32Val & RT_BIT(14), VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_SET);
+            }
+            if (   !(u32EFlags & X86_EFL_TF)
+                || (u64DebugCtlMsr & RT_BIT_64(1)))     /* Bit 1 is IA32_DEBUGCTL.BTF. */
+            {
+                /* Bit 14 is PendingDebug.BS. */
+                HMVMX_CHECK_BREAK(!(u32Val & RT_BIT(14)), VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_CLEAR);
+            }
+        }
+
+        /* VMCS link pointer. */
+        rc = VMXReadVmcs64(VMX_VMCS64_GUEST_VMCS_LINK_PTR_FULL, &u64Val);
+        AssertRCBreak(rc);
+        if (u64Val != UINT64_C(0xffffffffffffffff))
+        {
+            HMVMX_CHECK_BREAK(!(u64Val & 0xfff), VMX_IGS_VMCS_LINK_PTR_RESERVED);
+            /** @todo Bits beyond the processor's physical-address width MBZ. */
+            /** @todo 32-bit located in memory referenced by value of this field (as a
+             *        physical address) must contain the processor's VMCS revision ID. */
+            /** @todo SMM checks. */
+        }
+
+        /** @todo Checks on Guest Page-Directory-Pointer-Table Entries.  */
+
+        /* Shouldn't happen but distinguish it from AssertRCBreak() errors. */
+        if (uError == VMX_IGS_ERROR)
+            uError == VMX_IGS_REASON_NOT_FOUND;
+    } while (0);
+
+    pVCpu->hm.s.u32HMError = uError;
+    return uError;
+
+#undef HMVMX_ERROR_BREAK
+#undef HMVMX_CHECK_BREAK
+#undef HMVMX_IS_CANONICAL
+}
 
 /* -=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= */
 /* -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- VM-exit handlers -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=- */
@@ -7967,6 +8533,9 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     rc     |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
     rc     |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
+
+    uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
+    NOREF(uInvalidReason);
 
     Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntrInfo));
     Log4(("VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE    %#RX32\n", pVmxTransient->uEntryXcptErrorCode));
