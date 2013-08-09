@@ -3593,7 +3593,7 @@ Value: 2006.01.01</screen>
             </glosslist></para>
         </listitem>
         <listitem>
-          <para><emphasis role="bold"><computeroutput>session watch</computeroutput></emphasis>,
+          <para><emphasis role="bold"><computeroutput>watch</computeroutput></emphasis>,
           which prints current guest control activity.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; watch
