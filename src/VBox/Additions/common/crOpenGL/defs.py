@@ -9,7 +9,8 @@ import apiutil
 
 apiutil.CopyrightDef()
 
-print "LIBRARY VBoxOGL"
+# NOTE: if we need a LIBRARY statement, we would need to create a defs-x86.py to generate a .def file for VBoxOGL-x86 library
+#print "LIBRARY VBoxOGL"
 #print "DESCRIPTION \"\"" - warning LNK4017: DESCRIPTION statement not supported for the target platform; ignored
 print "EXPORTS"
 
