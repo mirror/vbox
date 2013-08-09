@@ -387,6 +387,7 @@ public:
     uint32_t                         ContextID(void) { return mCID; };
     const ComPtr<IEvent>             Event(void) { return mEvent; };
     const std::list<VBoxEventType_T> Types(void) { return mEventTypes; };
+    size_t                           TypeCount(void) { return mEventTypes.size(); }
     virtual int                      Signal(IEvent *pEvent);
     int                              Wait(RTMSINTERVAL uTimeoutMS);
 

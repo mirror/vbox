@@ -849,6 +849,10 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
 {
     AssertPtrReturn(puContextID, VERR_INVALID_POINTER);
 
+    if (   uSessionID >= VBOX_GUESTCTRL_MAX_SESSIONS
+        || uObjectID  >= VBOX_GUESTCTRL_MAX_OBJECTS)
+        return VERR_INVALID_PARAMETER;
+
     uint32_t uCount = ASMAtomicIncU32(&mNextContextID);
     if (uCount == VBOX_GUESTCTRL_MAX_CONTEXTS)
         uCount = 0;
@@ -858,6 +862,8 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
 
     *puContextID = uNewContextID;
 
+    LogFlowThisFunc(("mNextContextID=%RU32, uSessionID=%RU32, uObjectID=%RU32, uCount=%RU32, uNewContextID=%RU32\n",
+                     mNextContextID, uSessionID, uObjectID, uCount, uNewContextID));
     return VINF_SUCCESS;
 }
 
@@ -912,6 +918,9 @@ int GuestBase::signalWaitEvents(VBoxEventType_T aType, IEvent *aEvent)
             for (GuestWaitEvents::iterator itEvents = itTypes->second.begin();
                  itEvents != itTypes->second.end(); itEvents++)
             {
+                LogFlowThisFunc(("Signalling event=%p with type=%ld ...\n",
+                                 (*itEvents), aType));
+
                 ComPtr<IEvent> pThisEvent = aEvent;
                 Assert(!pThisEvent.isNull());
                 int rc2 = (*itEvents)->Signal(aEvent);
@@ -968,9 +977,6 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pEvent=%p, uTimeoutMS=%RU32\n",
-                 pEvent, uTimeoutMS));
-
     int vrc = pEvent->Wait(uTimeoutMS);
     if (RT_SUCCESS(vrc))
     {
@@ -990,7 +996,6 @@ int GuestBase::waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
         unconst(pThisEvent).setNull();
     }
 
-    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -1026,27 +1031,29 @@ int GuestObject::registerWaitEvent(const std::list<VBoxEventType_T> &lstEvents,
 int GuestObject::sendCommand(uint32_t uFunction,
                              uint32_t uParms, PVBOXHGCMSVCPARM paParms)
 {
-    LogFlowThisFuncEnter();
-
 #ifndef VBOX_GUESTCTRL_TEST_CASE
     ComObjPtr<Console> pConsole = mConsole;
     Assert(!pConsole.isNull());
 
+    int vrc = VERR_HGCM_SERVICE_NOT_FOUND;
+
     /* Forward the information to the VMM device. */
     VMMDev *pVMMDev = pConsole->getVMMDev();
-    AssertPtr(pVMMDev);
-
-    LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
-    int vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
-    if (RT_FAILURE(vrc))
+    if (pVMMDev)
     {
-        /** @todo What to do here? */
+        LogFlowThisFunc(("uFunction=%RU32, uParms=%RU32\n", uFunction, uParms));
+        vrc = pVMMDev->hgcmHostCall(HGCMSERVICE_NAME, uFunction, uParms, paParms);
+        if (RT_FAILURE(vrc))
+        {
+            /** @todo What to do here? */
+        }
     }
 #else
+    LogFlowThisFuncEnter();
+
     /* Not needed within testcases. */
     int vrc = VINF_SUCCESS;
 #endif
-    LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
@@ -1064,7 +1071,6 @@ GuestWaitEvent::GuestWaitEvent(uint32_t uCID,
 
 GuestWaitEvent::~GuestWaitEvent(void)
 {
-
 }
 
 /**
@@ -1088,8 +1094,6 @@ int GuestWaitEvent::Signal(IEvent *pEvent)
 
 int GuestWaitEvent::Wait(RTMSINTERVAL uTimeoutMS)
 {
-    LogFlowThisFunc(("uTimeoutMS=%RU32ms\n", uTimeoutMS));
-
     int rc = VINF_SUCCESS;
 
     if (ASMAtomicReadBool(&fAborted))
@@ -1107,7 +1111,6 @@ int GuestWaitEvent::Wait(RTMSINTERVAL uTimeoutMS)
             rc = VERR_CANCELLED;
     }
 
-    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

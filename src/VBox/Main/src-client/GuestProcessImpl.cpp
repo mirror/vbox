@@ -362,7 +362,7 @@ STDMETHODIMP GuestProcess::COMGETTER(EventSource)(IEventSource ** aEventSource)
     // no need to lock - lifetime constant
     mEventSource.queryInterfaceTo(aEventSource);
 
-    LogFlowFuncLeaveRC(S_OK);
+    LogFlowThisFuncLeave();
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -477,8 +477,6 @@ int GuestProcess::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTC
                      mData.mPID, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
 #endif
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     int vrc;
     switch (pCbCtx->uFunction)
     {
@@ -513,7 +511,7 @@ int GuestProcess::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTC
     }
 
 #ifdef DEBUG
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
 #endif
     return vrc;
 }
@@ -630,17 +628,15 @@ inline bool GuestProcess::isAlive(void)
             || mData.mStatus == ProcessStatus_Terminating);
 }
 
-bool GuestProcess::isReady(void)
+inline bool GuestProcess::hasEnded(void)
 {
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mData.mStatus == ProcessStatus_Started)
-    {
-        Assert(mData.mPID); /* PID must not be 0. */
-        return true;
-    }
-
-    return false;
+    return (   mData.mStatus == ProcessStatus_TerminatedNormally
+            || mData.mStatus == ProcessStatus_TerminatedSignal
+            || mData.mStatus == ProcessStatus_TerminatedAbnormally
+            || mData.mStatus == ProcessStatus_TimedOutKilled
+            || mData.mStatus == ProcessStatus_TimedOutAbnormally
+            || mData.mStatus == ProcessStatus_Down
+            || mData.mStatus == ProcessStatus_Error);
 }
 
 int GuestProcess::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData)
@@ -648,11 +644,9 @@ int GuestProcess::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUEST
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
-    LogFlowThisFunc(("uPID=%RU32\n", mData.mPID));
-
     int vrc = setProcessStatus(ProcessStatus_Down, VINF_SUCCESS);
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -706,12 +700,20 @@ int GuestProcess::onProcessInputStatus(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUES
 
         if (inputStatus != ProcessInputStatus_Undefined)
         {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+            /* Copy over necessary data before releasing lock again. */
+            uint32_t uPID = mData.mPID;
+            /** @todo Also handle mSession? */
+
+            alock.release(); /* Release lock before firing off event. */
+
             fireGuestProcessInputNotifyEvent(mEventSource, mSession, this,
-                                             mData.mPID, 0 /* StdIn */, dataCb.uProcessed, inputStatus);
+                                             uPID, 0 /* StdIn */, dataCb.uProcessed, inputStatus);
         }
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -756,6 +758,8 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
             case PROC_STS_STARTED:
             {
                 procStatus = ProcessStatus_Started;
+
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
                 mData.mPID = dataCb.uPID; /* Set the process PID. */
                 break;
             }
@@ -763,6 +767,8 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
             case PROC_STS_TEN:
             {
                 procStatus = ProcessStatus_TerminatedNormally;
+
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
                 mData.mExitCode = dataCb.uFlags; /* Contains the exit code. */
                 break;
             }
@@ -770,6 +776,8 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
             case PROC_STS_TES:
             {
                 procStatus = ProcessStatus_TerminatedSignal;
+
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
                 mData.mExitCode = dataCb.uFlags; /* Contains the signal. */
                 break;
             }
@@ -823,7 +831,7 @@ int GuestProcess::onProcessStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUE
             vrc = rc2;
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -859,7 +867,7 @@ int GuestProcess::onProcessOutput(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
                                     mData.mPID, dataCb.uHandle, dataCb.cbData, ComSafeArrayAsInParam(data));
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -939,13 +947,17 @@ int GuestProcess::readData(uint32_t uHandle, uint32_t uSize, uint32_t uTimeoutMS
 
     unregisterWaitEvent(pEvent);
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
 /* Does not do locking; caller is responsible for that! */
 int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
 {
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, procRc=%Rrc\n",
                      mData.mStatus, procStatus, procRc));
 
@@ -954,10 +966,12 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
         AssertMsg(RT_FAILURE(procRc), ("Guest rc must be an error (%Rrc)\n", procRc));
         /* Do not allow overwriting an already set error. If this happens
          * this means we forgot some error checking/locking somewhere. */
-        //AssertMsg(RT_SUCCESS(mData.mRC), ("Guest rc already set (to %Rrc)\n", mData.mRC));
+        AssertMsg(RT_SUCCESS(mData.mRC), ("Guest rc already set (to %Rrc)\n", mData.mRC));
     }
     else
         AssertMsg(RT_SUCCESS(procRc), ("Guest rc must not be an error (%Rrc)\n", procRc));
+
+    int rc = VINF_SUCCESS;
 
     if (mData.mStatus != procStatus) /* Was there a process status change? */
     {
@@ -975,11 +989,32 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
             AssertRC(rc2);
         }
 
+        /* Copy over necessary data before releasing lock again. */
+        uint32_t uPID =  mData.mPID;
+        ProcessStatus_T uStatus = mData.mStatus;
+        /** @todo Also handle mSession? */
+
+        alock.release(); /* Release lock before firing off event. */
+
         fireGuestProcessStateChangedEvent(mEventSource, mSession, this,
-                                          mData.mPID, mData.mStatus, errorInfo);
+                                          uPID, uStatus, errorInfo);
+#if 0
+        /*
+         * On Guest Additions < 4.3 there is no guarantee that outstanding
+         * requests will be delivered to the host after the process has ended,
+         * so just cancel all waiting events here to not let clients run
+         * into timeouts.
+         */
+        if (   mSession->getProtocolVersion() < 2
+            && hasEnded())
+        {
+            LogFlowThisFunc(("Process ended, canceling outstanding wait events ...\n"));
+            rc = cancelWaitEvents();
+        }
+#endif
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /* static */
@@ -993,8 +1028,9 @@ HRESULT GuestProcess::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
 
 int GuestProcess::startProcess(uint32_t uTimeoutMS, int *pGuestRc)
 {
-    LogFlowThisFunc(("uTimeoutMS=%RU32, procCmd=%s, procTimeoutMS=%RU32, procFlags=%x\n",
-                     uTimeoutMS, mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags));
+    LogFlowThisFunc(("uTimeoutMS=%RU32, procCmd=%s, procTimeoutMS=%RU32, procFlags=%x, sessionID=%RU32\n",
+                     uTimeoutMS, mData.mProcess.mCommand.c_str(), mData.mProcess.mTimeoutMS, mData.mProcess.mFlags,
+                     mSession->getId()));
 
     /* Wait until the caller function (if kicked off by a thread)
      * has returned and continue operation. */
@@ -1132,7 +1168,7 @@ int GuestProcess::startProcess(uint32_t uTimeoutMS, int *pGuestRc)
                                   NULL /* Process status */, pGuestRc);
     unregisterWaitEvent(pEvent);
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -1164,7 +1200,7 @@ int GuestProcess::startProcessAsync(void)
         vrc = VERR_NO_MEMORY;
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -1186,7 +1222,7 @@ DECLCALLBACK(int) GuestProcess::startProcessThread(RTTHREAD Thread, void *pvUser
                                      NULL /* Guest rc, ignored */);
     /* Nothing to do here anymore. */
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowFunc(("pProcess=%p returning rc=%Rrc\n", pProcess, vrc));
     return vrc;
 }
 
@@ -1243,7 +1279,7 @@ int GuestProcess::terminateProcess(uint32_t uTimeoutMS, int *pGuestRc)
         unregisterWaitEvent(pEvent);
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -1366,14 +1402,12 @@ ProcessWaitResult_T GuestProcess::waitFlagsToResult(uint32_t fWaitFlags)
 
 int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc)
 {
-    LogFlowThisFuncEnter();
-
     AssertReturn(fWaitFlags, VERR_INVALID_PARAMETER);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("fWaitFlags=0x%x, uTimeoutMS=%RU32, mStatus=%RU32, pGuestRc=%p\n",
-                     fWaitFlags, uTimeoutMS, mData.mStatus, pGuestRc));
+    LogFlowThisFunc(("fWaitFlags=0x%x, uTimeoutMS=%RU32, procStatus=%RU32, procRc=%Rrc, pGuestRc=%p\n",
+                     fWaitFlags, uTimeoutMS, mData.mStatus, mData.mRC, pGuestRc));
 
     /* Did some error occur before? Then skip waiting and return. */
     if (mData.mStatus == ProcessStatus_Error)
@@ -1386,8 +1420,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     }
 
     waitResult = waitFlagsToResult(fWaitFlags);
-    LogFlowThisFunc(("procStatus=%ld, procRc=%Rrc, waitResult=%ld\n",
-                     mData.mStatus, mData.mRC, waitResult));
+    LogFlowThisFunc(("waitFlagToResult=%ld\n", waitResult));
 
     /* No waiting needed? Return immediately using the last set error. */
     if (waitResult != ProcessWaitResult_None)
@@ -1449,11 +1482,13 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
         }
         else /* Waiting failed, bail out. */
             break;
+
+        alock.release(); /* Don't hold lock in next waiting round. */
     }
 
     unregisterWaitEvent(pEvent);
 
-    LogFlowThisFunc(("waitResult=%ld, processStatus=%ld, rc=%Rrc\n",
+    LogFlowThisFunc(("Returned waitResult=%ld, processStatus=%ld, rc=%Rrc\n",
                      waitResult, processStatus, vrc));
     return vrc;
 }
@@ -1498,6 +1533,12 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
                                 void *pvData, size_t cbData, uint32_t *pcbRead)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    /* pvData is optional. */
+    /* cbData is optional. */
+    /* pcbRead is optional. */
+
+    LogFlowThisFunc(("cEventTypes=%zu, pEvent=%p, uHandle=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu, pcbRead=%p\n",
+                     pEvent->TypeCount(), pEvent, uHandle, uTimeoutMS, pvData, cbData, pcbRead));
 
     int vrc;
 
@@ -1509,6 +1550,9 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
                            &evtType, pIEvent.asOutParam());
         if (RT_SUCCESS(vrc))
         {
+#ifdef DEBUG_andy
+            LogFlowThisFunc(("pEvent=%p, evtType=%ld\n", pEvent, evtType));
+#endif
             if (evtType == VBoxEventType_OnGuestProcessOutput)
             {
                 ComPtr<IGuestProcessOutputEvent> pProcessEvent = pIEvent;
@@ -1516,7 +1560,9 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
 
                 ULONG uHandleEvent;
                 HRESULT hr = pProcessEvent->COMGETTER(Handle)(&uHandleEvent);
-                if (uHandleEvent == uHandle)
+                LogFlowThisFunc(("Received output, uHandle=%RU32\n", uHandleEvent));
+                if (   SUCCEEDED(hr)
+                    && uHandleEvent == uHandle)
                 {
                     if (pvData)
                     {
@@ -1535,7 +1581,9 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
                                 vrc = VERR_BUFFER_OVERFLOW;
                         }
                     }
-                    if (pcbRead)
+
+                    if (   RT_SUCCESS(vrc)
+                        && pcbRead)
                     {
                         ULONG cbRead;
                         hr = pProcessEvent->COMGETTER(Processed)(&cbRead);
@@ -1545,14 +1593,22 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
 
                     break;
                 }
+                else if (FAILED(hr))
+                    vrc = VERR_COM_UNEXPECTED;
             }
             else
                 vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
         }
 
-    } while (RT_SUCCESS(vrc));
+    } while (vrc == VINF_SUCCESS);
 
-    LogFlowFuncLeaveRC(vrc);
+    if (   vrc != VINF_SUCCESS
+        && pcbRead)
+    {
+        *pcbRead = 0;
+    }
+
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -1758,7 +1814,7 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, 
 
     LogFlowThisFunc(("rc=%Rrc, cbRead=%RU32\n", vrc, cbRead));
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1853,7 +1909,7 @@ STDMETHODIMP GuestProcess::WaitFor(ULONG aWaitFlags, ULONG aTimeoutMS, ProcessWa
         }
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1921,7 +1977,7 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
 
     *aWritten = (ULONG)cbWritten;
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
@@ -1992,7 +2048,7 @@ int GuestProcessTool::Init(GuestSession *pGuestSession, const GuestProcessStartu
         vrc = VERR_GSTCTL_GUEST_ERROR;
     }
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
@@ -2083,6 +2139,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
         vrc = GetCurrentBlock(OUTPUT_HANDLE_ID_STDOUT, *pStreamBlock);
         if (RT_SUCCESS(vrc))
             return vrc;
+        /* else do the the waiting below. */
     }
 
     /* Do the waiting. */
@@ -2094,7 +2151,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
     LogFlowThisFunc(("waitFlags=0x%x\n", fWaitFlags));
 
-    /** @todo Decrease timeout. */
+    /** @todo Decrease timeout while running. */
     uint32_t uTimeoutMS = mStartupInfo.mTimeoutMS;
 
     int guestRc;
@@ -2162,6 +2219,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
         if (fHandleStdOut)
         {
+            cbRead = 0;
             vrc = pProcess->readData(OUTPUT_HANDLE_ID_STDOUT, sizeof(byBuf),
                                      uTimeoutMS, byBuf, sizeof(byBuf),
                                      &cbRead, &guestRc);
@@ -2170,7 +2228,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
             if (cbRead)
             {
-                LogFlowThisFunc(("Received %RU64 bytes from stdout\n", cbRead));
+                LogFlowThisFunc(("Received %RU32 bytes from stdout\n", cbRead));
                 vrc = mStdOut.AddData(byBuf, cbRead);
 
                 if (   RT_SUCCESS(vrc)
@@ -2188,6 +2246,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
         if (fHandleStdErr)
         {
+            cbRead = 0;
             vrc = pProcess->readData(OUTPUT_HANDLE_ID_STDERR, sizeof(byBuf),
                                      uTimeoutMS, byBuf, sizeof(byBuf),
                                      &cbRead, &guestRc);
@@ -2196,7 +2255,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
 
             if (cbRead)
             {
-                LogFlowThisFunc(("Received %RU64 bytes from stderr\n", cbRead));
+                LogFlowThisFunc(("Received %RU32 bytes from stderr\n", cbRead));
                 vrc = mStdErr.AddData(byBuf, cbRead);
             }
 
@@ -2210,7 +2269,7 @@ int GuestProcessTool::WaitEx(uint32_t fFlags, GuestProcessStreamBlock *pStreamBl
     if (pGuestRc)
         *pGuestRc = guestRc;
 
-    LogFlowFuncLeaveRC(vrc);
+    LogFlowThisFunc(("Returning rc=%Rrc\n", vrc));
     return vrc;
 }
 
