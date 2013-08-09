@@ -7934,7 +7934,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Shouldn't happen but distinguish it from AssertRCBreak() errors. */
         if (uError == VMX_IGS_ERROR)
-            uError == VMX_IGS_REASON_NOT_FOUND;
+            uError = VMX_IGS_REASON_NOT_FOUND;
     } while (0);
 
     pVCpu->hm.s.u32HMError = uError;
