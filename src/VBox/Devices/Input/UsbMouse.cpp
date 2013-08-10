@@ -251,9 +251,10 @@ typedef struct USBHIDM_REPORT
 
 typedef struct USBHIDT_REPORT
 {
+    uint8_t     fButtons;
+    uint8_t     padding;
     uint16_t    x;
     uint16_t    y;
-    uint8_t     fButtons;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
 
 /**
@@ -400,15 +401,6 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Collection */                0xA1, 0x01,     /* Application */
     /* Usage */                     0x09, 0x01,     /* Pointer */
     /* Collection */                0xA1, 0x00,     /* Physical */
-    /* Usage */                     0x09, 0x30,     /* X */
-    /* Usage */                     0x09, 0x31,     /* Y */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
-    /* Physical Minimum */          0x35, 0x00,     /* 0 */
-    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
-    /* Report Size */               0x75, 0x10,     /* 16 */
-    /* Report Count */              0x95, 0x02,     /* 2 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* Usage Page */                0x05, 0x09,     /* Button */
     /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
     /* Usage Maximum */             0x29, 0x05,     /* Button 5 */
@@ -420,6 +412,19 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Report Size */               0x75, 0x03,     /* 3 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Report Size */               0x75, 0x08,     /* 8 (padding byte) */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* End Collection */            0xC0,
     /* End Collection */            0xC0,
 };
@@ -1178,6 +1183,7 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     {
     case USBHIDMODE_ABSOLUTE:
         pReport->t.fButtons = pAccumulated->u.Absolute.fButtons;
+        pReport->t.padding  = 0;
         pReport->t.x        = pAccumulated->u.Absolute.x;
         pReport->t.y        = pAccumulated->u.Absolute.y;
 
@@ -2254,6 +2260,8 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     else
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
                                    N_("Invalid HID device mode"));
+
+    LogRelFlow(("usbHidConstruct/#%u: mode '%s'\n", iInstance, szMode));
 
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;
