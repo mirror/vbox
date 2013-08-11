@@ -128,7 +128,7 @@ static void PassVA2(PUVM pUVM, const char *pszFormat, va_list va)
 #else
     va_list va2;
     va_copy(va2, va);
-    void *pvVA = va2;
+    void *pvVA = &va2;
 #endif
 
     int rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)PassVACallback, 5, pUVM, _4K, _1G, pszFormat, pvVA);
