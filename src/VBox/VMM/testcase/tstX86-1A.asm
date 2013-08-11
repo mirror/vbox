@@ -2478,9 +2478,16 @@ extern NAME(RTTestISub)
  %endif
         call    NAME(RTTestISub)
 %else
+ %ifdef RT_OS_DARWIN
+        sub     esp, 12
+        push    %%s_szName
+        call    NAME(RTTestISub)
+        add     esp, 16
+ %else
         push    %%s_szName
         call    NAME(RTTestISub)
         add     esp, 4
+ %endif
 %endif
         jmp     %%done
 %%s_szName:
