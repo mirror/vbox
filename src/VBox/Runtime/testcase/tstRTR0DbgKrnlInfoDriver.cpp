@@ -83,7 +83,7 @@ int main (int argc, char **argv)
 
     void *pvImageBase;
     rc = SUPR3LoadServiceModule(szPath, "tstRTR0DbgKrnlInfo",
-                                "tstRTR0DbgKrnlInfoSrvReqHandler",
+                                "TSTR0DbgKrnlInfoSrvReqHandler",
                                 &pvImageBase);
     if (RT_FAILURE(rc))
     {
