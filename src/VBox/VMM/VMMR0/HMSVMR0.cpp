@@ -4068,16 +4068,16 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     SVMIOIOEXIT IoExitInfo;
     IoExitInfo.u       = (uint32_t)pVmcb->ctrl.u64ExitInfo1;
     uint32_t uIOWidth  = (IoExitInfo.u >> 4) & 0x7;
-    uint32_t uIOSize   = s_aIOSize[uIOWidth];
+    uint32_t cbValue   = s_aIOSize[uIOWidth];
     uint32_t uAndVal   = s_aIOOpAnd[uIOWidth];
 
-    if (RT_UNLIKELY(!uIOSize))
+    if (RT_UNLIKELY(!cbValue))
     {
         AssertMsgFailed(("hmR0SvmExitIOInstr: Invalid IO operation. uIOWidth=%u\n", uIOWidth));
         return VERR_EM_INTERPRETER;
     }
 
-    int rc;
+    VBOXSTRICTRC rcStrict;
     if (IoExitInfo.n.u1STR)
     {
         /* INS/OUTS - I/O String instruction. */
@@ -4086,26 +4086,24 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         /** @todo Huh? why can't we use the segment prefix information given by AMD-V
          *        in EXITINFO1? Investigate once this thing is up and running. */
 
-        rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
-        if (rc == VINF_SUCCESS)
+        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
+        if (rcStrict == VINF_SUCCESS)
         {
             if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
             {
-                VBOXSTRICTRC rc2 = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
-                                                      (DISCPUMODE)pDis->uAddrMode, uIOSize);
-                rc = VBOXSTRICTRC_VAL(rc2);
+                rcStrict = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                                              (DISCPUMODE)pDis->uAddrMode, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
             }
             else
             {
-                VBOXSTRICTRC rc2 = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
-                                                     (DISCPUMODE)pDis->uAddrMode, uIOSize);
-                rc = VBOXSTRICTRC_VAL(rc2);
+                rcStrict = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pCtx), IoExitInfo.n.u16Port, pDis->fPrefix,
+                                             (DISCPUMODE)pDis->uAddrMode, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
             }
         }
         else
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR;
     }
     else
     {
@@ -4114,10 +4112,9 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         if (IoExitInfo.n.u1Type == SVM_IOIO_WRITE)
         {
-            VBOXSTRICTRC rc2 = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, uIOSize);
-            rc = VBOXSTRICTRC_VAL(rc2);
-            if (rc == VINF_IOM_R3_IOPORT_WRITE)
-                HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
+            rcStrict = IOMIOPortWrite(pVM, pVCpu, IoExitInfo.n.u16Port, pCtx->eax & uAndVal, cbValue);
+            if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
+                HMR0SavePendingIOPortWrite(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, cbValue);
 
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
         }
@@ -4125,95 +4122,75 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         {
             uint32_t u32Val = 0;
 
-            VBOXSTRICTRC rc2 = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, uIOSize);
-            rc = VBOXSTRICTRC_VAL(rc2);
-            if (IOM_SUCCESS(rc))
+            rcStrict = IOMIOPortRead(pVM, pVCpu, IoExitInfo.n.u16Port, &u32Val, cbValue);
+            if (IOM_SUCCESS(rcStrict))
             {
                 /* Save result of I/O IN instr. in AL/AX/EAX. */
                 pCtx->eax = (pCtx->eax & ~uAndVal) | (u32Val & uAndVal);
             }
-            else if (rc == VINF_IOM_R3_IOPORT_READ)
-                HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, uIOSize);
+            else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
+                HMR0SavePendingIOPortRead(pVCpu, pCtx->rip, pVmcb->ctrl.u64ExitInfo2, IoExitInfo.n.u16Port, uAndVal, cbValue);
 
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
         }
     }
 
-    if (IOM_SUCCESS(rc))
+    if (IOM_SUCCESS(rcStrict))
     {
         /* AMD-V saves the RIP of the instruction following the IO instruction in EXITINFO2. */
         pCtx->rip = pVmcb->ctrl.u64ExitInfo2;
 
-        if (RT_LIKELY(rc == VINF_SUCCESS))
+        /*
+         * If any I/O breakpoints are armed, we need to check if one triggered
+         * and take appropriate action.
+         * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
+         */
+        /** @todo Optimize away the DBGFBpIsHwIoArmed call by having DBGF tell the
+         *  execution engines about whether hyper BPs and such are pending. */
+        uint32_t const uDr7 = pCtx->dr[7];
+        if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
+                            && X86_DR7_ANY_RW_IO(uDr7)
+                            && (pCtx->cr4 & X86_CR4_DE))
+                        || DBGFBpIsHwIoArmed(pVM)))
         {
-            /* If any IO breakpoints are armed, then we should check if a debug trap needs to be generated. */
-            /** @todo This is inefficient and wrong according to intel and amd specs
-             *        (regardless of which is correct).  See the same code in the VT-x case.
-             *        write testcase and refactor the code to use a mostly shared
-             *        implementation after the initial DR7/CR4 checks. */
-            if (pCtx->dr[7] & X86_DR7_ENABLED_MASK)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
+            CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);
+
+            VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pCtx, IoExitInfo.n.u16Port, cbValue);
+            if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
             {
-                /* I/O breakpoint length, in bytes. */
-                static uint32_t const s_aIOBPLen[4] = { 1, 2, 0, 4 };
-
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
-                for (unsigned i = 0; i < 4; i++)
-                {
-                    unsigned uBPLen = s_aIOBPLen[X86_DR7_GET_LEN(pCtx->dr[7], i)];
-
-                    if (   IoExitInfo.n.u16Port >= pCtx->dr[i]
-                        && IoExitInfo.n.u16Port < pCtx->dr[i] + uBPLen
-                        && (pCtx->dr[7] & (X86_DR7_L(i) | X86_DR7_G(i)))
-                        && (pCtx->dr[7] & X86_DR7_RW(i, X86_DR7_RW_IO)) == X86_DR7_RW(i, X86_DR7_RW_IO))
-                    {
-                        Assert(CPUMIsGuestDebugStateActive(pVCpu));
-
-                        /* Clear all breakpoint status flags and set the one we just hit. */
-                        pCtx->dr[6] &= ~(X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3);
-                        pCtx->dr[6] |= (uint64_t)RT_BIT(i);
-
-                        /*
-                         * Note: AMD64 Architecture Programmer's Manual 13.1:
-                         * Bits 15:13 of the DR6 register is never cleared by the processor and must be cleared
-                         * by software after the contents have been read.
-                         */
-                        pVmcb->guest.u64DR6 = pCtx->dr[6];
-
-                        /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
-                        pCtx->dr[7] &= ~X86_DR7_GD;
-
-                        /* Paranoia. */
-                        pCtx->dr[7] &= 0xffffffff;                                             /* Upper 32 bits MBZ. */
-                        pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));   /* MBZ. */
-                        pCtx->dr[7] |= 0x400;                                                  /* MB1. */
-
-                        pVmcb->guest.u64DR7 = pCtx->dr[7];
-                        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
-
-                        /* Inject the debug exception. */
-                        hmR0SvmSetPendingXcptDB(pVCpu);
-                        break;
-                    }
-                }
+                /* Raise #DB. */
+                pVmcb->guest.u64DR6 = pCtx->dr[6];
+                pVmcb->guest.u64DR7 = pCtx->dr[7];
+                pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+                hmR0SvmSetPendingXcptDB(pVCpu);
             }
+            /* rcStrict is VINF_SUCCESS or in [VINF_EM_FIRST..VINF_EM_LAST]. */
+            else if (   rcStrict2 != VINF_SUCCESS
+                     && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
+                rcStrict = rcStrict2;
         }
     }
 
 #ifdef VBOX_STRICT
-    if (rc == VINF_IOM_R3_IOPORT_READ)
+    if (rcStrict == VINF_IOM_R3_IOPORT_READ)
         Assert(IoExitInfo.n.u1Type == SVM_IOIO_READ);
-    else if (rc == VINF_IOM_R3_IOPORT_WRITE)
+    else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
         Assert(IoExitInfo.n.u1Type == SVM_IOIO_WRITE);
     else
     {
-        AssertMsg(   RT_FAILURE(rc)
-                  || rc == VINF_SUCCESS
-                  || rc == VINF_EM_RAW_EMULATE_INSTR
-                  || rc == VINF_EM_RAW_GUEST_TRAP
-                  || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
+        /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
+         *        statuses, that the VMM device and some others may return. See
+         *        IOM_SUCCESS() for guidance. */
+        AssertMsg(   RT_FAILURE(rcStrict)
+                  || rcStrict == VINF_SUCCESS
+                  || rcStrict == VINF_EM_RAW_EMULATE_INSTR
+                  || rcStrict == VINF_EM_DBG_BREAKPOINT
+                  || rcStrict == VINF_EM_RAW_GUEST_TRAP
+                  || rcStrict == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 #endif
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
