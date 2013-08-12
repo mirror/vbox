@@ -4176,7 +4176,11 @@ target_ulong helper_lar(target_ulong selector1)
         }
     }
     CC_SRC = eflags | CC_Z;
+#ifdef VBOX /* AMD says 0x00ffff00, while intel says 0x00fxff00. Bochs and IEM does like AMD says (x=f). */
+    return e2 & 0x00ffff00;
+#else
     return e2 & 0x00f0ff00;
+#endif
 }
 
 void helper_verr(target_ulong selector1)
