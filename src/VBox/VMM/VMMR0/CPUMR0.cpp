@@ -79,6 +79,7 @@ static CPUMHOSTLAPIC g_aLApics[RTCPUSET_MAX_CPUS];
 static int  cpumR0MapLocalApics(void);
 static void cpumR0UnmapLocalApics(void);
 #endif
+static int  cpumR0SaveHostDebugState(PVMCPU pVCpu);
 
 
 /**
@@ -344,7 +345,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     {
 #ifndef CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE
 # if defined(VBOX_WITH_HYBRID_32BIT_KERNEL) || defined(VBOX_WITH_KERNEL_USING_XMM) /** @todo remove the #else here and move cpumHandleLazyFPUAsm back to VMMGC after branching out 3.0!!. */
-        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE));
+        Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
         /** @todo Move the FFXR handling down into
          *        cpumR0SaveHostRestoreguestFPUState to optimize the
          *        VBOX_WITH_KERNEL_USING_XMM handling. */
@@ -356,7 +357,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (SavedEFER & MSR_K6_EFER_FFXSR)
             {
                 ASMWrMsr(MSR_K6_EFER, SavedEFER & ~MSR_K6_EFER_FFXSR);
-                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+                pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
             }
         }
 
@@ -364,7 +365,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         cpumR0SaveHostRestoreGuestFPUState(&pVCpu->cpum.s);
 
         /* Restore EFER. */
-        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, SavedEFER);
 
 # else
@@ -381,7 +382,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (oldMsrEFERHost & MSR_K6_EFER_FFXSR)
             {
                 ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
-                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+                pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
             }
         }
 
@@ -391,7 +392,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
 
         /* Restore EFER MSR */
-        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost);
 
         /* CPUMHandleLazyFPU could have changed CR0; restore it. */
@@ -424,7 +425,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             {
                 /* fxrstor doesn't restore the XMM state! */
                 cpumR0LoadXMM(pCtx);
-                pVCpu->cpum.s.fUseFlags |= CPUM_MANUAL_XMM_RESTORE;
+                pVCpu->cpum.s.fUseFlags |= CPUM_USED_MANUAL_XMM_RESTORE;
             }
         }
 
@@ -480,7 +481,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
         /* Clear MSR_K6_EFER_FFXSR or else we'll be unable to save/restore the XMM state with fxsave/fxrstor. */
         uint64_t oldMsrEFERHost = 0;
-        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE)
         {
             oldMsrEFERHost = ASMRdMsr(MSR_K6_EFER);
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost & ~MSR_K6_EFER_FFXSR);
@@ -488,7 +489,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         cpumR0SaveGuestRestoreHostFPUState(&pVCpu->cpum.s);
 
         /* Restore EFER MSR */
-        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE)
             ASMWrMsr(MSR_K6_EFER, oldMsrEFERHost | MSR_K6_EFER_FFXSR);
 
 # ifdef VBOX_WITH_KERNEL_USING_XMM
@@ -500,7 +501,7 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #  error "Fix all the NM_TRAPS_IN_KERNEL_MODE code path. I'm not going to fix unused code now."
 # endif
         cpumR0SaveFPU(pCtx);
-        if (pVCpu->cpum.s.fUseFlags & CPUM_MANUAL_XMM_RESTORE)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE)
         {
             /* fxsave doesn't save the XMM state! */
             cpumR0SaveXMM(pCtx);
@@ -516,115 +517,23 @@ VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #endif /* CPUM_CAN_HANDLE_NM_TRAPS_IN_KERNEL_MODE */
     }
 
-    pVCpu->cpum.s.fUseFlags &= ~(CPUM_USED_FPU | CPUM_SYNC_FPU_STATE | CPUM_MANUAL_XMM_RESTORE);
+    pVCpu->cpum.s.fUseFlags &= ~(CPUM_USED_FPU | CPUM_SYNC_FPU_STATE | CPUM_USED_MANUAL_XMM_RESTORE);
     return VINF_SUCCESS;
 }
 
 
 /**
- * Save guest debug state
+ * Saves the host debug state, setting CPUM_USED_HOST_DEBUG_STATE and loading
+ * DR7 with safe values.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
- * @param   fDR6        Whether to include DR6 or not.
  */
-VMMR0DECL(int) CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6)
+static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
 {
-    Assert(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS);
-
-    /* Save the guest's debug state. The caller is responsible for DR7. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (CPUMIsGuestInLongModeEx(pCtx))
-    {
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_STATE))
-        {
-            uint64_t dr6 = pCtx->dr[6];
-
-            HMR0SaveDebugState(pVM, pVCpu, pCtx);
-            if (!fDR6) /* dr6 was already up-to-date */
-                pCtx->dr[6] = dr6;
-        }
-    }
-    else
-#endif
-    {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        cpumR0SaveDRx(&pCtx->dr[0]);
-#else
-        pCtx->dr[0] = ASMGetDR0();
-        pCtx->dr[1] = ASMGetDR1();
-        pCtx->dr[2] = ASMGetDR2();
-        pCtx->dr[3] = ASMGetDR3();
-#endif
-        if (fDR6)
-            pCtx->dr[6] = ASMGetDR6();
-    }
-
     /*
-     * Restore the host's debug state. DR0-3, DR6 and only then DR7!
-     * DR7 contains 0x400 right now.
+     * Save the host state.
      */
-    CPUMR0LoadHostDebugState(pVM, pVCpu);
-    Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS));
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Lazily sync in the debug state
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
- * @param   fDR6        Whether to include DR6 or not.
- */
-VMMR0DECL(int) CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6)
-{
-    /* Save the host state. */
-    CPUMR0SaveHostDebugState(pVM, pVCpu);
-    Assert(ASMGetDR7() == X86_DR7_INIT_VAL);
-
-    /* Activate the guest state DR0-3; DR7 is left to the caller. */
-#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (CPUMIsGuestInLongModeEx(pCtx))
-    {
-        /* Restore the state on entry as we need to be in 64 bits mode to access the full state. */
-        pVCpu->cpum.s.fUseFlags |= CPUM_SYNC_DEBUG_STATE;
-    }
-    else
-#endif
-    {
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        cpumR0LoadDRx(&pCtx->dr[0]);
-#else
-        ASMSetDR0(pCtx->dr[0]);
-        ASMSetDR1(pCtx->dr[1]);
-        ASMSetDR2(pCtx->dr[2]);
-        ASMSetDR3(pCtx->dr[3]);
-#endif
-        if (fDR6)
-            ASMSetDR6(pCtx->dr[6]);
-    }
-
-    pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
-    return VINF_SUCCESS;
-}
-
-/**
- * Save the host debug state
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- */
-VMMR0DECL(int) CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu)
-{
-    NOREF(pVM);
-
-    /* Save the host state. */
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
     cpumR0SaveDRx(&pVCpu->cpum.s.Host.dr0);
@@ -637,42 +546,140 @@ VMMR0DECL(int) CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu)
     pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
     /** @todo dr7 might already have been changed to 0x400; don't care right now as it's harmless. */
     pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
-    /* Make sure DR7 is harmless or else we could trigger breakpoints when restoring dr0-3 (!) */
-    ASMSetDR7(X86_DR7_INIT_VAL);
+
+    /* Preemption paranoia. */
+    ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_HOST);
+
+    /*
+     * Make sure DR7 is harmless or else we could trigger breakpoints when
+     * load guest or hypervisor DRx values later.
+     */
+    if (pVCpu->cpum.s.Host.dr7 != X86_DR7_INIT_VAL)
+        ASMSetDR7(X86_DR7_INIT_VAL);
 
     return VINF_SUCCESS;
 }
 
+
 /**
- * Load the host debug state
+ * Saves the guest DRx state residing in host registers and restore the host
+ * register values.
  *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
+ * The guest DRx state is only saved if CPUMR0LoadGuestDebugState was called,
+ * since it's assumed that we're shadowing the guest DRx register values
+ * accurately when using the combined hypervisor debug register values
+ * (CPUMR0LoadHyperDebugState).
+ *
+ * @returns true if either guest or hypervisor debug registers were loaded.
+ * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   fDR6        Whether to include DR6 or not.
+ * @thread  EMT(pVCpu)
  */
-VMMR0DECL(int) CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu)
+VMMR0DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDR6)
 {
-    Assert(pVCpu->cpum.s.fUseFlags & (CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HYPER));
-    NOREF(pVM);
+    bool const fDrXLoaded = RT_BOOL(pVCpu->cpum.s.fUseFlags & (CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER));
+
+    /*
+     * Do we need to save the guest DRx registered loaded into host registers?
+     * (DR7 and DR6 (if fDR6 is true) are left to the caller.)
+     */
+    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
+    {
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
+        {
+            uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
+            HMR0SaveDebugState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
+            if (!fDR6)
+                pVCpu->cpum.s.Guest.dr[6] = uDr6;
+        }
+        else
+#endif
+        {
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+            cpumR0SaveDRx(&pVCpu->cpum.s.Guest.dr[0]);
+#else
+            pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
+            pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
+            pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
+            pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
+#endif
+            if (fDR6)
+                pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
+        }
+    }
+    ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~(  CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER
+                                                | CPUM_SYNC_DEBUG_REGS_GUEST | CPUM_SYNC_DEBUG_REGS_HYPER));
 
     /*
      * Restore the host's debug state. DR0-3, DR6 and only then DR7!
-     * DR7 contains 0x400 right now.
      */
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-    AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
-    cpumR0LoadDRx(&pVCpu->cpum.s.Host.dr0);
-#else
-    ASMSetDR0(pVCpu->cpum.s.Host.dr0);
-    ASMSetDR1(pVCpu->cpum.s.Host.dr1);
-    ASMSetDR2(pVCpu->cpum.s.Host.dr2);
-    ASMSetDR3(pVCpu->cpum.s.Host.dr3);
-#endif
-    ASMSetDR6(pVCpu->cpum.s.Host.dr6);
-    ASMSetDR7(pVCpu->cpum.s.Host.dr7);
+    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST)
+    {
+        /* A bit of paranoia first... */
+        uint64_t uCurDR7 = ASMGetDR7();
+        if (uCurDR7 != X86_DR7_INIT_VAL)
+            ASMSetDR7(X86_DR7_INIT_VAL);
 
-    pVCpu->cpum.s.fUseFlags &= ~(CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HYPER);
-    return VINF_SUCCESS;
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+        AssertCompile((uintptr_t)&pVCpu->cpum.s.Host.dr3 - (uintptr_t)&pVCpu->cpum.s.Host.dr0 == sizeof(uint64_t) * 3);
+        cpumR0LoadDRx(&pVCpu->cpum.s.Host.dr0);
+#else
+        ASMSetDR0(pVCpu->cpum.s.Host.dr0);
+        ASMSetDR1(pVCpu->cpum.s.Host.dr1);
+        ASMSetDR2(pVCpu->cpum.s.Host.dr2);
+        ASMSetDR3(pVCpu->cpum.s.Host.dr3);
+#endif
+        /** @todo consider only updating if they differ, esp. DR6. Need to figure how
+         *        expensive DRx reads are over DRx writes.  */
+        ASMSetDR6(pVCpu->cpum.s.Host.dr6);
+        ASMSetDR7(pVCpu->cpum.s.Host.dr7);
+
+        ASMAtomicAndU32(&pVCpu->cpum.s.fUseFlags, ~CPUM_USED_DEBUG_REGS_HOST);
+    }
+
+    return fDrXLoaded;
+}
+
+
+/**
+ * Lazily sync in the debug state.
+ *
+ * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   fDR6        Whether to include DR6 or not.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6)
+{
+    /*
+     * Save the host state and disarm all host BPs.
+     */
+    cpumR0SaveHostDebugState(pVCpu);
+    Assert(ASMGetDR7() == X86_DR7_INIT_VAL);
+
+    /*
+     * Activate the guest state DR0-3.
+     * DR7 and DR6 (if fDR6 is true) are left to the caller.
+     */
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
+        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_GUEST); /* Postpone it to the world switch. */
+    else
+#endif
+    {
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+        cpumR0LoadDRx(&pVCpu->cpum.s.Guest.dr[0]);
+#else
+        ASMSetDR0(pVCpu->cpum.s.Guest.dr[0]);
+        ASMSetDR1(pVCpu->cpum.s.Guest.dr[1]);
+        ASMSetDR2(pVCpu->cpum.s.Guest.dr[2]);
+        ASMSetDR3(pVCpu->cpum.s.Guest.dr[3]);
+#endif
+        if (fDR6)
+            ASMSetDR6(pVCpu->cpum.s.Guest.dr[6]);
+
+        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_GUEST);
+    }
 }
 
 
@@ -680,44 +687,46 @@ VMMR0DECL(int) CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu)
  * Lazily sync in the hypervisor debug state
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest CPU context.
+ * @param   pVCpu       The cross context CPU structure for the calling EMT.
  * @param   fDR6        Whether to include DR6 or not.
+ * @thread  EMT(pVCpu)
  */
-VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6)
+VMMR0DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6)
 {
-    NOREF(pCtx);
-
-    /* Save the host state. */
-    CPUMR0SaveHostDebugState(pVM, pVCpu);
+    /*
+     * Save the host state and disarm all host BPs.
+     */
+    cpumR0SaveHostDebugState(pVCpu);
     Assert(ASMGetDR7() == X86_DR7_INIT_VAL);
 
-    /* Activate the guest state DR0-3; DR7 is left to the caller. */
+    /*
+     * Make sure the hypervisor values are up to date.
+     */
+    CPUMRecalcHyperDRx(pVCpu, UINT8_MAX /* no loading, please */);
+
+    /*
+     * Activate the guest state DR0-3.
+     * DR7 and DR6 (if fDR6 is true) are left to the caller.
+     */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
-    {
-        AssertFailed();
-        return VERR_NOT_IMPLEMENTED;
-    }
+        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_HYPER); /* Postpone it. */
     else
 #endif
     {
 #ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
-        AssertFailed();
-        return VERR_NOT_IMPLEMENTED;
+        cpumR0LoadDRx(&pVCpu->cpum.s.Hyper.dr[0]);
 #else
-        ASMSetDR0(CPUMGetHyperDR0(pVCpu));
-        ASMSetDR1(CPUMGetHyperDR1(pVCpu));
-        ASMSetDR2(CPUMGetHyperDR2(pVCpu));
-        ASMSetDR3(CPUMGetHyperDR3(pVCpu));
+        ASMSetDR0(pVCpu->cpum.s.Hyper.dr[0]);
+        ASMSetDR1(pVCpu->cpum.s.Hyper.dr[1]);
+        ASMSetDR2(pVCpu->cpum.s.Hyper.dr[2]);
+        ASMSetDR3(pVCpu->cpum.s.Hyper.dr[3]);
 #endif
         if (fDR6)
-            ASMSetDR6(CPUMGetHyperDR6(pVCpu));
-    }
+            ASMSetDR6(X86_DR6_INIT_VAL);
 
-    pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
-    return VINF_SUCCESS;
+        ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_HYPER);
+    }
 }
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI

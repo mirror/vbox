@@ -444,7 +444,7 @@ GLOBALNAME ICEnterTarget
     ; Check if we need to restore the guest FPU state
     mov     esi, [rdx + CPUMCPU.fUseFlags] ; esi == use flags.
     test    esi, CPUM_SYNC_FPU_STATE
-    jz      near gth_fpu_no
+    jz      near htg_fpu_no
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 7
@@ -459,15 +459,18 @@ GLOBALNAME ICEnterTarget
 
     and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_FPU_STATE
 
-gth_fpu_no:
+htg_fpu_no:
     ; Check if we need to restore the guest debug state
-    test    esi, CPUM_SYNC_DEBUG_STATE
-    jz      near gth_debug_no
+    test    esi, CPUM_SYNC_DEBUG_REGS_GUEST | CPUM_SYNC_DEBUG_REGS_HYPER
+    jz      htg_debug_done
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 8
 %endif
+    test    esi, CPUM_SYNC_DEBUG_REGS_HYPER
+    jnz     htg_debug_hyper
 
+    ; Guest values in DRx, letting the guest access them directly.
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 0*8]
     mov     dr0, rax
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 1*8]
@@ -479,18 +482,40 @@ gth_fpu_no:
     mov     rax, qword [rdx + CPUMCPU.Guest.dr + 6*8]
     mov     dr6, rax    ; not required for AMD-V
 
-    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_STATE
+    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_REGS_GUEST
+    or      dword [rdx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_GUEST
+    jmp     htg_debug_done
 
-gth_debug_no:
+htg_debug_hyper:
+    ; Combined values in DRx, intercepting all accesses.
+    mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 0*8]
+    mov     dr0, rax
+    mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 1*8]
+    mov     dr1, rax
+    mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 2*8]
+    mov     dr2, rax
+    mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 3*8]
+    mov     dr3, rax
+    mov     rax, qword [rdx + CPUMCPU.Hyper.dr + 6*8]
+    mov     dr6, rax    ; not required for AMD-V
+
+    and     dword [rdx + CPUMCPU.fUseFlags], ~CPUM_SYNC_DEBUG_REGS_HYPER
+    or      dword [rdx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+
+htg_debug_done:
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov dword [rdx + CPUMCPU.Guest.dr + 4*8], 9
 %endif
 
+    ;
+    ; "Call" the specified helper function.
+    ;
+
     ; parameter for all helper functions (pCtx)
     DEBUG64_CHAR('9')
     lea     rsi, [rdx + CPUMCPU.Guest.fpu]
-    lea     rax, [gth_return wrt rip]
+    lea     rax, [htg_return wrt rip]
     push    rax                         ; return address
 
     cmp     r9d, HM64ON32OP_VMXRCStartVM64
@@ -504,7 +529,7 @@ gth_debug_no:
     cmp     r9d, HM64ON32OP_HMRCTestSwitcher64
     jz      NAME(HMRCTestSwitcher64)
     mov     eax, VERR_HM_INVALID_HM64ON32OP
-gth_return:
+htg_return:
     DEBUG64_CHAR('r')
 
     ; Load CPUM pointer into rdx
