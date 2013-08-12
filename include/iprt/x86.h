@@ -901,6 +901,11 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Mask used to check if any breakpoints are enabled. */
 #define X86_DR7_ENABLED_MASK                UINT32_C(0x000000ff)
 
+/** LEN0, LEN1, LEN2, and LEN3. */
+#define X86_DR7_LEN_ALL_MASKS               UINT32_C(0xcccc0000)
+/** R/W0, R/W1, R/W2, R/W3,LEN0, LEN1, LEN2, and LEN3. */
+#define X86_DR7_RW_LEN_ALL_MASKS            UINT32_C(0xffff0000)
+
 /** Value of DR7 after powerup/reset. */
 #define X86_DR7_INIT_VAL                    0x400
 /** @} */
