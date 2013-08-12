@@ -316,6 +316,18 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 #define VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_CLEAR                 105
 /** VMCS link pointer reserved bits not set to 0. */
 #define VMX_IGS_VMCS_LINK_PTR_RESERVED                          106
+/** TR cannot index into LDT, TI bit MBZ. */
+#define VMX_IGS_TR_TI_INVALID                                   107
+/** LDTR cannot index into LDT. TI bit MBZ. */
+#define VMX_IGS_LDTR_TI_INVALID                                 108
+/** TR.Base is not canonical. */
+#define VMX_IGS_TR_BASE_NOT_CANONICAL                           109
+/** FS.Base is not canonical. */
+#define VMX_IGS_FS_BASE_NOT_CANONICAL                           110
+/** GS.Base is not canonical. */
+#define VMX_IGS_GS_BASE_NOT_CANONICAL                           111
+/** LDTR.Base is not canonical. */
+#define VMX_IGS_LDTR_BASE_NOT_CANONICAL                         112
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
