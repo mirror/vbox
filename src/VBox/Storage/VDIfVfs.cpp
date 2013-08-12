@@ -85,10 +85,11 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
     /*
      * This may end up being a little more complicated, esp. wrt VERR_EOF.
      */
+    if (off == -1)
+        off = pThis->offCurPos;
     int rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = (off == -1 ? pThis->offCurPos : off)
-                         + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
+        pThis->offCurPos = off + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
     return rc;
 }
 
@@ -104,10 +105,11 @@ static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pS
     /*
      * This may end up being a little more complicated, esp. wrt VERR_EOF.
      */
+    if (off == -1)
+        off = pThis->offCurPos;
     int rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbWritten);
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = (off == -1 ? pThis->offCurPos : off)
-                         + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
+        pThis->offCurPos = off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
     return rc;
 }
 
