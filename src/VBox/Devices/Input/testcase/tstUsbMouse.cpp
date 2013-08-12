@@ -230,9 +230,9 @@ static void testSendPositionAbs(RTTEST hTest)
         {
             if (pUrb == &Urb)
             {
-                if (   *(uint16_t *)&Urb.abData[0] != 150  /* x >> 1 */
-                    || *(uint16_t *)&Urb.abData[2] != 100  /* y >> 1 */
-                    || Urb.abData[4] != 3                  /* Buttons */)
+                if (   *(uint16_t *)&Urb.abData[2] != 150  /* x >> 1 */
+                    || *(uint16_t *)&Urb.abData[4] != 100  /* y >> 1 */
+                    || Urb.abData[0] != 3                  /* Buttons */)
                     rc = VERR_GENERAL_FAILURE;
             }
             else
