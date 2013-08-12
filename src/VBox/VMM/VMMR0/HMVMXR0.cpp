@@ -8991,8 +8991,6 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
     AssertRCReturn(rc, rc);
 
-    Log4(("CS:RIP=%04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
-
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
     uint32_t uIOPort   = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
     uint8_t  uIOWidth  = VMX_EXIT_QUALIFICATION_IO_WIDTH(pVmxTransient->uExitQualification);
@@ -9017,6 +9015,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * Use instruction-information if available, otherwise fall back on
          * interpreting the instruction.
          */
+        Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
 #if 0 /* Not quite ready, seem iSegReg assertion trigger once... Do we perhaps need to always read that in longjmp / preempt scenario? */
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.msr.vmx_basic_info))
@@ -9090,6 +9089,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         /*
          * IN/OUT - I/O instruction.
          */
+        Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
         const uint32_t uAndVal = s_aIOOpAnd[uIOWidth];
         Assert(!VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification));
         if (fIOWrite)
@@ -9164,6 +9164,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                         uint8_t  cbInvAlign = s_abInvAlign[X86_DR7_GET_LEN(uDr7, iBp)];
                         uint64_t uDrXFirst  = pMixedCtx->dr[iBp] & ~(uint64_t)cbInvAlign;
                         uint64_t uDrXLast   = uDrXFirst + cbInvAlign;
+
                         if (uDrXFirst <= uIOPortLast && uDrXLast >= uIOPort)
                         {
                             Assert(CPUMIsGuestDebugStateActive(pVCpu));
@@ -9669,6 +9670,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
          * IA32_DEBUGCTL.LBR before forwarding it.
          * (See Intel spec. 27.1 "Architectural State before a VM-Exit".)
          */
+        pMixedCtx->dr[6] &= ~X86_DR6_B_MASK;
         pMixedCtx->dr[6] |= uDR6;
         if (CPUMIsGuestDebugStateActive(pVCpu))
             ASMSetDR6(pMixedCtx->dr[6]);
