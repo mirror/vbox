@@ -9662,7 +9662,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         /*
          * Raise #DB in the guest.
          */
-        int rc = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
