@@ -37,12 +37,13 @@
  *          VINF_SUCCESS means we completely handled this trap,
  *          other codes are passed execution to host context.
  *
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pRegFrame   Pointer to the register frame for the trap.
- * @param   uDr6        The DR6 hypervisor register value.
+ * @param   pVM             Pointer to the VM.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pRegFrame       Pointer to the register frame for the trap.
+ * @param   uDr6            The DR6 hypervisor register value.
+ * @param   fAltStepping    Alternative stepping indicator.
  */
-VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6)
+VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCUINTREG uDr6, bool fAltStepping)
 {
 #ifdef IN_RC
     const bool fInHyper = !(pRegFrame->ss.Sel & X86_SEL_RPL) && !pRegFrame->eflags.Bits.u1VM;
@@ -77,7 +78,7 @@ VMMRZ_INT_DECL(int) DBGFRZTrap01Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
      * Are we single stepping or is it the guest?
      */
     if (    (uDr6 & X86_DR6_BS)
-        &&  (fInHyper || pVCpu->dbgf.s.fSingleSteppingRaw))
+        &&  (fInHyper || pVCpu->dbgf.s.fSingleSteppingRaw || fAltStepping))
     {
         pVCpu->dbgf.s.fSingleSteppingRaw = false;
         LogFlow(("DBGFRZTrap01Handler: single step at %04x:%RGv\n", pRegFrame->cs.Sel, pRegFrame->rip));

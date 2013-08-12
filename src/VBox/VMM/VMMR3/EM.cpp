@@ -56,9 +56,6 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/patm.h>
-#ifdef IEM_VERIFICATION_MODE
-# include <VBox/vmm/iem.h>
-#endif
 #include "EMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/uvm.h>
@@ -818,7 +815,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                     AssertLogRelMsgFailedStmt(("Bad EM state."), VERR_EM_INTERNAL_ERROR);
 #endif
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
-                    rc = EMR3HmSingleInstruction(pVM, pVCpu);
+                    rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);
 #ifdef VBOX_WITH_REM
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM)
                     rc = emR3RemStep(pVM, pVCpu);
@@ -1260,10 +1257,6 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  */
 EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-#ifdef IEM_VERIFICATION_MODE
-    return EMSTATE_REM;
-#else
-
     /*
      * When forcing raw-mode execution, things are simple.
      */
@@ -1471,8 +1464,6 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /*Assert(PGMPhysIsA20Enabled(pVCpu));*/
     return EMSTATE_RAW;
-#endif /* !IEM_VERIFICATION_MODE */
-
 }
 
 
@@ -2359,40 +2350,26 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute raw.
                  */
                 case EMSTATE_RAW:
-#ifndef IEM_VERIFICATION_MODE /* remove later */
-# ifdef VBOX_WITH_RAW_MODE
+#ifdef VBOX_WITH_RAW_MODE
                     rc = emR3RawExecute(pVM, pVCpu, &fFFDone);
-# else
+#else
                     AssertLogRelMsgFailed(("%Rrc\n", rc));
                     rc = VERR_EM_INTERNAL_ERROR;
-# endif
-                    break;
 #endif
+                    break;
 
                 /*
                  * Execute hardware accelerated raw.
                  */
                 case EMSTATE_HM:
-#ifndef IEM_VERIFICATION_MODE /* remove later */
                     rc = emR3HmExecute(pVM, pVCpu, &fFFDone);
                     break;
-#endif
 
                 /*
                  * Execute recompiled.
                  */
                 case EMSTATE_REM:
-#ifdef IEM_VERIFICATION_MODE
-# if 1
-                    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); fFFDone = false;
-# else
-                    rc = VBOXSTRICTRC_TODO(REMR3EmulateInstruction(pVM, pVCpu)); fFFDone = false;
-                    if (rc == VINF_EM_RESCHEDULE)
-                        rc = VINF_SUCCESS;
-# endif
-#else
                     rc = emR3RemExecute(pVM, pVCpu, &fFFDone);
-#endif
                     Log2(("EMR3ExecuteVM: emR3RemExecute -> %Rrc\n", rc));
                     break;
 
@@ -2401,7 +2378,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  */
                 case EMSTATE_IEM:
 #if 0 /* For testing purposes. */
-                    rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu));
+                    rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE));
                     if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_HM || rc == VINF_EM_RESCHEDULE_REM || rc == VINF_EM_RESCHEDULE_RAW)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)

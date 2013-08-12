@@ -8925,10 +8925,28 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
      * Execute the instruction in REM.
      */
     PVM pVM = IEMCPU_TO_VM(pIemCpu);
-    EMRemLock(pVM);
-    int rc = REMR3EmulateInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu));
-    AssertRC(rc);
-    EMRemUnlock(pVM);
+    VBOXSTRICTRC rc = VERR_EM_CANNOT_EXEC_GUEST;
+#if 1
+    if (   HMIsEnabled(pVM)
+        && pIemCpu->cIOReads == 0
+        && pIemCpu->cIOWrites == 0)
+        do
+            rc = EMR3HmSingleInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu), EM_ONE_INS_FLAGS_RIP_CHANGE);
+        while (rc == VINF_SUCCESS);
+#endif
+    if (   rc == VERR_EM_CANNOT_EXEC_GUEST
+        || rc == VINF_IOM_R3_IOPORT_READ
+        || rc == VINF_IOM_R3_IOPORT_WRITE
+        || rc == VINF_IOM_R3_MMIO_READ
+        || rc == VINF_IOM_R3_MMIO_READ_WRITE
+        || rc == VINF_IOM_R3_MMIO_WRITE
+        )
+    {
+        EMRemLock(pVM);
+        rc = REMR3EmulateInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu));
+        AssertRC(rc);
+        EMRemUnlock(pVM);
+    }
 
     /*
      * Compare the register states.
@@ -9549,9 +9567,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
     /*
      * See if there is an interrupt pending in TRPM and inject it if we can.
      */
-#ifdef IEM_VERIFICATION_MODE_FULL
+#if !defined(IEM_VERIFICATION_MODE_FULL) || !defined(IN_RING3)
+# ifdef IEM_VERIFICATION_MODE_FULL
     pIemCpu->uInjectCpl = UINT8_MAX;
-#endif
+# endif
     if (   pCtx->eflags.Bits.u1IF
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pCtx->rip)
@@ -9565,6 +9584,9 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
         if (!IEM_VERIFICATION_ENABLED(pIemCpu))
             TRPMResetTrap(pVCpu);
     }
+#else
+    iemExecVerificationModeSetup(pIemCpu);
+#endif
 
     /*
      * Log the state.
@@ -9608,6 +9630,13 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPU pVCpu)
     VBOXSTRICTRC rcStrict = iemInitDecoderAndPrefetchOpcodes(pIemCpu, false);
     if (rcStrict == VINF_SUCCESS)
         rcStrict = iemExecOneInner(pVCpu, pIemCpu, true);
+
+#if defined(IEM_VERIFICATION_MODE_FULL) && defined(IN_RING3)
+    /*
+     * Assert some sanity.
+     */
+    iemExecVerificationModeCheck(pIemCpu);
+#endif
 
     /*
      * Maybe re-enter raw-mode and log.

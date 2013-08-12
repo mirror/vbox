@@ -233,6 +233,17 @@ VMMDECL(bool)                   EMRemIsLockOwner(PVM pVM);
 VMM_INT_DECL(int)               EMRemTryLock(PVM pVM);
 /** @} */
 
+
+/** @name EM_ONE_INS_FLAGS_XXX - flags for EMR3HmSingleInstruction (et al).
+ * @{ */
+/** Return when CS:RIP changes or some other important event happens.
+ * This means running whole REP and LOOP $ sequences for instance. */
+#define EM_ONE_INS_FLAGS_RIP_CHANGE     RT_BIT_32(0)
+/** Mask of valid flags. */
+#define EM_ONE_INS_FLAGS_MASK           UINT32_C(0x00000001)
+/** @} */
+
+
 #ifdef IN_RING3
 /** @defgroup grp_em_r3     The EM Host Context Ring-3 API
  * @ingroup grp_em
@@ -273,7 +284,7 @@ VMMR3_INT_DECL(int)             EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3CheckRawForcedActions(PVM pVM, PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             EMR3NotifyResume(PVM pVM);
 VMMR3_INT_DECL(int)             EMR3NotifySuspend(PVM pVM);
-VMMR3_INT_DECL(VBOXSTRICTRC)    EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu);
+VMMR3_INT_DECL(VBOXSTRICTRC)    EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint32_t fFlags);
 
 /** @} */
 #endif /* IN_RING3 */
