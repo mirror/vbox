@@ -310,6 +310,9 @@ typedef struct fd_format_t {
     const char *str;
 } fd_format_t;
 
+/* Note: Low-density disks (160K/180K/320K/360K) use 250 Kbps data rate
+ * in 40-track drives, but 300 Kbps in high-capacity 80-track drives.
+ */
 static fd_format_t fd_formats[] = {
     /* First entry is default format */
     /* 1.44 MB 3"1/2 floppy disks */
@@ -345,14 +348,14 @@ static fd_format_t fd_formats[] = {
     /* 720 kB 5"1/4 floppy disks */
     { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 80, 1, FDRIVE_RATE_250K,  "720 kB 5\"1/4", },
     { FDRIVE_DRV_120, FDRIVE_DISK_288, 11, 80, 1, FDRIVE_RATE_250K,  "880 kB 5\"1/4", },
-    /* 360 kB 5"1/4 floppy disks */
+    /* 360 kB 5"1/4 floppy disks (newer 9-sector formats) */
     { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 1, FDRIVE_RATE_300K,  "360 kB 5\"1/4", },
     { FDRIVE_DRV_120, FDRIVE_DISK_288,  9, 40, 0, FDRIVE_RATE_300K,  "180 kB 5\"1/4", },
     { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 41, 1, FDRIVE_RATE_300K,  "410 kB 5\"1/4", },
     { FDRIVE_DRV_120, FDRIVE_DISK_288, 10, 42, 1, FDRIVE_RATE_300K,  "420 kB 5\"1/4", },
-    /* 320 kB 5"1/4 floppy disks */
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 1, FDRIVE_RATE_250K,  "320 kB 5\"1/4", },
-    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0, FDRIVE_RATE_250K,  "160 kB 5\"1/4", },
+    /* 320 kB 5"1/4 floppy disks (old 8-sector formats) */
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 1, FDRIVE_RATE_300K,  "320 kB 5\"1/4", },
+    { FDRIVE_DRV_120, FDRIVE_DISK_288,  8, 40, 0, FDRIVE_RATE_300K,  "160 kB 5\"1/4", },
     /* 360 kB must match 5"1/4 better than 3"1/2... */
     { FDRIVE_DRV_144, FDRIVE_DISK_720,  9, 80, 0, FDRIVE_RATE_250K,  "360 kB 3\"1/2", },
 #ifdef VBOX /* For larger than real life floppy images (see DrvBlock.cpp). */
@@ -1864,13 +1867,18 @@ static void fdctrl_handle_sense_drive_status(fdctrl_t *fdctrl, int direction)
 static void fdctrl_handle_recalibrate(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
+    uint8_t  st0;
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
     fd_recalibrate(cur_drv);
     fdctrl_reset_fifo(fdctrl);
+    st0 = FD_SR0_SEEK | GET_CUR_DRV(fdctrl);
+    /* No drive means no TRK0 signal. */
+    if (cur_drv->drive == FDRIVE_DRV_NONE)
+        st0 |= FD_SR0_ABNTERM | FD_SR0_EQPMT;
     /* Raise Interrupt */
-    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
+    fdctrl_raise_irq(fdctrl, st0);
 }
 
 static void fdctrl_handle_sense_interrupt_status(fdctrl_t *fdctrl, int direction)
@@ -1887,6 +1895,9 @@ static void fdctrl_handle_sense_interrupt_status(fdctrl_t *fdctrl, int direction
            ASAP */
         fdctrl->fifo[0] =
             FD_SR0_SEEK | (cur_drv->head << 2) | GET_CUR_DRV(fdctrl);
+        /* Hack to preserve SR0 on equipment check failures (no drive). */
+        if (fdctrl->status0 & FD_SR0_EQPMT)
+            fdctrl->fifo[0] = fdctrl->status0;
     }
 
     fdctrl->fifo[1] = cur_drv->track;
@@ -1907,7 +1918,7 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
      */
     cur_drv->track = fdctrl->fifo[2];
     /* Raise Interrupt */
-    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK);
+    fdctrl_raise_irq(fdctrl, FD_SR0_SEEK | GET_CUR_DRV(fdctrl));
 #else
     if (fdctrl->fifo[2] > cur_drv->max_track) {
         fdctrl_raise_irq(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK);
