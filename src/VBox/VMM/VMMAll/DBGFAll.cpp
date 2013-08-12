@@ -235,9 +235,9 @@ VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, 
                      * that the B0..B3 bits are always cleared while the others
                      * must be cleared by software.
                      *
-                     * The following section says the GD bit is always cleared
-                     * when generating a #DB so the handler can safely access
-                     * the debug registers.
+                     * The following sub chapters says the GD bit is always
+                     * cleared when generating a #DB so the handler can safely
+                     * access the debug registers.
                      */
                     pCtx->dr[6] &= ~X86_DR6_B_MASK;
                     pCtx->dr[6] |= X86_DR6_B(iBp);
