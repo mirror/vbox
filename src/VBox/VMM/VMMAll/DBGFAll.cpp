@@ -114,6 +114,22 @@ VMM_INT_DECL(RTGCUINTREG) DBGFBpGetDR3(PVM pVM)
 
 
 /**
+ * Checks if any of the hardware breakpoints are armed.
+ *
+ * @returns true if armed, false if not.
+ * @param   pVM         The cross context VM structure.
+ */
+VMM_INT_DECL(bool) DBGFBpIsHwArmed(PVM pVM)
+{
+    Assert(RT_ELEMENTS(pVM->dbgf.s.aHwBreakpoints) == 4);
+    return (pVM->dbgf.s.aHwBreakpoints[0].fEnabled && pVM->dbgf.s.aHwBreakpoints[0].enmType == DBGFBPTYPE_REG)
+        || (pVM->dbgf.s.aHwBreakpoints[1].fEnabled && pVM->dbgf.s.aHwBreakpoints[1].enmType == DBGFBPTYPE_REG)
+        || (pVM->dbgf.s.aHwBreakpoints[2].fEnabled && pVM->dbgf.s.aHwBreakpoints[2].enmType == DBGFBPTYPE_REG)
+        || (pVM->dbgf.s.aHwBreakpoints[3].fEnabled && pVM->dbgf.s.aHwBreakpoints[3].enmType == DBGFBPTYPE_REG);
+}
+
+
+/**
  * Returns the single stepping state for a virtual CPU.
  *
  * @returns stepping (true) or not (false).

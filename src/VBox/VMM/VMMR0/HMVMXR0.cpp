@@ -5790,9 +5790,10 @@ static int hmR0VmxCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    if (   VM_FF_IS_PENDING(pVM, VM_FF_HM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING | VM_FF_PDM_DMA)
-        || VMCPU_FF_IS_PENDING(pVCpu,  VMCPU_FF_HM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
-                                     | VMCPU_FF_REQUEST | VMCPU_FF_HM_UPDATE_CR3 | VMCPU_FF_HM_UPDATE_PAE_PDPES))
+    if (   VM_FF_IS_PENDING(pVM, !pVCpu->hm.s.fSingleInstruction
+                            ? VM_FF_HP_R0_PRE_HM_MASK : VM_FF_HP_R0_PRE_HM_STEP_MASK)
+        || VMCPU_FF_IS_PENDING(pVCpu, !pVCpu->hm.s.fSingleInstruction
+                               ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
     {
         /* We need the control registers now, make sure the guest-CPU context is updated. */
         int rc3 = hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);
@@ -9627,12 +9628,17 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
+    /* If we sat the trap flag above, we have to clear it. */ /** @todo HM should remember what it does and possibly do this elsewhere! */
+    if (   (pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu))
+        && !(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG))
+        pMixedCtx->eflags.Bits.u1TF = 0;
+
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
     uint64_t uDR6 = X86_DR6_INIT_VAL;
     uDR6         |= (  pVmxTransient->uExitQualification
                      & (X86_DR6_B0 | X86_DR6_B1 | X86_DR6_B2 | X86_DR6_B3 | X86_DR6_BD | X86_DR6_BS));
 
-    rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pMixedCtx), uDR6);
+    rc = DBGFRZTrap01Handler(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pMixedCtx), uDR6, pVCpu->hm.s.fSingleInstruction);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
         /*
