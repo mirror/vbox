@@ -15735,34 +15735,58 @@ FNIEMOP_DEF(iemOp_loop_Jb)
     {
         case IEMMODE_16BIT:
             IEM_MC_BEGIN(0,0);
-            IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
-            IEM_MC_IF_CX_IS_NZ() {
-                IEM_MC_REL_JMP_S8(i8Imm);
-            } IEM_MC_ELSE() {
+            if (-(int8_t)pIemCpu->offOpcode != i8Imm)
+            {
+                IEM_MC_SUB_GREG_U16(X86_GREG_xCX, 1);
+                IEM_MC_IF_CX_IS_NZ() {
+                    IEM_MC_REL_JMP_S8(i8Imm);
+                } IEM_MC_ELSE() {
+                    IEM_MC_ADVANCE_RIP();
+                } IEM_MC_ENDIF();
+            }
+            else
+            {
+                IEM_MC_STORE_GREG_U16_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP();
-            } IEM_MC_ENDIF();
+            }
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_32BIT:
             IEM_MC_BEGIN(0,0);
-            IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
-            IEM_MC_IF_ECX_IS_NZ() {
-                IEM_MC_REL_JMP_S8(i8Imm);
-            } IEM_MC_ELSE() {
+            if (-(int8_t)pIemCpu->offOpcode != i8Imm)
+            {
+                IEM_MC_SUB_GREG_U32(X86_GREG_xCX, 1);
+                IEM_MC_IF_ECX_IS_NZ() {
+                    IEM_MC_REL_JMP_S8(i8Imm);
+                } IEM_MC_ELSE() {
+                    IEM_MC_ADVANCE_RIP();
+                } IEM_MC_ENDIF();
+            }
+            else
+            {
+                IEM_MC_STORE_GREG_U32_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP();
-            } IEM_MC_ENDIF();
+            }
             IEM_MC_END();
             return VINF_SUCCESS;
 
         case IEMMODE_64BIT:
             IEM_MC_BEGIN(0,0);
-            IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
-            IEM_MC_IF_RCX_IS_NZ() {
-                IEM_MC_REL_JMP_S8(i8Imm);
-            } IEM_MC_ELSE() {
+            if (-(int8_t)pIemCpu->offOpcode != i8Imm)
+            {
+                IEM_MC_SUB_GREG_U64(X86_GREG_xCX, 1);
+                IEM_MC_IF_RCX_IS_NZ() {
+                    IEM_MC_REL_JMP_S8(i8Imm);
+                } IEM_MC_ELSE() {
+                    IEM_MC_ADVANCE_RIP();
+                } IEM_MC_ENDIF();
+            }
+            else
+            {
+                IEM_MC_STORE_GREG_U64_CONST(X86_GREG_xCX, 0);
                 IEM_MC_ADVANCE_RIP();
-            } IEM_MC_ENDIF();
+            }
             IEM_MC_END();
             return VINF_SUCCESS;
 
