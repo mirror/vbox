@@ -9154,18 +9154,16 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * and take appropriate action.
          * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
          */
-        /** @todo We're not honoring I/O BPs if informational status code is returned.
-         *        We're also ignoring our own debugger's attempt at using I/O
-         *        breakpoints.  The whole host & guest debugger stuff needs to be
-         *        looked over at some point.  For now, it's just best effort. */
         int rc2 = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
         AssertRCReturn(rc2, rc2);
 
+        /** @todo Optimize away the DBGFBpIsHwIoArmed call by having DBGF tell the
+         *  execution engines about whether hyper BPs and such are pending. */
         uint32_t const uDr7 = pMixedCtx->dr[7];
-        if (   (   (uDr7 & X86_DR7_ENABLED_MASK)
-                && X86_DR7_ANY_RW_IO(uDr7)
-                && (pMixedCtx->cr4 & X86_CR4_DE))
-            || DBGFBpIsHwIoArmed(pVM))
+        if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
+                            && X86_DR7_ANY_RW_IO(uDr7)
+                            && (pMixedCtx->cr4 & X86_CR4_DE))
+                        || DBGFBpIsHwIoArmed(pVM)))
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
             bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /*fDr6*/);
