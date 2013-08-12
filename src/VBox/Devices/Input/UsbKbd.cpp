@@ -860,6 +860,34 @@ static testUsbHidFillReport gsTestUsbHidFillReport;
 #endif
 
 /**
+ * Handles a SET_REPORT request sent to the default control pipe. Note
+ * that unrecognized requests are ignored without reporting an error.
+ */
+static void usbHidSetReport(PUSBHID pThis, PVUSBURB pUrb)
+{
+    PVUSBSETUP pSetup = (PVUSBSETUP)&pUrb->abData[0];
+    Assert(pSetup->bRequest == HID_REQ_SET_REPORT);
+
+    /* The LED report is the 3rd report, ID 0 (-> wValue 0x200). */
+    if (pSetup->wIndex == 0 && pSetup->wLength == 1 && pSetup->wValue == 0x200)
+    {
+        PDMKEYBLEDS enmLeds = PDMKEYBLEDS_NONE;
+        uint8_t     u8LEDs = pUrb->abData[sizeof(*pSetup)];
+        LogFlowFunc(("Setting keybooard LEDs to u8LEDs=%02X\n", u8LEDs));
+
+        /* Translate LED state to PDM format and send upstream. */
+        if (u8LEDs & 0x01)
+            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_NUMLOCK);
+        if (u8LEDs & 0x02)
+            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_CAPSLOCK);
+        if (u8LEDs & 0x04)
+            enmLeds = (PDMKEYBLEDS)(enmLeds | PDMKEYBLEDS_SCROLLLOCK);
+
+        pThis->Lun0.pDrv->pfnLedStatusChange(pThis->Lun0.pDrv, enmLeds);
+    }
+}
+
+/**
  * Sends a state report to the host if there is a pending URB.
  */
 static int usbHidSendReport(PUSBHID pThis)
@@ -1254,6 +1282,20 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         Log(("usbHid: GET_IDLE wValue=%#x wIndex=%#x, returning %#x\n", pSetup->wValue, pSetup->wIndex, pThis->bIdle));
                         pUrb->abData[sizeof(*pSetup)] = pThis->bIdle;
                         return usbHidCompleteOk(pThis, pUrb, 1);
+                    }
+                    break;
+                }
+                break;
+            }
+            case HID_REQ_SET_REPORT:
+            {
+                switch (pSetup->bmRequestType)
+                {
+                    case VUSB_TO_INTERFACE | VUSB_REQ_CLASS | VUSB_DIR_TO_DEVICE:
+                    {
+                        Log(("usbHid: SET_REPORT wValue=%#x wIndex=%#x wLength=%#x\n", pSetup->wValue, pSetup->wIndex, pSetup->wLength));
+                        usbHidSetReport(pThis, pUrb);
+                        return usbHidCompleteOk(pThis, pUrb, 0);
                     }
                     break;
                 }
