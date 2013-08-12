@@ -2440,7 +2440,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
             pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_DEBUG_REGS_HYPER;
         }
 
-#else defined(IN_RING0)
+#elif defined(IN_RING0)
         Assert(!CPUMIsHyperDebugStateActive(pVCpu)); /* (can only change while in ring-3) */
 #endif
         pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HYPER;
