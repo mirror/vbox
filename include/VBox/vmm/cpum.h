@@ -502,17 +502,19 @@ VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
  * @ingroup grp_cpum
  * @{
  */
-VMMR0DECL(int)          CPUMR0ModuleInit(void);
-VMMR0DECL(int)          CPUMR0ModuleTerm(void);
-VMMR0DECL(int)          CPUMR0Init(PVM pVM);
-VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)          CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(bool)         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDR6);
-VMMR0DECL(void)         CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6);
-VMMR0DECL(void)         CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6);
+VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
+VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
+VMMR0_INT_DECL(int)     CPUMR0Init(PVM pVM);
+VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(int)     CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0_INT_DECL(int)     CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
+VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDr6);
+VMMR0_INT_DECL(bool)    CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6);
+
+VMMR0_INT_DECL(void)    CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6);
+VMMR0_INT_DECL(void)    CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6);
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-VMMR0DECL(void)         CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu);
+VMMR0_INT_DECL(void)    CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu);
 #endif
 
 /** @} */

@@ -86,7 +86,7 @@ static int  cpumR0SaveHostDebugState(PVMCPU pVCpu);
  * Does the Ring-0 CPU initialization once during module load.
  * XXX Host-CPU hot-plugging?
  */
-VMMR0DECL(int) CPUMR0ModuleInit(void)
+VMMR0_INT_DECL(int) CPUMR0ModuleInit(void)
 {
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
@@ -99,7 +99,7 @@ VMMR0DECL(int) CPUMR0ModuleInit(void)
 /**
  * Terminate the module.
  */
-VMMR0DECL(int) CPUMR0ModuleTerm(void)
+VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
 {
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     cpumR0UnmapLocalApics();
@@ -165,7 +165,7 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0DECL(int) CPUMR0Init(PVM pVM)
+VMMR0_INT_DECL(int) CPUMR0Init(PVM pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
 
@@ -282,7 +282,7 @@ VMMR0DECL(int) CPUMR0Init(PVM pVM)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
@@ -445,7 +445,7 @@ VMMR0DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest CPU context.
  */
-VMMR0DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+VMMR0_INT_DECL(int) CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(pVM->cpum.s.CPUFeatures.edx.u1FXSR);
     Assert(ASMGetCR4() & X86_CR4_OSFSXR);
@@ -572,16 +572,16 @@ static int cpumR0SaveHostDebugState(PVMCPU pVCpu)
  *
  * @returns true if either guest or hypervisor debug registers were loaded.
  * @param   pVCpu       The cross context CPU structure for the calling EMT.
- * @param   fDR6        Whether to include DR6 or not.
+ * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDR6)
+VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDr6)
 {
     bool const fDrXLoaded = RT_BOOL(pVCpu->cpum.s.fUseFlags & (CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER));
 
     /*
      * Do we need to save the guest DRx registered loaded into host registers?
-     * (DR7 and DR6 (if fDR6 is true) are left to the caller.)
+     * (DR7 and DR6 (if fDr6 is true) are left to the caller.)
      */
     if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
     {
@@ -590,7 +590,7 @@ VMMR0DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool 
         {
             uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
             HMR0SaveDebugState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
-            if (!fDR6)
+            if (!fDr6)
                 pVCpu->cpum.s.Guest.dr[6] = uDr6;
         }
         else
@@ -604,7 +604,7 @@ VMMR0DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool 
             pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
             pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
 #endif
-            if (fDR6)
+            if (fDr6)
                 pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
         }
     }
@@ -643,13 +643,61 @@ VMMR0DECL(bool) CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool 
 
 
 /**
+ * Saves the guest DRx state if it resides host registers.
+ *
+ * This does NOT clear any use flags, so the host registers remains loaded with
+ * the guest DRx state upon return.  The purpose is only to make sure the values
+ * in the CPU context structure is up to date.
+ *
+ * @returns true if the host registers contains guest values, false if not.
+ * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   fDr6        Whether to include DR6 or not.
+ * @thread  EMT(pVCpu)
+ */
+VMMR0_INT_DECL(bool) CPUMR0DebugStateMaybeSaveGuest(PVMCPU pVCpu, bool fDr6)
+{
+    /*
+     * Do we need to save the guest DRx registered loaded into host registers?
+     * (DR7 and DR6 (if fDr6 is true) are left to the caller.)
+     */
+    if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST)
+    {
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
+        {
+            uint64_t uDr6 = pVCpu->cpum.s.Guest.dr[6];
+            HMR0SaveDebugState(pVCpu->CTX_SUFF(pVM), pVCpu, &pVCpu->cpum.s.Guest);
+            if (!fDr6)
+                pVCpu->cpum.s.Guest.dr[6] = uDr6;
+        }
+        else
+#endif
+        {
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+            cpumR0SaveDRx(&pVCpu->cpum.s.Guest.dr[0]);
+#else
+            pVCpu->cpum.s.Guest.dr[0] = ASMGetDR0();
+            pVCpu->cpum.s.Guest.dr[1] = ASMGetDR1();
+            pVCpu->cpum.s.Guest.dr[2] = ASMGetDR2();
+            pVCpu->cpum.s.Guest.dr[3] = ASMGetDR3();
+#endif
+            if (fDr6)
+                pVCpu->cpum.s.Guest.dr[6] = ASMGetDR6();
+        }
+        return true;
+    }
+    return false;
+}
+
+
+/**
  * Lazily sync in the debug state.
  *
  * @param   pVCpu       The cross context CPU structure for the calling EMT.
- * @param   fDR6        Whether to include DR6 or not.
+ * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6)
+VMMR0_INT_DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDr6)
 {
     /*
      * Save the host state and disarm all host BPs.
@@ -659,7 +707,7 @@ VMMR0DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6)
 
     /*
      * Activate the guest state DR0-3.
-     * DR7 and DR6 (if fDR6 is true) are left to the caller.
+     * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
@@ -675,7 +723,7 @@ VMMR0DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6)
         ASMSetDR2(pVCpu->cpum.s.Guest.dr[2]);
         ASMSetDR3(pVCpu->cpum.s.Guest.dr[3]);
 #endif
-        if (fDR6)
+        if (fDr6)
             ASMSetDR6(pVCpu->cpum.s.Guest.dr[6]);
 
         ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_GUEST);
@@ -688,10 +736,10 @@ VMMR0DECL(void) CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6)
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context CPU structure for the calling EMT.
- * @param   fDR6        Whether to include DR6 or not.
+ * @param   fDr6        Whether to include DR6 or not.
  * @thread  EMT(pVCpu)
  */
-VMMR0DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6)
+VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6)
 {
     /*
      * Save the host state and disarm all host BPs.
@@ -706,7 +754,7 @@ VMMR0DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6)
 
     /*
      * Activate the guest state DR0-3.
-     * DR7 and DR6 (if fDR6 is true) are left to the caller.
+     * DR7 and DR6 (if fDr6 is true) are left to the caller.
      */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
@@ -722,7 +770,7 @@ VMMR0DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6)
         ASMSetDR2(pVCpu->cpum.s.Hyper.dr[2]);
         ASMSetDR3(pVCpu->cpum.s.Hyper.dr[3]);
 #endif
-        if (fDR6)
+        if (fDr6)
             ASMSetDR6(X86_DR6_INIT_VAL);
 
         ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_USED_DEBUG_REGS_HYPER);
@@ -883,7 +931,7 @@ static void cpumR0UnmapLocalApics(void)
  * @param   pVM         Pointer to the VM.
  * @param   idHostCpu   The ID of the current host CPU.
  */
-VMMR0DECL(void) CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu)
+VMMR0_INT_DECL(void) CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu)
 {
     pVM->cpum.s.pvApicBase = g_aLApics[RTMpCpuIdToSetIndex(idHostCpu)].pv;
 }
