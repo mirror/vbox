@@ -3379,10 +3379,14 @@ static int hmR0VmxLoadGuestDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(CPUMIsGuestDebugStateActive(pVCpu));
         }
         /*
-         * If no debugging enabled, we'll lazy load DR0-3.
+         * If no debugging enabled, we'll lazy load DR0-3.  Unlike on AMD-V, we
+         * must intercept #DB in order to maintain a correct DR6 guest value.
          */
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
+        {
             fInterceptMovDRx = true;
+            fInterceptDB = true;
+        }
 
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
         AssertRCReturn(rc, rc);
@@ -6036,16 +6040,12 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     }
 
     /* Restore host debug registers if necessary and resync on next R0 reentry. */
-    if (CPUMIsGuestDebugStateActive(pVCpu))
-    {
-        CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-    }
-    else if (CPUMIsHyperDebugStateActive(pVCpu))
-    {
-        CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */);
+#ifdef VBOX_STRICT
+    if (CPUMIsHyperDebugStateActive(pVCpu))
         Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
-    }
+#endif
+    if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */))
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 
@@ -9372,10 +9372,19 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         && !pVCpu->hm.s.fSingleInstruction
         && !CPUMIsHyperDebugStateActive(pVCpu))
     {
-        /* Don't intercept MOV DRx. */
+        /* Don't intercept MOV DRx and #DB any more. */
         pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT;
         rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
         AssertRCReturn(rc, rc);
+
+        if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+        {
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+            pVCpu->hm.s.vmx.u32XcptBitmap &= ~RT_BIT(X86_XCPT_DB);
+            rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXCEPTION_BITMAP, pVCpu->hm.s.vmx.u32XcptBitmap);
+            AssertRCReturn(rc, rc);
+#endif
+        }
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         PVM pVM = pVCpu->CTX_SUFF(pVM);
@@ -9620,6 +9629,7 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
+    Log6(("XcptDB\n"));
 
     /*
      * Get the DR6-like values from the exit qualification and pass it to DBGF
