@@ -709,7 +709,7 @@ VMMR0DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6)
      * DR7 and DR6 (if fDR6 is true) are left to the caller.
      */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-    if (CPUMIsGuestInLongModeEx(pCtx))
+    if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.s.Guest))
         ASMAtomicOrU32(&pVCpu->cpum.s.fUseFlags, CPUM_SYNC_DEBUG_REGS_HYPER); /* Postpone it. */
     else
 #endif
