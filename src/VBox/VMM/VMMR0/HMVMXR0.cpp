@@ -6048,7 +6048,6 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 
-
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
@@ -7881,7 +7880,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                 | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID);
         HMVMX_CHECK_BREAK(   (u32EFlags & X86_EFL_IF)
-                          || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
+                          || !(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID);
         if (VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo))
         {
@@ -9113,8 +9112,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
             /*
-             * If any I/O breakpoints are armed, then we should check if a
-             * debug trap needs to be generated.
+             * If any I/O breakpoints are armed, then we should check if a debug trap needs to be generated.
              * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
              */
             /** @todo We're not honoring I/O BPs if informational status code is returned.
@@ -9138,7 +9136,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                  *        implemented it that way too, but it would be worth having a
                  *        bootsector testcase for asserting the correct behavior (as well as
                  *        correctness of this code). */
-                /** @todo r=bird: DR0-3 are normally in host registes when the guest is using
+                /** @todo r=bird: DR0-3 are normally in host registers when the guest is using
                  *        them, so we're testing against potentially stale values here! */
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
                 uint32_t uIOPortLast = uIOPort + cbValue - 1;
