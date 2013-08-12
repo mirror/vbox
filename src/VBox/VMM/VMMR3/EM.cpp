@@ -871,8 +871,11 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                 break;
 
             default: /** @todo don't use default for guru, but make special errors code! */
+            {
+                LogRel(("emR3Debug: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
                 rc = DBGFR3Event(pVM, DBGFEVENT_FATAL_ERROR);
                 break;
+            }
         }
 
         /*
@@ -2463,7 +2466,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     TMR3NotifySuspend(pVM, pVCpu);
                     rc = VBOXSTRICTRC_TODO(emR3Debug(pVM, pVCpu, rc));
                     TMR3NotifyResume(pVM, pVCpu);
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: emR3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     break;
 
                 /*
@@ -2475,7 +2478,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatTotal, x);
 
                     rc = VBOXSTRICTRC_TODO(emR3Debug(pVM, pVCpu, rc));
-                    Log2(("EMR3ExecuteVM: enmr3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
+                    Log2(("EMR3ExecuteVM: emR3Debug -> %Rrc (state %d)\n", rc, pVCpu->em.s.enmState));
                     if (rc != VINF_SUCCESS)
                     {
                         if (rc == VINF_EM_OFF || rc == VINF_EM_TERMINATE)

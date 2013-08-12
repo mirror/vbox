@@ -4,7 +4,7 @@
 ;
 
 ;
-; Copyright (C) 2006-2012 Oracle Corporation
+; Copyright (C) 2006-2013 Oracle Corporation
 ;
 ; This file is part of VirtualBox Open Source Edition (OSE), as
 ; available from http://www.virtualbox.org. This file is free software;
@@ -354,9 +354,8 @@ htg_no_sysenter:
     mov     [rdx + r8 + CPUMCPU.fUseFlags], esi
 
     ; debug registers.
-    test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
-    jz      htg_debug_regs_no
-    jmp     htg_debug_regs_save
+    test    esi, CPUM_USE_DEBUG_REGS_HYPER | CPUM_USE_DEBUG_REGS_HOST
+    jnz     htg_debug_regs_save
 htg_debug_regs_no:
     DEBUG_CHAR('a')                     ; trashes esi
 
@@ -438,13 +437,16 @@ htg_debug_regs_save:
 DEBUG_S_CHAR('s');
     mov     rax, dr7                    ; not sure, but if I read the docs right this will trap if GD is set. FIXME!!!
     mov     [rdx + r8 + CPUMCPU.Host.dr7], rax
-    xor     eax, eax                    ; clear everything. (bit 12? is read as 1...)
-    mov     dr7, rax
+    mov     ecx, X86_DR7_INIT_VAL
+    cmp     eax, ecx
+    je      .htg_debug_regs_dr7_disabled
+    mov     dr7, rcx
+.htg_debug_regs_dr7_disabled:
     mov     rax, dr6                    ; just in case we save the state register too.
     mov     [rdx + r8 + CPUMCPU.Host.dr6], rax
     ; save host DR0-3?
-    test    esi, CPUM_USE_DEBUG_REGS
-    jz near htg_debug_regs_no
+    test    esi, CPUM_USE_DEBUG_REGS_HYPER
+    jz      htg_debug_regs_no
 DEBUG_S_CHAR('S');
     mov     rax, dr0
     mov     [rdx + r8 + CPUMCPU.Host.dr0], rax
@@ -454,6 +456,7 @@ DEBUG_S_CHAR('S');
     mov     [rdx + r8 + CPUMCPU.Host.dr2], rcx
     mov     rax, dr3
     mov     [rdx + r8 + CPUMCPU.Host.dr3], rax
+    or      dword [rdx + r8 + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HOST
     jmp     htg_debug_regs_no
 
 
@@ -512,12 +515,6 @@ just_a_jump:
 ALIGNCODE(16)
 GLOBALNAME JmpGCTarget
     DEBUG_CHAR('-')
-;mov eax, 0ffff0000h
-;.delay_loop:
-;nop
-;dec eax
-;nop
-;jnz .delay_loop
     ; load final cr3 and do far jump to load cs.
     mov     cr3, ebp                ; ebp set above
     DEBUG_CHAR('0')
@@ -564,7 +561,7 @@ GLOBALNAME JmpGCTarget
     mov     esi, [edx + CPUMCPU.fUseFlags]
 
     ; debug registers
-    test    esi, CPUM_USE_DEBUG_REGS
+    test    esi, CPUM_USE_DEBUG_REGS_HYPER
     jnz     htg_debug_regs_guest
 htg_debug_regs_guest_done:
     DEBUG_S_CHAR('9')
@@ -621,11 +618,11 @@ htg_debug_regs_guest:
     mov     dr2, eax
     mov     ebx, [edx + CPUMCPU.Hyper.dr + 8*3]
     mov     dr3, ebx
-    ;mov     eax, [edx + CPUMCPU.Hyper.dr + 8*6]
-    mov     ecx, 0ffff0ff0h
+    mov     ecx, X86_DR6_INIT_VAL
     mov     dr6, ecx
     mov     eax, [edx + CPUMCPU.Hyper.dr + 8*7]
     mov     dr7, eax
+    or      dword [edx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
     jmp     htg_debug_regs_guest_done
 
 ENDPROC vmmR0ToRawModeAsm
@@ -792,6 +789,12 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ; No need to save CRx here. They are set dynamically according to Guest/Host requirements.
     ; FPU context is saved before restore of host saving (another) branch.
 
+    ; Disable debug registers if active so they cannot trigger while switching.
+    test    dword [edi + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+    jz      .gth_disabled_dr7
+    mov     eax, X86_DR7_INIT_VAL
+    mov     dr7, eax
+.gth_disabled_dr7:
 
     ;;
     ;; Load Intermediate memory context.
@@ -990,13 +993,6 @@ gth_restored_cr4:
     ;mov     rcx, [rdx + r8 + CPUMCPU.Host.cr2] ; assumes this is waste of time.
     ;mov     cr2, rcx
 
-    ; restore debug registers (if modified) (esi must still be fUseFlags!)
-    ; (must be done after cr4 reload because of the debug extension.)
-    test    esi, CPUM_USE_DEBUG_REGS | CPUM_USE_DEBUG_REGS_HOST
-    jz short gth_debug_regs_no
-    jmp     gth_debug_regs_restore
-gth_debug_regs_no:
-
     ; Restore MSRs
     mov     rbx, rdx
     mov     ecx, MSR_K8_FS_BASE
@@ -1013,7 +1009,13 @@ gth_debug_regs_no:
     wrmsr
     mov     rdx, rbx
 
-    ; restore general registers.
+    ; Restore debug registers (if modified). (ESI must still be fUseFlags! Must be done late, at least after CR4!)
+    test    esi, CPUM_USE_DEBUG_REGS_HOST | CPUM_USED_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER
+    jnz     gth_debug_regs_restore
+gth_debug_regs_done:
+    and     dword [edx + CPUMCPU.fUseFlags], ~(CPUM_USED_DEBUG_REGS_HOST | CPUM_USED_DEBUG_REGS_HYPER)
+
+    ; Restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
     ; mov     rax, [rdx + r8 + CPUMCPU.Host.rax] - scratch + return code
     mov     rbx, [rdx + r8 + CPUMCPU.Host.rbx]
@@ -1048,10 +1050,15 @@ gth_debug_regs_no:
 ; edx and edi must be preserved.
 gth_debug_regs_restore:
     DEBUG_S_CHAR('d')
-    xor     eax, eax
-    mov     dr7, rax                    ; paranoia or not?
-    test    esi, CPUM_USE_DEBUG_REGS
-    jz short gth_debug_regs_dr7
+    mov     rax, dr7                    ; Some DR7 paranoia first...
+    mov     ecx, X86_DR7_INIT_VAL
+    cmp     rax, rcx
+    je      .gth_debug_skip_dr7_disabling
+    mov     dr7, rcx
+.gth_debug_skip_dr7_disabling:
+    test    esi, CPUM_USED_DEBUG_REGS_HOST
+    jz      .gth_debug_regs_dr7
+
     DEBUG_S_CHAR('r')
     mov     rax, [rdx + r8 + CPUMCPU.Host.dr0]
     mov     dr0, rax
@@ -1061,12 +1068,14 @@ gth_debug_regs_restore:
     mov     dr2, rcx
     mov     rax, [rdx + r8 + CPUMCPU.Host.dr3]
     mov     dr3, rax
-gth_debug_regs_dr7:
+.gth_debug_regs_dr7:
     mov     rbx, [rdx + r8 + CPUMCPU.Host.dr6]
     mov     dr6, rbx
     mov     rcx, [rdx + r8 + CPUMCPU.Host.dr7]
     mov     dr7, rcx
-    jmp     gth_debug_regs_no
+
+    ; We clear the USED flags in the main code path.
+    jmp     gth_debug_regs_done
 
 ENDPROC vmmRCToHostAsm
 

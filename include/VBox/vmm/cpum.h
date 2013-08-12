@@ -369,7 +369,7 @@ VMMDECL(void)           CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3);
 VMMDECL(void)           CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6);
 VMMDECL(void)           CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7);
 VMMDECL(void)           CPUMSetHyperCtx(PVMCPU pVCpu, const PCPUMCTX pCtx);
-VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu);
+VMMDECL(int)            CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg);
 /** @} */
 
 VMMDECL(void)           CPUMPushHyper(PVMCPU pVCpu, uint32_t u32);
@@ -427,7 +427,6 @@ VMMDECL(void)           CPUMDeactivateGuestFPUState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsGuestDebugStateActive(PVMCPU pVCpu);
 VMMDECL(void)           CPUMDeactivateGuestDebugState(PVMCPU pVCpu);
 VMMDECL(bool)           CPUMIsHyperDebugStateActive(PVMCPU pVCpu);
-VMMDECL(void)           CPUMDeactivateHyperDebugState(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCPL(PVMCPU pVCpu);
 VMMDECL(CPUMMODE)       CPUMGetGuestMode(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMGetGuestCodeBits(PVMCPU pVCpu);
@@ -508,11 +507,10 @@ VMMR0DECL(int)          CPUMR0ModuleTerm(void);
 VMMR0DECL(int)          CPUMR0Init(PVM pVM);
 VMMR0DECL(int)          CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(int)          CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-VMMR0DECL(int)          CPUMR0SaveGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
-VMMR0DECL(int)          CPUMR0LoadGuestDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
-VMMR0DECL(int)          CPUMR0LoadHostDebugState(PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)          CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);
-VMMR0DECL(int)          CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, bool fDR6);
+VMMR0DECL(bool)         CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(PVMCPU pVCpu, bool fDR6);
+VMMR0DECL(void)         CPUMR0LoadGuestDebugState(PVMCPU pVCpu, bool fDR6);
+VMMR0DECL(void)         CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDR6);
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 VMMR0DECL(void)         CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu);
 #endif

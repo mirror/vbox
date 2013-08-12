@@ -322,7 +322,7 @@ DECLASM(int) TRPMGCTrap01Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     PGMRZDynMapStartAutoSet(pVCpu);
     int rc = DBGFRZTrap01Handler(pVM, pVCpu, pRegFrame, uDr6);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
-        CPUMSetGuestDR6(pVCpu, uDr6);
+        CPUMSetGuestDR6(pVCpu, CPUMGetGuestDR6(pVCpu) | uDr6);
 
     rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);
     Log6(("TRPMGC01: %Rrc (%04x:%08x %RTreg %EFlag=%#x)\n", rc, pRegFrame->cs.Sel, pRegFrame->eip, uDr6, CPUMRawGetEFlags(pVCpu)));

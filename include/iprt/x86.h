@@ -786,6 +786,11 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Bit 9 - GE - Local breakpoint exact. (Not supported (read ignored) by P6 and later.) */
 #define X86_DR7_GE                          RT_BIT(9)
 
+/** L0, L1, L2, and L3.  */
+#define X86_DR7_LE_ALL                      UINT64_C(0x0000000000000055)
+/** L0, L1, L2, and L3.  */
+#define X86_DR7_GE_ALL                      UINT64_C(0x00000000000000aa)
+
 /** Bit 13 - GD - General detect enable. Enables emulators to get exceptions when
  * any DR register is accessed. */
 #define X86_DR7_GD                          RT_BIT(13)

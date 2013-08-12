@@ -316,45 +316,84 @@ VMMDECL(void) CPUMSetHyperLDTR(PVMCPU pVCpu, RTSEL SelLDTR)
 }
 
 
+/** @MAYBE_LOAD_DRx
+ * Macro for updating DRx values in raw-mode and ring-0 contexts.
+ */
+#ifdef IN_RING0
+# if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS)
+#  ifndef VBOX_WITH_HYBRID_32BIT_KERNEL
+#   define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+    do { \
+        if (!CPUMIsGuestInLongModeEx(&(a_pVCpu)->cpum.s.Guest)) \
+            a_fnLoad(a_uValue); \
+        else \
+            (a_pVCpu)->cpum.s.fUseFlags |= CPUM_SYNC_DEBUG_REGS_HYPER; \
+    } while (0)
+#  else
+#   define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+    do { \
+        /** @todo we're not loading the correct guest value here! */ \
+        a_fnLoad(a_uValue); \
+    } while (0)
+#  endif
+# else
+# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+    do { \
+        a_fnLoad(a_uValue); \
+    } while (0)
+# endif
+
+#elif defined(IN_RC)
+# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) \
+    do { \
+        if ((a_pVCpu)->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER) \
+        { a_fnLoad(a_uValue); } \
+    } while (0)
+
+#else
+# define MAYBE_LOAD_DRx(a_pVCpu, a_fnLoad, a_uValue) do { } while (0)
+#endif
+
 VMMDECL(void) CPUMSetHyperDR0(PVMCPU pVCpu, RTGCUINTREG uDr0)
 {
     pVCpu->cpum.s.Hyper.dr[0] = uDr0;
-    /** @todo in GC we must load it! */
+    MAYBE_LOAD_DRx(pVCpu, ASMSetDR0, uDr0);
 }
 
 
 VMMDECL(void) CPUMSetHyperDR1(PVMCPU pVCpu, RTGCUINTREG uDr1)
 {
     pVCpu->cpum.s.Hyper.dr[1] = uDr1;
-    /** @todo in GC we must load it! */
+    MAYBE_LOAD_DRx(pVCpu, ASMSetDR1, uDr1);
 }
 
 
 VMMDECL(void) CPUMSetHyperDR2(PVMCPU pVCpu, RTGCUINTREG uDr2)
 {
     pVCpu->cpum.s.Hyper.dr[2] = uDr2;
-    /** @todo in GC we must load it! */
+    MAYBE_LOAD_DRx(pVCpu, ASMSetDR2, uDr2);
 }
 
 
 VMMDECL(void) CPUMSetHyperDR3(PVMCPU pVCpu, RTGCUINTREG uDr3)
 {
     pVCpu->cpum.s.Hyper.dr[3] = uDr3;
-    /** @todo in GC we must load it! */
+    MAYBE_LOAD_DRx(pVCpu, ASMSetDR3, uDr3);
 }
 
 
 VMMDECL(void) CPUMSetHyperDR6(PVMCPU pVCpu, RTGCUINTREG uDr6)
 {
     pVCpu->cpum.s.Hyper.dr[6] = uDr6;
-    /** @todo in GC we must load it! */
 }
 
 
 VMMDECL(void) CPUMSetHyperDR7(PVMCPU pVCpu, RTGCUINTREG uDr7)
 {
     pVCpu->cpum.s.Hyper.dr[7] = uDr7;
-    /** @todo in GC we must load it! */
+#ifdef IN_RC
+    MAYBE_LOAD_DRx(pVCpu, ASMSetDR7, uDr7);
+#endif
 }
 
 
@@ -2117,42 +2156,42 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 VMMDECL(int) CPUMSetGuestDR0(PVMCPU pVCpu, uint64_t uDr0)
 {
     pVCpu->cpum.s.Guest.dr[0] = uDr0;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, 0);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR1(PVMCPU pVCpu, uint64_t uDr1)
 {
     pVCpu->cpum.s.Guest.dr[1] = uDr1;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, 1);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR2(PVMCPU pVCpu, uint64_t uDr2)
 {
     pVCpu->cpum.s.Guest.dr[2] = uDr2;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, 2);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3)
 {
     pVCpu->cpum.s.Guest.dr[3] = uDr3;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, 3);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 {
     pVCpu->cpum.s.Guest.dr[6] = uDr6;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return VINF_SUCCESS; /* No need to recalc. */
 }
 
 
 VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 {
     pVCpu->cpum.s.Guest.dr[7] = uDr7;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, 7);
 }
 
 
@@ -2163,43 +2202,67 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
     if (iReg == 4 || iReg == 5)
         iReg += 2;
     pVCpu->cpum.s.Guest.dr[iReg] = Value;
-    return CPUMRecalcHyperDRx(pVCpu);
+    return CPUMRecalcHyperDRx(pVCpu, iReg);
 }
 
 
 /**
- * Recalculates the hypervisor DRx register values based on
- * current guest registers and DBGF breakpoints.
+ * Recalculates the hypervisor DRx register values based on current guest
+ * registers and DBGF breakpoints, updating changed registers depending on the
+ * context.
  *
- * This is called whenever a guest DRx register is modified and when DBGF
- * sets a hardware breakpoint. In guest context this function will reload
- * any (hyper) DRx registers which comes out with a different value.
+ * This is called whenever a guest DRx register is modified (any context) and
+ * when DBGF sets a hardware breakpoint (ring-3 only, rendezvous).
+ *
+ * In raw-mode context this function will reload any (hyper) DRx registers which
+ * comes out with a different value.  It may also have to save the host debug
+ * registers if that haven't been done already.  In this context though, we'll
+ * be intercepting and emulating all DRx accesses, so the hypervisor DRx values
+ * are only important when breakpoints are actually enabled.
+ *
+ * In ring-0 (HM) context DR0-3 will be relocated by us, while DR7 will be
+ * reloaded by the HM code if it changes.  Further more, we will only use the
+ * combined register set when the VBox debugger is actually using hardware BPs,
+ * when it isn't we'll keep the guest DR0-3 + (maybe) DR6 loaded (DR6 doesn't
+ * concern us here).
+ *
+ * In ring-3 we won't be loading anything, so well calculate hypervisor values
+ * all the time.
  *
  * @returns VINF_SUCCESS.
  * @param   pVCpu       Pointer to the VMCPU.
+ * @param   iGstReg     The guest debug register number that was modified.
+ *                      UINT8_MAX if not guest register.
  */
-VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
+VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     /*
      * Compare the DR7s first.
      *
-     * We only care about the enabled flags. The GE and LE flags are always
-     * set and we don't care if the guest doesn't set them. GD is virtualized
-     * when we dispatch #DB, we never enable it.
+     * We only care about the enabled flags.  GD is virtualized when we
+     * dispatch the #DB, we never enable it.  The DBGF DR7 value is will
+     * always have the LE and GE bits set, so no need to check and disable
+     * stuff if they're cleared like we have to for the guest DR7.
      */
+    RTGCUINTREG uGstDr7 = CPUMGetGuestDR7(pVCpu);
+    if (!(uGstDr7 & (X86_DR7_LE | X86_DR7_GE)))
+        uGstDr7 = 0;
+    else if (!(uGstDr7 & X86_DR7_LE))
+        uGstDr7 &= ~X86_DR7_LE_ALL;
+    else if (!(uGstDr7 & X86_DR7_GE))
+        uGstDr7 &= ~X86_DR7_GE_ALL;
+
     const RTGCUINTREG uDbgfDr7 = DBGFBpGetDR7(pVM);
-#ifdef CPUM_VIRTUALIZE_DRX
-    const RTGCUINTREG uGstDr7  = CPUMGetGuestDR7(pVCpu);
-#else
-    const RTGCUINTREG uGstDr7  = 0;
-#endif
-    if ((uGstDr7 | uDbgfDr7) & X86_DR7_ENABLED_MASK)
+    if ((HMIsEnabled(pVCpu->CTX_SUFF(pVM)) ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
     {
+        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+
         /*
-         * Ok, something is enabled. Recalc each of the breakpoints.
-         * Straight forward code, not optimized/minimized in any way.
+         * Ok, something is enabled.  Recalc each of the breakpoints, taking
+         * the VM debugger ones of the guest ones.  In raw-mode context we will
+         * not allow breakpoints with values inside the hypervisor area.
          */
         RTGCUINTREG uNewDr7 = X86_DR7_GE | X86_DR7_LE | X86_DR7_RA1_MASK;
 
@@ -2212,11 +2275,16 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
         }
         else if (uGstDr7 & (X86_DR7_L0 | X86_DR7_G0))
         {
-            uNewDr7 |= uGstDr7 & (X86_DR7_L0 | X86_DR7_G0 | X86_DR7_RW0_MASK | X86_DR7_LEN0_MASK);
             uNewDr0 = CPUMGetGuestDR0(pVCpu);
+#ifdef IN_RC
+            if (MMHyperIsInsideArea(pVM, uNewDr0))
+                uNewDr0 = 0;
+            else
+#endif
+                uNewDr7 |= uGstDr7 & (X86_DR7_L0 | X86_DR7_G0 | X86_DR7_RW0_MASK | X86_DR7_LEN0_MASK);
         }
         else
-            uNewDr0 = pVCpu->cpum.s.Hyper.dr[0];
+            uNewDr0 = 0;
 
         /* bp 1 */
         RTGCUINTREG uNewDr1;
@@ -2227,11 +2295,16 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
         }
         else if (uGstDr7 & (X86_DR7_L1 | X86_DR7_G1))
         {
-            uNewDr7 |= uGstDr7 & (X86_DR7_L1 | X86_DR7_G1 | X86_DR7_RW1_MASK | X86_DR7_LEN1_MASK);
             uNewDr1 = CPUMGetGuestDR1(pVCpu);
+#ifdef IN_RC
+            if (MMHyperIsInsideArea(pVM, uNewDr1))
+                uNewDr1 = 0;
+            else
+#endif
+                uNewDr7 |= uGstDr7 & (X86_DR7_L1 | X86_DR7_G1 | X86_DR7_RW1_MASK | X86_DR7_LEN1_MASK);
         }
         else
-            uNewDr1 = pVCpu->cpum.s.Hyper.dr[1];
+            uNewDr1 = 0;
 
         /* bp 2 */
         RTGCUINTREG uNewDr2;
@@ -2242,11 +2315,16 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
         }
         else if (uGstDr7 & (X86_DR7_L2 | X86_DR7_G2))
         {
-            uNewDr7 |= uGstDr7 & (X86_DR7_L2 | X86_DR7_G2 | X86_DR7_RW2_MASK | X86_DR7_LEN2_MASK);
             uNewDr2 = CPUMGetGuestDR2(pVCpu);
+#ifdef IN_RC
+            if (MMHyperIsInsideArea(pVM, uNewDr2))
+                uNewDr2 = 0;
+            else
+#endif
+                uNewDr7 |= uGstDr7 & (X86_DR7_L2 | X86_DR7_G2 | X86_DR7_RW2_MASK | X86_DR7_LEN2_MASK);
         }
         else
-            uNewDr2 = pVCpu->cpum.s.Hyper.dr[2];
+            uNewDr2 = 0;
 
         /* bp 3 */
         RTGCUINTREG uNewDr3;
@@ -2257,49 +2335,128 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu)
         }
         else if (uGstDr7 & (X86_DR7_L3 | X86_DR7_G3))
         {
-            uNewDr7 |= uGstDr7 & (X86_DR7_L3 | X86_DR7_G3 | X86_DR7_RW3_MASK | X86_DR7_LEN3_MASK);
             uNewDr3 = CPUMGetGuestDR3(pVCpu);
+#ifdef IN_RC
+            if (MMHyperIsInsideArea(pVM, uNewDr3))
+                uNewDr3 = 0;
+            else
+#endif
+                uNewDr7 |= uGstDr7 & (X86_DR7_L3 | X86_DR7_G3 | X86_DR7_RW3_MASK | X86_DR7_LEN3_MASK);
         }
         else
-            uNewDr3 = pVCpu->cpum.s.Hyper.dr[3];
+            uNewDr3 = 0;
 
         /*
          * Apply the updates.
          */
 #ifdef IN_RC
-        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS))
+        /* Make sure to save host registers first. */
+        if (!(pVCpu->cpum.s.fUseFlags & (CPUM_USE_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER)))
         {
-            /** @todo save host DBx registers. */
+            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST));
+            pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
+            pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
+            pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
+            ASMSetDR6(X86_DR6_INIT_VAL);
         }
+        if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST))
+        {
+            pVCpu->cpum.s.Host.dr0 = ASMGetDR0();
+            pVCpu->cpum.s.Host.dr1 = ASMGetDR1();
+            pVCpu->cpum.s.Host.dr2 = ASMGetDR2();
+            pVCpu->cpum.s.Host.dr3 = ASMGetDR3();
+            pVCpu->cpum.s.fUseFlags |= CPUM_USED_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER | CPUM_USED_DEBUG_REGS_HYPER;
+
+            /* We haven't loaded any hyper DRxes yet, so we'll have to load them all now. */
+            pVCpu->cpum.s.Hyper.dr[0] = uNewDr0;
+            ASMSetDR0(uNewDr0);
+            pVCpu->cpum.s.Hyper.dr[1] = uNewDr1;
+            ASMSetDR1(uNewDr1);
+            pVCpu->cpum.s.Hyper.dr[2] = uNewDr2;
+            ASMSetDR2(uNewDr2);
+            pVCpu->cpum.s.Hyper.dr[3] = uNewDr3;
+            ASMSetDR3(uNewDr3);
+            pVCpu->cpum.s.Hyper.dr[7] = uNewDr7;
+            ASMSetDR7(uNewDr7);
+        }
+        else
 #endif
-        /** @todo Should this not be setting CPUM_USE_DEBUG_REGS_HYPER?
-         *        (CPUM_VIRTUALIZE_DRX is never defined). */
-        pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS;
-        if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
-            CPUMSetHyperDR3(pVCpu, uNewDr3);
-        if (uNewDr2 != pVCpu->cpum.s.Hyper.dr[2])
-            CPUMSetHyperDR2(pVCpu, uNewDr2);
-        if (uNewDr1 != pVCpu->cpum.s.Hyper.dr[1])
-            CPUMSetHyperDR1(pVCpu, uNewDr1);
-        if (uNewDr0 != pVCpu->cpum.s.Hyper.dr[0])
-            CPUMSetHyperDR0(pVCpu, uNewDr0);
-        if (uNewDr7 != pVCpu->cpum.s.Hyper.dr[7])
-            CPUMSetHyperDR7(pVCpu, uNewDr7);
+        {
+            pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
+            if (uNewDr3 != pVCpu->cpum.s.Hyper.dr[3])
+                CPUMSetHyperDR3(pVCpu, uNewDr3);
+            if (uNewDr2 != pVCpu->cpum.s.Hyper.dr[2])
+                CPUMSetHyperDR2(pVCpu, uNewDr2);
+            if (uNewDr1 != pVCpu->cpum.s.Hyper.dr[1])
+                CPUMSetHyperDR1(pVCpu, uNewDr1);
+            if (uNewDr0 != pVCpu->cpum.s.Hyper.dr[0])
+                CPUMSetHyperDR0(pVCpu, uNewDr0);
+            if (uNewDr7 != pVCpu->cpum.s.Hyper.dr[7])
+                CPUMSetHyperDR7(pVCpu, uNewDr7);
+        }
     }
+#ifdef IN_RING0
+    else if (CPUMIsGuestDebugStateActive(pVCpu))
+    {
+        /*
+         * Reload the register that was modified.  Normally this won't happen
+         * as we won't intercept DRx writes when not having the hyper debug
+         * state loaded, but in case we do for some reason we'll simply deal
+         * with it.
+         */
+        switch (iGstReg)
+        {
+            case 0: ASMSetDR0(CPUMGetGuestDR0(pVCpu)); break;
+            case 1: ASMSetDR1(CPUMGetGuestDR1(pVCpu)); break;
+            case 2: ASMSetDR2(CPUMGetGuestDR2(pVCpu)); break;
+            case 3: ASMSetDR3(CPUMGetGuestDR3(pVCpu)); break;
+            default:
+                AssertReturn(iGstReg != UINT8_MAX, VERR_INTERNAL_ERROR_3);
+        }
+    }
+#endif
     else
     {
-#ifdef IN_RC
-        if (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS)
+        /*
+         * No active debug state any more.  In raw-mode this means we have to
+         * make sure DR7 has everything disabled now, if we armed it already.
+         *
+         * In the ring-0 this only happens when we decided to lazy load the
+         * debug state because it wasn't active, and that didn't change with
+         * the latest changes, so nothing to do here.
+         */
+#if defined(IN_RC)
+        if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER)
         {
-            /** @todo restore host DBx registers. */
+            ASMSetDR7(X86_DR7_INIT_VAL);
+            if (pVCpu->cpum.s.Hyper.dr[0])
+                ASMSetDR0(0);
+            if (pVCpu->cpum.s.Hyper.dr[1])
+                ASMSetDR1(0);
+            if (pVCpu->cpum.s.Hyper.dr[2])
+                ASMSetDR2(0);
+            if (pVCpu->cpum.s.Hyper.dr[3])
+                ASMSetDR3(0);
+            pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_DEBUG_REGS_HYPER;
         }
+
+#else defined(IN_RING0)
+        Assert(!CPUMIsHyperDebugStateActive(pVCpu)); /* (can only change while in ring-3) */
 #endif
-        pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
+        pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HYPER;
+
+        /* Clear all the registers. */
+        pVCpu->cpum.s.Hyper.dr[7] = X86_DR7_RA1_MASK;
+        pVCpu->cpum.s.Hyper.dr[3] = 0;
+        pVCpu->cpum.s.Hyper.dr[2] = 0;
+        pVCpu->cpum.s.Hyper.dr[1] = 0;
+        pVCpu->cpum.s.Hyper.dr[0] = 0;
+
     }
     Log2(("CPUMRecalcHyperDRx: fUseFlags=%#x %RGr %RGr %RGr %RGr  %RGr %RGr\n",
           pVCpu->cpum.s.fUseFlags, pVCpu->cpum.s.Hyper.dr[0], pVCpu->cpum.s.Hyper.dr[1],
-         pVCpu->cpum.s.Hyper.dr[2], pVCpu->cpum.s.Hyper.dr[3], pVCpu->cpum.s.Hyper.dr[6],
-         pVCpu->cpum.s.Hyper.dr[7]));
+          pVCpu->cpum.s.Hyper.dr[2], pVCpu->cpum.s.Hyper.dr[3], pVCpu->cpum.s.Hyper.dr[6],
+          pVCpu->cpum.s.Hyper.dr[7]));
 
     return VINF_SUCCESS;
 }
@@ -2720,7 +2877,7 @@ VMMDECL(bool) CPUMSupportsFXSR(PVM pVM)
  */
 VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
 {
-    return (pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSENTER) != 0;
+    return RT_BOOL(pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSENTER);
 }
 
 
@@ -2732,7 +2889,7 @@ VMMDECL(bool) CPUMIsHostUsingSysEnter(PVM pVM)
  */
 VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
 {
-    return (pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSCALL) != 0;
+    return RT_BOOL(pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSCALL);
 }
 
 #ifndef IN_RING3
@@ -2758,16 +2915,20 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestFPUStateActive(PVMCPU pVCpu)
 {
-    return (pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU) != 0;
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU);
 }
 
 
 /**
  * Deactivate the FPU/XMM state of the guest OS.
  * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @todo    r=bird: Why is this needed? Looks like a workaround for mishandled
+ *          FPU state management.
  */
 VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
 {
+    Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_FPU));
     pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_FPU;
 }
 
@@ -2780,7 +2941,7 @@ VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
-    return (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS) != 0;
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST);
 }
 
 /**
@@ -2791,7 +2952,7 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
-    return (pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS_HYPER) != 0;
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER);
 }
 
 
@@ -2800,22 +2961,11 @@ VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
  *
  * @returns boolean
  * @param   pVM         Pointer to the VM.
+ * @todo    This API doesn't make sense any more.
  */
 VMMDECL(void) CPUMDeactivateGuestDebugState(PVMCPU pVCpu)
 {
-    pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS;
-}
-
-
-/**
- * Mark the hypervisor's debug state as inactive.
- *
- * @returns boolean
- * @param   pVM         Pointer to the VM.
- */
-VMMDECL(void) CPUMDeactivateHyperDebugState(PVMCPU pVCpu)
-{
-    pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HYPER;
+    Assert(!(pVCpu->cpum.s.fUseFlags & (CPUM_USED_DEBUG_REGS_GUEST | CPUM_USED_DEBUG_REGS_HYPER | CPUM_USED_DEBUG_REGS_HOST)));
 }
 
 

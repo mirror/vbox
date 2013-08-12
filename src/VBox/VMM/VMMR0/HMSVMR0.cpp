@@ -1320,62 +1320,93 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
         return;
-
-    /** @todo Turn these into assertions if possible. */
-    pCtx->dr[6] |= X86_DR6_INIT_VAL;                                          /* Set reserved bits to 1. */
-    pCtx->dr[6] &= ~RT_BIT(12);                                               /* MBZ. */
-
-    pCtx->dr[7] &= 0xffffffff;                                                /* Upper 32 bits MBZ. */
-    pCtx->dr[7] &= ~(RT_BIT(11) | RT_BIT(12) | RT_BIT(14) | RT_BIT(15));      /* MBZ. */
-    pCtx->dr[7] |= X86_DR7_INIT_VAL;                                          /* MB1. */
-
-    /* Update DR6, DR7 with the guest values. */
-    pVmcb->guest.u64DR7 = pCtx->dr[7];
-    pVmcb->guest.u64DR6 = pCtx->dr[6];
-    pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+    Assert((pCtx->dr[6] & X86_DR6_RA1_MASK) == X86_DR6_RA1_MASK); Assert((pCtx->dr[6] & X86_DR6_RAZ_MASK) == 0);
+    Assert((pCtx->dr[7] & X86_DR7_RA1_MASK) == X86_DR7_RA1_MASK); Assert((pCtx->dr[7] & X86_DR7_RAZ_MASK) == 0);
 
     bool fInterceptDB     = false;
     bool fInterceptMovDRx = false;
-    if (DBGFIsStepping(pVCpu))
+
+    /*
+     * Anyone single stepping on the host side? If so, we'll have to use the
+     * trap flag in the guest EFLAGS since AMD-V doesn't have a trap flag on
+     * the VMM level like VT-x implementations does.
+     */
+    bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
+    if (fStepping)
     {
-        /* AMD-V doesn't have any monitor-trap flag equivalent. Instead, enable tracing in the guest and trap #DB. */
         pVmcb->guest.u64RFlags |= X86_EFL_TF;
         fInterceptDB = true;
+        fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
     }
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (CPUMGetHyperDR7(pVCpu) & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    if (fStepping || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
     {
+        /*
+         * Use the combined guest and host DRx values found in the hypervisor
+         * register set because the debugger has breakpoints active or someone
+         * is single stepping on the host side.
+         *
+         * Note! DBGF expects a clean DR6 state before executing guest code.
+         */
         if (!CPUMIsHyperDebugStateActive(pVCpu))
-        {
-            int rc = CPUMR0LoadHyperDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-            AssertRC(rc);
+            CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
+        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(CPUMIsHyperDebugStateActive(pVCpu));
 
-            /* Update DR6, DR7 with the hypervisor values. */
+        /* Update DR6 & DR7. (The other DRx values are handled by CPUM one way or the other.) */
+        if (   pVmcb->guest.u64DR6 != X86_DR6_INIT_VAL
+            || pVmcb->guest.u64DR7 != CPUMGetHyperDR7(pVCpu) )
+        {
             pVmcb->guest.u64DR7 = CPUMGetHyperDR7(pVCpu);
-            pVmcb->guest.u64DR6 = CPUMGetHyperDR6(pVCpu);
+            pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
             pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
         }
-        Assert(CPUMIsHyperDebugStateActive(pVCpu));
+
+        /** @todo If we cared, we could optimize to allow the guest to read registers
+         *        with the same values. */
+        fInterceptDB = true;
         fInterceptMovDRx = true;
+        Log5(("hm: Loaded hyper DRx\n"));
     }
-    else if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD))
+    else
     {
-        if (!CPUMIsGuestDebugStateActive(pVCpu))
+        /*
+         * Update DR6, DR7 with the guest values if necessary.
+         */
+        if (   pVmcb->guest.u64DR7 != pCtx->dr[7]
+            || pVmcb->guest.u64DR6 != pCtx->dr[6])
         {
-            int rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-            AssertRC(rc);
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+            pVmcb->guest.u64DR7 = pCtx->dr[7];
+            pVmcb->guest.u64DR6 = pCtx->dr[6];
+            pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
         }
-        Assert(CPUMIsGuestDebugStateActive(pVCpu));
-        Assert(fInterceptMovDRx == false);
-    }
-    else if (!CPUMIsGuestDebugStateActive(pVCpu))
-    {
-        /* For the first time we would need to intercept MOV DRx accesses even when the guest debug registers aren't loaded. */
-        fInterceptMovDRx = true;
+
+        /*
+         * If the guest has enabled debug registers, we need to load them prior to
+         * executing guest code so they'll trigger at the right time.
+         */
+        if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
+        {
+            if (!CPUMIsGuestDebugStateActive(pVCpu))
+            {
+                CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+            }
+            Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+            Assert(CPUMIsGuestDebugStateActive(pVCpu));
+            Log5(("hm: Loaded guest DRx\n"));
+        }
+        /*
+         * If no debugging enabled, we'll lazy load DR0-3.
+         */
+        else if (!CPUMIsGuestDebugStateActive(pVCpu))
+            fInterceptMovDRx = true;
     }
 
+    /*
+     * Set up the intercepts.
+     */
     if (fInterceptDB)
         hmR0SvmAddXcptIntercept(pVmcb, X86_XCPT_DB);
     else
@@ -1759,8 +1790,16 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Debug registers.
      */
-    pMixedCtx->dr[6] = pVmcb->guest.u64DR6;
-    pMixedCtx->dr[7] = pVmcb->guest.u64DR7;
+    if (!CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        pMixedCtx->dr[6] = pVmcb->guest.u64DR6;
+        pMixedCtx->dr[7] = pVmcb->guest.u64DR7;
+    }
+    else
+    {
+        Assert(pVmcb->guest.u64DR7 == CPUMGetHyperDR7(pVCpu));
+        CPUMSetHyperDR6(pVCpu, pVmcb->guest.u64DR6);
+    }
 
     /*
      * With Nested Paging, CR3 changes are not intercepted. Therefore, sync. it now.
@@ -1799,23 +1838,21 @@ static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcEx
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
     }
 
-    /* Restore host debug registers if necessary and resync on next R0 reentry. */
-    if (CPUMIsGuestDebugStateActive(pVCpu))
-    {
-        CPUMR0SaveGuestDebugState(pVM, pVCpu, pCtx, true /* save DR6 */);
-        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-    }
-    else if (CPUMIsHyperDebugStateActive(pVCpu))
-    {
-        CPUMR0LoadHostDebugState(pVM, pVCpu);
-        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+    /*
+     * Restore host debug registers if necessary and resync on next R0 reentry.
+     */
 #ifdef VBOX_STRICT
+    if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
         PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
         Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
-#endif
     }
+#endif
+    if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
@@ -3093,25 +3130,25 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     RTCPUID const idAssertCpu = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId()
 
 # define HMSVM_ASSERT_PREEMPT_CPUID() \
-   do \
-   { \
-        RTCPUID const idAssertCpuNow = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId(); \
-        AssertMsg(idAssertCpu == idAssertCpuNow, ("SVM %#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
-   } while (0)
+    do \
+    { \
+         RTCPUID const idAssertCpuNow = RTThreadPreemptIsEnabled(NIL_RTTHREAD) ? NIL_RTCPUID : RTMpCpuId(); \
+         AssertMsg(idAssertCpu == idAssertCpuNow, ("SVM %#x, %#x\n", idAssertCpu, idAssertCpuNow)); \
+    } while (0)
 
 # define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() \
-            do { \
-                AssertPtr(pVCpu); \
-                AssertPtr(pCtx); \
-                AssertPtr(pSvmTransient); \
-                Assert(ASMIntAreEnabled()); \
-                Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
-                HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
-                Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
-                Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
-                if (VMMR0IsLogFlushDisabled(pVCpu)) \
-                    HMSVM_ASSERT_PREEMPT_CPUID(); \
-            } while (0)
+    do { \
+        AssertPtr(pVCpu); \
+        AssertPtr(pCtx); \
+        AssertPtr(pSvmTransient); \
+        Assert(ASMIntAreEnabled()); \
+        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
+        HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
+        Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
+        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
+        if (VMMR0IsLogFlushDisabled(pVCpu)) \
+            HMSVM_ASSERT_PREEMPT_CPUID(); \
+    } while (0)
 #else   /* Release builds */
 # define HMSVM_VALIDATE_EXIT_HANDLER_PARAMS() do { } while(0)
 #endif
@@ -3952,15 +3989,18 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 
     /* We should -not- get this VM-exit if the guest is debugging. */
-    if (CPUMIsGuestDebugStateActive(pVCpu))
-    {
-        AssertMsgFailed(("hmR0SvmExitReadDRx: Unexpected exit. pVCpu=%p pCtx=%p\n", pVCpu, pCtx));
-        return VERR_SVM_UNEXPECTED_EXIT;
-    }
+    AssertMsgReturn(!CPUMIsGuestDebugStateActive(pVCpu),
+                    ("hmR0SvmExitReadDRx: Unexpected exit. pVCpu=%p pCtx=%p\n", pVCpu, pCtx),
+                    VERR_SVM_UNEXPECTED_EXIT);
 
-    if (   !DBGFIsStepping(pVCpu)
-        && !CPUMIsHyperDebugStateActive(pVCpu))
+    /*
+     * Lazy DR0-3 loading?
+     */
+    if (!CPUMIsHyperDebugStateActive(pVCpu))
     {
+        Assert(!DBGFIsStepping(pVCpu)); Assert(!pVCpu->hm.s.fSingleInstruction);
+        Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
+
         /* Don't intercept DRx read and writes. */
         PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
         pVmcb->ctrl.u16InterceptRdDRx = 0;
@@ -3968,26 +4008,28 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
-        PVM pVM = pVCpu->CTX_SUFF(pVM);
-        int rc = CPUMR0LoadGuestDebugState(pVM, pVCpu, pCtx, true /* include DR6 */);
-        AssertRC(rc);
+        CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu));
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
-        return rc;
+        return VINF_SUCCESS;
     }
 
+    /*
+     * Interpret the read/writing of DRx.
+     */
     /** @todo Decode assist.  */
-    VBOXSTRICTRC rc2 = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
-    int rc = VBOXSTRICTRC_VAL(rc2);
+    VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
+    Log5(("hmR0SvmExitReadDRx: Emulatined DRx access: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         /* Not necessary for read accesses but whatever doesn't hurt for now, will be fixed with decode assist. */
+        /** @todo CPUM should set this flag! */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
     }
     else
         Assert(rc == VERR_EM_INTERPRETER);
-    return rc;
+    return VBOXSTRICTRC_TODO(rc);
 }
 
 
@@ -4532,15 +4574,39 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
+    /* If we sat the trap flag above, we have to clear it. */ /** @todo HM should remember what it does and possibly do this elsewhere! */
+    if (pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu))
+        pCtx->eflags.Bits.u1TF = 0;
+
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    int rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pCtx->dr[6]);
+    PSVMVMCB    pVmcb   = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    PVM         pVM     = pVCpu->CTX_SUFF(pVM);
+    int rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), pVmcb->guest.u64DR6);
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
+        Log5(("hmR0SvmExitXcptDB: DR6=%#RX64 -> guest trap\n", pVmcb->guest.u64DR6));
+        if (CPUMIsHyperDebugStateActive(pVCpu))
+            CPUMSetGuestDR6(pVCpu, CPUMGetGuestDR6(pVCpu) | pVmcb->guest.u64DR6);
+
         /* Reflect the exception back to the guest. */
         hmR0SvmSetPendingXcptDB(pVCpu);
         rc = VINF_SUCCESS;
+    }
+
+    /*
+     * Update DR6.
+     */
+    if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        Log5(("hmR0SvmExitXcptDB: DR6=%#RX64 -> %Rrc\n", pVmcb->guest.u64DR6, rc));
+        pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
+        pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+    }
+    else
+    {
+        AssertMsg(rc == VINF_SUCCESS, ("rc=%Rrc\n", rc));
+        Assert(!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu));
     }
 
     return rc;
