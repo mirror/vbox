@@ -328,6 +328,20 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 #define VMX_IGS_GS_BASE_NOT_CANONICAL                           111
 /** LDTR.Base is not canonical. */
 #define VMX_IGS_LDTR_BASE_NOT_CANONICAL                         112
+/** TR is unusable. */
+#define VMX_IGS_TR_ATTR_UNUSABLE                                113
+/** TR.Attr.S bit invalid. */
+#define VMX_IGS_TR_ATTR_S_INVALID                               114
+/** TR is not present. */
+#define VMX_IGS_TR_ATTR_P_INVALID                               115
+/** TR.Attr reserved bits not set to 0. */
+#define VMX_IGS_TR_ATTR_RESERVED                                116
+/** TR.Attr.G bit invalid. */
+#define VMX_IGS_TR_ATTR_G_INVALID                               117
+/** Longmode TR.Attr.Type invalid. */
+#define VMX_IGS_LONGMODE_TR_ATTR_TYPE_INVALID                   118
+/** TR.Attr.Type invalid. */
+#define VMX_IGS_TR_ATTR_TYPE_INVALID                            119
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
