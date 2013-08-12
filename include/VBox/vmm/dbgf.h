@@ -418,7 +418,9 @@ VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR1(PVM pVM);
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR2(PVM pVM);
 VMM_INT_DECL(RTGCUINTREG)   DBGFBpGetDR3(PVM pVM);
 VMM_INT_DECL(bool)          DBGFBpIsHwArmed(PVM pVM);
+VMM_INT_DECL(bool)          DBGFBpIsHwIoArmed(PVM pVM);
 VMM_INT_DECL(bool)          DBGFIsStepping(PVMCPU pVCpu);
+VMM_INT_DECL(VBOXSTRICTRC)  DBGFBpCheckIo(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTIOPORT uIoPort, uint8_t cbValue);
 
 
 #ifdef IN_RING3 /* The CPU mode API only works in ring-3. */

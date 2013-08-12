@@ -9010,14 +9010,14 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitIO, y1);
 
-    int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
-    rc    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
-    rc    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);    /* CR0 checks & PGM* in EMInterpretDisasCurrent(). */
-    rc    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
+    int rc2 = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
+    rc2    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
+    rc2    |= hmR0VmxSaveGuestRip(pVCpu, pMixedCtx);
+    rc2    |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);         /* Eflag checks in EMInterpretDisasCurrent(). */
+    rc2    |= hmR0VmxSaveGuestControlRegs(pVCpu, pMixedCtx);    /* CR0 checks & PGM* in EMInterpretDisasCurrent(). */
+    rc2    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);    /* SELM checks in EMInterpretDisasCurrent(). */
     /* EFER also required for longmode checks in EMInterpretDisasCurrent(), but it's always up-to-date. */
-    AssertRCReturn(rc, rc);
+    AssertRCReturn(rc2, rc2);
 
     /* Refer Intel spec. 27-5. "Exit Qualifications for I/O Instructions" for the format. */
     uint32_t uIOPort   = VMX_EXIT_QUALIFICATION_IO_PORT(pVmxTransient->uExitQualification);
@@ -9031,6 +9031,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     static const uint32_t s_aIOSizes[4] = { 1, 2, 0, 4 };                   /* Size of the I/O accesses. */
     static const uint32_t s_aIOOpAnd[4] = { 0xff, 0xffff, 0, 0xffffffff };  /* AND masks for saving the result (in AL/AX/EAX). */
 
+    VBOXSTRICTRC   rcStrict;
     const uint32_t cbValue  = s_aIOSizes[uIOWidth];
     const uint32_t cbInstr  = pVmxTransient->cbInstr;
     bool fUpdateRipAlready  = false; /* ugly hack, should be temporary. */
@@ -9048,19 +9049,19 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.msr.vmx_basic_info))
         {
-            rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+            rc2  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
             /** @todo optimize this, IEM should request the additional state if it needs it (GP, PF, ++). */
-            rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
+            rc2 |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+            AssertRCReturn(rc2, rc2);
             AssertReturn(pVmxTransient->ExitInstrInfo.StrIo.u3AddrSize <= 2, VERR_HMVMX_IPE_3);
             AssertCompile(IEMMODE_16BIT == 0 && IEMMODE_32BIT == 1 && IEMMODE_64BIT == 2);
             IEMMODE enmAddrMode = (IEMMODE)pVmxTransient->ExitInstrInfo.StrIo.u3AddrSize;
             bool    fRep        = VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification);
             if (fIOWrite)
             {
-                rc = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, fRep, cbInstr,
-                                          pVmxTransient->ExitInstrInfo.StrIo.iSegReg);
-                //if (rc == VINF_IOM_R3_IOPORT_WRITE)
+                rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, fRep, cbInstr,
+                                                pVmxTransient->ExitInstrInfo.StrIo.iSegReg);
+                //if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
                 //    hmR0SavePendingIOPortWriteStr(pVCpu, pMixedCtx->rip, cbValue, enmAddrMode, fRep, cbInstr,
                 //                                  pVmxTransient->ExitInstrInfo.StrIo.iSegReg);
             }
@@ -9069,17 +9070,17 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                 AssertMsgReturn(pVmxTransient->ExitInstrInfo.StrIo.iSegReg == X86_SREG_ES,
                                 ("%#x (%#llx)\n", pVmxTransient->ExitInstrInfo.StrIo.iSegReg, pVmxTransient->ExitInstrInfo.u),
                                 VERR_HMVMX_IPE_4);
-                rc = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, fRep, cbInstr);
-                //if (rc == VINF_IOM_R3_IOPORT_READ)
+                rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, fRep, cbInstr);
+                //if (rcStrict == VINF_IOM_R3_IOPORT_READ)
                 //    hmR0SavePendingIOPortReadStr(pVCpu, pMixedCtx->rip, cbValue, enmAddrMode, fRep, cbInstr);
             }
         }
         else
         {
             /** @todo optimize this, IEM should request the additional state if it needs it (GP, PF, ++). */
-            rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
-            rc = IEMExecOne(pVCpu);
+            rc2 = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+            AssertRCReturn(rc2, rc2);
+            rcStrict = IEMExecOne(pVCpu);
         }
         /** @todo IEM needs to be setting these flags somehow. */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
@@ -9087,28 +9088,26 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
 
 #else
         PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
-        rc = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
-        if (RT_SUCCESS(rc))
+        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
+        if (RT_SUCCESS(rcStrict))
         {
             if (fIOWrite)
             {
-                VBOXSTRICTRC rc2 = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                                      (DISCPUMODE)pDis->uAddrMode, cbValue);
-                rc = VBOXSTRICTRC_VAL(rc2);
+                rcStrict = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
+                                              (DISCPUMODE)pDis->uAddrMode, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
             }
             else
             {
-                VBOXSTRICTRC rc2 = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                                     (DISCPUMODE)pDis->uAddrMode, cbValue);
-                rc = VBOXSTRICTRC_VAL(rc2);
+                rcStrict = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
+                                             (DISCPUMODE)pDis->uAddrMode, cbValue);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
             }
         }
         else
         {
-            AssertMsg(rc == VERR_EM_INTERPRETER, ("rc=%Rrc RIP %#RX64\n", rc, pMixedCtx->rip));
-            rc = VINF_EM_RAW_EMULATE_INSTR;
+            AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("rcStrict=%Rrc RIP %#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->rip));
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR;
         }
 #endif
     }
@@ -9122,131 +9121,94 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         Assert(!VMX_EXIT_QUALIFICATION_IO_IS_REP(pVmxTransient->uExitQualification));
         if (fIOWrite)
         {
-            VBOXSTRICTRC rc2 = IOMIOPortWrite(pVM, pVCpu, uIOPort, pMixedCtx->eax & uAndVal, cbValue);
-            rc = VBOXSTRICTRC_VAL(rc2);
-            if (rc == VINF_IOM_R3_IOPORT_WRITE)
+            rcStrict = IOMIOPortWrite(pVM, pVCpu, uIOPort, pMixedCtx->eax & uAndVal, cbValue);
+            if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
                 HMR0SavePendingIOPortWrite(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOWrite);
         }
         else
         {
             uint32_t u32Result = 0;
-            VBOXSTRICTRC rc2 = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbValue);
-            rc = VBOXSTRICTRC_VAL(rc2);
-            if (IOM_SUCCESS(rc))
+            rcStrict = IOMIOPortRead(pVM, pVCpu, uIOPort, &u32Result, cbValue);
+            if (IOM_SUCCESS(rcStrict))
             {
                 /* Save result of I/O IN instr. in AL/AX/EAX. */
                 pMixedCtx->eax = (pMixedCtx->eax & ~uAndVal) | (u32Result & uAndVal);
             }
-            else if (rc == VINF_IOM_R3_IOPORT_READ)
+            else if (rcStrict == VINF_IOM_R3_IOPORT_READ)
                 HMR0SavePendingIOPortRead(pVCpu, pMixedCtx->rip, pMixedCtx->rip + cbInstr, uIOPort, uAndVal, cbValue);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIORead);
         }
     }
 
-    if (IOM_SUCCESS(rc))
+    if (IOM_SUCCESS(rcStrict))
     {
         if (!fUpdateRipAlready)
         {
             pMixedCtx->rip += cbInstr;
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RIP;
         }
-        if (RT_LIKELY(rc == VINF_SUCCESS))
-        {
-            /*
-             * If any I/O breakpoints are armed, then we should check if a debug trap needs to be generated.
-             * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
-             */
-            /** @todo We're not honoring I/O BPs if informational status code is returned.
-             *        We're also ignoring our own debugger's attempt at using I/O
-             *        breakpoints.  The whole host & guest debugger stuff needs to be
-             *        looked over at some point.  For now, it's just best effort. */
-            rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
-            uint32_t const uDr7 = pMixedCtx->dr[7];
-            if (   (uDr7 & X86_DR7_ENABLED_MASK)
+
+        /*
+         * If any I/O breakpoints are armed, we need to check if one triggered
+         * and take appropriate action.
+         * Note that the I/O breakpoint type is undefined if CR4.DE is 0.
+         */
+        /** @todo We're not honoring I/O BPs if informational status code is returned.
+         *        We're also ignoring our own debugger's attempt at using I/O
+         *        breakpoints.  The whole host & guest debugger stuff needs to be
+         *        looked over at some point.  For now, it's just best effort. */
+        int rc2 = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
+        AssertRCReturn(rc2, rc2);
+
+        uint32_t const uDr7 = pMixedCtx->dr[7];
+        if (   (   (uDr7 & X86_DR7_ENABLED_MASK)
                 && X86_DR7_ANY_RW_IO(uDr7)
-                && (pMixedCtx->cr4 & X86_CR4_DE) )
+                && (pMixedCtx->cr4 & X86_CR4_DE))
+            || DBGFBpIsHwIoArmed(pVM))
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
+            bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /*fDr6*/);
+
+            VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pMixedCtx, uIOPort, cbValue);
+            if (rcStrict2 == VINF_EM_RAW_GUEST_TRAP)
             {
-                /** @todo We're a little late here if we're doing string I/O, as we're supposed
-                 *        to break after the each repetition.  Not sooo important, just for a
-                 *        rainy day. (Should probably refactor some of this code; after the uDr7
-                 *        detection let someone else handle it.) */
-                /** @todo The AMD is mumbling something that sounds like cbValue == cbBp.  The
-                 *        Intel manual describes it differently, data and I/O breakpoints are to
-                 *        be matched in the same way, probably.  Bochs does it that way. We've
-                 *        implemented it that way too, but it would be worth having a
-                 *        bootsector testcase for asserting the correct behavior (as well as
-                 *        correctness of this code). */
-                /** @todo r=bird: DR0-3 are normally in host registers when the guest is using
-                 *        them, so we're testing against potentially stale values here! */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
-                uint32_t uIOPortLast = uIOPort + cbValue - 1;
-                for (unsigned iBp = 0; iBp < 4; iBp++)
-                {
-                    if (   (uDr7 & X86_DR7_L_G(iBp))
-                        && X86_DR7_GET_RW(uDr7, iBp) == X86_DR7_RW_IO)
-                    {
-                        /* ASSUME the breakpoint and the I/O width qualifier uses the same encoding (1 2 x 4). */
-                        static uint8_t const s_abInvAlign[4] = { 0, 1, 7, 3 };
-                        uint8_t  cbInvAlign = s_abInvAlign[X86_DR7_GET_LEN(uDr7, iBp)];
-                        uint64_t uDrXFirst  = pMixedCtx->dr[iBp] & ~(uint64_t)cbInvAlign;
-                        uint64_t uDrXLast   = uDrXFirst + cbInvAlign;
+                /* Raise #DB. */
+                if (fIsGuestDbgActive)
+                    ASMSetDR6(pMixedCtx->dr[6]);
+                if (pMixedCtx->dr[7] != uDr7)
+                    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
 
-                        if (uDrXFirst <= uIOPortLast && uDrXLast >= uIOPort)
-                        {
-                            Assert(CPUMIsGuestDebugStateActive(pVCpu));
-                            uint64_t uDR6 = ASMGetDR6();
-
-                            /* Clear all breakpoint status flags and set the one we just hit. */
-                            uDR6 &= ~X86_DR6_B_MASK;
-                            uDR6 |= X86_DR6_B(iBp);
-
-                            /*
-                             * Note: AMD64 Architecture Programmer's Manual 13.1:
-                             * Bits 15:13 of the DR6 register is never cleared by the processor and must
-                             * be cleared by software after the contents have been read.
-                             */
-                            ASMSetDR6(uDR6);
-
-                            /* X86_DR7_GD will be cleared if DRx accesses should be trapped inside the guest. */
-                            pMixedCtx->dr[7] &= ~X86_DR7_GD;
-
-                            /* Paranoia. */
-                            pMixedCtx->dr[7] &= ~(X86_DR7_RAZ_MASK | X86_DR7_MBZ_MASK);
-                            pMixedCtx->dr[7] |= X86_DR7_RA1_MASK;
-
-                            /* Resync DR7 */
-                            /** @todo probably cheaper to just reload DR7, nothing else needs changing. */
-                            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-
-                            /* Set #DB to be injected into the VM and continue guest execution. */
-                            hmR0VmxSetPendingXcptDB(pVCpu, pMixedCtx);
-                            break;
-                        }
-                    }
-                }
+                hmR0VmxSetPendingXcptDB(pVCpu, pMixedCtx);
             }
+            /* rcStrict is VINF_SUCCESS or in [VINF_EM_FIRST..VINF_EM_LAST]. */
+            else if (   rcStrict2 != VINF_SUCCESS
+                     && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
+                rcStrict = rcStrict2;
         }
     }
 
 #ifdef DEBUG
-    if (rc == VINF_IOM_R3_IOPORT_READ)
+    if (rcStrict == VINF_IOM_R3_IOPORT_READ)
         Assert(!fIOWrite);
-    else if (rc == VINF_IOM_R3_IOPORT_WRITE)
+    else if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
         Assert(fIOWrite);
     else
     {
-        AssertMsg(   RT_FAILURE(rc)
-                  || rc == VINF_SUCCESS
-                  || rc == VINF_EM_RAW_EMULATE_INSTR
-                  || rc == VINF_EM_RAW_GUEST_TRAP
-                  || rc == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", rc));
+        /** @todo r=bird: This is missing a bunch of VINF_EM_FIRST..VINF_EM_LAST
+         *        statuses, that the VMM device and some others may return. See
+         *        IOM_SUCCESS() for guidance. */
+        AssertMsg(   RT_FAILURE(rcStrict)
+                  || rcStrict == VINF_SUCCESS
+                  || rcStrict == VINF_EM_RAW_EMULATE_INSTR
+                  || rcStrict == VINF_EM_DBG_BREAKPOINT
+                  || rcStrict == VINF_EM_RAW_GUEST_TRAP
+                  || rcStrict == VINF_TRPM_XCPT_DISPATCHED, ("%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 #endif
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitIO, y1);
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
