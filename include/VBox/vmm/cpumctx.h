@@ -135,7 +135,8 @@ typedef struct CPUMSYSENTER
 /**
  * CPU context core.
  *
- * @todo eliminate this structure!
+ * @todo        Eliminate this structure!
+ * @deprecated  We don't push any context cores any more in TRPM.
  */
 #pragma pack(1)
 typedef struct CPUMCTXCORE
@@ -413,6 +414,11 @@ typedef struct CPUMCTX
  * Gets the CPUMCTXCORE part of a CPUMCTX.
  */
 # define CPUMCTX2CORE(pCtx) ((PCPUMCTXCORE)(void *)&(pCtx)->rax)
+
+/**
+ * Gets the CPUMCTXCORE part of a CPUMCTX.
+ */
+# define CPUMCTX_FROM_CORE(a_pCtxCore) RT_FROM_MEMBER(a_pCtxCore, CPUMCTX, rax)
 
 /**
  * Gets the first selector register of a CPUMCTX.
