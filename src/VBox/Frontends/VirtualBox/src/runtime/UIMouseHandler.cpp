@@ -934,8 +934,8 @@ bool UIMouseHandler::multiTouchEvent(QTouchEvent *pTouchEvent, ulong uScreenId)
         LogRelFlow(("UIMouseHandler::multiTouchEvent: Origin: %dx%d, State: %d\n",
                     currentTouchPoint.x(), currentTouchPoint.y(), iTouchPointState));
 
-        contacts[i++] = RT_MAKE_U64_FROM_U16((uint16_t)currentTouchPoint.x(),
-                                             (uint16_t)currentTouchPoint.y(),
+        contacts[i++] = RT_MAKE_U64_FROM_U16((uint16_t)currentTouchPoint.x() + 1,
+                                             (uint16_t)currentTouchPoint.y() + 1,
                                              RT_MAKE_U16(touchPoint.id(), iTouchPointState),
                                              0);
     }

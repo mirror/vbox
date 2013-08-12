@@ -1486,6 +1486,10 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface
         paNewContacts[i].flags  = RT_BYTE2(u32Hi) & (MT_CONTACT_F_IN_CONTACT | MT_CONTACT_F_IN_RANGE);
         paNewContacts[i].status = MT_CONTACT_S_DIRTY;
         paNewContacts[i].oldId  = 0; /* Not used. */
+        if (paNewContacts[i].flags & MT_CONTACT_F_IN_CONTACT)
+        {
+            paNewContacts[i].flags |= MT_CONTACT_F_IN_RANGE;
+        }
     }
 
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
