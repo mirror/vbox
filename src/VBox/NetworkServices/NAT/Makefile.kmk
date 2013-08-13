@@ -71,7 +71,8 @@ VBoxNetLwipNAT_TEMPLATE =
 VBoxNetLwipNAT_TEMPLATE := VBOXMAINCLIENTEXE
 VBoxNetLwipNAT_INCS += ../../Devices/Network \
 	../../Devices/Network/lwip-new/vbox # testproxy.h
-VBoxNetLwipNAT_DEFS += ${LWIP_DEFS} 
+VBoxNetLwipNAT_DEFS += ${LWIP_DEFS}
+VBoxNetLwipNAT_DEFS.win += _WIN32_WINNT=0x501 # Windows XP 
 VBoxNetLwipNAT_SOURCES += VBoxNetLwipNAT.cpp	\
 	../NetLib/VBoxNetBaseService.cpp \
 	../NetLib/VBoxNetPortForwardString.cpp
