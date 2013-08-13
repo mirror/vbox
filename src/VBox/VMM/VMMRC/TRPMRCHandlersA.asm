@@ -296,33 +296,38 @@ GenericTrapErrCode:
 
     mov     ebx, IMP(g_trpmGuestCtxCore)    ; Assume GC as the most common.
     test    byte [%$STK_CS], 3h             ; check RPL of the cs selector
-    ;; @todo check this for conforming segments.
-    jnz     .save_state
+    jnz     .save_guest_state
     test    dword [%$STK_EFLAGS], X86_EFL_VM; If in V86, then guest.
-    jnz     .save_state
+    jnz     .save_guest_state
     mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
 
     ;
     ; Save the state.
     ;
-    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
-    ;               under the bottom of the stack. This is atm safe.
-    ;
-.save_state:
+.save_hyper_state:
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    lea     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, ss
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+    jmp     .save_state_common
+
+.save_guest_state:
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    mov     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, [%$STK_SS]
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+
+.save_state_common:
     mov     eax, [%$STK_SAVED_EAX]
     mov     [ebx + CPUMCTXCORE.eax], eax
-    mov     [ebx + CPUMCTXCORE.ecx], ecx
     mov     [ebx + CPUMCTXCORE.edx], edx
     mov     eax, [%$STK_SAVED_EBX]
     mov     [ebx + CPUMCTXCORE.ebx], eax
     mov     [ebx + CPUMCTXCORE.esi], esi
     mov     [ebx + CPUMCTXCORE.edi], edi
     mov     [ebx + CPUMCTXCORE.ebp], ebp
-
-    mov     eax, [%$STK_ESP]
-    mov     [ebx + CPUMCTXCORE.esp], eax
-    mov     cx, [%$STK_SS]
-    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
 
     mov     cx, [%$STK_CS]
     mov     [ebx + CPUMCTXCORE.cs.Sel], cx
@@ -791,34 +796,39 @@ ti_GenericInterrupt:
     mov     cr0, eax
 
     mov     ebx, IMP(g_trpmGuestCtxCore)    ; Assume GC as the most common.
-    test    byte [%$STK_CS], 3h               ; check RPL of the cs selector
-    ;; @todo check this for conforming segments.
-    jnz     .save_state
-    test    dword [%$STK_EFLAGS], X86_EFL_VM  ; If in V86, then guest.
-    jnz     .save_state
+    test    byte [%$STK_CS], 3h             ; check RPL of the cs selector
+    jnz     .save_guest_state
+    test    dword [%$STK_EFLAGS], X86_EFL_VM ; If in V86, then guest.
+    jnz     .save_guest_state
     mov     ebx, IMP(g_trpmHyperCtxCore)    ; It's raw-mode context, actually.
 
     ;
     ; Save the state.
     ;
-    ;   ASSUMPTION: If trap in hypervisor, we assume that we can read two dword
-    ;               under the bottom of the stack. This is atm safe.
-    ;
-.save_state:
+.save_hyper_state:
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    lea     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, ss
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+    jmp     .save_state_common
+
+.save_guest_state:
+    mov     [ebx + CPUMCTXCORE.ecx], ecx
+    mov     eax, [%$STK_ESP]
+    mov     [ebx + CPUMCTXCORE.esp], eax
+    mov     cx, [%$STK_SS]
+    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
+
+.save_state_common:
     mov     eax, [%$STK_SAVED_EAX]
     mov     [ebx + CPUMCTXCORE.eax], eax
-    mov     [ebx + CPUMCTXCORE.ecx], ecx
     mov     [ebx + CPUMCTXCORE.edx], edx
     mov     eax, [%$STK_SAVED_EBX]
     mov     [ebx + CPUMCTXCORE.ebx], eax
     mov     [ebx + CPUMCTXCORE.esi], esi
     mov     [ebx + CPUMCTXCORE.edi], edi
     mov     [ebx + CPUMCTXCORE.ebp], ebp
-
-    mov     eax, [%$STK_ESP]
-    mov     [ebx + CPUMCTXCORE.esp], eax
-    mov     cx, [%$STK_SS]
-    mov     [ebx + CPUMCTXCORE.ss.Sel], cx
 
     mov     cx, [%$STK_CS]
     mov     [ebx + CPUMCTXCORE.cs.Sel], cx
