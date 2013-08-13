@@ -2989,10 +2989,12 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseDivideError(PIEMCPU pIemCpu)
 }
 
 
-/** \#DB - 01.  */
+/** \#DB - 01.
+ * @note This automatically clear DR7.GD.  */
 DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaiseDebugException(PIEMCPU pIemCpu)
 {
     /** @todo set/clear RF. */
+    pIemCpu->CTX_SUFF(pCtx)->dr[7] &= ~X86_DR7_GD;
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_DB, IEM_XCPT_FLAGS_T_CPU_XCPT, 0, 0);
 }
 
@@ -5230,6 +5232,18 @@ static VBOXSTRICTRC iemMemPageTranslateAndCheckAccess(PIEMCPU pIemCpu, RTGCPTR G
             return iemRaisePageFault(pIemCpu, GCPtrMem, fAccess & ~(IEM_ACCESS_TYPE_READ | IEM_ACCESS_TYPE_WRITE),
                                      VERR_ACCESS_DENIED);
         }
+    }
+
+    /*
+     * Set the dirty / access flags.
+     * ASSUMES this is set when the address is translated rather than on committ...
+     */
+    /** @todo testcase: check when A and D bits are actually set by the CPU.  */
+    uint32_t fAccessedDirty = fAccess & IEM_ACCESS_TYPE_WRITE ? X86_PTE_D | X86_PTE_A : X86_PTE_A;
+    if ((fFlags & fAccessedDirty) != fAccessedDirty)
+    {
+        int rc2 = PGMGstModifyPage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrMem, 1, fAccessedDirty, ~(uint64_t)fAccessedDirty);
+        AssertRC(rc2);
     }
 
     GCPhys |= GCPtrMem & PAGE_OFFSET_MASK;
@@ -8472,10 +8486,6 @@ static void iemExecVerificationModeSetup(PIEMCPU pIemCpu)
 #endif
 #if 0 /* DOS's size-overridden iret to v8086. */
             || (pOrgCtx->rip == 0x427 && pOrgCtx->cs.Sel == 0xb8)
-#endif
-#if 1 /* Win3.1: port 64 interception in v8086 mofr */
-            || (pOrgCtx->rip == 0xe9d6 && pOrgCtx->cs.Sel == 0xf000 && pOrgCtx->eflags.Bits.u1VM
-                && pOrgCtx->tr.u64Base == 0x80049e8c && pOrgCtx->tr.u32Limit == 0x2069)
 #endif
            )
        )

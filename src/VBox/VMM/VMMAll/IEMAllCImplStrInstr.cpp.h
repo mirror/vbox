@@ -1049,7 +1049,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    uint32_t        u32Value;
+    uint32_t        u32Value = 0;
     if (!IEM_VERIFICATION_ENABLED(pIemCpu))
         rcStrict = IOMIOPortRead(pVM, IEMCPU_TO_VMCPU(pIemCpu), pCtx->dx, &u32Value, OP_SIZE / 8);
     else
@@ -1216,7 +1216,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             if (rcStrict != VINF_SUCCESS)
                 return rcStrict;
 
-            uint32_t u32Value;
+            uint32_t u32Value = 0;
             if (!IEM_VERIFICATION_ENABLED(pIemCpu))
                 rcStrict = IOMIOPortRead(pVM, pVCpu, u16Port, &u32Value, OP_SIZE / 8);
             else
