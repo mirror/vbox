@@ -51,6 +51,11 @@ namespace guestControl {
 /** Maximum of callback contexts a guest process can have. */
 #define VBOX_GUESTCTRL_MAX_CONTEXTS     _64K
 
+/** Base (start) of guest control session IDs. Session
+ *  ID 0 is reserved for the root process which
+ *  hosts all other guest session processes. */
+#define VBOX_GUESTCTRL_SESSION_ID_BASE  1
+
 /** Builds a context ID out of the session ID, object ID and an
  *  increasing count. */
 #define VBOX_GUESTCTRL_CONTEXTID_MAKE(uSession, uObject, uCount) \
@@ -58,6 +63,7 @@ namespace guestControl {
      | (uint32_t)((uObject)  &  0x7ff) << 16 \
      | (uint32_t)((uCount)   & 0xffff)       \
     )
+/** Creates a context ID out of a session ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSession) \
     ((uint32_t)((uSession) & 0x1f) << 27)
 /** Gets the session ID out of a context ID. */
@@ -69,6 +75,10 @@ namespace guestControl {
 /** Gets the context count of a process out of a context ID. */
 #define VBOX_GUESTCTRL_CONTEXTID_GET_COUNT(uContextID) \
     ((uContextID) & 0xffff)
+/** Filter context IDs by session. Can be used in conjunction
+ *  with VbglR3GuestCtrlMsgFilterSet(). */
+#define VBOX_GUESTCTRL_FILTER_BY_SESSION(uSession) \
+    (VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSession) | 0xF8000000)
 
 /**
  * Process status when executed in the guest.
@@ -431,12 +441,15 @@ typedef struct HGCMMsgCmdFilterSet
 {
     VBoxGuestHGCMCallInfo hdr;
 
+    /** Value to filter for after filter mask
+     *  was applied. */
+    HGCMFunctionParameter value;         /* IN uint32_t */
     /** Mask to add to the current set filter. */
-    HGCMFunctionParameter add;      /* IN uint32_t */
+    HGCMFunctionParameter mask_add;      /* IN uint32_t */
     /** Mask to remove from the current set filter. */
-    HGCMFunctionParameter remove;   /* IN uint32_t */
+    HGCMFunctionParameter mask_remove;   /* IN uint32_t */
     /** Filter flags; currently unused. */
-    HGCMFunctionParameter flags;    /* IN uint32_t */
+    HGCMFunctionParameter flags;         /* IN uint32_t */
 
 } HGCMMsgCmdFilterSet;
 
