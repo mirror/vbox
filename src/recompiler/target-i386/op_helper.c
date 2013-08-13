@@ -271,9 +271,10 @@ static inline void load_seg_cache_raw_dt(SegmentCache *sc, uint32_t e1, uint32_t
 {
     sc->base = get_seg_base(e1, e2);
     sc->limit = get_seg_limit(e1, e2);
+#ifndef VBOX
     sc->flags = e2;
-#ifdef VBOX
-    sc->flags &= ~DESC_INTEL_UNUSABLE;
+#else
+    sc->flags = e2 & DESC_RAW_FLAG_BITS;
     sc->newselector = 0;
     sc->fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
 #endif
@@ -2582,7 +2583,7 @@ void helper_ltr(int selector)
         env->tr.base = 0;
         env->tr.limit = 0;
         env->tr.flags = 0;
-#ifdef VBOX
+#ifdef VBOX /** @todo can TR really be 0? If so, what're the hidden attributes? */
         env->tr.flags = DESC_INTEL_UNUSABLE;
         env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
         env->tr.newselector = 0;
@@ -2676,7 +2677,7 @@ void helper_load_seg(int seg_reg, int selector)
         } else {
             e2 = DESC_INTEL_UNUSABLE;
         }
-        cpu_x86_load_seg_cache(env, seg_reg, selector, 0, 0, e2);
+        cpu_x86_load_seg_cache_with_clean_flags(env, seg_reg, selector, 0, 0, e2);
 #endif
     } else {
 
@@ -3354,9 +3355,9 @@ static inline void helper_ret_protected(int shift, int is_iret, int addend)
             if ((env->hflags & HF_LMA_MASK) && rpl != 3 && (e2 & DESC_L_MASK)) {
                 if (!(e2 & DESC_A_MASK))
                     e2 = set_segment_accessed(new_cs, e2);
-                cpu_x86_load_seg_cache(env, R_SS, new_ss,
-                                       0, 0xffffffff,
-                                       DESC_INTEL_UNUSABLE | (rpl << DESC_DPL_SHIFT) );
+                cpu_x86_load_seg_cache_with_clean_flags(env, R_SS, new_ss,
+                                                        0, 0xffffffff,
+                                                        DESC_INTEL_UNUSABLE | (rpl << DESC_DPL_SHIFT) );
                 ss_e2 = DESC_B_MASK; /* not really used */
             } else
 # endif
