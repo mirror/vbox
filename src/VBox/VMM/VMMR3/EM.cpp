@@ -2377,8 +2377,11 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Execute in the interpreter.
                  */
                 case EMSTATE_IEM:
+                {
 #if 0 /* For testing purposes. */
+                    STAM_PROFILE_START(&pVCpu->em.s.StatHmExec, x1);
                     rc = VBOXSTRICTRC_TODO(EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE));
+                    STAM_PROFILE_STOP(&pVCpu->em.s.StatHmExec, x1);
                     if (rc == VINF_EM_DBG_STEPPED || rc == VINF_EM_RESCHEDULE_HM || rc == VINF_EM_RESCHEDULE_REM || rc == VINF_EM_RESCHEDULE_RAW)
                         rc = VINF_SUCCESS;
                     else if (rc == VERR_EM_CANNOT_EXEC_GUEST)
@@ -2392,6 +2395,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     }
                     fFFDone = false;
                     break;
+                }
 
                 /*
                  * Application processor execution halted until SIPI.
