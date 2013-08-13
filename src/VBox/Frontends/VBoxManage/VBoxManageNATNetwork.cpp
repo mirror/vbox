@@ -28,7 +28,9 @@
 #include <VBox/com/VirtualBox.h>
 #endif /* !VBOX_ONLY_DOCS */
 
-#include <netinet/in.h>
+#ifndef RT_OS_WINDOWS
+# include <netinet/in.h>
+#endif
 
 #define IPv6
 
