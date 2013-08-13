@@ -1409,7 +1409,10 @@ static int cpumR3CpuIdInit(PVM pVM)
 VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 {
     LogFlow(("CPUMR3Relocate\n"));
-    /* nothing to do any more. */
+
+    /* Recheck the guest DRx values in raw-mode. */
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+        CPUMRecalcHyperDRx(&pVM->aCpus[iCpu], UINT8_MAX);
 }
 
 
