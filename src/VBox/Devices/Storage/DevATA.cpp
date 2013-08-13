@@ -1544,6 +1544,8 @@ static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf,
     rc = s->pDrvBlock->pfnRead(s->pDrvBlock, u64Sector * 512, pvBuf, cSectors * 512);
     s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
+    Log4(("ataReadSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
+          rc, cSectors, u64Sector, cSectors * 512, pvBuf));
 
     STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * 512);
 
@@ -1580,6 +1582,8 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector,
 #endif
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
+    Log4(("ataWriteSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
+          rc, cSectors, u64Sector, cSectors * 512, pvBuf));
 
     STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * 512);
 
