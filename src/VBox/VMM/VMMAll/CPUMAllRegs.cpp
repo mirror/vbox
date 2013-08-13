@@ -2258,6 +2258,11 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
     if ((HMIsEnabled(pVCpu->CTX_SUFF(pVM)) ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
     {
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+#ifdef IN_RC
+        bool const fHmEnabled = false;
+#elif defined(IN_RING3)
+        bool const fHmEnabled = HMIsEnabled(pVM);
+#endif
 
         /*
          * Ok, something is enabled.  Recalc each of the breakpoints, taking
@@ -2276,8 +2281,8 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         else if (uGstDr7 & (X86_DR7_L0 | X86_DR7_G0))
         {
             uNewDr0 = CPUMGetGuestDR0(pVCpu);
-#ifdef IN_RC
-            if (MMHyperIsInsideArea(pVM, uNewDr0))
+#ifndef IN_RING0
+            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr0))
                 uNewDr0 = 0;
             else
 #endif
@@ -2296,8 +2301,8 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         else if (uGstDr7 & (X86_DR7_L1 | X86_DR7_G1))
         {
             uNewDr1 = CPUMGetGuestDR1(pVCpu);
-#ifdef IN_RC
-            if (MMHyperIsInsideArea(pVM, uNewDr1))
+#ifndef IN_RING0
+            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr1))
                 uNewDr1 = 0;
             else
 #endif
@@ -2316,8 +2321,8 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         else if (uGstDr7 & (X86_DR7_L2 | X86_DR7_G2))
         {
             uNewDr2 = CPUMGetGuestDR2(pVCpu);
-#ifdef IN_RC
-            if (MMHyperIsInsideArea(pVM, uNewDr2))
+#ifndef IN_RING0
+            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr2))
                 uNewDr2 = 0;
             else
 #endif
@@ -2336,8 +2341,8 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         else if (uGstDr7 & (X86_DR7_L3 | X86_DR7_G3))
         {
             uNewDr3 = CPUMGetGuestDR3(pVCpu);
-#ifdef IN_RC
-            if (MMHyperIsInsideArea(pVM, uNewDr3))
+#ifndef IN_RING0
+            if (fHmEnabled && MMHyperIsInsideArea(pVM, uNewDr3))
                 uNewDr3 = 0;
             else
 #endif
