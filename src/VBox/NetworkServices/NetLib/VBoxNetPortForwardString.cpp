@@ -18,8 +18,11 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-
+#ifndef RT_OS_WINDOWS
 #include <netinet/in.h>
+#else
+# include <Winsock2.h>
+#endif
 
 #include <iprt/cdefs.h>
 #define IPv6
