@@ -910,8 +910,8 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
 
 
 /**
- * Thread main routine for a forked guest session. This
- * thread runs in the main executable to control the forked
+ * Thread main routine for a forked guest session process.
+ * This thread runs in the main executable to control the forked
  * session process.
  *
  * @return IPRT status code.
@@ -935,21 +935,25 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
 
         /* The session thread is not interested in receiving any commands;
          * tell the host service. */
-        rc = VbglR3GuestCtrlMsgFilterSet(uClientID, 0 /* Skip all */, 0);
+        rc = VbglR3GuestCtrlMsgFilterSet(uClientID, 0 /* Skip all */,
+                                         0 /* Filter mask to add */, 0 /* Filter mask to remove */);
         if (RT_FAILURE(rc))
         {
             VBoxServiceError("Unable to set message filter, rc=%Rrc\n", rc);
             /* Non-critical. */
+            rc = VINF_SUCCESS;
         }
     }
     else
-    {
         VBoxServiceError("Error connecting to guest control service, rc=%Rrc\n", rc);
-        return rc;
-    }
 
-    /* Let caller know that we're done initializing. */
-    rc = RTThreadUserSignal(RTThreadSelf());
+    if (RT_FAILURE(rc))
+        pThread->fShutdown = true;
+
+    /* Let caller know that we're done initializing, regardless of the result. */
+    int rc2 = RTThreadUserSignal(RTThreadSelf());
+    AssertRC(rc2);
+
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1068,8 +1072,8 @@ static DECLCALLBACK(int) gstcntlSessionThread(RTTHREAD ThreadSelf, void *pvUser)
     /* Report final status. */
     Assert(uSessionStatus != GUEST_SESSION_NOTIFYTYPE_UNDEFINED);
     VBGLR3GUESTCTRLCMDCTX ctx = { uClientID, VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(uSessionID) };
-    int rc2 = VbglR3GuestCtrlSessionNotify(&ctx,
-                                           uSessionStatus, uSessionRc);
+    rc2 = VbglR3GuestCtrlSessionNotify(&ctx,
+                                       uSessionStatus, uSessionRc);
     if (RT_FAILURE(rc2))
         VBoxServiceError("Reporting session ID=%RU32 final status failed with rc=%Rrc\n",
                          uSessionID, rc2);
@@ -1099,10 +1103,10 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
          * host service to send messages which belong to another
          * session we don't want to handle. */
         uint32_t uFilterAdd =
-            VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID);
-        uFilterAdd |= 0x7FFFFFF; /* We only want to filter for session IDs. */
-
-        rc = VbglR3GuestCtrlMsgFilterSet(uClientID, uFilterAdd, 0 /* Filter remove */);
+            VBOX_GUESTCTRL_FILTER_BY_SESSION(pSession->StartupInfo.uSessionID);
+        rc = VbglR3GuestCtrlMsgFilterSet(uClientID,
+                                         VBOX_GUESTCTRL_CONTEXTID_MAKE_SESSION(pSession->StartupInfo.uSessionID),
+                                         uFilterAdd, 0 /* Filter remove */);
         VBoxServiceVerbose(3, "Setting message filterAdd=0x%x returned %Rrc\n",
                            uFilterAdd, rc);
 
@@ -1929,11 +1933,12 @@ int GstCntlSessionThreadDestroy(PVBOXSERVICECTRLSESSIONTHREAD pThread, uint32_t 
 
     int rc = GstCntlSessionThreadWait(pThread,
                                       5 * 60 * 1000 /* 5 minutes timeout */, uFlags);
-    /** @todo Kill session process if still around? */
 
     /* Remove session from list and destroy object. */
     RTListNodeRemove(&pThread->Node);
+
     RTMemFree(pThread);
+    pThread = NULL;
 
     return rc;
 }
