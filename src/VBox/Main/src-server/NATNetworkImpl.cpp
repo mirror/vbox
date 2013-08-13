@@ -675,7 +675,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 
                 m->dhcpServer->AddGlobalOption(DhcpOpt_Router, m->IPv4Gateway.raw());
 
-                rc = m->dhcpServer->SetEnabled(true);
+                rc = m->dhcpServer->COMSETTER(Enabled)(true);
 
                 BSTR dhcpip = NULL;
                 BSTR netmask = NULL;
