@@ -8934,15 +8934,21 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
     /*
      * Execute the instruction in REM.
      */
-    PVM pVM = IEMCPU_TO_VM(pIemCpu);
+    PVM    pVM   = IEMCPU_TO_VM(pIemCpu);
+    PVMCPU pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     VBOXSTRICTRC rc = VERR_EM_CANNOT_EXEC_GUEST;
 #if 1
     if (   HMIsEnabled(pVM)
         && pIemCpu->cIOReads == 0
         && pIemCpu->cIOWrites == 0)
+    {
         do
-            rc = EMR3HmSingleInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu), EM_ONE_INS_FLAGS_RIP_CHANGE);
-        while (rc == VINF_SUCCESS);
+            rc = EMR3HmSingleInstruction(pVM, pVCpu, EM_ONE_INS_FLAGS_RIP_CHANGE);
+        while (   rc == VINF_SUCCESS
+               || (   rc == VINF_EM_DBG_STEPPED
+                   && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                   && EMGetInhibitInterruptsPC(pVCpu) == pOrgCtx->rip) );
+    }
 #endif
     if (   rc == VERR_EM_CANNOT_EXEC_GUEST
         || rc == VINF_IOM_R3_IOPORT_READ
@@ -8953,7 +8959,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
         )
     {
         EMRemLock(pVM);
-        rc = REMR3EmulateInstruction(pVM, IEMCPU_TO_VMCPU(pIemCpu));
+        rc = REMR3EmulateInstruction(pVM, pVCpu);
         AssertRC(rc);
         EMRemUnlock(pVM);
     }
