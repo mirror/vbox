@@ -92,6 +92,12 @@ UISelectorWindow::UISelectorWindow(UISelectorWindow **ppSelf, QWidget *pParent,
     if (ppSelf)
         *ppSelf = this;
 
+#ifdef Q_WS_MAC
+    /* We have to make sure that we are getting the front most process.
+     * This is necessary for Qt versions > 4.3.3: */
+    ::darwinSetFrontMostProcess();
+#endif /* Q_WS_MAC */
+
     /* Prepare: */
     prepareIcon();
     prepareMenuBar();
