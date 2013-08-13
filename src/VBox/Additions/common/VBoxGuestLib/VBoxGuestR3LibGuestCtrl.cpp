@@ -137,21 +137,23 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgWaitFor(uint32_t uClientId, uint32_t *puMsg, u
  *
  * @return  IPRT status code.
  * @param   uClientId       The client ID returned by VbglR3GuestCtrlConnect().
- * @param   uFilterAdd      Context ID filter mask to add.
- * @param   uFilterRemove   Context ID filter mask to remove.
+ * @param   uValue          The value to filter messages for.
+ * @param   uMaskAdd        Filter mask to add.
+ * @param   uMaskRemove     Filter mask to remove.
  */
-VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId,
-                                            uint32_t uFilterAdd, uint32_t uFilterRemove)
+VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterSet(uint32_t uClientId, uint32_t uValue,
+                                            uint32_t uMaskAdd, uint32_t uMaskRemove)
 {
     HGCMMsgCmdFilterSet Msg;
 
     Msg.hdr.result      = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = uClientId;
     Msg.hdr.u32Function = GUEST_MSG_FILTER_SET; /* Tell the host we want to set a filter. */
-    Msg.hdr.cParms      = 3;
+    Msg.hdr.cParms      = 4;
 
-    VbglHGCMParmUInt32Set(&Msg.add, uFilterAdd);
-    VbglHGCMParmUInt32Set(&Msg.remove, uFilterRemove);
+    VbglHGCMParmUInt32Set(&Msg.value, uValue);
+    VbglHGCMParmUInt32Set(&Msg.mask_add, uMaskAdd);
+    VbglHGCMParmUInt32Set(&Msg.mask_remove, uMaskRemove);
     VbglHGCMParmUInt32Set(&Msg.flags, 0 /* Flags, unused */);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));

@@ -1441,7 +1441,8 @@ static int gstcntlProcessProcessWorker(PVBOXSERVICECTRLPROCESS pProcess)
 
     /* The process thread is not interested in receiving any commands;
      * tell the host service. */
-    rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */, 0);
+    rc = VbglR3GuestCtrlMsgFilterSet(pProcess->uClientID, 0 /* Skip all */,
+                                     0 /* Filter mask to add */, 0 /* Filter mask to remove */);
     if (RT_FAILURE(rc))
     {
         VBoxServiceError("Unable to set message filter, rc=%Rrc\n", rc);

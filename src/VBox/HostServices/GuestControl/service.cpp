@@ -286,8 +286,8 @@ typedef struct HostCommand
      */
     int CopyTo(VBOXHGCMSVCPARM paDstParms[], uint32_t cDstParms) const
     {
-        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mContextID=%RU32\n",
-                     this, mMsgType, mParmCount, mContextID));
+        LogFlowFunc(("pHostCmd=%p, mMsgType=%RU32, mParmCount=%RU32, mContextID=%RU32 (Session %RU32)\n",
+                     this, mMsgType, mParmCount, mContextID, VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(mContextID)));
 
         int rc = VINF_SUCCESS;
         if (cDstParms != mParmCount)
@@ -477,7 +477,8 @@ typedef struct ClientState
     ClientState(void)
         : mSvcHelpers(NULL),
           mID(0),
-          mFlags(0), mContextFilter(0),
+          mFlags(0),
+          mFilterMask(0), mFilterValue(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
           mIsPending(false),
@@ -486,7 +487,8 @@ typedef struct ClientState
     ClientState(PVBOXHGCMSVCHELPERS pSvcHelpers, uint32_t uClientID)
         : mSvcHelpers(pSvcHelpers),
           mID(uClientID),
-          mFlags(0), mContextFilter(0),
+          mFlags(0),
+          mFilterMask(0), mFilterValue(0),
           mHostCmdRc(VINF_SUCCESS), mHostCmdTries(0),
           mHostCmdTS(0),
           mIsPending(false),
@@ -570,16 +572,15 @@ typedef struct ClientState
         bool fWant;
         if (mFlags & CLIENTSTATE_FLAG_CONTEXTFILTER)
         {
-            fWant =
-                (pHostCmd->mContextID & mContextFilter) == pHostCmd->mContextID;
+            fWant = (pHostCmd->mContextID & mFilterMask) == mFilterValue;
         }
         else /* Client is interested in all commands. */
             fWant = true;
 
-        LogFlowFunc(("[Client %RU32] mFlags=0x%x, mContextID=%RU32 (session %RU32), mContextFilter=0x%x, fWant=%RTbool\n",
+        LogFlowFunc(("[Client %RU32] mFlags=0x%x, mContextID=%RU32 (session %RU32), mFilterMask=0x%x, mFilterValue=%RU32, fWant=%RTbool\n",
                      mID, mFlags, pHostCmd->mContextID,
                      VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(pHostCmd->mContextID),
-                     mContextFilter, fWant));
+                     mFilterMask, mFilterValue, fWant));
 
         return fWant;
     }
@@ -830,8 +831,10 @@ typedef struct ClientState
     uint32_t mID;
     /** Client flags. @sa CLIENTSTATE_FLAG_ flags. */
     uint32_t mFlags;
-    /** The context ID filter, based on the flags set. */
-    uint32_t mContextFilter;
+    /** The context ID filter mask, if any. */
+    uint32_t mFilterMask;
+    /** The context ID filter value, if any. */
+    uint32_t mFilterValue;
     /** Host command list to process. */
     HostCmdList mHostCmdList;
     /** Last (most recent) rc after handling the
@@ -1151,26 +1154,31 @@ int Service::clientSetMsgFilterSet(uint32_t u32ClientID, VBOXHGCMCALLHANDLE call
     if (itClientState == mClientStateMap.end())
         return VERR_NOT_FOUND; /* Should never happen. */
 
-    if (cParms != 3)
+    if (cParms != 4)
         return VERR_INVALID_PARAMETER;
 
-    uint32_t uMaskAdd, uMaskRemove;
-    int rc = paParms[0].getUInt32(&uMaskAdd);
+    uint32_t uValue, uMaskAdd, uMaskRemove;
+    int rc = paParms[0].getUInt32(&uValue);
     if (RT_SUCCESS(rc))
-        rc = paParms[1].getUInt32(&uMaskRemove);
+        rc = paParms[1].getUInt32(&uMaskAdd);
+    if (RT_SUCCESS(rc))
+        rc = paParms[2].getUInt32(&uMaskRemove);
+    /** @todo paParm[3] (flags) not used yet. */
     if (RT_SUCCESS(rc))
     {
         ClientState &clientState = itClientState->second;
 
         clientState.mFlags |= CLIENTSTATE_FLAG_CONTEXTFILTER;
         if (uMaskAdd)
-            clientState.mContextFilter |= uMaskAdd;
+            clientState.mFilterMask |= uMaskAdd;
         if (uMaskRemove)
-            clientState.mContextFilter &= ~uMaskRemove;
+            clientState.mFilterMask &= ~uMaskRemove;
 
-        LogFlowFunc(("[Client %RU32] Setting message filter=0x%x set (flags=0x%x, maskAdd=0x%x, maskRemove=0x%x)\n",
-                     u32ClientID, clientState.mContextFilter, clientState.mFlags,
-                     uMaskAdd, uMaskRemove));
+        clientState.mFilterValue = uValue;
+
+        LogFlowFunc(("[Client %RU32] Setting message filterMask=0x%x, filterVal=%RU32 set (flags=0x%x, maskAdd=0x%x, maskRemove=0x%x)\n",
+                     u32ClientID, clientState.mFilterMask, clientState.mFilterValue,
+                     clientState.mFlags, uMaskAdd, uMaskRemove));
     }
 
     return rc;
@@ -1195,7 +1203,8 @@ int Service::clientSetMsgFilterUnset(uint32_t u32ClientID, VBOXHGCMCALLHANDLE ca
     ClientState &clientState = itClientState->second;
 
     clientState.mFlags &= ~CLIENTSTATE_FLAG_CONTEXTFILTER;
-    clientState.mContextFilter = 0;
+    clientState.mFilterMask = 0;
+    clientState.mFilterValue = 0;
 
     LogFlowFunc(("[Client %RU32} Unset message filter\n", u32ClientID));
     return VINF_SUCCESS;
