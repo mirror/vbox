@@ -3357,6 +3357,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     do
     {
         bool fSessionFound = false;
+        size_t cSessionsHandled = 0;
 
         SafeIfaceArray <IGuestSession> collSessions;
         CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
@@ -3385,6 +3386,8 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             if (fSessionFound)
             {
+                cSessionsHandled++;
+
                 Assert(!pSession.isNull());
                 if (fVerbose)
                     RTPrintf("Closing guest session ID=#%RU32 \"%s\" ...\n",
@@ -3397,7 +3400,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
             }
         }
 
-        if (!fSessionFound)
+        if (!cSessionsHandled)
         {
             RTPrintf("No guest session(s) found\n");
             rc = E_ABORT; /* To set exit code accordingly. */
