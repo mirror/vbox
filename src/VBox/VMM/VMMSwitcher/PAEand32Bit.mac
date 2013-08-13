@@ -514,7 +514,7 @@ htg_debug_regs_guest:
     mov     [edx + CPUMCPU.Host.dr2], ecx
     mov     eax, dr3
     mov     [edx + CPUMCPU.Host.dr3], eax
-    or      dword [edi + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HOST
+    or      dword [edx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HOST
 
     ; load hyper DR0-7
     mov     ebx, [edx + CPUMCPU.Hyper.dr]
@@ -529,7 +529,7 @@ htg_debug_regs_guest:
     mov     dr6, ecx
     mov     eax, [edx + CPUMCPU.Hyper.dr + 8*7]
     mov     dr7, eax
-    or      dword [edi + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+    or      dword [edx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
     jmp     htg_debug_regs_guest_done
 
 ENDPROC vmmR0ToRawModeAsm
@@ -681,6 +681,7 @@ BEGINPROC vmmRCToHostAsm
 
     ; special registers which may change.
 vmmRCToHostAsm_SaveNoGeneralRegs:
+    mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
     ; str     [edx + CPUMCPU.Hyper.tr] - double fault only, and it won't be right then either.
     sldt    [edx + CPUMCPU.Hyper.ldtr.Sel]
 
@@ -688,7 +689,7 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ; FPU context is saved before restore of host saving (another) branch.
 
     ; Disable debug regsiters if active so they cannot trigger while switching.
-    test    dword [edi + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+    test    dword [edx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
     jz      .gth_disabled_dr7
     mov     eax, X86_DR7_INIT_VAL
     mov     dr7, eax
@@ -699,14 +700,12 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ; Disarm K7 NMI.
     ;
     mov     esi, edx
-    mov     edi, eax
 
     xor     edx, edx
     xor     eax, eax
     mov     ecx, MSR_K7_EVNTSEL0
     wrmsr
 
-    mov     eax, edi
     mov     edx, esi
 %endif
 
@@ -714,7 +713,6 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ;;
     ;; Load Intermediate memory context.
     ;;
-    mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
     mov     ecx, [edx + CPUMCPU.Host.cr3]
     FIXUP SWITCHER_FIX_INTER_CR3_GC, 1
     mov     eax, 0ffffffffh

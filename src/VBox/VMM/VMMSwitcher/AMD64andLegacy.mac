@@ -783,6 +783,8 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     cli
 .if_clear_out:
 %endif
+    mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
+
     ; str     [edx + CPUMCPU.Hyper.tr] - double fault only, and it won't be right then either.
     sldt    [edx + CPUMCPU.Hyper.ldtr.Sel]
 
@@ -790,7 +792,7 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ; FPU context is saved before restore of host saving (another) branch.
 
     ; Disable debug registers if active so they cannot trigger while switching.
-    test    dword [edi + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
+    test    dword [edx + CPUMCPU.fUseFlags], CPUM_USED_DEBUG_REGS_HYPER
     jz      .gth_disabled_dr7
     mov     eax, X86_DR7_INIT_VAL
     mov     dr7, eax
@@ -799,7 +801,6 @@ vmmRCToHostAsm_SaveNoGeneralRegs:
     ;;
     ;; Load Intermediate memory context.
     ;;
-    mov     edi, eax                    ; save return code in EDI (careful with COM_DWORD_REG from here on!)
     FIXUP SWITCHER_FIX_INTER_CR3_GC, 1
     mov     eax, 0ffffffffh
     mov     cr3, eax

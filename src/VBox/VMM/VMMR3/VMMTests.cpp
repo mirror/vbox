@@ -69,6 +69,7 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     if (RT_FAILURE(rc))
         return rc;
 
+    Log(("vmmR3DoGCTest: %d %#x\n", enmTestcase, uVariation));
     CPUMSetHyperState(pVCpu, pVM->vmm.s.pfnCallTrampolineRC, pVCpu->vmm.s.pbEMTStackBottomRC, 0, 0);
     vmmR3TestClearStack(pVCpu);
     CPUMPushHyper(pVCpu, uVariation);
@@ -78,6 +79,23 @@ static int vmmR3DoGCTest(PVM pVM, VMMGCOPERATION enmTestcase, unsigned uVariatio
     CPUMPushHyper(pVCpu, RCPtrEP);                /* what to call */
     Assert(CPUMGetHyperCR3(pVCpu) && CPUMGetHyperCR3(pVCpu) == PGMGetHyperCR3(pVCpu));
     rc = SUPR3CallVMMR0Fast(pVM->pVMR0, VMMR0_DO_RAW_RUN, 0);
+
+#if 1
+    /* flush the raw-mode logs. */
+# ifdef LOG_ENABLED
+    PRTLOGGERRC pLogger = pVM->vmm.s.pRCLoggerR3;
+    if (   pLogger
+        && pLogger->offScratch > 0)
+        RTLogFlushRC(NULL, pLogger);
+# endif
+# ifdef VBOX_WITH_RC_RELEASE_LOGGING
+    PRTLOGGERRC pRelLogger = pVM->vmm.s.pRCRelLoggerR3;
+    if (RT_UNLIKELY(pRelLogger && pRelLogger->offScratch > 0))
+        RTLogFlushRC(RTLogRelDefaultInstance(), pRelLogger);
+# endif
+#endif
+
+    Log(("vmmR3DoGCTest: rc=%Rrc iLastGZRc=%Rrc\n", rc, pVCpu->vmm.s.iLastGZRc));
     if (RT_LIKELY(rc == VINF_SUCCESS))
         rc = pVCpu->vmm.s.iLastGZRc;
     return rc;
@@ -245,7 +263,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_SUCCESS)
         {
             RTPrintf("VMM: Nop test failed, rc=%Rrc not VINF_SUCCESS\n", rc);
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         /* a harmless breakpoint */
@@ -259,7 +277,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_SUCCESS)
         {
             RTPrintf("VMM: DR0=0x10000 test failed with rc=%Rrc!\n", rc);
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         /* a bad one at VMMGCEntry */
@@ -272,7 +290,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_EM_DBG_HYPER_BREAKPOINT)
         {
             RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Rrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         /* resume the breakpoint */
@@ -282,7 +300,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_SUCCESS)
         {
             RTPrintf("VMM: failed to resume on hyper breakpoint, rc=%Rrc = KNOWN BUG\n", rc); /** @todo fix VMMR3ResumeHyper */
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         /* engage the breakpoint again and try single stepping. */
@@ -291,7 +309,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_EM_DBG_HYPER_BREAKPOINT)
         {
             RTPrintf("VMM: DR1=VMMGCEntry test failed with rc=%Rrc! expected VINF_EM_RAW_BREAKPOINT_HYPER\n", rc);
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         RTGCUINTREG OldPc = CPUMGetHyperEIP(pVCpu);
@@ -304,7 +322,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             if (rc != VINF_EM_DBG_HYPER_STEPPED)
             {
                 RTPrintf("\nVMM: failed to step on hyper breakpoint, rc=%Rrc\n", rc);
-                return rc;
+                return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
             }
             RTGCUINTREG Pc = CPUMGetHyperEIP(pVCpu);
             RTPrintf("%RGr=>", Pc);
@@ -328,7 +346,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         if (rc != VINF_SUCCESS)
         {
             RTPrintf("VMM: NOP failed, rc=%Rrc\n", rc);
-            return rc;
+            return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
         }
 
         /*
@@ -342,7 +360,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
             if (rc != VINF_SUCCESS)
             {
                 RTPrintf("VMM: Interrupt masking failed: rc=%Rrc\n", rc);
-                return rc;
+                return RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_INFO_STATUS;
             }
             uint64_t Ticks = ASMReadTSC() - StartTick;
             if (Ticks < (SUPGetCpuHzFromGIP(g_pSUPGlobalInfoPage) / 10000))
