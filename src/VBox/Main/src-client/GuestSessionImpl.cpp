@@ -655,7 +655,11 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     /** @todo uFlags validation. */
 
     if (mData.mStatus != GuestSessionStatus_Started)
+    {
+        LogFlowThisFunc(("Session ID=%RU32 not started (anymore), status now is: %ld\n",
+                         mData.mSession.mID, mData.mStatus));
         return VINF_SUCCESS;
+    }
 
     int vrc;
 
