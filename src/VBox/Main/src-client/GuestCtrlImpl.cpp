@@ -379,7 +379,7 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
     try
     {
         /* Create a new session ID and assign it. */
-        uint32_t uNewSessionID = 0;
+        uint32_t uNewSessionID = VBOX_GUESTCTRL_SESSION_ID_BASE;
         uint32_t uTries = 0;
 
         for (;;)
@@ -392,7 +392,7 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
             }
             uNewSessionID++;
             if (uNewSessionID >= VBOX_GUESTCTRL_MAX_SESSIONS)
-                uNewSessionID = 0;
+                uNewSessionID = VBOX_GUESTCTRL_SESSION_ID_BASE;
 
             if (++uTries == VBOX_GUESTCTRL_MAX_SESSIONS)
                 break; /* Don't try too hard. */
