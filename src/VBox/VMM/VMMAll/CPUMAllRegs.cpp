@@ -2156,28 +2156,28 @@ VMMDECL(CPUMCPUVENDOR) CPUMGetGuestCpuVendor(PVM pVM)
 VMMDECL(int) CPUMSetGuestDR0(PVMCPU pVCpu, uint64_t uDr0)
 {
     pVCpu->cpum.s.Guest.dr[0] = uDr0;
-    return CPUMRecalcHyperDRx(pVCpu, 0);
+    return CPUMRecalcHyperDRx(pVCpu, 0, false);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR1(PVMCPU pVCpu, uint64_t uDr1)
 {
     pVCpu->cpum.s.Guest.dr[1] = uDr1;
-    return CPUMRecalcHyperDRx(pVCpu, 1);
+    return CPUMRecalcHyperDRx(pVCpu, 1, false);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR2(PVMCPU pVCpu, uint64_t uDr2)
 {
     pVCpu->cpum.s.Guest.dr[2] = uDr2;
-    return CPUMRecalcHyperDRx(pVCpu, 2);
+    return CPUMRecalcHyperDRx(pVCpu, 2, false);
 }
 
 
 VMMDECL(int) CPUMSetGuestDR3(PVMCPU pVCpu, uint64_t uDr3)
 {
     pVCpu->cpum.s.Guest.dr[3] = uDr3;
-    return CPUMRecalcHyperDRx(pVCpu, 3);
+    return CPUMRecalcHyperDRx(pVCpu, 3, false);
 }
 
 
@@ -2191,7 +2191,7 @@ VMMDECL(int) CPUMSetGuestDR6(PVMCPU pVCpu, uint64_t uDr6)
 VMMDECL(int) CPUMSetGuestDR7(PVMCPU pVCpu, uint64_t uDr7)
 {
     pVCpu->cpum.s.Guest.dr[7] = uDr7;
-    return CPUMRecalcHyperDRx(pVCpu, 7);
+    return CPUMRecalcHyperDRx(pVCpu, 7, false);
 }
 
 
@@ -2202,7 +2202,7 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
     if (iReg == 4 || iReg == 5)
         iReg += 2;
     pVCpu->cpum.s.Guest.dr[iReg] = Value;
-    return CPUMRecalcHyperDRx(pVCpu, iReg);
+    return CPUMRecalcHyperDRx(pVCpu, iReg, false);
 }
 
 
@@ -2233,8 +2233,10 @@ VMMDECL(int) CPUMSetGuestDRx(PVMCPU pVCpu, uint32_t iReg, uint64_t Value)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   iGstReg     The guest debug register number that was modified.
  *                      UINT8_MAX if not guest register.
+ * @param   fForceHyper Used in HM to force hyper registers because of single
+ *                      stepping.
  */
-VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
+VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -2255,7 +2257,12 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         uGstDr7 &= ~X86_DR7_GE_ALL;
 
     const RTGCUINTREG uDbgfDr7 = DBGFBpGetDR7(pVM);
-    if ((HMIsEnabled(pVCpu->CTX_SUFF(pVM)) ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
+
+#ifdef IN_RING0
+    if (!fForceHyper && (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER))
+        fForceHyper = true;
+#endif
+    if (( HMIsEnabled(pVCpu->CTX_SUFF(pVM)) && !fForceHyper ? uDbgfDr7 : (uGstDr7 | uDbgfDr7)) & X86_DR7_ENABLED_MASK)
     {
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 #ifdef IN_RC
@@ -2425,15 +2432,14 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
         /*
          * No active debug state any more.  In raw-mode this means we have to
          * make sure DR7 has everything disabled now, if we armed it already.
-         *
-         * In the ring-0 this only happens when we decided to lazy load the
-         * debug state because it wasn't active, and that didn't change with
-         * the latest changes, so nothing to do here.
+         * In ring-0 we might end up here when just single stepping.
          */
-#if defined(IN_RC)
+#if defined(IN_RC) || defined(IN_RING0)
         if (pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER)
         {
+# ifdef IN_RC
             ASMSetDR7(X86_DR7_INIT_VAL);
+# endif
             if (pVCpu->cpum.s.Hyper.dr[0])
                 ASMSetDR0(0);
             if (pVCpu->cpum.s.Hyper.dr[1])
@@ -2444,9 +2450,6 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg)
                 ASMSetDR3(0);
             pVCpu->cpum.s.fUseFlags &= ~CPUM_USED_DEBUG_REGS_HYPER;
         }
-
-#elif defined(IN_RING0)
-        Assert(!CPUMIsHyperDebugStateActive(pVCpu)); /* (can only change while in ring-3) */
 #endif
         pVCpu->cpum.s.fUseFlags &= ~CPUM_USE_DEBUG_REGS_HYPER;
 
