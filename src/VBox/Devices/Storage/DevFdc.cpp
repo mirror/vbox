@@ -607,10 +607,12 @@ enum {
 enum {
     FD_SR1_MA       = 0x01, /* Missing address mark */
     FD_SR1_NW       = 0x02, /* Not writable */
+    FD_SR1_ND       = 0x04, /* No data */
     FD_SR1_EC       = 0x80  /* End of cylinder */
 };
 
 enum {
+    FD_SR2_MD       = 0x01, /* Missing data address mark */
     FD_SR2_SNS      = 0x04, /* Scan not satisfied */
     FD_SR2_SEH      = 0x08  /* Scan equal hit */
 };
@@ -1259,7 +1261,7 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("data rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
-        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, FD_SR2_MD);
         fdctrl->fifo[3] = kt;
         fdctrl->fifo[4] = kh;
         fdctrl->fifo[5] = ks;
@@ -2141,11 +2143,11 @@ static void fdctrl_result_timer(void *opaque)
 #ifdef VBOX
     if (!cur_drv->max_track) {
         FLOPPY_DPRINTF("read id when no disk in drive\n");
-        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     } else if ((fdctrl->dsr & FD_DSR_DRATEMASK) != cur_drv->media_rate) {
         FLOPPY_DPRINTF("read id rate mismatch (fdc=%d, media=%d)\n",
                        fdctrl->dsr & FD_DSR_DRATEMASK, cur_drv->media_rate);
-        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA, 0x00);
+        fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, FD_SR1_MA | FD_SR1_ND, FD_SR2_MD);
     }
     else
 #endif
