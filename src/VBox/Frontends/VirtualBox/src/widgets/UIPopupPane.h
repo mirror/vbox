@@ -160,14 +160,15 @@ private:
     QSize m_hiddenSizeHint;
     QSize m_shownSizeHint;
 
+    /* Variables: Focus stuff: */
+    bool m_fCanLooseFocus;
+    bool m_fFocused;
+
     /* Variables: Hover stuff: */
     bool m_fHovered;
     const int m_iDefaultOpacity;
     const int m_iHoveredOpacity;
     int m_iOpacity;
-
-    /* Variables: Focus stuff: */
-    bool m_fFocused;
 
     /* Widgets: */
     UIPopupPaneTextPane *m_pTextPane;

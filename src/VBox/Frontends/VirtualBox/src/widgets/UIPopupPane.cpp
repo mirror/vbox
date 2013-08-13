@@ -39,11 +39,12 @@ UIPopupPane::UIPopupPane(QWidget *pParent,
     , m_buttonDescriptions(buttonDescriptions)
     , m_fShown(false)
     , m_pShowAnimation(0)
-    , m_fHovered(false)
+    , m_fCanLooseFocus(!m_buttonDescriptions.isEmpty())
+    , m_fFocused(!m_fCanLooseFocus)
+    , m_fHovered(m_fFocused)
     , m_iDefaultOpacity(180)
     , m_iHoveredOpacity(250)
-    , m_iOpacity(m_iDefaultOpacity)
-    , m_fFocused(false)
+    , m_iOpacity(m_fHovered ? m_iHoveredOpacity : m_iDefaultOpacity)
     , m_pTextPane(0), m_pButtonPane(0)
 {
     /* Prepare: */
@@ -226,7 +227,7 @@ void UIPopupPane::prepareBackground()
 void UIPopupPane::prepareContent()
 {
     /* Create message-label: */
-    m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fProposeAutoConfirmation);
+    m_pTextPane = new UIPopupPaneTextPane(this, m_strMessage, m_fProposeAutoConfirmation, m_fFocused);
     {
         /* Prepare label: */
         connect(this, SIGNAL(sigProposeTextPaneWidth(int)), m_pTextPane, SLOT(sltHandleProposalForWidth(int)));
@@ -264,7 +265,7 @@ void UIPopupPane::prepareAnimation()
 
     /* Install 'hover' animation for 'opacity' property: */
     UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
-                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()));
+                                          SIGNAL(sigHoverEnter()), SIGNAL(sigHoverLeave()), m_fHovered);
 }
 
 void UIPopupPane::retranslateUi()
@@ -339,7 +340,7 @@ bool UIPopupPane::eventFilter(QObject *pWatched, QEvent *pEvent)
         case QEvent::FocusOut:
         {
             /* Unhocus pane if focused: */
-            if (m_fFocused)
+            if (m_fCanLooseFocus && m_fFocused)
             {
                 m_fFocused = false;
                 emit sigFocusLeave();

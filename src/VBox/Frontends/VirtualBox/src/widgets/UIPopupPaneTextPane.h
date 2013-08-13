@@ -50,7 +50,8 @@ signals:
 public:
 
     /* Constructor: */
-    UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fProposeAutoConfirmation);
+    UIPopupPaneTextPane(QWidget *pParent, const QString &strText,
+                        bool fProposeAutoConfirmation, bool fFocused);
 
     /* API: Text stuff: */
     void setText(const QString &strText);

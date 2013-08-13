@@ -25,7 +25,8 @@
 #include "UIPopupPaneTextPane.h"
 #include "UIAnimationFramework.h"
 
-UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText, bool fProposeAutoConfirmation)
+UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strText,
+                                         bool fProposeAutoConfirmation, bool fFocused)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iLayoutMargin(0)
     , m_iLayoutSpacing(10)
@@ -34,7 +35,7 @@ UIPopupPaneTextPane::UIPopupPaneTextPane(QWidget *pParent, const QString &strTex
     , m_iDesiredLabelWidth(-1)
     , m_pAutoConfirmCheckBox(0)
     , m_fProposeAutoConfirmation(fProposeAutoConfirmation)
-    , m_fFocused(false)
+    , m_fFocused(fFocused)
     , m_pAnimation(0)
 {
     /* Prepare: */
@@ -218,7 +219,7 @@ void UIPopupPaneTextPane::prepareAnimation()
     connect(parent(), SIGNAL(sigFocusLeave()), this, SLOT(sltFocusLeave()));
     /* Install geometry animation for 'minimumSizeHint' property: */
     m_pAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "collapsedSizeHint", "expandedSizeHint",
-                                                         SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()));
+                                                         SIGNAL(sigFocusEnter()), SIGNAL(sigFocusLeave()), m_fFocused);
 }
 
 void UIPopupPaneTextPane::retranslateUi()
