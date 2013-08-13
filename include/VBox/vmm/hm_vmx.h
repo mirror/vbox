@@ -342,6 +342,10 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 #define VMX_IGS_LONGMODE_TR_ATTR_TYPE_INVALID                   118
 /** TR.Attr.Type invalid. */
 #define VMX_IGS_TR_ATTR_TYPE_INVALID                            119
+/** CS.Attr.S invalid. */
+#define VMX_IGS_CS_ATTR_S_INVALID                               120
+/** CS.Attr.DPL invalid. */
+#define VMX_IGS_CS_ATTR_DPL_INVALID                             121
 /** @} */
 
 /** @name VMX VMCS-Read cache indices.
