@@ -1412,7 +1412,7 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
 
     /* Recheck the guest DRx values in raw-mode. */
     for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
-        CPUMRecalcHyperDRx(&pVM->aCpus[iCpu], UINT8_MAX);
+        CPUMRecalcHyperDRx(&pVM->aCpus[iCpu], UINT8_MAX, false);
 }
 
 
