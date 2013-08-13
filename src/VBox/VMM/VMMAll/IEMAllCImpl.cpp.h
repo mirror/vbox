@@ -4689,6 +4689,21 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
         pIemCpu->cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+        Assert(rcStrict == VINF_SUCCESS); /* assumed below */
+
+        /*
+         * Check for I/O breakpoints.
+         */
+        uint32_t const uDr7 = pCtx->dr[7];
+        if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
+                            && X86_DR7_ANY_RW_IO(uDr7)
+                            && (pCtx->cr4 & X86_CR4_DE))
+                        || DBGFBpIsHwIoArmed(IEMCPU_TO_VM(pIemCpu))))
+        {
+            rcStrict = DBGFBpCheckIo(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu), pCtx, u16Port, cbReg);
+            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+                rcStrict = iemRaiseDebugException(pIemCpu);
+        }
     }
 
     return rcStrict;
@@ -4744,6 +4759,21 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         pIemCpu->cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
+        Assert(rcStrict == VINF_SUCCESS); /* assumed below */
+
+        /*
+         * Check for I/O breakpoints.
+         */
+        uint32_t const uDr7 = pCtx->dr[7];
+        if (RT_UNLIKELY(   (   (uDr7 & X86_DR7_ENABLED_MASK)
+                            && X86_DR7_ANY_RW_IO(uDr7)
+                            && (pCtx->cr4 & X86_CR4_DE))
+                        || DBGFBpIsHwIoArmed(IEMCPU_TO_VM(pIemCpu))))
+        {
+            rcStrict = DBGFBpCheckIo(IEMCPU_TO_VM(pIemCpu), IEMCPU_TO_VMCPU(pIemCpu), pCtx, u16Port, cbReg);
+            if (rcStrict == VINF_EM_RAW_GUEST_TRAP)
+                rcStrict = iemRaiseDebugException(pIemCpu);
+        }
     }
     return rcStrict;
 }
