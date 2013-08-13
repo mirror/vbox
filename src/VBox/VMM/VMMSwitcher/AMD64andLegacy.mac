@@ -1013,7 +1013,7 @@ gth_restored_cr4:
     test    esi, CPUM_USE_DEBUG_REGS_HOST | CPUM_USED_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER
     jnz     gth_debug_regs_restore
 gth_debug_regs_done:
-    and     dword [edx + CPUMCPU.fUseFlags], ~(CPUM_USED_DEBUG_REGS_HOST | CPUM_USED_DEBUG_REGS_HYPER)
+    and     dword [rdx + r8 + CPUMCPU.fUseFlags], ~(CPUM_USED_DEBUG_REGS_HOST | CPUM_USED_DEBUG_REGS_HYPER)
 
     ; Restore general registers.
     mov     eax, edi                    ; restore return code. eax = return code !!
