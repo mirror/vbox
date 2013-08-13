@@ -115,6 +115,8 @@ void UIPopupStack::sltAdjustGeometry()
 
     /* Read parent geometry: */
     QRect geo(parentWidget()->geometry());
+    if (!parentWidget()->isWindow())
+        geo.moveTo(parentWidget()->mapToGlobal(QPoint(0, 0)));
 
     /* Determine size: */
     int iWidth = parentWidget()->width();
