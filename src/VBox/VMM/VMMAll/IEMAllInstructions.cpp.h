@@ -4330,7 +4330,7 @@ FNIEMOP_DEF_1(iemOpCommonPushSReg, uint8_t, iReg)
             IEM_MC_BEGIN(0, 1);
             IEM_MC_LOCAL(uint32_t, u32Value);
             IEM_MC_FETCH_SREG_ZX_U32(u32Value, iReg);
-            IEM_MC_PUSH_U32(u32Value);
+            IEM_MC_PUSH_U32_SREG(u32Value);
             IEM_MC_ADVANCE_RIP();
             IEM_MC_END();
             break;
