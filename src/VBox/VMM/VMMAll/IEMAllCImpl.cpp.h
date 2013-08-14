@@ -182,6 +182,9 @@ static void iemHlpUpdateArithEFlagsU8(PIEMCPU pIemCpu, uint8_t u8Result, uint32_
     iemAImpl_test_u8(&u8Result, u8Result, &fEFlags);
     pCtx->eflags.u &= ~(fToUpdate | fUndefined);
     pCtx->eflags.u |= (fToUpdate | fUndefined) & fEFlags;
+#ifdef IEM_VERIFICATION_MODE_FULL
+    pIemCpu->fUndefinedEFlags |= fUndefined;
+#endif
 }
 
 
@@ -189,19 +192,30 @@ static void iemHlpUpdateArithEFlagsU8(PIEMCPU pIemCpu, uint8_t u8Result, uint32_
  * Loads a NULL data selector into a selector register, both the hidden and
  * visible parts, in protected mode.
  *
+ * @param   pIemCpu             The IEM state of the calling EMT.
  * @param   pSReg               Pointer to the segment register.
  * @param   uRpl                The RPL.
  */
-static void iemHlpLoadNullDataSelectorProt(PCPUMSELREG pSReg, RTSEL uRpl)
+static void iemHlpLoadNullDataSelectorProt(PIEMCPU pIemCpu, PCPUMSELREG pSReg, RTSEL uRpl)
 {
     /** @todo Testcase: write a testcase checking what happends when loading a NULL
      *        data selector in protected mode. */
     pSReg->Sel      = uRpl;
     pSReg->ValidSel = uRpl;
     pSReg->fFlags   = CPUMSELREG_FLAGS_VALID;
-    pSReg->u64Base  = 0;
-    pSReg->u32Limit = 0;
-    pSReg->Attr.u   = X86DESCATTR_UNUSABLE;
+    if (IEM_IS_GUEST_CPU_INTEL(pIemCpu) && !IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+    {
+        /* VT-x (Intel 3960x) observed doing something like this. */
+        pSReg->Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D;
+        pSReg->u32Limit = UINT32_MAX;
+        pSReg->u64Base  = 0;
+    }
+    else
+    {
+        pSReg->Attr.u   = X86DESCATTR_UNUSABLE;
+        pSReg->u32Limit = 0;
+        pSReg->u64Base  = 0;
+    }
 }
 
 
@@ -224,7 +238,7 @@ static void iemHlpAdjustSelectorForNewCpl(PIEMCPU pIemCpu, uint8_t uCpl, PCPUMSE
         && pSReg->Attr.n.u1DescType /* code or data, not system */
         &&    (pSReg->Attr.n.u4Type & (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF))
            !=                         (X86_SEL_TYPE_CODE | X86_SEL_TYPE_CONF)) /* not conforming code */
-        iemHlpLoadNullDataSelectorProt(pSReg, 0);
+        iemHlpLoadNullDataSelectorProt(pIemCpu, pSReg, 0);
 }
 
 
@@ -287,7 +301,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
         if (rcStrict == VINF_SUCCESS)
         {
             pCtx->rsp = TmpRsp.u;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
     }
     else
@@ -308,7 +322,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_16)
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegAddToRsp(pIemCpu, pCtx, 16);
-                iemRegAddToRip(pIemCpu, cbInstr);
+                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
             }
         }
     }
@@ -368,7 +382,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
             pCtx->rax &= UINT32_MAX;
 #endif
             pCtx->rsp = TmpRsp.u;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
     }
     else
@@ -389,7 +403,7 @@ IEM_CIMPL_DEF_0(iemCImpl_popa_32)
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegAddToRsp(pIemCpu, pCtx, 32);
-                iemRegAddToRip(pIemCpu, cbInstr);
+                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
             }
         }
     }
@@ -439,7 +453,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
         if (rcStrict == VINF_SUCCESS)
         {
             pCtx->rsp = TmpRsp.u;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
     }
     else
@@ -461,7 +475,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_16)
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegSubFromRsp(pIemCpu, pCtx, 16);
-                iemRegAddToRip(pIemCpu, cbInstr);
+                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
             }
         }
     }
@@ -511,7 +525,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
         if (rcStrict == VINF_SUCCESS)
         {
             pCtx->rsp = TmpRsp.u;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
     }
     else
@@ -533,7 +547,7 @@ IEM_CIMPL_DEF_0(iemCImpl_pusha_32)
             if (rcStrict == VINF_SUCCESS)
             {
                 iemRegSubFromRsp(pIemCpu, pCtx, 32);
-                iemRegAddToRip(pIemCpu, cbInstr);
+                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
             }
         }
     }
@@ -590,7 +604,7 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -729,7 +743,7 @@ IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
      */
     Assert(fEflNew & RT_BIT_32(1));
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEflNew);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -754,8 +768,8 @@ IEM_CIMPL_DEF_1(iemCImpl_call_16, uint16_t, uNewPC)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
-
 }
 
 
@@ -777,6 +791,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_16, int16_t, offDisp)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
@@ -800,8 +815,8 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
-
 }
 
 
@@ -823,6 +838,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_32, int32_t, offDisp)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
@@ -846,8 +862,8 @@ IEM_CIMPL_DEF_1(iemCImpl_call_64, uint64_t, uNewPC)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
-
 }
 
 
@@ -869,6 +885,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
         return rcStrict;
 
     pCtx->rip = uNewPC;
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
@@ -884,7 +901,7 @@ IEM_CIMPL_DEF_1(iemCImpl_call_rel_64, int64_t, offDisp)
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work. */
+    /* Call various functions to do the work.  Clear RF? */
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 }
 
@@ -900,7 +917,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskSegment, uint16_t, uSel, IEMBRANCH, enmBranch
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work. */
+    /* Call various functions to do the work. Don't clear RF */
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 }
 
@@ -916,7 +933,7 @@ IEM_CIMPL_DEF_4(iemCImpl_BranchTaskGate, uint16_t, uSel, IEMBRANCH, enmBranch, I
  */
 IEM_CIMPL_DEF_4(iemCImpl_BranchCallGate, uint16_t, uSel, IEMBRANCH, enmBranch, IEMMODE, enmEffOpSize, PIEMSELDESC, pDesc)
 {
-    /* Call various functions to do the work. */
+    /* Call various functions to do the work.  Clear RF. */
     IEM_RETURN_ASPECT_NOT_IMPLEMENTED();
 }
 
@@ -1016,6 +1033,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
         pCtx->cs.ValidSel   = uSel;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uSel << 4;
+        pCtx->eflags.Bits.u1RF = 0;
         return VINF_SUCCESS;
     }
 
@@ -1130,6 +1148,7 @@ IEM_CIMPL_DEF_3(iemCImpl_FarJmp, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmE
     pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
+    pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
     return VINF_SUCCESS;
@@ -1193,6 +1212,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
         pCtx->cs.ValidSel   = uSel;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uSel << 4;
+        pCtx->eflags.Bits.u1RF = 0;
         return VINF_SUCCESS;
     }
 
@@ -1345,6 +1365,7 @@ IEM_CIMPL_DEF_3(iemCImpl_callf, uint16_t, uSel, uint64_t, offSeg, IEMMODE, enmEf
     pCtx->cs.Attr.u      = X86DESC_GET_HID_ATTR(&Desc.Legacy);
     pCtx->cs.u32Limit    = cbLimit;
     pCtx->cs.u64Base     = u64Base;
+    pCtx->eflags.Bits.u1RF = 0;
     /** @todo check if the hidden bits are loaded correctly for 64-bit
      *        mode.  */
     return VINF_SUCCESS;
@@ -1416,6 +1437,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
         pCtx->cs.ValidSel   = uNewCs;
         pCtx->cs.fFlags     = CPUMSELREG_FLAGS_VALID;
         pCtx->cs.u64Base    = (uint32_t)uNewCs << 4;
+        pCtx->eflags.Bits.u1RF = 0;
         /** @todo do we load attribs and limit as well? */
         if (cbPop)
             iemRegAddToRsp(pIemCpu, pCtx, cbPop);
@@ -1668,6 +1690,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
 
         if (cbPop)
             iemRegAddToRsp(pIemCpu, pCtx, cbPop);
+        pCtx->eflags.Bits.u1RF = 0;
 
         /* Done! */
     }
@@ -1732,6 +1755,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retf, IEMMODE, enmEffOpSize, uint16_t, cbPop)
          *        mode.  */
         if (cbPop)
             iemRegAddToRsp(pIemCpu, pCtx, cbPop);
+        pCtx->eflags.Bits.u1RF = 0;
     }
     return VINF_SUCCESS;
 }
@@ -1800,6 +1824,7 @@ IEM_CIMPL_DEF_2(iemCImpl_retn, IEMMODE, enmEffOpSize, uint16_t, cbPop)
     pCtx->rsp = NewRsp.u;
     if (cbPop)
         iemRegAddToRsp(pIemCpu, pCtx, cbPop);
+    pCtx->eflags.Bits.u1RF = 0;
 
     return VINF_SUCCESS;
 }
@@ -1914,7 +1939,7 @@ IEM_CIMPL_DEF_3(iemCImpl_enter, IEMMODE, enmEffOpSize, uint16_t, cbFrame, uint8_
     /* Commit it. */
     pCtx->rbp = NewRbp.u;
     pCtx->rsp = NewRsp.u;
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -1971,7 +1996,7 @@ IEM_CIMPL_DEF_1(iemCImpl_leave, IEMMODE, enmEffOpSize)
     /* Commit it. */
     pCtx->rbp = NewRbp.u;
     pCtx->rsp = NewRsp.u;
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -3081,7 +3106,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
                                 : X86_SEL_TYPE_READ | X86_SEL_TYPE_CODE;
 #endif
         CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -3111,14 +3136,14 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
         }
 
         *pSel = uSel;   /* Not RPL, remember :-) */
-        iemHlpLoadNullDataSelectorProt(pHid, uSel);
+        iemHlpLoadNullDataSelectorProt(pIemCpu, pHid, uSel);
         if (iSegReg == X86_SREG_SS)
             pHid->Attr.u |= pIemCpu->uCpl << X86DESCATTR_DPL_SHIFT;
 
         Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pHid));
         CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
 
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -3229,7 +3254,7 @@ IEM_CIMPL_DEF_2(iemCImpl_LoadSReg, uint8_t, iSegReg, uint16_t, uSel)
     Assert(CPUMSELREG_ARE_HIDDEN_PARTS_VALID(IEMCPU_TO_VMCPU(pIemCpu), pHid));
 
     CPUMSetChangedFlags(IEMCPU_TO_VMCPU(pIemCpu), CPUM_CHANGED_HIDDEN_SEL_REGS);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -3458,7 +3483,7 @@ IEM_CIMPL_DEF_2(iemCImpl_VerX, uint16_t, uSel, bool, fWrite)
     /* commit */
     pIemCpu->CTX_SUFF(pCtx)->eflags.Bits.u1ZF = fAccessible;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -3564,7 +3589,7 @@ IEM_CIMPL_DEF_4(iemCImpl_LarLsl_u64, uint64_t *, pu64Dst, uint16_t, uSel, uint32
 
     /* commit flags value and advance rip. */
     pIemCpu->CTX_SUFF(pCtx)->eflags.Bits.u1ZF = fDescOk;
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
 
     return VINF_SUCCESS;
 }
@@ -3618,7 +3643,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
             pCtx->gdtr.pGdt  = GCPtrBase;
         }
         if (rcStrict == VINF_SUCCESS)
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     }
     return rcStrict;
 }
@@ -3641,7 +3666,7 @@ IEM_CIMPL_DEF_3(iemCImpl_sgdt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->gdtr.cbGdt, pCtx->gdtr.pGdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
 }
 
@@ -3675,7 +3700,7 @@ IEM_CIMPL_DEF_3(iemCImpl_lidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffSrc, IEMMODE, 
             pCtx->idtr.cbIdt = cbLimit;
             pCtx->idtr.pIdt  = GCPtrBase;
         }
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     }
     return rcStrict;
 }
@@ -3698,7 +3723,7 @@ IEM_CIMPL_DEF_3(iemCImpl_sidt, uint8_t, iEffSeg, RTGCPTR, GCPtrEffDst, IEMMODE, 
     PCPUMCTX pCtx = pIemCpu->CTX_SUFF(pCtx);
     VBOXSTRICTRC rcStrict = iemMemStoreDataXdtr(pIemCpu, pCtx->idtr.cbIdt, pCtx->idtr.pIdt, iEffSeg, GCPtrEffDst, enmEffOpSize);
     if (rcStrict == VINF_SUCCESS)
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
 }
 
@@ -3743,14 +3768,25 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
             pCtx->ldtr.Sel = uNewLdt;
         pCtx->ldtr.ValidSel = uNewLdt;
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-        pCtx->ldtr.Attr.u   = X86DESCATTR_UNUSABLE;
-        if (!IEM_IS_GUEST_CPU_AMD(pIemCpu) || !IEM_VERIFICATION_ENABLED(pIemCpu)) /* See bs-cpu-hidden-regs-1 on AMD. */
+        if (!IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
         {
+            pCtx->ldtr.Attr.u = X86DESCATTR_UNUSABLE;
+            pCtx->ldtr.u64Base = pCtx->ldtr.u32Limit = 0; /* For verfication against REM. */
+        }
+        else if (IEM_IS_GUEST_CPU_AMD(pIemCpu))
+        {
+            /* AMD-V seems to leave the base and limit alone. */
+            pCtx->ldtr.Attr.u = X86DESCATTR_UNUSABLE;
+        }
+        else if (!IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+        {
+            /* VT-x (Intel 3960x) seems to be doing the following. */
+            pCtx->ldtr.Attr.u   = X86DESCATTR_UNUSABLE | X86DESCATTR_G | X86DESCATTR_D;
             pCtx->ldtr.u64Base  = 0;
-            pCtx->ldtr.u32Limit = 0;
+            pCtx->ldtr.u32Limit = UINT32_MAX;
         }
 
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -3813,7 +3849,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
     pCtx->ldtr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);
     pCtx->ldtr.u64Base  = u64Base;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -3934,7 +3970,7 @@ IEM_CIMPL_DEF_1(iemCImpl_ltr, uint16_t, uNewTr)
     pCtx->tr.u32Limit = X86DESC_LIMIT_G(&Desc.Legacy);
     pCtx->tr.u64Base  = u64Base;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -3979,7 +4015,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Cd, uint8_t, iGReg, uint8_t, iCrReg)
     else
         *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = (uint32_t)crX;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4277,7 +4313,7 @@ IEM_CIMPL_DEF_2(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX)
     {
         if (rcStrict != VINF_SUCCESS)
             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     }
 
     return rcStrict;
@@ -4408,7 +4444,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Rd_Dd, uint8_t, iGReg, uint8_t, iDrReg)
     else
         *(uint64_t *)iemGRegRef(pIemCpu, iGReg) = (uint32_t)drX;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4504,7 +4540,7 @@ IEM_CIMPL_DEF_2(iemCImpl_mov_Dd_Rd, uint8_t, iDrReg, uint8_t, iGReg)
     else
         pCtx->dr[iDrReg] = uNewDrX;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4523,7 +4559,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, uint8_t, GCPtrPage)
     Assert(!pIemCpu->CTX_SUFF(pCtx)->eflags.Bits.u1VM);
 
     int rc = PGMInvalidatePage(IEMCPU_TO_VMCPU(pIemCpu), GCPtrPage);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
 
     if (rc == VINF_SUCCESS)
         return VINF_SUCCESS;
@@ -4566,7 +4602,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdtsc)
     pIemCpu->fIgnoreRaxRdx = true;
 #endif
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4601,7 +4637,7 @@ IEM_CIMPL_DEF_0(iemCImpl_rdmsr)
     pCtx->rax = uValue.s.Lo;
     pCtx->rdx = uValue.s.Hi;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4646,7 +4682,7 @@ IEM_CIMPL_DEF_0(iemCImpl_wrmsr)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
     }
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -4685,7 +4721,7 @@ IEM_CIMPL_DEF_2(iemCImpl_in, uint16_t, u16Port, uint8_t, cbReg)
             case 4: pCtx->rax = u32Value;           break;
             default: AssertFailedReturn(VERR_INTERNAL_ERROR_3);
         }
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         pIemCpu->cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
@@ -4755,7 +4791,7 @@ IEM_CIMPL_DEF_2(iemCImpl_out, uint16_t, u16Port, uint8_t, cbReg)
         rcStrict = iemVerifyFakeIOPortWrite(pIemCpu, u16Port, u32Value, cbReg);
     if (IOM_SUCCESS(rcStrict))
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         pIemCpu->cPotentialExits++;
         if (rcStrict != VINF_SUCCESS)
             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
@@ -4827,7 +4863,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cli)
 
     /* Commit. */
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     Log2(("CLI: %#x -> %#x\n", fEflOld, fEfl)); NOREF(fEflOld);
     return VINF_SUCCESS;
 }
@@ -4873,8 +4909,8 @@ IEM_CIMPL_DEF_0(iemCImpl_sti)
 
     /* Commit. */
     IEMMISC_SET_EFL(pIemCpu, pCtx, fEfl);
-    iemRegAddToRip(pIemCpu, cbInstr);
-    if ((!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF)) || IEM_VERIFICATION_ENABLED(pIemCpu))
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
+    if ((!(fEflOld & X86_EFL_IF) && (fEfl & X86_EFL_IF)) || IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
         EMSetInhibitInterruptsPC(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rip);
     Log2(("STI: %#x -> %#x\n", fEflOld, fEfl));
     return VINF_SUCCESS;
@@ -4888,7 +4924,7 @@ IEM_CIMPL_DEF_0(iemCImpl_hlt)
 {
     if (pIemCpu->uCpl != 0)
         return iemRaiseGeneralProtectionFault0(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_EM_HALT;
 }
 
@@ -4942,7 +4978,7 @@ IEM_CIMPL_DEF_1(iemCImpl_monitor, uint8_t, iEffSeg)
     rcStrict = EMMonitorWaitPrepare(IEMCPU_TO_VMCPU(pIemCpu), pCtx->rax, pCtx->rcx, pCtx->rdx, GCPhysMem);
     Assert(rcStrict == VINF_SUCCESS);
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
 }
 
@@ -4998,7 +5034,7 @@ IEM_CIMPL_DEF_0(iemCImpl_mwait)
      */
     VBOXSTRICTRC rcStrict = EMMonitorWaitPerform(IEMCPU_TO_VMCPU(pIemCpu), uEax, uEcx);
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return rcStrict;
 }
 
@@ -5027,7 +5063,7 @@ IEM_CIMPL_DEF_0(iemCImpl_swapgs)
     pCtx->msrKERNELGSBASE = pCtx->gs.u64Base;
     pCtx->gs.u64Base = uOtherGsBase;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5045,7 +5081,7 @@ IEM_CIMPL_DEF_0(iemCImpl_cpuid)
     pCtx->rcx &= UINT32_C(0xffffffff);
     pCtx->rdx &= UINT32_C(0xffffffff);
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5066,7 +5102,7 @@ IEM_CIMPL_DEF_1(iemCImpl_aad, uint8_t, bImm)
                               X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF,
                               X86_EFL_OF | X86_EFL_AF | X86_EFL_CF);
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5089,7 +5125,7 @@ IEM_CIMPL_DEF_1(iemCImpl_aam, uint8_t, bImm)
                               X86_EFL_SF | X86_EFL_ZF | X86_EFL_PF,
                               X86_EFL_OF | X86_EFL_AF | X86_EFL_CF);
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5182,7 +5218,7 @@ IEM_CIMPL_DEF_1(iemCImpl_finit, bool, fCheckXcpts)
     }
 
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5279,7 +5315,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxsave, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, e
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5392,7 +5428,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fxrstor, uint8_t, iEffSeg, RTGCPTR, GCPtrEff, IEMMODE, 
         return rcStrict;
 
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5548,7 +5584,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnstenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCP
         return rcStrict;
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5596,7 +5632,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fnsave, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
     pCtx->fpu.FOP   = 0;
 
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5625,7 +5661,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fldenv, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
         return rcStrict;
 
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5660,7 +5696,7 @@ IEM_CIMPL_DEF_3(iemCImpl_frstor, IEMMODE, enmEffOpSize, uint8_t, iEffSeg, RTGCPT
         return rcStrict;
 
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5684,7 +5720,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fldcw, uint16_t, u16Fcw)
 
     /* Note: C0, C1, C2 and C3 are documented as undefined, we leave them untouched! */
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5733,7 +5769,7 @@ IEM_CIMPL_DEF_1(iemCImpl_fxch_underflow, uint8_t, iStReg)
 
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -5802,7 +5838,7 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
 
     iemFpuUpdateOpcodeAndIpWorker(pIemCpu, pCtx);
     iemHlpUsedFpu(pIemCpu);
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 

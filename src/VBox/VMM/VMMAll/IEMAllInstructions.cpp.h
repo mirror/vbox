@@ -10189,7 +10189,7 @@ FNIEMOP_DEF_1(iemOp_pop_Ev, uint8_t, bRm)
     if (rcStrict == VINF_SUCCESS)
     {
         pCtx->rsp = TmpRsp.u;
-        iemRegUpdateRip(pIemCpu);
+        iemRegUpdateRipAndClearRF(pIemCpu);
     }
     return rcStrict;
 

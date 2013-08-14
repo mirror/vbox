@@ -75,7 +75,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     ADDR_TYPE       uCounterReg  = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -213,7 +213,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repe_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint8
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -231,7 +231,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -369,7 +369,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_repne_cmps_op,OP_SIZE,_addr,ADDR_SIZE), uint
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -387,7 +387,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -491,7 +491,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -509,7 +509,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -612,7 +612,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -632,7 +632,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -775,7 +775,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_movs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -793,7 +793,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -895,7 +895,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -913,7 +913,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -1007,7 +1007,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -1063,7 +1063,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
                 pCtx->ADDR_rDI += OP_SIZE / 8;
             else
                 pCtx->ADDR_rDI -= OP_SIZE / 8;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         }
         /* iemMemMap already check permissions, so this may only be real errors
            or access handlers medling. The access handler case is going to
@@ -1100,7 +1100,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -1180,7 +1180,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                         {
                             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                             if (uCounterReg == 0)
-                                iemRegAddToRip(pIemCpu, cbInstr);
+                                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                         }
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_W, puMem, &PgLockMem);
                         return rcStrict;
@@ -1235,7 +1235,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
             if (rcStrict != VINF_SUCCESS)
             {
                 if (uCounterReg == 0)
-                    iemRegAddToRip(pIemCpu, cbInstr);
+                    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                 rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 return rcStrict;
             }
@@ -1245,7 +1245,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
@@ -1285,7 +1285,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
                 pCtx->ADDR_rSI += OP_SIZE / 8;
             else
                 pCtx->ADDR_rSI -= OP_SIZE / 8;
-            iemRegAddToRip(pIemCpu, cbInstr);
+            iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
             if (rcStrict != VINF_SUCCESS)
                 rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
         }
@@ -1318,7 +1318,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     ADDR_TYPE       uCounterReg = pCtx->ADDR_rCX;
     if (uCounterReg == 0)
     {
-        iemRegAddToRip(pIemCpu, cbInstr);
+        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
         return VINF_SUCCESS;
     }
 
@@ -1389,7 +1389,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                         {
                             rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                             if (uCounterReg == 0)
-                                iemRegAddToRip(pIemCpu, cbInstr);
+                                iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                         }
                         iemMemPageUnmap(pIemCpu, GCPhysMem, IEM_ACCESS_DATA_R, puMem, &PgLockMem);
                         return rcStrict;
@@ -1440,7 +1440,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
                 if (IOM_SUCCESS(rcStrict))
                 {
                     if (uCounterReg == 0)
-                        iemRegAddToRip(pIemCpu, cbInstr);
+                        iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
                     rcStrict = iemSetPassUpStatus(pIemCpu, rcStrict);
                 }
                 return rcStrict;
@@ -1451,7 +1451,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
     /*
      * Done.
      */
-    iemRegAddToRip(pIemCpu, cbInstr);
+    iemRegAddToRipAndClearRF(pIemCpu, cbInstr);
     return VINF_SUCCESS;
 }
 
