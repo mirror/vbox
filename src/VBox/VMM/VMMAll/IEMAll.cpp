@@ -6478,13 +6478,65 @@ static VBOXSTRICTRC iemMemStackPushU32(PIEMCPU pIemCpu, uint32_t u32Value)
     PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
     RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, 4, &uNewRsp);
 
-    /* Write the word the lazy way. */
+    /* Write the dword the lazy way. */
     uint32_t *pu32Dst;
     VBOXSTRICTRC rc = iemMemMap(pIemCpu, (void **)&pu32Dst, sizeof(*pu32Dst), X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_W);
     if (rc == VINF_SUCCESS)
     {
         *pu32Dst = u32Value;
         rc = iemMemCommitAndUnmap(pIemCpu, pu32Dst, IEM_ACCESS_STACK_W);
+    }
+
+    /* Commit the new RSP value unless we an access handler made trouble. */
+    if (rc == VINF_SUCCESS)
+        pCtx->rsp = uNewRsp;
+
+    return rc;
+}
+
+
+/**
+ * Pushes a dword segment register value onto the stack.
+ *
+ * @returns Strict VBox status code.
+ * @param   pIemCpu             The IEM per CPU data.
+ * @param   u16Value            The value to push.
+ */
+static VBOXSTRICTRC iemMemStackPushU32SReg(PIEMCPU pIemCpu, uint32_t u32Value)
+{
+    /* Increment the stack pointer. */
+    uint64_t    uNewRsp;
+    PCPUMCTX    pCtx     = pIemCpu->CTX_SUFF(pCtx);
+    RTGCPTR     GCPtrTop = iemRegGetRspForPush(pIemCpu, pCtx, 4, &uNewRsp);
+
+    VBOXSTRICTRC rc;
+    if (IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+    {
+        /* The recompiler writes a full dword. */
+        uint32_t *pu32Dst;
+        rc = iemMemMap(pIemCpu, (void **)&pu32Dst, sizeof(*pu32Dst), X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_W);
+        if (rc == VINF_SUCCESS)
+        {
+            *pu32Dst = u32Value;
+            rc = iemMemCommitAndUnmap(pIemCpu, pu32Dst, IEM_ACCESS_STACK_W);
+        }
+    }
+    else
+    {
+        /* The intel docs talks about zero extending the selector register
+           value.  My actual intel CPU here might be zero extending the value
+           but it still only writes the lower word... */
+        /** @todo Test this on new HW and on AMD and in 64-bit mode.  Also test what
+         *        happens when crossing an electric page boundrary, is the high word
+         *        checked for write accessibility or not? Probably it is.  What about
+         *        segment limits? */
+        uint16_t *pu16Dst;
+        rc = iemMemMap(pIemCpu, (void **)&pu16Dst, sizeof(uint32_t), X86_SREG_SS, GCPtrTop, IEM_ACCESS_STACK_RW);
+        if (rc == VINF_SUCCESS)
+        {
+            *pu16Dst = (uint16_t)u32Value;
+            rc = iemMemCommitAndUnmap(pIemCpu, pu16Dst, IEM_ACCESS_STACK_RW);
+        }
     }
 
     /* Commit the new RSP value unless we an access handler made trouble. */
@@ -7618,6 +7670,8 @@ static VBOXSTRICTRC iemMemMarkSelDescAccessed(PIEMCPU pIemCpu, uint16_t uSel)
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU16(pIemCpu, (a_u16Value)))
 #define IEM_MC_PUSH_U32(a_u32Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32(pIemCpu, (a_u32Value)))
+#define IEM_MC_PUSH_U32_SREG(a_u32Value) \
+    IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU32SReg(pIemCpu, (a_u32Value)))
 #define IEM_MC_PUSH_U64(a_u64Value) \
     IEM_MC_RETURN_ON_FAILURE(iemMemStackPushU64(pIemCpu, (a_u64Value)))
 
