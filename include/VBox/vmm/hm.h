@@ -188,6 +188,8 @@ VMMR3DECL(bool)                 HMR3IsEnabled(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsNestedPagingActive(PUVM pUVM);
 VMMR3DECL(bool)                 HMR3IsVpidActive(PUVM pVUM);
 VMMR3DECL(bool)                 HMR3IsUXActive(PUVM pVUM);
+VMMR3DECL(bool)                 HMR3IsSvmEnabled(PUVM pUVM);
+VMMR3DECL(bool)                 HMR3IsVmxEnabled(PUVM pUVM);
 
 VMMR3_INT_DECL(bool)            HMR3IsEventPending(PVMCPU pVCpu);
 VMMR3_INT_DECL(int)             HMR3Init(PVM pVM);
