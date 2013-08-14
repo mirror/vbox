@@ -4613,7 +4613,6 @@ uint8_t cpu_inb(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 1);
-if (addr == 0x01f0) RTLogPrintf("ins: %#06x -> %#04x %d\n", addr, u32, rc);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         if (/*addr != 0x61 && */addr != 0x71)
@@ -4634,7 +4633,6 @@ uint16_t cpu_inw(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 2);
-if (addr == 0x01f0) RTLogPrintf("ins: %#06x -> %#06x %d\n", addr, u32, rc);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         Log2(("cpu_inw: addr=%#06x -> %#x\n", addr, u32));
@@ -4654,11 +4652,8 @@ uint32_t cpu_inl(CPUX86State *env, pio_addr_t addr)
 {
     uint32_t u32 = 0;
     int rc = IOMIOPortRead(env->pVM, env->pVCpu, (RTIOPORT)addr, &u32, 4);
-if (addr == 0x01f0) RTLogPrintf("ins: %#06x -> %#010x %d\n", addr, u32, rc);
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
-//if (addr==0x01f0 && u32 == 0x6b6d)
-//    loglevel = ~0;
         Log2(("cpu_inl: addr=%#06x -> %#x\n", addr, u32));
         return u32;
     }
