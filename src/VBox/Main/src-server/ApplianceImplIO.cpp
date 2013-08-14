@@ -32,9 +32,9 @@
 #include <iprt/stream.h>
 #include <iprt/circbuf.h>
 #include <iprt/vfs.h>
+#include <iprt/manifest.h>
+#include <VBox/vd-ifs.h>
 #include <VBox/vd.h>
-#include <zlib.h>
-//#define VBOX_MAIN_USE_VFS /** @todo Replace as much as possible with IPRT VFS. */
 
 /******************************************************************************
  *   Structures and Typedefs                                                  *
@@ -1339,73 +1339,12 @@ int ShaWriteBuf(const char *pcszFilename, void *pvBuf, size_t cbSize, PVDINTERFA
     return rc;
 }
 
-static int zipDecompressBuffer(z_stream streamIn,
-                                      uint32_t *cbDecompressed,
-                                      bool *finished)
-{
-    int rc;
-    int sh = streamIn.avail_out;
-
-    *cbDecompressed = 0;
-
-    do
-    {
-        rc = inflate(&streamIn, Z_NO_FLUSH);
-
-        if (rc < 0)
-        {
-            switch (rc)
-            {
-                case Z_STREAM_ERROR:
-                    rc = VERR_ZIP_CORRUPTED;
-                    break;
-                case Z_DATA_ERROR:
-                    rc = VERR_ZIP_CORRUPTED;
-                    break;
-                case Z_MEM_ERROR:
-                    rc = VERR_ZIP_NO_MEMORY;
-                    break;
-                case Z_BUF_ERROR:
-                    rc = VERR_ZIP_ERROR;
-                    break;
-                case Z_VERSION_ERROR:
-                    rc = VERR_ZIP_UNSUPPORTED_VERSION;
-                    break;
-                case Z_ERRNO: /* We shouldn't see this status! */
-                default:
-                    AssertMsgFailed(("%d\n", rc));
-                    if (rc >= 0)
-                        rc = VINF_SUCCESS;
-                    rc = VERR_ZIP_ERROR;
-            }
-
-            break;
-        }
-
-        *cbDecompressed += (sh - streamIn.avail_out);
-        sh = streamIn.avail_out;
-    }
-    while (streamIn.avail_out > 0 && streamIn.avail_in > 0 );
-
-    if (RT_SUCCESS(rc))
-    {
-        if (streamIn.avail_in == 0)
-            *finished = true;
-        else
-        {
-            if (streamIn.avail_out == 0)
-                *finished = false;
-        }
-    }
-
-    return rc;
-}
-
 int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullFilenameOut, PVDINTERFACEIO pIfIo, void *pvUser)
 {
     /* Validate input. */
     AssertPtrReturn(pIfIo, VERR_INVALID_POINTER);
 
+    PSHASTORAGE pShaStorage = (PSHASTORAGE)pvUser;
     /*
      * Open the source file.
      */
@@ -1415,10 +1354,10 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
                             &pvStorage);
     if (RT_FAILURE(rc))
         return rc;
-#ifdef VBOX_MAIN_USE_VFS
 
     /* Turn the source file handle/whatever into a VFS stream. */
     RTVFSIOSTREAM hVfsIosCompressedSrc;
+
     rc = VDIfCreateVfsStream(pIfIo, pvStorage, RTFILE_O_READ, &hVfsIosCompressedSrc);
     if (RT_SUCCESS(rc))
     {
@@ -1443,141 +1382,35 @@ int decompressImageAndSave(const char *pcszFullFilenameIn, const char *pcszFullF
                     /*
                      * Pump the bytes thru. If we fail, delete the output file.
                      */
-                    rc = RTVfsUtilPumpIoStreams(hVfsIosSrc, hVfsIosDst, 0);
+                    RTMANIFEST hFileManifest = NIL_RTMANIFEST;
+                    rc = RTManifestCreate(0 /*fFlags*/, &hFileManifest);
+                    if (RT_SUCCESS(rc))
+                    {
+                        RTVFSIOSTREAM hVfsIosMfst;
+
+                        uint32_t digestType = (pShaStorage->fSha256 == true) ? RTMANIFEST_ATTR_SHA256: RTMANIFEST_ATTR_SHA1;
+
+                        rc = RTManifestEntryAddPassthruIoStream(hFileManifest,
+                                                                hVfsIosSrc,
+                                                                "ovf import",
+                                                                digestType,
+                                                                true /*read*/, &hVfsIosMfst);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = RTVfsUtilPumpIoStreams(hVfsIosMfst, hVfsIosDst, 0);
+                        }
+
+                        RTVfsIoStrmRelease(hVfsIosMfst);
+                    }
 
                     RTVfsIoStrmRelease(hVfsIosDst);
-                    RTFileDelete(pcszFullFilenameOut);
                 }
             }
 
             RTVfsIoStrmRelease(hVfsIosSrc);
         }
-        RTVfsIoStrmRelease(hVfsIosCompressedSrc);
     }
     pIfIo->pfnClose(pvUser, pvStorage);
-
-#else
-
-    Bytef *decompressedBuffer = 0;
-    Bytef *compressedBuffer = 0;
-    uint64_t cbTmpSize = _1M;
-    size_t cbAllRead = 0;
-    size_t cbAllWritten = 0;
-    RTFILE pFile = NULL;
-    z_stream gzipStream;
-
-    Utf8Str pathOut(pcszFullFilenameOut);
-    pathOut = pathOut.stripFilename();
-
-    Utf8Str fileIn(pcszFullFilenameIn);
-    fileIn = fileIn.stripPath();
-
-    do
-    {
-        if (RTFileExists(pcszFullFilenameOut) == false)
-        {
-            /* ensure the directory exists */
-            rc = VirtualBox::ensureFilePathExists(Utf8Str(pcszFullFilenameOut), true);
-            if (FAILED(rc))
-            {
-                rc = VBOX_E_FILE_ERROR; /** @todo r=bird: You're mixing COM and VBox status codes... */
-                break;
-            }
-
-            rc = RTFileOpen(&pFile, pcszFullFilenameOut, RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        }
-        else
-        {
-            rc = RTFileOpen(&pFile, pcszFullFilenameOut, RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE);
-        }
-
-        if (FAILED(rc) || pFile == NULL)
-        {
-            rc = VBOX_E_FILE_ERROR;
-            break;
-        }
-
-        compressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize);
-
-        if (!compressedBuffer)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-
-        decompressedBuffer = (Bytef *)RTMemAlloc(cbTmpSize*10);
-
-        if (!decompressedBuffer)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
-
-        gzipStream.zalloc = Z_NULL;
-        gzipStream.zfree = Z_NULL;
-        gzipStream.opaque = Z_NULL;
-        gzipStream.next_in = compressedBuffer;
-        gzipStream.avail_in = 0;
-        gzipStream.next_out = decompressedBuffer;
-        gzipStream.avail_out = cbTmpSize*10;
-
-        rc = inflateInit2(&gzipStream, MAX_WBITS + 16 /* autodetect gzip header */);
-
-        if (rc < 0)
-        {
-            break;
-        }
-
-        size_t cbRead = 0;
-        size_t cbDecompressed = 0;
-        bool fFinished = true;
-
-        for (;;)
-        {
-            if (fFinished == true)
-            {
-                rc = pIfIo->pfnReadSync(pvUser, pvStorage, cbAllRead, compressedBuffer, cbTmpSize, &cbRead);
-                if (   RT_FAILURE(rc)
-                    || cbRead == 0)
-                    break;
-
-                gzipStream.avail_in = cbRead;
-                gzipStream.avail_out = cbTmpSize*10;
-            }
-
-            /* decompress the buffer */
-            rc = zipDecompressBuffer(gzipStream,
-                                           (uint32_t *)(&cbDecompressed),
-                                           &fFinished);
-
-            if (RT_FAILURE(rc))
-                break;
-
-            rc = RTFileWrite(pFile, decompressedBuffer, cbDecompressed, &cbDecompressed);
-
-            if (RT_FAILURE(rc))
-                break;
-
-            cbAllWritten += cbDecompressed;
-            cbAllRead += cbRead;
-        }
-    } while (0);
-
-    pIfIo->pfnClose(pvUser, pvStorage);
-
-    if (rc == VERR_EOF)
-        rc = VINF_SUCCESS;
-
-    rc = inflateEnd(&gzipStream);
-
-    rc = RTFileClose(pFile);
-
-    if (decompressedBuffer)
-        RTMemFree(decompressedBuffer);
-    if (compressedBuffer)
-        RTMemFree(compressedBuffer);
-#endif /* !VBOX_MAIN_USE_VFS */
 
     return rc;
 }

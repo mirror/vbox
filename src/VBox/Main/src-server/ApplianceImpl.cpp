@@ -53,6 +53,7 @@ static const char* const strVHDURI = "http://go.microsoft.com/fwlink/?LinkId=137
 static std::map<Utf8Str, Utf8Str> supportedStandardsURI;
 
 static const char* const applianceIOTarName = "Appliance::IOTar";
+static const char* const applianceIOShaName = "Appliance::IOSha";
 static const char* const applianceIOFileName = "Appliance::IOFile";
 
 static std::map<APPLIANCEIONAME, Utf8Str> applianceIONameMap;
@@ -703,6 +704,7 @@ HRESULT Appliance::initApplianceIONameMap()
 
         applianceIONameMap.insert(std::make_pair(applianceIOTar, applianceIOTarName));
         applianceIONameMap.insert(std::make_pair(applianceIOFile, applianceIOFileName));
+        applianceIONameMap.insert(std::make_pair(applianceIOSha, applianceIOShaName));
 
     return rc;
 }

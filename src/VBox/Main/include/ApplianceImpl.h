@@ -42,7 +42,7 @@ typedef struct VDINTERFACE   *PVDINTERFACE;
 typedef struct VDINTERFACEIO *PVDINTERFACEIO;
 typedef struct SHASTORAGE    *PSHASTORAGE;
 
-typedef enum applianceIOName { applianceIOTar, applianceIOFile } APPLIANCEIONAME;
+typedef enum applianceIOName { applianceIOTar, applianceIOFile, applianceIOSha } APPLIANCEIONAME;
 
 namespace ovf
 {
