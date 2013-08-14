@@ -6990,6 +6990,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     if (rc != VINF_SUCCESS)
         return rc;
 
+#ifndef IEM_VERIFICATION_MODE_FULL
     /* Setup the Virtualized APIC accesses. pMixedCtx->msrApicBase is always up-to-date. It's not part of the VMCS. */
     if (   pVCpu->hm.s.vmx.u64MsrApicBase != pMixedCtx->msrApicBase
         && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_VIRT_APIC))
@@ -7010,6 +7011,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 
         pVCpu->hm.s.vmx.u64MsrApicBase = pMixedCtx->msrApicBase;
     }
+#endif /* !IEM_VERIFICATION_MODE_FULL */
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.) */
