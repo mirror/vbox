@@ -1543,6 +1543,15 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             if (!pShaIo)
                 throw setError(E_OUTOFMEMORY);
 
+            Utf8Str nameSha = applianceIOName(applianceIOSha);
+            /* Fill out interface descriptor. */
+            pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
+            pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
+            pShaIo->Core.pszInterfaceName = nameSha.c_str();
+            pShaIo->Core.enmInterface     = VDINTERFACETYPE_IO;
+            pShaIo->Core.pvUser           = &storage;
+            pShaIo->Core.pNext            = NULL;
+
             storage.fCreateDigest = true;
 
             size_t cbMfSize = 0;
@@ -1634,14 +1643,23 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         SHASTORAGE storage;
         RT_ZERO(storage);
 
-        Utf8Str name = applianceIOName(applianceIOTar);
+        Utf8Str nameTar = applianceIOName(applianceIOTar);
 
-        vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
+        vrc = VDInterfaceAdd(&pTarIo->Core, nameTar.c_str(),
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Creation of the VD interface failed (%Rrc)"), vrc);
+
+        Utf8Str nameSha = applianceIOName(applianceIOSha);
+        /* Fill out interface descriptor. */
+        pShaIo->Core.u32Magic         = VDINTERFACE_MAGIC;
+        pShaIo->Core.cbSize           = sizeof(VDINTERFACEIO);
+        pShaIo->Core.pszInterfaceName = nameSha.c_str();
+        pShaIo->Core.enmInterface     = VDINTERFACETYPE_IO;
+        pShaIo->Core.pvUser           = &storage;
+        pShaIo->Core.pNext            = NULL;
 
         /* Read the file name of the first file (need to be the ovf file). This
          * is how all internal files are named. */
@@ -2289,6 +2307,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                                    RTPathFilename(strSrcFilePath.c_str()), vrc);
 
                 /* Create the necessary file access interfaces. */
+
                 pFileIo = FileCreateInterface();
                 if (!pFileIo)
                     throw setError(E_OUTOFMEMORY);
