@@ -148,7 +148,7 @@ RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
 #define RTFILE_O_NOT_CONTENT_INDEXED    UINT32_C(0x00000800)
 /** Truncate the file.
  * @remarks This will not truncate files opened for read-only.
- * @remarks The trunction doesn't have to be atomically, so anyone else opening
+ * @remarks The truncation doesn't have to be atomically, so anyone else opening
  *          the file may be racing us. The caller is responsible for not causing
  *          this race. */
 #define RTFILE_O_TRUNCATE               UINT32_C(0x00001000)
@@ -1254,7 +1254,7 @@ RTDECL(int) RTFileAioCtxCreate(PRTFILEAIOCTX phAioCtx, uint32_t cAioReqsMax,
 #define RTFILEAIO_UNLIMITED_REQS    UINT32_MAX
 
 /** When set RTFileAioCtxWait() will always wait for completing requests,
- * even when there is none waiting currently, instead of returning 
+ * even when there is none waiting currently, instead of returning
  * VERR_FILE_AIO_NO_REQUEST. */
 #define RTFILEAIOCTX_FLAGS_WAIT_WITHOUT_PENDING_REQUESTS RT_BIT_32(0)
 /** mask of valid flags. */
