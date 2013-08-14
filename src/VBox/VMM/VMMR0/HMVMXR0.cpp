@@ -5504,29 +5504,32 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     pSelReg->Attr.u = u32Val;
 
     /*
-     * If VT-x marks the segment as unusable, the rest of the attributes are undefined with certain exceptions (some bits in
-     * CS, SS). Regardless, we have to clear the bits here and only retain the unusable bit because the unusable bit is specific
-     * to VT-x, everyone else relies on the attribute being zero and have no clue what the unusable bit is.
+     * If VT-x marks the segment as unusable, most other bits remain undefined:
+     *    - For CS the L, D and G bits have meaning.
+     *    - For SS the DPL have meaning (it -is- the CPL for Intel and VBox).
+     *    - For the remaining data segments no bits are defined.
+     *
+     * What should be important for the rest of the VBox code that the P bit is
+     * cleared.  Some of the other VBox code recognizes the unusable bit, but
+     * AMD-V certainly don't, and REM doesn't really either.  So, to be on the
+     * safe side here we'll strip off P and other bits we don't care about.  If
+     * any code breaks because attr.u != 0 when Sel < 4, it should be fixed.
      *
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
-     *
-     * bird: This isn't quite as simple.  VT-x and VBox(!) requires the DPL for SS to be the same as CPL.  In 64-bit mode it
-     *       is possible (int/trap/xxx injects does this when switching rings) to load SS with a NULL selector and RPL=CPL.
-     *       The Attr.u = X86DESCATTR_UNUSABLE works fine as long as nobody uses ring-1 or ring-2.  VT-x updates the DPL
-     *       correctly in the attributes of SS even when the unusable bit is set, we need to preserve the DPL or we get invalid
-     *       guest state trouble.  Try bs2-cpu-hidden-regs-1.
      */
     if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
-        Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x\n", idxSel, pSelReg->Attr.u));
-
-        if (idxSel == VMX_VMCS16_GUEST_FIELD_SS)
-            pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_DPL;
-        else if (idxSel == VMX_VMCS16_GUEST_FIELD_CS)
-            pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G;
-        else
-            pSelReg->Attr.u = X86DESCATTR_UNUSABLE;
+#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
+        uint32_t fAttr = pSelReg->Attr.u;
+#endif
+        /* Masking off: X86DESCATTR_P, X86DESCATTR_LIMIT_HIGH, and X86DESCATTR_AVL. The latter two are really irrelevant. */
+        pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G
+                         | X86DESCATTR_DPL | X86DESCATTR_TYPE | X86DESCATTR_DT;
+        Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x -> %#x\n", idxSel, fAttr, pSelReg->Attr.u));
+#ifdef DEBUG_bird
+        AssertMsg(fAttr == pSelReg->Attr.u, ("%#x: %#x != %#x\n", idxSel, fAttr, pSelReg->Attr.u));
+#endif
     }
     return VINF_SUCCESS;
 }
@@ -6154,13 +6157,6 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     else
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
 
-    /* Make sure we've undo the trap flag if we tried to single step something. */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        pVCpu->hm.s.fClearTrapFlag = false;
-        pMixedCtx->eflags.Bits.u1TF = 0;
-    }
-
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
 }
@@ -6299,7 +6295,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         else
             hmR0VmxSetIntWindowExitVmcs(pVCpu);
     }
-    else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
+    else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+             && !pVCpu->hm.s.fSingleInstruction)
     {
         /* Check if there are guest external interrupts (PIC/APIC) pending and inject them if the guest can receive them. */
         rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
@@ -7222,21 +7219,20 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
 }
 
 
+
 /**
- * Runs the guest code using VT-x.
+ * Runs the guest code using VT-x the normal way.
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
+ * @note    Mostly the same as hmR0VmxRunGuestCodeStep.
  * @remarks Called with preemption disabled.
  */
-VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
     VMXTRANSIENT VmxTransient;
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
     int          rc     = VERR_INTERNAL_ERROR_5;
@@ -7301,6 +7297,143 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+
+
+/**
+ * Single steps guest code using VT-x.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @note    Mostly the same as hmR0VmxRunGuestCodeNormal.
+ * @remarks Called with preemption disabled.
+ */
+static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    VMXTRANSIENT VmxTransient;
+    VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
+    int          rc     = VERR_INTERNAL_ERROR_5;
+    uint32_t     cLoops = 0;
+    uint16_t     uCsStart  = pCtx->cs.Sel;
+    uint64_t     uRipStart = pCtx->rip;
+
+    for (;; cLoops++)
+    {
+        Assert(!HMR0SuspendPending());
+        AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
+                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
+                  (unsigned)RTMpCpuId(), cLoops));
+
+        /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
+        rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient);
+        if (rc != VINF_SUCCESS)
+            break;
+
+        /*
+         * No longjmps to ring-3 from this point on!!!
+         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+         * This also disables flushing of the R0-logger instance (if any).
+         */
+        VMMRZCallRing3Disable(pVCpu);
+        VMMRZCallRing3RemoveNotification(pVCpu);
+        hmR0VmxPreRunGuestCommitted(pVM, pVCpu, pCtx, &VmxTransient);
+
+        rc = hmR0VmxRunGuest(pVM, pVCpu, pCtx);
+        /* The guest-CPU context is now outdated, 'pCtx' is to be treated as 'pMixedCtx' from this point on!!! */
+
+        /*
+         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
+         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
+         */
+        hmR0VmxPostRunGuest(pVM, pVCpu, pCtx, &VmxTransient, rc);
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))        /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
+        {
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
+            hmR0VmxReportWorldSwitchError(pVM, pVCpu, rc, pCtx, &VmxTransient);
+            return rc;
+        }
+
+        /* Handle the VM-exit. */
+        AssertMsg(VmxTransient.uExitReason <= VMX_EXIT_MAX, ("%#x\n", VmxTransient.uExitReason));
+        STAM_COUNTER_INC(&pVCpu->hm.s.paStatExitReasonR0[VmxTransient.uExitReason & MASK_EXITREASON_STAT]);
+        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
+        HMVMX_START_EXIT_DISPATCH_PROF();
+#ifdef HMVMX_USE_FUNCTION_TABLE
+        rc = g_apfnVMExitHandlers[VmxTransient.uExitReason](pVCpu, pCtx, &VmxTransient);
+#else
+        rc = hmR0VmxHandleExit(pVCpu, pCtx, &VmxTransient, VmxTransient.uExitReason);
+#endif
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
+        if (rc != VINF_SUCCESS)
+            break;
+        else if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            rc = VINF_EM_RAW_INTERRUPT;
+            break;
+        }
+
+        /*
+         * Did the RIP change, if so, consider it a single step.
+         * Otherwise, make sure one of the TFs gets set.
+         */
+        int rc2 = hmR0VmxLoadGuestRip(pVCpu, pCtx);
+        rc2 |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pCtx);
+        AssertRCReturn(rc2, rc2);
+        if (   pCtx->rip    != uRipStart
+            || pCtx->cs.Sel != uCsStart)
+        {
+            rc = VINF_EM_DBG_STEPPED;
+            break;
+        }
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+    }
+
+    /*
+     * Clear the X86_EFL_TF if necessary .
+     */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pCtx);
+        AssertRCReturn(rc2, rc2);
+        pVCpu->hm.s.fClearTrapFlag = false;
+        pCtx->eflags.Bits.u1TF = 0;
+    }
+/** @todo there seems to be issues with the resume flag when the monitor trap
+ *        flag is pending without being used. Seen early in bios init when
+ *        accessing APIC page in prot mode. */
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+
+
+/**
+ * Runs the guest code using VT-x.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks Called with preemption disabled.
+ */
+VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Assert(VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    int rc;
+    if (!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu))
+        rc = hmR0VmxRunGuestCodeNormal(pVM, pVCpu, pCtx);
+    else
+        rc = hmR0VmxRunGuestCodeStep(pVM, pVCpu, pCtx);
+
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     else if (rc == VINF_EM_RESET)
@@ -9663,13 +9796,6 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
      */
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
-
-    /* If we sat the trap flag above, we have to clear it. */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        pVCpu->hm.s.fClearTrapFlag = false;
-        pMixedCtx->eflags.Bits.u1TF = 0;
-    }
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
     uint64_t uDR6 = X86_DR6_INIT_VAL;
