@@ -1003,6 +1003,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageTempOff(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
+#ifndef IEM_VERIFICATION_MODE_FULL
 
 /**
  * Replaces an MMIO page with an MMIO2 page.
@@ -1130,6 +1131,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAlias(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCP
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
+
 /**
  * Replaces an MMIO page with an arbitrary HC page.
  *
@@ -1234,6 +1236,7 @@ VMMDECL(int)  PGMHandlerPhysicalPageAliasHC(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS G
     return VERR_PGM_HANDLER_NOT_FOUND;
 }
 
+#endif /* !IEM_VERIFICATION_MODE_FULL */
 
 /**
  * Checks if a physical range is handled

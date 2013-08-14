@@ -2423,6 +2423,7 @@ VMMDECL(VBOXSTRICTRC) IOMInterpretOUTS(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegF
  */
 VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags)
 {
+# ifndef IEM_VERIFICATION_MODE_FULL
     /* Currently only called from the VGA device during MMIO. */
     Log(("IOMMMIOMapMMIO2Page %RGp -> %RGp flags=%RX64\n", GCPhys, GCPhysRemapped, fPageFlags));
     AssertReturn(fPageFlags == (X86_PTE_RW | X86_PTE_P), VERR_INVALID_PARAMETER);
@@ -2465,20 +2466,22 @@ VMMDECL(int) IOMMMIOMapMMIO2Page(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapp
      *
      * Note: This is a NOP in the EPT case; we'll just let it fault again to resync the page.
      */
-#if 0 /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
-# ifdef VBOX_STRICT
+#  if 0 /* The assertion is wrong for the PGM_SYNC_CLEAR_PGM_POOL and VINF_PGM_HANDLER_ALREADY_ALIASED cases. */
+#   ifdef VBOX_STRICT
     uint64_t fFlags;
     RTHCPHYS HCPhys;
     rc = PGMShwGetPage(pVCpu, (RTGCPTR)GCPhys, &fFlags, &HCPhys);
     Assert(rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
-# endif
-#endif
+#   endif
+#  endif
     rc = PGMPrefetchPage(pVCpu, (RTGCPTR)GCPhys);
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
+# endif /* !IEM_VERIFICATION_MODE_FULL */
     return VINF_SUCCESS;
 }
 
 
+# ifndef IEM_VERIFICATION_MODE_FULL
 /**
  * Mapping a HC page in place of an MMIO page for direct access.
  *
@@ -2532,6 +2535,7 @@ VMMDECL(int) IOMMMIOMapMMIOHCPage(PVM pVM, PVMCPU pVCpu, RTGCPHYS GCPhys, RTHCPH
     Assert(rc == VINF_SUCCESS || rc == VERR_PAGE_NOT_PRESENT || rc == VERR_PAGE_TABLE_NOT_PRESENT);
     return VINF_SUCCESS;
 }
+#endif /* !IEM_VERIFICATION_MODE_FULL */
 
 
 /**
