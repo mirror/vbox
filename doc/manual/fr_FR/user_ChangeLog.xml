@@ -56,6 +56,30 @@
         pour la mise à jour automatique des suppléments invité.</para>
       </listitem>
       <listitem>
+        <para>VBoxManage : ajout du support de la présentation des sessions et
+        des processus de l'invité actifs avec
+        <computeroutput>guestcontrol list &lt;all|sessions|processes&gt;</computeroutput>.</para>
+      </listitem>
+      <listitem>
+        <para>VBoxManage : ajout du support de la fermeture de sessions actives
+        sur l'invité avec  via
+          <computeroutput>guestcontrol session close --session-id &lt;ID&gt;|
+          --session-name &lt;nom ou extrait&gt;|--all</computeroutput>
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage : ajout du support 'de la fin des processus actifs de
+        l'invité via <computeroutput>guestcontrol process kill|close|terminate --session-id &lt;ID&gt;|
+        --session-name &lt;nom ou modèle&gt; &lt;PID&gt; ... &lt;PID n&gt;</computeroutput>
+        ou
+        <computeroutput>guestcontrol [p[s]]kill --session-id &lt;ID&gt;|
+        --session-name &lt;nom ou modèle&gt; &lt;PID&gt; ... &lt;PID n&gt;</computeroutput>
+        </para>
+       </listitem>
+
+
+      <listitem>
         <para>support 3D : plusieurs corrections pour les hôtes Mac OS X</para>
       </listitem>
 
@@ -76,6 +100,13 @@
          <para>Suppléments Windows : correction d'un mauvais comportement
          avec l'affichage de la gestion de l'énergie dans l'invité (pilote WDDM
          seulement ; bogue #11170)</para>
+       </listitem>
+
+       <listitem>
+         <para>Invités Windows : possibilité de repérer les moments
+d'inactivité 
+         de l'utilisateur dans l'invité grâce à l'événement
+         IGuestUserStateChangedEvent, introduit récemment.</para>
        </listitem>
 
     </itemizedlist>

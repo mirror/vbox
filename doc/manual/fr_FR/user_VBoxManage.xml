@@ -1637,7 +1637,10 @@ Virtual system 0:
     l'état actuel de la machne viruelle. Vous devez fournir un nom pour l'instantané
     et vous pouvez éventuellement entrer une description. Le nouvel instantané est
     inséré à l'arborescence des instantanés comme un fichier de l'instantané 
-    actuel et il devient le nouvel instantané actuel.</para>
+    actuel et il devient le nouvel instantané actuel. Le paramètre
+    <computeroutput>--description</computeroutput> permet de décrire
+    l'instantané. Si vous spécifiez <computeroutput>--live</computeroutput>,
+    la VM ne s'arrêtera pas pendant la créqation de l'instantané.</para>
 
     <para>L'opération <computeroutput>delete</computeroutput> efface un
     instantané (spécifié par son nom ou son UUID). Cela peut être long à se
@@ -3291,8 +3294,211 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><computeroutput>stat</computeroutput>, qui affiche l'état d'un
-          fichier ou d'un gestionnaire de fichiers de l'invité.</para>
+          <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>,
+          qui présente plusieurs informations de contrôle de l'invité telles
+          que les sessions ouvertes dans l'invité et les processus de l'invité.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; list
+          &lt;all|sessions|processes&gt; [--verbose]</screen>
+
+          <para>où les paramètres signifient&nbsp;: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+              <glossdef>
+                <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>all|sessions|processes</computeroutput></glossterm>
+
+              <glossdef>
+                <para>présenter les sessions dans l'invité, les processus de
+                l'invité ou toutes les informations disponibles.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Dit à VBoxManage d'être plus verbeux.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>process kill</computeroutput></emphasis>,
+          qui termine des processus de l'invité en particulier pour une session
+          de l'invité, à partir soit l'ID de la session, soit du nom de la
+          session.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; process kill
+            --session-id &lt;ID&gt;
+          | --session-name &lt;nom ou modèle&gt;
+          [--verbose]
+          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+
+          <para>où les paramètres signifient&nbsp;: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+              <glossdef>
+                <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Spécifie la session de l'invité à utiliser par son ID.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Spécifie la session de l'invité à utiliser par son nom.
+                Vous pouvez spécifier plusieurs sessions en spécifiant les jokers
+                * ou ?.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Dit à VBoxManage d'être plus verbeux.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Liste les identifiants des processus (PIDs) à terminer.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>[p[s]]kill</computeroutput></emphasis>,
+          qui termine des processus en particulier dans une session de l'invité,
+          à partir soit de l'ID de la session, soit de son nom.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; process kill
+            --session-id &lt;ID&gt;
+          | --session-name &lt;nom ou modèle&gt;
+          [--verbose]
+          &lt;PID&gt; ... &lt;PID n&gt;</screen>
+
+          <para>où les paramètres signifient&nbsp;: <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+              <glossdef>
+                <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Spécifie la session de l'invité à utiliser par son ID.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Spécifie la session de l'invité à utiliser par son nom. Vous
+                pouvez spécifier plusieurs sessions avec les jokers * ou ?.</para>
+              </glossdef>
+
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Dit à VBoxManage d'être plus verbeux.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>&lt;PID&gt; ... &lt;PID n&gt;</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Liste les identifiants des processus (PIDs) à terminer.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>session close</computeroutput></emphasis>,
+          qui ferme des sessions spécifiques de l'invité à partir de l'ID de la
+          session ou de son nom.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; session close
+            --session-id &lt;ID&gt;
+          | --session-name &lt;nom ou extrait&gt;
+          | --all
+          [--verbose]</screen>
+
+          <para>où les paramètres signifient : <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+              <glossdef>
+                <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-id</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Ferme une session de ;'invité spécifiée par son ID.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--session-name</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Ferme une session de ;'invité spécifiée par son nom. Vous
+                pouvez fermer plusieurs sessions grâce aux jokers * ou ?.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--all</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Ferme toutes les sessions de l'invité.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Dit à VBoxManage d'être plus verbeux.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>stat</computeroutput></emphasis>, qui affiche l'état d'un
+          fichier ou d'un système de fichiers de l'invité.</para>
 
           <screen>VBoxManage guestcontrol &lt;nomvm&gt;|&lt;uuid&gt; stat
             &lt;file&gt;... --username &lt;nom&gt;
@@ -3359,7 +3565,7 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
-          <para><computeroutput>updateadditions</computeroutput>, qui permet de
+          <para><emphasis role="bold"><computeroutput>updateadditions</computeroutput></emphasis>, qui permet de
           mettre à jour une version des suppléments invité installée sur l'invité
           (sur les suppléments invité installés 4.0 et supérieur).</para>
 
