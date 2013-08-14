@@ -3768,7 +3768,7 @@ IEM_CIMPL_DEF_1(iemCImpl_lldt, uint16_t, uNewLdt)
             pCtx->ldtr.Sel = uNewLdt;
         pCtx->ldtr.ValidSel = uNewLdt;
         pCtx->ldtr.fFlags   = CPUMSELREG_FLAGS_VALID;
-        if (!IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
+        if (IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu))
         {
             pCtx->ldtr.Attr.u = X86DESCATTR_UNUSABLE;
             pCtx->ldtr.u64Base = pCtx->ldtr.u32Limit = 0; /* For verfication against REM. */
