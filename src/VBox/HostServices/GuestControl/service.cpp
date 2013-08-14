@@ -319,7 +319,6 @@ typedef struct HostCommand
                             paDstParms[i].u.uint32 = mpParms[i].u.uint32;
                             break;
 
-
                         case VBOX_HGCM_SVC_PARM_64BIT:
 #ifdef DEBUG_andy
                             LogFlowFunc(("\tmpParms[%RU32] = %RU64 (uint64_t)\n",
