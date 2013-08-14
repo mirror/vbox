@@ -229,6 +229,7 @@ typedef struct USBHID
     MTCONTACT aReportingContactState[MT_CONTACT_MAX_COUNT];
     uint32_t u32LastTouchScanTime;
     bool fTouchReporting;
+    bool fTouchStateUpdated;
 } USBHID;
 /** Pointer to the USB HID instance data. */
 typedef USBHID *PUSBHID;
@@ -283,6 +284,14 @@ typedef struct USBHIDMT_REPORT
     } aContacts[MT_CONTACTS_PER_REPORT];
     uint32_t    u32ScanTime;
 } USBHIDMT_REPORT, *PUSBHIDMT_REPORT;
+
+typedef struct USBHIDMT_REPORT_POINTER
+{
+    uint8_t     idReport;
+    uint8_t     fButtons;
+    uint16_t    x;
+    uint16_t    y;
+} USBHIDMT_REPORT_POINTER;
 #pragma pack()
 
 /*******************************************************************************
@@ -1139,6 +1148,7 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
      */
     pThis->enmState = USBHIDREQSTATE_READY;
     pThis->fHasPendingChanges = false;
+    pThis->fTouchStateUpdated = false;
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
@@ -1352,7 +1362,7 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
     {
         LogRel3(("usbHid: all touch contacts reported\n"));
         pThis->fTouchReporting = false;
-        pThis->fHasPendingChanges = false;
+        pThis->fHasPendingChanges = pThis->fTouchStateUpdated;
     }
     else
     {
@@ -1621,6 +1631,7 @@ static DECLCALLBACK(int) usbHidMousePutEventMultiTouch(PPDMIMOUSEPORT pInterface
                 ));
     }
 
+    pThis->fTouchStateUpdated = true;
     pThis->fHasPendingChanges = true;
 
     /* Send a report if possible. */
@@ -1812,10 +1823,29 @@ static int usbHidRequestClass(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         pSetup->bRequest == GET_REPORT? "GET_REPORT": "SET_REPORT",
                         u8ReportType, u8ReportID,
                         pUrb->cbData - sizeof(VUSBSETUP), &pUrb->abData[sizeof(VUSBSETUP)]));
-            uint32_t cbData = 0;
             if (pSetup->bRequest == GET_REPORT)
             {
-                if (u8ReportType == 3 && u8ReportID == REPORTID_TOUCH_MAX_COUNT)
+                uint32_t cbData = 0; /* 0 means that the report is unsupported. */
+
+                if (u8ReportType == 1 && u8ReportID == REPORTID_TOUCH_POINTER)
+                {
+                    USBHIDMT_REPORT_POINTER *p = (USBHIDMT_REPORT_POINTER *)&pUrb->abData[sizeof(VUSBSETUP)];
+                    /* The actual state should be reported here. */
+                    p->idReport = REPORTID_TOUCH_POINTER;
+                    p->fButtons = 0;
+                    p->x = 0;
+                    p->y = 0;
+                    cbData = sizeof(USBHIDMT_REPORT_POINTER);
+                }
+                else if (u8ReportType == 1 && u8ReportID == REPORTID_TOUCH_EVENT)
+                {
+                    USBHIDMT_REPORT *p = (USBHIDMT_REPORT *)&pUrb->abData[sizeof(VUSBSETUP)];
+                    /* The actual state should be reported here. */
+                    RT_ZERO(*p);
+                    p->idReport = REPORTID_TOUCH_EVENT;
+                    cbData = sizeof(USBHIDMT_REPORT);
+                }
+                else if (u8ReportType == 3 && u8ReportID == REPORTID_TOUCH_MAX_COUNT)
                 {
                     pUrb->abData[sizeof(VUSBSETUP) + 0] = REPORTID_TOUCH_MAX_COUNT;
                     pUrb->abData[sizeof(VUSBSETUP) + 1] = MT_CONTACT_MAX_COUNT; /* Contact count maximum. */
@@ -1830,9 +1860,31 @@ static int usbHidRequestClass(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                            sau8QASampleBlob, sizeof(sau8QASampleBlob));
                     cbData = sizeof(sau8QASampleBlob) + 1;
                 }
-            }
+                else if (u8ReportType == 3 && u8ReportID == REPORTID_TOUCH_DEVCONFIG)
+                {
+                    pUrb->abData[sizeof(VUSBSETUP) + 0] = REPORTID_TOUCH_DEVCONFIG;
+                    pUrb->abData[sizeof(VUSBSETUP) + 1] = 2;  /* Device mode:
+                                                               * "HID touch device supporting contact
+                                                               * identifier and contact count maximum."
+                                                               */
+                    pUrb->abData[sizeof(VUSBSETUP) + 2] = 0;  /* Device identifier */
+                    cbData = 3;
+                }
 
-            rc = usbHidCompleteOk(pThis, pUrb, sizeof(VUSBSETUP) + cbData);
+                if (cbData > 0)
+                {
+                    rc = usbHidCompleteOk(pThis, pUrb, sizeof(VUSBSETUP) + cbData);
+                }
+                else
+                {
+                    rc = usbHidCompleteStall(pThis, pEp, pUrb, "Unsupported GET_REPORT MT");
+                }
+            }
+            else
+            {
+                /* SET_REPORT */
+                rc = usbHidCompleteOk(pThis, pUrb, pUrb->cbData);
+            }
         } break;
         default:
         {
