@@ -103,7 +103,7 @@ static void rtThreadCtxHooksLnxSchedIn(struct preempt_notifier *pPreemptNotifier
     PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
     AssertPtr(pThis);
     AssertPtr(pThis->pfnThreadCtxHook);
-    AssertPtr(pThis->fRegistered);
+    Assert(pThis->fRegistered);
 
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_RESUMED, pThis->pvUser);
 }
