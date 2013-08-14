@@ -390,8 +390,8 @@ static int gstcntlHandleSessionClose(PVBGLR3GUESTCTRLCMDCTX pHostCtx)
                            uSessionID, rc);
     }
     else
-        VBoxServiceError("Closing guest session failed with rc=%Rrc\n", rc);
-
+        VBoxServiceError("Closing guest session %RU32 failed with rc=%Rrc\n",
+                         uSessionID, rc);
     return rc;
 }
 
