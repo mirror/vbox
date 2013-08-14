@@ -5509,6 +5509,10 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
      *    - For SS the DPL have meaning (it -is- the CPL for Intel and VBox).
      *    - For the remaining data segments no bits are defined.
      *
+     * The present bit and the unused bit has been observed to be set at the
+     * same time (the selector was supposed to invalid as we started executing
+     * a V8086 interrupt in ring-0).
+     *
      * What should be important for the rest of the VBox code that the P bit is
      * cleared.  Some of the other VBox code recognizes the unusable bit, but
      * AMD-V certainly don't, and REM doesn't really either.  So, to be on the
@@ -5520,15 +5524,15 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     if (pSelReg->Attr.u & X86DESCATTR_UNUSABLE)
     {
         Assert(idxSel != VMX_VMCS16_GUEST_FIELD_TR);          /* TR is the only selector that can never be unusable. */
-#if defined(LOG_ENABLED) || defined(VBOX_STRICT)
-        uint32_t fAttr = pSelReg->Attr.u;
-#endif
+
         /* Masking off: X86DESCATTR_P, X86DESCATTR_LIMIT_HIGH, and X86DESCATTR_AVL. The latter two are really irrelevant. */
         pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G
                          | X86DESCATTR_DPL | X86DESCATTR_TYPE | X86DESCATTR_DT;
-        Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x -> %#x\n", idxSel, fAttr, pSelReg->Attr.u));
+        Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x -> %#x\n", idxSel, u32Val, pSelReg->Attr.u));
 #ifdef DEBUG_bird
-        AssertMsg(fAttr == pSelReg->Attr.u, ("%#x: %#x != %#x\n", idxSel, fAttr, pSelReg->Attr.u));
+        AssertMsg((u32Val & ~X86DESCATTR_P) == pSelReg->Attr.u,
+                  ("%#x: %#x != %#x (sel=%#x base=%#llx limit=%#x)\n",
+                   idxSel, u32Val, pSelReg->Attr.u, pSelReg->Sel, pSelReg->u64Base, pSelReg->u32Limit));
 #endif
     }
     return VINF_SUCCESS;
