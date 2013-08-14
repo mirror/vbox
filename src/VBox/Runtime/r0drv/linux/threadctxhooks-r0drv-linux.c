@@ -82,7 +82,7 @@ static void rtThreadCtxHooksLnxSchedOut(struct preempt_notifier *pPreemptNotifie
     PRTTHREADCTXINT pThis = RT_FROM_MEMBER(pPreemptNotifier, RTTHREADCTXINT, hPreemptNotifier);
     AssertPtr(pThis);
     AssertPtr(pThis->pfnThreadCtxHook);
-    AssertPtr(pThis->fRegistered);
+    Assert(pThis->fRegistered);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     pThis->pfnThreadCtxHook(RTTHREADCTXEVENT_PREEMPTING, pThis->pvUser);
