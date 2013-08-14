@@ -2372,7 +2372,7 @@ typedef struct X86DESCATTRBITS
 #define X86DESCATTR_DT              UINT32_C(0x00000010)
 #define X86DESCATTR_DPL             UINT32_C(0x00000060)
 #define X86DESCATTR_DPL_SHIFT       5 /**< Shift count for the DPL value. */
-#define X86DESCATTR_P               UINT32_C(0x00000800)
+#define X86DESCATTR_P               UINT32_C(0x00000080)
 #define X86DESCATTR_LIMIT_HIGH      UINT32_C(0x00000f00)
 #define X86DESCATTR_AVL             UINT32_C(0x00001000)
 #define X86DESCATTR_L               UINT32_C(0x00002000)
