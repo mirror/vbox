@@ -10146,9 +10146,9 @@
       the session object via <link to="IGuest::createSession"/>.
 
       There can be a maximum of 32 sessions at once per VM, whereas session 0
-      is reserved for the root session. This root session is controlling all 
+      is reserved for the root session. This root session is controlling all
       other guest sessions and also is responsible for actions which require
-      system level privileges. Each guest session keeps track of its started 
+      system level privileges. Each guest session keeps track of its started
       guest processes, opened guest files or guest directories.
       To work on guest files or directories a guest session offers methods to open
       or create such objects (see <link to="IGuestSession::fileOpen"/> or
@@ -10226,7 +10226,8 @@
       <desc>
         Closes this session. All opened guest directories, files and
         processes which are not referenced by clients anymore will be
-        uninitialized.
+        closed. Guest processes which fall into this category and still
+        are running on the guest will be terminated automatically.
       </desc>
     </method>
 
@@ -10724,12 +10725,6 @@
           If ProcessCreateFlag_WaitForStdOut and / or respectively ProcessCreateFlag_WaitForStdErr
           is / are set, the guest process will not exit until all data from the specified
           stream(s) is / are read out.
-
-          To raise or lower the guest process execution limit, either the guest property
-          "/VirtualBox/GuestAdd/VBoxService/--control-procs-max-kept" or VBoxService'
-          command line by specifying "--control-procs-max-kept" needs to be modified.
-          A restart of the guest OS is required afterwards. To serve unlimited guest
-          processes, a value of "0" needs to be set (not recommended).
         </note>
 
         <result name="VBOX_E_IPRT_ERROR">
@@ -11976,6 +11971,10 @@
         To work on guest files or directories a guest session offers methods to open
         or create such objects (see <link to="IGuestSession::fileOpen"/> or
         <link to="IGuestSession::directoryOpen"/> for example).
+
+        There can be up to 2048 objects (guest processes, files or directories)
+        a time per guest session. Exceeding the limit will result in an appropriate
+        error message.
 
         When done with either of these objects, including the guest session itself,
         use the appropriate close() method to let the object do its cleanup work.
