@@ -1256,6 +1256,7 @@ static int usbHidSendMultiTouchReport(PUSBHID pThis, PVUSBURB pUrb)
     if (!pThis->fTouchReporting)
     {
         pThis->fTouchReporting = true;
+        pThis->fTouchStateUpdated = false;
 
         /* Update the reporting state with the new current state.
          * Also mark all active contacts in reporting state as dirty,
