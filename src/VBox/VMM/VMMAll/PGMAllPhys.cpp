@@ -4115,3 +4115,60 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
     return rc;
 }
 
+
+/**
+ * Checks if the give GCPhys page requires special handling for the given access
+ * because it's MMIO or otherwise monitored.
+ *
+ * @returns VBox status code (no informational statuses).
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_WRITE and *ppv set if the page has a write
+ *          access handler of some kind.
+ * @retval  VERR_PGM_PHYS_TLB_CATCH_ALL if the page has a handler catching all
+ *          accesses or is odd in any way.
+ * @retval  VERR_PGM_PHYS_TLB_UNASSIGNED if the page doesn't exist.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   GCPhys      The GC physical address to convert.  Since this is only
+ *                      used for filling the REM TLB, the A20 mask must be
+ *                      applied before calling this API.
+ * @param   fWritable   Whether write access is required.
+ *
+ * @remarks This is a watered down version PGMPhysIemGCPhys2Ptr and really just
+ *          a stop gap thing that should be removed once there is a better TLB
+ *          for virtual address accesses.
+ */
+VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVM pVM, RTGCPHYS GCPhys, bool fWritable, bool fByPassHandlers)
+{
+    pgmLock(pVM);
+    PGM_A20_ASSERT_MASKED(VMMGetCpu(pVM), GCPhys);
+
+    PPGMRAMRANGE pRam;
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageAndRangeEx(pVM, GCPhys, &pPage, &pRam);
+    if (RT_SUCCESS(rc))
+    {
+        if (PGM_PAGE_IS_BALLOONED(pPage))
+            rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
+        else if (   !PGM_PAGE_HAS_ANY_HANDLERS(pPage)
+                 || (fByPassHandlers && !PGM_PAGE_IS_MMIO(pPage)) )
+            rc = VINF_SUCCESS;
+        else
+        {
+            if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)) /* catches MMIO */
+            {
+                Assert(!fByPassHandlers || PGM_PAGE_IS_MMIO(pPage));
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            }
+            else if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage) && fWritable)
+            {
+                Assert(!fByPassHandlers);
+                rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
+            }
+        }
+    }
+
+    pgmUnlock(pVM);
+    return rc;
+}
+
