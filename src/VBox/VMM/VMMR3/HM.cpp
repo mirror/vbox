@@ -2664,7 +2664,7 @@ VMMR3_INT_DECL(bool) HMR3IsActive(PVMCPU pVCpu)
  * External interface for querying whether hardware accelerated raw mode is
  * enabled.
  *
- * @returns true if nested paging is being used, otherwise false.
+ * @returns true if VT-x or AMD-V is being used, otherwise false.
  * @param   pUVM        The user mode VM handle.
  * @sa      HMIsEnabled, HMIsEnabledNotMacro.
  */
@@ -2674,6 +2674,42 @@ VMMR3DECL(bool) HMR3IsEnabled(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->fHMEnabled; /* Don't use the macro as the GUI may query us very very early. */
+}
+
+
+/**
+ * External interface for querying whether VT-x is being used.
+ *
+ * @returns true if VT-x is being used, otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ * @sa      HMR3IsSvmEnabled, HMIsEnabled
+ */
+VMMR3DECL(bool) HMR3IsVmxEnabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return pVM->hm.s.vmx.fEnabled
+        && pVM->hm.s.vmx.fSupported
+        && pVM->fHMEnabled;
+}
+
+
+/**
+ * External interface for querying whether AMD-V is being used.
+ *
+ * @returns true if VT-x is being used, otherwise false.
+ * @param   pUVM        The user mode VM handle.
+ * @sa      HMR3IsVmxEnabled, HMIsEnabled
+ */
+VMMR3DECL(bool) HMR3IsSvmEnabled(PUVM pUVM)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, false);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, false);
+    return pVM->hm.s.svm.fEnabled
+        && pVM->hm.s.svm.fSupported
+        && pVM->fHMEnabled;
 }
 
 
