@@ -523,7 +523,9 @@ typedef struct HMCPU
     volatile bool               fCheckedTLBFlush;
     /** Whether we're executing a single instruction. */
     bool                        fSingleInstruction;
-    uint8_t                     abAlignment[3];
+    /** Set if we need to clear the trap flag because of single stepping. */
+    bool                        fClearTrapFlag;
+    uint8_t                     abAlignment[2];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;

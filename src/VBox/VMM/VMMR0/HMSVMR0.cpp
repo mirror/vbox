@@ -97,9 +97,9 @@
 /** @} */
 
 
-/** @name Macro for checking and returning from the using function for
- *        #VMEXIT intercepts that maybe caused during delivering of another
- *        event in the guest. */
+/** Macro for checking and returning from the using function for
+ * \#VMEXIT intercepts that maybe caused during delivering of another
+ * event in the guest. */
 #define HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY() \
     do \
     { \
@@ -109,18 +109,23 @@
         else if (RT_UNLIKELY(rc == VINF_EM_RESET)) \
             return rc; \
     } while (0)
-/** @} */
+
+/** Macro for upgrading a @a a_rc to VINF_EM_DBG_STEPPED after emulating an
+ * instruction that exited. */
+#define HMSVM_CHECK_SINGLE_STEP(a_pVCpu, a_rc) \
+    do { \
+        if ((a_pVCpu)->hm.s.fSingleInstruction && (a_rc) == VINF_SUCCESS) \
+            (a_rc) = VINF_EM_DBG_STEPPED; \
+    } while (0)
 
 
-/**
- * @name Exception bitmap mask for all contributory exceptions.
+/** Exception bitmap mask for all contributory exceptions.
  *
  * Page fault is deliberately excluded here as it's conditional as to whether
  * it's contributory or benign. Page faults are handled separately.
  */
 #define HMSVM_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
-/** @} */
 
 
 /** @name VMCB Clean Bits.
@@ -1334,6 +1339,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
     bool const fStepping = pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu);
     if (fStepping)
     {
+        pVCpu->hm.s.fClearTrapFlag = true;
         pVmcb->guest.u64RFlags |= X86_EFL_TF;
         fInterceptDB = true;
         fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
@@ -1649,7 +1655,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
               pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
 
-    Log4(("Load: CS:RIP=%04x:%#RX64\n", pCtx->cs.Sel, pCtx->rip));
+    Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss, pCtx->rsp));
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
@@ -1894,6 +1900,8 @@ DECLCALLBACK(void) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
 
 
 /**
+ * Take necessary actions before going back to ring-3.
+ *
  * An action requires us to go back to ring-3. This function does the necessary
  * steps before we can safely return to ring-3. This is not the same as longjmps
  * to ring-3, this is voluntary.
@@ -1946,6 +1954,13 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
     else
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
+
+    /* Make sure we've undo the trap flag if we tried to single step something. */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pVCpu->hm.s.fClearTrapFlag = false;
+        pCtx->eflags.Bits.u1TF = 0;
+    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
@@ -3624,7 +3639,9 @@ HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitWbinvd);
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    return rc;
 }
 
 
@@ -3637,7 +3654,9 @@ HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmT
 
     hmR0SvmUpdateRip(pVCpu, pCtx, 2);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvd);
-    return VINF_SUCCESS;
+    int rc = VINF_SUCCESS;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    return rc;
 }
 
 
@@ -3650,7 +3669,10 @@ HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = EMInterpretCpuId(pVM, pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
         hmR0SvmUpdateRip(pVCpu, pCtx, 2);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    }
     else
     {
         AssertMsgFailed(("hmR0SvmExitCpuid: EMInterpretCpuId failed with %Rrc\n", rc));
@@ -3673,6 +3695,9 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     {
         hmR0SvmUpdateRip(pVCpu, pCtx, 2);
         pSvmTransient->fUpdateTscOffsetting = true;
+
+        /* Single step check. */
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
     {
@@ -3695,6 +3720,7 @@ HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     {
         hmR0SvmUpdateRip(pVCpu, pCtx, 3);
         pSvmTransient->fUpdateTscOffsetting = true;
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
     {
@@ -3714,7 +3740,10 @@ HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretRdpmc(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
         hmR0SvmUpdateRip(pVCpu, pCtx, 2);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    }
     else
     {
         AssertMsgFailed(("hmR0SvmExitRdpmc: EMInterpretRdpmc failed with %Rrc\n", rc));
@@ -3738,6 +3767,7 @@ HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     int rc = hmR0SvmInterpretInvlpg(pVM, pVCpu, CPUMCTX2CORE(pCtx));    /* Updates RIP if successful. */
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitInvlpg);
     Assert(rc == VINF_SUCCESS || rc == VERR_EM_INTERPRETER);
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     return rc;
 }
 
@@ -3750,6 +3780,7 @@ HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     hmR0SvmUpdateRip(pVCpu, pCtx, 1);
     int rc = EMShouldContinueAfterHalt(pVCpu, pCtx) ? VINF_SUCCESS : VINF_EM_HALT;
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitHlt);
     return rc;
 }
@@ -3763,7 +3794,10 @@ HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     int rc = EMInterpretMonitor(pVCpu->CTX_SUFF(pVM), pVCpu, CPUMCTX2CORE(pCtx));
     if (RT_LIKELY(rc == VINF_SUCCESS))
+    {
         hmR0SvmUpdateRip(pVCpu, pCtx, 3);
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    }
     else
     {
         AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMonitor: EMInterpretMonitor failed with %Rrc\n", rc));
@@ -3792,6 +3826,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
         {
             rc = VINF_SUCCESS;
         }
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
     {
@@ -3832,6 +3867,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
               ("hmR0SvmExitReadCRx: EMInterpretInstruction failed rc=%Rrc\n", rc));
     Assert((pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0) <= 15);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCRxRead[pSvmTransient->u64ExitCode - SVM_EXIT_READ_CR0]);
+    HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     return rc;
 }
 
@@ -3873,6 +3909,7 @@ HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT p
                                 pSvmTransient->u64ExitCode, pSvmTransient->u64ExitCode - SVM_EXIT_WRITE_CR0));
                 break;
         }
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
         Assert(rc == VERR_EM_INTERPRETER || rc == VINF_PGM_CHANGE_MODE || rc == VINF_PGM_SYNC_CR3);
@@ -3918,24 +3955,29 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
                 pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_SVM_GUEST_APIC_STATE;
             }
             hmR0SvmUpdateRip(pVCpu, pCtx, 2);
-            return VINF_SUCCESS;
+            rc = VINF_SUCCESS;
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+            return rc;
         }
 
         if (pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_NRIP_SAVE)
         {
             rc = EMInterpretWrmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
             if (RT_LIKELY(rc == VINF_SUCCESS))
+            {
                 pCtx->rip = pVmcb->ctrl.u64NextRIP;
+                HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+            }
             else
                 AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretWrmsr failed rc=%Rrc\n", rc));
         }
         else
         {
-            VBOXSTRICTRC rcStrict = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
-            rc = VBOXSTRICTRC_VAL(rcStrict);
+            rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */));
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                 AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: WrMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
             /* RIP updated by EMInterpretInstruction(). */
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         }
 
         /* If this is an X2APIC WRMSR access, update the APIC state as well. */
@@ -3962,17 +4004,20 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         {
             rc = EMInterpretRdmsr(pVM, pVCpu, CPUMCTX2CORE(pCtx));
             if (RT_LIKELY(rc == VINF_SUCCESS))
+            {
                 pCtx->rip = pVmcb->ctrl.u64NextRIP;
+                HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+            }
             else
                 AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: EMInterpretRdmsr failed rc=%Rrc\n", rc));
         }
         else
         {
-            VBOXSTRICTRC rcStrict = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0);
-            rc = VBOXSTRICTRC_VAL(rcStrict);
+            rc = VBOXSTRICTRC_TODO(EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0));
             if (RT_UNLIKELY(rc != VINF_SUCCESS))
                 AssertMsg(rc == VERR_EM_INTERPRETER, ("hmR0SvmExitMsr: RdMsr. EMInterpretInstruction failed rc=%Rrc\n", rc));
             /* RIP updated by EMInterpretInstruction(). */
+            HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
         }
     }
 
@@ -4027,6 +4072,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         /* Not necessary for read accesses but whatever doesn't hurt for now, will be fixed with decode assist. */
         /** @todo CPUM should set this flag! */
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
     }
     else
         Assert(rc == VERR_EM_INTERPRETER);
@@ -4170,6 +4216,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
         }
+
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
     }
 
 #ifdef VBOX_STRICT
@@ -4366,7 +4414,9 @@ HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
 
     int rc = hmR0SvmEmulateMovTpr(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    if (RT_LIKELY(rc == VINF_SUCCESS))
+        HMSVM_CHECK_SINGLE_STEP(pVCpu, rc);
+    else
         hmR0SvmSetPendingXcptUD(pVCpu);
     return VINF_SUCCESS;
 }
@@ -4553,9 +4603,11 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
     /* If we set the trap flag above, we have to clear it. */
-    /** @todo HM should remember what it does and possibly do this elsewhere! */
-    if (pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu))
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pVCpu->hm.s.fClearTrapFlag = false;
         pCtx->eflags.Bits.u1TF = 0;
+    }
 
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */

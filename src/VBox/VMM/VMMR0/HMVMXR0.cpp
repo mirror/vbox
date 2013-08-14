@@ -3335,9 +3335,10 @@ static int hmR0VmxLoadGuestDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         }
         else
         {
-            fInterceptDB = true;
             pMixedCtx->eflags.u32 |= X86_EFL_TF;
+            pVCpu->hm.s.fClearTrapFlag = true;
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_RFLAGS;
+            fInterceptDB = true;
         }
     }
 
@@ -6080,6 +6081,8 @@ DECLINLINE(void) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
 
 
 /**
+ * Take necessary actions before going back to ring-3.
+ *
  * An action requires us to go back to ring-3. This function does the necessary
  * steps before we can safely return to ring-3. This is not the same as longjmps
  * to ring-3, this is voluntary and prepares the guest so it may continue
@@ -6150,6 +6153,13 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
     else
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
+
+    /* Make sure we've undo the trap flag if we tried to single step something. */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pVCpu->hm.s.fClearTrapFlag = false;
+        pMixedCtx->eflags.Bits.u1TF = 0;
+    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
@@ -9652,10 +9662,12 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    /* If we sat the trap flag above, we have to clear it. */ /** @todo HM should remember what it does and possibly do this elsewhere! */
-    if (   (pVCpu->hm.s.fSingleInstruction || DBGFIsStepping(pVCpu))
-        && !(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_MONITOR_TRAP_FLAG))
+    /* If we sat the trap flag above, we have to clear it. */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pVCpu->hm.s.fClearTrapFlag = false;
         pMixedCtx->eflags.Bits.u1TF = 0;
+    }
 
     /* Refer Intel spec. Table 27-1. "Exit Qualifications for debug exceptions" for the format. */
     uint64_t uDR6 = X86_DR6_INIT_VAL;
