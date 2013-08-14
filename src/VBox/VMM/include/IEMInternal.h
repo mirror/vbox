@@ -260,10 +260,12 @@ typedef struct IEMCPU
     /** Indicates that a MOVS instruction with overlapping source and destination
      *  was executed, causing the memory write records to be incorrrect. */
     bool                    fOverlappingMovs;
+    /** Set if there are problematic memory accesses (MMIO, write monitored, ++). */
+    bool                    fProblematicMemory;
     /** This is used to communicate a CPL changed caused by IEMInjectTrap that
      * CPUM doesn't yet reflect. */
     uint8_t                 uInjectCpl;
-    bool                    afAlignment2[4];
+    bool                    afAlignment2[3];
     /** Mask of undefined eflags.
      * The verifier will any difference in these flags. */
     uint32_t                fUndefinedEFlags;
@@ -533,13 +535,29 @@ typedef IEMCPU const *PCIEMCPU;
 /**
  * Tests if full verification mode is enabled.
  *
- * This expands to @c false when IEM_VERIFICATION_MODE is not defined and
+ * This expands to @c false when IEM_VERIFICATION_MODE_FULL is not defined and
  * should therefore cause the compiler to eliminate the verification branch
  * of an if statement.  */
 #ifdef IEM_VERIFICATION_MODE_FULL
 # define IEM_FULL_VERIFICATION_ENABLED(a_pIemCpu) (!(a_pIemCpu)->fNoRem)
 #else
 # define IEM_FULL_VERIFICATION_ENABLED(a_pIemCpu) (false)
+#endif
+
+/**
+ * Tests if full verification mode is enabled again REM.
+ *
+ * This expands to @c false when IEM_VERIFICATION_MODE_FULL is not defined and
+ * should therefore cause the compiler to eliminate the verification branch
+ * of an if statement.  */
+#ifdef IEM_VERIFICATION_MODE_FULL
+# ifdef IEM_VERIFICATION_MODE_FULL_HM
+#  define IEM_FULL_VERIFICATION_REM_ENABLED(a_pIemCpu) (!(a_pIemCpu)->fNoRem && !HMIsEnabled(IEMCPU_TO_VM(a_pIemCpu)))
+# else
+#  define IEM_FULL_VERIFICATION_REM_ENABLED(a_pIemCpu) (!(a_pIemCpu)->fNoRem)
+# endif
+#else
+# define IEM_FULL_VERIFICATION_REM_ENABLED(a_pIemCpu) (false)
 #endif
 
 /** @def IEM_VERIFICATION_MODE
