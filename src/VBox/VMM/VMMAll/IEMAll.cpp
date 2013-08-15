@@ -3201,11 +3201,19 @@ DECL_NO_INLINE(static, VBOXSTRICTRC) iemRaisePageFault(PIEMCPU pIemCpu, RTGCPTR 
             && (pIemCpu->CTX_SUFF(pCtx)->msrEFER & MSR_K6_EFER_NXE) ) )
         uErr |= X86_TRAP_PF_ID;
 
+#if 0 /* This is so much non-sense, really.  Why was it done like that? */
     /* Note! RW access callers reporting a WRITE protection fault, will clear
              the READ flag before calling.  So, read-modify-write accesses (RW)
              can safely be reported as READ faults. */
     if ((fAccess & (IEM_ACCESS_TYPE_WRITE | IEM_ACCESS_TYPE_READ)) == IEM_ACCESS_TYPE_WRITE)
         uErr |= X86_TRAP_PF_RW;
+#else
+    if (fAccess & IEM_ACCESS_TYPE_WRITE)
+    {
+        if (!IEM_FULL_VERIFICATION_REM_ENABLED(pIemCpu) || !(fAccess & IEM_ACCESS_TYPE_READ))
+            uErr |= X86_TRAP_PF_RW;
+    }
+#endif
 
     return iemRaiseXcptOrInt(pIemCpu, 0, X86_XCPT_PF, IEM_XCPT_FLAGS_T_CPU_XCPT | IEM_XCPT_FLAGS_ERR | IEM_XCPT_FLAGS_CR2,
                              uErr, GCPtrWhere);
