@@ -7909,10 +7909,6 @@ FNIEMOP_DEF_1(iemOpCommonPopGReg, uint8_t, iReg)
         pIemCpu->enmEffOpSize = !(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? IEMMODE_64BIT : IEMMODE_16BIT;
     }
 
-/** @todo How does this code handle iReg==X86_GREG_xSP. How does a real CPU
- *        handle it, for that matter (Intel pseudo code hints that the popped
- *        value is incremented by the stack item size.)  Test it, both encodings
- *        and all three register sizes. */
     switch (pIemCpu->enmEffOpSize)
     {
         case IEMMODE_16BIT:
@@ -7984,7 +7980,48 @@ FNIEMOP_DEF(iemOp_pop_eBX)
 FNIEMOP_DEF(iemOp_pop_eSP)
 {
     IEMOP_MNEMONIC("pop rSP");
-    return FNIEMOP_CALL_1(iemOpCommonPopGReg, X86_GREG_xSP);
+    if (pIemCpu->enmCpuMode == IEMMODE_64BIT)
+    {
+        if (pIemCpu->uRexB)
+            return FNIEMOP_CALL_1(iemOpCommonPopGReg, X86_GREG_xSP);
+        pIemCpu->enmDefOpSize = IEMMODE_64BIT;
+        pIemCpu->enmEffOpSize = !(pIemCpu->fPrefixes & IEM_OP_PRF_SIZE_OP) ? IEMMODE_64BIT : IEMMODE_16BIT;
+    }
+
+    IEMOP_HLP_DECODED_NL_1(OP_POP, IEMOPFORM_FIXED, OP_PARM_REG_ESP,
+                           DISOPTYPE_HARMLESS | DISOPTYPE_DEFAULT_64_OP_SIZE | DISOPTYPE_REXB_EXTENDS_OPREG);
+    /** @todo add testcase for this instruction. */
+    switch (pIemCpu->enmEffOpSize)
+    {
+        case IEMMODE_16BIT:
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_LOCAL(uint16_t, u16Dst);
+            IEM_MC_POP_U16(&u16Dst); /** @todo not correct MC, fix later. */
+            IEM_MC_STORE_GREG_U16(X86_GREG_xSP, u16Dst);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            break;
+
+        case IEMMODE_32BIT:
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_LOCAL(uint32_t, u32Dst);
+            IEM_MC_POP_U32(&u32Dst);
+            IEM_MC_STORE_GREG_U32(X86_GREG_xSP, u32Dst);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            break;
+
+        case IEMMODE_64BIT:
+            IEM_MC_BEGIN(0, 1);
+            IEM_MC_LOCAL(uint64_t, u64Dst);
+            IEM_MC_POP_U64(&u64Dst);
+            IEM_MC_STORE_GREG_U64(X86_GREG_xSP, u64Dst);
+            IEM_MC_ADVANCE_RIP();
+            IEM_MC_END();
+            break;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
