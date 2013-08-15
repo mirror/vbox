@@ -1555,7 +1555,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
 
-    /* Nothing to do here. */
+    pVCpu->hm.s.fLeaveDone = false;
     return VINF_SUCCESS;
 }
 
@@ -1575,7 +1575,7 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     NOREF(pVCpu);
     NOREF(pCtx);
 
-    /* Nothing to do here. Everything is taken care of in hmR0SvmLongJmpToRing3(). */
+    /* Nothing to do here. Everything is taken care of in hmR0SvmLeave(). */
     return VINF_SUCCESS;
 }
 
@@ -1886,6 +1886,22 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
+    /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
+       which would've done this work from the SVMR0ThreadCtxCallback(). */
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    bool fPreemptDisabled = false;
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    {
+        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+        RTThreadPreemptDisable(&PreemptState);
+        fPreemptDisabled = true;
+        if (pVCpu->hm.s.fLeaveDone)
+        {
+            RTThreadPreemptRestore(&PreemptState);
+            return;
+        }
+    }
+
     /* Restore host FPU state if necessary and resync on next R0 reentry .*/
     if (CPUMIsGuestFPUStateActive(pVCpu))
     {
@@ -1911,7 +1927,6 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 
-
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
@@ -1919,6 +1934,13 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+
+    /* Restore preemption if we previous disabled it ourselves. */
+    if (fPreemptDisabled)
+    {
+        pVCpu->hm.s.fLeaveDone = true;
+        RTThreadPreemptRestore(&PreemptState);
+    }
 }
 
 

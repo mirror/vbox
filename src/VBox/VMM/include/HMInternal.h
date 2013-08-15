@@ -525,7 +525,9 @@ typedef struct HMCPU
     bool                        fSingleInstruction;
     /** Set if we need to clear the trap flag because of single stepping. */
     bool                        fClearTrapFlag;
-    uint8_t                     abAlignment[2];
+    /** Whether we've completed the inner HM leave function. */
+    bool                        fLeaveDone;
+    uint8_t                     abAlignment[1];
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
@@ -540,7 +542,6 @@ typedef struct HMCPU
     uint32_t                    uCurrentAsid;
     /** An additional error code used for some gurus. */
     uint32_t                    u32HMError;
-
     /** Host's TSC_AUX MSR (used when RDTSCP doesn't cause VM-exits). */
     uint64_t                    u64HostTscAux;
 
@@ -656,9 +657,6 @@ typedef struct HMCPU
         VMXRESTOREHOST              RestoreHost;
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
-        /** Whether we've completed the restoration procedure while leaving the inner
-         *  VT-x context. */
-        bool                        fVmxLeaveDone;
     } vmx;
 
     struct
