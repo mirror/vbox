@@ -656,6 +656,9 @@ typedef struct HMCPU
         VMXRESTOREHOST              RestoreHost;
         /** Set if guest was executing in real mode (extra checks). */
         bool                        fWasInRealMode;
+        /** Whether we've completed the restoration procedure while leaving the inner
+         *  VT-x context. */
+        bool                        fVmxLeaveDone;
     } vmx;
 
     struct

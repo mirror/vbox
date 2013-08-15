@@ -30,6 +30,7 @@ RT_C_DECLS_BEGIN
 
 VMMR0DECL(int)  VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
 VMMR0DECL(int)  VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
 VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem);
 VMMR0DECL(int)  VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)  VMXR0GlobalInit(void);
@@ -43,14 +44,15 @@ VMMR0DECL(int)  VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 DECLASM(int)    VMXR0StartVM32(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 DECLASM(int)    VMXR0StartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 
+
 # if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 DECLASM(int)    VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu);
 VMMR0DECL(int)  VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, HM64ON32OP enmOp, uint32_t cbParam,
                                          uint32_t *paParam);
 # endif
 
-/* Cached VMCS accesses -- defined always in the old VT-x code, defined only for 32 hosts on new code. */
-#ifdef VMX_USE_CACHED_VMCS_ACCESSES
+/* Cached VMCS accesses -- defined only for 32 hosts (with 64-bit guest support). */
+# ifdef VMX_USE_CACHED_VMCS_ACCESSES
 VMMR0DECL(int) VMXWriteCachedVmcsEx(PVMCPU pVCpu, uint32_t idxField, uint64_t u64Val);
 
 DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG *pVal)
@@ -59,7 +61,7 @@ DECLINLINE(int) VMXReadCachedVmcsEx(PVMCPU pVCpu, uint32_t idxCache, RTGCUINTREG
     *pVal = pVCpu->hm.s.vmx.VMCSCache.Read.aFieldVal[idxCache];
     return VINF_SUCCESS;
 }
-#endif
+# endif
 
 # ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
 #  define VMXReadVmcsHstN(idxField, p64Val)               HMVMX_IS_64BIT_HOST_MODE() ?                      \
