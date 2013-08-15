@@ -275,8 +275,6 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         /* Attach popup-stack connections: */
         connect(pPopupStack, SIGNAL(sigPopupPaneDone(QString, int)), this, SLOT(sltPopupPaneDone(QString, int)));
         connect(pPopupStack, SIGNAL(sigRemove(QString)), this, SLOT(sltRemovePopupStack(QString)));
-        /* Show popup-stack: */
-        showPopupStack(pParent);
     }
 
     /* If there is already popup-pane with such ID: */
@@ -298,6 +296,9 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
         pPopupStack->createPopupPane(strPopupPaneID, strMessage, strDetails,
                                      buttonDescriptions, fProposeAutoConfirmation);
     }
+
+    /* Show popup-stack: */
+    showPopupStack(pParent);
 }
 
 void UIPopupCenter::hidePopupPane(QWidget *pParent, const QString &strPopupPaneID)
