@@ -57,7 +57,7 @@ foreach ($machines as $machine)
         {
             $console = $session->console;
             $display = $console->display;
-            list($screenWidth, $screenHeight, $screenBpp) = $display->getScreenResolution(0 /* First screen */);             
+            list($screenWidth, $screenHeight, $screenBpp, $screenX, $screenY) = $display->getScreenResolution(0 /* First screen */);             
 
             $imageraw = $display->takeScreenShotToArray(0 /* First screen */, $screenWidth, $screenHeight);
             echo "Screenshot size: " . sizeof($imageraw) . "\n";

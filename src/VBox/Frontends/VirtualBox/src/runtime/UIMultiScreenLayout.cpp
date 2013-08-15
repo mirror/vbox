@@ -166,7 +166,8 @@ void UIMultiScreenLayout::update()
             /* Re-enable guest-screen with the old arguments: */
             LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d.\n", iGuestScreen));
             ULONG iWidth, iHeight, iBpp;
-            display.GetScreenResolution(iGuestScreen, iWidth, iHeight, iBpp);
+            LONG xOrigin, yOrigin;
+            display.GetScreenResolution(iGuestScreen, iWidth, iHeight, iBpp, xOrigin, yOrigin);
             display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, iWidth, iHeight, iBpp);
         }
     }
@@ -382,6 +383,8 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
     ULONG width = 0;
     ULONG height = 0;
     ULONG guestBpp = 0;
+    LONG xOrigin = 0;
+    LONG yOrigin = 0;
     quint64 usedBits = 0;
     CDisplay display = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay();
     foreach (int iGuestScreen, m_guestScreens)
@@ -391,7 +394,7 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> &screenLayo
             screen = QApplication::desktop()->availableGeometry(screenLayout.value(iGuestScreen, 0));
         else
             screen = QApplication::desktop()->screenGeometry(screenLayout.value(iGuestScreen, 0));
-        display.GetScreenResolution(iGuestScreen, width, height, guestBpp);
+        display.GetScreenResolution(iGuestScreen, width, height, guestBpp, xOrigin, yOrigin);
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */

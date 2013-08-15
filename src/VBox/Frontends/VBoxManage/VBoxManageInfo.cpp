@@ -1606,7 +1606,8 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 return rc;
             }
             ULONG xRes, yRes, bpp;
-            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp);
+            LONG xOrigin, yOrigin;
+            rc = display->GetScreenResolution(0, &xRes, &yRes, &bpp, &xOrigin, &yOrigin);
             if (rc == E_ACCESSDENIED)
                 break; /* VM not powered up */
             if (FAILED(rc))
@@ -1616,9 +1617,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 return rc;
             }
             if (details == VMINFO_MACHINEREADABLE)
-                RTPrintf("VideoMode=\"%d,%d,%d\"\n", xRes, yRes, bpp);
+                RTPrintf("VideoMode=\"%d,%d,%d\"@%d,%d\n", xRes, yRes, bpp, xOrigin, yOrigin);
             else
-                RTPrintf("Video mode:      %dx%dx%d\n", xRes, yRes, bpp);
+                RTPrintf("Video mode:      %dx%dx%d at %d,%d\n", xRes, yRes, bpp, xOrigin, yOrigin);
         }
         while (0);
     }

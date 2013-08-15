@@ -558,7 +558,7 @@ HRESULT Mouse::convertDisplayRes(LONG x, LONG y, int32_t *pxAdj, int32_t *pyAdj,
         ULONG displayWidth, displayHeight;
         /* Takes the display lock */
         HRESULT rc = pDisplay->getScreenResolution(0, &displayWidth,
-                                                   &displayHeight, NULL);
+                                                   &displayHeight, NULL, NULL, NULL);
         if (FAILED(rc))
             return rc;
 

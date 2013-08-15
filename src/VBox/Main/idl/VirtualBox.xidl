@@ -15179,7 +15179,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IDisplay" extends="$unknown"
-    uuid="23efdcab-1ae5-47ee-951e-e0f9a3935f2a"
+    uuid="480b372c-c0b5-4c23-9bd7-dcbb85b1594c"
     wsmap="managed"
     >
     <desc>
@@ -15199,6 +15199,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="width" type="unsigned long" dir="out"/>
       <param name="height" type="unsigned long" dir="out"/>
       <param name="bitsPerPixel" type="unsigned long" dir="out"/>
+      <param name="xOrigin" type="long" dir="out"/>
+      <param name="yOrigin" type="long" dir="out"/>
     </method>
 
     <method name="setFramebuffer">

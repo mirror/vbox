@@ -187,7 +187,8 @@ void UIGMachinePreview::sltRecreatePreview()
                             CDisplay display = console.GetDisplay();
                             /* Todo: correct aspect radio */
 //                            ULONG w, h, bpp;
-//                            display.GetScreenResolution(0, w, h, bpp);
+//                            LONG xOrigin, yOrigin;
+//                            display.GetScreenResolution(0, w, h, bpp, xOrigin, yOrigin);
 //                            QImage shot = QImage(w, h, QImage::Format_RGB32);
 //                            shot.fill(Qt::black);
 //                            display.TakeScreenShot(0, shot.bits(), shot.width(), shot.height());

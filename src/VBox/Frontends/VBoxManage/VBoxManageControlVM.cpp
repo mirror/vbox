@@ -1318,7 +1318,8 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
             ULONG width, height, bpp;
-            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(iScreen, &width, &height, &bpp));
+            LONG xOrigin, yOrigin;
+            CHECK_ERROR_BREAK(pDisplay, GetScreenResolution(iScreen, &width, &height, &bpp, &xOrigin, &yOrigin));
             com::SafeArray<BYTE> saScreenshot;
             CHECK_ERROR_BREAK(pDisplay, TakeScreenShotPNGToArray(iScreen, width, height, ComSafeArrayAsOutParam(saScreenshot)));
             RTFILE pngFile = NIL_RTFILE;

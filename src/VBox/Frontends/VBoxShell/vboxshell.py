@@ -508,7 +508,7 @@ def takeScreenshotOld(_ctx, console, args):
         screen = int(args[3])
     else:
         screen = 0
-    (fbw, fbh, _fbbpp) = display.getScreenResolution(screen)
+    (fbw, fbh, _fbbpp, fbx, fby) = display.getScreenResolution(screen)
     if len(args) > 1:
         w = int(args[1])
     else:
@@ -535,7 +535,7 @@ def takeScreenshot(_ctx, console, args):
         screen = int(args[3])
     else:
         screen = 0
-    (fbw, fbh, _fbbpp) = display.getScreenResolution(screen)
+    (fbw, fbh, _fbbpp, fbx, fby) = display.getScreenResolution(screen)
     if len(args) > 1:
         w = int(args[1])
     else:

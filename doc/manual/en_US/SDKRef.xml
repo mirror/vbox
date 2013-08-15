@@ -3676,6 +3676,11 @@ AuthResult AUTHCALL AuthEntry(
             Guest Additions 4.3 will set the protocol version to 2. This might
             change in the future as new features arise.</para>
         </listitem>
+
+        <listitem>
+          <para><computeroutput>IDisplay::getScreenResolution</computeroutput>
+          has been extended to return the display position in the guest.</para>
+        </listitem>
       </itemizedlist>
     </sect1>
 
