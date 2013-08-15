@@ -20,6 +20,7 @@
 /* Qt includes: */
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QEvent>
 
 /* GUI includes: */
 #include "UIWarningPane.h"
@@ -28,6 +29,7 @@ UIWarningPane::UIWarningPane(QWidget *pParent)
     : QWidget(pParent)
     , m_pLabelIcon(0)
     , m_pLabelText(0)
+    , m_fHovered(false)
 {
     /* Prepare: */
     prepare();
@@ -51,6 +53,9 @@ void UIWarningPane::prepare()
 
 void UIWarningPane::prepareContent()
 {
+    /* Configure self: */
+    setMouseTracking(true);
+    installEventFilter(this);
     /* Create layout: */
     QHBoxLayout *pLayout = new QHBoxLayout(this);
     {
@@ -58,11 +63,55 @@ void UIWarningPane::prepareContent()
         pLayout->setContentsMargins(0, 0, 0, 0);
         /* Create icon label: */
         m_pLabelIcon = new QLabel;
+        {
+            /* Configure icon label: */
+            m_pLabelIcon->setMouseTracking(true);
+            m_pLabelIcon->installEventFilter(this);
+        }
         /* Create text label: */
         m_pLabelText = new QLabel;
+        {
+            /* Configure text label: */
+            m_pLabelText->setMouseTracking(true);
+            m_pLabelText->installEventFilter(this);
+        }
         /* Add widgets into layout: */
         pLayout->addWidget(m_pLabelIcon);
         pLayout->addWidget(m_pLabelText);
     }
+}
+
+bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* Depending on event-type: */
+    switch (pEvent->type())
+    {
+        /* Anything is hovered: */
+        case QEvent::MouseMove:
+        {
+            /* Hover warning-pane if not yet hovered: */
+            if (!m_fHovered)
+            {
+                m_fHovered = true;
+                emit sigHoverEnter();
+            }
+            break;
+        }
+        /* Warning-pane is unhovered: */
+        case QEvent::Leave:
+        {
+            /* Unhover warning-pane if hovered: */
+            if (pWatched == this && m_fHovered)
+            {
+                m_fHovered = false;
+                emit sigHoverLeave();
+            }
+            break;
+        }
+        /* Default case: */
+        default: break;
+    }
+    /* Call to base-class: */
+    return QWidget::eventFilter(pWatched, pEvent);
 }
 
