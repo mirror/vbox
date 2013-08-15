@@ -13020,7 +13020,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     RTThreadSleep(500);
     mParent->AddRef();
     LONG c = mParent->Release();
-    LogFlowThisFunc(("vbox ref=%d\n", c));
+    LogFlowThisFunc(("vbox ref=%d\n", c)); NOREF(c);
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
 

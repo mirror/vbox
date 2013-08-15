@@ -7425,8 +7425,8 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     VMXTRANSIENT VmxTransient;
     VmxTransient.fUpdateTscOffsettingAndPreemptTimer = true;
-    int          rc     = VERR_INTERNAL_ERROR_5;
-    uint32_t     cLoops = 0;
+    int          rc        = VERR_INTERNAL_ERROR_5;
+    uint32_t     cLoops    = 0;
     uint16_t     uCsStart  = pCtx->cs.Sel;
     uint64_t     uRipStart = pCtx->rip;
 
