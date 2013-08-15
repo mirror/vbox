@@ -291,7 +291,7 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
  */
-VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
+VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
 {
     AssertReturn(!fEnabledByHost, VERR_INVALID_PARAMETER);
     AssertReturn(   HCPhysCpuPage
@@ -346,7 +346,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
  */
-VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     AssertReturn(   HCPhysCpuPage
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
@@ -792,7 +792,7 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 {
     PVM pVM              = pVCpu->CTX_SUFF(pVM);
     PSVMVMCB pVmcb       = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
 
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
@@ -1545,7 +1545,7 @@ static int hmR0SvmSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the CPU info struct.
  */
-VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
+VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);

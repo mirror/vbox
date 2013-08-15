@@ -28,11 +28,11 @@ RT_C_DECLS_BEGIN
 
 #ifdef IN_RING0
 
-VMMR0DECL(int)  VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
+VMMR0DECL(int)  VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu);
 VMMR0DECL(int)  VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
-VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem);
-VMMR0DECL(int)  VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
+VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem);
+VMMR0DECL(int)  VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)  VMXR0GlobalInit(void);
 VMMR0DECL(void) VMXR0GlobalTerm(void);
 VMMR0DECL(int)  VMXR0InitVM(PVM pVM);

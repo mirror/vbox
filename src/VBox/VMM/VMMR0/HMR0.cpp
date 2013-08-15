@@ -81,19 +81,19 @@ typedef HMR0FIRSTRC *PHMR0FIRSTRC;
 static struct
 {
     /** Per CPU globals. */
-    HMGLOBLCPUINFO                  aCpuInfo[RTCPUSET_MAX_CPUS];
+    HMGLOBALCPUINFO                  aCpuInfo[RTCPUSET_MAX_CPUS];
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu));
+    DECLR0CALLBACKMEMBER(int,  pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
     DECLR0CALLBACKMEMBER(int,  pfnLeaveSession,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback,(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(int,  pfnLoadGuestState,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int,  pfnRunGuestCode,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
-    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu,(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu,(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                              bool fEnabledByHost));
-    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu,(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu,(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
     DECLR0CALLBACKMEMBER(int,  pfnInitVM,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnTermVM,(PVM pVM));
     DECLR0CALLBACKMEMBER(int,  pfnSetupVM,(PVM pVM));
@@ -241,7 +241,7 @@ static RTCPUID hmR0FirstRcGetCpuId(PHMR0FIRSTRC pFirstRc)
 /** @name Dummy callback handlers.
  * @{ */
 
-static DECLCALLBACK(int) hmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
+static DECLCALLBACK(int) hmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 {
     NOREF(pVM); NOREF(pVCpu); NOREF(pCpu);
     return VINF_SUCCESS;
@@ -258,14 +258,14 @@ static DECLCALLBACK(void) hmR0DummyThreadCtxCallback(RTTHREADCTXEVENT enmEvent, 
     NOREF(enmEvent); NOREF(pVCpu); NOREF(fGlobalInit);
 }
 
-static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                             bool fEnabledBySystem)
 {
     NOREF(pCpu); NOREF(pVM); NOREF(pvCpuPage); NOREF(HCPhysCpuPage); NOREF(fEnabledBySystem);
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyDisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+static DECLCALLBACK(int) hmR0DummyDisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     NOREF(pCpu);  NOREF(pvCpuPage); NOREF(HCPhysCpuPage);
     return VINF_SUCCESS;
@@ -915,7 +915,7 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  */
 static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
-    PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
+    PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
@@ -1069,7 +1069,7 @@ VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
  */
 static int hmR0DisableCpu(RTCPUID idCpu)
 {
-    PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
+    PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
     Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
@@ -1303,8 +1303,8 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Call the hardware specific initialization method.
      */
-    RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    PHMGLOBLCPUINFO pCpu   = HMR0GetCurrentCpu();
+    RTCCUINTREG      fFlags = ASMIntDisableFlags();
+    PHMGLOBALCPUINFO pCpu   = HMR0GetCurrentCpu();
     ASMSetFlags(fFlags);
 
     int rc = g_HvmR0.pfnInitVM(pVM);
@@ -1333,8 +1333,8 @@ VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
     /*
      * Call the hardware specific method.
      */
-    RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    PHMGLOBLCPUINFO pCpu   = HMR0GetCurrentCpu();
+    RTCCUINTREG      fFlags = ASMIntDisableFlags();
+    PHMGLOBALCPUINFO pCpu   = HMR0GetCurrentCpu();
     ASMSetFlags(fFlags);
 
     int rc = g_HvmR0.pfnTermVM(pVM);
@@ -1363,9 +1363,9 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
      * Call the hardware specific setup VM method.  This requires the CPU to be
      * enabled for AMD-V/VT-x and preemption to be prevented.
      */
-    RTCCUINTREG     fFlags = ASMIntDisableFlags();
-    RTCPUID         idCpu  = RTMpCpuId();
-    PHMGLOBLCPUINFO pCpu   = &g_HvmR0.aCpuInfo[idCpu];
+    RTCCUINTREG      fFlags = ASMIntDisableFlags();
+    RTCPUID          idCpu  = RTMpCpuId();
+    PHMGLOBALCPUINFO pCpu   = &g_HvmR0.aCpuInfo[idCpu];
 
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -1404,7 +1404,7 @@ VMMR0_INT_DECL(void) HMR0EnterEx(PVMCPU pVCpu)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     RTCPUID          idCpu = RTMpCpuId();
-    PHMGLOBLCPUINFO   pCpu = &g_HvmR0.aCpuInfo[idCpu];
+    PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
     AssertPtr(pCpu);
 
     pVCpu->hm.s.idEnteredCpu = idCpu;
@@ -1445,9 +1445,9 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     bool fStartedSet = PGMR0DynMapStartOrMigrateAutoSet(pVCpu);
 #endif
 
-    RTCPUID         idCpu = RTMpCpuId();
-    PHMGLOBLCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
-    PCPUMCTX        pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
+    RTCPUID          idCpu = RTMpCpuId();
+    PHMGLOBALCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
+    PCPUMCTX         pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(pCpu);
     Assert(pCtx);
 
@@ -1580,7 +1580,7 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
 VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_STRICT
-    PHMGLOBLCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
+    PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
     Assert(pCpu->fConfigured);
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
@@ -1677,7 +1677,7 @@ VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
  *
  * @returns The cpu structure pointer.
  */
-VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpu(void)
+VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpu(void)
 {
     RTCPUID idCpu = RTMpCpuId();
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
@@ -1692,7 +1692,7 @@ VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpu(void)
  * @returns The cpu structure pointer.
  * @param   idCpu       id of the VCPU.
  */
-VMMR0DECL(PHMGLOBLCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
+VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpuEx(RTCPUID idCpu)
 {
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     return &g_HvmR0.aCpuInfo[idCpu];
@@ -1800,7 +1800,7 @@ VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pf
         return VINF_SUCCESS;
 
     /* Ok, disable VT-x. */
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
     AssertReturn(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ, VERR_HM_IPE_2);
 
     *pfVTxDisabled = true;
@@ -1832,7 +1832,7 @@ VMMR0_INT_DECL(void) HMR0LeaveSwitcher(PVM pVM, bool fVTxDisabled)
         Assert(g_HvmR0.fEnabled);
         Assert(g_HvmR0.fGlobalInit);
 
-        PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+        PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
         AssertReturnVoid(pCpu && pCpu->hMemObj != NIL_RTR0MEMOBJ);
 
         void           *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);

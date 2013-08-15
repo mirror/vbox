@@ -987,7 +987,7 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  * @param   fEnabledByHost  Set if SUPR0EnableVTx() or similar was used to
  *                          enable VT-x on the host.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
+VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
 {
     AssertReturn(pCpu, VERR_INVALID_PARAMETER);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
@@ -1041,7 +1041,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvCpuPage, RT
  * @remarks This function should never be called when SUPR0EnableVTx() or
  *          similar was used to enable VT-x on the host.
  */
-VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     NOREF(pCpu);
     NOREF(pvCpuPage);
@@ -1259,7 +1259,7 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu)
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
     AssertPtr(pCpu);
 
     pVCpu->hm.s.TlbShootdown.cPages = 0;
@@ -1301,7 +1301,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
               ("hmR0VmxFlushTaggedTlbBoth cannot be invoked unless NestedPaging & VPID are enabled."
                "fNestedPaging=%RTbool fVpid=%RTbool", pVM->hm.s.fNestedPaging, pVM->hm.s.vmx.fVpid));
 
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
     AssertPtr(pCpu);
 
     /*
@@ -1410,7 +1410,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
     AssertMsg(pVM->hm.s.fNestedPaging, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with NestedPaging disabled."));
     AssertMsg(!pVM->hm.s.vmx.fVpid, ("hmR0VmxFlushTaggedTlbEpt cannot be invoked with VPID enabled."));
 
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
     AssertPtr(pCpu);
 
     /*
@@ -1475,7 +1475,7 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu)
     AssertMsg(pVM->hm.s.vmx.fVpid, ("hmR0VmxFlushTlbVpid cannot be invoked with VPID disabled."));
     AssertMsg(!pVM->hm.s.fNestedPaging, ("hmR0VmxFlushTlbVpid cannot be invoked with NestedPaging enabled"));
 
-    PHMGLOBLCPUINFO pCpu = HMR0GetCurrentCpu();
+    PHMGLOBALCPUINFO pCpu = HMR0GetCurrentCpu();
 
     /*
      * Force a TLB flush for the first world switch if the current CPU differs from the one we ran on last.
@@ -4318,7 +4318,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
                                          uint32_t *paParam)
 {
     int             rc, rc2;
-    PHMGLOBLCPUINFO pCpu;
+    PHMGLOBALCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
     RTCCUINTREG     uOldEflags;
 
@@ -4400,7 +4400,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE pCache, PVM pVM, PVMCPU pVCpu)
 {
     uint32_t        aParam[6];
-    PHMGLOBLCPUINFO pCpu          = NULL;
+    PHMGLOBALCPUINFO pCpu          = NULL;
     RTHCPHYS        HCPhysCpuPage = 0;
     int             rc            = VERR_INTERNAL_ERROR_5;
 
@@ -6768,7 +6768,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCpu        Pointer to the CPU info struct.
  */
-VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
+VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 {
     AssertPtr(pVM);
     AssertPtr(pVCpu);
