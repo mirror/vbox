@@ -6039,7 +6039,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
         RTThreadPreemptDisable(&PreemptState);
         fPreemptDisabled = true;
-        if (pVCpu->hm.s.vmx.fVmxLeaveDone)
+        if (pVCpu->hm.s.fLeaveDone)
         {
             RTThreadPreemptRestore(&PreemptState);
             return;
@@ -6093,7 +6093,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Restore preemption if we previous disabled it ourselves. */
     if (fPreemptDisabled)
     {
-        pVCpu->hm.s.vmx.fVmxLeaveDone = true;
+        pVCpu->hm.s.fLeaveDone = true;
         RTThreadPreemptRestore(&PreemptState);
     }
 }
@@ -6795,8 +6795,8 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu)
 
     /** @todo this will change with preemption hooks where can VMRESUME as long
      *        as we're no preempted. */
-    pVCpu->hm.s.fResumeVM = false;
-    pVCpu->hm.s.vmx.fVmxLeaveDone = false;
+    pVCpu->hm.s.fResumeVM  = false;
+    pVCpu->hm.s.fLeaveDone = false;
     return VINF_SUCCESS;
 }
 
@@ -6847,8 +6847,8 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
             AssertRC(rc);
 
-            pVCpu->hm.s.fResumeVM = false;
-            pVCpu->hm.s.vmx.fVmxLeaveDone = false;
+            pVCpu->hm.s.fResumeVM  = false;
+            pVCpu->hm.s.fLeaveDone = false;
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
 
             /* Restore preemption, migrating to another CPU should be fine now. */
