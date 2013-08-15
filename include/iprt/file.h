@@ -600,6 +600,47 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
 /** @} */
 
 /**
+ * Converts file opening modes (used by fopen, for example) to IPRT
+ * compatible flags, which then can be used with RTFileOpen* APIs.
+ *
+ * @return  IPRT status code.
+ * @param   pszMode                 Mode string to convert.
+ * @param   puMode                  Where to store the converted mode flags
+ *                                  on success.
+ */
+RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
+
+/**
+ * Converts file opening modes along with a separate disposition command
+ * to IPRT compatible flags, which then can be used with RTFileOpen* APIs.
+ *
+ * Access modes:
+ *      "r"  - Read
+ *      "r+" - Read / Write
+ *      "w"  - Write
+ *      "w+" - Write / Read
+ *
+ * Disposition modes:
+ *      "ca" - Create a new file, always, overwrite existing
+ *      "ce" - Create a new file if not exist, fail if exist
+ *      "oc" - Open existing, create if not exist
+ *      "oe" - Open existing, fail if not exist
+ *      "ot" - Open and truncate existing, fail of not exist
+ *
+ * Sharing modes:
+ *      Not implemented yet.
+ *
+ * @return  IPRT status code.
+ * @param   pszAccess               Access mode string to convert.
+ * @param   pszDisposition          Disposition mode string to convert.
+ * @param   pszSharing              Sharing mode string to convert. Not
+ *                                  implemented yet.
+ * @param   puMode                  Where to store the converted mode flags
+ *                                  on success.
+ */
+RTDECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposition, const char *pszSharing, uint64_t *puMode);
+
+/**
  * Moves a file.
  *
  * RTFileMove differs from RTFileRename in that it works across volumes.
