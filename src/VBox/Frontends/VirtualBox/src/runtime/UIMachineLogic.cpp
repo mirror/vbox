@@ -2158,7 +2158,9 @@ void UIMachineLogic::takeScreenshot(const QString &strFile, const QString &strFo
         ULONG width  = 0;
         ULONG height = 0;
         ULONG bpp    = 0;
-        display.GetScreenResolution(i, width, height, bpp);
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        display.GetScreenResolution(i, width, height, bpp, xOrigin, yOrigin);
         uMaxWidth  += width;
         uMaxHeight  = RT_MAX(uMaxHeight, height);
         QImage shot = QImage(width, height, QImage::Format_RGB32);

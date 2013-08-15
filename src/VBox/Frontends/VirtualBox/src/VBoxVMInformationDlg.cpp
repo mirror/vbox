@@ -464,12 +464,17 @@ void VBoxVMInformationDlg::refreshStatistics()
         ULONG width = 0;
         ULONG height = 0;
         ULONG bpp = 0;
-        console.GetDisplay().GetScreenResolution(0, width, height, bpp);
+        LONG xOrigin = 0;
+        LONG yOrigin = 0;
+        console.GetDisplay().GetScreenResolution(0, width, height, bpp, xOrigin, yOrigin);
         QString resolution = QString ("%1x%2")
             .arg (width)
             .arg (height);
         if (bpp)
             resolution += QString ("x%1").arg (bpp);
+        resolution += QString (" @%1,%2")
+                          .arg (xOrigin)
+                          .arg (yOrigin);
 
         QString clipboardMode = gpConverter->toString(m.GetClipboardMode());
         QString dragAndDropMode = gpConverter->toString(m.GetDragAndDropMode());

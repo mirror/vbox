@@ -107,7 +107,7 @@ class DisplayMouseInterface
 {
 public:
     virtual int getScreenResolution(uint32_t cScreen, ULONG *pcx,
-                                    ULONG *pcy, ULONG *pcBPP) = 0;
+                                    ULONG *pcy, ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin) = 0;
     virtual void getFramebufferDimensions(int32_t *px1, int32_t *py1,
                                           int32_t *px2, int32_t *py2) = 0;
 };
@@ -161,9 +161,9 @@ public:
     }
     void getFramebufferDimensions(int32_t *px1, int32_t *py1, int32_t *px2, int32_t *py2);
     int getScreenResolution(uint32_t cScreen, ULONG *pcx, ULONG *pcy,
-                            ULONG *pcBPP)
+                            ULONG *pcBPP, LONG *pXOrigin, LONG *pYOrigin)
     {
-        return GetScreenResolution(cScreen, pcx, pcy, pcBPP);
+        return GetScreenResolution(cScreen, pcx, pcy, pcBPP, pXOrigin, pYOrigin);
     }
 
     int  handleSetVisibleRegion(uint32_t cRect, PRTRECT pRect);
@@ -182,7 +182,7 @@ public:
     STDMETHOD(HandleEvent)(IEvent * aEvent);
 
     // IDisplay methods
-    STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel);
+    STDMETHOD(GetScreenResolution)(ULONG aScreenId, ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetFramebuffer)(ULONG aScreenId, IFramebuffer *aFramebuffer);
     STDMETHOD(GetFramebuffer)(ULONG aScreenId, IFramebuffer **aFramebuffer, LONG *aXOrigin, LONG *aYOrigin);
     STDMETHOD(SetVideoModeHint)(ULONG aDisplay, BOOL aEnabled, BOOL aChangeOrigin, LONG aOriginX, LONG aOriginY, ULONG aWidth, ULONG aHeight, ULONG aBitsPerPixel);

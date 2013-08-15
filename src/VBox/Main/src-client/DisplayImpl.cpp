@@ -2063,7 +2063,8 @@ int Display::videoAccelRefreshProcess(void)
 // IDisplay methods
 /////////////////////////////////////////////////////////////////////////////
 STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
-    ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel)
+    ULONG *aWidth, ULONG *aHeight, ULONG *aBitsPerPixel,
+    LONG *aXOrigin, LONG *aYOrigin)
 {
     LogRelFlowFunc(("aScreenId = %d\n", aScreenId));
 
@@ -2075,6 +2076,8 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
     uint32_t u32Width = 0;
     uint32_t u32Height = 0;
     uint32_t u32BitsPerPixel = 0;
+    int32_t xOrigin = 0;
+    int32_t yOrigin = 0;
 
     if (aScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
@@ -2091,6 +2094,8 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
         u32Width = pFBInfo->w;
         u32Height = pFBInfo->h;
         u32BitsPerPixel = pFBInfo->u16BitsPerPixel;
+        xOrigin = pFBInfo->xOrigin;
+        yOrigin = pFBInfo->yOrigin;
     }
     else
     {
@@ -2103,6 +2108,10 @@ STDMETHODIMP Display::GetScreenResolution (ULONG aScreenId,
         *aHeight = u32Height;
     if (aBitsPerPixel)
         *aBitsPerPixel = u32BitsPerPixel;
+    if (aXOrigin)
+        *aXOrigin = xOrigin;
+    if (aYOrigin)
+        *aYOrigin = yOrigin;
 
     return S_OK;
 }

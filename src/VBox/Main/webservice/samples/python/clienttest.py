@@ -98,10 +98,10 @@ def main(argv):
                 # Get the VM's display object
                 display = console.display
 
-                # Get the VM's current display resolution + bit depth
+                # Get the VM's current display resolution + bit depth + position
                 screenNum = 0 # From first screen
-                (screenX, screenY, screenBPP) = display.getScreenResolution(screenNum)
-                print "    Display (%d):     %dx%d, %d BPP"  %(screenNum, screenX, screenY, screenBPP)
+                (screenW, screenH, screenBPP, screenX, screenY) = display.getScreenResolution(screenNum)
+                print "    Display (%d):     %dx%d, %d BPP at %d,%d"  %(screenNum, screenW, screenH, screenBPP, screenX, screenY)
 
                 # We're done -- don't forget to unlock the machine!
                 session.unlockMachine()
