@@ -426,7 +426,7 @@ void UIPopupPane::paintBackground(const QRect &rect, QPainter &painter)
     QColor currentColor(palette().color(QPalette::Window));
     QColor newColor1(currentColor.red(), currentColor.green(), currentColor.blue(), opacity());
     QColor newColor2 = newColor1.darker(115);
-    QLinearGradient headerGradient(rect.topLeft(), rect.topRight());
+    QLinearGradient headerGradient(rect.topLeft(), rect.bottomLeft());
     headerGradient.setColorAt(0, newColor1);
     headerGradient.setColorAt(1, newColor2);
     painter.fillRect(rect, headerGradient);
