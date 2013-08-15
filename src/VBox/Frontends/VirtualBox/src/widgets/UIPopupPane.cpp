@@ -443,9 +443,6 @@ void UIPopupPane::paintFrame(QPainter &painter)
 
 void UIPopupPane::done(int iResultCode)
 {
-    /* Close the window: */
-    close();
-
     /* Was the popup auto-confirmed? */
     if (m_pTextPane->isAutoConfirmed())
         iResultCode |= AlertOption_AutoConfirmed;
