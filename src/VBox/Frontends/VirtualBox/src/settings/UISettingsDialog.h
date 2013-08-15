@@ -103,8 +103,10 @@ protected:
 
 private slots:
 
-    /* Handler: Validation stuff: */
+    /* Handlers: Validation stuff: */
     void sltHandleValidityChange(UIPageValidator *pValidator);
+    void sltHandleWarningPaneHovered();
+    void sltHandleWarningPaneUnhovered();
 
     /* Slot to update whats-this: */
     void sltUpdateWhatsThis(bool fGotFocus = false);
