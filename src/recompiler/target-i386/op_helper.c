@@ -603,8 +603,10 @@ static void switch_tss(int tss_selector,
     env->tr.selector = tss_selector;
     env->tr.base = tss_base;
     env->tr.limit = tss_limit;
+#ifndef VBOX
     env->tr.flags = e2 & ~DESC_TSS_BUSY_MASK;
-#ifdef VBOX
+#else
+    env->tr.flags = e2 & (DESC_RAW_FLAG_BITS & ~(DESC_TSS_BUSY_MASK)); /** @todo stop clearing the busy bit, VT-x and AMD-V seems to set it in the hidden bits. */
     env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
     env->tr.newselector = 0;
 #endif
