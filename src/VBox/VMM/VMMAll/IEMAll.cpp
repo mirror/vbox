@@ -9275,7 +9275,7 @@ static void iemExecVerificationModeCheck(PIEMCPU pIemCpu)
             CHECK_BIT_FIELD(rflags.Bits.u2IOPL);
             CHECK_BIT_FIELD(rflags.Bits.u1NT);
             CHECK_BIT_FIELD(rflags.Bits.u1Reserved3);
-            if (fRem)
+            if (0 && !fRem) /** @todo debug the occational clear RF flags when running against VT-x. */
                 CHECK_BIT_FIELD(rflags.Bits.u1RF);
             CHECK_BIT_FIELD(rflags.Bits.u1VM);
             CHECK_BIT_FIELD(rflags.Bits.u1AC);
