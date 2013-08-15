@@ -58,6 +58,8 @@ struct DRVMAINMOUSE
     PDMIMOUSECONNECTOR          IConnector;
     /** The capabilities of this device. */
     uint32_t                    u32DevCaps;
+    /** The device priority. */
+    uint32_t                    u32Priority;
 };
 
 
@@ -974,7 +976,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Object\0Priority\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -1008,14 +1010,35 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
         return rc;
     }
     pThis->pMouse = (Mouse *)pv;        /** @todo Check this cast! */
+    /*
+     * Get the device priority.
+     */
+    rc = CFGMR3QueryU32Def(pCfg, "Priority", &pThis->u32Priority, 1);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Configuration error: Bad \"Priority\" value! rc=%Rrc\n", rc));
+        return rc;
+    }
     unsigned cDev;
     {
+        PDRVMAINMOUSE pObject = pThis;
         AutoReadLock mouseLock(pThis->pMouse COMMA_LOCKVAL_SRC_POS);
 
         for (cDev = 0; cDev < MOUSE_MAX_DEVICES; ++cDev)
-            if (!pThis->pMouse->mpDrv[cDev])
+            if (pThis->pMouse->mpDrv[cDev])
             {
-                pThis->pMouse->mpDrv[cDev] = pThis;
+                /* Fix priorities. */
+                if (   pThis->pMouse->mpDrv[cDev]->u32Priority
+                    <= pObject->u32Priority)
+                {
+                    PDRVMAINMOUSE pNewObject = pThis->pMouse->mpDrv[cDev];
+                    pThis->pMouse->mpDrv[cDev] = pObject;
+                    pObject = pNewObject;
+                }
+            }
+            else
+            {
+                pThis->pMouse->mpDrv[cDev] = pObject;
                 break;
             }
     }
