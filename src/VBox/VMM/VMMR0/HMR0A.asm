@@ -750,9 +750,9 @@ ENDPROC VMXDisable
 ; * @returns VBox status code
 ; * @param   HCPhysVmcs     Physical address of VM control structure
 ; */
-;DECLASM(int) VMXClearVMCS(RTHCPHYS HCPhysVmcs);
+;DECLASM(int) VMXClearVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
-BEGINPROC VMXClearVMCS
+BEGINPROC VMXClearVmcs
 %ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
@@ -795,7 +795,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif
-ENDPROC VMXClearVMCS
+ENDPROC VMXClearVmcs
 
 
 ;/**
@@ -804,9 +804,9 @@ ENDPROC VMXClearVMCS
 ; * @returns VBox status code
 ; * @param   HCPhysVmcs     Physical address of VMCS structure
 ; */
-;DECLASM(int) VMXActivateVMCS(RTHCPHYS HCPhysVmcs);
+;DECLASM(int) VMXActivateVmcs(RTHCPHYS HCPhysVmcs);
 ALIGNCODE(16)
-BEGINPROC VMXActivateVMCS
+BEGINPROC VMXActivateVmcs
 %ifdef RT_ARCH_AMD64
     xor     rax, rax
  %ifdef ASM_CALL64_GCC
@@ -849,7 +849,7 @@ BITS 64
     dd      .the_end, NAME(SUPR0AbsKernelCS)
 BITS 32
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
-ENDPROC VMXActivateVMCS
+ENDPROC VMXActivateVmcs
 
 
 ;/**
@@ -858,8 +858,8 @@ ENDPROC VMXActivateVMCS
 ; * @returns VBox status code
 ; * @param    [esp + 04h]  gcc:rdi  msc:rcx   Param 1 - First parameter - Address that will receive the current pointer
 ; */
-;DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
-BEGINPROC VMXGetActivateVMCS
+;DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pVMCS);
+BEGINPROC VMXGetActivatedVmcs
 %ifdef RT_OS_OS2
     mov     eax, VERR_NOT_SUPPORTED
     ret
@@ -898,7 +898,7 @@ BITS 64
 BITS 32
  %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 %endif
-ENDPROC VMXGetActivateVMCS
+ENDPROC VMXGetActivatedVmcs
 
 ;/**
 ; * Invalidate a page using invept

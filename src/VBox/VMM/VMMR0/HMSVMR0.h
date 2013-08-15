@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -41,6 +41,7 @@ VMMR0DECL(int)  SVMR0GlobalInit(void);
 VMMR0DECL(void) SVMR0GlobalTerm(void);
 VMMR0DECL(int)  SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBLCPUINFO pCpu);
 VMMR0DECL(int)  SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
 VMMR0DECL(int)  SVMR0EnableCpu(PHMGLOBLCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS HCPhysCpuPage, bool fEnabledBySystem);
 VMMR0DECL(int)  SVMR0DisableCpu(PHMGLOBLCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)  SVMR0InitVM(PVM pVM);
@@ -95,5 +96,5 @@ DECLASM(void) SVMR0InvlpgA(RTGCPTR pPageGC, uint32_t u32ASID);
 
 RT_C_DECLS_END
 
-#endif /* HMSVMR0_h */
+#endif /* ___HMSVMR0_h */
 

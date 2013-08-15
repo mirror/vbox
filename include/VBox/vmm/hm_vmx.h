@@ -1915,9 +1915,9 @@ DECLINLINE(void) VMXDisable(void)
  * @param   pVMCS       Physical address of VM control structure
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXClearVMCS(RTHCPHYS pVMCS);
+DECLASM(int) VMXClearVmcs(RTHCPHYS pVMCS);
 #else
-DECLINLINE(int) VMXClearVMCS(RTHCPHYS pVMCS)
+DECLINLINE(int) VMXClearVmcs(RTHCPHYS pVMCS)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -1972,9 +1972,9 @@ success:
  * @param   pVMCS       Physical address of VMCS structure
  */
 #if ((RT_INLINE_ASM_EXTERNAL || !defined(RT_ARCH_X86)) && !VMX_USE_MSC_INTRINSICS) || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-DECLASM(int) VMXActivateVMCS(RTHCPHYS pVMCS);
+DECLASM(int) VMXActivateVmcs(RTHCPHYS pVMCS);
 #else
-DECLINLINE(int) VMXActivateVMCS(RTHCPHYS pVMCS)
+DECLINLINE(int) VMXActivateVmcs(RTHCPHYS pVMCS)
 {
 # if RT_INLINE_ASM_GNU_STYLE
     int rc = VINF_SUCCESS;
@@ -2026,7 +2026,7 @@ success:
  * @returns VBox status code
  * @param pVMCS    Address that will receive the current pointer
  */
-DECLASM(int) VMXGetActivateVMCS(RTHCPHYS *pVMCS);
+DECLASM(int) VMXGetActivatedVmcs(RTHCPHYS *pVMCS);
 
 /**
  * Executes VMWRITE

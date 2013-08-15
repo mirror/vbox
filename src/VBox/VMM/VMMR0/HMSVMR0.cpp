@@ -238,6 +238,7 @@ typedef enum SVMMSREXITWRITE
 *******************************************************************************/
 static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD enmRead, SVMMSREXITWRITE enmWrite);
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
+static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
 HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
@@ -1580,6 +1581,56 @@ VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 
 /**
+ * Thread-context callback for AMD-V.
+ *
+ * @param   enmEvent        The thread-context event.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   fGlobalInit     Whether global VT-x/AMD-V init. is used.
+ */
+VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
+{
+    switch (enmEvent)
+    {
+        case RTTHREADCTXEVENT_PREEMPTING:
+        {
+            Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+            PVM         pVM  = pVCpu->CTX_SUFF(pVM);
+            PCPUMCTX    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
+            VMMRZCallRing3Disable(pVCpu);                        /* No longjmps (log-flush, locks) in this fragile context. */
+
+            hmR0SvmLeave(pVM, pVCpu, pCtx);
+
+            int rc = HMR0LeaveEx(pVCpu);                         /* Leave HM context, takes care of local init (term). */
+            AssertRC(rc); NOREF(rc);
+
+            VMMRZCallRing3Enable(pVCpu);                         /* Restore longjmp state. */
+            break;
+        }
+
+        case RTTHREADCTXEVENT_RESUMED:
+        {
+            /* Disable preemption, we don't want to be migrated to another CPU while re-initializing AMD-V state. */
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            RTThreadPreemptDisable(&PreemptState);
+
+            /* Initialize the bare minimum state required for HM. This takes care of
+               initializing AMD-V if necessary (onlined CPUs, local init etc.) */
+            HMR0EnterEx(pVCpu);
+
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
+
+            RTThreadPreemptRestore(&PreemptState);
+            break;
+        }
+
+        default:
+            break;
+    }
+}
+
+
+/**
  * Saves the host state.
  *
  * @returns VBox status code.
@@ -1821,17 +1872,16 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 
 /**
- * Does the necessary state syncing before doing a longjmp to ring-3.
+ * Does the necessary state syncing before returning to ring-3 for any reason
+ * (longjmp, preemption, voluntary exits to ring-3) from AMD-V.
  *
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
- * @param   rcExit      The reason for exiting to ring-3. Can be
- *                      VINF_VMM_UNKNOWN_RING3_CALL.
+ * @param   pMixedCtx   Pointer to the guest-CPU context.
  *
  * @remarks No-long-jmp zone!!!
  */
-static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
+static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
@@ -1857,8 +1907,10 @@ static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcEx
 #endif
     if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
@@ -1867,6 +1919,21 @@ static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcEx
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+}
+
+
+/**
+ * Does the necessary state syncing before doing a longjmp to ring-3.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jmp zone!!!
+ */
+static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    hmR0SvmLeave(pVM, pVCpu, pCtx);
 }
 
 
@@ -1893,8 +1960,10 @@ DECLCALLBACK(void) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
 
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
+
     Log4(("hmR0SvmCallRing3Callback->hmR0SvmLongJmpToRing3\n"));
-    hmR0SvmLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser, VINF_VMM_UNKNOWN_RING3_CALL);
+    hmR0SvmLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+
     VMMRZCallRing3Enable(pVCpu);
 }
 
@@ -1936,8 +2005,8 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         Assert(!pVCpu->hm.s.Event.fPending);
     }
 
-    /* Sync. the guest state. */
-    hmR0SvmLongJmpToRing3(pVM, pVCpu, pCtx, rcExit);
+    /* Sync. the necessary state for going back to ring-3. */
+    hmR0SvmLeave(pVM, pVCpu, pCtx);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
@@ -1947,6 +2016,18 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
                               | CPUM_CHANGED_IDTR
                               | CPUM_CHANGED_TR
                               | CPUM_CHANGED_HIDDEN_SEL_REGS);
+    if (   pVM->hm.s.fNestedPaging
+        && CPUMIsGuestPagingEnabledEx(pCtx))
+    {
+        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
+    }
+
+    /* Make sure we've undo the trap flag if we tried to single step something. */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pCtx->eflags.Bits.u1TF = 0;
+        pVCpu->hm.s.fClearTrapFlag = false;
+    }
 
     /* On our way back from ring-3 the following needs to be done. */
     /** @todo This can change with preemption hooks. */
@@ -1954,13 +2035,6 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
     else
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
-
-    /* Make sure we've undo the trap flag if we tried to single step something. */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        pVCpu->hm.s.fClearTrapFlag = false;
-        pCtx->eflags.Bits.u1TF = 0;
-    }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
     VMMRZCallRing3Enable(pVCpu);
