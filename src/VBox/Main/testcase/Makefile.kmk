@@ -31,7 +31,8 @@ ifndef VBOX_ONLY_SDK
 	$(if $(VBOX_WITH_RESOURCE_USAGE_API),tstCollector,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
 	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
-	$(if true,tstMouseImpl,)
+	tstMediumLock \
+	tstMouseImpl
   PROGRAMS.linux += \
 	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
  endif # !VBOX_WITH_TESTCASES
@@ -59,33 +60,17 @@ samplesXPCOM_SOURCES = tstVBoxAPILinux.cpp makefile.tstVBoxAPILinux=>Makefile
 #
 # tstAPI
 #
-tstAPI_TEMPLATE = VBOXMAINCLIENTEXE
+tstAPI_TEMPLATE = VBOXMAINCLIENTTSTEXE
 #tstAPI_INST = $(INST_SDK)bindings/gluecom/samples/
 tstAPI_SOURCES  = tstAPI.cpp
-ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
-tstAPI_DEPS = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
-else
-tstAPI_DEPS = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
-endif
-ifdef VBOX_WITH_RESOURCE_USAGE_API
-tstAPI_DEFS += VBOX_WITH_RESOURCE_USAGE_API
-endif
 
 
 #
 # tstOVF
 #
-tstOVF_TEMPLATE = VBOXMAINCLIENTEXE
+tstOVF_TEMPLATE = VBOXMAINCLIENTTSTEXE
 #tstOVF_INST = $(INST_SDK)bindings/gluecom/samples/
 tstOVF_SOURCES  = tstOVF.cpp
-ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
-tstOVF_DEPS = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
-else
-tstOVF_DEPS = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
-endif
-ifdef VBOX_WITH_RESOURCE_USAGE_API
-tstOVF_DEFS += VBOX_WITH_RESOURCE_USAGE_API
-endif
 
 ifndef VBOX_OSE
 #
@@ -108,38 +93,23 @@ endif
 # We only build the testcase here to make sure it builds.
 # It comes with a custom makefile which should be tested as well!
 #
-tstVBoxAPILinux_TEMPLATE = VBOXR3EXE
+tstVBoxAPILinux_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstVBoxAPILinux_SOURCES  = tstVBoxAPILinux.cpp
-tstVBoxAPILinux_CXXFLAGS = -Wno-non-virtual-dtor -fshort-wchar
-tstVBoxAPILinux_LDFLAGS.solaris += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)/../../..'
-ifdef VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
- tstVBoxAPILinux_DEFS += VBOX_WITH_XPCOM_NAMESPACE_CLEANUP
-endif
-tstVBoxAPILinux_DEFS += VBOX_WITH_XPCOM
-tstVBoxAPILinux_INCS     = \
-	$(VBOX_XPCOM_INCS) \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include
-tstVBoxAPILinux_LIBPATH  = $(LIBPATH_XPCOM)
-tstVBoxAPILinux_LIBS     = $(LIB_XPCOM) $(LIB_RUNTIME)
-tstVBoxAPILinux_DEPS     = \
-	$(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
 
 
 #
 # tstVBoxAPIWin
 #
-tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENTEXE
+tstVBoxAPIWin_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstVBoxAPIWin_SOURCES  = \
 	tstVBoxAPIWin.cpp \
 	$(VBOX_PATH_SDK)/bindings/mscom/lib/VirtualBox_i.c
-tstVBoxAPIWin_DEPS     = \
-	$(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
 
 
 #
 # tstCollector
 #
-tstCollector_TEMPLATE = VBOXMAINCLIENTEXE
+tstCollector_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../src-server/Performance.cpp
@@ -153,33 +123,23 @@ tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib
 #
 # tstGuestCtrlParseBuffer
 #
-tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTEXE
+tstGuestCtrlParseBuffer_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstGuestCtrlParseBuffer_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlParseBuffer_SOURCES  = \
 	tstGuestCtrlParseBuffer.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlParseBuffer_INCS     = ../include
-ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
- tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
-else
- tstGuestCtrlParseBuffer_DEPS    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
-endif
 
 
 #
 # tstGuestCtrlContextID
 #
-tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTEXE
+tstGuestCtrlContextID_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstGuestCtrlContextID_DEFS    += VBOX_WITH_HGCM VBOX_WITH_GUEST_CONTROL VBOX_GUESTCTRL_TEST_CASE
 tstGuestCtrlContextID_SOURCES  = \
 	tstGuestCtrlContextID.cpp \
 	../src-client/GuestCtrlPrivate.cpp
 tstGuestCtrlContextID_INCS     = ../include
-ifeq ($(KBUILD_TARGET),win) ## @todo just add this to the template.
- tstGuestCtrlContextID_DEPS    = $(VBOX_PATH_SDK)/bindings/mscom/include/VirtualBox.h
-else
- tstGuestCtrlContextID_DEPS    = $(VBOX_PATH_SDK)/bindings/xpcom/include/VirtualBox_XPCOM.h
-endif
 
 
 #
@@ -206,6 +166,13 @@ tstUSBProxyLinux_DEPS     = \
 tstUSBProxyLinux_LIBS     += \
 	$(PATH_OUT)/lib/USBLib.a \
 	$(PATH_OUT)/lib/VBoxCOM.a
+
+
+#
+# tstMediumLock
+#
+tstMediumLock_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstMediumLock_SOURCES  = tstMediumLock.cpp
 
 
 #
