@@ -173,7 +173,7 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 typedef struct VMXTRANSIENT
 {
     /** The host's rflags/eflags. */
-    RTCCUINTREG     uEFlags;
+    RTCCUINTREG     uEflags;
 #if HC_ARCH_BITS == 32
     uint32_t        u32Alignment0;
 #endif
@@ -2881,9 +2881,9 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* Intel spec. 2.3.1 "System Flags and Fields in IA-32e Mode" claims the upper 32-bits of RFLAGS are reserved (MBZ).
            Let us assert it as such and use 32-bit VMWRITE. */
         Assert(!(pMixedCtx->rflags.u64 >> 32));
-        X86EFLAGS uEFlags = pMixedCtx->eflags;
-        uEFlags.u32 &= VMX_EFLAGS_RESERVED_0;                   /* Bits 22-31, 15, 5 & 3 MBZ. */
-        uEFlags.u32 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
+        X86EFLAGS Eflags = pMixedCtx->eflags;
+        Eflags.u32 &= VMX_EFLAGS_RESERVED_0;                   /* Bits 22-31, 15, 5 & 3 MBZ. */
+        Eflags.u32 |= VMX_EFLAGS_RESERVED_1;                   /* Bit 1 MB1. */
 
         /*
          * If we're emulating real-mode using Virtual 8086 mode, save the real-mode eflags so we can restore them on VM exit.
@@ -2893,15 +2893,15 @@ static int hmR0VmxLoadGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
             Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
-            pVCpu->hm.s.vmx.RealMode.eflags.u32 = uEFlags.u32; /* Save the original eflags of the real-mode guest. */
-            uEFlags.Bits.u1VM   = 1;                           /* Set the Virtual 8086 mode bit. */
-            uEFlags.Bits.u2IOPL = 0;                           /* Change IOPL to 0, otherwise certain instructions won't fault. */
+            pVCpu->hm.s.vmx.RealMode.Eflags.u32 = Eflags.u32;  /* Save the original eflags of the real-mode guest. */
+            Eflags.Bits.u1VM   = 1;                            /* Set the Virtual 8086 mode bit. */
+            Eflags.Bits.u2IOPL = 0;                            /* Change IOPL to 0, otherwise certain instructions won't fault. */
         }
 
-        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_RFLAGS, uEFlags.u32);
+        rc = VMXWriteVmcs32(VMX_VMCS_GUEST_RFLAGS, Eflags.u32);
         AssertRCReturn(rc, rc);
 
-        Log4(("Load: VMX_VMCS_GUEST_RFLAGS=%#RX32\n", uEFlags.u32));
+        Log4(("Load: VMX_VMCS_GUEST_RFLAGS=%#RX32\n", Eflags.u32));
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_RFLAGS;
     }
     return rc;
@@ -3674,12 +3674,12 @@ static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* Save the segment attributes for real-on-v86 mode hack, so we can restore them on VM-exit. */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
         {
-            pVCpu->hm.s.vmx.RealMode.uAttrCS.u = pMixedCtx->cs.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.uAttrSS.u = pMixedCtx->ss.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.uAttrDS.u = pMixedCtx->ds.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.uAttrES.u = pMixedCtx->es.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.uAttrFS.u = pMixedCtx->fs.Attr.u;
-            pVCpu->hm.s.vmx.RealMode.uAttrGS.u = pMixedCtx->gs.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrCS.u = pMixedCtx->cs.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrSS.u = pMixedCtx->ss.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrDS.u = pMixedCtx->ds.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrES.u = pMixedCtx->es.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrFS.u = pMixedCtx->fs.Attr.u;
+            pVCpu->hm.s.vmx.RealMode.AttrGS.u = pMixedCtx->gs.Attr.u;
         }
 
 #ifdef VBOX_WITH_REM
@@ -4320,7 +4320,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     int             rc, rc2;
     PHMGLOBLCPUINFO pCpu;
     RTHCPHYS        HCPhysCpuPage;
-    RTCCUINTREG     uOldEFlags;
+    RTCCUINTREG     uOldEflags;
 
     AssertReturn(pVM->hm.s.pfnHost32ToGuest64R0, VERR_HM_NO_32_TO_64_SWITCHER);
     Assert(enmOp > HM64ON32OP_INVALID && enmOp < HM64ON32OP_END);
@@ -4336,7 +4336,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 #endif
 
     /* Disable interrupts. */
-    uOldEFlags = ASMIntDisableFlags();
+    uOldEflags = ASMIntDisableFlags();
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     RTCPUID idHostCpu = RTMpCpuId();
@@ -4374,14 +4374,14 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
     if (RT_FAILURE(rc2))
     {
         ASMSetCR4(ASMGetCR4() & ~X86_CR4_VMXE);
-        ASMSetFlags(uOldEFlags);
+        ASMSetFlags(uOldEflags);
         return rc2;
     }
 
     rc2 = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     AssertRC(rc2);
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-    ASMSetFlags(uOldEFlags);
+    ASMSetFlags(uOldEflags);
     return rc;
 }
 
@@ -5153,7 +5153,7 @@ static int hmR0VmxSaveGuestRflags(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Log4(("Saving real-mode EFLAGS VT-x view=%#RX32\n", pMixedCtx->eflags.u32));
 
             pMixedCtx->eflags.Bits.u1VM   = 0;
-            pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.eflags.Bits.u2IOPL;
+            pMixedCtx->eflags.Bits.u2IOPL = pVCpu->hm.s.vmx.RealMode.Eflags.Bits.u2IOPL;
         }
 
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_RFLAGS;
@@ -5578,12 +5578,12 @@ static int hmR0VmxSaveGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* Restore segment attributes for real-on-v86 mode hack. */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
         {
-            pMixedCtx->cs.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrCS.u;
-            pMixedCtx->ss.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrSS.u;
-            pMixedCtx->ds.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrDS.u;
-            pMixedCtx->es.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrES.u;
-            pMixedCtx->fs.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrFS.u;
-            pMixedCtx->gs.Attr.u = pVCpu->hm.s.vmx.RealMode.uAttrGS.u;
+            pMixedCtx->cs.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrCS.u;
+            pMixedCtx->ss.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrSS.u;
+            pMixedCtx->ds.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrDS.u;
+            pMixedCtx->es.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrES.u;
+            pMixedCtx->fs.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrFS.u;
+            pMixedCtx->gs.Attr.u = pVCpu->hm.s.vmx.RealMode.AttrGS.u;
         }
         pVCpu->hm.s.vmx.fUpdatedGuestState |= HMVMX_UPDATED_GUEST_SEGMENT_REGS;
     }
@@ -7118,10 +7118,10 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /* We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.) */
-    pVmxTransient->uEFlags = ASMIntDisableFlags();
+    pVmxTransient->uEflags = ASMIntDisableFlags();
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
-        ASMSetFlags(pVmxTransient->uEFlags);
+        ASMSetFlags(pVmxTransient->uEflags);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
@@ -7169,7 +7169,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
-    pVmxTransient->uEFlags = ASMIntDisableFlags();
+    pVmxTransient->uEflags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
@@ -7280,7 +7280,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-    ASMSetFlags(pVmxTransient->uEFlags);                        /* Enable interrupts. */
+    ASMSetFlags(pVmxTransient->uEflags);                        /* Enable interrupts. */
     pVCpu->hm.s.fResumeVM = true;                               /* Use VMRESUME instead of VMLAUNCH in the next run. */
 
     /* Save the basic VM-exit reason. Refer Intel spec. 24.9.1 "Basic VM-exit Information". */
@@ -7755,7 +7755,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * RIP and RFLAGS.
          */
-        uint32_t u32EFlags;
+        uint32_t u32Eflags;
 #if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (HMVMX_IS_64BIT_HOST_MODE())
         {
@@ -7778,21 +7778,21 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffffffc08028)),                     /* Bit 63:22, Bit 15, 5, 3 MBZ. */
                               VMX_IGS_RFLAGS_RESERVED);
             HMVMX_CHECK_BREAK((u64Val & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);       /* Bit 1 MB1. */
-            u32EFlags = u64Val;
+            u32Eflags = u64Val;
         }
         else
 #endif
         {
-            rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32EFlags);
+            rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Eflags);
             AssertRCBreak(rc);
-            HMVMX_CHECK_BREAK(!(u32EFlags & 0xffc08028), VMX_IGS_RFLAGS_RESERVED);          /* Bit 31:22, Bit 15, 5, 3 MBZ. */
-            HMVMX_CHECK_BREAK((u32EFlags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);    /* Bit 1 MB1. */
+            HMVMX_CHECK_BREAK(!(u32Eflags & 0xffc08028), VMX_IGS_RFLAGS_RESERVED);          /* Bit 31:22, Bit 15, 5, 3 MBZ. */
+            HMVMX_CHECK_BREAK((u32Eflags & X86_EFL_RA1_MASK), VMX_IGS_RFLAGS_RESERVED1);    /* Bit 1 MB1. */
         }
 
         if (   fLongModeGuest
             || !(pCtx->cr0 & X86_CR0_PE))
         {
-            HMVMX_CHECK_BREAK(!(u32EFlags & X86_EFL_VM), VMX_IGS_RFLAGS_VM_INVALID);
+            HMVMX_CHECK_BREAK(!(u32Eflags & X86_EFL_VM), VMX_IGS_RFLAGS_VM_INVALID);
         }
 
         uint32_t u32EntryInfo;
@@ -7897,7 +7897,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          */
         HMVMX_CHECK_BREAK(   (pCtx->ldtr.Attr.u & X86DESCATTR_UNUSABLE)
                           || !(pCtx->ldtr.Sel & X86_SEL_LDT), VMX_IGS_LDTR_TI_INVALID);
-        if (!(u32EFlags & X86_EFL_VM))
+        if (!(u32Eflags & X86_EFL_VM))
         {
             /* CS */
             HMVMX_CHECK_BREAK(pCtx->cs.Attr.n.u1Present, VMX_IGS_CS_ATTR_P_INVALID);
@@ -8172,7 +8172,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                             != (  VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI
                                 | VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_MOVSS_INVALID);
-        HMVMX_CHECK_BREAK(   (u32EFlags & X86_EFL_IF)
+        HMVMX_CHECK_BREAK(   (u32Eflags & X86_EFL_IF)
                           || !(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID);
         if (VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo))
@@ -8226,13 +8226,13 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS)
             || u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_HLT)
         {
-            if (   (u32EFlags & X86_EFL_TF)
+            if (   (u32Eflags & X86_EFL_TF)
                 && !(u64DebugCtlMsr & RT_BIT_64(1)))    /* Bit 1 is IA32_DEBUGCTL.BTF. */
             {
                 /* Bit 14 is PendingDebug.BS. */
                 HMVMX_CHECK_BREAK(u32Val & RT_BIT(14), VMX_IGS_PENDING_DEBUG_XCPT_BS_NOT_SET);
             }
-            if (   !(u32EFlags & X86_EFL_TF)
+            if (   !(u32Eflags & X86_EFL_TF)
                 || (u64DebugCtlMsr & RT_BIT_64(1)))     /* Bit 1 is IA32_DEBUGCTL.BTF. */
             {
                 /* Bit 14 is PendingDebug.BS. */
@@ -10079,25 +10079,25 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     uMask  = 0xffff;
                 }
 
-                /* Get the stack pointer & pop the contents of the stack onto EFlags. */
+                /* Get the stack pointer & pop the contents of the stack onto Eflags. */
                 RTGCPTR   GCPtrStack = 0;
-                X86EFLAGS uEflags;
+                X86EFLAGS Eflags;
                 rc = SELMToFlatEx(pVCpu, DISSELREG_SS, CPUMCTX2CORE(pMixedCtx), pMixedCtx->esp & uMask, SELMTOFLAT_FLAGS_CPL0,
                                   &GCPtrStack);
                 if (RT_SUCCESS(rc))
                 {
-                    Assert(sizeof(uEflags.u32) >= cbParm);
-                    uEflags.u32 = 0;
-                    rc = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &uEflags.u32, cbParm);
+                    Assert(sizeof(Eflags.u32) >= cbParm);
+                    Eflags.u32 = 0;
+                    rc = PGMPhysRead(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u32, cbParm);
                 }
                 if (RT_FAILURE(rc))
                 {
                     rc = VERR_EM_INTERPRETER;
                     break;
                 }
-                Log4(("POPF %x -> %#RX64 mask=%x RIP=%#RX64\n", uEflags.u, pMixedCtx->rsp, uMask, pMixedCtx->rip));
+                Log4(("POPF %#x -> %#RX64 mask=%#x RIP=%#RX64\n", Eflags.u, pMixedCtx->rsp, uMask, pMixedCtx->rip));
                 pMixedCtx->eflags.u32 =   (pMixedCtx->eflags.u32 & ~(X86_EFL_POPF_BITS & uMask))
-                                        | (uEflags.u32 & X86_EFL_POPF_BITS & uMask);
+                                        | (Eflags.u32 & X86_EFL_POPF_BITS & uMask);
                 /* The RF bit is always cleared by POPF; see Intel Instruction reference for POPF. */
                 pMixedCtx->eflags.Bits.u1RF   = 0;
                 pMixedCtx->esp               += cbParm;
@@ -10132,19 +10132,18 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
                     rc = VERR_EM_INTERPRETER;
                     break;
                 }
-                X86EFLAGS uEflags;
-                uEflags = pMixedCtx->eflags;
+                X86EFLAGS Eflags = pMixedCtx->eflags;
                 /* The RF & VM bits are cleared on image stored on stack; see Intel Instruction reference for PUSHF. */
-                uEflags.Bits.u1RF = 0;
-                uEflags.Bits.u1VM = 0;
+                Eflags.Bits.u1RF = 0;
+                Eflags.Bits.u1VM = 0;
 
-                rc = PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &uEflags.u, cbParm);
+                rc = PGMPhysWrite(pVM, (RTGCPHYS)GCPtrStack, &Eflags.u, cbParm);
                 if (RT_FAILURE(rc))
                 {
                     rc = VERR_EM_INTERPRETER;
                     break;
                 }
-                Log4(("PUSHF %x -> %#RGv\n", uEflags.u, GCPtrStack));
+                Log4(("PUSHF %#x -> %#RGv\n", Eflags.u, GCPtrStack));
                 pMixedCtx->esp               -= cbParm;
                 pMixedCtx->esp               &= uMask;
                 pMixedCtx->rip               += pDis->cbInstr;

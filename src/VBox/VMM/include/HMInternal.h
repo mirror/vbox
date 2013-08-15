@@ -630,13 +630,13 @@ typedef struct HMCPU
         /** Real-mode emulation state. */
         struct
         {
-            X86DESCATTR                 uAttrCS;
-            X86DESCATTR                 uAttrDS;
-            X86DESCATTR                 uAttrES;
-            X86DESCATTR                 uAttrFS;
-            X86DESCATTR                 uAttrGS;
-            X86DESCATTR                 uAttrSS;
-            X86EFLAGS                   eflags;
+            X86DESCATTR                 AttrCS;
+            X86DESCATTR                 AttrDS;
+            X86DESCATTR                 AttrES;
+            X86DESCATTR                 AttrFS;
+            X86DESCATTR                 AttrGS;
+            X86DESCATTR                 AttrSS;
+            X86EFLAGS                   Eflags;
             uint32_t                    fRealOnV86Active;
         } RealMode;
 
@@ -648,7 +648,7 @@ typedef struct HMCPU
             uint32_t                u32ExitReason;
             RTCPUID                 idEnteredCpu;
             RTCPUID                 idCurrentCpu;
-            uint32_t                padding;
+            uint32_t                u32Padding;
         } LastError;
 
         /** Which host-state bits to restore before being preempted. */
