@@ -88,8 +88,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     /* No page-title with tool-bar: */
     m_pLbTitle->hide();
-    /* No whats-this with tool-bar: */
-    m_pLbWhatsThis->hide();
     /* Create modern tool-bar selector: */
     m_pSelector = new VBoxSettingsToolBarSelector(this);
     static_cast<UIToolBar*>(m_pSelector->widget())->setMacToolbar();
@@ -100,7 +98,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 #else
     /* Create classical tree-view selector: */
     m_pSelector = new VBoxSettingsTreeViewSelector(this);
-    pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 3, 1);
+    pMainLayout->addWidget(m_pSelector->widget(), 0, 0, 2, 1);
     m_pSelector->widget()->setFocus();
     pMainLayout->setSpacing(10);
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
@@ -128,13 +126,6 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     qApp->installEventFilter(this);
     m_pWhatsThisTimer->setSingleShot(true);
     connect(m_pWhatsThisTimer, SIGNAL(timeout()), this, SLOT(sltUpdateWhatsThis()));
-    m_pLbWhatsThis->setAutoFillBackground(true);
-    QPalette whatsThisPalette = m_pLbWhatsThis->palette();
-    whatsThisPalette.setBrush(QPalette::Window, whatsThisPalette.brush(QPalette::Midlight));
-    m_pLbWhatsThis->setPalette(whatsThisPalette);
-    m_pLbWhatsThis->setFixedHeight(m_pLbWhatsThis->frameWidth() * 2 +
-                                   m_pLbWhatsThis->margin() * 2 +
-                                   m_pLbWhatsThis->fontMetrics().lineSpacing() * 4);
 
     /* Set the default button: */
     m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
@@ -463,14 +454,8 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
         pWhatsThisWidget = pWhatsThisWidget->parentWidget();
     }
 
-#ifndef Q_WS_MAC
-    if (strWhatsThisText.isEmpty())
-        strWhatsThisText = whatsThis();
-    m_pLbWhatsThis->setText(strWhatsThisText);
-#else /* !Q_WS_MAC */
     if (pWhatsThisWidget && !strWhatsThisText.isEmpty())
         pWhatsThisWidget->setToolTip(QString("<qt>%1</qt>").arg(strWhatsThisText));
-#endif /* Q_WS_MAC */
 }
 
 void UISettingsDialog::reject()
