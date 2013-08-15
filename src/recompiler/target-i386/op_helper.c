@@ -2580,13 +2580,12 @@ void helper_ltr(int selector)
     selector &= 0xffff;
     if ((selector & 0xfffc) == 0) {
         /* NULL selector case: invalid TR */
+#ifdef VBOX
+        raise_exception_err(EXCP0A_TSS, 0);
+#else
         env->tr.base = 0;
         env->tr.limit = 0;
         env->tr.flags = 0;
-#ifdef VBOX /** @todo can TR really be 0? If so, what're the hidden attributes? */
-        env->tr.flags = DESC_INTEL_UNUSABLE;
-        env->tr.fVBoxFlags  = CPUMSELREG_FLAGS_VALID;
-        env->tr.newselector = 0;
 #endif
     } else {
         if (selector & 0x4)
