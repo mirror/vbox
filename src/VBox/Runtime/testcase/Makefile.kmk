@@ -64,6 +64,7 @@ PROGRAMS += \
 	tstRTFileAppend-1 \
 	tstRTFileGetSize-1 \
 	tstFileLock \
+	tstFileModeStringToFlags \
 	tstFork \
 	tstRTHttp \
 	tstRTFsQueries \
@@ -270,6 +271,9 @@ tstFileAppendWin-1_SOURCES = tstFileAppendWin-1.cpp
 
 tstFileLock_TEMPLATE = VBOXR3TSTEXE
 tstFileLock_SOURCES = tstFileLock.cpp
+
+tstFileModeStringToFlags_TEMPLATE = VBOXR3TSTEXE
+tstFileModeStringToFlags_SOURCES = tstFileModeStringToFlags.cpp
 
 tstFork_TEMPLATE = VBOXR3TSTEXE
 tstFork_SOURCES = tstFork.cpp
