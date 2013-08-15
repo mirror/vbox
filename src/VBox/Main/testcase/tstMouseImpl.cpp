@@ -252,23 +252,15 @@ int TestDisplay::getScreenResolution(uint32_t cScreen, ULONG *pcx,
     return S_OK;
 }
 
-DECLEXPORT(bool) CFGMR3AreValuesValid(PCFGMNODE, const char *)
-{
-    return true;
-}
-
-DECLEXPORT(int) CFGMR3QueryPtr(PCFGMNODE, const char *, void **pv)
-{
-    *pv = pMouse;
-    return VINF_SUCCESS;
-}
-
 /******************************************************************************
 *   Main test code                                                            *
 ******************************************************************************/
 
 static int setup(void)
 {
+    PCFGMNODE pCfg = NULL;
+    Mouse *pMouse2;
+    int rc;
     VMMDevPort.pfnSetAbsoluteMouse = setAbsoluteMouse;
     VMMDevPort.pfnUpdateMouseCapabilities = updateMouseCapabilities;
     HRESULT hrc = pMouse.createObject();
@@ -280,8 +272,13 @@ static int setup(void)
     ppdmdrvIns = (struct PDMDRVINS *) RTMemAllocZ(  sizeof(struct PDMDRVINS)
                                                   + Mouse::DrvReg.cbInstance);
     *ppdmdrvIns = pdmdrvInsCore;
-    Mouse::DrvReg.pfnConstruct(ppdmdrvIns, NULL, 0);
-    return VINF_SUCCESS;
+    pMouse2 = pMouse;
+    pCfg = CFGMR3CreateTree(NULL);
+    if (pCfg)
+        rc = CFGMR3InsertInteger(pCfg, "Object", (uintptr_t)pMouse2);
+    if (RT_SUCCESS(rc))
+        Mouse::DrvReg.pfnConstruct(ppdmdrvIns, pCfg, 0);
+    return rc;
 }
 
 static void teardown(void)
