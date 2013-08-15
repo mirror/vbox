@@ -362,16 +362,14 @@ HRESULT Initialize(bool fGui)
     static const char *kAppPathsToProbe[] =
     {
         NULL, /* 0: will use VBOX_APP_HOME */
-        NULL, /* 1: will try RTPathAppPrivateArch() */
-#ifdef RT_OS_LINUX
-        "/usr/lib/virtualbox",
-        "/opt/VirtualBox",
-#elif RT_OS_SOLARIS
-        "/opt/VirtualBox/amd64",
-        "/opt/VirtualBox/i386",
-#elif RT_OS_DARWIN
-        "/Application/VirtualBox.app/Contents/MacOS",
-#endif
+        NULL, /* 1: will try RTPathAppPrivateArch(), correctly installed release builds will never go further */
+        NULL, /* 2: will try parent directory of RTPathAppPrivateArch(), only for testcases in non-hardened builds */
+        /* There used to be hard coded paths, but they only caused trouble
+         * because they often led to mixing of builds or even versions.
+         * If you feel tempted to add anything here, think again. They would
+         * only be used if option 1 would not work, which is a sign of a big
+         * problem, as it returns a fixed location defined at compile time.
+         * It is better to fail than blindly trying to cover the problem. */
     };
 
     /* Find out the directory where VirtualBox binaries are located */
@@ -392,6 +390,22 @@ HRESULT Initialize(bool fGui)
             /* Use RTPathAppPrivateArch() first */
             vrc = RTPathAppPrivateArch(szAppHomeDir, sizeof(szAppHomeDir));
             AssertRC(vrc);
+        }
+        else if (i == 2)
+        {
+#ifdef VBOX_WITH_HARDENING
+            continue;
+#else /* !VBOX_WITH_HARDENING */
+            /* Use parent of RTPathAppPrivateArch() if ends with "testcase" */
+            vrc = RTPathAppPrivateArch(szAppHomeDir, sizeof(szAppHomeDir));
+            AssertRC(vrc);
+            vrc = RTPathStripTrailingSlash(szAppHomeDir);
+            AssertRC(vrc);
+            char *filename = RTPathFilename(szAppHomeDir);
+            if (!filename || strcmp(filename, "testcase"))
+                continue;
+            RTPathStripFilename(szAppHomeDir);
+#endif /* !VBOX_WITH_HARDENING */
         }
         else
         {
