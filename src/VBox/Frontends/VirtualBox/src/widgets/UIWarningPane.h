@@ -30,6 +30,12 @@ class UIWarningPane: public QWidget
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifiers: Hover stuff: */
+    void sigHoverEnter();
+    void sigHoverLeave();
+
 public:
 
     /* Constructor: */
@@ -45,9 +51,15 @@ private:
     void prepare();
     void prepareContent();
 
+    /* Handler: Event processing stuff: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
     /* Variables: Widgets: */
     QLabel *m_pLabelIcon;
     QLabel *m_pLabelText;
+
+    /* Variable: Hover stuff: */
+    bool m_fHovered;
 };
 
 #endif /* __UIWarningPane_h__ */
