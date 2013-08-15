@@ -29,6 +29,7 @@
 #include "UIWarningPane.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIPopupCenter.h"
 #include "QIWidgetValidator.h"
 #include "VBoxSettingsSelector.h"
 #include "UISettingsPage.h"
@@ -106,6 +107,7 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
     /* Creating stack of pages: */
     m_pStack = new QStackedWidget(m_pWtStackHandler);
+    popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
     QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWtStackHandler);
     pStackLayout->setContentsMargins(0, 0, 0, 0);
     pStackLayout->addWidget(m_pStack);
@@ -119,6 +121,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
     /* Setup error & warning stuff: */
     m_pStatusBar->addWidget(m_pWarningPane);
+    connect(m_pWarningPane, SIGNAL(sigHoverEnter()), this, SLOT(sltHandleWarningPaneHovered()));
+    connect(m_pWarningPane, SIGNAL(sigHoverLeave()), this, SLOT(sltHandleWarningPaneUnhovered()));
 
     /* Setup whatsthis stuff: */
     qApp->installEventFilter(this);
@@ -145,6 +149,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
 UISettingsDialog::~UISettingsDialog()
 {
+    /* Recall popup-pane if any: */
+    popupCenter().recall(m_pStack, "SettingsDialogWarning");
     /* Delete selector early! */
     delete m_pSelector;
 }
@@ -275,32 +281,12 @@ void UISettingsDialog::setError(const QString &strError)
 {
     m_strErrorString = strError.isEmpty() ? QString() :
                        QString("<font color=red>%1</font>").arg(strError);
-
-    /* Do not touching QILabel until dialog is polished
-     * otherwise it can change its size to undefined: */
-    if (m_fPolished)
-    {
-        if (!m_strErrorString.isEmpty() && m_pStatusBar->currentWidget() == m_pWarningPane)
-            m_pLbWhatsThis->setText(m_strErrorString);
-        else
-            sltUpdateWhatsThis(true /* got focus? */);
-    }
 }
 
 void UISettingsDialog::setWarning(const QString &strWarning)
 {
     m_strWarningString = strWarning.isEmpty() ? QString() :
                          QString("<font color=#ff5400>%1</font>").arg(strWarning);
-
-    /* Do not touching QILabel until dialog is polished
-     * otherwise it can change its size to undefined: */
-    if (m_fPolished)
-    {
-        if (!m_strWarningString.isEmpty() && m_pStatusBar->currentWidget() == m_pWarningPane)
-            m_pLbWhatsThis->setText(m_strWarningString);
-        else
-            sltUpdateWhatsThis(true /* got focus? */);
-    }
 }
 
 void UISettingsDialog::addItem(const QString &strBigIcon,
@@ -376,9 +362,6 @@ void UISettingsDialog::revalidate()
                 m_fValid = false;
                 setError(pValidator->lastMessage());
                 m_pWarningPane->setWarningText(m_strErrorHint);
-#ifdef Q_WS_MAC
-                m_pWarningPane->setToolTip(m_strErrorString);
-#endif /* Q_WS_MAC */
             }
             /* Show warning if message is not an error: */
             else
@@ -386,12 +369,9 @@ void UISettingsDialog::revalidate()
                 m_fSilent = false;
                 setWarning(pValidator->lastMessage());
                 m_pWarningPane->setWarningText(m_strWarningHint);
-#ifdef Q_WS_MAC
-                m_pWarningPane->setToolTip(m_strWarningString);
-#endif /* Q_WS_MAC */
             }
 
-            /* Configure warning pixmap: */
+            /* Configure warning-pane pixmap: */
             m_pWarningPane->setWarningPixmap(pFailedSettingsPage->warningPixmap());
 
             /* Stop dialog revalidation on first error/warning: */
@@ -433,6 +413,28 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
     }
 }
 
+void UISettingsDialog::sltHandleWarningPaneHovered()
+{
+    LogRel(("Settings Dialog: Warning-pane hovered.\n"));
+
+    /* Show corresponding popup: */
+    if (!m_fValid || !m_fSilent)
+    {
+        popupCenter().popup(m_pStack, "SettingsDialogWarning",
+                            !m_fValid ? m_strErrorString :
+                            !m_fSilent ? m_strWarningString :
+                            QString());
+    }
+}
+
+void UISettingsDialog::sltHandleWarningPaneUnhovered()
+{
+    LogRel(("Settings Dialog: Warning-pane unhovered.\n"));
+
+    /* Recall corresponding popup: */
+    popupCenter().recall(m_pStack, "SettingsDialogWarning");
+}
+
 void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
 {
     QString strWhatsThisText;
@@ -462,20 +464,13 @@ void UISettingsDialog::sltUpdateWhatsThis(bool fGotFocus /* = false */)
     }
 
 #ifndef Q_WS_MAC
-    if (m_pStatusBar->currentWidget() == m_pWarningPane)
-    {
-        if (strWhatsThisText.isEmpty() && !m_strErrorString.isEmpty())
-            strWhatsThisText = m_strErrorString;
-        else if (strWhatsThisText.isEmpty() && !m_strWarningString.isEmpty())
-            strWhatsThisText = m_strWarningString;
-    }
     if (strWhatsThisText.isEmpty())
         strWhatsThisText = whatsThis();
     m_pLbWhatsThis->setText(strWhatsThisText);
-#else
+#else /* !Q_WS_MAC */
     if (pWhatsThisWidget && !strWhatsThisText.isEmpty())
         pWhatsThisWidget->setToolTip(QString("<qt>%1</qt>").arg(strWhatsThisText));
-#endif
+#endif /* Q_WS_MAC */
 }
 
 void UISettingsDialog::reject()
