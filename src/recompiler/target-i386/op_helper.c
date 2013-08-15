@@ -462,6 +462,7 @@ static void switch_tss(int tss_selector,
     else
         old_tss_limit_max = 43;
 
+#ifndef VBOX    /* The old TSS is written first... */
     /* read all the registers from the new TSS */
     if (type & 8) {
         /* 32 bit */
@@ -488,6 +489,7 @@ static void switch_tss(int tss_selector,
         new_segs[R_GS] = 0;
         new_trap = 0;
     }
+#endif
 
     /* NOTE: we must avoid memory exceptions during the task switch,
        so we make dummy accesses before */
@@ -527,10 +529,6 @@ static void switch_tss(int tss_selector,
         stl_kernel(env->tr.base + (0x28 + 7 * 4), EDI);
         for(i = 0; i < 6; i++)
             stw_kernel(env->tr.base + (0x48 + i * 4), env->segs[i].selector);
-#ifdef VBOX
-        /* Must store the ldt as it gets reloaded and might have been changed. */
-        stw_kernel(env->tr.base + 0x60, env->ldt.selector);
-#endif
 #if defined(VBOX) && defined(DEBUG)
         printf("TSS 32 bits switch\n");
         printf("Saving CS=%08X\n", env->segs[R_CS].selector);
@@ -548,12 +546,37 @@ static void switch_tss(int tss_selector,
         stw_kernel(env->tr.base + (0x12 + 6 * 2), ESI);
         stw_kernel(env->tr.base + (0x12 + 7 * 2), EDI);
         for(i = 0; i < 4; i++)
-            stw_kernel(env->tr.base + (0x22 + i * 4), env->segs[i].selector);
-#ifdef VBOX
-        /* Must store the ldt as it gets reloaded and might have been changed. */
-        stw_kernel(env->tr.base + 0x2a, env->ldt.selector);
-#endif
+            stw_kernel(env->tr.base + (0x22 + i * 2), env->segs[i].selector);
     }
+
+#ifdef VBOX
+    /* read all the registers from the new TSS - may be the same as the old one */
+    if (type & 8) {
+        /* 32 bit */
+        new_cr3 = ldl_kernel(tss_base + 0x1c);
+        new_eip = ldl_kernel(tss_base + 0x20);
+        new_eflags = ldl_kernel(tss_base + 0x24);
+        for(i = 0; i < 8; i++)
+            new_regs[i] = ldl_kernel(tss_base + (0x28 + i * 4));
+        for(i = 0; i < 6; i++)
+            new_segs[i] = lduw_kernel(tss_base + (0x48 + i * 4));
+        new_ldt = lduw_kernel(tss_base + 0x60);
+        new_trap = ldl_kernel(tss_base + 0x64);
+    } else {
+        /* 16 bit */
+        new_cr3 = 0;
+        new_eip = lduw_kernel(tss_base + 0x0e);
+        new_eflags = lduw_kernel(tss_base + 0x10);
+        for(i = 0; i < 8; i++)
+            new_regs[i] = lduw_kernel(tss_base + (0x12 + i * 2)) | 0xffff0000;
+        for(i = 0; i < 4; i++)
+            new_segs[i] = lduw_kernel(tss_base + (0x22 + i * 2));
+        new_ldt = lduw_kernel(tss_base + 0x2a);
+        new_segs[R_FS] = 0;
+        new_segs[R_GS] = 0;
+        new_trap = 0;
+    }
+#endif
 
     /* now if an exception occurs, it will occurs in the next task
        context */
