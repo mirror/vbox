@@ -1059,14 +1059,6 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* Guest Additions < 4.3 don't support handling
-       guest files, skip. */
-    if (mData.mProtocolVersion < 2)
-    {
-        LogFlowThisFunc(("Installed Guest Additions don't support handling guest files, skipping\n"));
-        return VERR_NOT_SUPPORTED;
-    }
-
     int rc = VERR_MAX_PROCS_REACHED;
     if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
         return rc;
@@ -1114,28 +1106,22 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
     rc = pFile->openFile(&guestRc);
     if (RT_SUCCESS(rc))
     {
-        try
-        {
-            /* Add the created file to our vector. */
-            mData.mFiles[uNewFileID] = pFile;
-            mData.mNumObjects++;
-            Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
+        /* Add the created file to our vector. */
+        mData.mFiles[uNewFileID] = pFile;
+        mData.mNumObjects++;
+        Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-            LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
-                         openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+        LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+                     openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
 
-            alock.release(); /* Release lock before firing off event. */
+        alock.release(); /* Release lock before firing off event. */
 
-            fireGuestFileRegisteredEvent(mEventSource, this, pFile,
-                                         true /* Registered */);
-            if (pGuestRc)
-                *pGuestRc = guestRc;
-        }
-        catch (std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
-        }
+        fireGuestFileRegisteredEvent(mEventSource, this, pFile,
+                                     true /* Registered */);
     }
+
+    if (pGuestRc)
+        *pGuestRc = guestRc;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1642,22 +1628,15 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
         return rc;
 
     /* Add the created process to our map. */
-    try
-    {
-        mData.mProcesses[uNewProcessID] = pProcess;
-        mData.mNumObjects++;
-        Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
+    mData.mProcesses[uNewProcessID] = pProcess;
+    mData.mNumObjects++;
+    Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-        LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes, %ld objects)\n",
-                     mData.mSession.mID, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
+    fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProcess,
+                                    0 /* PID */, true /* Process registered */);
 
-        fireGuestProcessRegisteredEvent(mEventSource, this /* Session */, pProcess,
-                                        0 /* PID */, true /* Process registered */);
-    }
-    catch (std::bad_alloc &)
-    {
-        rc = VERR_NO_MEMORY;
-    }
+    LogFlowFunc(("Added new process (Session: %RU32) with process ID=%RU32 (now total %ld processes, %ld objects)\n",
+                 mData.mSession.mID, uNewProcessID, mData.mProcesses.size(), mData.mNumObjects));
 
     return rc;
 }
@@ -1840,7 +1819,7 @@ int GuestSession::queryInfo(void)
     uint32_t uVBoxMajor    = VBOX_FULL_VERSION_GET_MAJOR(uVerAdditions);
     uint32_t uVBoxMinor    = VBOX_FULL_VERSION_GET_MINOR(uVerAdditions);
 
-#if 1
+#if 0
     /* Hardcode the to-used protocol version; nice for testing side effects. */
     mData.mProtocolVersion = 2;
 #else
@@ -2774,11 +2753,6 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
     {
         switch (vrc)
         {
-            case VERR_NOT_SUPPORTED:
-                hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Handling guest files not supported by installed Guest Additions"));
-                break;
-
             case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestFile::setErrorExternal(this, guestRc);
                 break;
