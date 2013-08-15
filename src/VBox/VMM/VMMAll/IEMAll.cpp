@@ -3718,6 +3718,7 @@ static VBOXSTRICTRC iemRegRipRelativeJumpS8(PIEMCPU pIemCpu, int8_t offNextInstr
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
@@ -3741,8 +3742,9 @@ static VBOXSTRICTRC iemRegRipRelativeJumpS16(PIEMCPU pIemCpu, int16_t offNextIns
     if (   uNewIp > pCtx->cs.u32Limit
         && pIemCpu->enmCpuMode != IEMMODE_64BIT) /* no need to check for non-canonical. */
         return iemRaiseGeneralProtectionFault0(pIemCpu);
-    /** @todo Test 16-bit jump in 64-bit mode.  */
+    /** @todo Test 16-bit jump in 64-bit mode. possible?  */
     pCtx->rip = uNewIp;
+    pCtx->eflags.Bits.u1RF = 0;
 
     return VINF_SUCCESS;
 }
@@ -3781,6 +3783,7 @@ static VBOXSTRICTRC iemRegRipRelativeJumpS32(PIEMCPU pIemCpu, int32_t offNextIns
             return iemRaiseGeneralProtectionFault0(pIemCpu);
         pCtx->rip = uNewRip;
     }
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
@@ -3835,6 +3838,7 @@ static VBOXSTRICTRC iemRegRipJump(PIEMCPU pIemCpu, uint64_t uNewRip)
         IEM_NOT_REACHED_DEFAULT_CASE_RET();
     }
 
+    pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
 }
 
