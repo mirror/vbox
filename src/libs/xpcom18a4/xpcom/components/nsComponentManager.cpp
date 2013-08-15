@@ -2375,7 +2375,7 @@ nsComponentManagerImpl::GetServiceByContractID(const char* aContractID,
 
     mon.Enter();
 
-#ifdef XPCOM_CHECK_PENDING_CIDS 
+#ifdef XPCOM_CHECK_PENDING_CIDS
     if (entry)
         RemovePendingCID(entry->mCid);
 #endif
@@ -3722,8 +3722,21 @@ NS_GetServiceManager(nsIServiceManager* *result)
 
     if (nsComponentManagerImpl::gComponentManager == nsnull)
     {
+#ifdef VBOX
+        // While XPCOM might need initialization, we're not in a position
+        // to pass the right values to this call. This is actually triggered
+        // on object destruction, so there is no point in re-initializing,
+        // and actually the attempt would lead to nested calls to
+        // xptiInterfaceInfoManager::BuildFileSearchPath, which it detects
+        // as unsafe in debug builds. Just fail, no real problem.
+#ifdef DEBUG
+        printf("NS_GetServiceManager: no current instance, suppressed XPCOM initialization!\n");
+#endif
+        rv = NS_ERROR_SERVICE_NOT_AVAILABLE;
+#else /* !VBOX */
         // XPCOM needs initialization.
         rv = NS_InitXPCOM2(nsnull, nsnull, nsnull);
+#endif /* !VBOX */
     }
 
     if (NS_FAILED(rv))
