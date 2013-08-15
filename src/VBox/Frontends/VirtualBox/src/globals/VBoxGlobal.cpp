@@ -4256,7 +4256,7 @@ void VBoxGlobal::prepare()
     static const char * const s_kOSTypeIcons[][2] =
     {
         {"Other",           ":/os_other.png"},
-        {"Other_64",        ":/os_other.png"}, /// @todo os_other_64.png.
+        {"Other_64",        ":/os_other_64.png"},
         {"DOS",             ":/os_dos.png"},
         {"Netware",         ":/os_netware.png"},
         {"L4",              ":/os_l4.png"},
