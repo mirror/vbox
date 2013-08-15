@@ -512,6 +512,9 @@ typedef IEMCPU const *PCIEMCPU;
 /** ModR/M: reg only */
 #define IEMOPFORM_R             3
 
+/** Fixed register instruction, no R/M. */
+#define IEMOPFORM_FIXED         4
+
 /** The r/m is a register. */
 #define IEMOPFORM_MOD3          RT_BIT_32(8)
 /** The r/m is a memory access. */
