@@ -81,7 +81,7 @@ typedef HMR0FIRSTRC *PHMR0FIRSTRC;
 static struct
 {
     /** Per CPU globals. */
-    HMGLOBALCPUINFO                  aCpuInfo[RTCPUSET_MAX_CPUS];
+    HMGLOBALCPUINFO                 aCpuInfo[RTCPUSET_MAX_CPUS];
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
@@ -343,8 +343,8 @@ static bool hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum(void)
         || u == UINT32_C(0x000106E5) /* 322373.pdf - AAO95  - B1 - Intel Xeon Processor 3400 Series */
         || u == UINT32_C(0x000106E5) /* 322166.pdf - AAN92  - B1 - Intel CoreTM i7-800 and i5-700 Desktop Processor Series */
         || u == UINT32_C(0x000106E5) /* 320767.pdf - AAP86  - B1 - Intel Core i7-900 Mobile Processor Extreme Edition Series, Intel Core i7-800 and i7-700 Mobile Processor Series */
-        || u == UINT32_C(0x000106A0) /*?321333.pdf - AAM126 - C0 - Intel Xeon Processor 3500 Series Specification */
-        || u == UINT32_C(0x000106A1) /*?321333.pdf - AAM126 - C1 - Intel Xeon Processor 3500 Series Specification */
+        || u == UINT32_C(0x000106A0) /* 321333.pdf - AAM126 - C0 - Intel Xeon Processor 3500 Series Specification */
+        || u == UINT32_C(0x000106A1) /* 321333.pdf - AAM126 - C1 - Intel Xeon Processor 3500 Series Specification */
         || u == UINT32_C(0x000106A4) /* 320836.pdf - AAJ124 - C0 - Intel Core i7-900 Desktop Processor Extreme Edition Series and Intel Core i7-900 Desktop Processor Series */
         || u == UINT32_C(0x000106A5) /* 321333.pdf - AAM126 - D0 - Intel Xeon Processor 3500 Series Specification */
         || u == UINT32_C(0x000106A5) /* 321324.pdf - AAK139 - D0 - Intel Xeon Processor 5500 Series Specification */
@@ -1643,8 +1643,8 @@ VMMR0_INT_DECL(int)   HMR0SaveDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0_INT_DECL(int)   HMR0TestSwitcher3264(PVM pVM)
 {
-    PVMCPU   pVCpu = &pVM->aCpus[0];
-    PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
+    PVMCPU   pVCpu     = &pVM->aCpus[0];
+    PCPUMCTX pCtx      = CPUMQueryGuestCtxPtr(pVCpu);
     uint32_t aParam[5] = {0, 1, 2, 3, 4};
     int      rc;
 

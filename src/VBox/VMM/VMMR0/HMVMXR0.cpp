@@ -5506,18 +5506,18 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
     /*
      * If VT-x marks the segment as unusable, most other bits remain undefined:
      *    - For CS the L, D and G bits have meaning.
-     *    - For SS the DPL have meaning (it -is- the CPL for Intel and VBox).
+     *    - For SS the DPL has meaning (it -is- the CPL for Intel and VBox).
      *    - For the remaining data segments no bits are defined.
      *
-     * The present bit and the unused bit has been observed to be set at the
+     * The present bit and the unusable bit has been observed to be set at the
      * same time (the selector was supposed to invalid as we started executing
      * a V8086 interrupt in ring-0).
      *
      * What should be important for the rest of the VBox code that the P bit is
      * cleared.  Some of the other VBox code recognizes the unusable bit, but
      * AMD-V certainly don't, and REM doesn't really either.  So, to be on the
-     * safe side here we'll strip off P and other bits we don't care about.  If
-     * any code breaks because attr.u != 0 when Sel < 4, it should be fixed.
+     * safe side here, we'll strip off P and other bits we don't care about.  If
+     * any code breaks because Attr.u != 0 when Sel < 4, it should be fixed.
      *
      * See Intel spec. 27.3.2 "Saving Segment Registers and Descriptor-Table Registers".
      */
@@ -5528,6 +5528,7 @@ DECLINLINE(int) hmR0VmxReadSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t id
         /* Masking off: X86DESCATTR_P, X86DESCATTR_LIMIT_HIGH, and X86DESCATTR_AVL. The latter two are really irrelevant. */
         pSelReg->Attr.u &= X86DESCATTR_UNUSABLE | X86DESCATTR_L | X86DESCATTR_D | X86DESCATTR_G
                          | X86DESCATTR_DPL | X86DESCATTR_TYPE | X86DESCATTR_DT;
+
         Log4(("hmR0VmxReadSegmentReg: Unusable idxSel=%#x attr=%#x -> %#x\n", idxSel, u32Val, pSelReg->Attr.u));
 #ifdef DEBUG_bird
         AssertMsg((u32Val & ~X86DESCATTR_P) == pSelReg->Attr.u,
@@ -6192,9 +6193,9 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
         pMixedCtx->eflags.Bits.u1TF = 0;
         pVCpu->hm.s.fClearTrapFlag = false;
     }
-/** @todo there seems to be issues with the resume flag when the monitor trap
- *        flag is pending without being used. Seen early in bios init when
- *        accessing APIC page in prot mode. */
+    /** @todo there seems to be issues with the resume flag when the monitor trap
+     *        flag is pending without being used. Seen early in bios init when
+     *        accessing APIC page in prot mode. */
 
     /* On our way back from ring-3 the following needs to be done. */
     /** @todo This can change with preemption hooks. */
@@ -7490,8 +7491,8 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * Did the RIP change, if so, consider it a single step.
          * Otherwise, make sure one of the TFs gets set.
          */
-        int rc2 = hmR0VmxLoadGuestRip(pVCpu, pCtx);
-        rc2 |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pCtx);
+        int rc2 = hmR0VmxSaveGuestRip(pVCpu, pCtx);
+        rc2    |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pCtx);
         AssertRCReturn(rc2, rc2);
         if (   pCtx->rip    != uRipStart
             || pCtx->cs.Sel != uCsStart)
@@ -7750,7 +7751,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         AssertRCBreak(rc);
         Assert(u32Val == pVCpu->hm.s.vmx.u32ProcCtls);
 #endif
-        const bool fLongModeGuest = !!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
+        bool const fLongModeGuest = !!(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
 
         /*
          * RIP and RFLAGS.
