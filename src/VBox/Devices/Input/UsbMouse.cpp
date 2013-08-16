@@ -131,7 +131,6 @@ typedef struct USBHIDM_ACCUM
             int32_t     dx;
             int32_t     dy;
             int32_t     dz;
-            int32_t     dw;
         } Relative;
         struct
         {
@@ -245,7 +244,6 @@ typedef struct USBHIDM_REPORT
     int8_t      dx;
     int8_t      dy;
     int8_t      dz;
-    int8_t      dw;
 } USBHIDM_REPORT, *PUSBHIDM_REPORT;
 
 /**
@@ -386,12 +384,10 @@ static const uint8_t g_UsbHidMReportDesc[] =
     /* Usage */                     0x09, 0x30,     /* X */
     /* Usage */                     0x09, 0x31,     /* Y */
     /* Usage */                     0x09, 0x38,     /* Z (wheel) */
-    /* Usage Page */                0x05, 0x0C,     /* Consumer Devices */
-    /* Usage */                     0x0A, 0x38, 0x02,/* AC Pan (horizontal wheel) */
     /* Logical Minimum */           0x15, 0x81,     /* -127 */
     /* Logical Maximum */           0x25, 0x7F,     /* +127 */
     /* Report Size */               0x75, 0x08,     /* 8 */
-    /* Report Count */              0x95, 0x04,     /* 4 */
+    /* Report Count */              0x95, 0x03,     /* 3 */
     /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
     /* End Collection */            0xC0,
     /* End Collection */            0xC0,
@@ -1211,11 +1207,10 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         pReport->m.dx       = clamp_i8(pAccumulated->u.Relative.dx);
         pReport->m.dy       = clamp_i8(pAccumulated->u.Relative.dy);
         pReport->m.dz       = clamp_i8(pAccumulated->u.Relative.dz);
-        pReport->m.dw       = clamp_i8(pAccumulated->u.Relative.dw);
     
         cbCopy = sizeof(pReport->m);
-        LogRel3(("Rel event, dx=%d, dy=%d, dz=%d, dw=%d, fButtons=%02x, report size %d\n",
-                 pReport->m.dx, pReport->m.dy, pReport->m.dz, pReport->m.dw,
+        LogRel3(("Rel event, dx=%d, dy=%d, dz=%d, fButtons=%02x, report size %d\n",
+                 pReport->m.dx, pReport->m.dy, pReport->m.dz,
                  pReport->m.fButtons, cbCopy));
         break;
     default:
@@ -1439,7 +1434,6 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface,
     pThis->PtrDelta.u.Relative.dx      += dx;
     pThis->PtrDelta.u.Relative.dy      += dy;
     pThis->PtrDelta.u.Relative.dz      -= dz;    /* Inverted! */
-    pThis->PtrDelta.u.Relative.dw      += dw;
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);

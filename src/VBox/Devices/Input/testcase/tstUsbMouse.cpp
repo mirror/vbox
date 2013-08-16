@@ -184,8 +184,7 @@ static void testSendPositionRel(RTTEST hTest)
                 if (   Urb.abData[0] != 3    /* Buttons */
                     || Urb.abData[1] != 123  /* x */
                     || Urb.abData[2] != 240  /* 256 - y */
-                    || Urb.abData[3] != 255  /* z */
-                    || Urb.abData[4] != 255  /* w */)
+                    || Urb.abData[3] != 255  /* z */)
                     rc = VERR_GENERAL_FAILURE;
             }
             else
