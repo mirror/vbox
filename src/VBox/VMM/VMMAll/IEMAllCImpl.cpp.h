@@ -2193,15 +2193,6 @@ static void iemCImplCommonV8086LoadSeg(PCPUMSELREG pSReg, uint16_t uSeg)
 IEM_CIMPL_DEF_5(iemCImpl_iret_prot_v8086, PCPUMCTX, pCtx, uint32_t, uNewEip, uint16_t, uNewCs,
                 uint32_t, uNewFlags, uint64_t, uNewRsp)
 {
-#if 0
-    if (!LogIs6Enabled())
-    {
-        RTLogGroupSettings(NULL, "iem.eo.l6.l2");
-        RTLogFlags(NULL, "enabled");
-        return VERR_IEM_RESTART_INSTRUCTION;
-    }
-#endif
-
     /*
      * Pop the V8086 specific frame bits off the stack.
      */
@@ -2346,6 +2337,36 @@ IEM_CIMPL_DEF_1(iemCImpl_iret_prot, IEMMODE, enmEffOpSize)
         Log(("iret %04x:%08x - not code segment (%#x) -> #GP\n", uNewCs, uNewEip, DescCS.Legacy.Gen.u4Type));
         return iemRaiseGeneralProtectionFaultBySelector(pIemCpu, uNewCs);
     }
+
+#ifdef VBOX_WITH_RAW_MODE_NOT_R0
+    /* Raw ring-0 and ring-1 compression adjustments for PATM performance tricks and other CS leaks. */
+    PVM pVM = IEMCPU_TO_VM(pIemCpu);
+    if (EMIsRawRing0Enabled(pVM) && !HMIsEnabled(pVM))
+    {
+        if ((uNewCs & X86_SEL_RPL) == 1)
+        {
+            if (   pIemCpu->uCpl == 0
+                && (   !EMIsRawRing1Enabled(pVM)
+                    || pCtx->cs.Sel == (uNewCs & X86_SEL_MASK_OFF_RPL)) )
+            {
+                Log(("iret: Ring-0 compression fix: uNewCS=%#x -> %#x\n", uNewCs, uNewCs & X86_SEL_MASK_OFF_RPL));
+                uNewCs &= X86_SEL_MASK_OFF_RPL;
+            }
+# ifdef LOG_ENABLED
+            else if (pIemCpu->uCpl <= 1 && EMIsRawRing1Enabled(pVM))
+                Log(("iret: uNewCs=%#x genuine return to ring-1.\n", uNewCs));
+# endif
+        }
+        else if (   (uNewCs & X86_SEL_RPL) == 2
+                 && EMIsRawRing1Enabled(pVM)
+                 && pIemCpu->uCpl <= 1)
+        {
+            Log(("iret: Ring-1 compression fix: uNewCS=%#x -> %#x\n", uNewCs, (uNewCs & X86_SEL_MASK_OFF_RPL) | 1));
+            uNewCs = (uNewCs & X86_SEL_MASK_OFF_RPL) | 2;
+        }
+    }
+#endif /* VBOX_WITH_RAW_MODE_NOT_R0 */
+
 
     /* Privilege checks. */
     if ((uNewCs & X86_SEL_RPL) < pIemCpu->uCpl)
