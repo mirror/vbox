@@ -223,7 +223,7 @@ int NativeEventQueue::init()
            we're called on the right thread. */
         nsCOMPtr<nsIEventQueue> q;
         nsresult rv = NS_GetMainEventQ(getter_AddRefs(q));
-        Assert(NS_SUCCEEDED(rv));
+        AssertComRCReturnRC(rv);
         Assert(q == sMainQueue->mEventQ);
 
         /* Check that it's a native queue. */
