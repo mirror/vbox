@@ -106,8 +106,9 @@ int main()
             break;
         }
 
-        /** @todo Sharing modes are not implemented yet, so just assume default ones. */
-        uMode |= RTFILE_O_DENY_NONE;
+        /** @todo Testing sharing modes are not implemented yet,
+         *        so just remove them from testing. */
+        uMode &= ~RTFILE_O_DENY_NONE;
 
         if (   RT_SUCCESS(iResult)
             && uMode != aTests[iTest].uMode)
