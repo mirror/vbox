@@ -986,6 +986,7 @@ static void ataPIOTransferStart(ATADevState *s, uint32_t start, uint32_t size)
     s->iIOBufferPIODataStart = start;
     s->iIOBufferPIODataEnd = start + size;
     ataSetStatus(s, ATA_STAT_DRQ | ATA_STAT_SEEK);
+    ataUnsetStatus(s, ATA_STAT_BUSY);
 }
 
 
