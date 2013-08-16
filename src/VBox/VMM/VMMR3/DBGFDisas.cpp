@@ -733,7 +733,8 @@ VMMR3_INT_DECL(int) DBGFR3DisasInstrCurrent(PVMCPU pVCpu, char *pszOutput, uint3
 
     RTGCPTR GCPtr = 0;
     return dbgfR3DisasInstrExOnVCpu(pVCpu->pVMR3, pVCpu, 0, &GCPtr,
-                                    DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE,
+                                    DBGF_DISAS_FLAGS_CURRENT_GUEST | DBGF_DISAS_FLAGS_DEFAULT_MODE
+                                    | DBGF_DISAS_FLAGS_ANNOTATE_PATCHED,
                                     pszOutput, cbOutput, NULL);
 }
 
