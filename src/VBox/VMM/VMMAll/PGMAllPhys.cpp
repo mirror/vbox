@@ -1032,9 +1032,6 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
     if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2
         || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
     {
-        /* Fend off the VT-x APIC access page hack. */
-        AssertLogRelReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, VERR_PGM_MAP_MMIO2_ALIAS_MMIO);
-
         /* Decode the page id to a page in a MMIO2 ram range. */
         uint8_t  idMmio2 = PGM_MMIO2_PAGEID_GET_MMIO2_ID(PGM_PAGE_GET_PAGEID(pPage));
         uint32_t iPage   = PGM_MMIO2_PAGEID_GET_IDX(PGM_PAGE_GET_PAGEID(pPage));
