@@ -161,8 +161,6 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
 
-        pVCpu->em.s.offVMCPU = RT_OFFSETOF(VMCPU, em.s);
-
         pVCpu->em.s.enmState     = (i == 0) ? EMSTATE_NONE : EMSTATE_WAIT_SIPI;
         pVCpu->em.s.enmPrevState = EMSTATE_NONE;
         pVCpu->em.s.fForceRAW    = false;
@@ -420,6 +418,7 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         EM_REG_PROFILE(&pVCpu->em.s.StatHmEntry,    "/PROF/CPU%d/EM/HmEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
         EM_REG_PROFILE(&pVCpu->em.s.StatHmExec,     "/PROF/CPU%d/EM/HmExec",         "Profiling Hardware Accelerated Mode execution.");
         EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,     "/PROF/CPU%d/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMThenREM, "/PROF/CPU%d/EM/IEMThenRem",        "Profiling IEM-then-REM instruction execution (by IEM).");
         EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,     "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
         EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,    "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
         EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,    "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
@@ -668,6 +667,7 @@ static DECLCALLBACK(VBOXSTRICTRC) emR3SetExecutionPolicy(PVM pVM, PVMCPU pVCpu, 
            || pVCpu->em.s.enmState == EMSTATE_HM
            || pVCpu->em.s.enmState == EMSTATE_IEM
            || pVCpu->em.s.enmState == EMSTATE_REM
+           || pVCpu->em.s.enmState == EMSTATE_IEM_THEN_REM
          ? VINF_EM_RESCHEDULE
          : VINF_SUCCESS;
 }
@@ -777,6 +777,7 @@ static const char *emR3GetStateName(EMSTATE enmState)
         case EMSTATE_DEBUG_GUEST_REM:   return "EMSTATE_DEBUG_GUEST_REM";
         case EMSTATE_DEBUG_HYPER:       return "EMSTATE_DEBUG_HYPER";
         case EMSTATE_GURU_MEDITATION:   return "EMSTATE_GURU_MEDITATION";
+        case EMSTATE_IEM_THEN_REM:      return "EMSTATE_IEM_THEN_REM";
         default:                        return "Unknown!";
     }
 }
@@ -1248,6 +1249,57 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 #endif /* DEBUG */
 
 
+static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
+{
+    LogFlow(("emR3ExecuteIemThenRem: %04x:%RGv\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
+    *pfFFDone = false;
+
+    /*
+     * Execute in IEM for a while.
+     */
+    while (pVCpu->em.s.cIemThenRemInstructions < 1024)
+    {
+        VBOXSTRICTRC rcStrict = IEMExecLots(pVCpu);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+                || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+                break;
+
+            pVCpu->em.s.cIemThenRemInstructions++;
+            Log(("emR3ExecuteIemThenRem: returns %Rrc after %u instructions\n",
+                 VBOXSTRICTRC_VAL(rcStrict), pVCpu->em.s.cIemThenRemInstructions));
+            return rcStrict;
+        }
+        pVCpu->em.s.cIemThenRemInstructions++;
+
+        EMSTATE enmNewState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+        if (enmNewState != EMSTATE_REM && enmNewState != EMSTATE_IEM_THEN_REM)
+        {
+            LogFlow(("emR3ExecuteIemThenRem: -> %d (%s) after %u instructions\n",
+                     enmNewState, emR3GetStateName(enmNewState), pVCpu->em.s.cIemThenRemInstructions));
+            pVCpu->em.s.enmPrevState = pVCpu->em.s.enmState;
+            pVCpu->em.s.enmState     = enmNewState;
+            return VINF_SUCCESS;
+        }
+
+        /*
+         * Check for pending actions.
+         */
+        if (   VM_FF_IS_PENDING(pVM, VM_FF_ALL_REM_MASK)
+            || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_ALL_REM_MASK))
+            return VINF_SUCCESS;
+    }
+
+    /*
+     * Switch to REM.
+     */
+    Log(("emR3ExecuteIemThenRem: -> EMSTATE_REM (after %u instructions)\n", pVCpu->em.s.cIemThenRemInstructions));
+    pVCpu->em.s.enmState = EMSTATE_REM;
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Decides whether to execute RAW, HWACC or REM.
  *
@@ -1294,7 +1346,11 @@ EMSTATE emR3Reschedule(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * Note! Raw mode and hw accelerated mode are incompatible. The latter
          *       turns off monitoring features essential for raw mode!
          */
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+        return EMSTATE_IEM_THEN_REM;
+#else
         return EMSTATE_REM;
+#endif
     }
 
     /*
@@ -2057,6 +2113,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
             pVCpu->em.s.enmState = pVCpu->em.s.enmPrevState;
         else
             pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+        pVCpu->em.s.cIemThenRemInstructions = 0;
         Log(("EMR3ExecuteVM: enmState=%s\n", emR3GetStateName(pVCpu->em.s.enmState)));
 
         STAM_REL_PROFILE_ADV_START(&pVCpu->em.s.StatTotal, x);
@@ -2123,9 +2180,28 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                  * Reschedule - to recompiled execution.
                  */
                 case VINF_EM_RESCHEDULE_REM:
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+                    Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
+                    if (HMIsEnabled(pVM))
+                    {
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_IEM_THEN_REM)\n",
+                              enmOldState, EMSTATE_IEM_THEN_REM));
+                        if (pVCpu->em.s.enmState != EMSTATE_IEM_THEN_REM)
+                        {
+                            pVCpu->em.s.enmState = EMSTATE_IEM_THEN_REM;
+                            pVCpu->em.s.cIemThenRemInstructions = 0;
+                        }
+                    }
+                    else
+                    {
+                        Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", enmOldState, EMSTATE_REM));
+                        pVCpu->em.s.enmState = EMSTATE_REM;
+                    }
+#else
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE_REM: %d -> %d (EMSTATE_REM)\n", enmOldState, EMSTATE_REM));
                     Assert(!pVM->em.s.fIemExecutesAll || pVCpu->em.s.enmState != EMSTATE_IEM);
                     pVCpu->em.s.enmState = EMSTATE_REM;
+#endif
                     break;
 
                 /*
@@ -2149,6 +2225,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 {
                     EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
                     Log2(("EMR3ExecuteVM: VINF_EM_RESCHEDULE: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
+                    if (pVCpu->em.s.enmState != enmState && enmState == EMSTATE_IEM_THEN_REM)
+                        pVCpu->em.s.cIemThenRemInstructions = 0;
                     pVCpu->em.s.enmState = enmState;
                     break;
                 }
@@ -2191,6 +2269,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     {
                         EMSTATE enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
                         Log2(("EMR3ExecuteVM: VINF_EM_RESET: %d -> %d (%s)\n", enmOldState, enmState, emR3GetStateName(enmState)));
+                        if (pVCpu->em.s.enmState != enmState && enmState == EMSTATE_IEM_THEN_REM)
+                            pVCpu->em.s.cIemThenRemInstructions = 0;
                         pVCpu->em.s.enmState = enmState;
                     }
                     else
@@ -2327,6 +2407,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                     && (   enmNewState == EMSTATE_RAW
                         || enmNewState == EMSTATE_HM
                         || enmNewState == EMSTATE_REM
+                        || enmNewState == EMSTATE_IEM_THEN_REM
                         || enmNewState == EMSTATE_DEBUG_GUEST_RAW
                         || enmNewState == EMSTATE_DEBUG_GUEST_HM
                         || enmNewState == EMSTATE_DEBUG_GUEST_IEM
@@ -2395,6 +2476,18 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         Assert(rc != VINF_EM_RESCHEDULE_HM);
                     }
                     fFFDone = false;
+                    break;
+                }
+
+                /*
+                 * Execute in IEM, hoping we can quickly switch aback to HM
+                 * or RAW execution.  If our hopes fail, we go to REM.
+                 */
+                case EMSTATE_IEM_THEN_REM:
+                {
+                    STAM_PROFILE_START(&pVCpu->em.s.StatIEMThenREM, pIemThenRem);
+                    rc = VBOXSTRICTRC_TODO(emR3ExecuteIemThenRem(pVM, pVCpu, &fFFDone));
+                    STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMThenREM, pIemThenRem);
                     break;
                 }
 

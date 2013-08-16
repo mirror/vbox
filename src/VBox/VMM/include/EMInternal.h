@@ -336,10 +336,6 @@ typedef EM *PEM;
  */
 typedef struct EMCPU
 {
-    /** Offset to the VM structure.
-     * See EMCPU2VM(). */
-    RTUINT                  offVMCPU;
-
     /** Execution Manager State. */
     EMSTATE volatile        enmState;
 
@@ -352,6 +348,10 @@ typedef struct EMCPU
     bool                    fForceRAW;
 
     uint8_t                 u8Padding[3];
+
+    /** The number of instructions we've executed in IEM since switching to the
+     *  EMSTATE_IEM_THEN_REM state. */
+    uint32_t                cIemThenRemInstructions;
 
     /** Inhibit interrupts for this instruction. Valid only when VM_FF_INHIBIT_INTERRUPTS is set. */
     RTGCUINTPTR             GCPtrInhibitInterrupts;
@@ -412,6 +412,7 @@ typedef struct EMCPU
     STAMPROFILEADV          StatHmEntry;
     STAMPROFILE             StatHmExec;
     STAMPROFILE             StatIEMEmu;
+    STAMPROFILE             StatIEMThenREM;
     STAMPROFILE             StatREMEmu;
     STAMPROFILE             StatREMExec;
     STAMPROFILE             StatREMSync;
