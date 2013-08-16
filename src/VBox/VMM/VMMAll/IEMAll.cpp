@@ -93,6 +93,9 @@
 #include <VBox/vmm/dbgftrace.h>
 #ifdef VBOX_WITH_RAW_MODE_NOT_R0
 # include <VBox/vmm/patm.h>
+# if defined(VBOX_WITH_CALL_RECORD) || defined(REM_MONITOR_CODE_PAGES)
+#  include <VBox/vmm/csam.h>
+# endif
 #endif
 #include "IEMInternal.h"
 #ifdef IEM_VERIFICATION_MODE_FULL
@@ -1018,25 +1021,38 @@ static VBOXSTRICTRC iemInitDecoderAndPrefetchOpcodes(PIEMCPU pIemCpu, bool fBypa
     /*
      * Read the bytes at this address.
      */
-    uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
-    if (cbToTryRead > cbLeftOnPage)
-        cbToTryRead = cbLeftOnPage;
-    if (cbToTryRead > sizeof(pIemCpu->abOpcode))
-        cbToTryRead = sizeof(pIemCpu->abOpcode);
-    /** @todo PATM: Read original, unpatched bytes? EMAll.cpp doesn't seem to be
-     *        doing that. */
-    if (!pIemCpu->fBypassHandlers)
-        rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, pIemCpu->abOpcode, cbToTryRead);
-    else
-        rc = PGMPhysSimpleReadGCPhys(IEMCPU_TO_VM(pIemCpu), pIemCpu->abOpcode, GCPhys, cbToTryRead);
-    if (rc != VINF_SUCCESS)
+    PVM pVM = IEMCPU_TO_VM(pIemCpu);
+#if defined(IN_RING3) && defined(VBOX_WITH_RAW_MODE_NOT_R0)
+    size_t cbActual;
+    if (   PATMIsEnabled(pVM)
+        && RT_SUCCESS(PATMR3ReadOrgInstr(pVM, GCPtrPC, pIemCpu->abOpcode, sizeof(pIemCpu->abOpcode), &cbActual)))
     {
-        /** @todo status code handling */
-        Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
-             GCPtrPC, GCPhys, rc, cbToTryRead));
-        return rc;
+        Log4(("decode - Read %u unpatched bytes at %RGv\n", cbActual, GCPtrPC));
+        Assert(cbActual > 0);
+        pIemCpu->cbOpcode = (uint8_t)cbActual;
     }
-    pIemCpu->cbOpcode = cbToTryRead;
+    else
+#endif
+    {
+        uint32_t cbLeftOnPage = PAGE_SIZE - (GCPtrPC & PAGE_OFFSET_MASK);
+        if (cbToTryRead > cbLeftOnPage)
+            cbToTryRead = cbLeftOnPage;
+        if (cbToTryRead > sizeof(pIemCpu->abOpcode))
+            cbToTryRead = sizeof(pIemCpu->abOpcode);
+
+        if (!pIemCpu->fBypassHandlers)
+            rc = PGMPhysRead(pVM, GCPhys, pIemCpu->abOpcode, cbToTryRead);
+        else
+            rc = PGMPhysSimpleReadGCPhys(pVM, pIemCpu->abOpcode, GCPhys, cbToTryRead);
+        if (rc != VINF_SUCCESS)
+        {
+            /** @todo status code handling */
+            Log(("iemInitDecoderAndPrefetchOpcodes: %RGv/%RGp LB %#x - read error - rc=%Rrc (!!)\n",
+                 GCPtrPC, GCPhys, rc, cbToTryRead));
+            return rc;
+        }
+        pIemCpu->cbOpcode = cbToTryRead;
+    }
 
     return VINF_SUCCESS;
 }
@@ -1136,6 +1152,10 @@ static VBOXSTRICTRC iemOpcodeFetchMoreBytes(PIEMCPU pIemCpu, size_t cbMin)
 
     /*
      * Read the bytes at this address.
+     *
+     * We read all unpatched bytes in iemInitDecoderAndPrefetchOpcodes already,
+     * and since PATM should only patch the start of an instruction there
+     * should be no need to check again here.
      */
     if (!pIemCpu->fBypassHandlers)
         rc = PGMPhysRead(IEMCPU_TO_VM(pIemCpu), GCPhys, &pIemCpu->abOpcode[pIemCpu->cbOpcode], cbToTryRead);
