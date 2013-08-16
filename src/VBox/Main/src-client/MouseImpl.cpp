@@ -473,7 +473,12 @@ void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
 {
     /* If mouse button is pressed, we generate new event, to avoid reusable events coalescing and thus
        dropping key press events */
-    GuestMouseEventMode_T mode = fAbsolute? GuestMouseEventMode_Absolute: GuestMouseEventMode_Relative;
+    GuestMouseEventMode_T mode;
+    if (fAbsolute)
+        mode = GuestMouseEventMode_Absolute;
+    else
+        mode = GuestMouseEventMode_Relative;
+
     if (fButtons != 0)
     {
         VBoxEventDesc evDesc;
