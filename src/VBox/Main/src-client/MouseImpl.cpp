@@ -455,10 +455,7 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
             cJiggle = !fUsesVMMDevEvent;
         }
         else
-        {
             rc = reportAbsEventToMouseDev(x, y, 0, 0, fButtons);
-            fButtons = 0;
-        }
     }
     if (SUCCEEDED(rc))
         rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
