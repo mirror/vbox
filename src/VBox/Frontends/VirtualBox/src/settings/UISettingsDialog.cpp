@@ -56,14 +56,14 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Loading/saving stuff: */
     , m_fLoaded(false)
     , m_fSaved(false)
-    /* Status bar stuff: */
-    , m_pStatusBar(new QStackedWidget(this))
-    /* Process bar stuff: */
-    , m_pProcessBar(new QProgressBar(this))
-    /* Error/Warning stuff: */
+    /* Status-bar stuff: */
+    , m_pStatusBar(0)
+    /* Process-bar stuff: */
+    , m_pProcessBar(0)
+    /* Warning-pane stuff: */
+    , m_pWarningPane(0)
     , m_fValid(true)
     , m_fSilent(true)
-    , m_pWarningPane(new UIWarningPane(this))
     /* Whats-this stuff: */
     , m_pWhatsThisTimer(new QTimer(this))
     , m_pWhatsThisCandidate(0)
@@ -71,19 +71,13 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     /* Apply UI decorations: */
     Ui::UISettingsDialog::setupUi(this);
 
-#ifdef Q_WS_MAC
-    /* No status bar on the mac: */
-    setSizeGripEnabled(false);
-    setStatusBar(0);
-#endif /* Q_WS_MAC */
-
     /* Page-title font is derived from the system font: */
     QFont pageTitleFont = font();
     pageTitleFont.setBold(true);
     pageTitleFont.setPointSize(pageTitleFont.pointSize() + 2);
     m_pLbTitle->setFont(pageTitleFont);
 
-    /* Get main grid layout: */
+    /* Prepare selector: */
     QGridLayout *pMainLayout = static_cast<QGridLayout*>(centralWidget()->layout());
 #ifdef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     /* No page-title with tool-bar: */
@@ -102,37 +96,42 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
     m_pSelector->widget()->setFocus();
     pMainLayout->setSpacing(10);
 #endif /* VBOX_GUI_WITH_TOOLBAR_SETTINGS */
+    connect(m_pSelector, SIGNAL(categoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
 
-    /* Creating stack of pages: */
+    /* Prepare page-stack: */
     m_pStack = new QStackedWidget(m_pWtStackHandler);
     popupCenter().setPopupStackOrientation(m_pStack, UIPopupStackOrientation_Bottom);
     QVBoxLayout *pStackLayout = new QVBoxLayout(m_pWtStackHandler);
     pStackLayout->setContentsMargins(0, 0, 0, 0);
     pStackLayout->addWidget(m_pStack);
 
-    /* Status bar: */
-    m_pStatusBar->addWidget(new QWidget);
-    m_pButtonBox->addExtraWidget(m_pStatusBar);
+    /* Prepare button-box: */
+    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
+    connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
 
-    /* Setup process bar stuff: */
-    m_pStatusBar->addWidget(m_pProcessBar);
+    /* Prepare process-bar: */
+    m_pProcessBar = new QProgressBar;
 
-    /* Setup error & warning stuff: */
-    m_pStatusBar->addWidget(m_pWarningPane);
+    /* Prepare warning-pane: */
+    m_pWarningPane = new UIWarningPane;
     connect(m_pWarningPane, SIGNAL(sigHoverEnter()), this, SLOT(sltHandleWarningPaneHovered()));
     connect(m_pWarningPane, SIGNAL(sigHoverLeave()), this, SLOT(sltHandleWarningPaneUnhovered()));
+
+    /* Prepare status-bar: */
+    m_pStatusBar = new QStackedWidget;
+    /* Add empty widget: */
+    m_pStatusBar->addWidget(new QWidget);
+    /* Add process-bar widget: */
+    m_pStatusBar->addWidget(m_pProcessBar);
+    /* Add warning-pane: */
+    m_pStatusBar->addWidget(m_pWarningPane);
+    /* Add status-bar to button-box: */
+    m_pButtonBox->addExtraWidget(m_pStatusBar);
 
     /* Setup whatsthis stuff: */
     qApp->installEventFilter(this);
     m_pWhatsThisTimer->setSingleShot(true);
     connect(m_pWhatsThisTimer, SIGNAL(timeout()), this, SLOT(sltUpdateWhatsThis()));
-
-    /* Set the default button: */
-    m_pButtonBox->button(QDialogButtonBox::Ok)->setDefault(true);
-
-    /* Setup connections: */
-    connect(m_pSelector, SIGNAL(categoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
-    connect(m_pButtonBox, SIGNAL(helpRequested()), &msgCenter(), SLOT(sltShowHelpHelpDialog()));
 
     /* Translate UI: */
     retranslateUi();
@@ -334,6 +333,7 @@ void UISettingsDialog::revalidate()
     m_fSilent = true;
     setError(QString());
     setWarning(QString());
+    m_pWarningPane->setWarningText(QString());
 
     /* Enumerating all the validators we have: */
     QList<UIPageValidator*> validators(findChildren<UIPageValidator*>());
@@ -370,10 +370,10 @@ void UISettingsDialog::revalidate()
         }
     }
 
-    /* Make sure message-pane visible if necessary: */
+    /* Make sure warning-pane visible if necessary: */
     if ((!m_fValid || !m_fSilent) && m_pStatusBar->currentIndex() == 0)
         m_pStatusBar->setCurrentWidget(m_pWarningPane);
-    /* Make sure whats-this-pane visible otherwise: */
+    /* Make sure empty-pane visible otherwise: */
     else if (m_fValid && m_fSilent && m_pStatusBar->currentWidget() == m_pWarningPane)
         m_pStatusBar->setCurrentIndex(0);
 
