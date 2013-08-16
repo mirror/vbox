@@ -20595,7 +20595,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="GuestMouseEventMode"
-    uuid="5eff2374-9a4e-4c47-aaee-8815e5ce58c2"
+    uuid="4b500146-ebba-4b7c-bc29-69c2d57a5caf"
     >
 
     <desc>
@@ -20617,17 +20617,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Absolute event.
       </desc>
     </const>
-
-    <const name="MultiTouch" value="2">
-      <desc>
-        Multi-touch event.
-      </desc>
-    </const>
   </enum>
 
   <interface
     name="IGuestMouseEvent" extends="IReusableEvent"
-    uuid="1f85d35c-c524-40ff-8e98-307000df0992"
+    uuid="179f8647-319c-4e7e-8150-c5837bd265f6"
     wsmap="managed" autogen="VBoxEvent" id="OnGuestMouse"
     >
     <desc>
@@ -20664,19 +20658,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="contact" type="long" readonly="yes">
-      <desc>
-        The multi-touch contact identifier.  This remains valid as long as a
-        touch is in progress and can and should be re-used after a touch has
-        terminated (see @a buttons).
-      </desc>
-    </attribute>
-
     <attribute name="buttons" type="long" readonly="yes">
       <desc>
-        Button state bitmask.  Multi-touch events should have the first bit set
-        as long as the touch is in progress and terminate with an event with no
-        bits set.
+        Button state bitmask.
       </desc>
     </attribute>
 

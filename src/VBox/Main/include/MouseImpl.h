@@ -127,7 +127,7 @@ private:
     VBoxEventDesc                mMouseEvent;
 
     void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
-                        LONG cContact, LONG fButtons);
+                        LONG fButtons);
 };
 
 #endif // !____H_MOUSEIMPL
