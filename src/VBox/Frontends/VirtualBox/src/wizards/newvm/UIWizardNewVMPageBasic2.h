@@ -24,7 +24,7 @@
 
 /* Forward declarations: */
 class VBoxGuestRAMSlider;
-class QILineEdit;
+class QSpinBox;
 class QLabel;
 class QIRichTextLabel;
 
@@ -37,12 +37,12 @@ protected:
     UIWizardNewVMPage2();
 
     /* Handlers: */
-    void onRamSliderValueChanged(int iValue);
-    void onRamEditorTextChanged(const QString &strText);
+    void onRamSliderValueChanged();
+    void onRamEditorValueChanged();
 
     /* Widgets: */
     VBoxGuestRAMSlider *m_pRamSlider;
-    QILineEdit *m_pRamEditor;
+    QSpinBox *m_pRamEditor;
     QLabel *m_pRamMin;
     QLabel *m_pRamMax;
     QLabel *m_pRamUnits;
@@ -61,8 +61,8 @@ public:
 private slots:
 
     /* Handlers: */
-    void sltRamSliderValueChanged(int iValue);
-    void sltRamEditorTextChanged(const QString &strText);
+    void sltRamSliderValueChanged();
+    void sltRamEditorValueChanged();
 
 private:
 
