@@ -579,6 +579,11 @@
 #define VERR_PGM_PHYS_NULL_PAGE_PARAM           (-1681)
 /** PCI passthru is not supported by this build. */
 #define VERR_PGM_PCI_PASSTHRU_MISCONFIG         (-1682)
+/** Too many MMIO2 ranges. */
+#define VERR_PGM_TOO_MANY_MMIO2_RANGES          (-1683)
+/** Internal processing error in the PGM physial page mapping code dealing
+ * with MMIO2 pages. */
+#define VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE        (-1684)
 /** @} */
 
 
