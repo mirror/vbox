@@ -1933,7 +1933,7 @@ static bool atapiPassthroughSS(ATADevState *s)
     uint32_t cbTransfer;
     PSTAMPROFILEADV pProf = NULL;
 
-    cbTransfer = RT_MIN(s->cbElementaryTransfer, s->cbIOBuffer);
+    cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
 
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         Log3(("ATAPI PT data write (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
@@ -2161,10 +2161,12 @@ static bool atapiPassthroughSS(ATADevState *s)
             Assert(cbTransfer <= s->cbTotalTransfer);
             /*
              * Reply with the same amount of data as the real drive
-             * but only if the command wasn't splitted.
+             * but only if the command wasn't split.
              */
+#if 0   //@todo: This destroys commands where cbTotalTransfer > cbIOBuffer
             if (s->cbElementaryTransfer < s->cbIOBuffer)
                 s->cbTotalTransfer = cbTransfer;
+#endif
 
             if (   s->aATAPICmd[0] == SCSI_INQUIRY
                 && s->fOverwriteInquiry)
@@ -3691,7 +3693,7 @@ static void atapiParseCmdPassthrough(ATADevState *s)
         sendcmd:
             /*
              * Send a command to the drive, passing data in/out as required.
-             * Commands which exceed the I/O buffer size are splitted below
+             * Commands which exceed the I/O buffer size are split below
              * or aborted if splitting is not implemented.
              */
             Log2(("ATAPI PT: max size %d\n", cbTransfer));
