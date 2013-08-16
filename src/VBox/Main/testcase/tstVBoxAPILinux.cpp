@@ -280,14 +280,14 @@ void createVM(IVirtualBox *virtualBox)
                                                   getter_AddRefs(session));
         if (NS_FAILED(rc))
         {
-            RTPrintf("Error, could not instantiate session object! rc=0x%x\n", rc);
+            RTPrintf("Error, could not instantiate session object! rc=%Rhrc\n", rc);
             return;
         }
 
         rc = machine->LockMachine(session, LockType_Write);
         if (NS_FAILED(rc))
         {
-            RTPrintf("Error, could not lock the machine for the session! rc=0x%x\n", rc);
+            RTPrintf("Error, could not lock the machine for the session! rc=%Rhrc\n", rc);
             return;
         }
 
@@ -299,7 +299,7 @@ void createVM(IVirtualBox *virtualBox)
         rc = session->GetMachine(getter_AddRefs(sessionMachine));
         if (NS_FAILED(rc))
         {
-            RTPrintf("Error, could not get machine session! rc=0x%x\n", rc);
+            RTPrintf("Error, could not get machine session! rc=%Rhrc\n", rc);
             return;
         }
     }
@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
         rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), nsnull, nsnull);
         if (NS_FAILED(rc))
         {
-            RTPrintf("Error: XPCOM could not be initialized! rc=0x%x\n", rc);
+            RTPrintf("Error: XPCOM could not be initialized! rc=%Rhrc\n", rc);
             return -1;
         }
 
@@ -544,7 +544,7 @@ int main(int argc, char *argv[])
                                                   getter_AddRefs(virtualBox));
         if (NS_FAILED(rc))
         {
-            RTPrintf("Error, could not instantiate VirtualBox object! rc=0x%x\n", rc);
+            RTPrintf("Error, could not instantiate VirtualBox object! rc=%Rhrc\n", rc);
             return -1;
         }
         RTPrintf("VirtualBox object created\n");
