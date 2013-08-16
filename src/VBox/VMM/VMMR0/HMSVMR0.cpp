@@ -1619,6 +1619,7 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             HMR0EnterEx(pVCpu);
             Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
 
+            pVCpu->hm.s.fLeaveDone = false;
             RTThreadPreemptRestore(&PreemptState);
             break;
         }
@@ -1894,52 +1895,49 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
         RTThreadPreemptDisable(&PreemptState);
         fPreemptDisabled = true;
-        if (pVCpu->hm.s.fLeaveDone)
+    }
+
+    if (!pVCpu->hm.s.fLeaveDone)
+    {
+        /* Restore host FPU state if necessary and resync on next R0 reentry .*/
+        if (CPUMIsGuestFPUStateActive(pVCpu))
         {
-            RTThreadPreemptRestore(&PreemptState);
-            return;
+            CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
+            Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         }
+
+        /*
+         * Restore host debug registers if necessary and resync on next R0 reentry.
+         */
+    #ifdef VBOX_STRICT
+        if (CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+            Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
+            Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
+        }
+    #endif
+        if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+
+        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+
+        pVCpu->hm.s.fLeaveDone = true;
     }
-
-    /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-    if (CPUMIsGuestFPUStateActive(pVCpu))
-    {
-        CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
-        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
-    }
-
-    /*
-     * Restore host debug registers if necessary and resync on next R0 reentry.
-     */
-#ifdef VBOX_STRICT
-    if (CPUMIsHyperDebugStateActive(pVCpu))
-    {
-        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-        Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
-        Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
-    }
-#endif
-    if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-
-    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
-
-    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
     /* Restore preemption if we previous disabled it ourselves. */
     if (fPreemptDisabled)
-    {
-        pVCpu->hm.s.fLeaveDone = true;
         RTThreadPreemptRestore(&PreemptState);
-    }
 }
 
 

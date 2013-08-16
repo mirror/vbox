@@ -6040,63 +6040,60 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
         RTThreadPreemptDisable(&PreemptState);
         fPreemptDisabled = true;
-        if (pVCpu->hm.s.fLeaveDone)
+    }
+
+    if (!pVCpu->hm.s.fLeaveDone)
+    {
+        /* Save the guest state if necessary. */
+        if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
         {
-            RTThreadPreemptRestore(&PreemptState);
-            return;
+            int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+            AssertRC(rc);
+            Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
         }
+
+        /* Restore host FPU state if necessary and resync on next R0 reentry .*/
+        if (CPUMIsGuestFPUStateActive(pVCpu))
+        {
+            CPUMR0SaveGuestFPU(pVM, pVCpu, pMixedCtx);
+            Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+        }
+
+        /* Restore host debug registers if necessary and resync on next R0 reentry. */
+    #ifdef VBOX_STRICT
+        if (CPUMIsHyperDebugStateActive(pVCpu))
+            Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
+    #endif
+        if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */))
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+
+        /* Restore host-state bits that VT-x only restores partially. */
+        if (pVCpu->hm.s.vmx.fRestoreHostFlags)
+        {
+            VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
+            pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
+        }
+
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitIO);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitMovCRx);
+        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitXcptNmi);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
+        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+
+        pVCpu->hm.s.fLeaveDone = true;
     }
-
-    /* Save the guest state if necessary. */
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
-    {
-        int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-        AssertRC(rc);
-        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
-    }
-
-    /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-    if (CPUMIsGuestFPUStateActive(pVCpu))
-    {
-        CPUMR0SaveGuestFPU(pVM, pVCpu, pMixedCtx);
-        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
-    }
-
-    /* Restore host debug registers if necessary and resync on next R0 reentry. */
-#ifdef VBOX_STRICT
-    if (CPUMIsHyperDebugStateActive(pVCpu))
-        Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_MOV_DR_EXIT);
-#endif
-    if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, true /* save DR6 */))
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-
-    /* Restore host-state bits that VT-x only restores partially. */
-    if (pVCpu->hm.s.vmx.fRestoreHostFlags)
-    {
-        VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
-        pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
-    }
-
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitIO);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitMovCRx);
-    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExitXcptNmi);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
-
-    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
 
     /* Restore preemption if we previous disabled it ourselves. */
     if (fPreemptDisabled)
-    {
-        pVCpu->hm.s.fLeaveDone = true;
         RTThreadPreemptRestore(&PreemptState);
-    }
 }
 
 
