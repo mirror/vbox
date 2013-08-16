@@ -104,17 +104,17 @@
     ; trouble only just less efficient.
     mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
-    je      .no_cached_reads%2
-    jmp     .cached_read%3
+    je      .no_cached_read32%2
+    jmp     .cached_read32%3
 
 ALIGN(16)
-.cached_read%3:
+.cached_read32%3:
     dec     xCX
     mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX * 4]
     vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
     cmp     xCX, 0
-    jnz     .cached_read
-.no_cached_reads%2:
+    jnz     .cached_read32%3
+.no_cached_read32%2:
  %endif
 
     ; Restore segment registers.
@@ -373,7 +373,7 @@ ENDPROC MY_NAME(VMXR0StartVM32)
     ; trouble only just less efficient.
     mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
-    je      .no_cached_reads64%2
+    je      .no_cached_read64%2
     jmp     .cached_read64%3
 
 ALIGN(16)
@@ -382,8 +382,8 @@ ALIGN(16)
     mov     eax, [xDX + VMCSCACHE.Read.aField + xCX * 4]
     vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
     cmp      xCX, 0
-    jnz     .cached_read
-.no_cached_reads64%2:
+    jnz     .cached_read64%3
+.no_cached_read64%2:
  %endif
 
     ; Restore segment registers.
