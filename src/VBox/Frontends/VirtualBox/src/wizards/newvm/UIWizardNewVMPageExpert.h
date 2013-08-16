@@ -59,8 +59,8 @@ private slots:
     /* Handlers: */
     void sltNameChanged(const QString &strNewText);
     void sltOsTypeChanged();
-    void sltRamSliderValueChanged(int iValue);
-    void sltRamEditorTextChanged(const QString &strText);
+    void sltRamSliderValueChanged();
+    void sltRamEditorValueChanged();
     void sltVirtualDiskSourceChanged();
     void sltGetWithFileOpenDialog();
 

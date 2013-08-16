@@ -23,32 +23,32 @@
 #include <QGridLayout>
 #include <QSpacerItem>
 #include <QLabel>
+#include <QSpinBox>
 
 /* GUI includes: */
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVM.h"
 #include "VBoxGlobal.h"
 #include "VBoxGuestRAMSlider.h"
-#include "QILineEdit.h"
 #include "QIRichTextLabel.h"
 
 UIWizardNewVMPage2::UIWizardNewVMPage2()
 {
 }
 
-void UIWizardNewVMPage2::onRamSliderValueChanged(int iValue)
+void UIWizardNewVMPage2::onRamSliderValueChanged()
 {
     /* Update 'ram' field editor connected to slider: */
     m_pRamEditor->blockSignals(true);
-    m_pRamEditor->setText(QString::number(iValue));
+    m_pRamEditor->setValue(m_pRamSlider->value());
     m_pRamEditor->blockSignals(false);
 }
 
-void UIWizardNewVMPage2::onRamEditorTextChanged(const QString &strText)
+void UIWizardNewVMPage2::onRamEditorValueChanged()
 {
     /* Update 'ram' field slider connected to editor: */
     m_pRamSlider->blockSignals(true);
-    m_pRamSlider->setValue(strText.toInt());
+    m_pRamSlider->setValue(m_pRamEditor->value());
     m_pRamSlider->blockSignals(false);
 }
 
@@ -65,12 +65,11 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
                 m_pRamSlider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
                 m_pRamSlider->setOrientation(Qt::Horizontal);
             }
-            m_pRamEditor = new QILineEdit(this);
+            m_pRamEditor = new QSpinBox(this);
             {
-                m_pRamEditor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-                m_pRamEditor->setFixedWidthByText("88888");
-                m_pRamEditor->setAlignment(Qt::AlignRight);
-                m_pRamEditor->setValidator(new QIntValidator(m_pRamSlider->minRAM(), m_pRamSlider->maxRAM(), this));
+                m_pRamEditor->setMinimum(m_pRamSlider->minRAM());
+                m_pRamEditor->setMaximum(m_pRamSlider->maxRAM());
+                vboxGlobal().setMinimumWidthAccordingSymbolCount(m_pRamEditor, 5);
             }
             m_pRamUnits = new QLabel(this);
             {
@@ -97,26 +96,26 @@ UIWizardNewVMPageBasic2::UIWizardNewVMPageBasic2()
     }
 
     /* Setup connections: */
-    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged(int)));
-    connect(m_pRamEditor, SIGNAL(textChanged(const QString&)), this, SLOT(sltRamEditorTextChanged(const QString&)));
+    connect(m_pRamSlider, SIGNAL(valueChanged(int)), this, SLOT(sltRamSliderValueChanged()));
+    connect(m_pRamEditor, SIGNAL(valueChanged(int)), this, SLOT(sltRamEditorValueChanged()));
 
     /* Register fields: */
     registerField("ram", m_pRamSlider, "value", SIGNAL(valueChanged(int)));
 }
 
-void UIWizardNewVMPageBasic2::sltRamSliderValueChanged(int iValue)
+void UIWizardNewVMPageBasic2::sltRamSliderValueChanged()
 {
     /* Call to base-class: */
-    onRamSliderValueChanged(iValue);
+    onRamSliderValueChanged();
 
     /* Broadcast complete-change: */
     emit completeChanged();
 }
 
-void UIWizardNewVMPageBasic2::sltRamEditorTextChanged(const QString &strText)
+void UIWizardNewVMPageBasic2::sltRamEditorValueChanged()
 {
     /* Call to base-class: */
-    onRamEditorTextChanged(strText);
+    onRamEditorValueChanged();
 
     /* Broadcast complete-change: */
     emit completeChanged();
@@ -147,7 +146,7 @@ void UIWizardNewVMPageBasic2::initializePage()
     /* Get recommended 'ram' field value: */
     CGuestOSType type = field("type").value<CGuestOSType>();
     m_pRamSlider->setValue(type.GetRecommendedRAM());
-    m_pRamEditor->setText(QString::number(type.GetRecommendedRAM()));
+    m_pRamEditor->setValue(type.GetRecommendedRAM());
 
     /* 'Ram' field should have focus initially: */
     m_pRamSlider->setFocus();
