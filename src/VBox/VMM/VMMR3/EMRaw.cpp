@@ -58,15 +58,17 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static int emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
-DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
-static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu);
-static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret);
-static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu);
-static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
-static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
+static int      emR3RawForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
+static int      emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu);
+static int      emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret);
+static int      emR3RawPrivileged(PVM pVM, PVMCPU pVCpu);
+static int      emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
+static int      emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu);
 
 #define EMHANDLERC_WITH_PATM
+#define emR3ExecuteInstruction   emR3RawExecuteInstruction
+#define emR3ExecuteIOInstruction emR3RawExecuteIOInstruction
 #include "EMHandleRCTmpl.h"
 
 
@@ -263,9 +265,9 @@ int emR3SingleStepExecRaw(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
+static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC, const char *pszPrefix)
 #else
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
+static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
 #endif
 {
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
@@ -298,7 +300,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
      */
     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
-        Log(("emR3ExecuteInstruction: In patch block. eip=%RRv\n", (RTRCPTR)pCtx->eip));
+        Log(("emR3RawExecuteInstruction: In patch block. eip=%RRv\n", (RTRCPTR)pCtx->eip));
 
         RTGCPTR pNewEip;
         rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
@@ -309,7 +311,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
              * mode; just execute the whole block until IF is set again.
              */
             case VINF_SUCCESS:
-                Log(("emR3ExecuteInstruction: Executing instruction starting at new address %RGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Executing instruction starting at new address %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 Assert(pCtx->eip);
@@ -320,12 +322,12 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 else if (rcGC == VINF_PATM_PENDING_IRQ_AFTER_IRET)
                 {
                     /* special case: iret, that sets IF,  detected a pending irq/event */
-                    return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIRET");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIRET");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -333,16 +335,16 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
              * One instruction.
              */
             case VINF_PATCH_EMULATE_INSTR:
-                Log(("emR3ExecuteInstruction: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
-                return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIR");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
 
             /*
              * The patch was disabled, hand it to the REM.
              */
             case VERR_PATCH_DISABLED:
-                Log(("emR3ExecuteInstruction: Disabled patch -> new eip %RGv IF=%d VMIF=%x\n",
+                Log(("emR3RawExecuteInstruction: Disabled patch -> new eip %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 if (pCtx->eflags.Bits.u1IF)
@@ -351,7 +353,7 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -396,12 +398,12 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
  */
-DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
+DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
 {
 #ifdef LOG_ENABLED
-    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
+    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
-    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC);
+    return emR3RawExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }
 
@@ -412,14 +414,14 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
+static int emR3RawExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_FIRST_IEM_STEP
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
     /* Hand it over to the interpreter. */
     VBOXSTRICTRC rcStrict = IEMExecOne(pVCpu);
-    LogFlow(("emR3ExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    LogFlow(("emR3RawExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -506,7 +508,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         AssertMsg(rcStrict == VINF_EM_RAW_EMULATE_INSTR || rcStrict == VINF_EM_RESCHEDULE_REM, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-    return emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
+    return emR3RawExecuteInstruction(pVM, pVCpu, "IO: ");
 #endif
 }
 
@@ -550,7 +552,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
         &&  PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
         LogFlow(("emR3RawGuestTrap: trap %#x in patch code; eip=%08x\n", u8TrapNo, pCtx->eip));
-        return emR3PatchTrap(pVM, pVCpu, pCtx, rc);
+        return emR3RawPatchTrap(pVM, pVCpu, pCtx, rc);
     }
 #endif
 
@@ -619,7 +621,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
                 rc = VBOXSTRICTRC_TODO(EMInterpretInstructionDisasState(pVCpu, &cpu, CPUMCTX2CORE(pCtx), 0, EMCODETYPE_SUPERVISOR));
                 if (RT_SUCCESS(rc))
                     return rc;
-                return emR3ExecuteInstruction(pVM, pVCpu, "Monitor: ");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "Monitor: ");
             }
         }
     }
@@ -641,7 +643,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
              */
             rc = TRPMResetTrap(pVCpu);
             AssertRC(rc);
-            return emR3ExecuteInstruction(pVM, pVCpu, "IO Guest Trap: ");
+            return emR3RawExecuteInstruction(pVM, pVCpu, "IO Guest Trap: ");
         }
     }
 
@@ -727,7 +729,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
         AssertRC(rc);
 
     /* go to the REM to emulate a single instruction */
-    return emR3ExecuteInstruction(pVM, pVCpu, "RSWITCH: ");
+    return emR3RawExecuteInstruction(pVM, pVCpu, "RSWITCH: ");
 }
 
 
@@ -740,7 +742,7 @@ static int emR3RawRingSwitch(PVM pVM, PVMCPU pVCpu)
  * @param   pCtx    Pointer to the guest CPU context.
  * @param   gcret   GC return code.
  */
-static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
+static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
 {
     uint8_t         u8TrapNo;
     int             rc;
@@ -768,7 +770,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
         rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2, NULL /* pu8InstrLen */);
         if (RT_FAILURE(rc))
         {
-            AssertReleaseMsgFailed(("emR3PatchTrap: no trap! (rc=%Rrc) gcret=%Rrc\n", rc, gcret));
+            AssertReleaseMsgFailed(("emR3RawPatchTrap: no trap! (rc=%Rrc) gcret=%Rrc\n", rc, gcret));
             return rc;
         }
         /* Reset the trap as we'll execute the original instruction again. */
@@ -827,7 +829,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
             }
         }
 #endif /* LOG_ENABLED */
-        Log(("emR3PatchTrap: in patch: eip=%08x: trap=%02x err=%08x cr2=%08x cr0=%08x\n",
+        Log(("emR3RawPatchTrap: in patch: eip=%08x: trap=%02x err=%08x cr2=%08x cr0=%08x\n",
              pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0));
 
         RTGCPTR pNewEip;
@@ -840,9 +842,9 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
             case VINF_SUCCESS:
             {
                 /** @todo execute a whole block */
-                Log(("emR3PatchTrap: Executing faulting instruction at new address %RGv\n", pNewEip));
+                Log(("emR3RawPatchTrap: Executing faulting instruction at new address %RGv\n", pNewEip));
                 if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
-                    Log(("emR3PatchTrap: Virtual IF flag disabled!!\n"));
+                    Log(("emR3RawPatchTrap: Virtual IF flag disabled!!\n"));
 
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
@@ -863,7 +865,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
                     /** @todo Knoppix 5 regression when returning VINF_SUCCESS here and going back to raw mode. */
                     /* Note: possibly because a reschedule is required (e.g. iret to V86 code) */
 
-                    return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                     /* Interrupts are enabled; just go back to the original instruction.
                     return VINF_SUCCESS; */
                 }
@@ -874,18 +876,18 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
              * One instruction.
              */
             case VINF_PATCH_EMULATE_INSTR:
-                Log(("emR3PatchTrap: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
+                Log(("emR3RawPatchTrap: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
                      pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
-                return emR3ExecuteInstruction(pVM, pVCpu, "PATCHEMUL: ");
+                return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHEMUL: ");
 
             /*
              * The patch was disabled, hand it to the REM.
              */
             case VERR_PATCH_DISABLED:
                 if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
-                    Log(("emR3PatchTrap: Virtual IF flag disabled!!\n"));
+                    Log(("emR3RawPatchTrap: Virtual IF flag disabled!!\n"));
                 pCtx->eip = pNewEip;
                 AssertRelease(pCtx->eip);
 
@@ -895,7 +897,7 @@ static int emR3PatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
                      * The last instruction in the patch block needs to be executed!! (sti/sysexit for example)
                      */
                     Log(("PATCH: IF=1 -> emulate last instruction as it can't be interrupted!!\n"));
-                    return emR3ExecuteInstruction(pVM, pVCpu, "PATCHIR");
+                    return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
                 }
                 return VINF_EM_RESCHEDULE_REM;
 
@@ -1152,9 +1154,9 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
     }
 
     if (PATMIsPatchGCAddr(pVM, pCtx->eip))
-        return emR3PatchTrap(pVM, pVCpu, pCtx, VINF_PATM_PATCH_TRAP_GP);
+        return emR3RawPatchTrap(pVM, pVCpu, pCtx, VINF_PATM_PATCH_TRAP_GP);
 
-    return emR3ExecuteInstruction(pVM, pVCpu, "PRIV");
+    return emR3RawExecuteInstruction(pVM, pVCpu, "PRIV");
 }
 
 

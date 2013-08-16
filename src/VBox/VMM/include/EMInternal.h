@@ -411,6 +411,7 @@ typedef struct EMCPU
     STAMPROFILEADV          StatCapped;
     STAMPROFILEADV          StatHmEntry;
     STAMPROFILE             StatHmExec;
+    STAMPROFILE             StatIEMEmu;
     STAMPROFILE             StatREMEmu;
     STAMPROFILE             StatREMExec;
     STAMPROFILE             StatREMSync;

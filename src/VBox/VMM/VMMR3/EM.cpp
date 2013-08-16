@@ -415,16 +415,17 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.pCliStatTree = 0;
 
         /* these should be considered for release statistics. */
-        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,                 "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,               "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHmEntry,           "/PROF/CPU%d/EM/HmEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatHmExec,            "/PROF/CPU%d/EM/HmExec",         "Profiling Hardware Accelerated Mode execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,               "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,              "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,              "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,             "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,              "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
-        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,              "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,      "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
+        EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,    "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHmEntry,    "/PROF/CPU%d/EM/HmEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatHmExec,     "/PROF/CPU%d/EM/HmExec",         "Profiling Hardware Accelerated Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatIEMEmu,     "/PROF/CPU%d/EM/IEMEmuSingle",      "Profiling single instruction IEM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,     "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMExec,    "/PROF/CPU%d/EM/REMExec",           "Profiling REM execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatREMSync,    "/PROF/CPU%d/EM/REMSync",           "Profiling REM context syncing.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWEntry,   "/PROF/CPU%d/EM/RAWEnter",          "Profiling Raw Mode entry overhead.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWExec,    "/PROF/CPU%d/EM/RAWExec",           "Profiling Raw Mode execution.");
+        EM_REG_PROFILE(&pVCpu->em.s.StatRAWTail,    "/PROF/CPU%d/EM/RAWTail",           "Profiling Raw Mode tail overhead.");
 
 #endif /* VBOX_WITH_STATISTICS */
 
