@@ -138,13 +138,13 @@ private:
     QProgressBar *m_pProcessBar;
 
     /* Error & Warning stuff: */
+    UIWarningPane *m_pWarningPane;
     bool m_fValid;
     bool m_fSilent;
     QString m_strErrorHint;
     QString m_strWarningHint;
     QString m_strErrorString;
     QString m_strWarningString;
-    UIWarningPane *m_pWarningPane;
 
     /* Whats-This stuff: */
     QTimer *m_pWhatsThisTimer;
