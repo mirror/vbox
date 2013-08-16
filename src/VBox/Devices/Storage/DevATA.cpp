@@ -2453,7 +2453,7 @@ static bool atapiReadTrackInformationSS(ATADevState *s)
     return false;
 }
 
-static size_t atapiGetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureListProfiles(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 3*4)
         return 0;
@@ -2471,7 +2471,7 @@ static size_t atapiGetConfigurationFillFeatureListProfiles(ATADevState *s, uint8
     return 3*4; /* Header + 2 profiles entries */
 }
 
-static size_t atapiGetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 12)
         return 0;
@@ -2486,7 +2486,7 @@ static size_t atapiGetConfigurationFillFeatureCore(ATADevState *s, uint8_t *pbBu
     return 12;
 }
 
-static size_t atapiGetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -2500,7 +2500,7 @@ static size_t atapiGetConfigurationFillFeatureMorphing(ATADevState *s, uint8_t *
     return 8;
 }
 
-static size_t atapiGetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureRemovableMedium(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -2515,7 +2515,7 @@ static size_t atapiGetConfigurationFillFeatureRemovableMedium(ATADevState *s, ui
     return 8;
 }
 
-static size_t atapiGetConfigurationFillFeatureRandomReadable(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureRandomReadable(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 12)
         return 0;
@@ -2531,7 +2531,7 @@ static size_t atapiGetConfigurationFillFeatureRandomReadable(ATADevState *s, uin
     return 12;
 }
 
-static size_t atapiGetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -2545,7 +2545,7 @@ static size_t atapiGetConfigurationFillFeatureCDRead(ATADevState *s, uint8_t *pb
     return 8;
 }
 
-static size_t atapiGetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeaturePowerManagement(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 4)
         return 0;
@@ -2557,7 +2557,7 @@ static size_t atapiGetConfigurationFillFeaturePowerManagement(ATADevState *s, ui
     return 4;
 }
 
-static size_t atapiGetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
+static uint32_t atapiGetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *pbBuf, size_t cbBuf)
 {
     if (cbBuf < 8)
         return 0;
@@ -2573,8 +2573,8 @@ static size_t atapiGetConfigurationFillFeatureTimeout(ATADevState *s, uint8_t *p
 static bool atapiGetConfigurationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
-    size_t cbBuf = s->cbIOBuffer;
-    size_t cbCopied = 0;
+    uint32_t cbBuf = s->cbIOBuffer;
+    uint32_t cbCopied = 0;
     uint16_t u16Sfn = ataBE2H_U16(&s->aATAPICmd[2]);
 
     Assert(s->uTxDir == PDMBLOCKTXDIR_FROM_DEVICE);

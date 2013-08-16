@@ -271,7 +271,7 @@ static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, const uint
 static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
-    size_t cbCueSheet = atapiBE2H_U24(pbCDB + 6);
+    unsigned cbCueSheet = atapiBE2H_U24(pbCDB + 6);
     unsigned cTracks = cbCueSheet / 8;
 
     AssertReturn(cbCueSheet % 8 == 0 && cTracks, VERR_INVALID_PARAMETER);
@@ -310,10 +310,10 @@ static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const
  * @param   cbBuffer      Size of the buffer.
  */
 static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t iTrack,
-                                                bool fMSF, const uint8_t *pbBuf, size_t cbBuffer)
+                                                bool fMSF, const uint8_t *pbBuf, uint32_t cbBuffer)
 {
     int rc = VINF_SUCCESS;
-    size_t cbToc = atapiBE2H_U16(pbBuf);
+    unsigned cbToc = atapiBE2H_U16(pbBuf);
     uint8_t iTrackFirst = pbBuf[2];
     unsigned cTracks;
 
@@ -358,6 +358,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 
             pTrack->fFlags &= ~TRACK_FLAGS_UNDETECTED;
             pbBuf += 8;
+            pTrack++;
         }
     }
 
@@ -367,7 +368,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
 static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
 {
     int rc = VINF_SUCCESS;
-    size_t cbBuffer = atapiBE2H_U16(&pbCDB[7]);
+    uint16_t cbBuffer = atapiBE2H_U16(&pbCDB[7]);
     bool fMSF = (pbCDB[1] & 0x2) != 0;
     uint8_t uFmt = pbCDB[2] & 0xf;
     uint8_t iTrack = pbCDB[6];
@@ -550,10 +551,10 @@ DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uin
     return rc;
 }
 
-DECLHIDDEN(size_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba)
+DECLHIDDEN(uint32_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba)
 {
     PTRACK pTrack = NULL;
-    size_t cbAtapiSector = 2048;
+    uint32_t cbAtapiSector = 2048;
 
     if (pTrackList->cTracksCurrent)
     {
