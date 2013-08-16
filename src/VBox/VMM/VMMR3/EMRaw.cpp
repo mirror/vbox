@@ -273,14 +273,6 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
     int      rc;
 
-    /*
-     *
-     * The simple solution is to use the recompiler.
-     * The better solution is to disassemble the current instruction and
-     * try handle as many as possible without using REM.
-     *
-     */
-
 #ifdef LOG_ENABLED
     /*
      * Disassemble the instruction if requested.
@@ -302,8 +294,8 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
     {
         Log(("emR3RawExecuteInstruction: In patch block. eip=%RRv\n", (RTRCPTR)pCtx->eip));
 
-        RTGCPTR pNewEip;
-        rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
+        RTGCPTR uNewEip;
+        rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &uNewEip);
         switch (rc)
         {
             /*
@@ -312,8 +304,8 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
              */
             case VINF_SUCCESS:
                 Log(("emR3RawExecuteInstruction: Executing instruction starting at new address %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
-                pCtx->eip = pNewEip;
+                     uNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
+                pCtx->eip = uNewEip;
                 Assert(pCtx->eip);
 
                 if (pCtx->eflags.Bits.u1IF)
@@ -336,8 +328,8 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
              */
             case VINF_PATCH_EMULATE_INSTR:
                 Log(("emR3RawExecuteInstruction: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
-                pCtx->eip = pNewEip;
+                     uNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
+                pCtx->eip = uNewEip;
                 return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHIR");
 
             /*
@@ -345,8 +337,8 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
              */
             case VERR_PATCH_DISABLED:
                 Log(("emR3RawExecuteInstruction: Disabled patch -> new eip %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
-                pCtx->eip = pNewEip;
+                     uNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
+                pCtx->eip = uNewEip;
                 if (pCtx->eflags.Bits.u1IF)
                 {
                     /*
@@ -367,22 +359,42 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
         }
     }
 
-    STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
+
+    /*
+     * Use IEM and fallback on REM if the functionality is missing.
+     * Once IEM gets mature enough, nothing should ever fall back.
+     */
+#if 0/*defined(VBOX_WITH_FIRST_IEM_STEP)*/ || !defined(VBOX_WITH_REM)
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
-#ifdef VBOX_WITH_REM
-    EMRemLock(pVM);
-    /* Flush the recompiler TLB if the VCPU has changed. */
-    if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-    pVM->em.s.idLastRemCpu = pVCpu->idCpu;
-
-    rc = REMR3EmulateInstruction(pVM, pVCpu);
-    EMRemUnlock(pVM);
-#else
+    STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
     rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
+    if (rc == VINF_SUCCESS)
+        rc = VINF_EM_RESCHEDULE;
+    else if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+             || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
 #endif
-    STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
+    {
+#ifdef VBOX_WITH_REM
+        STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
+# if 1 //ndef VBOX_WITH_FIRST_IEM_STEP
+        Log(("EMINS[rem]: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
+//# elif defined(DEBUG_bird)
+//        AssertFailed();
+# endif
+        EMRemLock(pVM);
+        /* Flush the recompiler TLB if the VCPU has changed. */
+        if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+        pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
+        rc = REMR3EmulateInstruction(pVM, pVCpu);
+        EMRemUnlock(pVM);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, b);
+#else  /* !VBOX_WITH_REM */
+        NOREF(pVM);
+#endif /* !VBOX_WITH_REM */
+    }
     return rc;
 }
 
@@ -832,8 +844,8 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
         Log(("emR3RawPatchTrap: in patch: eip=%08x: trap=%02x err=%08x cr2=%08x cr0=%08x\n",
              pCtx->eip, u8TrapNo, uErrorCode, uCR2, (uint32_t)pCtx->cr0));
 
-        RTGCPTR pNewEip;
-        rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &pNewEip);
+        RTGCPTR uNewEip;
+        rc = PATMR3HandleTrap(pVM, pCtx, pCtx->eip, &uNewEip);
         switch (rc)
         {
             /*
@@ -842,11 +854,11 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
             case VINF_SUCCESS:
             {
                 /** @todo execute a whole block */
-                Log(("emR3RawPatchTrap: Executing faulting instruction at new address %RGv\n", pNewEip));
+                Log(("emR3RawPatchTrap: Executing faulting instruction at new address %RGv\n", uNewEip));
                 if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
                     Log(("emR3RawPatchTrap: Virtual IF flag disabled!!\n"));
 
-                pCtx->eip = pNewEip;
+                pCtx->eip = uNewEip;
                 AssertRelease(pCtx->eip);
 
                 if (pCtx->eflags.Bits.u1IF)
@@ -877,8 +889,8 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
              */
             case VINF_PATCH_EMULATE_INSTR:
                 Log(("emR3RawPatchTrap: Emulate patched instruction at %RGv IF=%d VMIF=%x\n",
-                     pNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
-                pCtx->eip = pNewEip;
+                     uNewEip, pCtx->eflags.Bits.u1IF, pVCpu->em.s.pPatmGCState->uVMFlags));
+                pCtx->eip = uNewEip;
                 AssertRelease(pCtx->eip);
                 return emR3RawExecuteInstruction(pVM, pVCpu, "PATCHEMUL: ");
 
@@ -888,7 +900,7 @@ static int emR3RawPatchTrap(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int gcret)
             case VERR_PATCH_DISABLED:
                 if (!(pVCpu->em.s.pPatmGCState->uVMFlags & X86_EFL_IF))
                     Log(("emR3RawPatchTrap: Virtual IF flag disabled!!\n"));
-                pCtx->eip = pNewEip;
+                pCtx->eip = uNewEip;
                 AssertRelease(pCtx->eip);
 
                 if (pCtx->eflags.Bits.u1IF)
