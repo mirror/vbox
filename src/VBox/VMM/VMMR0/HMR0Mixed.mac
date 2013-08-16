@@ -30,6 +30,98 @@
  %define VMX_SKIP_TR
 %endif
 
+;; @def RESTORESTATEVM32
+; Macro restoring essential host state and updating guest state
+; for common host, 32-bit guest for VT-x.
+;
+; @param 1  Jump label suffix 1.
+; @param 2  Jump label suffix 2.
+; @param 3  Jump label suffix 3.
+%macro RESTORESTATEVM32 3
+    ; Restore base and limit of the IDTR & GDTR.
+ %ifndef VMX_SKIP_IDTR
+    lidt    [xSP]
+    add     xSP, xCB * 2
+ %endif
+ %ifndef VMX_SKIP_GDTR
+    lgdt    [xSP]
+    add     xSP, xCB * 2
+ %endif
+
+    push    xDI
+ %ifndef VMX_SKIP_TR
+    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved xDI, TR, LDTR).
+ %else
+    mov     xDI, [xSP + xCB * 2]         ; pCtx (*2 to skip the saved xDI, LDTR).
+ %endif
+
+    mov     [ss:xDI + CPUMCTX.eax], eax
+    mov     [ss:xDI + CPUMCTX.ebx], ebx
+    mov     [ss:xDI + CPUMCTX.ecx], ecx
+    mov     [ss:xDI + CPUMCTX.edx], edx
+    mov     [ss:xDI + CPUMCTX.esi], esi
+    mov     [ss:xDI + CPUMCTX.ebp], ebp
+    mov     xAX, cr2
+    mov     [ss:xDI + CPUMCTX.cr2], xAX
+
+ %ifdef RT_ARCH_AMD64
+    pop     xAX                                 ; The guest edi we pushed above.
+    mov     dword [ss:xDI + CPUMCTX.edi], eax
+ %else
+    pop     dword [ss:xDI + CPUMCTX.edi]        ; The guest edi we pushed above.
+ %endif
+
+ %ifndef VMX_SKIP_TR
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
+    ; @todo get rid of sgdt
+    pop     xBX         ; Saved TR
+    sub     xSP, xCB * 2
+    sgdt    [xSP]
+    mov     xAX, xBX
+    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
+    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
+    ltr     bx
+    add     xSP, xCB * 2
+ %endif
+
+    pop     xAX         ; Saved LDTR
+ %ifdef RT_ARCH_AMD64
+    cmp     xAX, 0
+    je      .skipldtwrite32%1
+ %endif
+    lldt    ax
+
+.skipldtwrite32%1:
+    add     xSP, xCB     ; pCtx
+
+ %ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    pop     xDX         ; Saved pCache
+
+    mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
+    cmp     ecx, 0      ; Can't happen
+    je      .no_cached_reads%2
+    jmp     .cached_read%3
+
+ALIGN(16)
+.cached_read%3:
+    dec     xCX
+    mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX * 4]
+    vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
+    cmp     xCX, 0
+    jnz     .cached_read
+.no_cached_reads%2:
+ %endif
+
+    ; Restore segment registers.
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers.
+    MYPOPAD
+%endmacro
+
+
 ;/**
 ; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
 ; *
@@ -172,88 +264,7 @@ ALIGNCODE(16) ;; @todo YASM BUG - this alignment is wrong on darwin, it's 1 byte
     jc      near .vmxstart_invalid_vmcs_ptr
     jz      near .vmxstart_start_failed
 
-    ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-    push    xDI
-%ifndef VMX_SKIP_TR
-    mov     xDI, [xSP + xCB * 3]         ; pCtx (*3 to skip the saved xDI, TR, LDTR).
-%else
-    mov     xDI, [xSP + xCB * 2]         ; pCtx (*2 to skip the saved xDI, LDTR).
-%endif
-
-    mov     [ss:xDI + CPUMCTX.eax], eax
-    mov     [ss:xDI + CPUMCTX.ebx], ebx
-    mov     [ss:xDI + CPUMCTX.ecx], ecx
-    mov     [ss:xDI + CPUMCTX.edx], edx
-    mov     [ss:xDI + CPUMCTX.esi], esi
-    mov     [ss:xDI + CPUMCTX.ebp], ebp
-    mov     xAX, cr2
-    mov     [ss:xDI + CPUMCTX.cr2], xAX
-
-%ifdef RT_ARCH_AMD64
-    pop     xAX                                 ; The guest edi we pushed above.
-    mov     dword [ss:xDI + CPUMCTX.edi], eax
-%else
-    pop     dword [ss:xDI + CPUMCTX.edi]        ; The guest edi we pushed above.
-%endif
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-%ifdef RT_ARCH_AMD64
-    cmp     xAX, 0
-    je      .skipldtwrite32
-%endif
-    lldt    ax
-
-.skipldtwrite32:
-    add     xSP, xCB     ; pCtx
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     xDX         ; Saved pCache
-
-    mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
-    cmp     ecx, 0      ; Can't happen
-    je      .no_cached_reads
-    jmp     .cached_read
-
-ALIGN(16)
-.cached_read:
-    dec     xCX
-    mov     eax, [ss:xDX + VMCSCACHE.Read.aField + xCX * 4]
-    vmread  [ss:xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
-    cmp     xCX, 0
-    jnz     .cached_read
-.no_cached_reads:
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore general purpose registers.
-    MYPOPAD
-
+    RESTORESTATEVM32 A, B, C
     mov     eax, VINF_SUCCESS
 
 .vmstart_end:
@@ -261,96 +272,122 @@ ALIGN(16)
     pop     xBP
     ret
 
-
 .vmxstart_invalid_vmcs_ptr:
-    ; Restore base and limit of the IDTR & GDTR
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax          ; Don't bother with conditional restoration in the error case.
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xCB * 2  ; pCtx + pCache
-%else
-    add     xSP, xCB     ; pCtx
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
+    RESTORESTATEVM32 D, E, F
     mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
     jmp     .vmstart_end
 
 .vmxstart_start_failed:
-    ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p)
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax          ; Don't bother with conditional restoration in the error case
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xCB * 2  ; pCtx + pCache
-%else
-    add     xSP, xCB    ; pCtx
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
+    RESTORESTATEVM32 G, H, I
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart_end
 
 ENDPROC MY_NAME(VMXR0StartVM32)
 
+
 %ifdef RT_ARCH_AMD64
+;; @def RESTORESTATEVM64
+; Macro restoring essential host state and updating guest state
+; for 64-bit host, 64-bit guest for VT-x.
+;
+; @param 1  Jump label suffix 1.
+; @param 2  Jump label suffix 2.
+; @param 3  Jump label suffix 3.
+%macro RESTORESTATEVM64 3
+    ; Restore base and limit of the IDTR & GDTR
+ %ifndef VMX_SKIP_IDTR
+    lidt    [xSP]
+    add     xSP, xCB * 2
+ %endif
+ %ifndef VMX_SKIP_GDTR
+    lgdt    [xSP]
+    add     xSP, xCB * 2
+ %endif
+
+    push    xDI
+ %ifndef VMX_SKIP_TR
+    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, TR, LDTR)
+ %else
+    mov     xDI, [xSP + xCB * 2]        ; pCtx (*2 to skip the saved xDI, LDTR)
+ %endif
+
+    mov     qword [xDI + CPUMCTX.eax], rax
+    mov     qword [xDI + CPUMCTX.ebx], rbx
+    mov     qword [xDI + CPUMCTX.ecx], rcx
+    mov     qword [xDI + CPUMCTX.edx], rdx
+    mov     qword [xDI + CPUMCTX.esi], rsi
+    mov     qword [xDI + CPUMCTX.ebp], rbp
+    mov     qword [xDI + CPUMCTX.r8],  r8
+    mov     qword [xDI + CPUMCTX.r9],  r9
+    mov     qword [xDI + CPUMCTX.r10], r10
+    mov     qword [xDI + CPUMCTX.r11], r11
+    mov     qword [xDI + CPUMCTX.r12], r12
+    mov     qword [xDI + CPUMCTX.r13], r13
+    mov     qword [xDI + CPUMCTX.r14], r14
+    mov     qword [xDI + CPUMCTX.r15], r15
+    mov     rax, cr2
+    mov     qword [xDI + CPUMCTX.cr2], rax
+
+    pop     xAX                                 ; The guest edi we pushed above
+    mov     qword [xDI + CPUMCTX.edi], rax
+
+ %ifndef VMX_SKIP_TR
+    ; Restore TSS selector; must mark it as not busy before using ltr (!)
+    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
+    ; @todo get rid of sgdt
+    pop     xBX         ; Saved TR
+    sub     xSP, xCB * 2
+    sgdt    [xSP]
+    mov     xAX, xBX
+    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
+    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
+    and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
+    ltr     bx
+    add     xSP, xCB * 2
+ %endif
+
+    pop     xAX         ; Saved LDTR
+    cmp     xAX, 0
+    je      .skipldtwrite64%1
+    lldt    ax
+
+.skipldtwrite64%1:
+    pop     xSI         ; pCtx (needed in rsi by the macros below)
+
+ %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+    ; Save the guest MSRs and load the host MSRs.
+    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
+    LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
+    LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+ %endif
+
+ %ifdef VMX_USE_CACHED_VMCS_ACCESSES
+    pop     xDX         ; Saved pCache
+
+    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
+    cmp     ecx, 0      ; Can't happen
+    je      .no_cached_reads64%2
+    jmp     .cached_read64%3
+
+ALIGN(16)
+.cached_read64%3:
+    dec     xCX
+    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX * 4]
+    vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
+    cmp      xCX, 0
+    jnz     .cached_read
+.no_cached_reads64%2:
+ %endif
+
+    ; Restore segment registers.
+    MYPOPSEGS xAX, ax
+
+    ; Restore general purpose registers.
+    MYPOPAD
+%endmacro
+
+
 ;/**
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
@@ -498,98 +535,7 @@ ALIGNCODE(16)
     jc      near .vmxstart64_invalid_vmcs_ptr
     jz      near .vmxstart64_start_failed
 
-    ; Restore base and limit of the IDTR & GDTR
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-    push    xDI
-%ifndef VMX_SKIP_TR
-    mov     xDI, [xSP + xCB * 3]        ; pCtx (*3 to skip the saved xDI, TR, LDTR)
-%else
-    mov     xDI, [xSP + xCB * 2]        ; pCtx (*2 to skip the saved xDI, LDTR)
-%endif
-
-    mov     qword [xDI + CPUMCTX.eax], rax
-    mov     qword [xDI + CPUMCTX.ebx], rbx
-    mov     qword [xDI + CPUMCTX.ecx], rcx
-    mov     qword [xDI + CPUMCTX.edx], rdx
-    mov     qword [xDI + CPUMCTX.esi], rsi
-    mov     qword [xDI + CPUMCTX.ebp], rbp
-    mov     qword [xDI + CPUMCTX.r8],  r8
-    mov     qword [xDI + CPUMCTX.r9],  r9
-    mov     qword [xDI + CPUMCTX.r10], r10
-    mov     qword [xDI + CPUMCTX.r11], r11
-    mov     qword [xDI + CPUMCTX.r12], r12
-    mov     qword [xDI + CPUMCTX.r13], r13
-    mov     qword [xDI + CPUMCTX.r14], r14
-    mov     qword [xDI + CPUMCTX.r15], r15
-    mov     rax, cr2
-    mov     qword [xDI + CPUMCTX.cr2], rax
-
-    pop     xAX                                 ; The guest edi we pushed above
-    mov     qword [xDI + CPUMCTX.edi], rax
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-    cmp     xAX, 0
-    je      .skipldtwrite64
-    lldt    ax
-
-.skipldtwrite64:
-    pop     xSI         ; pCtx (needed in rsi by the macros below)
-
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Save the guest MSRs and load the host MSRs.
-    LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
-    LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
-    LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
-%endif
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    pop     xDX         ; Saved pCache
-
-    mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
-    cmp     ecx, 0      ; Can't happen
-    je      .no_cached_reads
-    jmp     .cached_read
-
-ALIGN(16)
-.cached_read:
-    dec     xCX
-    mov     eax, [xDX + VMCSCACHE.Read.aField + xCX * 4]
-    vmread  [xDX + VMCSCACHE.Read.aFieldVal + xCX * 8], xAX
-    cmp      xCX, 0
-    jnz     .cached_read
-.no_cached_reads:
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore general purpose registers.
-    MYPOPAD
-
+    RESTORESTATEVM64 a, b, c
     mov     eax, VINF_SUCCESS
 
 .vmstart64_end:
@@ -597,106 +543,13 @@ ALIGN(16)
     pop     xBP
     ret
 
-
 .vmxstart64_invalid_vmcs_ptr:
-    ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax          ; Don't bother with conditional restoration in the error case.
-
-    pop     xSI         ; pCtx (needed in rsi by the macros below)
-
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Load the host MSRs. Don't bother saving the guest MSRs as vmlaunch/vmresume failed.
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
-    LOADHOSTMSR MSR_K8_SF_MASK
-    LOADHOSTMSR MSR_K6_STAR
-    LOADHOSTMSR MSR_K8_LSTAR
-%endif
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xCB    ; pCache
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
+    RESTORESTATEVM64 d, e, f
     mov     eax, VERR_VMX_INVALID_VMCS_PTR_TO_START_VM
     jmp     .vmstart64_end
 
 .vmxstart64_start_failed:
-    ; Restore base and limit of the IDTR & GDTR.
-%ifndef VMX_SKIP_IDTR
-    lidt    [xSP]
-    add     xSP, xCB * 2
-%endif
-%ifndef VMX_SKIP_GDTR
-    lgdt    [xSP]
-    add     xSP, xCB * 2
-%endif
-
-%ifndef VMX_SKIP_TR
-    ; Restore TSS selector; must mark it as not busy before using ltr (!)
-    ; ASSUME that this is supposed to be 'BUSY'. (saves 20-30 ticks on the T42p).
-    ; @todo get rid of sgdt
-    pop     xBX         ; Saved TR
-    sub     xSP, xCB * 2
-    sgdt    [xSP]
-    mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
-    ltr     bx
-    add     xSP, xCB * 2
-%endif
-
-    pop     xAX         ; Saved LDTR
-    lldt    ax          ; Don't bother with conditional restoration in the error case.
-
-    pop     xSI         ; pCtx (needed in rsi by the macros below).
-
-%ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    ; Load the host MSRs. Don't bother saving the guest MSRs as vmlaunch/vmresume failed.
-    LOADHOSTMSR MSR_K8_KERNEL_GS_BASE
-    LOADHOSTMSR MSR_K8_SF_MASK
-    LOADHOSTMSR MSR_K6_STAR
-    LOADHOSTMSR MSR_K8_LSTAR
-%endif
-
-%ifdef VMX_USE_CACHED_VMCS_ACCESSES
-    add     xSP, xCB    ; pCache
-%endif
-
-    ; Restore segment registers.
-    MYPOPSEGS xAX, ax
-
-    ; Restore all general purpose host registers.
-    MYPOPAD
+    RESTORESTATEVM64 g, h, i
     mov     eax, VERR_VMX_UNABLE_TO_START_VM
     jmp     .vmstart64_end
 ENDPROC MY_NAME(VMXR0StartVM64)
