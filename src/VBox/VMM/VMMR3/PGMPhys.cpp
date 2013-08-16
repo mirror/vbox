@@ -2602,12 +2602,12 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                  */
                 /** @todo we can save us the linked list now, just search the lookup table... */
                 pgmLock(pVM);
-                Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2] == NULL);
-                Assert(pVM->pgm.s.apMmio2RangesR0[idMmio2] == NIL_RTR0PTR);
+                Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] == NULL);
+                Assert(pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] == NIL_RTR0PTR);
                 pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
                 pVM->pgm.s.pMmio2RangesR3 = pNew;
-                pVM->pgm.s.apMmio2RangesR3[idMmio2] = pNew;
-                pVM->pgm.s.apMmio2RangesR0[idMmio2] = MMHyperCCToR0(pVM, pNew);
+                pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] = pNew;
+                pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] = MMHyperCCToR0(pVM, pNew);
                 pgmUnlock(pVM);
 
                 *ppv = pvPages;
@@ -2682,9 +2682,9 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             pCur->pNextR3 = NULL;
 
             uint8_t idMmio2 = pCur->idMmio2;
-            Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2] == pCur);
-            pVM->pgm.s.apMmio2RangesR3[idMmio2] = NULL;
-            pVM->pgm.s.apMmio2RangesR0[idMmio2] = NIL_RTR0PTR;
+            Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] == pCur);
+            pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] = NULL;
+            pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] = NIL_RTR0PTR;
 
             /*
              * Free the memory.
