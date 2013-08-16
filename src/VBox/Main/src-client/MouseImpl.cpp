@@ -711,7 +711,17 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
     DisplayMouseInterface *pDisplay = mParent->getDisplayMouseInterface();
     ComAssertRet(pDisplay, E_FAIL);
 
-    HRESULT rc = S_OK;
+    /* Touch events are mapped to the primary monitor, because the emulated USB
+     * touchscreen device is associated with one (normally the primary) screen in the guest.
+     */
+    ULONG uScreenId = 0;
+
+    ULONG cWidth  = 0;
+    ULONG cHeight = 0;
+    LONG  xOrigin = 0;
+    LONG  yOrigin = 0;
+    HRESULT rc = pDisplay->getScreenResolution(uScreenId, &cWidth, &cHeight, NULL, &xOrigin, &yOrigin);
+    ComAssertComRCRetRC(rc);
 
     uint64_t* pau64Contacts = NULL;
     uint8_t cContacts = 0;
@@ -723,9 +733,13 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
         pau64Contacts = (uint64_t *)RTMemTmpAlloc(aCount * sizeof(uint64_t));
         if (pau64Contacts)
         {
-            int32_t x1, y1, x2, y2;
-            /* Takes the display lock */
-            pDisplay->getFramebufferDimensions(&x1, &y1, &x2, &y2);
+            int32_t x1 = xOrigin;
+            int32_t y1 = yOrigin;
+            int32_t x2 = x1 + cWidth;
+            int32_t y2 = y1 + cHeight;
+
+            LogRel3(("%s: screen %d,%d %d,%d\n",
+                     __FUNCTION__, x1, y1, x2, y2));
 
             LONG i;
             for (i = 0; i < aCount; i++)
@@ -741,13 +755,17 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
                 LogRel3(("%s: [%d] %d,%d id %d, inContact %d, inRange %d\n",
                          __FUNCTION__, i, x, y, contactId, fInContact, fInRange));
 
-                /* Framebuffer dimensions are 0,0 width, height, that is x2,y2 are exclusive,
+                /* Screen dimensions are 0,0 width, height, that is x2,y2 are exclusive,
                  * while coords are inclusive.
                  */
-                int32_t xAdj = x1 < x2 ?   ((x - 1 - x1) * VMMDEV_MOUSE_RANGE)
-                                         / (x2 - x1) : 0;
-                int32_t yAdj = y1 < y2 ?   ((y - 1 - y1) * VMMDEV_MOUSE_RANGE)
-                                         / (y2 - y1) : 0;
+                if (x < x1 || x >= x2 || y < y1 || y >= y2)
+                {
+                    /* Out of range. Skip the contact. */
+                    continue;
+                }
+
+                int32_t xAdj = x1 < x2? ((x - 1 - x1) * VMMDEV_MOUSE_RANGE) / (x2 - x1) : 0;
+                int32_t yAdj = y1 < y2? ((y - 1 - y1) * VMMDEV_MOUSE_RANGE) / (y2 - y1) : 0;
 
                 bool fValid = (   xAdj >= VMMDEV_MOUSE_RANGE_MIN
                                && xAdj <= VMMDEV_MOUSE_RANGE_MAX
