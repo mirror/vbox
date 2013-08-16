@@ -67,7 +67,7 @@ DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uin
  * @param   pTrackList    The track list to use.
  * @param   iAtapiLba     The start LBA to get the sector size for.
  */
-DECLHIDDEN(size_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba);
+DECLHIDDEN(uint32_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba);
 
 RT_C_DECLS_END
 
