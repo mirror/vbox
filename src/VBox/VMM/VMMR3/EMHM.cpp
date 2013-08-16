@@ -205,8 +205,8 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
         STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
 # ifndef VBOX_WITH_FIRST_IEM_STEP
         Log(("EMINS[rem]: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
-# elif defined(DEBUG_bird)
-        AssertFailed();
+//# elif defined(DEBUG_bird)
+//        AssertFailed();
 # endif
         EMRemLock(pVM);
         /* Flush the recompiler TLB if the VCPU has changed. */

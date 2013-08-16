@@ -1332,7 +1332,6 @@
     GEN_CHECK_OFF(VM, cCpus);
     GEN_CHECK_OFF(VM, uCpuExecutionCap);
     GEN_CHECK_OFF(VM, cbSelf);
-    GEN_CHECK_OFF(VM, offVMCPU);
     GEN_CHECK_OFF(VM, pfnVMMRCToHostAsm);
     GEN_CHECK_OFF(VM, pfnVMMRCToHostAsmNoReturn);
     GEN_CHECK_OFF(VM, fRecompileUser);

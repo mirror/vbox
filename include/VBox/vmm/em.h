@@ -76,6 +76,9 @@ typedef enum EMSTATE
     EMSTATE_DEBUG_HYPER,
     /** The VM has encountered a fatal error. (And everyone is panicing....) */
     EMSTATE_GURU_MEDITATION,
+    /** Executing in IEM, falling back on REM if we cannot switch back to HM or
+     * RAW after a short while. */
+    EMSTATE_IEM_THEN_REM,
     /** Just a hack to ensure that we get a 32-bit integer. */
     EMSTATE_MAKE_32BIT_HACK = 0x7fffffff
 } EMSTATE;
