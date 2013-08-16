@@ -6843,6 +6843,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             /* Initialize the bare minimum state required for HM. This takes care of
                initializing VT-x if necessary (onlined CPUs, local init etc.) */
             HMR0EnterEx(pVCpu);
+            Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
 
             /* Load the active VMCS as the current one. */
             int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
@@ -6850,7 +6851,6 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
             pVCpu->hm.s.fResumeVM  = false;
             pVCpu->hm.s.fLeaveDone = false;
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
 
             /* Restore preemption, migrating to another CPU should be fine now. */
             RTThreadPreemptRestore(&PreemptState);
