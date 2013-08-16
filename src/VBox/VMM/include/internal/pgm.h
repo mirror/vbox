@@ -45,6 +45,11 @@ typedef enum PGMPAGETYPE
     /** MMIO2 page aliased over an MMIO page. (RWX)
      * See PGMHandlerPhysicalPageAlias(). */
     PGMPAGETYPE_MMIO2_ALIAS_MMIO,
+    /** Special page aliased over an MMIO page. (RWX)
+     * See PGMHandlerPhysicalPageAliasHC(), but this is generally only used for
+     * VT-x's APIC access page at the moment.  Treated as MMIO by everyone except
+     * the shadow paging code. */
+    PGMPAGETYPE_SPECIAL_ALIAS_MMIO,
     /** Shadowed ROM. (RWX) */
     PGMPAGETYPE_ROM_SHADOW,
     /** ROM page. (R-X) */
@@ -54,7 +59,7 @@ typedef enum PGMPAGETYPE
     /** End of valid entries. */
     PGMPAGETYPE_END
 } PGMPAGETYPE;
-AssertCompile(PGMPAGETYPE_END <= 7);
+AssertCompile(PGMPAGETYPE_END == 8);
 
 VMMDECL(PGMPAGETYPE) PGMPhysGetPageType(PVM pVM, RTGCPHYS GCPhys);
 

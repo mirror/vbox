@@ -716,6 +716,7 @@ static DECLCALLBACK(int) ftmR3SyncDirtyPage(PVM pVM, RTGCPHYS GCPhys, uint8_t *p
         break;
 
     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+    case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
         AssertFailed();
         break;
 

@@ -104,6 +104,27 @@
 #define PGM_STATE_CRC32_ZERO_HALF_PAGE  UINT32_C(0xf1e8ba9e)
 
 
+
+/** @name Old Page types used in older saved states.
+ * @{  */
+/** Old saved state: The usual invalid zero entry. */
+#define PGMPAGETYPE_OLD_INVALID             0
+/** Old saved state: RAM page. (RWX) */
+#define PGMPAGETYPE_OLD_RAM                 1
+/** Old saved state: MMIO2 page. (RWX) */
+#define PGMPAGETYPE_OLD_MMIO2               1
+/** Old saved state: MMIO2 page aliased over an MMIO page. (RWX)
+ * See PGMHandlerPhysicalPageAlias(). */
+#define PGMPAGETYPE_OLD_MMIO2_ALIAS_MMIO    2
+/** Old saved state: Shadowed ROM. (RWX) */
+#define PGMPAGETYPE_OLD_ROM_SHADOW          3
+/** Old saved state: ROM page. (R-X) */
+#define PGMPAGETYPE_OLD_ROM                 4
+/** Old saved state: MMIO page. (---) */
+#define PGMPAGETYPE_OLD_MMIO                5
+/** @}  */
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -1155,6 +1176,7 @@ static int pgmR3PrepRamPages(PVM pVM)
                             break;
 
                         case PGMPAGETYPE_MMIO:
+                        case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
                             paLSPages[iPage].fZero   = 0;
                             paLSPages[iPage].fShared = 0;
                             paLSPages[iPage].fDirty  = 0;
@@ -2171,21 +2193,50 @@ static int pgmR3LoadPageToDevNullOld(PSSMHANDLE pSSM)
 
 
 /**
+ * Compares a page with an old save type value.
+ *
+ * @returns true if equal, false if not.
+ * @param   pPage           The page to compare.
+ * @param   uOldType        The old type value from the saved state.
+ */
+DECLINLINE(bool) pgmR3CompareNewAndOldPageTypes(PPGMPAGE pPage, uint8_t uOldType)
+{
+    uint8_t uOldPageType;
+    switch (PGM_PAGE_GET_TYPE(pPage))
+    {
+        case PGMPAGETYPE_INVALID:               uOldPageType = PGMPAGETYPE_OLD_INVALID; break;
+        case PGMPAGETYPE_RAM:                   uOldPageType = PGMPAGETYPE_OLD_RAM; break;
+        case PGMPAGETYPE_MMIO2:                 uOldPageType = PGMPAGETYPE_OLD_MMIO2; break;
+        case PGMPAGETYPE_MMIO2_ALIAS_MMIO:      uOldPageType = PGMPAGETYPE_OLD_MMIO2_ALIAS_MMIO; break;
+        case PGMPAGETYPE_ROM_SHADOW:            uOldPageType = PGMPAGETYPE_OLD_ROM_SHADOW; break;
+        case PGMPAGETYPE_ROM:                   uOldPageType = PGMPAGETYPE_OLD_ROM; break;
+        case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:    /* fall thru */
+        case PGMPAGETYPE_MMIO:                  uOldPageType = PGMPAGETYPE_OLD_MMIO; break;
+        default:
+            AssertFailed();
+            uOldPageType = PGMPAGETYPE_OLD_INVALID;
+            break;
+    }
+    return uOldPageType == uOldType;
+}
+
+
+/**
  * Loads a page without any bits in the saved state, i.e. making sure it's
  * really zero.
  *
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
- * @param   uType           The page type or PGMPAGETYPE_INVALID (old saved
+ * @param   uOldType        The page type or PGMPAGETYPE_OLD_INVALID (old saved
  *                          state).
  * @param   pPage           The guest page tracking structure.
  * @param   GCPhys          The page address.
  * @param   pRam            The ram range (logging).
  */
-static int pgmR3LoadPageZeroOld(PVM pVM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+static int pgmR3LoadPageZeroOld(PVM pVM, uint8_t uOldType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
 {
-    if (    PGM_PAGE_GET_TYPE(pPage) != uType
-        &&  uType != PGMPAGETYPE_INVALID)
+    if (   uOldType != PGMPAGETYPE_OLD_INVALID
+        && !pgmR3CompareNewAndOldPageTypes(pPage, uOldType))
         return VERR_SSM_UNEXPECTED_DATA;
 
     /* I think this should be sufficient. */
@@ -2206,21 +2257,21 @@ static int pgmR3LoadPageZeroOld(PVM pVM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS
  * @returns VBox status code.
  * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
- * @param   uType           The page type or PGMPAGETYEP_INVALID (old saved
+ * @param   uOldType        The page type or PGMPAGETYPE_OLD_INVALID (old saved
  *                          state).
  * @param   pPage           The guest page tracking structure.
  * @param   GCPhys          The page address.
  * @param   pRam            The ram range (logging).
  */
-static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uOldType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
 {
     /*
      * Match up the type, dealing with MMIO2 aliases (dropped).
      */
-    AssertLogRelMsgReturn(   PGM_PAGE_GET_TYPE(pPage) == uType
-                          || uType == PGMPAGETYPE_INVALID
+    AssertLogRelMsgReturn(   uOldType == PGMPAGETYPE_INVALID
+                          || pgmR3CompareNewAndOldPageTypes(pPage, uOldType)
                           /* kudge for the expanded PXE bios (r67885) - @bugref{5687}: */
-                          || (   uType == PGMPAGETYPE_RAM
+                          || (   uOldType == PGMPAGETYPE_OLD_RAM
                               && GCPhys >= 0xed000
                               && GCPhys <= 0xeffff
                               && PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_ROM)
@@ -2250,24 +2301,24 @@ static int pgmR3LoadPageBitsOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAG
  * @returns VBox status code, fully bitched errors.
  * @param   pVM             Pointer to the VM.
  * @param   pSSM            The SSM handle.
- * @param   uType           The page type.
+ * @param   uOldType        The page type.
  * @param   pPage           The page.
  * @param   GCPhys          The page address.
  * @param   pRam            The RAM range (for error messages).
  */
-static int pgmR3LoadPageOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
+static int pgmR3LoadPageOld(PVM pVM, PSSMHANDLE pSSM, uint8_t uOldType, PPGMPAGE pPage, RTGCPHYS GCPhys, PPGMRAMRANGE pRam)
 {
     uint8_t uState;
     int rc = SSMR3GetU8(pSSM, &uState);
     AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] GCPhys=%#x %s rc=%Rrc\n", pPage, GCPhys, pRam->pszDesc, rc), rc);
     if (uState == 0 /* zero */)
-        rc = pgmR3LoadPageZeroOld(pVM, uType, pPage, GCPhys, pRam);
+        rc = pgmR3LoadPageZeroOld(pVM, uOldType, pPage, GCPhys, pRam);
     else if (uState == 1)
-        rc = pgmR3LoadPageBitsOld(pVM, pSSM, uType, pPage, GCPhys, pRam);
+        rc = pgmR3LoadPageBitsOld(pVM, pSSM, uOldType, pPage, GCPhys, pRam);
     else
         rc = VERR_PGM_INVALID_SAVED_PAGE_STATE;
-    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uType=%d GCPhys=%RGp %s rc=%Rrc\n",
-                                 pPage, uState, uType, GCPhys, pRam->pszDesc, rc),
+    AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] uState=%d uOldType=%d GCPhys=%RGp %s rc=%Rrc\n",
+                                 pPage, uState, uOldType, GCPhys, pRam->pszDesc, rc),
                             rc);
     return VINF_SUCCESS;
 }
@@ -2439,13 +2490,13 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             {
                 RTGCPHYS const  GCPhysPage = ((RTGCPHYS)iPage << PAGE_SHIFT) + pRam->GCPhys;
                 PPGMPAGE        pPage      = &pRam->aPages[iPage];
-                uint8_t         uType;
-                rc = SSMR3GetU8(pSSM, &uType);
+                uint8_t         uOldType;
+                rc = SSMR3GetU8(pSSM, &uOldType);
                 AssertLogRelMsgRCReturn(rc, ("pPage=%R[pgmpage] iPage=%#x GCPhysPage=%#x %s\n", pPage, iPage, GCPhysPage, pRam->pszDesc), rc);
-                if (uType == PGMPAGETYPE_ROM_SHADOW)
+                if (uOldType == PGMPAGETYPE_OLD_ROM_SHADOW)
                     rc = pgmR3LoadShadowedRomPageOld(pVM, pSSM, pPage, GCPhysPage, pRam);
                 else
-                    rc = pgmR3LoadPageOld(pVM, pSSM, uType, pPage, GCPhysPage, pRam);
+                    rc = pgmR3LoadPageOld(pVM, pSSM, uOldType, pPage, GCPhysPage, pRam);
                 AssertLogRelMsgRCReturn(rc, ("rc=%Rrc iPage=%#x GCPhysPage=%#x %s\n", rc, iPage, GCPhysPage, pRam->pszDesc), rc);
             }
         }
@@ -2493,7 +2544,8 @@ static int pgmR3LoadMemoryOld(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
                         PPGMPAGE        pPage      = &pRam->aPages[iPage];
                         if (fPresent)
                         {
-                            if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO)
+                            if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO
+                                || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO)
                                 rc = pgmR3LoadPageToDevNullOld(pSSM);
                             else
                                 rc = pgmR3LoadPageBitsOld(pVM, pSSM, PGMPAGETYPE_INVALID, pPage, GCPhysPage, pRam);
