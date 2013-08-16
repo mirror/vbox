@@ -531,7 +531,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetOutput(PVBGLR3GUESTCTRLCMDCTX pCtx,
  * @returns VBox status code.
  ** @todo Docs!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
                                             uint32_t  *puPID,       uint32_t *puFlags,
                                             void      *pvData,      uint32_t  cbData,
                                             uint32_t  *pcbSize)
@@ -578,21 +578,24 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX pCtx,
 
 
 VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
-                                           char     *pszFileName,       uint32_t cbFileName,
-                                           char     *pszOpenMode,       uint32_t cbOpenMode,
-                                           char     *pszDisposition,    uint32_t cbDisposition,
+                                           char     *pszFileName,      uint32_t cbFileName,
+                                           char     *pszAccess,        uint32_t cbAccess,
+                                           char     *pszDisposition,   uint32_t cbDisposition,
+                                           char     *pszSharing,       uint32_t cbSharing,
                                            uint32_t *puCreationMode,
                                            uint64_t *puOffset)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
-    AssertReturn(pCtx->uNumParms == 6, VERR_INVALID_PARAMETER);
+    AssertReturn(pCtx->uNumParms == 7, VERR_INVALID_PARAMETER);
 
     AssertPtrReturn(pszFileName, VERR_INVALID_POINTER);
     AssertReturn(cbFileName, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszOpenMode, VERR_INVALID_POINTER);
-    AssertReturn(cbOpenMode, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszAccess, VERR_INVALID_POINTER);
+    AssertReturn(cbAccess, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDisposition, VERR_INVALID_POINTER);
     AssertReturn(cbDisposition, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszSharing, VERR_INVALID_POINTER);
+    AssertReturn(cbSharing, VERR_INVALID_PARAMETER);
     AssertPtrReturn(puCreationMode, VERR_INVALID_POINTER);
     AssertPtrReturn(puOffset, VERR_INVALID_POINTER);
 
@@ -605,8 +608,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileGetOpen(PVBGLR3GUESTCTRLCMDCTX      pCtx,
 
     VbglHGCMParmUInt32Set(&Msg.context, 0);
     VbglHGCMParmPtrSet(&Msg.filename, pszFileName, cbFileName);
-    VbglHGCMParmPtrSet(&Msg.openmode, pszOpenMode, cbOpenMode);
+    VbglHGCMParmPtrSet(&Msg.openmode, pszAccess, cbAccess);
     VbglHGCMParmPtrSet(&Msg.disposition, pszDisposition, cbDisposition);
+    VbglHGCMParmPtrSet(&Msg.sharing, pszSharing, cbSharing);
     VbglHGCMParmUInt32Set(&Msg.creationmode, 0);
     VbglHGCMParmUInt64Set(&Msg.offset, 0);
 
@@ -1024,6 +1028,32 @@ VBGLR3DECL(int) VbglR3GuestCtrlFileCbClose(PVBGLR3GUESTCTRLCMDCTX pCtx,
 
     VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
     VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_CLOSE);
+    VbglHGCMParmUInt32Set(&Msg.rc, uRc);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlFileCbError(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uRc)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+
+    HGCMReplyFileNotify Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_FILE_NOTIFY;
+    Msg.hdr.cParms      = 3;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.type, GUEST_FILE_NOTIFYTYPE_ERROR);
     VbglHGCMParmUInt32Set(&Msg.rc, uRc);
 
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));

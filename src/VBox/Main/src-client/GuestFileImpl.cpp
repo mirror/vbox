@@ -152,9 +152,12 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
     int vrc = bindToSession(pConsole, pSession, uFileID /* Object ID */);
     if (RT_SUCCESS(vrc))
     {
-        mData.mID = 0;
+        mSession = pSession;
+
+        mData.mID = uFileID;
         mData.mInitialSize = 0;
         mData.mStatus = FileStatus_Undefined;
+        mData.mOpenInfo = openInfo;
 
         unconst(mEventSource).createObject();
         HRESULT hr = mEventSource->init(static_cast<IGuestFile*>(this));
@@ -272,7 +275,9 @@ STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aDisposition = getDispositionFromString(mData.mOpenInfo.mDisposition);
+    uint32_t uDisposition = 0;
+    /** @todo Fix me! */
+    *aDisposition = uDisposition;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -362,7 +367,9 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aOpenMode = getOpenModeFromString(mData.mOpenInfo.mOpenMode);
+    uint32_t uOpenMode = 0;
+    /** @todo Fix me! */
+    *aOpenMode = uOpenMode;
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -396,8 +403,6 @@ int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRL
                      mData.mOpenInfo.mFileName.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
 #endif
     AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     int vrc;
     switch (pCbCtx->uFunction)
@@ -453,44 +458,11 @@ int GuestFile::closeFile(int *pGuestRc)
     vrc = sendCommand(HOST_FILE_CLOSE, i, paParms);
     if (RT_SUCCESS(vrc))
         vrc = waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
-                                  NULL /* FileStatus */);
+                                  NULL /* FileStatus */, pGuestRc);
     unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
-}
-
-/* static */
-uint32_t GuestFile::getDispositionFromString(const Utf8Str &strDisposition)
-{
-    return 0; /** @todo Implement me! */
-}
-
-/* static */
-uint32_t GuestFile::getOpenModeFromString(const Utf8Str &strOpenMode)
-{
-    uint32_t uOpenMode = 0;
-
-    const char *pc = strOpenMode.c_str();
-    while (*pc != '\0')
-    {
-        switch (*pc++)
-        {
-            case 'r':
-                uOpenMode |= RTFILE_O_READ;
-                break;
-
-            case 'w':
-                uOpenMode |= RTFILE_O_WRITE;
-                break;
-
-            default:
-                /* Silently skip unknown values. */
-                break;
-        }
-    }
-
-    return uOpenMode;
 }
 
 /* static */
@@ -542,25 +514,37 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
+    LogFlowThisFuncEnter();
+
     if (pSvcCbData->mParms < 3)
         return VERR_INVALID_PARAMETER;
 
     int vrc = VINF_SUCCESS;
 
-    int idx = 0; /* Current parameter index. */
+    int idx = 1; /* Current parameter index. */
     CALLBACKDATA_FILE_NOTIFY dataCb;
     /* pSvcCb->mpaParms[0] always contains the context ID. */
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.uType);
     pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.rc);
 
+    FileStatus_T fileStatus = FileStatus_Undefined;
     int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
+
+    LogFlowFunc(("uType=%RU32, guestRc=%Rrc\n",
+                 dataCb.uType, guestRc));
+
+    if (RT_FAILURE(guestRc))
+    {
+        int rc2 = setFileStatus(FileStatus_Error, guestRc);
+        AssertRC(rc2);
+
+        return VINF_SUCCESS; /* Report to the guest. */
+    }
 
     switch (dataCb.uType)
     {
         case GUEST_FILE_NOTIFYTYPE_ERROR:
         {
-            AssertMsg(mData.mStatus != FileStatus_Error, ("File status already set to error\n"));
-
             int rc2 = setFileStatus(FileStatus_Error, guestRc);
             AssertRC(rc2);
             break;
@@ -572,11 +556,12 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
             {
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.open.uHandle);
 
-                AssertMsg(mData.mID == 0, ("File ID already set to %RU32\n", mData.mID));
-                mData.mID = dataCb.u.open.uHandle;
-                AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
-                          ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
-                           VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+                {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+                    AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
+                              ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
+                               VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+                }
 
                 /* Set the process status. */
                 int rc2 = setFileStatus(FileStatus_Open, guestRc);
@@ -598,6 +583,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
         }
 
         case GUEST_FILE_NOTIFYTYPE_READ:
+        {
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData,
@@ -605,10 +591,15 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 uint32_t cbRead = dataCb.u.read.cbData;
                 if (cbRead)
                 {
+                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                     mData.mOffCurrent += cbRead;
+
+                    alock.release();
 
                     com::SafeArray<BYTE> data((size_t)cbRead);
                     data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
+
                     fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
                                            cbRead, ComSafeArrayAsInParam(data));
                 }
@@ -616,71 +607,83 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
             else
                 vrc = VERR_NOT_SUPPORTED;
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_WRITE:
+        {
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getUInt32(&dataCb.u.write.cbWritten);
 
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                 mData.mOffCurrent += dataCb.u.write.cbWritten;
+                uint64_t uOffCurrent = mData.mOffCurrent;
+
+                alock.release();
 
                 if (dataCb.u.write.cbWritten)
-                    fireGuestFileWriteEvent(mEventSource, mSession, this, mData.mOffCurrent,
+                    fireGuestFileWriteEvent(mEventSource, mSession, this, uOffCurrent,
                                             dataCb.u.write.cbWritten);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_SEEK:
+        {
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.seek.uOffActual);
 
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                 mData.mOffCurrent = dataCb.u.seek.uOffActual;
+                uint64_t uOffCurrent = mData.mOffCurrent;
+
+                alock.release();
 
                 if (dataCb.u.seek.uOffActual)
                     fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                    mData.mOffCurrent, 0 /* Processed */);
+                                                    uOffCurrent, 0 /* Processed */);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
             break;
+        }
 
         case GUEST_FILE_NOTIFYTYPE_TELL:
+        {
             if (pSvcCbData->mParms == 4)
             {
                 pSvcCbData->mpaParms[idx++].getUInt64(&dataCb.u.tell.uOffActual);
 
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
                 if (mData.mOffCurrent != dataCb.u.tell.uOffActual)
                 {
                     mData.mOffCurrent = dataCb.u.tell.uOffActual;
+                    uint64_t uOffCurrent = mData.mOffCurrent;
+
+                    alock.release();
 
                     fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                    mData.mOffCurrent, 0 /* Processed */);
+                                                    uOffCurrent, 0 /* Processed */);
                 }
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
             break;
+        }
 
         default:
             vrc = VERR_NOT_SUPPORTED;
             break;
     }
 
-    LogFlowThisFunc(("strName=%s, uType=%RU32, guestRc=%Rrc\n",
-                     mData.mOpenInfo.mFileName.c_str(), dataCb.uType, dataCb.rc));
-
-    if (RT_SUCCESS(vrc))
-    {
-        /* Nothing to do here yet. */
-    }
-    else if (vrc == VERR_NOT_SUPPORTED)
-    {
-        /* Also let the callback know. */
-        guestRc = VERR_NOT_SUPPORTED;
-    }
+    LogFlowThisFunc(("uType=%RU32, guestRc=%Rrc\n",
+                     dataCb.uType, dataCb.rc));
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -691,20 +694,21 @@ int GuestFile::onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTR
     AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pSvcCbData, VERR_INVALID_POINTER);
 
-    LogFlowThisFunc(("strFile=%s\n",
-                     mData.mOpenInfo.mFileName.c_str()));
-
     int vrc = setFileStatus(FileStatus_Down, VINF_SUCCESS);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestFile::openFile(int *pGuestRc)
+int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
 {
-    LogFlowThisFunc(("strFile=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%RU32\n",
+    LogFlowThisFuncEnter();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    LogFlowThisFunc(("strFile=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%RU32, uOffset=%RU64\n",
                      mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mOpenMode.c_str(),
-                     mData.mOpenInfo.mDisposition.c_str(), mData.mOpenInfo.mCreationMode));
+                     mData.mOpenInfo.mDisposition.c_str(), mData.mOpenInfo.mCreationMode, mData.mOpenInfo.mInitialOffset));
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -733,13 +737,17 @@ int GuestFile::openFile(int *pGuestRc)
                             (ULONG)mData.mOpenInfo.mOpenMode.length() + 1);
     paParms[i++].setPointer((void*)mData.mOpenInfo.mDisposition.c_str(),
                             (ULONG)mData.mOpenInfo.mDisposition.length() + 1);
+    paParms[i++].setPointer((void*)mData.mOpenInfo.mSharingMode.c_str(),
+                            (ULONG)mData.mOpenInfo.mSharingMode.length() + 1);
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
     paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
 
+    alock.release(); /* Drop read lock before sending. */
+
     vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
-        vrc = waitForStatusChange(pEvent, 30 * 1000 /* Timeout in ms */,
-                                  NULL /* FileStatus */);
+        vrc = waitForStatusChange(pEvent, uTimeoutMS,
+                                  NULL /* FileStatus */, pGuestRc);
 
     unregisterWaitEvent(pEvent);
 
@@ -902,9 +910,12 @@ HRESULT GuestFile::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
     return pInterface->setError(VBOX_E_IPRT_ERROR, GuestFile::guestErrorToString(guestRc).c_str());
 }
 
-/* Does not do locking; caller is responsible for that! */
 int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
 {
+    LogFlowThisFuncEnter();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     LogFlowThisFunc(("oldStatus=%ld, newStatus=%ld, fileRc=%Rrc\n",
                      mData.mStatus, fileStatus, fileRc));
 
@@ -919,21 +930,27 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
 
     if (mData.mStatus != fileStatus)
     {
-        mData.mStatus = fileStatus;
+        mData.mStatus    = fileStatus;
+        mData.mLastError = fileRc;
 
         ComObjPtr<VirtualBoxErrorInfo> errorInfo;
         HRESULT hr = errorInfo.createObject();
         ComAssertComRC(hr);
         if (RT_FAILURE(fileRc))
         {
-            int rc2 = errorInfo->initEx(VBOX_E_IPRT_ERROR, fileRc,
-                                        COM_IIDOF(IGuestFile), getComponentName(),
-                                        guestErrorToString(fileRc));
-            AssertRC(rc2);
+            hr = errorInfo->initEx(VBOX_E_IPRT_ERROR, fileRc,
+                                   COM_IIDOF(IGuestFile), getComponentName(),
+                                   guestErrorToString(fileRc));
+            ComAssertComRC(hr);
         }
 
+        /* Copy over necessary data before releasing lock again. */
+        FileStatus_T fileStatus = mData.mStatus;
+
+        alock.release(); /* Release lock before firing off event. */
+
         fireGuestFileStateChangedEvent(mEventSource, mSession,
-                                       this, mData.mStatus, errorInfo);
+                                       this, fileStatus, errorInfo);
     }
 
     return VINF_SUCCESS;
@@ -1012,10 +1029,11 @@ int GuestFile::waitForRead(GuestWaitEvent *pEvent,
     return vrc;
 }
 
-int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent,
-                                   uint32_t uTimeoutMS, FileStatus_T *pFileStatus)
+int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
+                                   FileStatus_T *pFileStatus, int *pGuestRc)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+    /* pFileStatus is optional. */
 
     VBoxEventType_T evtType;
     ComPtr<IEvent> pIEvent;
@@ -1027,8 +1045,29 @@ int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent,
         ComPtr<IGuestFileStateChangedEvent> pFileEvent = pIEvent;
         Assert(!pFileEvent.isNull());
 
-        HRESULT hr = pFileEvent->COMGETTER(Status)(pFileStatus);
+        HRESULT hr;
+        if (pFileStatus)
+        {
+            hr = pFileEvent->COMGETTER(Status)(pFileStatus);
+            ComAssertComRC(hr);
+        }
+
+        ComPtr<IVirtualBoxErrorInfo> errorInfo;
+        hr = pFileEvent->COMGETTER(Error)(errorInfo.asOutParam());
         ComAssertComRC(hr);
+
+        LONG lGuestRc;
+        hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
+        ComAssertComRC(hr);
+
+        LogFlowThisFunc(("resultDetail=%RI32 (rc=%Rrc)\n",
+                         lGuestRc, lGuestRc));
+
+        if (RT_FAILURE((int)lGuestRc))
+            vrc = VERR_GSTCTL_GUEST_ERROR;
+
+        if (pGuestRc)
+            *pGuestRc = (int)lGuestRc;
     }
 
     return vrc;
@@ -1196,14 +1235,6 @@ STDMETHODIMP GuestFile::Close(void)
     if (RT_SUCCESS(rc))
         rc = rc2;
 
-    /*
-     * Release autocaller before calling uninit.
-     */
-    autoCaller.release();
-
-    uninit();
-
-    LogFlowFuncLeaveRC(rc);
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_GSTCTL_GUEST_ERROR)
@@ -1213,6 +1244,7 @@ STDMETHODIMP GuestFile::Close(void)
                         tr("Closing guest file failed with %Rrc\n"), rc);
     }
 
+    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }

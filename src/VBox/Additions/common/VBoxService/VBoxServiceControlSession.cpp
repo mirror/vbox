@@ -102,6 +102,7 @@ static int gstcntlSessionFileDestroy(PVBOXSERVICECTRLFILE pFile)
 }
 
 
+/** @todo No locking done yet! */
 static PVBOXSERVICECTRLFILE gstcntlSessionFileGetLocked(const PVBOXSERVICECTRLSESSION pSession,
                                                         uint32_t uHandle)
 {
@@ -126,35 +127,50 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
     char szFile[RTPATH_MAX];
-    char szOpenMode[64];
+    char szAccess[64];
     char szDisposition[64];
+    char szSharing[64];
     uint32_t uCreationMode = 0;
     uint64_t uOffset = 0;
-
     uint32_t uHandle = 0;
+
     int rc = VbglR3GuestCtrlFileGetOpen(pHostCtx,
                                         /* File to open. */
                                         szFile, sizeof(szFile),
                                         /* Open mode. */
-                                        szOpenMode, sizeof(szOpenMode),
+                                        szAccess, sizeof(szAccess),
                                         /* Disposition. */
                                         szDisposition, sizeof(szDisposition),
+                                        /* Sharing. */
+                                        szSharing, sizeof(szSharing),
                                         /* Creation mode. */
                                         &uCreationMode,
                                         /* Offset. */
                                         &uOffset);
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "[File %s]: szAccess=%s, szDisposition=%s, szSharing=%s, rc=%Rrc\n",
+                       szFile, szAccess, szDisposition, szSharing, rc);
+#endif
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLFILE pFile = (PVBOXSERVICECTRLFILE)RTMemAlloc(sizeof(VBOXSERVICECTRLFILE));
         if (pFile)
         {
-            if (!RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile))
-                rc = VERR_BUFFER_OVERFLOW;
+            if (!strlen(szFile))
+                rc = VERR_INVALID_PARAMETER;
+
+            if (   RT_SUCCESS(rc)
+                && !RTStrPrintf(pFile->szName, sizeof(pFile->szName), "%s", szFile))
+                rc = VERR_NO_MEMORY;
 
             if (RT_SUCCESS(rc))
             {
-                uint64_t fFlags = RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE; /** @todo Modes! */
-                rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
+                uint64_t fFlags;
+                rc = RTFileModeToFlagsEx(szAccess, szDisposition,
+                                         NULL /* pszSharing, not used yet */, &fFlags);
+                VBoxServiceVerbose(4, "[File %s]: Opening flags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
+                if (RT_SUCCESS(rc))
+                    rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
                 if (   RT_SUCCESS(rc)
                     && uOffset)
                 {
@@ -164,7 +180,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
                         VBoxServiceVerbose(3, "[File %s]: Seeking to offset %RU64 failed; rc=%Rrc\n",
                                            pFile->szName, uOffset, rc);
                 }
-                else
+                else if (RT_FAILURE(rc))
                     VBoxServiceVerbose(3, "[File %s]: Opening failed; rc=%Rrc\n",
                                        pFile->szName, rc);
             }
@@ -195,6 +211,10 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
             rc = rc2;
     }
 
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Opening file \"%s\" (open mode=\"%s\", disposition=\"%s\", creation mode=0x%x returned rc=%Rrc\n",
+                       szFile, szAccess, szDisposition, uCreationMode, rc);
+#endif
     return rc;
 }
 
@@ -205,12 +225,13 @@ static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
 
+    uint32_t uHandle = 0;
     int rc = VbglR3GuestCtrlFileGetClose(pHostCtx, &uHandle /* File handle to close */);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = gstcntlSessionFileDestroy(pFile);
@@ -226,6 +247,10 @@ static int gstcntlSessionHandleFileClose(const PVBOXSERVICECTRLSESSION pSession,
             rc = rc2;
     }
 
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Closing file \"%s\" (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -237,9 +262,10 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uHandle;
-    uint32_t cbToRead;
+    PVBOXSERVICECTRLFILE pFile = NULL;
 
+    uint32_t uHandle = 0;
+    uint32_t cbToRead;
     int rc = VbglR3GuestCtrlFileGetRead(pHostCtx, &uHandle, &cbToRead);
     if (RT_SUCCESS(rc))
     {
@@ -278,6 +304,11 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Reading file \"%s\" (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -289,17 +320,19 @@ static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
+
+    uint32_t uHandle = 0;
     uint32_t cbToRead; int64_t iOffset;
 
     int rc = VbglR3GuestCtrlFileGetReadAt(pHostCtx,
-                                          &uHandle, &cbToRead, (uint64_t*)&iOffset);
+                                          &uHandle, &cbToRead, (uint64_t *)&iOffset);
     if (RT_SUCCESS(rc))
     {
         void *pvDataRead = pvScratchBuf;
         size_t cbRead = 0;
 
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             if (cbToRead)
@@ -331,6 +364,11 @@ static int gstcntlSessionHandleFileReadAt(const PVBOXSERVICECTRLSESSION pSession
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Reading file \"%s\" at offset (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -344,7 +382,9 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
+
+    uint32_t uHandle = 0;
     uint32_t cbToWrite;
 
     int rc = VbglR3GuestCtrlFileGetWrite(pHostCtx, &uHandle,
@@ -353,7 +393,7 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWrite(pFile->hFile, pvScratchBuf, cbScratchBuf, &cbWritten);
@@ -368,6 +408,11 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Writing file \"%s\" (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -381,12 +426,14 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
     AssertPtrReturn(pvScratchBuf, VERR_INVALID_POINTER);
     AssertPtrReturn(cbScratchBuf, VERR_INVALID_PARAMETER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
+
+    uint32_t uHandle = 0;
     uint32_t cbToWrite; int64_t iOffset;
 
     int rc = VbglR3GuestCtrlFileGetWriteAt(pHostCtx, &uHandle,
                                            pvScratchBuf, cbScratchBuf,
-                                           &cbToWrite, (uint64_t*)&iOffset);
+                                           &cbToWrite, (uint64_t *)&iOffset);
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
@@ -406,6 +453,11 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Writing file \"%s\" at offset (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -416,7 +468,9 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
+
+    uint32_t uHandle = 0;
     uint32_t uSeekMethod;
     uint64_t uOffset; /* Will be converted to int64_t. */
 
@@ -426,7 +480,7 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
                                         &uSeekMethod, &uOffset);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             unsigned uSeekMethodIPRT;
@@ -463,6 +517,11 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Seeking file \"%s\" (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -473,13 +532,15 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
     AssertPtrReturn(pHostCtx, VERR_INVALID_POINTER);
 
-    uint32_t uHandle;
+    PVBOXSERVICECTRLFILE pFile = NULL;
+
+    uint32_t uHandle = 0;
     uint64_t uOffsetActual = 0;
 
     int rc = VbglR3GuestCtrlFileGetTell(pHostCtx, &uHandle);
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             uOffsetActual = RTFileTell(pFile->hFile);
@@ -494,6 +555,11 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
+
+#ifdef DEBUG
+    VBoxServiceVerbose(4, "Telling file \"%s\" (handle=%RU32) returned rc=%Rrc\n",
+                       pFile ? pFile->szName : "<Not found>", uHandle, rc);
+#endif
     return rc;
 }
 
@@ -658,7 +724,7 @@ int gstcntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
         if (uFlags & INPUT_FLAG_EOF)
         {
             fPendingClose = true;
-#ifdef DEBUG_andy
+#ifdef DEBUG
             VBoxServiceVerbose(4, "Got last process input block for PID=%RU32 (%RU32 bytes) ...\n",
                                uPID, cbSize);
 #endif
@@ -678,8 +744,7 @@ int gstcntlSessionHandleProcInput(PVBOXSERVICECTRLSESSION pSession,
             rc = VERR_NOT_FOUND;
     }
 
-
-#ifdef DEBUG_andy
+#ifdef DEBUG
     VBoxServiceVerbose(4, "Setting input for PID=%RU32 resulted in rc=%Rrc\n",
                        uPID, rc);
 #endif
@@ -904,6 +969,10 @@ int GstCntlSessionHandler(PVBOXSERVICECTRLSESSION pSession,
                                uMsg, pHostCtx->uNumParms);
             break;
     }
+
+    if (RT_FAILURE(rc))
+        VBoxServiceError("Error while handling message (uMsg=%RU32, cParms=%RU32), rc=%Rrc\n",
+                         uMsg, pHostCtx->uNumParms, rc);
 
     return rc;
 }
@@ -1168,9 +1237,8 @@ RTEXITCODE gstcntlSessionForkWorker(PVBOXSERVICECTRLSESSION pSession)
                 VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
             if (RT_SUCCESS(rc))
             {
-#ifdef DEBUG
-                VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
-#endif
+                VBoxServiceVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
+
                 /* Set number of parameters for current host context. */
                 ctxHost.uNumParms = cParms;
 

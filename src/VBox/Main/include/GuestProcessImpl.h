@@ -127,7 +127,7 @@ private:
         ProcessStatus_T          mStatus;
         /** The last returned process status
          *  returned from the guest side. */
-        int                      mRC;
+        int                      mLastError;
     } mData;
 };
 
