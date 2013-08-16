@@ -200,6 +200,10 @@ int main()
             break;
         }
 
+        /** @todo Testing sharing modes are not implemented yet,
+         *        so just remove them from testing. */
+        uMode &= ~RTFILE_O_DENY_NONE;
+
         if (   RT_SUCCESS(iResult)
             && uMode != aTestsEx[iTest].uMode)
         {
