@@ -10137,7 +10137,7 @@
 
   <interface
     name="IGuestSession" extends="$unknown"
-    uuid="1afeabbd-0c0b-458c-8026-04464892ae12"
+    uuid="5b28703c-07b6-4fcb-afba-ac199b309752"
     wsmap="managed"
     >
     <desc>
@@ -10624,6 +10624,38 @@
       </param>
       <param name="disposition" type="wstring" dir="in">
         <desc>The file disposition.</desc>
+      </param>
+      <param name="creationMode" type="unsigned long" dir="in">
+        <desc>The file creation mode.</desc>
+      </param>
+      <param name="file" type="IGuestFile" dir="return">
+        <desc><link to="IGuestFile"/> object representing the opened file.</desc>
+      </param>
+    </method>
+
+    <method name="fileOpenEx">
+      <desc>
+        Opens a file and creates a <link to="IGuestFile"/> object that
+        can be used for further operations, extended version.
+
+        <result name="VBOX_E_OBJECT_NOT_FOUND">
+          File to open was not found.
+        </result>
+        <result name="VBOX_E_IPRT_ERROR">
+          Error while opening the file.
+        </result>
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>Full path to file to open.</desc>
+      </param>
+      <param name="openMode" type="wstring" dir="in">
+        <desc>The file open mode.</desc>
+      </param>
+      <param name="disposition" type="wstring" dir="in">
+        <desc>The file disposition.</desc>
+      </param>
+      <param name="sharingMode" type="wstring" dir="in">
+        <desc>The file sharing mode on the guest.</desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
         <desc>The file creation mode.</desc>
@@ -20908,7 +20940,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
     <!-- Note: No events for reads/writes for performance reasons.
-               See dedidcated events IGuestFileReadEvent and
+               See dedicated events IGuestFileReadEvent and
                IGuestFileWriteEvent. -->
 
   </interface>

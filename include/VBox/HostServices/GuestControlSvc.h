@@ -709,12 +709,14 @@ typedef struct HGCMMsgFileOpen
     VBoxGuestHGCMCallInfo hdr;
     /** UInt32: Context ID. */
     HGCMFunctionParameter context;
-    /** String: File to open. */
+    /** File to open. */
     HGCMFunctionParameter filename;
-    /** String: Open mode. */
+    /** Open mode. */
     HGCMFunctionParameter openmode;
-    /** String: Disposition. */
+    /** Disposition mode. */
     HGCMFunctionParameter disposition;
+    /** Sharing mode. */
+    HGCMFunctionParameter sharing;
     /** UInt32: Creation mode. */
     HGCMFunctionParameter creationmode;
     /** UInt64: Initial offset. */

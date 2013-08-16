@@ -224,9 +224,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
             VBoxServiceVerbose(3, "Getting host message failed with %Rrc\n", rc); /* VERR_GEN_IO_FAILURE seems to be normal if ran into timeout. */
         if (RT_SUCCESS(rc))
         {
-#ifdef DEBUG
-            VBoxServiceVerbose(3, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
-#endif
+            VBoxServiceVerbose(4, "Msg=%RU32 (%RU32 parms) retrieved\n", uMsg, cParms);
+
             /* Set number of parameters for current host context. */
             ctxHost.uNumParms = cParms;
 

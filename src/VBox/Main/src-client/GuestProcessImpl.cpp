@@ -238,7 +238,7 @@ int GuestProcess::init(Console *aConsole, GuestSession *aSession,
         mData.mProcess = aProcInfo;
         mData.mExitCode = 0;
         mData.mPID = 0;
-        mData.mRC = VINF_SUCCESS;
+        mData.mLastError = VINF_SUCCESS;
         mData.mStatus = ProcessStatus_Undefined;
         /* Everything else will be set by the actual starting routine. */
 
@@ -966,7 +966,7 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
         AssertMsg(RT_FAILURE(procRc), ("Guest rc must be an error (%Rrc)\n", procRc));
         /* Do not allow overwriting an already set error. If this happens
          * this means we forgot some error checking/locking somewhere. */
-        AssertMsg(RT_SUCCESS(mData.mRC), ("Guest rc already set (to %Rrc)\n", mData.mRC));
+        AssertMsg(RT_SUCCESS(mData.mLastError), ("Guest rc already set (to %Rrc)\n", mData.mLastError));
     }
     else
         AssertMsg(RT_SUCCESS(procRc), ("Guest rc must not be an error (%Rrc)\n", procRc));
@@ -975,29 +975,29 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
 
     if (mData.mStatus != procStatus) /* Was there a process status change? */
     {
-        mData.mStatus = procStatus;
-        mData.mRC     = procRc;
+        mData.mStatus    = procStatus;
+        mData.mLastError = procRc;
 
         ComObjPtr<VirtualBoxErrorInfo> errorInfo;
         HRESULT hr = errorInfo.createObject();
         ComAssertComRC(hr);
-        if (RT_FAILURE(mData.mRC))
+        if (RT_FAILURE(mData.mLastError))
         {
-            int rc2 = errorInfo->initEx(VBOX_E_IPRT_ERROR, mData.mRC,
-                                        COM_IIDOF(IGuestProcess), getComponentName(),
-                                        guestErrorToString(mData.mRC));
-            AssertRC(rc2);
+            hr = errorInfo->initEx(VBOX_E_IPRT_ERROR, mData.mLastError,
+                                   COM_IIDOF(IGuestProcess), getComponentName(),
+                                   guestErrorToString(mData.mLastError));
+            ComAssertComRC(hr);
         }
 
         /* Copy over necessary data before releasing lock again. */
         uint32_t uPID =  mData.mPID;
-        ProcessStatus_T uStatus = mData.mStatus;
+        ProcessStatus_T procStatus = mData.mStatus;
         /** @todo Also handle mSession? */
 
         alock.release(); /* Release lock before firing off event. */
 
         fireGuestProcessStateChangedEvent(mEventSource, mSession, this,
-                                          uPID, uStatus, errorInfo);
+                                          uPID, procStatus, errorInfo);
 #if 0
         /*
          * On Guest Additions < 4.3 there is no guarantee that outstanding
@@ -1407,15 +1407,15 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("fWaitFlags=0x%x, uTimeoutMS=%RU32, procStatus=%RU32, procRc=%Rrc, pGuestRc=%p\n",
-                     fWaitFlags, uTimeoutMS, mData.mStatus, mData.mRC, pGuestRc));
+                     fWaitFlags, uTimeoutMS, mData.mStatus, mData.mLastError, pGuestRc));
 
     /* Did some error occur before? Then skip waiting and return. */
     if (mData.mStatus == ProcessStatus_Error)
     {
         waitResult = ProcessWaitResult_Error;
-        AssertMsg(RT_FAILURE(mData.mRC), ("No error rc (%Rrc) set when guest process indicated an error\n", mData.mRC));
+        AssertMsg(RT_FAILURE(mData.mLastError), ("No error rc (%Rrc) set when guest process indicated an error\n", mData.mLastError));
         if (pGuestRc)
-            *pGuestRc = mData.mRC; /* Return last set error. */
+            *pGuestRc = mData.mLastError; /* Return last set error. */
         return VERR_GSTCTL_GUEST_ERROR;
     }
 
@@ -1426,8 +1426,8 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     if (waitResult != ProcessWaitResult_None)
     {
         if (pGuestRc)
-            *pGuestRc = mData.mRC; /* Return last set error (if any). */
-        return RT_SUCCESS(mData.mRC) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
+            *pGuestRc = mData.mLastError; /* Return last set error (if any). */
+        return RT_SUCCESS(mData.mLastError) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
 
     alock.release(); /* Release lock before waiting. */

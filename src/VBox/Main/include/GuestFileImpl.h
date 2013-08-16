@@ -81,13 +81,11 @@ public:
      * @{ */
     int             callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int             closeFile(int *pGuestRc);
-    static uint32_t getDispositionFromString(const Utf8Str &strDisposition);
     EventSource    *getEventSource(void) { return mEventSource; }
-    static uint32_t getOpenModeFromString(const Utf8Str &strOpenMode);
     static Utf8Str  guestErrorToString(int guestRc);
     int             onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
     int             onGuestDisconnected(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCbData);
-    int             openFile(int *pGuestRc);
+    int             openFile(uint32_t uTimeoutMS, int *pGuestRc);
     int             readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
     int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
     int             seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
@@ -95,7 +93,7 @@ public:
     int             setFileStatus(FileStatus_T fileStatus, int fileRc);
     int             waitForOffsetChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint64_t *puOffset);
     int             waitForRead(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead);
-    int             waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, FileStatus_T *pFileStatus);
+    int             waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, FileStatus_T *pFileStatus, int *pGuestRc);
     int             waitForWrite(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint32_t *pcbWritten);
     int             writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
     int             writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS, void *pvData, uint32_t cbData, uint32_t *pcbWritten);
@@ -103,10 +101,6 @@ public:
 
 private:
 
-    /** The internal console object. */
-    Console                *mConsole;
-    /** The associate session this file belongs to. */
-    GuestSession           *mSession;
     /** This can safely be used without holding any locks.
      * An AutoCaller suffices to prevent it being destroy while in use and
      * internally there is a lock providing the necessary serialization. */
@@ -122,6 +116,9 @@ private:
         uint32_t                mID;
         /** The current file status. */
         FileStatus_T            mStatus;
+        /** The last returned process status
+         *  returned from the guest side. */
+        int                     mLastError;
         /** The file's current offset. */
         uint64_t                mOffCurrent;
     } mData;

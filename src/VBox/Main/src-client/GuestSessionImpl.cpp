@@ -1004,7 +1004,8 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
             LogFlowThisFunc(("Removing guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
                              Utf8Str(strName).c_str(), mData.mSession.mID, mData.mFiles.size() - 1, mData.mNumObjects - 1));
 
-            itFiles->second->Release();
+            pFile->cancelWaitEvents();
+            pFile->Release();
 
             mData.mFiles.erase(itFiles);
             mData.mNumObjects--;
@@ -1053,7 +1054,7 @@ int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 
 int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pGuestRc)
 {
-    LogFlowThisFunc(("strPath=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%x, iOffset=%RI64\n",
+    LogFlowThisFunc(("strPath=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%x, uOffset=%RU64\n",
                      openInfo.mFileName.c_str(), openInfo.mOpenMode.c_str(), openInfo.mDisposition.c_str(),
                      openInfo.mCreationMode, openInfo.mInitialOffset));
 
@@ -1110,30 +1111,41 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
     if (RT_FAILURE(rc))
         return rc;
 
-    int guestRc;
-    rc = pFile->openFile(&guestRc);
+    /*
+     * Since this is a synchronous guest call we have to
+     * register the file object first, releasing the session's
+     * lock and then proceed with the actual opening command
+     * -- otherwise the file's opening callback would hang
+     * because the session's lock still is in place.
+     */
+    try
+    {
+        /* Add the created file to our vector. */
+        mData.mFiles[uNewFileID] = pFile;
+        mData.mNumObjects++;
+        Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
+
+        LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
+                     openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+
+        alock.release(); /* Release lock before firing off event. */
+
+        fireGuestFileRegisteredEvent(mEventSource, this, pFile,
+                                     true /* Registered */);
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
     if (RT_SUCCESS(rc))
     {
-        try
+        int guestRc;
+        rc = pFile->openFile(30 * 1000 /* 30s timeout */, &guestRc);
+        if (   rc == VERR_GSTCTL_GUEST_ERROR
+            && pGuestRc)
         {
-            /* Add the created file to our vector. */
-            mData.mFiles[uNewFileID] = pFile;
-            mData.mNumObjects++;
-            Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
-
-            LogFlowFunc(("Added new guest file \"%s\" (Session: %RU32) (now total %ld files, %ld objects)\n",
-                         openInfo.mFileName.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
-
-            alock.release(); /* Release lock before firing off event. */
-
-            fireGuestFileRegisteredEvent(mEventSource, this, pFile,
-                                         true /* Registered */);
-            if (pGuestRc)
-                *pGuestRc = guestRc;
-        }
-        catch (std::bad_alloc &)
-        {
-            rc = VERR_NO_MEMORY;
+            *pGuestRc = guestRc;
         }
     }
 
@@ -2727,7 +2739,22 @@ STDMETHODIMP GuestSession::FileRemove(IN_BSTR aPath)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile)
+STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, ULONG aCreationMode, IGuestFile **aFile)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    LogFlowThisFuncEnter();
+
+    Bstr strSharingMode = ""; /* Sharing mode is ignored. */
+
+    return FileOpenEx(aPath, aOpenMode, aDisposition, strSharingMode.raw(), aCreationMode,
+                      0 /* aOffset */, aFile);
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
+STDMETHODIMP GuestSession::FileOpenEx(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aDisposition, IN_BSTR aSharingMode,
+                                      ULONG aCreationMode, LONG64 aOffset, IGuestFile **aFile)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -2740,6 +2767,7 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
         return setError(E_INVALIDARG, tr("No open mode specified"));
     if (RT_UNLIKELY((aDisposition) == NULL || *(aDisposition) == '\0'))
         return setError(E_INVALIDARG, tr("No disposition mode specified"));
+    /* aSharingMode is optional. */
 
     CheckComArgOutPointerValid(aFile);
 
@@ -2750,9 +2778,6 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
     if (FAILED(hr))
         return hr;
 
-    /** @todo Validate open mode. */
-    /** @todo Validate disposition mode. */
-
     /** @todo Validate creation mode. */
     uint32_t uCreationMode = 0;
 
@@ -2760,11 +2785,20 @@ STDMETHODIMP GuestSession::FileOpen(IN_BSTR aPath, IN_BSTR aOpenMode, IN_BSTR aD
     openInfo.mFileName = Utf8Str(aPath);
     openInfo.mOpenMode = Utf8Str(aOpenMode);
     openInfo.mDisposition = Utf8Str(aDisposition);
+    openInfo.mSharingMode = Utf8Str(aSharingMode);
     openInfo.mCreationMode = aCreationMode;
     openInfo.mInitialOffset = aOffset;
 
+    uint64_t uFlagsIgnored;
+    int vrc = RTFileModeToFlagsEx(openInfo.mOpenMode.c_str(),
+                                  openInfo.mDisposition.c_str(),
+                                  openInfo.mSharingMode.c_str(),
+                                  &uFlagsIgnored);
+    if (RT_FAILURE(vrc))
+        return setError(E_INVALIDARG, tr("Invalid open mode / disposition / sharing mode specified"));
+
     ComObjPtr <GuestFile> pFile; int guestRc;
-    int vrc = fileOpenInternal(openInfo, pFile, &guestRc);
+    vrc = fileOpenInternal(openInfo, pFile, &guestRc);
     if (RT_SUCCESS(vrc))
     {
         /* Return directory object to the caller. */

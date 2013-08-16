@@ -115,10 +115,13 @@ struct GuestFileOpenInfo
     Utf8Str                 mOpenMode;
     /** The file's disposition mode. */
     Utf8Str                 mDisposition;
+    /** The file's sharing mode.
+     **@todo Not implemented yet.*/
+    Utf8Str                 mSharingMode;
     /** Octal creation mode. */
     uint32_t                mCreationMode;
     /** The initial offset on open. */
-    int64_t                 mInitialOffset;
+    uint64_t                mInitialOffset;
 };
 
 
