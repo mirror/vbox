@@ -1481,7 +1481,6 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   idCpu       The identifier for the CPU the function is called on.
  */
 VMMR0_INT_DECL(int) HMR0LeaveEx(PVMCPU pVCpu)
 {
