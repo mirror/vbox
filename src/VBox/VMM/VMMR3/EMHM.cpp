@@ -60,97 +60,14 @@
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
-static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
-static int emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
+static int      emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu);
+static int      emR3HmForcedActions(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
 #define EMHANDLERC_WITH_HM
+#define emR3ExecuteInstruction   emR3HmExecuteInstruction
+#define emR3ExecuteIOInstruction emR3HmExecuteIOInstruction
 #include "EMHandleRCTmpl.h"
-
-
-#if defined(DEBUG) && defined(SOME_UNUSED_FUNCTIONS)
-
-/**
- * Steps hardware accelerated mode.
- *
- * @returns VBox status code.
- * @param   pVM     Pointer to the VM.
- * @param   pVCpu   Pointer to the VMCPU.
- */
-static int emR3HmStep(PVM pVM, PVMCPU pVCpu)
-{
-    Assert(pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM);
-
-    int         rc;
-    PCPUMCTX    pCtx   = pVCpu->em.s.pCtx;
-# ifdef VBOX_WITH_RAW_MODE
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_SELM_SYNC_GDT | VMCPU_FF_SELM_SYNC_LDT | VMCPU_FF_TRPM_SYNC_IDT | VMCPU_FF_SELM_SYNC_TSS));
-# endif
-
-    /*
-     * Check vital forced actions, but ignore pending interrupts and timers.
-     */
-    if (    VM_FF_IS_PENDING(pVM, VM_FF_HIGH_PRIORITY_PRE_RAW_MASK)
-        ||  VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_PRE_RAW_MASK))
-    {
-        rc = emR3HmForcedActions(pVM, pVCpu, pCtx);
-        if (rc != VINF_SUCCESS)
-            return rc;
-    }
-    /*
-     * Set flags for single stepping.
-     */
-    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) | X86_EFL_TF | X86_EFL_RF);
-
-    /*
-     * Single step.
-     * We do not start time or anything, if anything we should just do a few nanoseconds.
-     */
-    do
-    {
-        rc = VMMR3HmRunGC(pVM, pVCpu);
-    } while (   rc == VINF_SUCCESS
-             || rc == VINF_EM_RAW_INTERRUPT);
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_RESUME_GUEST_MASK);
-
-    /*
-     * Make sure the trap flag is cleared.
-     * (Too bad if the guest is trying to single step too.)
-     */
-    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
-
-    /*
-     * Deal with the return codes.
-     */
-    rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
-    rc = emR3HmHandleRC(pVM, pVCpu, pCtx, rc);
-    return rc;
-}
-
-
-static int emR3SingleStepExecHm(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
-{
-    int     rc          = VINF_SUCCESS;
-    EMSTATE enmOldState = pVCpu->em.s.enmState;
-    pVCpu->em.s.enmState  = EMSTATE_DEBUG_GUEST_HM;
-
-    Log(("Single step BEGIN:\n"));
-    for (uint32_t i = 0; i < cIterations; i++)
-    {
-        DBGFR3PrgStep(pVCpu);
-        DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, "RSS");
-        rc = emR3HmStep(pVM, pVCpu);
-        if (    rc != VINF_SUCCESS
-            ||  !HMR3CanExecuteGuest(pVM, pVCpu->em.s.pCtx))
-            break;
-    }
-    Log(("Single step END: rc=%Rrc\n", rc));
-    CPUMSetGuestEFlags(pVCpu, CPUMGetGuestEFlags(pVCpu) & ~X86_EFL_TF);
-    pVCpu->em.s.enmState = enmOldState;
-    return rc == VINF_SUCCESS ? VINF_EM_RESCHEDULE_REM : rc;
-}
-
-#endif /* DEBUG */
 
 
 /**
@@ -248,9 +165,9 @@ VMMR3_INT_DECL(VBOXSTRICTRC) EMR3HmSingleInstruction(PVM pVM, PVMCPU pVCpu, uint
  *                      instruction and prefix the log output with this text.
  */
 #ifdef LOG_ENABLED
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, const char *pszPrefix)
+static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, const char *pszPrefix)
 #else
-static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
+static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
 {
 #ifdef LOG_ENABLED
@@ -259,75 +176,51 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     int      rc;
     NOREF(rcRC);
 
-    /*
-     *
-     * The simple solution is to use the recompiler.
-     * The better solution is to disassemble the current instruction and
-     * try handle as many as possible without using REM.
-     *
-     */
-
 #ifdef LOG_ENABLED
     /*
-     * Disassemble the instruction if requested.
+     * Log it.
      */
+    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
     if (pszPrefix)
     {
         DBGFR3_INFO_LOG(pVM, "cpumguest", pszPrefix);
         DBGFR3_DISAS_INSTR_CUR_LOG(pVCpu, pszPrefix);
     }
-#endif /* LOG_ENABLED */
+#endif
 
-#if 0
-    /* Try our own instruction emulator before falling back to the recompiler. */
-    DISCPUSTATE Cpu;
-    rc = CPUMR3DisasmInstrCPU(pVM, pVCpu, pCtx, pCtx->rip, &Cpu, "GEN EMU");
-    if (RT_SUCCESS(rc))
+    /*
+     * Use IEM and fallback on REM if the functionality is missing.
+     * Once IEM gets mature enough, nothing should ever fall back.
+     */
+#if defined(VBOX_WITH_FIRST_IEM_STEP) || !defined(VBOX_WITH_REM)
+    STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
+    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
+
+    if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
+        || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
+#endif
     {
-        switch (Cpu.pCurInstr->uOpcode)
-        {
-        /* @todo we can do more now */
-        case OP_MOV:
-        case OP_AND:
-        case OP_OR:
-        case OP_XOR:
-        case OP_POP:
-        case OP_INC:
-        case OP_DEC:
-        case OP_XCHG:
-            STAM_PROFILE_START(&pVCpu->em.s.StatMiscEmu, a);
-            rc = EMInterpretInstructionCpuUpdtPC(pVM, pVCpu, &Cpu, CPUMCTX2CORE(pCtx), 0);
-            if (RT_SUCCESS(rc))
-            {
-#ifdef EM_NOTIFY_HM
-                if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
-                    HMR3NotifyEmulated(pVCpu);
-#endif
-                STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
-                return rc;
-            }
-            if (rc != VERR_EM_INTERPRETER)
-                AssertMsgFailedReturn(("rc=%Rrc\n", rc), rc);
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatMiscEmu, a);
-            break;
-        }
-    }
-#endif /* 0 */
-    STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
-    Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
 #ifdef VBOX_WITH_REM
-    EMRemLock(pVM);
-    /* Flush the recompiler TLB if the VCPU has changed. */
-    if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-    pVM->em.s.idLastRemCpu = pVCpu->idCpu;
+        STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, a);
+# ifndef VBOX_WITH_FIRST_IEM_STEP
+        Log(("EMINS[rem]: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
+# elif defined(DEBUG_bird)
+        AssertFailed();
+# endif
+        EMRemLock(pVM);
+        /* Flush the recompiler TLB if the VCPU has changed. */
+        if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+        pVM->em.s.idLastRemCpu = pVCpu->idCpu;
 
-    rc = REMR3EmulateInstruction(pVM, pVCpu);
-    EMRemUnlock(pVM);
-#else
-    rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); NOREF(pVM);
-#endif
-    STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
+        rc = REMR3EmulateInstruction(pVM, pVCpu);
+        EMRemUnlock(pVM);
+        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, a);
+#else  /* !VBOX_WITH_REM */
+        NOREF(pVM);
+#endif /* !VBOX_WITH_REM */
+    }
 
 #ifdef EM_NOTIFY_HM
     if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_HM)
@@ -348,12 +241,12 @@ static int emR3ExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
  *                      instruction and prefix the log output with this text.
  * @param   rcGC        GC return code
  */
-DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
+DECLINLINE(int) emR3HmExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC)
 {
 #ifdef LOG_ENABLED
-    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
+    return emR3HmExecuteInstructionWorker(pVM, pVCpu, rcGC, pszPrefix);
 #else
-    return emR3ExecuteInstructionWorker(pVM, pVCpu, rcGC);
+    return emR3HmExecuteInstructionWorker(pVM, pVCpu, rcGC);
 #endif
 }
 
@@ -364,13 +257,15 @@ DECLINLINE(int) emR3ExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPre
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
+static int emR3HmExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
 {
     PCPUMCTX pCtx = pVCpu->em.s.pCtx;
 
     STAM_PROFILE_START(&pVCpu->em.s.StatIOEmu, a);
 
-    /* Try to restart the io instruction that was refused in ring-0. */
+    /*
+     * Try to restart the io instruction that was refused in ring-0.
+     */
     VBOXSTRICTRC rcStrict = HMR3RestartPendingIOInstr(pVM, pVCpu, pCtx);
     if (IOM_SUCCESS(rcStrict))
     {
@@ -382,9 +277,11 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
                     RT_SUCCESS_NP(rcStrict) ? VERR_IPE_UNEXPECTED_INFO_STATUS : VBOXSTRICTRC_TODO(rcStrict));
 
 #ifdef VBOX_WITH_FIRST_IEM_STEP
-    /* Hand it over to the interpreter. */
+    /*
+     * Hand it over to the interpreter.
+     */
     rcStrict = IEMExecOne(pVCpu);
-    LogFlow(("emR3ExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
+    LogFlow(("emR3HmExecuteIOInstruction: %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->StatIoIem);
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
     return VBOXSTRICTRC_TODO(rcStrict);
@@ -448,7 +345,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         {
             pCtx->rip += Cpu.cbInstr;
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            LogFlow(("emR3ExecuteIOInstruction: %Rrc 1\n", VBOXSTRICTRC_VAL(rcStrict)));
+            LogFlow(("emR3HmExecuteIOInstruction: %Rrc 1\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_TODO(rcStrict);
         }
 
@@ -457,7 +354,7 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
             /* The active trap will be dispatched. */
             Assert(TRPMHasTrap(pVCpu));
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            LogFlow(("emR3ExecuteIOInstruction: VINF_SUCCESS 2\n"));
+            LogFlow(("emR3HmExecuteIOInstruction: VINF_SUCCESS 2\n"));
             return VINF_SUCCESS;
         }
         AssertMsg(rcStrict != VINF_TRPM_XCPT_DISPATCHED, ("Handle VINF_TRPM_XCPT_DISPATCHED\n"));
@@ -465,15 +362,15 @@ static int emR3ExecuteIOInstruction(PVM pVM, PVMCPU pVCpu)
         if (RT_FAILURE(rcStrict))
         {
             STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-            LogFlow(("emR3ExecuteIOInstruction: %Rrc 3\n", VBOXSTRICTRC_VAL(rcStrict)));
+            LogFlow(("emR3HmExecuteIOInstruction: %Rrc 3\n", VBOXSTRICTRC_VAL(rcStrict)));
             return VBOXSTRICTRC_TODO(rcStrict);
         }
         AssertMsg(rcStrict == VINF_EM_RAW_EMULATE_INSTR || rcStrict == VINF_EM_RESCHEDULE_REM, ("rcStrict=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
     }
 
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIOEmu, a);
-    int rc3 = emR3ExecuteInstruction(pVM, pVCpu, "IO: ");
-    LogFlow(("emR3ExecuteIOInstruction: %Rrc 4 (rc2=%Rrc, rc3=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict), rc2, rc3));
+    int rc3 = emR3HmExecuteInstruction(pVM, pVCpu, "IO: ");
+    LogFlow(("emR3HmExecuteIOInstruction: %Rrc 4 (rc2=%Rrc, rc3=%Rrc)\n", VBOXSTRICTRC_VAL(rcStrict), rc2, rc3));
     return rc3;
 #endif
 }
