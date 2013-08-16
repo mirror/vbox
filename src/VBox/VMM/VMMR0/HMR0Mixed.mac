@@ -99,6 +99,9 @@
  %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; Saved pCache
 
+    ; Note! If we get here as a result of invalid VMCS pointer, all the following
+    ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
+    ; trouble only just less efficient.
     mov     ecx, [ss:xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
     je      .no_cached_reads%2
@@ -365,6 +368,9 @@ ENDPROC MY_NAME(VMXR0StartVM32)
  %ifdef VMX_USE_CACHED_VMCS_ACCESSES
     pop     xDX         ; Saved pCache
 
+    ; Note! If we get here as a result of invalid VMCS pointer, all the following
+    ; vmread's will fail (only eflags.cf=1 will be set) but that shouldn't cause any
+    ; trouble only just less efficient.
     mov     ecx, [xDX + VMCSCACHE.Read.cValidEntries]
     cmp     ecx, 0      ; Can't happen
     je      .no_cached_reads64%2
