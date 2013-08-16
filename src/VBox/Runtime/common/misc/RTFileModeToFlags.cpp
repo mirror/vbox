@@ -307,17 +307,19 @@ RTR3DECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposit
     /* Open and truncate existing, fail of not exist. */
     else if (!RTStrCmp(pszCur, "ot"))
         uMode |= RTFILE_O_OPEN | RTFILE_O_TRUNCATE;
-
-    /* No action mask set? */
-    if ((uMode & RTFILE_O_ACTION_MASK) == 0)
+    else
         rc = VERR_INVALID_PARAMETER;
 
-    if (RT_FAILURE(rc))
-        return rc;
+    /* No action mask set? */
+    if (   RT_SUCCESS(rc)
+        && (uMode & RTFILE_O_ACTION_MASK) == 0)
+        rc = VERR_INVALID_PARAMETER;
 
     /** @todo Handle sharing mode. */
 
-    *puMode = uMode;
+    if (RT_SUCCESS(rc))
+        *puMode = uMode;
+
     return rc;
 }
 RT_EXPORT_SYMBOL(RTFileModeToFlagsEx);
