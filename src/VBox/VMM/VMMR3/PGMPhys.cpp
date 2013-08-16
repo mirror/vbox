@@ -143,14 +143,15 @@ VMMR3DECL(int) PGMR3PhysReadExternal(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size
                  * If the page has an ALL access handler, we'll have to
                  * delegate the job to EMT.
                  */
-                if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
+                if (   PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
+                    || PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
                 {
                     pgmUnlock(pVM);
 
                     return VMR3ReqPriorityCallWait(pVM, VMCPUID_ANY, (PFNRT)pgmR3PhysReadExternalEMT, 4,
                                                    pVM, &GCPhys, pvBuf, cbRead);
                 }
-                Assert(!PGM_PAGE_IS_MMIO(pPage));
+                Assert(!PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage));
 
                 /*
                  * Simple stuff, go ahead.
@@ -281,7 +282,8 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                  * dealt with here.
                  */
                 if (    PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
-                    ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
+                    ||  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+                    ||  PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
                 {
                     if (    PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
                         && !PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
@@ -294,7 +296,7 @@ VMMDECL(int) PGMR3PhysWriteExternal(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf,
                                                        pVM, &GCPhys, pvBuf, cbWrite);
                     }
                 }
-                Assert(!PGM_PAGE_IS_MMIO(pPage));
+                Assert(!PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage));
 
                 /*
                  * Simple stuff, go ahead.
@@ -377,7 +379,7 @@ static DECLCALLBACK(int) pgmR3PhysGCPhys2CCPtrDelegated(PVM pVM, PRTGCPHYS pGCPh
         int rc2 = pgmPhysPageQueryTlbe(pVM, *pGCPhys, &pTlbe);
         AssertFatalRC(rc2);
         PPGMPAGE pPage = pTlbe->pPage;
-        if (PGM_PAGE_IS_MMIO(pPage))
+        if (PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
         {
             PGMPhysReleasePageMappingLock(pVM, pLock);
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
@@ -448,7 +450,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrExternal(PVM pVM, RTGCPHYS GCPhys, void **pp
     if (RT_SUCCESS(rc))
     {
         PPGMPAGE pPage = pTlbe->pPage;
-        if (PGM_PAGE_IS_MMIO(pPage))
+        if (PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
         {
@@ -551,7 +553,7 @@ VMMR3DECL(int) PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPhys, v
         PPGMPAGE pPage = pTlbe->pPage;
 #if 1
         /* MMIO pages doesn't have any readable backing. */
-        if (PGM_PAGE_IS_MMIO(pPage))
+        if (PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
 #else
         if (PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage))
@@ -1978,6 +1980,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                         break;
 
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                    case PGMPAGETYPE_SPECIAL_ALIAS_MMIO: /** @todo perhaps leave the special page alone?  I don't think VT-x copes with this code. */
                         pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT),
                                                            true /*fDoAccounting*/);
                         break;
@@ -2031,6 +2034,7 @@ int pgmR3PhysRamZeroAll(PVM pVM)
                         break;
 
                     case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                    case PGMPAGETYPE_SPECIAL_ALIAS_MMIO: /** @todo perhaps leave the special page alone?  I don't think VT-x copes with this code. */
                         pgmHandlerPhysicalResetAliasedPage(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT),
                                                            true /*fDoAccounting*/);
                         break;
@@ -2126,6 +2130,7 @@ int pgmR3PhysRamTerm(PVM pVM)
                     break;
 
                 case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
                 case PGMPAGETYPE_MMIO2:
                 case PGMPAGETYPE_ROM_SHADOW: /* handled by pgmR3PhysRomReset. */
                 case PGMPAGETYPE_ROM:
@@ -2148,6 +2153,7 @@ int pgmR3PhysRamTerm(PVM pVM)
     GMMR3FreePagesCleanup(pReq);
     return VINF_SUCCESS;
 }
+
 
 /**
  * This is the interface IOM is using to register an MMIO region.
@@ -2362,15 +2368,16 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                 while (cLeft-- > 0)
                 {
                     PPGMPAGE    pPage    = &pRam->aPages[iPage];
-                    if (    PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO
+                    if (   !PGM_PAGE_IS_MMIO_OR_ALIAS(pPage)
                         /*|| not-out-of-action later */)
                     {
                         fAllMMIO = false;
-                        Assert(PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_MMIO2_ALIAS_MMIO);
                         AssertMsgFailed(("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
                         break;
                     }
-                    Assert(PGM_PAGE_IS_ZERO(pPage));
+                    Assert(   PGM_PAGE_IS_ZERO(pPage)
+                           || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
+                           || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO);
                     pPage++;
                 }
                 if (fAllMMIO)
@@ -2408,9 +2415,11 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                 while (cLeft--)
                 {
                     PPGMPAGE pPage = &pRam->aPages[iPage];
-                    AssertMsg(PGM_PAGE_IS_MMIO(pPage), ("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
-                    AssertMsg(PGM_PAGE_IS_ZERO(pPage), ("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
-                    if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO)
+                    AssertMsg(   (PGM_PAGE_IS_MMIO(pPage) && PGM_PAGE_IS_ZERO(pPage))
+                              || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO
+                              || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_SPECIAL_ALIAS_MMIO,
+                              ("%RGp %R[pgmpage]\n", pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), pPage));
+                    if (PGM_PAGE_IS_MMIO_OR_ALIAS(pPage))
                         PGM_PAGE_SET_TYPE(pVM, pPage, PGMPAGETYPE_RAM);
                 }
                 break;
@@ -2487,7 +2496,8 @@ DECLINLINE(PPGMMMIO2RANGE) pgmR3PhysMMIO2Find(PVM pVM, PPDMDEVINS pDevIns, uint3
  *                          the memory.
  * @param   pszDesc         The description.
  */
-VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
+VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags,
+                                      void **ppv, const char *pszDesc)
 {
     /*
      * Validate input.
@@ -2505,7 +2515,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
     AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cb, VERR_INVALID_PARAMETER);
-    AssertLogRelReturn(cPages <= INT32_MAX / 2, VERR_NO_MEMORY);
+    AssertLogRelReturn(cPages <= PGM_MMIO2_MAX_PAGE_COUNT, VERR_NO_MEMORY);
 
     /*
      * For the 2nd+ instance, mangle the description string so it's unique.
@@ -2516,6 +2526,20 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
         if (!pszDesc)
             return VERR_NO_MEMORY;
     }
+
+    /*
+     * Allocate an MMIO2 range ID (not freed on failure).
+     * The zero ID is not used as it could be confused with NIL_GMM_PAGEID.
+     */
+    pgmLock(pVM);
+    uint8_t idMmio2 = pVM->pgm.s.cMmio2Regions + 1;
+    if (idMmio2 > PGM_MMIO2_MAX_RANGES)
+    {
+        pgmUnlock(pVM);
+        AssertLogRelFailedReturn(VERR_PGM_TOO_MANY_MMIO2_RANGES);
+    }
+    pVM->pgm.s.cMmio2Regions = idMmio2;
+    pgmUnlock(pVM);
 
     /*
      * Try reserve and allocate the backing memory first as this is what is
@@ -2548,6 +2572,7 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 //pNew->fOverlapping        = false;
                 pNew->iRegion               = iRegion;
                 pNew->idSavedState          = UINT8_MAX;
+                pNew->idMmio2               = idMmio2;
                 pNew->RamRange.pSelfR0      = MMHyperCCToR0(pVM, &pNew->RamRange);
                 pNew->RamRange.pSelfRC      = MMHyperCCToRC(pVM, &pNew->RamRange);
                 pNew->RamRange.GCPhys       = NIL_RTGCPHYS;
@@ -2562,7 +2587,8 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                 while (iPage-- > 0)
                 {
                     PGM_PAGE_INIT(&pNew->RamRange.aPages[iPage],
-                                  paPages[iPage].Phys, NIL_GMM_PAGEID,
+                                  paPages[iPage].Phys,
+                                  PGM_MMIO2_PAGEID_MAKE(idMmio2, iPage),
                                   PGMPAGETYPE_MMIO2, PGM_PAGE_STATE_ALLOCATED);
                 }
 
@@ -2574,9 +2600,14 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iReg
                  * Link it into the list.
                  * Since there is no particular order, just push it.
                  */
+                /** @todo we can save us the linked list now, just search the lookup table... */
                 pgmLock(pVM);
+                Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2] == NULL);
+                Assert(pVM->pgm.s.apMmio2RangesR0[idMmio2] == NIL_RTR0PTR);
                 pNew->pNextR3 = pVM->pgm.s.pMmio2RangesR3;
                 pVM->pgm.s.pMmio2RangesR3 = pNew;
+                pVM->pgm.s.apMmio2RangesR3[idMmio2] = pNew;
+                pVM->pgm.s.apMmio2RangesR0[idMmio2] = MMHyperCCToR0(pVM, pNew);
                 pgmUnlock(pVM);
 
                 *ppv = pvPages;
@@ -2649,6 +2680,11 @@ VMMR3DECL(int) PGMR3PhysMMIO2Deregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iR
             else
                 pVM->pgm.s.pMmio2RangesR3 = pNext;
             pCur->pNextR3 = NULL;
+
+            uint8_t idMmio2 = pCur->idMmio2;
+            Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2] == pCur);
+            pVM->pgm.s.apMmio2RangesR3[idMmio2] = NULL;
+            pVM->pgm.s.apMmio2RangesR0[idMmio2] = NIL_RTR0PTR;
 
             /*
              * Free the memory.

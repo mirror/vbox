@@ -570,7 +570,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      */
     PGM_LOCK_ASSERT_OWNER(pVM);
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
-    Assert(!PGM_PAGE_IS_MMIO(pPage));
+    Assert(!PGM_PAGE_IS_MMIO_OR_ALIAS(pPage));
 
 # ifdef PGM_WITH_LARGE_PAGES
     /*
@@ -619,7 +619,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     /* re-assert preconditions since pgmPhysEnsureHandyPage may do a context switch. */
     PGM_LOCK_ASSERT_OWNER(pVM);
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
-    Assert(!PGM_PAGE_IS_MMIO(pPage));
+    Assert(!PGM_PAGE_IS_MMIO_OR_ALIAS(pPage));
 
     uint32_t iHandyPage = --pVM->pgm.s.cHandyPages;
     AssertMsg(iHandyPage < RT_ELEMENTS(pVM->pgm.s.aHandyPages), ("%d\n", iHandyPage));
@@ -1027,35 +1027,45 @@ static int pgmPhysPageMapCommon(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, PPPGMP
 
 
     /*
-     * Special case: ZERO and MMIO2 pages.
+     * Special cases: MMIO2, ZERO and specially aliased MMIO pages.
      */
+    if (   PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2
+        || PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
+    {
+        /* Fend off the VT-x APIC access page hack. */
+        AssertLogRelReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, VERR_PGM_MAP_MMIO2_ALIAS_MMIO);
+
+        /* Decode the page id to a page in a MMIO2 ram range. */
+        uint8_t  idMmio2 = PGM_MMIO2_PAGEID_GET_MMIO2_ID(PGM_PAGE_GET_PAGEID(pPage));
+        uint32_t iPage   = PGM_MMIO2_PAGEID_GET_IDX(PGM_PAGE_GET_PAGEID(pPage));
+        AssertLogRelReturn((uint8_t)(idMmio2 - 1U)< RT_ELEMENTS(pVM->pgm.s.CTX_SUFF(apMmio2Ranges)),
+                            VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
+        PPGMMMIO2RANGE pMmio2Range = pVM->pgm.s.CTX_SUFF(apMmio2Ranges)[idMmio2 - 1];
+        AssertLogRelReturn(pMmio2Range, VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
+        AssertLogRelReturn(pMmio2Range->idMmio2 == idMmio2, VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
+        AssertLogRelReturn(iPage < (pMmio2Range->RamRange.cb >> PAGE_SHIFT), VERR_PGM_PHYS_PAGE_MAP_MMIO2_IPE);
+        *ppv = (uint8_t *)pMmio2Range->RamRange.pvR3 + ((uintptr_t)iPage << PAGE_SHIFT);
+        *ppMap = NULL;
+        return VINF_SUCCESS;
+    }
+
     const uint32_t idChunk = PGM_PAGE_GET_CHUNKID(pPage);
     if (idChunk == NIL_GMM_CHUNKID)
     {
-        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_1);
-        if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2)
+        AssertMsgReturn(PGM_PAGE_GET_PAGEID(pPage) == NIL_GMM_PAGEID, ("pPage=%R[pgmpage]\n", pPage),
+                        VERR_PGM_PHYS_PAGE_MAP_IPE_1);
+        if (!PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
         {
-            /* Lookup the MMIO2 range and use pvR3 to calc the address. */
-            PPGMRAMRANGE pRam = pgmPhysGetRange(pVM, GCPhys);
-            AssertMsgReturn(pRam || !pRam->pvR3, ("pRam=%p pPage=%R[pgmpage]\n", pRam, pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_2);
-            *ppv = (void *)((uintptr_t)pRam->pvR3 + (uintptr_t)((GCPhys & ~(RTGCPHYS)PAGE_OFFSET_MASK) - pRam->GCPhys));
-        }
-        else if (PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_MMIO2_ALIAS_MMIO)
-        {
-            /** @todo deal with aliased MMIO2 pages somehow...
-             * One solution would be to seed MMIO2 pages to GMM and get unique Page IDs for
-             * them, that would also avoid this mess. It would actually be kind of
-             * elegant... */
-            AssertLogRelMsgFailedReturn(("%RGp\n", GCPhys), VERR_PGM_MAP_MMIO2_ALIAS_MMIO);
+            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage),
+                            VERR_PGM_PHYS_PAGE_MAP_IPE_3);
+            AssertMsgReturn(PGM_PAGE_GET_HCPHYS(pPage)== pVM->pgm.s.HCPhysZeroPg, ("pPage=%R[pgmpage]\n", pPage),
+                            VERR_PGM_PHYS_PAGE_MAP_IPE_4);
+            *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
         }
         else
         {
-            /** @todo handle MMIO2 */
-            AssertMsgReturn(PGM_PAGE_IS_ZERO(pPage), ("pPage=%R[pgmpage]\n", pPage), VERR_PGM_PHYS_PAGE_MAP_IPE_3);
-            AssertMsgReturn(PGM_PAGE_GET_HCPHYS(pPage) == pVM->pgm.s.HCPhysZeroPg,
-                            ("pPage=%R[pgmpage]\n", pPage),
-                            VERR_PGM_PHYS_PAGE_MAP_IPE_4);
-            *ppv = pVM->pgm.s.CTXALLSUFF(pvZeroPg);
+            static uint8_t s_abPlayItSafe[0x1000*2];  /* I don't dare return the zero page at the moment. */
+            *ppv = (uint8_t *)((uintptr_t)&s_abPlayItSafe[0x1000] & ~(uintptr_t)0xfff);
         }
         *ppMap = NULL;
         return VINF_SUCCESS;
@@ -1683,7 +1693,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
     rc = pgmPhysGetPageEx(pVM, GCPhys, &pPage);
     if (RT_SUCCESS(rc))
     {
-        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
+        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage)))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
         {
@@ -1715,7 +1725,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtrReadOnly(PVM pVM, RTGCPHYS GCPhys, void const **
     {
         /* MMIO pages doesn't have any readable backing. */
         PPGMPAGE pPage = pTlbe->pPage;
-        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO(pPage)))
+        if (RT_UNLIKELY(PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage)))
             rc = VERR_PGM_PHYS_PAGE_RESERVED;
         else
         {
@@ -2098,7 +2108,8 @@ static int pgmPhysReadHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void *pv
 #ifdef IN_RING3
     PPGMPHYSHANDLER pPhys = NULL;
 #endif
-    if (PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL)
+    if (   PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) == PGM_PAGE_HNDL_PHYS_STATE_ALL
+        || PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
     {
 #ifdef IN_RING3
         pPhys = pgmHandlerPhysicalLookup(pVM, GCPhys);
@@ -2235,7 +2246,8 @@ VMMDECL(int) PGMPhysRead(PVM pVM, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
                 /*
                  * Any ALL access handlers?
                  */
-                if (RT_UNLIKELY(PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)))
+                if (RT_UNLIKELY(   PGM_PAGE_HAS_ACTIVE_ALL_HANDLERS(pPage)
+                                || PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage)))
                 {
                     int rc = pgmPhysReadHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb);
                     if (RT_FAILURE(rc))
@@ -2334,8 +2346,8 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
      * write area. This should be a pretty frequent case with MMIO and
      * the heavy usage of full page handlers in the page pool.
      */
-    if (    !PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
-        ||  PGM_PAGE_IS_MMIO(pPage) /* screw virtual handlers on MMIO pages */)
+    if (   !PGM_PAGE_HAS_ACTIVE_VIRTUAL_HANDLERS(pPage)
+        || PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage) /* screw virtual handlers on MMIO pages */)
     {
         PPGMPHYSHANDLER pCur = pgmHandlerPhysicalLookup(pVM, GCPhys);
         if (pCur)
@@ -2355,7 +2367,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 
 #else  /* IN_RING3 */
             Log5(("pgmPhysWriteHandler: GCPhys=%RGp cbRange=%#x pPage=%R[pgmpage] phys %s\n", GCPhys, cbRange, pPage, R3STRING(pCur->pszDesc) ));
-            if (!PGM_PAGE_IS_MMIO(pPage))
+            if (!PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(pPage))
                 rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, GCPhys, &pvDst, &PgMpLck);
             else
                 rc = VINF_SUCCESS;
@@ -2403,7 +2415,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 #endif /* IN_RING3 */
         }
         /* else: the handler is somewhere else in the page, deal with it below. */
-        Assert(!PGM_PAGE_IS_MMIO(pPage)); /* MMIO handlers are all PAGE_SIZEed! */
+        Assert(!PGM_PAGE_IS_MMIO_OR_ALIAS(pPage)); /* MMIO handlers are all PAGE_SIZEed! */
     }
     /*
      * A virtual handler without any interfering physical handlers.
@@ -2770,7 +2782,8 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
                 /*
                  * Any active WRITE or ALL access handlers?
                  */
-                if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                if (   PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage)
+                    || PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
                 {
                     int rc = pgmPhysWriteHandler(pVM, pPage, pRam->GCPhys + off, pvBuf, cb);
                     if (RT_FAILURE(rc))
@@ -4038,6 +4051,8 @@ VMM_INT_DECL(int) PGMPhysIemGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable,
     {
         if (PGM_PAGE_IS_BALLOONED(pPage))
             rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
+        else if (PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
+            rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
         else if (   !PGM_PAGE_HAS_ANY_HANDLERS(pPage)
                  || (fByPassHandlers && !PGM_PAGE_IS_MMIO(pPage)) )
             rc = VINF_SUCCESS;
@@ -4150,6 +4165,8 @@ VMM_INT_DECL(int) PGMPhysIemQueryAccess(PVM pVM, RTGCPHYS GCPhys, bool fWritable
     {
         if (PGM_PAGE_IS_BALLOONED(pPage))
             rc = VERR_PGM_PHYS_TLB_CATCH_WRITE;
+        else if (PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(pPage))
+            rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
         else if (   !PGM_PAGE_HAS_ANY_HANDLERS(pPage)
                  || (fByPassHandlers && !PGM_PAGE_IS_MMIO(pPage)) )
             rc = VINF_SUCCESS;

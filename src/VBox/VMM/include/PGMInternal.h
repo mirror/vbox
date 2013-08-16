@@ -730,7 +730,11 @@ typedef union PGMPAGE
         /** 63:54 - PTE index for usage tracking (page pool). */
         uint64_t    u10PteIdx           : 10;
 
-        /** The GMM page ID. */
+        /** The GMM page ID.
+         * @remarks In the current implementation, MMIO2 and pages aliased to
+         *          MMIO2 pages will be exploiting this field to calculate the
+         *          ring-3 mapping address corresponding to the page.
+         *          Later we may consider including MMIO2 management into GMM. */
         uint32_t    idPage;
         /** Usage tracking (page pool). */
         uint16_t    u16TrackingY;
@@ -961,11 +965,36 @@ typedef PPGMPAGE *PPPGMPAGE;
     do { (a_pPage)->s.u10PteIdx = (a_iPte); PGM_PAGE_ASSERT_LOCK(a_pVM); } while (0)
 
 /**
- * Checks if the page is marked for MMIO.
+ * Checks if the page is marked for MMIO, no MMIO2 aliasing.
  * @returns true/false.
  * @param   a_pPage     Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_IS_MMIO(a_pPage)               ( (a_pPage)->s.uTypeY == PGMPAGETYPE_MMIO )
+
+/**
+ * Checks if the page is marked for MMIO, including both aliases.
+ * @returns true/false.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_MMIO_OR_ALIAS(a_pPage)      (   (a_pPage)->s.uTypeY == PGMPAGETYPE_MMIO \
+                                                 || (a_pPage)->s.uTypeY == PGMPAGETYPE_MMIO2_ALIAS_MMIO \
+                                                 || (a_pPage)->s.uTypeY == PGMPAGETYPE_SPECIAL_ALIAS_MMIO \
+                                                 )
+
+/**
+ * Checks if the page is marked for MMIO, including special aliases.
+ * @returns true/false.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_MMIO_OR_SPECIAL_ALIAS(a_pPage) (   (a_pPage)->s.uTypeY == PGMPAGETYPE_MMIO \
+                                                    || (a_pPage)->s.uTypeY == PGMPAGETYPE_SPECIAL_ALIAS_MMIO )
+
+/**
+ * Checks if the page is a special aliased MMIO page.
+ * @returns true/false.
+ * @param   a_pPage     Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_SPECIAL_ALIAS_MMIO(a_pPage) ( (a_pPage)->s.uTypeY == PGMPAGETYPE_SPECIAL_ALIAS_MMIO )
 
 /**
  * Checks if the page is backed by the ZERO page.
@@ -1584,8 +1613,10 @@ typedef struct PGMMMIO2RANGE
     uint8_t                             iRegion;
     /** The saved state range ID. */
     uint8_t                             idSavedState;
+    /** MMIO2 range identifier, for page IDs (PGMPAGE::s.idPage). */
+    uint8_t                             idMmio2;
     /** Alignment padding for putting the ram range on a PGMPAGE alignment boundary. */
-    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 12 : 12];
+    uint8_t                             abAlignment[HC_ARCH_BITS == 32 ? 11 : 11];
     /** Live save per page tracking data. */
     R3PTRTYPE(PPGMLIVESAVEMMIO2PAGE)    paLSPages;
     /** The associated RAM range. */
@@ -1594,6 +1625,19 @@ typedef struct PGMMMIO2RANGE
 /** Pointer to a MMIO2 range. */
 typedef PGMMMIO2RANGE *PPGMMMIO2RANGE;
 
+/** @name Intenal MMIO2 constants.
+ * @{ */
+/** The maximum number of MMIO2 ranges. */
+#define PGM_MMIO2_MAX_RANGES                        8
+/** The maximum number of pages in a MMIO2 range. */
+#define PGM_MMIO2_MAX_PAGE_COUNT                    UINT32_C(0x00ffffff)
+/** Makes a MMIO2 page ID out of a MMIO2 range ID and page index number. */
+#define PGM_MMIO2_PAGEID_MAKE(a_idMmio2, a_iPage)   ( ((uint32_t)(a_idMmio2) << 24) | (uint32_t)(a_iPage) )
+/** Gets the MMIO2 range ID from an MMIO2 page ID.  */
+#define PGM_MMIO2_PAGEID_GET_MMIO2_ID(a_idPage)     ( (uint8_t)((a_idPage) >> 24) )
+/** Gets the MMIO2 page index from an MMIO2 page ID.  */
+#define PGM_MMIO2_PAGEID_GET_IDX(a_idPage)          ( ((a_idPage) & UINT32_C(0x00ffffff)) )
+/** @} */
 
 
 
@@ -3086,8 +3130,10 @@ typedef struct PGM
     bool                            fNoMorePhysWrites;
     /** Set if PCI passthrough is enabled. */
     bool                            fPciPassthrough;
+    /** The number of MMIO2 regions (serves as the next MMIO2 ID). */
+    uint8_t                         cMmio2Regions;
     /** Alignment padding that makes the next member start on a 8 byte boundary. */
-    bool                            afAlignment1[3];
+    bool                            afAlignment1[2];
 
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
@@ -3143,6 +3189,8 @@ typedef struct PGM
      * The index into this table is made up from */
     R3PTRTYPE(PPGMMODEDATA)         paModeData;
     RTR3PTR                         R3PtrAlignment0;
+    /** MMIO2 lookup array for ring-3.  Indexed by idMmio2 minus 1.  */
+    R3PTRTYPE(PPGMMMIO2RANGE)       apMmio2RangesR3[PGM_MMIO2_MAX_RANGES];
 
     /** RAM range TLB for R0. */
     R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
@@ -3162,7 +3210,8 @@ typedef struct PGM
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
     R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
     RTR0PTR                         R0PtrAlignment0;
-
+    /** MMIO2 lookup array for ring-3.  Indexed by idMmio2 minus 1.  */
+    R0PTRTYPE(PPGMMMIO2RANGE)       apMmio2RangesR0[PGM_MMIO2_MAX_RANGES];
 
     /** RAM range TLB for RC. */
     RCPTRTYPE(PPGMRAMRANGE)         apRamRangesTlbRC[PGM_RAMRANGE_TLB_ENTRIES];

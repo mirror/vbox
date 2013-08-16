@@ -3951,8 +3951,9 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
 
                     default:
                         AssertFailed();
-                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
                     case PGMPAGETYPE_MMIO:
+                    case PGMPAGETYPE_MMIO2_ALIAS_MMIO:
+                    case PGMPAGETYPE_SPECIAL_ALIAS_MMIO:
                         if (fIncZeroPgs)
                         {
                             rc = RTFileWrite(hFile, abZeroPg, PAGE_SIZE, NULL);
