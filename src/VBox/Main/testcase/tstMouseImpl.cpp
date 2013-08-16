@@ -264,7 +264,7 @@ static int setup(void)
 {
     PCFGMNODE pCfg = NULL;
     Mouse *pMouse2;
-    int rc;
+    int rc = VERR_NO_MEMORY;
     VMMDevPort.pfnSetAbsoluteMouse = setAbsoluteMouse;
     VMMDevPort.pfnUpdateMouseCapabilities = updateMouseCapabilities;
     HRESULT hrc = pMouse.createObject();
@@ -279,9 +279,11 @@ static int setup(void)
     pMouse2 = pMouse;
     pCfg = CFGMR3CreateTree(NULL);
     if (pCfg)
+    {
         rc = CFGMR3InsertInteger(pCfg, "Object", (uintptr_t)pMouse2);
-    if (RT_SUCCESS(rc))
-        Mouse::DrvReg.pfnConstruct(ppdmdrvIns, pCfg, 0);
+        if (RT_SUCCESS(rc))
+            Mouse::DrvReg.pfnConstruct(ppdmdrvIns, pCfg, 0);
+    }
     return rc;
 }
 
