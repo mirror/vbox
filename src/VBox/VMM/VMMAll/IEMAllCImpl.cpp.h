@@ -814,6 +814,23 @@ IEM_CIMPL_DEF_1(iemCImpl_call_32, uint32_t, uNewPC)
     if (rcStrict != VINF_SUCCESS)
         return rcStrict;
 
+#if defined(IN_RING3) && defined(VBOX_WITH_RAW_MODE) && defined(VBOX_WITH_CALL_RECORD)
+    /*
+     * CASM hook for recording interesting indirect calls.
+     */
+    if (   !pCtx->eflags.Bits.u1IF
+        && (pCtx->cr0 & X86_CR0_PG)
+        && !CSAMIsEnabled(IEMCPU_TO_VM(pIemCpu))
+        && pIemCpu->uCpl == 0)
+    {
+        EMSTATE enmState = EMGetState(IEMCPU_TO_VMCPU(pIemCpu));
+        if (   enmState == EMSTATE_IEM_THEN_REM
+            || enmState == EMSTATE_IEM
+            || enmState == EMSTATE_REM)
+            CSAMR3RecordCallAddress(IEMCPU_TO_VM(pIemCpu), pCtx->eip);
+    }
+#endif
+
     pCtx->rip = uNewPC;
     pCtx->eflags.Bits.u1RF = 0;
     return VINF_SUCCESS;
