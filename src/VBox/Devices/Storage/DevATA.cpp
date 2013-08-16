@@ -1328,8 +1328,8 @@ static bool atapiIdentifySS(ATADevState *s)
 
     p = (uint16_t *)s->CTX_SUFF(pbIOBuffer);
     memset(p, 0, 512);
-    /* Removable CDROM, 50us response, 12 byte packets */
-    p[0] = RT_H2LE_U16(2 << 14 | 5 << 8 | 1 << 7 | 2 << 5 | 0 << 0);
+    /* Removable CDROM, 3ms response, 12 byte packets */
+    p[0] = RT_H2LE_U16(2 << 14 | 5 << 8 | 1 << 7 | 0 << 5 | 0 << 0);
     ataPadString((uint8_t *)(p + 10), s->szSerialNumber, ATA_SERIAL_NUMBER_LENGTH); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
     p[21] = RT_H2LE_U16(512); /* XXX: retired, cache size in sectors */
