@@ -1249,6 +1249,17 @@ int emR3SingleStepExecRem(PVM pVM, PVMCPU pVCpu, uint32_t cIterations)
 #endif /* DEBUG */
 
 
+/**
+ * Try execute the problematic code in IEM first, then fall back on REM if there
+ * is too much of it or if IEM doesn't implement something.
+ *
+ * @returns Strict VBox status code from IEMExecLots.
+ * @param   pVM         The cross context VM structure.
+ * @param   pVCpu       The cross context CPU structure for the calling EMT.
+ * @param   pfFFDone    Force flags done indicator.
+ *
+ * @thread  EMT(pVCpu)
+ */
 static VBOXSTRICTRC emR3ExecuteIemThenRem(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 {
     LogFlow(("emR3ExecuteIemThenRem: %04x:%RGv\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestRIP(pVCpu)));
