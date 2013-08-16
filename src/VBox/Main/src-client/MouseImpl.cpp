@@ -738,8 +738,8 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
             int32_t x2 = x1 + cWidth;
             int32_t y2 = y1 + cHeight;
 
-            LogRel3(("%s: screen %d,%d %d,%d\n",
-                     __FUNCTION__, x1, y1, x2, y2));
+            LogRel3(("%s: screen [%d] %d,%d %d,%d\n",
+                     __FUNCTION__, uScreenId, x1, y1, x2, y2));
 
             LONG i;
             for (i = 0; i < aCount; i++)
@@ -755,10 +755,10 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
                 LogRel3(("%s: [%d] %d,%d id %d, inContact %d, inRange %d\n",
                          __FUNCTION__, i, x, y, contactId, fInContact, fInRange));
 
-                /* Screen dimensions are 0,0 width, height, that is x2,y2 are exclusive,
-                 * while coords are inclusive.
+                /* x1,y1 are inclusive and x2,y2 are exclusive,
+                 * while x,y start from 1 and are inclusive.
                  */
-                if (x < x1 || x >= x2 || y < y1 || y >= y2)
+                if (x <= x1 || x > x2 || y <= y1 || y > y2)
                 {
                     /* Out of range. Skip the contact. */
                     continue;
