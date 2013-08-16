@@ -307,7 +307,7 @@ def guestExec(ctx, machine, console, cmds):
     exec cmds
 
 def printMouseEvent(_ctx, mev):
-    print "Mouse : mode=%d x=%d y=%d z=%d w=%d contact=%d buttons=%x" % (mev.mode, mev.x, mev.y, mev.z, mev.w, mev.contact, mev.buttons)
+    print "Mouse : mode=%d x=%d y=%d z=%d w=%d buttons=%x" % (mev.mode, mev.x, mev.y, mev.z, mev.w, mev.buttons)
 
 def printKbdEvent(ctx, kev):
     print "Kbd: ", ctx['global'].getArray(kev, 'scancodes')
@@ -404,7 +404,7 @@ def recordDemo(ctx, console, filename, dur):
         if evtype == ctx['global'].constants.VBoxEventType_OnGuestMouse:
             mev = ctx['global'].queryInterface(event, 'IGuestMouseEvent')
             if mev:
-                line = "%d: m %d %d %d %d %d %d\n" % (stamp(), mev.absolute, mev.x, mev.y, mev.z, mev.w, mev.buttons)
+                line = "%d: m %d %d %d %d %d %d\n" % (stamp(), mev.mode, mev.x, mev.y, mev.z, mev.w, mev.buttons)
                 demo.write(line)
         elif evtype == ctx['global'].constants.VBoxEventType_OnGuestKeyboard:
             kev = ctx['global'].queryInterface(event, 'IGuestKeyboardEvent')

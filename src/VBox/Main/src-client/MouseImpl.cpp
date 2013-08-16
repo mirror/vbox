@@ -117,7 +117,7 @@ HRESULT Mouse::init (ConsoleMouseInterface *parent)
     HRESULT rc = mEventSource->init(static_cast<IMouse*>(this));
     AssertComRCReturnRC(rc);
     mMouseEvent.init(mEventSource, VBoxEventType_OnGuestMouse,
-                     0, 0, 0, 0, 0);
+                     0, 0, 0, 0, 0, 0);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -469,21 +469,22 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
 }
 
 void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
-                           LONG cContact, LONG fButtons)
+                           LONG fButtons)
 {
     /* If mouse button is pressed, we generate new event, to avoid reusable events coalescing and thus
        dropping key press events */
+    GuestMouseEventMode_T mode = fAbsolute? GuestMouseEventMode_Absolute: GuestMouseEventMode_Relative;
     if (fButtons != 0)
     {
         VBoxEventDesc evDesc;
-        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, fAbsolute, x, y,
-                    dz, dw, cContact, fButtons);
+        evDesc.init(mEventSource, VBoxEventType_OnGuestMouse, mode, x, y,
+                    dz, dw, fButtons);
         evDesc.fire(0);
     }
     else
     {
-        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, fAbsolute, x, y, dz, dw,
-                           cContact, fButtons);
+        mMouseEvent.reinit(VBoxEventType_OnGuestMouse, mode, x, y, dz, dw,
+                           fButtons);
         mMouseEvent.fire(0);
     }
 }
@@ -518,7 +519,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw,
     updateVMMDevMouseCaps(0, VMMDEV_MOUSE_HOST_WANTS_ABSOLUTE);
     rc = reportRelEventToMouseDev(dx, dy, dz, dw, fButtonsAdj);
 
-    fireMouseEvent(false, dx, dy, dz, dw, 0, fButtons);
+    fireMouseEvent(false, dx, dy, dz, dw, fButtons);
 
     return rc;
 }
@@ -632,7 +633,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                             RT_BOOL(  mfVMMDevGuestCaps
                                     & VMMDEV_MOUSE_NEW_PROTOCOL));
 
-        fireMouseEvent(true, x, y, dz, dw, 0, fButtons);
+        fireMouseEvent(true, x, y, dz, dw, fButtons);
     }
 
     return rc;
@@ -794,7 +795,7 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
     {
         rc = reportMultiTouchEventToDevice(cContacts, cContacts? pau64Contacts: NULL, (uint32_t)aScanTime);
 
-        // @todo Implement. Maybe using a new TouchEvent rather than extending the mouse event.
+        // @todo Implement using a new TouchEvent rather than extending the mouse event.
         // fireMouseEvent(true, x, y, 0, 0, cContact, contactState);
     }
 
