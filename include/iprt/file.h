@@ -603,6 +603,9 @@ RTDECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRenam
  * Converts file opening modes (used by fopen, for example) to IPRT
  * compatible flags, which then can be used with RTFileOpen* APIs.
  *
+ * Note: Handling sharing modes is not supported yet, so RTFILE_O_DENY_NONE
+ *       will be used by default.
+ *
  * @return  IPRT status code.
  * @param   pszMode                 Mode string to convert.
  * @param   puMode                  Where to store the converted mode flags
@@ -628,7 +631,8 @@ RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
  *      "ot" - Open and truncate existing, fail of not exist
  *
  * Sharing modes:
- *      Not implemented yet.
+ *      Not implemented yet. RTFILE_O_DENY_NONE will be
+ *      used by default.
  *
  * @return  IPRT status code.
  * @param   pszAccess               Access mode string to convert.

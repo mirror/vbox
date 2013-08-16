@@ -182,8 +182,12 @@ RTR3DECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode)
     }
 
     /* No action mask set? */
-    if ((uMode & RTFILE_O_ACTION_MASK) == 0)
+    if (   RT_SUCCESS(rc)
+        && (uMode & RTFILE_O_ACTION_MASK) == 0)
         rc = VERR_INVALID_PARAMETER;
+
+    /** @todo Handle sharing mode. */
+    uMode |= RTFILE_O_DENY_NONE;
 
     if (RT_SUCCESS(rc))
         *puMode = uMode;
@@ -316,6 +320,7 @@ RTR3DECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposit
         rc = VERR_INVALID_PARAMETER;
 
     /** @todo Handle sharing mode. */
+    uMode |= RTFILE_O_DENY_NONE;
 
     if (RT_SUCCESS(rc))
         *puMode = uMode;
