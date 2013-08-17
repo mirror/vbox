@@ -141,6 +141,8 @@
 #define DW_TAG_rvalue_reference_type        UINT16_C(0x0042)
 #define DW_TAG_template_alias               UINT16_C(0x0043)
 #define DW_TAG_lo_user                      UINT16_C(0x4080)
+#define DW_TAG_GNU_call_site                UINT16_C(0x4109)
+#define DW_TAG_GNU_call_site_parameter      UINT16_C(0x410a)
 #define DW_TAG_hi_user                      UINT16_C(0xffff)
 /** @} */
 
@@ -694,6 +696,7 @@ typedef struct RTDWARFADDRRANGE
     uint8_t             cAttrs           : 2;
     uint8_t             fHaveLowAddress  : 1;
     uint8_t             fHaveHighAddress : 1;
+    uint8_t             fHaveHighIsAddress : 1;
     uint8_t             fHaveRanges      : 1;
 } RTDWARFADDRRANGE;
 typedef RTDWARFADDRRANGE *PRTDWARFADDRRANGE;
@@ -1199,6 +1202,7 @@ static const char *rtDwarfLog_FormName(uint32_t uForm)
 #endif /* LOG_ENABLED || RT_STRICT */
 
 
+
 /** @callback_method_impl{FNRTLDRENUMSEGS} */
 static DECLCALLBACK(int) rtDbgModDwarfScanSegmentsCallback(RTLDRMOD hLdrMod, PCRTLDRSEG pSeg, void *pvUser)
 {
@@ -1499,8 +1503,8 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
         }
     }
 
-    //return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
-    return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+    return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
+    //return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
 }
 
 
@@ -3179,7 +3183,15 @@ static DECLCALLBACK(int) rtDwarfDecode_LowHighPc(PRTDWARFDIE pDie, uint8_t *pbMe
             return pCursor->rc = VERR_DWARF_BAD_INFO;
         }
         pRange->fHaveHighAddress = true;
-        pRange->uHighAddress     = uAddr;
+        pRange->fHaveHighIsAddress = uForm == DW_FORM_addr;
+        if (!pRange->fHaveHighIsAddress && pRange->fHaveLowAddress)
+        {
+            pRange->fHaveHighIsAddress = true;
+            pRange->uHighAddress     = uAddr + pRange->uLowAddress;
+        }
+        else
+            pRange->uHighAddress     = uAddr;
+
     }
     pRange->cAttrs++;
 
@@ -3200,9 +3212,10 @@ static DECLCALLBACK(int) rtDwarfDecode_Ranges(PRTDWARFDIE pDie, uint8_t *pbMembe
     uint64_t off;
     switch (uForm)
     {
-        case DW_FORM_addr:  off = rtDwarfCursor_GetNativeUOff(pCursor, 0); break;
-        case DW_FORM_data4: off = rtDwarfCursor_GetU32(pCursor, 0); break;
-        case DW_FORM_data8: off = rtDwarfCursor_GetU64(pCursor, 0); break;
+        case DW_FORM_addr:          off = rtDwarfCursor_GetNativeUOff(pCursor, 0); break;
+        case DW_FORM_data4:         off = rtDwarfCursor_GetU32(pCursor, 0); break;
+        case DW_FORM_data8:         off = rtDwarfCursor_GetU64(pCursor, 0); break;
+        case DW_FORM_sec_offset:    off = rtDwarfCursor_GetUOff(pCursor, 0); break;
         default:
             AssertMsgFailedReturn(("%#x\n", uForm), VERR_DWARF_UNEXPECTED_FORM);
     }
@@ -3830,11 +3843,14 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                                                                      &iSeg, &offSeg);
                             if (RT_SUCCESS(rc))
                             {
+                                uint64_t cb;
+                                if (pSubProgram->PcRange.uHighAddress >= pSubProgram->PcRange.uLowAddress)
+                                    cb = pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress;
+                               else
+                                    cb = 1;
                                 rc = RTDbgModSymbolAdd(pThis->hCnt,
                                                        rtDwarfInfo_SelectName(pSubProgram->pszName, pSubProgram->pszLinkageName),
-                                                       iSeg, offSeg,
-                                                       pSubProgram->PcRange.uHighAddress - pSubProgram->PcRange.uLowAddress,
-                                                       0 /*fFlags*/, NULL /*piOrdinal*/);
+                                                       iSeg, offSeg, cb, 0 /*fFlags*/, NULL /*piOrdinal*/);
                                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_DUPLICATE_SYMBOL, ("%Rrc\n", rc));
                             }
                             else if (   pSubProgram->PcRange.uLowAddress  == 0 /* see with vmlinux */
@@ -4312,7 +4328,7 @@ static int rtDwarfInfo_LoadUnit(PRTDBGMODDWARF pThis, PRTDWARFCURSOR pCursor, bo
             else
             {
                 pszName  = "<unknown>";
-                pDieDesc = g_aTagDescs[0].pDesc;
+                pDieDesc = &g_CoreDieDesc;
             }
             Log4(("%08x: %*stag=%s (%#x, abbrev %u)%s\n", offLog, cDepth * 2, "", pszName,
                   pAbbrev->uTag, uAbbrCode, pAbbrev->fChildren ? " has children" : ""));
