@@ -200,7 +200,7 @@ int dbgfR3AsInit(PUVM pUVM)
     }
 
     /*
-     * Prepend the VBoxDbgSyms directory to the path.
+     * Prepend the NoArch and VBoxDbgSyms directories to the path.
      */
     char szPath[RTPATH_MAX];
     rc = RTPathAppPrivateNoArch(szPath, sizeof(szPath));
@@ -208,6 +208,9 @@ int dbgfR3AsInit(PUVM pUVM)
 #ifdef RT_OS_DARWIN
     rc = RTPathAppend(szPath, sizeof(szPath), "../Resources/VBoxDbgSyms/");
 #else
+    rc = RTDbgCfgChangeString(pUVM->dbgf.s.hDbgCfg, RTDBGCFGPROP_PATH, RTDBGCFGOP_PREPEND, szPath);
+    AssertRCReturn(rc, rc);
+
     rc = RTPathAppend(szPath, sizeof(szPath), "VBoxDbgSyms/");
 #endif
     AssertRCReturn(rc, rc);
