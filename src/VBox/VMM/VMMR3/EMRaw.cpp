@@ -364,20 +364,30 @@ static int emR3RawExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcGC)
      * Use IEM and fallback on REM if the functionality is missing.
      * Once IEM gets mature enough, nothing should ever fall back.
      */
-#if 0/*defined(VBOX_WITH_FIRST_IEM_STEP)*/ || !defined(VBOX_WITH_REM)
+#ifdef VBOX_WITH_FIRST_IEM_STEP
+//# define VBOX_WITH_FIRST_IEM_STEP_B
+#endif
+#if defined(VBOX_WITH_FIRST_IEM_STEP_B) || !defined(VBOX_WITH_REM)
     Log(("EMINS: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
     STAM_PROFILE_START(&pVCpu->em.s.StatIEMEmu, a);
     rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu));
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
-    if (rc == VINF_SUCCESS)
-        rc = VINF_EM_RESCHEDULE;
+    if (RT_SUCCESS(rc))
+    {
+        if (rc == VINF_SUCCESS || rc == VINF_EM_RESCHEDULE)
+            rc = VINF_EM_RESCHEDULE;
+# ifdef DEBUG_bird
+        else
+            AssertMsgFailed(("%Rrc\n", rc));
+# endif
+    }
     else if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
              || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
 #endif
     {
 #ifdef VBOX_WITH_REM
         STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
-# if 1 //ndef VBOX_WITH_FIRST_IEM_STEP
+# ifndef VBOX_WITH_FIRST_IEM_STEP_B
         Log(("EMINS[rem]: %04x:%RGv RSP=%RGv\n", pCtx->cs.Sel, (RTGCPTR)pCtx->rip, (RTGCPTR)pCtx->rsp));
 //# elif defined(DEBUG_bird)
 //        AssertFailed();
