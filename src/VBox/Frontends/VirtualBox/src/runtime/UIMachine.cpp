@@ -382,7 +382,7 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     qApp->setQuitOnLastWindowClosed(false);
 
     /* Cache IMedium data: */
-    vboxGlobal().startEnumeratingMedia();
+    vboxGlobal().startEnumeratingMedia(false /*fReallyNecessary*/);
 
     /* Load machine settings: */
     loadMachineSettings();

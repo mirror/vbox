@@ -375,23 +375,13 @@ bool UISession::powerOff(bool fIncludingDiscard, bool &fServerCrashed)
                 /* Prepare the snapshot-discard progress: */
                 CSnapshot snapshot = machine.GetCurrentSnapshot();
                 CProgress progress = console.RestoreSnapshot(snapshot);
-                if (console.isOk())
-                {
-                    /* Show the snapshot-discard progress: */
-                    msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
-                    if (progress.GetResultCode() != 0)
-                    {
-                        /* Failed in progress: */
-                        msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
-                        return false;
-                    }
-                }
-                else
-                {
-                    /* Failed in console: */
-                    msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
-                    return false;
-                }
+                if (!console.isOk())
+                    return msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
+
+                /* Show the snapshot-discard progress: */
+                msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
+                if (progress.GetResultCode() != 0)
+                    return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
             }
         }
         else
