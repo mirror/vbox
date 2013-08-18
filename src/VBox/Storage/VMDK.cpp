@@ -1104,7 +1104,7 @@ static int vmdkReadGrainDirectory(PVMDKIMAGE pImage, PVMDKEXTENT pExtent)
         {
             uint32_t uGTStart = *pGDTmp;
             uint32_t uRGTStart = *pRGDTmp;
-            uint32_t cbGTRead = cbGT;
+            size_t   cbGTRead = cbGT;
 
             /* If no grain table is allocated skip the entry. */
             if (*pGDTmp == 0 && *pRGDTmp == 0)
