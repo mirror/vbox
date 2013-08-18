@@ -106,6 +106,8 @@
 #include "CHostUSBDevice.h"
 #include "CMediumFormat.h"
 #include "CSharedFolder.h"
+#include "CConsole.h"
+#include "CSnapshot.h"
 
 /* Other VBox includes: */
 #include <iprt/asm.h>
@@ -265,6 +267,12 @@ VBoxGlobal::VBoxGlobal()
     , m_pVirtualMachine(0)
     , mMediaEnumThread (NULL)
     , mIsKWinManaged (false)
+#if defined(DEBUG_bird)
+    , mAgressiveCaching(false)
+#else
+    , mAgressiveCaching(true)
+#endif
+    , mRestoreCurrentSnapshot(false)
     , mDisablePatm(false)
     , mDisableCsam(false)
     , mRecompileSupervisor(false)
@@ -383,6 +391,30 @@ bool VBoxGlobal::startMachine(const QString &strMachineId)
     /* Some restrictions: */
     AssertMsg(mValid, ("VBoxGlobal is invalid"));
     AssertMsg(!m_pVirtualMachine, ("Machine already started"));
+
+    /* Restore current snapshot if asked to do so: */
+    if (mRestoreCurrentSnapshot)
+    {
+        CSession session = vboxGlobal().openSession(strMachineId, KLockType_VM);
+        if (session.isNull())
+            return false;
+
+        CConsole  console  = session.GetConsole();
+        CMachine  machine  = session.GetMachine();
+        CSnapshot snapshot = machine.GetCurrentSnapshot();
+        CProgress progress = console.RestoreSnapshot(snapshot);
+        if (!console.isOk())
+            return msgCenter().cannotRestoreSnapshot(console, snapshot.GetName(), machine.GetName());
+
+        /* Show the snapshot-discard progress: */
+        msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_snapshot_discard_90px.png");
+        if (progress.GetResultCode() != 0)
+            return msgCenter().cannotRestoreSnapshot(progress, snapshot.GetName(), machine.GetName());
+        session.UnlockMachine();
+
+        /* Clear the restore flag so media enum can be started, should be safe now. */
+        mRestoreCurrentSnapshot = false;
+    }
 
     /* Create VM session: */
     CSession session = vboxGlobal().openSession(strMachineId, KLockType_VM);
@@ -947,7 +979,7 @@ QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff, bool fUs
     if (!findMedium (cmedium, medium))
     {
         /* Medium may be new and not already in the media list, request refresh */
-        startEnumeratingMedia();
+        startEnumeratingMedia(true /*fReallyNecessary*/);
         if (!findMedium (cmedium, medium))
             /* Medium might be deleted already, return null string */
             return QString();
@@ -1735,10 +1767,14 @@ static void addHardDisksToList (const CMediumVector &aVector,
  * Note that #mediumEnumerated() signals are emitted in the same order as
  * described above.
  *
+ * @param   fReallyNecessary    Whether the caller actually needs the media info
+ *                              now, or is just trying to be nice and start the
+ *                              IPC storm... er... caching process early.
+ *
  * @sa #currentMediaList()
  * @sa #isMediaEnumerationStarted()
  */
-void VBoxGlobal::startEnumeratingMedia()
+void VBoxGlobal::startEnumeratingMedia(bool fReallyNecessary)
 {
     AssertReturnVoid (mValid);
 
@@ -1748,6 +1784,15 @@ void VBoxGlobal::startEnumeratingMedia()
 
     /* Ignore the request during VBoxGlobal cleanup: */
     if (m_sfCleanupInProgress)
+        return;
+
+    /* If asked to restore snapshot, don't do this till *after* we're done
+     * restoring or the code with have a heart attack. */
+    if (shouldRestoreCurrentSnapshot())
+        return;
+
+    /* Developer doesn't want any unnecessary media caching! */
+    if (!fReallyNecessary && !agressiveCaching())
         return;
 
     /* composes a list of all currently known media & their children */
@@ -4454,8 +4499,14 @@ void VBoxGlobal::prepare()
                 }
             }
         }
-        else if (!::strcmp (arg, "--no-startvm-errormsgbox"))
+        else if (!::strcmp(arg, "--no-startvm-errormsgbox"))
             mShowStartVMErrors = false;
+        else if (!::strcmp(arg, "--aggressive-caching"))
+            mAgressiveCaching = true;
+        else if (!::strcmp(arg, "--no-aggressive-caching"))
+            mAgressiveCaching = false;
+        else if (!::strcmp(arg, "--restore-current"))
+            mRestoreCurrentSnapshot = true;
         else if (!::strcmp(arg, "--disable-patm"))
             mDisablePatm = true;
         else if (!::strcmp(arg, "--disable-csam"))
@@ -4474,7 +4525,7 @@ void VBoxGlobal::prepare()
                 mWarpPct = RTStrToUInt32(qApp->argv() [i]);
         }
 #ifdef VBOX_WITH_DEBUGGER_GUI
-        else if (!::strcmp (arg, "-dbg") || !::strcmp (arg, "--dbg"))
+        else if (!::strcmp(arg, "-dbg") || !::strcmp (arg, "--dbg"))
             setDebuggerVar(&mDbgEnabled, true);
         else if (!::strcmp( arg, "-debug") || !::strcmp (arg, "--debug"))
         {
@@ -4484,21 +4535,21 @@ void VBoxGlobal::prepare()
             setDebuggerVar(&mDbgAutoShowStatistics, true);
             mStartPaused = true;
         }
-        else if (!::strcmp (arg, "--debug-command-line"))
+        else if (!::strcmp(arg, "--debug-command-line"))
         {
             setDebuggerVar(&mDbgEnabled, true);
             setDebuggerVar(&mDbgAutoShow, true);
             setDebuggerVar(&mDbgAutoShowCommandLine, true);
             mStartPaused = true;
         }
-        else if (!::strcmp (arg, "--debug-statistics"))
+        else if (!::strcmp(arg, "--debug-statistics"))
         {
             setDebuggerVar(&mDbgEnabled, true);
             setDebuggerVar(&mDbgAutoShow, true);
             setDebuggerVar(&mDbgAutoShowStatistics, true);
             mStartPaused = true;
         }
-        else if (!::strcmp (arg, "-no-debug") || !::strcmp (arg, "--no-debug"))
+        else if (!::strcmp(arg, "-no-debug") || !::strcmp(arg, "--no-debug"))
         {
             setDebuggerVar(&mDbgEnabled, false);
             setDebuggerVar(&mDbgAutoShow, false);
@@ -4506,9 +4557,9 @@ void VBoxGlobal::prepare()
             setDebuggerVar(&mDbgAutoShowStatistics, false);
         }
         /* Not quite debug options, but they're only useful with the debugger bits. */
-        else if (!::strcmp (arg, "--start-paused"))
+        else if (!::strcmp(arg, "--start-paused"))
             mStartPaused = true;
-        else if (!::strcmp (arg, "--start-running"))
+        else if (!::strcmp(arg, "--start-running"))
             mStartPaused = false;
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
@@ -4575,7 +4626,7 @@ void VBoxGlobal::prepare()
      * There could be no used mediums at all,
      * but this method should be run anyway just to enumerate null UIMedium object,
      * used by some VBox smart widgets, like VBoxMediaComboBox: */
-    vboxGlobal().startEnumeratingMedia();
+    vboxGlobal().startEnumeratingMedia(false /*fReallyNecessary*/);
 
     /* Prepare global settings change handler: */
     connect(&settings(), SIGNAL(propertyChanged(const char*, const char*)),

@@ -204,8 +204,8 @@ public:
                                            const QString &strTargetImageMaxSize, const QString &strTargetFileSystemFree) const;
     void cannotTakeSnapshot(const CConsole &console, const QString &strMachineName, QWidget *pParent = 0) const;
     void cannotTakeSnapshot(const CProgress &progress, const QString &strMachineName, QWidget *pParent = 0) const;
-    void cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
-    void cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
+    bool cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
+    bool cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const;
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 

@@ -123,6 +123,8 @@ public:
 
     const QRect availableGeometry(int iScreen = 0) const;
 
+    bool agressiveCaching() const { return mAgressiveCaching; }
+    bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
     bool isPatmDisabled() const { return mDisablePatm; }
     bool isCsamDisabled() const { return mDisableCsam; }
     bool isSupervisorCodeExecedRecompiled() const { return mRecompileSupervisor; }
@@ -238,7 +240,7 @@ public:
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
 
-    void startEnumeratingMedia();
+    void startEnumeratingMedia(bool fReallyNecessary);
 
     void reloadProxySettings();
 
@@ -473,6 +475,10 @@ private:
     const char * vm_render_mode_str;
     bool mIsKWinManaged;
 
+    /** The --aggressive-caching / --no-aggressive-caching option. */
+    bool mAgressiveCaching;
+    /** The --restore-current option. */
+    bool mRestoreCurrentSnapshot;
     /** The --disable-patm option. */
     bool mDisablePatm;
     /** The --disable-csam option. */

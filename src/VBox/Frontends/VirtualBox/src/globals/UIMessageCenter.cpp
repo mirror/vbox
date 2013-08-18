@@ -848,20 +848,22 @@ void UIMessageCenter::cannotTakeSnapshot(const CProgress &progress, const QStrin
           formatErrorInfo(progress));
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const
+bool UIMessageCenter::cannotRestoreSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
           tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
              .arg(strSnapshotName, strMachineName),
           formatErrorInfo(console));
+    return false;
 }
 
-void UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
+bool UIMessageCenter::cannotRestoreSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const
 {
     error(0, MessageType_Error,
           tr("Failed to restore the snapshot <b>%1</b> of the virtual machine <b>%2</b>.")
              .arg(strSnapshotName, strMachineName),
           formatErrorInfo(progress));
+    return false;
 }
 
 void UIMessageCenter::cannotRemoveSnapshot(const CConsole &console, const QString &strSnapshotName, const QString &strMachineName) const
