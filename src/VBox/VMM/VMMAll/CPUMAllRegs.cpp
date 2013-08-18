@@ -2363,16 +2363,13 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
          */
 #ifdef IN_RC
         /* Make sure to save host registers first. */
-        if (!(pVCpu->cpum.s.fUseFlags & (CPUM_USE_DEBUG_REGS_HOST | CPUM_USE_DEBUG_REGS_HYPER)))
-        {
-            Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST));
-            pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
-            pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
-            pVCpu->cpum.s.fUseFlags |= CPUM_USE_DEBUG_REGS_HYPER;
-            ASMSetDR6(X86_DR6_INIT_VAL);
-        }
         if (!(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HOST))
         {
+            if (!(pVCpu->cpum.s.fUseFlags & CPUM_USE_DEBUG_REGS_HOST))
+            {
+                pVCpu->cpum.s.Host.dr6 = ASMGetDR6();
+                pVCpu->cpum.s.Host.dr7 = ASMGetDR7();
+            }
             pVCpu->cpum.s.Host.dr0 = ASMGetDR0();
             pVCpu->cpum.s.Host.dr1 = ASMGetDR1();
             pVCpu->cpum.s.Host.dr2 = ASMGetDR2();
@@ -2388,6 +2385,7 @@ VMMDECL(int) CPUMRecalcHyperDRx(PVMCPU pVCpu, uint8_t iGstReg, bool fForceHyper)
             ASMSetDR2(uNewDr2);
             pVCpu->cpum.s.Hyper.dr[3] = uNewDr3;
             ASMSetDR3(uNewDr3);
+            ASMSetDR6(X86_DR6_INIT_VAL);
             pVCpu->cpum.s.Hyper.dr[7] = uNewDr7;
             ASMSetDR7(uNewDr7);
         }
