@@ -1039,6 +1039,15 @@ typedef struct PDMIBLOCK
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize,(PPDMIBLOCK pInterface));
 
     /**
+     * Gets the media sector size in bytes.
+     *
+     * @returns Media sector size in bytes.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetSectorSize,(PPDMIBLOCK pInterface));
+
+    /**
      * Gets the block drive type.
      *
      * @returns block drive type.
@@ -1282,6 +1291,15 @@ typedef struct PDMIMEDIA
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(uint64_t, pfnGetSize,(PPDMIMEDIA pInterface));
+
+    /**
+     * Gets the media sector size in bytes.
+     *
+     * @returns Media sector size in bytes.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetSectorSize,(PPDMIMEDIA pInterface));
 
     /**
      * Check if the media is readonly or not.

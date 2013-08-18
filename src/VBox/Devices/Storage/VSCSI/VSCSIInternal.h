@@ -363,6 +363,20 @@ DECLINLINE(int) vscsiLunMediumGetSize(PVSCSILUNINT pVScsiLun, uint64_t *pcbSize)
 }
 
 /**
+ * Wrapper for the get medium sector size I/O callback.
+ *
+ * @returns VBox status code.
+ * @param   pVScsiLun     The LUN.
+ * @param   pcbSectorSize Where to store the sector size on success.
+ */
+DECLINLINE(int) vscsiLunMediumGetSectorSize(PVSCSILUNINT pVScsiLun, uint32_t *pcbSectorSize)
+{
+    return pVScsiLun->pVScsiLunIoCallbacks->pfnVScsiLunMediumGetSectorSize(pVScsiLun,
+                                                                           pVScsiLun->pvVScsiLunUser,
+                                                                           pcbSectorSize);
+}
+
+/**
  * Wrapper for the get medium lock/unlock I/O callback.
  *
  * @returns VBox status code.

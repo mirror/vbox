@@ -32,7 +32,7 @@
 #include "VSCSIInternal.h"
 
 /** Maximum of amount of LBAs to unmap with one command. */
-#define VSCSI_UNMAP_LBAS_MAX ((10*_1M) / 512)
+#define VSCSI_UNMAP_LBAS_MAX(a_cbSector) ((10*_1M) / a_cbSector)
 
 /**
  * SBC LUN instance
@@ -41,6 +41,8 @@ typedef struct VSCSILUNSBC
 {
     /** Core LUN structure */
     VSCSILUNINT    Core;
+    /** Sector size of the medium. */
+    uint32_t       cbSector;
     /** Size of the virtual disk. */
     uint64_t       cSectors;
     /** VPD page pool. */
@@ -56,9 +58,13 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
     int rc = VINF_SUCCESS;
     int cVpdPages = 0;
 
-    rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
+    rc = vscsiLunMediumGetSectorSize(pVScsiLun, &pVScsiLunSbc->cbSector);
     if (RT_SUCCESS(rc))
-        pVScsiLunSbc->cSectors = cbDisk / 512; /* Fixed sector size */
+    {
+        rc = vscsiLunMediumGetSize(pVScsiLun, &cbDisk);
+        if (RT_SUCCESS(rc))
+            pVScsiLunSbc->cSectors = cbDisk / pVScsiLunSbc->cbSector;
+    }
 
     if (RT_SUCCESS(rc))
         rc = vscsiVpdPagePoolInit(&pVScsiLunSbc->VpdPagePool);
@@ -99,7 +105,7 @@ static int vscsiLunSbcInit(PVSCSILUNINT pVScsiLun)
                 pBlkPage->u32MaxTrfLength              = 0;
                 pBlkPage->u32OptTrfLength              = 0;
                 pBlkPage->u32MaxPreXdTrfLength         = 0;
-                pBlkPage->u32MaxUnmapLbaCount          = RT_H2BE_U32(VSCSI_UNMAP_LBAS_MAX);
+                pBlkPage->u32MaxUnmapLbaCount          = RT_H2BE_U32(VSCSI_UNMAP_LBAS_MAX(pVScsiLunSbc->cbSector));
                 pBlkPage->u32MaxUnmapBlkDescCount      = UINT32_C(0xffffffff);
                 pBlkPage->u32OptUnmapGranularity       = 0;
                 pBlkPage->u32UnmapGranularityAlignment = 0;
@@ -245,7 +251,7 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                 vscsiH2BEU32(aReply, UINT32_C(0xffffffff));
             else
                 vscsiH2BEU32(aReply, pVScsiLunSbc->cSectors - 1);
-            vscsiH2BEU32(&aReply[4], 512);
+            vscsiH2BEU32(&aReply[4], pVScsiLunSbc->cbSector);
             RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
             break;
