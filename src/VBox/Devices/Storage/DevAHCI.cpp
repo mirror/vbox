@@ -454,6 +454,8 @@ typedef struct AHCIPort
 
     /** Number of total sectors. */
     uint64_t                        cTotalSectors;
+    /** Size of one sector. */
+    uint32_t                        cbSector;
     /** Currently configured number of sectors in a multi-sector transfer. */
     uint32_t                        cMultSectors;
     /** Currently active transfer mode (MDMA/UDMA) and speed. */
@@ -483,7 +485,7 @@ typedef struct AHCIPort
      * Holds the command slot of the command processed at the moment. */
     volatile uint32_t               u32CurrentCommandSlot;
 
-#if HC_ARCH_BITS == 64
+#if HC_ARCH_BITS == 32
     uint32_t                        u32Alignment2;
 #endif
 
@@ -2986,7 +2988,8 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
     if (   pAhciPort->pDrvBlock->pfnDiscard
         || ( pAhciPort->fAsyncInterface
-            && pAhciPort->pDrvBlockAsync->pfnStartDiscard))
+            && pAhciPort->pDrvBlockAsync->pfnStartDiscard)
+        || pAhciPort->cbSector != 512)
     {
         p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
         p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
@@ -3012,6 +3015,14 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
     /* valid information, more than one logical sector per physical sector, 2^cLogSectorsPerPhysicalExp logical sectors per physical sector */
     if (pAhciPort->cLogSectorsPerPhysicalExp)
         p[106] = RT_H2LE_U16(RT_BIT(14) | RT_BIT(13) | pAhciPort->cLogSectorsPerPhysicalExp);
+
+    if (pAhciPort->cbSector != 512)
+    {
+        /* Enable reporting of logical sector size. */
+        p[106] |= RT_H2LE_U16(RT_BIT(12));
+        p[117] = RT_H2LE_U16(pAhciPort->cbSector);
+        p[118] = RT_H2LE_U16(pAhciPort->cbSector >> 16);
+    }
 
     if (pAhciPort->fNonRotational)
         p[217] = RT_H2LE_U16(1); /* Non-rotational medium */
@@ -4877,7 +4888,7 @@ static void ahciDeviceReset(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 /**
  * Create a PIO setup FIS and post it into the memory area of the guest.
  *
- * @returns nothing.
+ * @returns nothing.
  * @param   pAhciPort          The port of the SATA controller.
  * @param   pAhciReq           The state of the task.
  * @param   pCmdFis            Pointer to the command FIS from the guest.
@@ -5579,8 +5590,8 @@ static int ahciTrimRangesCreate(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
                     aRanges[idxRangeSrc] = RT_H2LE_U64(aRanges[idxRangeSrc]);
                     if (AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) != 0)
                     {
-                        pAhciReq->u.Trim.paRanges[idxRange].offStart = (aRanges[idxRangeSrc] & AHCI_RANGE_LBA_MASK) * 512;
-                        pAhciReq->u.Trim.paRanges[idxRange].cbRange = AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) * 512;
+                        pAhciReq->u.Trim.paRanges[idxRange].offStart = (aRanges[idxRangeSrc] & AHCI_RANGE_LBA_MASK) * pAhciPort->cbSector;
+                        pAhciReq->u.Trim.paRanges[idxRange].cbRange = AHCI_RANGE_LENGTH_GET(aRanges[idxRangeSrc]) * pAhciPort->cbSector;
                         idxRange++;
                     }
                     else
@@ -6006,8 +6017,8 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             fLBA48 = true;
         case ATA_READ_DMA:
         {
-            pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * 512;
-            pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * 512;
+            pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
+            pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * pAhciPort->cbSector;
             rc = AHCITXDIR_READ;
             break;
         }
@@ -6015,23 +6026,23 @@ static AHCITXDIR ahciProcessCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, uint8_t 
             fLBA48 = true;
         case ATA_WRITE_DMA:
         {
-            pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * 512;
-            pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * 512;
+            pAhciReq->cbTransfer = ahciGetNSectors(pCmdFis, fLBA48) * pAhciPort->cbSector;
+            pAhciReq->uOffset = ahciGetSector(pAhciPort, pCmdFis, fLBA48) * pAhciPort->cbSector;
             rc = AHCITXDIR_WRITE;
             break;
         }
         case ATA_READ_FPDMA_QUEUED:
         {
-            pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * 512;
-            pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * 512;
+            pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * pAhciPort->cbSector;
+            pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
             rc = AHCITXDIR_READ;
             break;
         }
         case ATA_WRITE_FPDMA_QUEUED:
         {
-            pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * 512;
-            pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * 512;
+            pAhciReq->cbTransfer = ahciGetNSectorsQueued(pCmdFis) * pAhciPort->cbSector;
+            pAhciReq->uOffset = ahciGetSectorQueued(pCmdFis) * pAhciPort->cbSector;
             pAhciReq->fFlags |= AHCI_REQ_IS_QUEUED;
             rc = AHCITXDIR_WRITE;
             break;
@@ -7146,7 +7157,8 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
     }
     else
     {
-        pAhciPort->cTotalSectors = pAhciPort->pDrvBlock->pfnGetSize(pAhciPort->pDrvBlock) / 512;
+        pAhciPort->cbSector = pAhciPort->pDrvBlock->pfnGetSectorSize(pAhciPort->pDrvBlock);
+        pAhciPort->cTotalSectors = pAhciPort->pDrvBlock->pfnGetSize(pAhciPort->pDrvBlock) / pAhciPort->cbSector;
         rc = pAhciPort->pDrvBlockBios->pfnGetPCHSGeometry(pAhciPort->pDrvBlockBios,
                                                           &pAhciPort->PCHSGeometry);
         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)

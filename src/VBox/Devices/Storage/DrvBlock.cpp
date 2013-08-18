@@ -264,6 +264,23 @@ static DECLCALLBACK(uint64_t) drvblockGetSize(PPDMIBLOCK pInterface)
 }
 
 
+/** @copydoc PDMIBLOCK::pfnGetSize */
+static DECLCALLBACK(uint32_t) drvblockGetSectorSize(PPDMIBLOCK pInterface)
+{
+    PDRVBLOCK pThis = PDMIBLOCK_2_DRVBLOCK(pInterface);
+
+    /*
+     * Check the state.
+     */
+    if (!pThis->pDrvMedia)
+        return 0;
+
+    uint32_t cb = pThis->pDrvMedia->pfnGetSectorSize(pThis->pDrvMedia);
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
+}
+
+
 /** @copydoc PDMIBLOCK::pfnGetType */
 static DECLCALLBACK(PDMBLOCKTYPE) drvblockGetType(PPDMIBLOCK pInterface)
 {
@@ -852,6 +869,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, u
     pThis->IBlock.pfnMerge                  = drvblockMerge;
     pThis->IBlock.pfnIsReadOnly             = drvblockIsReadOnly;
     pThis->IBlock.pfnGetSize                = drvblockGetSize;
+    pThis->IBlock.pfnGetSectorSize          = drvblockGetSectorSize;
     pThis->IBlock.pfnGetType                = drvblockGetType;
     pThis->IBlock.pfnGetUuid                = drvblockGetUuid;
 

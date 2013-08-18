@@ -747,6 +747,7 @@ int main()
     GEN_CHECK_OFF(ATADevState, fATAPI);
     GEN_CHECK_OFF(ATADevState, fIrqPending);
     GEN_CHECK_OFF(ATADevState, cMultSectors);
+    GEN_CHECK_OFF(ATADevState, cbSector);
     GEN_CHECK_OFF(ATADevState, PCHSGeometry.cCylinders);
     GEN_CHECK_OFF(ATADevState, PCHSGeometry.cHeads);
     GEN_CHECK_OFF(ATADevState, PCHSGeometry.cSectors);
@@ -1153,6 +1154,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fRedo);
     GEN_CHECK_OFF(AHCIPort, fWrkThreadSleeping);
     GEN_CHECK_OFF(AHCIPort, cTotalSectors);
+    GEN_CHECK_OFF(AHCIPort, cbSector);
     GEN_CHECK_OFF(AHCIPort, cMultSectors);
     GEN_CHECK_OFF(AHCIPort, uATATransferMode);
     GEN_CHECK_OFF(AHCIPort, abATAPISense);

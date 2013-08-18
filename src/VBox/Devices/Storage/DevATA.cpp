@@ -127,6 +127,8 @@ typedef struct ATADevState
     PDMMEDIAGEOMETRY PCHSGeometry;
     /** Total number of sectors on this disk. */
     uint64_t cTotalSectors;
+    /** Sector size of the medium. */
+    uint32_t cbSector;
     /** Number of sectors to transfer per IRQ. */
     uint32_t cSectorsPerIRQ;
 
@@ -205,8 +207,6 @@ typedef struct ATADevState
 
     /** Media type if known. */
     volatile uint32_t MediaTrackType;
-
-    uint32_t    Aligmnent0; /**< Padding to 8-byte boundary. */
 
     /** The status LED state for this drive. */
     PDMLED Led;
@@ -1542,13 +1542,13 @@ static int ataReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf,
 
     STAM_PROFILE_ADV_START(&s->StatReads, r);
     s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
-    rc = s->pDrvBlock->pfnRead(s->pDrvBlock, u64Sector * 512, pvBuf, cSectors * 512);
+    rc = s->pDrvBlock->pfnRead(s->pDrvBlock, u64Sector * s->cbSector, pvBuf, cSectors * s->cbSector);
     s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
     Log4(("ataReadSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
-          rc, cSectors, u64Sector, cSectors * 512, pvBuf));
+          rc, cSectors, u64Sector, cSectors * s->cbSector, pvBuf));
 
-    STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * 512);
+    STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * s->cbSector);
 
     if (RT_SUCCESS(rc))
         *pfRedo = false;
@@ -1576,7 +1576,7 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector,
     if (s->fDMA)
         STAM_PROFILE_ADV_START(&s->StatInstrVDWrites, vw);
 #endif
-    rc = s->pDrvBlock->pfnWrite(s->pDrvBlock, u64Sector * 512, pvBuf, cSectors * 512);
+    rc = s->pDrvBlock->pfnWrite(s->pDrvBlock, u64Sector * s->cbSector, pvBuf, cSectors * s->cbSector);
 #ifdef VBOX_INSTRUMENT_DMA_WRITES
     if (s->fDMA)
         STAM_PROFILE_ADV_STOP(&s->StatInstrVDWrites, vw);
@@ -1584,9 +1584,9 @@ static int ataWriteSectors(ATADevState *s, uint64_t u64Sector,
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
     Log4(("ataWriteSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
-          rc, cSectors, u64Sector, cSectors * 512, pvBuf));
+          rc, cSectors, u64Sector, cSectors * s->cbSector, pvBuf));
 
-    STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * 512);
+    STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * s->cbSector);
 
     if (RT_SUCCESS(rc))
         *pfRedo = false;
@@ -1604,11 +1604,11 @@ static void ataReadWriteSectorsBT(ATADevState *s)
 {
     uint32_t cSectors;
 
-    cSectors = s->cbTotalTransfer / 512;
+    cSectors = s->cbTotalTransfer / s->cbSector;
     if (cSectors > s->cSectorsPerIRQ)
-        s->cbElementaryTransfer = s->cSectorsPerIRQ * 512;
+        s->cbElementaryTransfer = s->cSectorsPerIRQ * s->cbSector;
     else
-        s->cbElementaryTransfer = cSectors * 512;
+        s->cbElementaryTransfer = cSectors * s->cbSector;
     if (s->uTxDir == PDMBLOCKTXDIR_TO_DEVICE)
         ataCmdOK(s, 0);
 }
@@ -3874,8 +3874,8 @@ static int ataTrimSectors(ATADevState *s, uint64_t u64Sector, uint32_t cSectors,
 
     PDMCritSectLeave(&pCtl->lock);
 
-    TrimRange.offStart = u64Sector * 512;
-    TrimRange.cbRange  = cSectors * 512;
+    TrimRange.offStart = u64Sector * s->cbSector;
+    TrimRange.cbRange  = cSectors * s->cbSector;
 
     s->Led.Asserted.s.fWriting = s->Led.Actual.s.fWriting = 1;
     rc = s->pDrvBlock->pfnDiscard(s->pDrvBlock, &TrimRange, 1);
@@ -4014,7 +4014,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             if (!s->pDrvBlock || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = 1;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
         case ATA_WRITE_SECTORS_EXT:
             s->fLBA48 = true;
@@ -4023,7 +4023,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             if (!s->pDrvBlock || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = 1;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_MULTIPLE_EXT:
             s->fLBA48 = true;
@@ -4031,7 +4031,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             if (!s->pDrvBlock || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
         case ATA_WRITE_MULTIPLE_EXT:
             s->fLBA48 = true;
@@ -4039,7 +4039,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             if (!s->pDrvBlock || !s->cMultSectors || s->fATAPI)
                 goto abort_cmd;
             s->cSectorsPerIRQ = s->cMultSectors;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_DMA_EXT:
             s->fLBA48 = true;
@@ -4049,7 +4049,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
             s->fDMA = true;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_READ_SECTORS, false);
             break;
         case ATA_WRITE_DMA_EXT:
             s->fLBA48 = true;
@@ -4059,7 +4059,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
                 goto abort_cmd;
             s->cSectorsPerIRQ = ATA_MAX_MULT_SECTORS;
             s->fDMA = true;
-            ataStartTransfer(s, ataGetNSectors(s) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
+            ataStartTransfer(s, ataGetNSectors(s) * s->cbSector, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_READ_WRITE_SECTORS, ATAFN_SS_WRITE_SECTORS, false);
             break;
         case ATA_READ_NATIVE_MAX_ADDRESS_EXT:
             s->fLBA48 = true;
@@ -6202,7 +6202,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         if (pIf->fATAPI)
             AssertRelease(pIf->cbIOBuffer == _128K);
         else
-            AssertRelease(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * 512);
+            AssertRelease(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * pIf->cbSector);
         Assert(pIf->pbIOBufferR3);
         Assert(pIf->pbIOBufferR0 == MMHyperR3ToR0(pVM, pIf->pbIOBufferR3));
         Assert(pIf->pbIOBufferRC == MMHyperR3ToRC(pVM, pIf->pbIOBufferR3));
@@ -6212,7 +6212,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         if (pIf->fATAPI)
             pIf->cbIOBuffer = _128K;
         else
-            pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * 512;
+            pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * pIf->cbSector;
         Assert(!pIf->pbIOBufferR3);
         rc = MMR3HyperAllocOnceNoRel(pVM, pIf->cbIOBuffer, 0, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferR3);
         if (RT_FAILURE(rc))
@@ -6226,7 +6226,8 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
      */
     if (pIf->fATAPI)
     {
-        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 2048;
+        pIf->cbSector = 2048;
+        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / pIf->cbSector;
         pIf->PCHSGeometry.cCylinders = 0; /* dummy */
         pIf->PCHSGeometry.cHeads     = 0; /* dummy */
         pIf->PCHSGeometry.cSectors   = 0; /* dummy */
@@ -6234,7 +6235,8 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     }
     else
     {
-        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 512;
+        pIf->cbSector = pIf->pDrvBlock->pfnGetSectorSize(pIf->pDrvBlock);
+        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / pIf->cbSector;
         rc = pIf->pDrvBlockBios->pfnGetPCHSGeometry(pIf->pDrvBlockBios,
                                                     &pIf->PCHSGeometry);
         if (rc == VERR_PDM_MEDIA_NOT_MOUNTED)
