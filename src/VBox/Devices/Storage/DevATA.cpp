@@ -1255,7 +1255,8 @@ static bool ataIdentifySS(ATADevState *s)
     p[66] = RT_H2LE_U16(120); /* recommended DMA multiword tx cycle time */
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
-    if (s->pDrvBlock->pfnDiscard)
+    if (   s->pDrvBlock->pfnDiscard
+        || s->cbSector != 512)
     {
         p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
         p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
@@ -1286,6 +1287,15 @@ static bool ataIdentifySS(ATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+
+    if (s->cbSector != 512)
+    {
+        /* Enable reporting of logical sector size. */
+        p[106] |= RT_H2LE_U16(RT_BIT(12));
+        p[117] = RT_H2LE_U16(s->cbSector);
+        p[118] = RT_H2LE_U16(s->cbSector >> 16);
+    }
+
     if (s->pDrvBlock->pfnDiscard) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
         p[169] = RT_H2LE_U16(1); /* DATA SET MANAGEMENT command supported. */
     if (s->fNonRotational)

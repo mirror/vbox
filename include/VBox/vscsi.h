@@ -121,6 +121,20 @@ typedef struct VSCSILUNIOCALLBACKS
                                                          uint64_t *pcbSize));
 
     /**
+     * Retrieve the sector size of the underlying medium.
+     *
+     * @returns VBox status status code.
+     * @param   hVScsiLun        Virtual SCSI LUN handle.
+     * @param   pvScsiLunUser    Opaque user data which may
+     *                           be used to identify the medium.
+     * @param   pcbSectorSize    Where to store the sector size of the
+     *                           medium.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnVScsiLunMediumGetSectorSize, (VSCSILUN hVScsiLun,
+                                                              void *pvScsiLunUser,
+                                                              uint32_t *pcbSectorSize));
+
+    /**
      * Set the lock state of the underlying medium.
      *
      * @returns VBox status status code.
