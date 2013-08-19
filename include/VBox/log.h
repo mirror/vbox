@@ -333,6 +333,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_GUESTMONITORCHANGEDEVENT,
     /** Main group, IGuestMouseEvent. */
     LOG_GROUP_MAIN_GUESTMOUSEEVENT,
+    /** Main group, IGuestMultiTouchEvent. */
+    LOG_GROUP_MAIN_GUESTMULTITOUCHEVENT,
     /** Main group, IGuestOSType. */
     LOG_GROUP_MAIN_GUESTOSTYPE,
     /** Main group, IGuestProcess. */
@@ -815,6 +817,7 @@ typedef enum LOGGROUP
     "MAIN_GUESTKEYBOARDEVENT", \
     "MAIN_GUESTMONITORCHANGEDEVENT", \
     "MAIN_GUESTMOUSEEVENT", \
+    "MAIN_GUESTMULTITOUCHEVENT", \
     "MAIN_GUESTOSTYPE", \
     "MAIN_GUESTPROCESS", \
     "MAIN_GUESTPROCESSEVENT", \

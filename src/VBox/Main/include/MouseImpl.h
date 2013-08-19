@@ -128,6 +128,10 @@ private:
 
     void fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
                         LONG fButtons);
+
+    void fireMultiTouchEvent(uint8_t cContacts,
+                             const LONG64 *paContacts,
+                             uint32_t u32ScanTime);
 };
 
 #endif // !____H_MOUSEIMPL

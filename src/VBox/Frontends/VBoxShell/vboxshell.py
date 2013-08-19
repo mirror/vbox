@@ -312,6 +312,16 @@ def printMouseEvent(_ctx, mev):
 def printKbdEvent(ctx, kev):
     print "Kbd: ", ctx['global'].getArray(kev, 'scancodes')
 
+def printMultiTouchEvent(ctx, mtev):
+    print "MultiTouch : contacts=%d time=%d" % (mtev.contactCount, mtev.scanTime)
+    xPositions = ctx['global'].getArray(mtev, 'xPositions')
+    yPositions = ctx['global'].getArray(mtev, 'yPositions')
+    contactIds = ctx['global'].getArray(mtev, 'contactIds')
+    contactFlags = ctx['global'].getArray(mtev, 'contactFlags')
+
+    for i in range(0, mtev.contactCount):
+        print "  [%d] %d,%d %d %d" % (i, xPositions[i], yPositions[i], contactIds[i], contactFlags[i])
+
 def monitorSource(ctx, eventSource, active, dur):
     def handleEventImpl(event):
         evtype = event.type
@@ -340,6 +350,10 @@ def monitorSource(ctx, eventSource, active, dur):
             kev = ctx['global'].queryInterface(event, 'IGuestKeyboardEvent')
             if kev:
                 printKbdEvent(ctx, kev)
+        elif evtype == ctx['global'].constants.VBoxEventType_OnGuestMultiTouch:
+            mtev = ctx['global'].queryInterface(event, 'IGuestMultiTouchEvent')
+            if mtev:
+                printMultiTouchEvent(ctx, mtev)
 
     class EventListener:
         def __init__(self, arg):
@@ -1560,6 +1574,20 @@ def monitorGuestKbdCmd(ctx, args):
 def monitorGuestMouseCmd(ctx, args):
     if (len(args) < 2):
         print "usage: monitorGuestMouse name (duration)"
+        return 0
+    mach = argsToMach(ctx, args)
+    if mach == None:
+        return 0
+    dur = 5
+    if len(args) > 2:
+        dur = float(args[2])
+    active = False
+    cmdExistingVm(ctx, mach, 'guestlambda', [lambda ctx, mach, console, args:  monitorSource(ctx, console.mouse.eventSource, active, dur)])
+    return 0
+
+def monitorGuestMultiTouchCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: monitorGuestMultiTouch name (duration)"
         return 0
     mach = argsToMach(ctx, args)
     if mach == None:
@@ -3219,8 +3247,9 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'host':['Show host information', hostCmd, 0],
             'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
-            'monitorGuestKbd':['Monitor guest keyboardfor some time: monitorGuestKbd Win32 10', monitorGuestKbdCmd, 0],
-            'monitorGuestMouse':['Monitor guest keyboardfor some time: monitorGuestMouse Win32 10', monitorGuestMouseCmd, 0],
+            'monitorGuestKbd':['Monitor guest keyboard for some time: monitorGuestKbd Win32 10', monitorGuestKbdCmd, 0],
+            'monitorGuestMouse':['Monitor guest mouse for some time: monitorGuestMouse Win32 10', monitorGuestMouseCmd, 0],
+            'monitorGuestMultiTouch':['Monitor guest touch screen for some time: monitorGuestMultiTouch Win32 10', monitorGuestMultiTouchCmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
             'showLog':['Show log file of the VM, : showLog Win32', showLogCmd, 0],

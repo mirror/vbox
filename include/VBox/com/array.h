@@ -1242,6 +1242,34 @@ inline void com::SafeArray<BYTE>::initFrom(const BYTE* aPtr, size_t aSize)
 
 
 template<>
+inline void com::SafeArray<SHORT>::initFrom(const com::SafeArray<SHORT> & aRef)
+{
+    size_t sSize = aRef.size();
+    resize(sSize);
+    ::memcpy(raw(), aRef.raw(), sSize * sizeof(SHORT));
+}
+template<>
+inline void com::SafeArray<SHORT>::initFrom(const SHORT* aPtr, size_t aSize)
+{
+    resize(aSize);
+    ::memcpy(raw(), aPtr, aSize * sizeof(SHORT));
+}
+
+template<>
+inline void com::SafeArray<USHORT>::initFrom(const com::SafeArray<USHORT> & aRef)
+{
+    size_t sSize = aRef.size();
+    resize(sSize);
+    ::memcpy(raw(), aRef.raw(), sSize * sizeof(USHORT));
+}
+template<>
+inline void com::SafeArray<USHORT>::initFrom(const USHORT* aPtr, size_t aSize)
+{
+    resize(aSize);
+    ::memcpy(raw(), aPtr, aSize * sizeof(USHORT));
+}
+
+template<>
 inline void com::SafeArray<LONG>::initFrom(const com::SafeArray<LONG> & aRef)
 {
     size_t sSize = aRef.size();

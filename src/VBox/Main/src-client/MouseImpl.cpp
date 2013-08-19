@@ -488,6 +488,32 @@ void Mouse::fireMouseEvent(bool fAbsolute, LONG x, LONG y, LONG dz, LONG dw,
     }
 }
 
+void Mouse::fireMultiTouchEvent(uint8_t cContacts,
+                                const LONG64 *paContacts,
+                                uint32_t u32ScanTime)
+{
+    com::SafeArray<SHORT> xPositions(cContacts);
+    com::SafeArray<SHORT> yPositions(cContacts);
+    com::SafeArray<USHORT> contactIds(cContacts);
+    com::SafeArray<USHORT> contactFlags(cContacts);
+
+    uint8_t i;
+    for (i = 0; i < cContacts; i++)
+    {
+        uint32_t u32Lo = RT_LO_U32(paContacts[i]);
+        uint32_t u32Hi = RT_HI_U32(paContacts[i]);
+        xPositions[i] = (int16_t)u32Lo;
+        yPositions[i] = (int16_t)(u32Lo >> 16);
+        contactIds[i] = RT_BYTE1(u32Hi);
+        contactFlags[i] = RT_BYTE2(u32Hi);
+    }
+
+    VBoxEventDesc evDesc;
+    evDesc.init(mEventSource, VBoxEventType_OnGuestMultiTouch,
+                cContacts, ComSafeArrayAsInParam(xPositions), ComSafeArrayAsInParam(yPositions),
+                ComSafeArrayAsInParam(contactIds), ComSafeArrayAsInParam(contactFlags), u32ScanTime);
+    evDesc.fire(0);
+}
 
 /**
  * Send a relative mouse event to the guest.
@@ -794,8 +820,8 @@ HRESULT Mouse::putEventMultiTouch(LONG aCount,
     {
         rc = reportMultiTouchEventToDevice(cContacts, cContacts? pau64Contacts: NULL, (uint32_t)aScanTime);
 
-        // @todo Implement using a new TouchEvent rather than extending the mouse event.
-        // fireMouseEvent(true, x, y, 0, 0, cContact, contactState);
+        /* Send the original contact information. */
+        fireMultiTouchEvent(cContacts, cContacts? paContacts: NULL, (uint32_t)aScanTime);
     }
 
     RTMemTmpFree(pau64Contacts);
