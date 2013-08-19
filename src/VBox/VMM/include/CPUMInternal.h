@@ -410,7 +410,7 @@ typedef struct CPUMCPU
      * Call CPUMR0SetLApic to update this before doing a world switch. */
     bool                    fX2Apic;
 #else
-    uint8_t                 abPadding3[8+4+1];
+    uint8_t                 abPadding3[(HC_ARCH_BITS == 64 ? 8 : 4) + 4 + 1];
 #endif
 
     /** Have we entered raw-mode? */
@@ -419,7 +419,7 @@ typedef struct CPUMCPU
     bool                    fRemEntered;
 
     /** Align the structure on a 64-byte boundary. */
-    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2];
+    uint8_t                 abPadding2[64 - 16 - (HC_ARCH_BITS == 64 ? 8 : 4) - 4 - 1 - 2];
 } CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;

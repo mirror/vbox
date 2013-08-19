@@ -436,13 +436,13 @@ struc CPUMCPU
     .fApicDisVectors      resd    1
     .fX2Apic              resb    1
 %else
-    .abPadding3           resb    (8 + 4 + 1)
+    .abPadding3           resb    (RTR0PTR_CB + 4 + 1)
 %endif
 
     .fRawEntered          resb    1
     .fRemEntered          resb    1
 
-    .abPadding2           resb    (64 - 16 - 8 - 4 - 1 - 2)
+    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2)
 endstruc
 
 
