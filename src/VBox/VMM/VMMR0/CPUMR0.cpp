@@ -47,6 +47,10 @@ typedef struct CPUMHOSTLAPIC
 {
     /** Indicates that the entry is in use and have valid data. */
     bool        fEnabled;
+    /** Whether it's operating in X2APIC mode (EXTD). */
+    bool        fX2Apic;
+    /** The APIC version number. */
+    uint32_t    uVersion;
     /** Has APIC_REG_LVT_THMR. Not used. */
     uint32_t    fHasThermal;
     /** The physical address of the APIC registers. */
@@ -780,19 +784,21 @@ VMMR0_INT_DECL(void) CPUMR0LoadHyperDebugState(PVMCPU pVCpu, bool fDr6)
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 
 /**
- * Worker for cpumR0MapLocalApics. Check each CPU for a present Local APIC.
- * Play safe and treat each CPU separate.
+ * Per-CPU callback that probes the CPU for APIC support.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     Ignored.
  * @param   pvUser2     Ignored.
  */
-static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+static DECLCALLBACK(void) cpumR0MapLocalApicCpuProber(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     NOREF(pvUser1); NOREF(pvUser2);
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
 
+    /*
+     * Check for APIC support.
+     */
     uint32_t uMaxLeaf, u32EBX, u32ECX, u32EDX;
     ASMCpuId(0, &uMaxLeaf, &u32EBX, &u32ECX, &u32EDX);
     if (   (   ASMIsIntelCpuEx(u32EBX, u32ECX, u32EDX)
@@ -805,8 +811,11 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
         if (    (u32EDX & X86_CPUID_FEATURE_EDX_APIC)
             &&  (u32EDX & X86_CPUID_FEATURE_EDX_MSR))
         {
+            /*
+             * Safe to access the MSR. Read it and calc the BASE (a little complicated).
+             */
             uint64_t u64ApicBase = ASMRdMsr(MSR_IA32_APICBASE);
-            uint64_t u64Mask     = UINT64_C(0x0000000ffffff000);
+            uint64_t u64Mask     = MSR_IA32_APICBASE_BASE_MIN;
 
             /* see Intel Manual: Local APIC Status and Location: MAXPHYADDR default is bit 36 */
             uint32_t uMaxExtLeaf;
@@ -820,10 +829,64 @@ static DECLCALLBACK(void) cpumR0MapLocalApicWorker(RTCPUID idCpu, void *pvUser1,
                 u64Mask = ((UINT64_C(1) << u32PhysBits) - 1) & UINT64_C(0xfffffffffffff000);
             }
 
-            uint64_t const u64PhysBase = u64ApicBase & u64Mask;
-            g_aLApics[iCpu].PhysBase   = (RTHCPHYS)u64PhysBase;
-            g_aLApics[iCpu].fEnabled   = g_aLApics[iCpu].PhysBase == u64PhysBase;
+            AssertCompile(sizeof(g_aLApics[iCpu].PhysBase) == sizeof(u64ApicBase));
+            g_aLApics[iCpu].PhysBase    = u64ApicBase & u64Mask;
+            g_aLApics[iCpu].fEnabled    = RT_BOOL(u64ApicBase & MSR_IA32_APICBASE_EN);
+            g_aLApics[iCpu].fX2Apic     =    (u64ApicBase & (MSR_IA32_APICBASE_EXTD | MSR_IA32_APICBASE_EN))
+                                          == (MSR_IA32_APICBASE_EXTD | MSR_IA32_APICBASE_EN);
         }
+    }
+}
+
+
+
+/**
+ * Per-CPU callback that verifies our APIC expectations.
+ *
+ * @param   idCpu       The identifier for the CPU the function is called on.
+ * @param   pvUser1     Ignored.
+ * @param   pvUser2     Ignored.
+ */
+static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    int iCpu = RTMpCpuIdToSetIndex(idCpu);
+    AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
+    if (!g_aLApics[iCpu].fEnabled)
+        return;
+
+    /*
+     * 0x0X       82489 external APIC
+     * 0x1X       Local APIC
+     * 0x2X..0xFF reserved
+     */
+    uint32_t uApicVersion;
+    if (g_aLApics[iCpu].fX2Apic)
+        uApicVersion = ApicX2RegRead32(APIC_REG_VERSION);
+    else
+        uApicVersion = ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_VERSION);
+    if ((APIC_REG_VERSION_GET_VER(uApicVersion) & 0xF0) == 0x10)
+    {
+        g_aLApics[iCpu].uVersion    = uApicVersion;
+        g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(uApicVersion) >= 5;
+
+#if 0 /* enable if you need it. */
+        if (g_aLApics[iCpu].fX2Apic)
+            SUPR0Printf("CPUM: X2APIC %02u at - ver %#x, lint0=%#x lint1=%#x pc=%#x thmr=%#x\n",
+                        iCpu, uApicVersion,
+                        ApicX2RegRead32(APIC_REG_LVT_LINT0), ApicX2RegRead32(APIC_REG_LVT_LINT1),
+                        ApicX2RegRead32(APIC_REG_LVT_PC), ApicX2RegRead32(APIC_REG_LVT_THMR) );
+        else
+            SUPR0Printf("CPUM: APIC %02u at %RGp (mapped at %p) - ver %#x, lint0=%#x lint1=%#x pc=%#x thmr=%#x\n",
+                        iCpu, g_aLApics[iCpu].PhysBase, g_aLApics[iCpu].pv, uApicVersion,
+                        ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT0), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_LINT1),
+                        ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_PC), ApicRegRead(g_aLApics[iCpu].pv, APIC_REG_LVT_THMR) );
+#endif
+    }
+    else
+    {
+        g_aLApics[iCpu].fEnabled = false;
+        g_aLApics[iCpu].fX2Apic  = false;
+        SUPR0Printf("VBox/CPUM: Unsupported APIC version %#x (iCpu=%d)\n", uApicVersion, iCpu);
     }
 }
 
@@ -843,15 +906,13 @@ static int cpumR0MapLocalApics(void)
     }
 
     /*
-     * Create mappings for all online CPUs we think have APICs.
+     * Create mappings for all online CPUs we think have legacy APICs.
      */
-    /** @todo r=bird: This code is not adequately handling CPUs that are
-     *        offline or unplugged at init time and later bought into action. */
-    int rc = RTMpOnAll(cpumR0MapLocalApicWorker, NULL, NULL);
+    int rc = RTMpOnAll(cpumR0MapLocalApicCpuProber, NULL, NULL);
 
     for (unsigned iCpu = 0; RT_SUCCESS(rc) && iCpu < RT_ELEMENTS(g_aLApics); iCpu++)
     {
-        if (g_aLApics[iCpu].fEnabled)
+        if (g_aLApics[iCpu].fEnabled && !g_aLApics[iCpu].fX2Apic)
         {
             rc = RTR0MemObjEnterPhys(&g_aLApics[iCpu].hMemObj, g_aLApics[iCpu].PhysBase,
                                      PAGE_SIZE, RTMEM_CACHE_POLICY_MMIO);
@@ -861,42 +922,46 @@ static int cpumR0MapLocalApics(void)
                                          PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
                 if (RT_SUCCESS(rc))
                 {
-                    void *pvApicBase = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);
-
-                    /*
-                     * 0x0X       82489 external APIC
-                     * 0x1X       Local APIC
-                     * 0x2X..0xFF reserved
-                     */
-                    /** @todo r=bird: The local APIC is usually at the same address for all CPUs,
-                     *        and therefore inaccessible by the other CPUs. */
-                    uint32_t ApicVersion = ApicRegRead(pvApicBase, APIC_REG_VERSION);
-                    if ((APIC_REG_VERSION_GET_VER(ApicVersion) & 0xF0) == 0x10)
-                    {
-                        g_aLApics[iCpu].fHasThermal = APIC_REG_VERSION_GET_MAX_LVT(ApicVersion) >= 5;
-                        g_aLApics[iCpu].pv          = pvApicBase;
-                        Log(("CPUM: APIC %02u at %RGp (mapped at %p) - ver %#x, lint0=%#x lint1=%#x pc=%#x thmr=%#x\n",
-                             iCpu, g_aLApics[iCpu].PhysBase, g_aLApics[iCpu].pv, ApicVersion,
-                             ApicRegRead(pvApicBase, APIC_REG_LVT_LINT0),
-                             ApicRegRead(pvApicBase, APIC_REG_LVT_LINT1),
-                             ApicRegRead(pvApicBase, APIC_REG_LVT_PC),
-                             ApicRegRead(pvApicBase, APIC_REG_LVT_THMR)
-                             ));
-                        continue;
-                    }
-
-                    RTR0MemObjFree(g_aLApics[iCpu].hMapObj, true /* fFreeMappings */);
+                    g_aLApics[iCpu].pv = RTR0MemObjAddress(g_aLApics[iCpu].hMapObj);
+                    continue;
                 }
                 RTR0MemObjFree(g_aLApics[iCpu].hMemObj, true /* fFreeMappings */);
             }
             g_aLApics[iCpu].fEnabled = false;
         }
+        g_aLApics[iCpu].pv = NULL;
     }
+
+    /*
+     * Check the APICs.
+     */
+    if (RT_SUCCESS(rc))
+        rc = RTMpOnAll(cpumR0MapLocalApicCpuChecker, NULL, NULL);
+
     if (RT_FAILURE(rc))
     {
         cpumR0UnmapLocalApics();
         return rc;
     }
+
+#ifdef LOG_ENABLED
+    /*
+     * Log the result (pretty useless, requires enabling CPUM in VBoxDrv
+     * and !VBOX_WITH_R0_LOGGING).
+     */
+    if (LogIsEnabled())
+    {
+        uint32_t cEnabled = 0;
+        uint32_t cX2Apics = 0;
+        for (unsigned iCpu = 0; iCpu < RT_ELEMENTS(g_aLApics); iCpu++)
+            if (g_aLApics[iCpu].fEnabled)
+            {
+                cEnabled++;
+                cX2Apics += g_aLApics[iCpu].fX2Apic;
+            }
+        Log(("CPUM: %u APICs, %u X2APICs\n", cEnabled, cX2Apics));
+    }
+#endif
 
     return VINF_SUCCESS;
 }
@@ -916,6 +981,7 @@ static void cpumR0UnmapLocalApics(void)
             g_aLApics[iCpu].hMapObj  = NIL_RTR0MEMOBJ;
             g_aLApics[iCpu].hMemObj  = NIL_RTR0MEMOBJ;
             g_aLApics[iCpu].fEnabled = false;
+            g_aLApics[iCpu].fX2Apic  = false;
             g_aLApics[iCpu].pv       = NULL;
         }
     }
@@ -923,17 +989,23 @@ static void cpumR0UnmapLocalApics(void)
 
 
 /**
- * Write the Local APIC mapping address of the current host CPU to CPUM to be
- * able to access the APIC registers in the raw mode switcher for disabling/
- * re-enabling the NMI. Must be called with disabled preemption or disabled
- * interrupts!
+ * Updates CPUMCPU::pvApicBase and CPUMCPU::fX2Apic prior to world switch.
  *
- * @param   pVM         Pointer to the VM.
+ * Writes the Local APIC mapping address of the current host CPU to CPUMCPU so
+ * the world switchers can access the APIC registers for the purpose of
+ * disabling and re-enabling the NMIs.  Must be called with disabled preemption
+ * or disabled interrupts!
+ *
+ * @param   pVCpu       Pointer to the cross context CPU structure of the
+ *                      calling EMT.
  * @param   idHostCpu   The ID of the current host CPU.
  */
-VMMR0_INT_DECL(void) CPUMR0SetLApic(PVM pVM, RTCPUID idHostCpu)
+VMMR0_INT_DECL(void) CPUMR0SetLApic(PVMCPU pVCpu, RTCPUID idHostCpu)
 {
-    pVM->cpum.s.pvApicBase = g_aLApics[RTMpCpuIdToSetIndex(idHostCpu)].pv;
+    int idxCpu = RTMpCpuIdToSetIndex(idHostCpu);
+    pVCpu->cpum.s.pvApicBase = g_aLApics[idxCpu].pv;
+    pVCpu->cpum.s.fX2Apic    = g_aLApics[idxCpu].fX2Apic;
+//    Log6(("CPUMR0SetLApic: pvApicBase=%p fX2Apic=%d\n", g_aLApics[idxCpu].pv, g_aLApics[idxCpu].fX2Apic));
 }
 
 #endif /* VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI */

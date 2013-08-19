@@ -122,10 +122,15 @@ BEGINPROC vmmR0ToRawMode
     call    NAME(vmmR0ToRawModeAsm)
 
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    CPUM_FROM_CPUMCPU(edx)
     ; Restore blocked Local APIC NMI vectors
-    mov     ecx, [edx + CPUM.fApicDisVectors]
-    mov     edx, [edx + CPUM.pvApicBase]
+    ; Do this here to ensure the host CS is already restored
+    mov     ecx, [edx + CPUMCPU.fApicDisVectors]
+    test    ecx, ecx
+    jz      gth_apic_done
+    cmp     byte [edx + CPUMCPU.fX2Apic], 1
+    je      gth_x2apic
+
+    mov     edx, [edx + CPUMCPU.pvApicBase]
     shr     ecx, 1
     jnc     gth_nolint0
     and     dword [edx + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
@@ -142,6 +147,46 @@ gth_nopc:
     jnc     gth_notherm
     and     dword [edx + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
 gth_notherm:
+    jmp     gth_apic_done
+
+gth_x2apic:
+    push    eax                         ; save eax
+    push    ebx                         ; save it for fApicDisVectors
+    push    edx                         ; save edx just in case.
+    mov     ebx, ecx                    ; ebx = fApicDisVectors, ecx free for MSR use
+    shr     ebx, 1
+    jnc     gth_x2_nolint0
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT0 >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth_x2_nolint0:
+    shr     ebx, 1
+    jnc     gth_x2_nolint1
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT1 >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth_x2_nolint1:
+    shr     ebx, 1
+    jnc     gth_x2_nopc
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_PC >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth_x2_nopc:
+    shr     ebx, 1
+    jnc     gth_x2_notherm
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_THMR >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth_x2_notherm:
+    pop     edx
+    pop     ebx
+    pop     eax
+
+gth_apic_done:
 %endif
 
     ; restore original flags
@@ -197,7 +242,7 @@ BEGINPROC vmmR0ToRawModeAsm
     mov     [edx + CPUMCPU.Host.edi], edi
     mov     [edx + CPUMCPU.Host.esi], esi
     mov     [edx + CPUMCPU.Host.esp], esp
-    mov     [edx + CPUMCPU.Host.ebp], ebp
+    mov     [edx + CPUMCPU.Host.ebp], ebp ; offCpumCpu!
     ; selectors.
     mov     [edx + CPUMCPU.Host.ds], ds
     mov     [edx + CPUMCPU.Host.es], es
@@ -219,10 +264,12 @@ BEGINPROC vmmR0ToRawModeAsm
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     DEBUG32_S_CHAR('f')
     DEBUG32_S_CHAR(';')
-    CPUM_FROM_CPUMCPU_WITH_OFFSET edx, ebp
-    mov     ebx, [edx + CPUM.pvApicBase]
+    cmp     byte [edx + CPUMCPU.pvApicBase], 1
+    je      htg_x2apic
+
+    mov     ebx, [edx + CPUMCPU.pvApicBase]
     or      ebx, ebx
-    jz      htg_noapic
+    jz      htg_apic_done
     mov     eax, [ebx + APIC_REG_LVT_LINT0]
     mov     ecx, eax
     and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
@@ -267,9 +314,62 @@ htg_nopc:
     mov     [ebx + APIC_REG_LVT_THMR], eax
     mov     eax, [ebx + APIC_REG_LVT_THMR] ; write completion
 htg_notherm:
-    mov     [edx + CPUM.fApicDisVectors], edi
-htg_noapic:
-    CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
+    mov     [edx + CPUMCPU.fApicDisVectors], edi
+    jmp     htg_apic_done
+
+htg_x2apic:
+    mov     esi, edx                    ; Save edx.
+    xor     edi, edi                    ; fApicDisVectors
+
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT0 >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nolint0
+    or      edi, 0x01
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nolint0:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT1 >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nolint1
+    or      edi, 0x02
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nolint1:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_PC >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nopc
+    or      edi, 0x04
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nopc:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_VERSION >> 4)
+    rdmsr
+    shr     eax, 16
+    cmp     al, 5
+    jb      htg_x2_notherm
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_THMR >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_notherm
+    or      edi, 0x08
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_notherm:
+    mov     edx, esi                    ; Restore edx.
+    mov     [edx + CPUMCPU.fApicDisVectors], edi
+
+htg_apic_done:
 %endif
 
     ; control registers.

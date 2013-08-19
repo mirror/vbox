@@ -44,10 +44,6 @@
     GEN_CHECK_OFF(CPUM, aGuestCpuIdCentaur);
     GEN_CHECK_OFF(CPUM, aGuestCpuIdHyper);
     GEN_CHECK_OFF(CPUM, GuestCpuIdDef);
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    GEN_CHECK_OFF(CPUM, pvApicBase);
-    GEN_CHECK_OFF(CPUM, fApicDisVectors);
-#endif
 
     GEN_CHECK_SIZE(CPUMCPU); // has .mac
     GEN_CHECK_OFF(CPUMCPU, Hyper);
@@ -62,6 +58,11 @@
     GEN_CHECK_OFF(CPUMCPU, fChanged);
     GEN_CHECK_OFF(CPUMCPU, offCPUM);
     GEN_CHECK_OFF(CPUMCPU, u32RetCode);
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    GEN_CHECK_OFF(CPUMCPU, pvApicBase);
+    GEN_CHECK_OFF(CPUMCPU, fApicDisVectors);
+    GEN_CHECK_OFF(CPUMCPU, fX2Apic);
+#endif
     GEN_CHECK_OFF(CPUMCPU, fRawEntered);
     GEN_CHECK_OFF(CPUMCPU, fRemEntered);
 
