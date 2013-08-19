@@ -58,8 +58,6 @@ struct DRVMAINMOUSE
     PDMIMOUSECONNECTOR          IConnector;
     /** The capabilities of this device. */
     uint32_t                    u32DevCaps;
-    /** The device priority. */
-    uint32_t                    u32Priority;
 };
 
 
@@ -438,27 +436,26 @@ HRESULT Mouse::reportAbsEvent(int32_t x, int32_t y,
                               int32_t dz, int32_t dw, uint32_t fButtons,
                               bool fUsesVMMDevEvent)
 {
-    HRESULT rc = S_OK;
+    HRESULT rc;
     /** If we are using the VMMDev to report absolute position but without
      * VMMDev IRQ support then we need to send a small "jiggle" to the emulated
      * relative mouse device to alert the guest to changes. */
     LONG cJiggle = 0;
 
-    /*
-     * Send the absolute mouse position to the device.
-     */
-    if (x != mcLastX || y != mcLastY)
+    if (vmmdevCanAbs())
     {
-        if (vmmdevCanAbs())
+        /*
+         * Send the absolute mouse position to the VMM device.
+         */
+        if (x != mcLastX || y != mcLastY)
         {
             rc = reportAbsEventToVMMDev(x, y);
             cJiggle = !fUsesVMMDevEvent;
         }
-        else
-            rc = reportAbsEventToMouseDev(x, y, 0, 0, fButtons);
-    }
-    if (SUCCEEDED(rc))
         rc = reportRelEventToMouseDev(cJiggle, 0, dz, dw, fButtons);
+    }
+    else
+        rc = reportAbsEventToMouseDev(x, y, dz, dw, fButtons);
 
     mcLastX = x;
     mcLastY = y;
@@ -997,7 +994,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0Priority\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -1031,35 +1028,14 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
         return rc;
     }
     pThis->pMouse = (Mouse *)pv;        /** @todo Check this cast! */
-    /*
-     * Get the device priority.
-     */
-    rc = CFGMR3QueryU32Def(pCfg, "Priority", &pThis->u32Priority, 1);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: Bad \"Priority\" value! rc=%Rrc\n", rc));
-        return rc;
-    }
     unsigned cDev;
     {
-        PDRVMAINMOUSE pObject = pThis;
         AutoReadLock mouseLock(pThis->pMouse COMMA_LOCKVAL_SRC_POS);
 
         for (cDev = 0; cDev < MOUSE_MAX_DEVICES; ++cDev)
-            if (pThis->pMouse->mpDrv[cDev])
+            if (!pThis->pMouse->mpDrv[cDev])
             {
-                /* Fix priorities. */
-                if (   pThis->pMouse->mpDrv[cDev]->u32Priority
-                    <= pObject->u32Priority)
-                {
-                    PDRVMAINMOUSE pNewObject = pThis->pMouse->mpDrv[cDev];
-                    pThis->pMouse->mpDrv[cDev] = pObject;
-                    pObject = pNewObject;
-                }
-            }
-            else
-            {
-                pThis->pMouse->mpDrv[cDev] = pObject;
+                pThis->pMouse->mpDrv[cDev] = pThis;
                 break;
             }
     }
