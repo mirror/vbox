@@ -59,8 +59,8 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Variables: */
-    QHBoxLayout *m_pLayout;
-    QLabel *m_pWarningLabel;
+    QHBoxLayout *m_pIconLayout;
+    QLabel *m_pTextLabel;
     QList<UIPageValidator*> m_validators;
     QList<QLabel*> m_icons;
     QList<bool> m_hovered;

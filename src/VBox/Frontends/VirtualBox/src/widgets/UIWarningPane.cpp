@@ -31,7 +31,8 @@
 
 UIWarningPane::UIWarningPane(QWidget *pParent)
     : QWidget(pParent)
-    , m_pWarningLabel(0)
+    , m_pIconLayout(0)
+    , m_pTextLabel(0)
 {
     /* Prepare: */
     prepare();
@@ -39,15 +40,16 @@ UIWarningPane::UIWarningPane(QWidget *pParent)
 
 void UIWarningPane::setWarningLabel(const QString &strWarningLabel)
 {
-    m_pWarningLabel->setText(strWarningLabel);
+    /* Assign passed text directly to warning-label: */
+    m_pTextLabel->setText(strWarningLabel);
 }
 
 void UIWarningPane::registerValidator(UIPageValidator *pValidator)
 {
-    /* Make sure validator is set! */
+    /* Make sure validator exists: */
     AssertPtrReturnVoid(pValidator);
 
-    /* Makre sure validator is not registered yet: */
+    /* Make sure validator is not registered yet: */
     if (m_validators.contains(pValidator))
     {
         AssertMsgFailed(("Validator is registered already!\n"));
@@ -63,7 +65,7 @@ void UIWarningPane::registerValidator(UIPageValidator *pValidator)
         /* Add icon-label into list: */
         m_icons << pIconLabel;
         /* Add icon-label into layout: */
-        m_pLayout->addWidget(pIconLabel);
+        m_pIconLayout->addWidget(pIconLabel);
         /* Configure icon-label: */
         pIconLabel->setMouseTracking(true);
         pIconLabel->installEventFilter(this);
@@ -72,7 +74,7 @@ void UIWarningPane::registerValidator(UIPageValidator *pValidator)
         connect(pValidator, SIGNAL(sigHideWarningIcon()), pIconLabel, SLOT(hide()));
     }
 
-    /* Mark icon as 'non-hovered': */
+    /* Mark icon as 'unhovered': */
     m_hovered << false;
 }
 
@@ -91,19 +93,19 @@ void UIWarningPane::prepareContent()
         pMainLayout->setContentsMargins(0, 0, 0, 0);
         /* Add left stretch: */
         pMainLayout->addStretch();
-        /* Create warning-label: */
-        m_pWarningLabel = new QLabel;
+        /* Create text-label: */
+        m_pTextLabel = new QLabel;
         {
             /* Add into main-layout: */
-            pMainLayout->addWidget(m_pWarningLabel);
+            pMainLayout->addWidget(m_pTextLabel);
         }
         /* Create layout: */
-        m_pLayout = new QHBoxLayout;
+        m_pIconLayout = new QHBoxLayout;
         {
             /* Configure layout: */
-            m_pLayout->setContentsMargins(0, 0, 0, 0);
+            m_pIconLayout->setContentsMargins(0, 0, 0, 0);
             /* Add into main-layout: */
-            pMainLayout->addLayout(m_pLayout);
+            pMainLayout->addLayout(m_pIconLayout);
         }
         /* Add right stretch: */
         pMainLayout->addStretch();
