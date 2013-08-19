@@ -921,7 +921,16 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_PLATFORM_ID                0x17
 
 #ifndef MSR_IA32_APICBASE /* qemu cpu.h kludge */
-#define MSR_IA32_APICBASE                   0x1b
+# define MSR_IA32_APICBASE                  0x1b
+/** Local APIC enabled. */
+# define MSR_IA32_APICBASE_EN               RT_BIT_64(11)
+/** X2APIC enabled (requires the EN bit to be set). */
+# define MSR_IA32_APICBASE_EXTD             RT_BIT_64(10)
+/** The processor is the boot strap processor (BSP). */
+# define MSR_IA32_APICBASE_BSP              RT_BIT_64(8)
+/** Minimum base address mask, consult CPUID leaf 0x80000008 for the actual
+ *  width. */
+# define MSR_IA32_APICBASE_BASE_MIN         UINT64_C(0x0000000ffffff000)
 #endif
 
 /** CPU Feature control. */
