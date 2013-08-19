@@ -134,9 +134,11 @@ typedef struct USBHIDM_ACCUM
         } Relative;
         struct
         {
+            uint32_t    fButtons;
+            int32_t     dz;
+            int32_t     dw;
             uint32_t    x;
             uint32_t    y;
-            uint32_t    fButtons;
         } Absolute;
     } u;
 } USBHIDM_ACCUM, *PUSBHIDM_ACCUM;
@@ -253,6 +255,8 @@ typedef struct USBHIDM_REPORT
 typedef struct USBHIDT_REPORT
 {
     uint8_t     fButtons;
+    int8_t      dz;
+    int8_t      dw;
     uint8_t     padding;
     uint16_t    x;
     uint16_t    y;
@@ -400,8 +404,6 @@ static const uint8_t g_UsbHidMReportDesc[] =
  * as OS X shows no such problem. When X/Y is reported last, Windows behaves
  * properly.
  */
-#define REPORTID_MOUSE     1
-#define REPORTID_MAX_COUNT 2
 
 static const uint8_t g_UsbHidTReportDesc[] =
 {
@@ -421,6 +423,17 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Report Size */               0x75, 0x03,     /* 3 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x38,     /* Z (wheel) */
+    /* Logical Minimum */           0x15, 0x81,     /* -127 */
+    /* Logical Maximum */           0x25, 0x7F,     /* +127 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
+    /* Usage Page */                0x05, 0x0C,     /* Consumer Devices */
+    /* Usage */                     0x0A, 0x38, 0x02,/* AC Pan (horizontal wheel) */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
     /* Report Size */               0x75, 0x08,     /* 8 (padding byte) */
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
@@ -1193,6 +1206,8 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
     {
     case USBHIDMODE_ABSOLUTE:
         pReport->t.fButtons = pAccumulated->u.Absolute.fButtons;
+        pReport->t.dz       = clamp_i8(pAccumulated->u.Absolute.dz);
+        pReport->t.dw       = clamp_i8(pAccumulated->u.Absolute.dw);
         pReport->t.padding  = 0;
         pReport->t.x        = pAccumulated->u.Absolute.x;
         pReport->t.y        = pAccumulated->u.Absolute.y;
@@ -1463,6 +1478,8 @@ static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface,
     pThis->PtrDelta.u.Absolute.fButtons = fButtons;
     pThis->PtrDelta.u.Absolute.x        = x >> pThis->u8CoordShift;
     pThis->PtrDelta.u.Absolute.y        = y >> pThis->u8CoordShift;
+    pThis->PtrDelta.u.Absolute.dz      -= dz;    /* Inverted! */
+    pThis->PtrDelta.u.Absolute.dw      -= dw;    /* Inverted! */
 
     /* Send a report if possible. */
     usbHidSendReport(pThis);
