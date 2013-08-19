@@ -103,6 +103,7 @@ public:
 
     BOOL postEvent(Event *event);
     int processEventQueue(RTMSINTERVAL cMsTimeout);
+    int processPendingEvents(size_t cNumEvents);
     int interruptEventQueueProcessing();
 
 private:
@@ -110,6 +111,10 @@ private:
     /** Critical section for serializing access to this
      *  event queue. */
     RTCRITSECT         mCritSect;
+    /** Number of concurrent users. At the moment we
+     *  only support one concurrent user at a time when
+        calling processEventQueue(). */
+    uint32_t           mUserCnt;
     /** Event semaphore for getting notified on new
      *  events being handled. */
     RTSEMEVENT         mSemEvent;
