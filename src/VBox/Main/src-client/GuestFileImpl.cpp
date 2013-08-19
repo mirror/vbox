@@ -262,8 +262,7 @@ STDMETHODIMP GuestFile::COMGETTER(CreationMode)(ULONG *aCreationMode)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-/** @todo For 4.3: Change ULONG* to BSTR* ?*/
-STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
+STDMETHODIMP GuestFile::COMGETTER(Disposition)(BSTR *aDisposition)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -275,9 +274,7 @@ STDMETHODIMP GuestFile::COMGETTER(Disposition)(ULONG *aDisposition)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uDisposition = 0;
-    /** @todo Fix me! */
-    *aDisposition = uDisposition;
+    mData.mOpenInfo.mDisposition.cloneTo(aDisposition);
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
@@ -293,7 +290,7 @@ STDMETHODIMP GuestFile::COMGETTER(EventSource)(IEventSource ** aEventSource)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    // no need to lock - lifetime constant
+    /* No need to lock - lifetime constant. */
     mEventSource.queryInterfaceTo(aEventSource);
 
     return S_OK;
@@ -354,8 +351,7 @@ STDMETHODIMP GuestFile::COMGETTER(Offset)(LONG64 *aOffset)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
-/** @todo For 4.3: Change ULONG* to BSTR* ?*/
-STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
+STDMETHODIMP GuestFile::COMGETTER(OpenMode)(BSTR *aOpenMode)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
@@ -367,9 +363,7 @@ STDMETHODIMP GuestFile::COMGETTER(OpenMode)(ULONG *aOpenMode)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    uint32_t uOpenMode = 0;
-    /** @todo Fix me! */
-    *aOpenMode = uOpenMode;
+    mData.mOpenInfo.mOpenMode.cloneTo(aOpenMode);
 
     return S_OK;
 #endif /* VBOX_WITH_GUEST_CONTROL */
