@@ -82,38 +82,58 @@ public:
 
     void uninit(void)
     {
+        mSession.setNull();
     }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
         switch (aType)
         {
+            case VBoxEventType_OnGuestFileRegistered:
+                break;
+
+            case VBoxEventType_OnGuestProcessRegistered:
+                break;
+
             case VBoxEventType_OnGuestSessionRegistered:
             {
-                ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
-                Assert(!pEvent.isNull());
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
 
-                ComPtr<IGuestSession> pSession;
-                HRESULT rc = pEvent->COMGETTER(Session)(pSession.asOutParam());
-                AssertComRCBreakRC(rc);
-                AssertBreak(!pSession.isNull());
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(mSession.asOutParam()));
+                    AssertBreak(!mSession.isNull());
+                    BOOL fRegistered;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
+                    Bstr strName;
+                    CHECK_ERROR_BREAK(mSession, COMGETTER(Name)(strName.asOutParam()));
+                    ULONG uID;
+                    CHECK_ERROR_BREAK(mSession, COMGETTER(Id)(&uID));
 
-                BOOL fRegistered;
-                rc = pEvent->COMGETTER(Registered)(&fRegistered);
-                AssertComRCBreakRC(rc);
+                    RTPrintf("Session ID=%RU32 \"%s\" %s\n",
+                             uID, Utf8Str(strName).c_str(),
+                             fRegistered ? "registered" : "unregistered");
+                    if (fRegistered)
+                    {
+                    #if 0
+                        /* Register for IGuestSession events. */
+                        ComPtr<IEventSource> es;
+                        CHECK_ERROR_BREAK(pSession, COMGETTER(EventSource)(es.asOutParam()));
+                        com::SafeArray<VBoxEventType_T> eventTypes;
+                        eventTypes.push_back(VBoxEventType_OnGuestFileRegistered);
+                        eventTypes.push_back(VBoxEventType_OnGuestProcessRegistered);
+                        CHECK_ERROR_BREAK(es, RegisterListener(this, ComSafeArrayAsInParam(eventTypes),
+                                                               true /* Active listener */));
+                    #endif
+                    }
+                    else
+                    {
+                        mSession.setNull();
+                    }
 
-                Bstr strName;
-                rc = pSession->COMGETTER(Name)(strName.asOutParam());
-                AssertComRCBreakRC(rc);
-                ULONG uID;
-                rc = pSession->COMGETTER(Id)(&uID);
-                AssertComRCBreakRC(rc);
-
-                RTPrintf("Session ID=%RU32 \"%s\" %s\n",
-                         uID, Utf8Str(strName).c_str(),
-                         fRegistered ? "registered" : "unregistered");
-
-                pSession.setNull();
+                } while (0);
                 break;
             }
 
@@ -123,6 +143,10 @@ public:
 
         return S_OK;
     }
+
+protected:
+
+    ComPtr<IGuestSession> mSession;
 };
 typedef ListenerImpl<GuestEventListener> GuestEventListenerImpl;
 VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
@@ -328,7 +352,7 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                            [--directory] [--secure] [--tmpdir <directory>]\n"
                  "                            [--domain <domain>] [--mode <mode>] [--verbose]\n"
                  "\n"
-                 "                            list <all|sessions|processes> [--verbose]\n"
+                 "                            list <all|sessions|processes|files> [--verbose]\n"
                  "\n"
                  /** @todo Add an own help group for "session" and "process" sub commands. */
                  "                            process kill --session-id <ID>\n"
@@ -552,6 +576,32 @@ static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus)
         case GuestSessionStatus_Down:
             return "killed";
         case GuestSessionStatus_Error:
+            return "error";
+        default:
+            break;
+    }
+    return "unknown";
+}
+
+/**
+ * Translates a guest file status to a human readable
+ * string.
+ */
+static const char *ctrlFileStatusToText(FileStatus_T enmStatus)
+{
+    switch (enmStatus)
+    {
+        case FileStatus_Opening:
+            return "opening";
+        case FileStatus_Open:
+            return "open";
+        case FileStatus_Closing:
+            return "closing";
+        case FileStatus_Closed:
+            return "closed";
+        case FileStatus_Down:
+            return "killed";
+        case FileStatus_Error:
             return "error";
         default:
             break;
@@ -2978,12 +3028,15 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fListAll = false;
     bool fListSessions = false;
     bool fListProcesses = false;
+    bool fListFiles = false;
     if (   !RTStrICmp(pArg->argv[0], "sessions")
         || !RTStrICmp(pArg->argv[0], "sess"))
         fListSessions = true;
     else if (   !RTStrICmp(pArg->argv[0], "processes")
              || !RTStrICmp(pArg->argv[0], "procs"))
         fListSessions = fListProcesses = true; /* Showing processes implies showing sessions. */
+    else if (   !RTStrICmp(pArg->argv[0], "files"))
+        fListSessions = fListFiles = true;     /* Showing files implies showing sessions. */
     else if (!RTStrICmp(pArg->argv[0], "all"))
         fListAll = true;
 
@@ -2997,6 +3050,7 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
         do
         {
             size_t cTotalProcs = 0;
+            size_t cTotalFiles = 0;
 
             SafeIfaceArray <IGuestSession> collSessions;
             CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
@@ -3048,11 +3102,39 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
 
                             cTotalProcs += collProcesses.size();
                         }
+
+                        if (   fListAll
+                            || fListFiles)
+                        {
+                            SafeIfaceArray <IGuestFile> collFiles;
+                            CHECK_ERROR_BREAK(pCurSession, COMGETTER(Files)(ComSafeArrayAsOutParam(collFiles)));
+                            for (size_t a = 0; a < collFiles.size(); a++)
+                            {
+                                ComPtr<IGuestFile> pCurFile = collFiles[a];
+                                if (!pCurFile.isNull())
+                                {
+                                    ULONG uID;
+                                    CHECK_ERROR_BREAK(pCurFile, COMGETTER(Id)(&uID));
+                                    Bstr strName;
+                                    CHECK_ERROR_BREAK(pCurFile, COMGETTER(FileName)(strName.asOutParam()));
+                                    FileStatus_T fileStatus;
+                                    CHECK_ERROR_BREAK(pCurFile, COMGETTER(Status)(&fileStatus));
+
+                                    RTPrintf("\n\t\tFile #%-03zu PID=%-6RU32 Status=[%s] Name=%ls",
+                                             a, uID, ctrlFileStatusToText(fileStatus), strName.raw());
+                                }
+                            }
+
+                            cTotalFiles += collFiles.size();
+                        }
                     }
                 }
 
                 RTPrintf("\n\nTotal guest sessions: %zu\n", collSessions.size());
-                RTPrintf("Total guest processes: %zu\n", cTotalProcs);
+                if (fListAll || fListProcesses)
+                    RTPrintf("Total guest processes: %zu\n", cTotalProcs);
+                if (fListAll || fListFiles)
+                    RTPrintf("Total guest files: %zu\n", cTotalFiles);
             }
             else
                 RTPrintf("No active guest sessions found\n");
@@ -3479,9 +3561,6 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
     try
     {
         ComObjPtr<GuestEventListenerImpl> pGuestListener;
-
-
-
         do
         {
             /* Listener creation. */
