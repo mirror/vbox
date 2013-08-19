@@ -24,25 +24,56 @@
 
 /* GUI includes: */
 #include "UIWarningPane.h"
+#include "QIWidgetValidator.h"
+
+/* Other VBox includes: */
+#include <VBox/sup.h>
 
 UIWarningPane::UIWarningPane(QWidget *pParent)
     : QWidget(pParent)
-    , m_pLabelIcon(0)
-    , m_pLabelText(0)
-    , m_fHovered(false)
+    , m_pWarningLabel(0)
 {
     /* Prepare: */
     prepare();
 }
 
-void UIWarningPane::setWarningPixmap(const QPixmap &pixmap)
+void UIWarningPane::setWarningLabel(const QString &strWarningLabel)
 {
-    m_pLabelIcon->setPixmap(pixmap);
+    m_pWarningLabel->setText(strWarningLabel);
 }
 
-void UIWarningPane::setWarningText(const QString &strText)
+void UIWarningPane::registerValidator(UIPageValidator *pValidator)
 {
-    m_pLabelText->setText(strText);
+    /* Make sure validator is set! */
+    AssertPtrReturnVoid(pValidator);
+
+    /* Makre sure validator is not registered yet: */
+    if (m_validators.contains(pValidator))
+    {
+        AssertMsgFailed(("Validator is registered already!\n"));
+        return;
+    }
+
+    /* Register validator: */
+    m_validators << pValidator;
+
+    /* Create icon-label for newly registered validator: */
+    QLabel *pIconLabel = new QLabel;
+    {
+        /* Add icon-label into list: */
+        m_icons << pIconLabel;
+        /* Add icon-label into layout: */
+        m_pLayout->addWidget(pIconLabel);
+        /* Configure icon-label: */
+        pIconLabel->setMouseTracking(true);
+        pIconLabel->installEventFilter(this);
+        pIconLabel->setPixmap(pValidator->warningPixmap());
+        connect(pValidator, SIGNAL(sigShowWarningIcon()), pIconLabel, SLOT(show()));
+        connect(pValidator, SIGNAL(sigHideWarningIcon()), pIconLabel, SLOT(hide()));
+    }
+
+    /* Mark icon as 'non-hovered': */
+    m_hovered << false;
 }
 
 void UIWarningPane::prepare()
@@ -53,31 +84,29 @@ void UIWarningPane::prepare()
 
 void UIWarningPane::prepareContent()
 {
-    /* Configure self: */
-    setMouseTracking(true);
-    installEventFilter(this);
-    /* Create layout: */
-    QHBoxLayout *pLayout = new QHBoxLayout(this);
+    /* Create main-layout: */
+    QHBoxLayout *pMainLayout = new QHBoxLayout(this);
     {
         /* Configure layout: */
-        pLayout->setContentsMargins(0, 0, 0, 0);
-        /* Create icon label: */
-        m_pLabelIcon = new QLabel;
+        pMainLayout->setContentsMargins(0, 0, 0, 0);
+        /* Add left stretch: */
+        pMainLayout->addStretch();
+        /* Create warning-label: */
+        m_pWarningLabel = new QLabel;
         {
-            /* Configure icon label: */
-            m_pLabelIcon->setMouseTracking(true);
-            m_pLabelIcon->installEventFilter(this);
+            /* Add into main-layout: */
+            pMainLayout->addWidget(m_pWarningLabel);
         }
-        /* Create text label: */
-        m_pLabelText = new QLabel;
+        /* Create layout: */
+        m_pLayout = new QHBoxLayout;
         {
-            /* Configure text label: */
-            m_pLabelText->setMouseTracking(true);
-            m_pLabelText->installEventFilter(this);
+            /* Configure layout: */
+            m_pLayout->setContentsMargins(0, 0, 0, 0);
+            /* Add into main-layout: */
+            pMainLayout->addLayout(m_pLayout);
         }
-        /* Add widgets into layout: */
-        pLayout->addWidget(m_pLabelIcon);
-        pLayout->addWidget(m_pLabelText);
+        /* Add right stretch: */
+        pMainLayout->addStretch();
     }
 }
 
@@ -86,25 +115,43 @@ bool UIWarningPane::eventFilter(QObject *pWatched, QEvent *pEvent)
     /* Depending on event-type: */
     switch (pEvent->type())
     {
-        /* Anything is hovered: */
+        /* One of icons hovered: */
         case QEvent::MouseMove:
         {
-            /* Hover warning-pane if not yet hovered: */
-            if (!m_fHovered)
+            /* Cast object to label: */
+            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pWatched))
             {
-                m_fHovered = true;
-                emit sigHoverEnter();
+                /* Search for the corresponding icon: */
+                if (m_icons.contains(pIconLabel))
+                {
+                    /* Mark icon-label hovered if not yet: */
+                    int iIconLabelPosition = m_icons.indexOf(pIconLabel);
+                    if (!m_hovered[iIconLabelPosition])
+                    {
+                        m_hovered[iIconLabelPosition] = true;
+                        emit sigHoverEnter(m_validators[iIconLabelPosition]);
+                    }
+                }
             }
             break;
         }
-        /* Warning-pane is unhovered: */
+        /* One of icons unhovered: */
         case QEvent::Leave:
         {
-            /* Unhover warning-pane if hovered: */
-            if (pWatched == this && m_fHovered)
+            /* Cast object to label: */
+            if (QLabel *pIconLabel = qobject_cast<QLabel*>(pWatched))
             {
-                m_fHovered = false;
-                emit sigHoverLeave();
+                /* Search for the corresponding icon: */
+                if (m_icons.contains(pIconLabel))
+                {
+                    /* Mark icon-label unhovered if not yet: */
+                    int iIconLabelPosition = m_icons.indexOf(pIconLabel);
+                    if (m_hovered[iIconLabelPosition])
+                    {
+                        m_hovered[iIconLabelPosition] = false;
+                        emit sigHoverLeave(m_validators[iIconLabelPosition]);
+                    }
+                }
             }
             break;
         }

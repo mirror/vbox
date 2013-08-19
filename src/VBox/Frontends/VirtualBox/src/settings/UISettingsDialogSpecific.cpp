@@ -412,10 +412,7 @@ UISettingsDialogGlobal::UISettingsDialogGlobal(QWidget *pParent)
                     break;
             }
             if (pSettingsPage)
-            {
                 pSettingsPage->setDialogType(dialogType());
-                pSettingsPage->setId(iPageIndex);
-            }
         }
     }
 
@@ -682,10 +679,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
                     break;
             }
             if (pSettingsPage)
-            {
                 pSettingsPage->setDialogType(dialogType());
-                pSettingsPage->setId(iPageIndex);
-            }
         }
     }
 

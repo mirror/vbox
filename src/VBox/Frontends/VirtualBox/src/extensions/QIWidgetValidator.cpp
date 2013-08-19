@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,6 +28,28 @@ UIPageValidator::UIPageValidator(QObject *pParent, UISettingsPage *pPage)
     , m_pPage(pPage)
     , m_fIsValid(true)
 {
+}
+
+QPixmap UIPageValidator::warningPixmap() const
+{
+    return m_pPage->warningPixmap();
+}
+
+QString UIPageValidator::internalName() const
+{
+    return m_pPage->internalName();
+}
+
+void UIPageValidator::setLastMessage(const QString &strLastMessage)
+{
+    /* Remember new message: */
+    m_strLastMessage = strLastMessage;
+
+    /* Should we show corresponding warning icon? */
+    if (m_strLastMessage.isEmpty())
+        emit sigHideWarningIcon();
+    else
+        emit sigShowWarningIcon();
 }
 
 void UIPageValidator::revalidate()

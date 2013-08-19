@@ -114,8 +114,8 @@ UISettingsDialog::UISettingsDialog(QWidget *pParent)
 
     /* Prepare warning-pane: */
     m_pWarningPane = new UIWarningPane;
-    connect(m_pWarningPane, SIGNAL(sigHoverEnter()), this, SLOT(sltHandleWarningPaneHovered()));
-    connect(m_pWarningPane, SIGNAL(sigHoverLeave()), this, SLOT(sltHandleWarningPaneUnhovered()));
+    connect(m_pWarningPane, SIGNAL(sigHoverEnter(UIPageValidator*)), this, SLOT(sltHandleWarningPaneHovered(UIPageValidator*)));
+    connect(m_pWarningPane, SIGNAL(sigHoverLeave(UIPageValidator*)), this, SLOT(sltHandleWarningPaneUnhovered(UIPageValidator*)));
 
     /* Prepare status-bar: */
     m_pStatusBar = new QStackedWidget;
@@ -228,13 +228,10 @@ void UISettingsDialog::retranslateUi()
     /* Translate generated stuff: */
     Ui::UISettingsDialog::retranslateUi(this);
 
-    /* Translate error/warning stuff: */
-    m_strErrorHint = tr("Invalid settings detected");
-    m_strWarningHint = tr("Non-optimal settings detected");
-    if (!m_fValid)
-        m_pWarningPane->setWarningText(m_strErrorHint);
-    else if (!m_fSilent)
-        m_pWarningPane->setWarningText(m_strWarningHint);
+    /* Translate warning stuff: */
+    m_strWarningHint = tr("Invalid settings detected");
+    if (!m_fValid || !m_fSilent)
+        m_pWarningPane->setWarningLabel(m_strWarningHint);
 
 #ifndef VBOX_GUI_WITH_TOOLBAR_SETTINGS
     /* Retranslate current page headline: */
@@ -267,18 +264,6 @@ QString UISettingsDialog::titleExtension() const
 #endif
 }
 
-void UISettingsDialog::setError(const QString &strError)
-{
-    m_strErrorString = strError.isEmpty() ? QString() :
-                       QString("<font color=red>%1</font>").arg(strError);
-}
-
-void UISettingsDialog::setWarning(const QString &strWarning)
-{
-    m_strWarningString = strWarning.isEmpty() ? QString() :
-                         QString("<font color=#ff5400>%1</font>").arg(strWarning);
-}
-
 void UISettingsDialog::addItem(const QString &strBigIcon,
                                const QString &strBigIconDisabled,
                                const QString &strSmallIcon,
@@ -301,7 +286,10 @@ void UISettingsDialog::addItem(const QString &strBigIcon,
     }
     /* Assign validator if necessary: */
     if (pSettingsPage)
+    {
+        pSettingsPage->setId(cId);
         assignValidator(pSettingsPage);
+    }
 }
 
 void UISettingsDialog::revalidate(UIPageValidator *pValidator)
@@ -331,9 +319,7 @@ void UISettingsDialog::revalidate()
     /* Perform dialog revalidation: */
     m_fValid = true;
     m_fSilent = true;
-    setError(QString());
-    setWarning(QString());
-    m_pWarningPane->setWarningText(QString());
+    m_pWarningPane->setWarningLabel(QString());
 
     /* Enumerating all the validators we have: */
     QList<UIPageValidator*> validators(findChildren<UIPageValidator*>());
@@ -349,21 +335,13 @@ void UISettingsDialog::revalidate()
 
             /* Show error first: */
             if (!pValidator->isValid())
-            {
                 m_fValid = false;
-                setError(pValidator->lastMessage());
-                m_pWarningPane->setWarningText(m_strErrorHint);
-            }
             /* Show warning if message is not an error: */
             else
-            {
                 m_fSilent = false;
-                setWarning(pValidator->lastMessage());
-                m_pWarningPane->setWarningText(m_strWarningHint);
-            }
 
-            /* Configure warning-pane pixmap: */
-            m_pWarningPane->setWarningPixmap(pFailedSettingsPage->warningPixmap());
+            /* Configure warning-pane label: */
+            m_pWarningPane->setWarningLabel(m_strWarningHint);
 
             /* Stop dialog revalidation on first error/warning: */
             break;
@@ -404,23 +382,21 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
     }
 }
 
-void UISettingsDialog::sltHandleWarningPaneHovered()
+void UISettingsDialog::sltHandleWarningPaneHovered(UIPageValidator *pValidator)
 {
-    LogRel(("Settings Dialog: Warning-pane hovered.\n"));
+    LogRel(("Settings Dialog: Warning-icon hovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Show corresponding popup: */
     if (!m_fValid || !m_fSilent)
     {
         popupCenter().popup(m_pStack, "SettingsDialogWarning",
-                            !m_fValid ? m_strErrorString :
-                            !m_fSilent ? m_strWarningString :
-                            QString());
+                            pValidator->lastMessage());
     }
 }
 
-void UISettingsDialog::sltHandleWarningPaneUnhovered()
+void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator)
 {
-    LogRel(("Settings Dialog: Warning-pane unhovered.\n"));
+    LogRel(("Settings Dialog: Warning-icon unhovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Recall corresponding popup: */
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
@@ -567,6 +543,7 @@ void UISettingsDialog::assignValidator(UISettingsPage *pPage)
     UIPageValidator *pValidator = new UIPageValidator(this, pPage);
     connect(pValidator, SIGNAL(sigValidityChanged(UIPageValidator*)), this, SLOT(sltHandleValidityChange(UIPageValidator*)));
     pPage->setValidator(pValidator);
+    m_pWarningPane->registerValidator(pValidator);
 
     // TODO: Why here?
     /* Configure navigation (tab-order): */
