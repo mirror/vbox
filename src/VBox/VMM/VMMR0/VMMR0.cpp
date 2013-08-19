@@ -772,7 +772,7 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             RTThreadPreemptDisable(&PreemptState);
             RTCPUID idHostCpu = RTMpCpuId();
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-            CPUMR0SetLApic(pVM, idHostCpu);
+            CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
             ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
             if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
@@ -1089,7 +1089,7 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
             RTCPUID idHostCpu = RTMpCpuId();
-            CPUMR0SetLApic(pVM, idHostCpu);
+            CPUMR0SetLApic(&pVM->aCpus[0], idHostCpu);
 #endif
 
             /* We might need to disable VT-x if the active switcher turns off paging. */

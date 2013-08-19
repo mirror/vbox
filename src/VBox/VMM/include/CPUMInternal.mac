@@ -92,12 +92,6 @@ struc CPUM
 %if HC_ARCH_BITS == 32
     .abPadding2           resb    4
 %endif
-
-%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    .pvApicBase           RTR0PTR_RES 1
-    .fApicDisVectors      resd    1
-    .abPadding3           resb    4
-%endif
 endstruc
 
 struc CPUMCPU
@@ -436,9 +430,19 @@ struc CPUMCPU
     .fChanged             resd    1
     .offCPUM              resd    1
     .u32RetCode           resd    1
+
+%ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    .pvApicBase           RTR0PTR_RES 1
+    .fApicDisVectors      resd    1
+    .fX2Apic              resb    1
+%else
+    .abPadding3           resb    (8 + 4 + 1)
+%endif
+
     .fRawEntered          resb    1
     .fRemEntered          resb    1
-    .abPadding2           resb    (64 - 16 - 2)
+
+    .abPadding2           resb    (64 - 16 - 8 - 4 - 1 - 2)
 endstruc
 
 

@@ -101,8 +101,15 @@ BEGINPROC vmmR0ToRawMode
  %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     ; Unblock Local APIC NMI vectors
     ; Do this here to ensure the host CS is already restored
-    mov     ecx, [rdx + CPUM.fApicDisVectors]
-    mov     r8, [rdx + CPUM.pvApicBase]
+    mov     r8d, [rdx + CPUM.offCPUMCPU0]
+    mov     ecx, [rdx + r8 + CPUMCPU.fApicDisVectors]
+    test    ecx, ecx
+    jz      gth64_apic_done
+    cmp     byte [rdx + r8 + CPUMCPU.fX2Apic], 1
+    je      gth64_x2apic
+
+    ; Legacy APIC mode:
+    mov     r8, [rdx + r8 + CPUMCPU.pvApicBase]
     shr     ecx, 1
     jnc     gth64_nolint0
     and     dword [r8 + APIC_REG_LVT_LINT0], ~APIC_REG_LVT_MASKED
@@ -119,6 +126,43 @@ gth64_nopc:
     jnc     gth64_notherm
     and     dword [r8 + APIC_REG_LVT_THMR], ~APIC_REG_LVT_MASKED
 gth64_notherm:
+    jmp     gth64_apic_done
+
+    ; X2 APIC mode:
+gth64_x2apic:
+    mov     r8, rax                     ; save rax
+    mov     r10, rcx
+    shr     r10d, 1
+    jnc     gth64_x2_nolint0
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT0 >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth64_x2_nolint0:
+    shr     r10d, 1
+    jnc     gth64_x2_nolint1
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT1 >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth64_x2_nolint1:
+    shr     r10d, 1
+    jnc     gth64_x2_nopc
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_PC >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth64_x2_nopc:
+    shr     r10d, 1
+    jnc     gth64_x2_notherm
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_THMR >> 4)
+    rdmsr
+    and     eax, ~APIC_REG_LVT_MASKED
+    wrmsr
+gth64_x2_notherm:
+    mov     rax, r8                     ; restore rax
+
+gth64_apic_done:
  %endif
 
  %ifdef VBOX_WITH_STATISTICS
@@ -280,10 +324,12 @@ BEGINPROC vmmR0ToRawModeAsm
 
 %ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     ; Block Local APIC NMI vectors
-    mov     rbx, [rdx + CPUM.pvApicBase]
+    cmp     byte [rdx + r8 + CPUMCPU.fX2Apic], 1
+    je      htg_x2apic
+    mov     rbx, [rdx + r8 + CPUMCPU.pvApicBase]
     or      rbx, rbx
-    jz      htg_noapic
-    xor     edi, edi
+    jz      htg_apic_done
+    xor     edi, edi                    ; fApicDisVectors
     mov     eax, [rbx + APIC_REG_LVT_LINT0]
     mov     ecx, eax
     and     ecx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
@@ -328,8 +374,63 @@ htg_nopc:
     mov     [rbx + APIC_REG_LVT_THMR], eax
     mov     eax, [rbx + APIC_REG_LVT_THMR] ; write completion
 htg_notherm:
-    mov     [rdx + CPUM.fApicDisVectors], edi
-htg_noapic:
+    mov     [rdx + r8 + CPUMCPU.fApicDisVectors], edi
+    jmp     htg_apic_done
+
+    ; X2APIC?
+htg_x2apic:
+    mov     r15, rdx                    ; save rdx
+    xor     edi, edi                    ; fApicDisVectors
+
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT0 >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nolint0
+    or      edi, 0x01
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nolint0:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_LINT1 >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nolint1
+    or      edi, 0x02
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nolint1:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_PC >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_nopc
+    or      edi, 0x04
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_nopc:
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_VERSION >> 4)
+    rdmsr
+    shr     eax, 16
+    cmp     al, 5
+    jb      htg_x2_notherm
+    mov     ecx, MSR_IA32_X2APIC_START + (APIC_REG_LVT_THMR >> 4)
+    rdmsr
+    mov     ebx, eax
+    and     ebx, (APIC_REG_LVT_MASKED | APIC_REG_LVT_MODE_MASK)
+    cmp     ebx, APIC_REG_LVT_MODE_NMI
+    jne     htg_x2_notherm
+    or      edi, 0x08
+    or      eax, APIC_REG_LVT_MASKED
+    wrmsr
+htg_x2_notherm:
+    mov     rdx, r15
+    mov     [rdx + r8 + CPUMCPU.fApicDisVectors], edi
+htg_apic_done:
+
 %endif ; VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
 
     FIXUP FIX_NO_SYSENTER_JMP, 0, htg_no_sysenter - NAME(Start) ; this will insert a jmp htg_no_sysenter if host doesn't use sysenter.

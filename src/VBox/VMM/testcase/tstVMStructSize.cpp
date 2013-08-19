@@ -272,7 +272,7 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.Hyper, 64);
     CHECK_MEMBER_ALIGNMENT(VM, aCpus[1].cpum.s.Hyper, 64);
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    CHECK_MEMBER_ALIGNMENT(VM, cpum.s.pvApicBase, 8);
+    CHECK_MEMBER_ALIGNMENT(VM, aCpus[0].cpum.s.pvApicBase, 8);
 #endif
 
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.u64CallRing3Arg, 8);

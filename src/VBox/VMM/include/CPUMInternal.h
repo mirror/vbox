@@ -315,7 +315,7 @@ typedef struct CPUM
     /** CR4 mask */
     struct
     {
-        uint32_t            AndMask;
+        uint32_t            AndMask; /**< @todo Move these to the per-CPU structure and fix the switchers. Saves a register! */
         uint32_t            OrMask;
     } CR4;
 
@@ -341,12 +341,6 @@ typedef struct CPUM
 
 #if HC_ARCH_BITS == 32
     uint8_t                 abPadding2[4];
-#endif
-
-#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
-    RTHCPTR                 pvApicBase;
-    uint32_t                fApicDisVectors;
-    uint8_t                 abPadding3[4];
 #endif
 } CPUM;
 /** Pointer to the CPUM instance data residing in the shared VM structure. */
@@ -405,13 +399,27 @@ typedef struct CPUMCPU
      * 32-64 switcher. */
     uint32_t                u32RetCode;
 
+#ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
+    /** The address of the APIC mapping, NULL if no APIC.
+     * Call CPUMR0SetLApic to update this before doing a world switch. */
+    RTHCPTR                 pvApicBase;
+    /** Used by the world switcher code to store which vectors needs restoring on
+     * the way back. */
+    uint32_t                fApicDisVectors;
+    /** Set if the CPU has the X2APIC mode enabled.
+     * Call CPUMR0SetLApic to update this before doing a world switch. */
+    bool                    fX2Apic;
+#else
+    uint8_t                 abPadding3[8+4+1];
+#endif
+
     /** Have we entered raw-mode? */
     bool                    fRawEntered;
     /** Have we entered the recompiler? */
     bool                    fRemEntered;
 
     /** Align the structure on a 64-byte boundary. */
-    uint8_t                 abPadding2[64 - 16 - 2];
+    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2];
 } CPUMCPU;
 /** Pointer to the CPUMCPU instance data residing in the shared VMCPU structure. */
 typedef CPUMCPU *PCPUMCPU;

@@ -54,5 +54,18 @@ DECLINLINE(uint32_t) ApicRegRead(void *pvBase, uint32_t offReg)
     return *(const volatile uint32_t *)((uintptr_t)pvBase + offReg);
 }
 
+
+#ifdef ___iprt_asm_amd64_x86_h
+/**
+ * Reads an X2APIC register.
+ *
+ * @param   offReg      MMIO offset, APIC_REG_XXX.
+ */
+DECLINLINE(uint32_t) ApicX2RegRead32(uint32_t offReg)
+{
+    return ASMRdMsr((offReg >> 4) + MSR_IA32_X2APIC_START);
+}
+#endif
+
 #endif /* ___VBox_apic_h */
 

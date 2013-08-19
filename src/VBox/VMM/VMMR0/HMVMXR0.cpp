@@ -4340,7 +4340,7 @@ VMMR0DECL(int) VMXR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_LAPIC_NMI
     RTCPUID idHostCpu = RTMpCpuId();
-    CPUMR0SetLApic(pVM, idHostCpu);
+    CPUMR0SetLApic(pVCpu, idHostCpu);
 #endif
 
     pCpu = HMR0GetCurrentCpu();
