@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -21,6 +21,7 @@
 
 /* Qt includes: */
 #include <QValidator>
+#include <QPixmap>
 
 /* External includes: */
 #ifdef Q_WS_X11
@@ -40,6 +41,10 @@ signals:
     /* Notifier: Validation stuff: */
     void sigValidityChanged(UIPageValidator *pValidator);
 
+    /* Notifiers: Warning stuff: */
+    void sigShowWarningIcon();
+    void sigHideWarningIcon();
+
 public:
 
     /* Constructor: */
@@ -47,6 +52,8 @@ public:
 
     /* API: Page stuff: */
     UISettingsPage* page() const { return m_pPage; }
+    QPixmap warningPixmap() const;
+    QString internalName() const;
 
     /* API: Validity stuff: */
     bool isValid() const { return m_fIsValid; }
@@ -54,7 +61,7 @@ public:
 
     /* API: Message stuff: */
     QString lastMessage() const { return m_strLastMessage; }
-    void setLastMessage(const QString &strLastMessage) { m_strLastMessage = strLastMessage; }
+    void setLastMessage(const QString &strLastMessage);
 
 public slots:
 

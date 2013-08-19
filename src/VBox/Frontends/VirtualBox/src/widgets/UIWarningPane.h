@@ -23,6 +23,8 @@
 #include <QWidget>
 
 /* Forward declarations: */
+class UIPageValidator;
+class QHBoxLayout;
 class QLabel;
 
 /* Warning-pane prototype: */
@@ -33,8 +35,8 @@ class UIWarningPane: public QWidget
 signals:
 
     /* Notifiers: Hover stuff: */
-    void sigHoverEnter();
-    void sigHoverLeave();
+    void sigHoverEnter(UIPageValidator *pValidator);
+    void sigHoverLeave(UIPageValidator *pValidator);
 
 public:
 
@@ -42,8 +44,10 @@ public:
     UIWarningPane(QWidget *pParent = 0);
 
     /* API: Warning stuff: */
-    void setWarningPixmap(const QPixmap &pixmap);
-    void setWarningText(const QString &strText);
+    void setWarningLabel(const QString &strWarningLabel);
+
+    /* API: Registry stuff: */
+    void registerValidator(UIPageValidator *pValidator);
 
 private:
 
@@ -54,12 +58,12 @@ private:
     /* Handler: Event processing stuff: */
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Variables: Widgets: */
-    QLabel *m_pLabelIcon;
-    QLabel *m_pLabelText;
-
-    /* Variable: Hover stuff: */
-    bool m_fHovered;
+    /* Variables: */
+    QHBoxLayout *m_pLayout;
+    QLabel *m_pWarningLabel;
+    QList<UIPageValidator*> m_validators;
+    QList<QLabel*> m_icons;
+    QList<bool> m_hovered;
 };
 
 #endif /* __UIWarningPane_h__ */

@@ -82,10 +82,6 @@ protected:
     /* Dialog title extension: */
     virtual QString titleExtension() const;
 
-    /* Setters for error/warning: */
-    void setError(const QString &strError);
-    void setWarning(const QString &strWarning);
-
     /* Add settings page: */
     void addItem(const QString &strBigIcon, const QString &strBigIconDisabled,
                  const QString &strSmallIcon, const QString &strSmallIconDisabled,
@@ -105,8 +101,8 @@ private slots:
 
     /* Handlers: Validation stuff: */
     void sltHandleValidityChange(UIPageValidator *pValidator);
-    void sltHandleWarningPaneHovered();
-    void sltHandleWarningPaneUnhovered();
+    void sltHandleWarningPaneHovered(UIPageValidator *pValidator);
+    void sltHandleWarningPaneUnhovered(UIPageValidator *pValidator);
 
     /* Slot to update whats-this: */
     void sltUpdateWhatsThis(bool fGotFocus = false);
@@ -141,10 +137,7 @@ private:
     UIWarningPane *m_pWarningPane;
     bool m_fValid;
     bool m_fSilent;
-    QString m_strErrorHint;
     QString m_strWarningHint;
-    QString m_strErrorString;
-    QString m_strWarningString;
 
     /* Whats-This stuff: */
     QTimer *m_pWhatsThisTimer;
