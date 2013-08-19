@@ -33,6 +33,11 @@
           will lead to decreased performance and may trigger crashes</para>
       </listitem>
 
+       <listitem>
+        <para>Main: new event queue implementation which does not use the host's
+          native event queue for processing VirtualBox events anymore.</para>
+      </listitem>
+
       <listitem>
         <para>Main: use the XDG standard configuration folder instead of
            .VirtualBox on systems where it is appropriate (bug #5099)</para>
