@@ -467,32 +467,20 @@ Utf8Str GuestFile::guestErrorToString(int guestRc)
     /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
     switch (guestRc)
     {
-        case VERR_INVALID_VM_HANDLE:
-            strError += Utf8StrFmt(tr("VMM device is not available (is the VM running?)"));
+        case VERR_ALREADY_EXISTS:
+            strError += Utf8StrFmt(tr("File already exists"));
             break;
 
-        case VERR_HGCM_SERVICE_NOT_FOUND:
-            strError += Utf8StrFmt(tr("The guest execution service is not available"));
+        case VERR_FILE_NOT_FOUND:
+            strError += Utf8StrFmt(tr("File not found"));
             break;
 
-        case VERR_TIMEOUT:
-            strError += Utf8StrFmt(tr("The guest did not respond within time"));
+        case VERR_NET_HOST_NOT_FOUND:
+            strError += Utf8StrFmt(tr("Host name not found"));
             break;
 
-        case VERR_CANCELLED:
-            strError += Utf8StrFmt(tr("The session operation was canceled"));
-            break;
-
-        case VERR_MAX_PROCS_REACHED:
-            strError += Utf8StrFmt(tr("Maximum number of concurrent guest files has been reached"));
-            break;
-
-        case VERR_NOT_EQUAL: /** @todo Imprecise to the user; can mean anything and all. */
-            strError += Utf8StrFmt(tr("Unable to retrieve requested information"));
-            break;
-
-        case VERR_NOT_FOUND:
-            strError += Utf8StrFmt(tr("The guest execution service is not ready (yet)"));
+        case VERR_SHARING_VIOLATION:
+            strError += Utf8StrFmt(tr("Sharing violation"));
             break;
 
         default:
