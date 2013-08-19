@@ -130,31 +130,41 @@ static struct PDMDRVHLPR3 pdmHlpR3 =
 
 static struct
 {
-    int32_t cx;
-    int32_t cy;
+    int32_t dx;
+    int32_t dy;
+    int32_t dz;
+    int32_t dw;
 } mouseEvent;
 
 static int mousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX,
                          int32_t iDeltaY, int32_t iDeltaZ, int32_t iDeltaW,
                          uint32_t fButtonStates)
 {
-    mouseEvent.cx = iDeltaX;
-    mouseEvent.cy = iDeltaY;
+    mouseEvent.dx = iDeltaX;
+    mouseEvent.dy = iDeltaY;
+    mouseEvent.dz = iDeltaZ;
+    mouseEvent.dw = iDeltaW;
     return VINF_SUCCESS;
 }
 
 static struct
 {
-    int32_t x;
-    int32_t y;
+    uint32_t cx;
+    uint32_t cy;
+    int32_t  dz;
+    int32_t  dw;
+    uint32_t fButtonStates;
 } mouseEventAbs;
 
 static int mousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX,
                             uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW,
                             uint32_t fButtonStates)
 {
-    mouseEventAbs.x = uX;
-    mouseEventAbs.y = uY;
+    mouseEventAbs.cx            = uX;
+    mouseEventAbs.cy            = uY;
+    mouseEventAbs.dz            = iDeltaZ;
+    mouseEventAbs.dw            = iDeltaW;
+    mouseEventAbs.fButtonStates = fButtonStates;
     return VINF_SUCCESS;
 }
 
@@ -373,29 +383,38 @@ static void testAbsToAbsDev(RTTEST hTest)
     pConnector = (PPDMIMOUSECONNECTOR)pBase->pfnQueryInterface(pBase,
                                                  PDMIMOUSECONNECTOR_IID);
     pConnector->pfnReportModes(pConnector, false, true, false);
-    pMouse->onVMMDevGuestCapsChange(  VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE
-                                    | VMMDEV_MOUSE_NEW_PROTOCOL);
+    pMouse->onVMMDevGuestCapsChange(VMMDEV_MOUSE_NEW_PROTOCOL);
     pMouse->PutMouseEventAbsolute(0, 0, 0, 0, 0);
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.x, 0x8000, 200),
-                      ("mouseEventAbs.x=%d\n", mouseEventAbs.x));
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.y, 0x8000, 200),
-                      ("mouseEventAbs.y=%d\n", mouseEventAbs.y));
-    pMouse->PutMouseEventAbsolute(-319, -239, 0, 0, 0);
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.x, 0, 200),
-                      ("mouseEventAbs.x=%d\n", mouseEventAbs.x));
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.y, 0, 200),
-                      ("mouseEventAbs.y=%d\n", mouseEventAbs.y));
-    pMouse->PutMouseEventAbsolute(320, 240, 0, 0, 0);
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.x, 0xffff, 200),
-                      ("mouseEventAbs.x=%d\n", mouseEventAbs.x));
-    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.y, 0xffff, 200),
-                      ("mouseEventAbs.y=%d\n", mouseEventAbs.y));
-    mouseEventAbs.x = mouseEventAbs.y = 0xffff;
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cx, 0x8000, 200),
+                      ("mouseEventAbs.cx=%d\n", mouseEventAbs.cx));
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cy, 0x8000, 200),
+                      ("mouseEventAbs.cy=%d\n", mouseEventAbs.cy));
+    pMouse->PutMouseEventAbsolute(-319, -239, 0, 0, 3);
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cx, 0, 200),
+                      ("mouseEventAbs.cx=%d\n", mouseEventAbs.cx));
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cy, 0, 200),
+                      ("mouseEventAbs.cy=%d\n", mouseEventAbs.cy));
+    RTTESTI_CHECK_MSG(mouseEventAbs.fButtonStates == 3,
+                      ("mouseEventAbs.fButtonStates=%u\n",
+                      (unsigned) mouseEventAbs.fButtonStates));
+    pMouse->PutMouseEventAbsolute(320, 240, -3, 2, 1);
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cx, 0xffff, 200),
+                      ("mouseEventAbs.cx=%d\n", mouseEventAbs.cx));
+    RTTESTI_CHECK_MSG(approxEq(mouseEventAbs.cy, 0xffff, 200),
+                      ("mouseEventAbs.cy=%d\n", mouseEventAbs.cy));
+    RTTESTI_CHECK_MSG(mouseEventAbs.fButtonStates == 1,
+                      ("mouseEventAbs.fButtonStates=%u\n",
+                      (unsigned) mouseEventAbs.fButtonStates));
+    RTTESTI_CHECK_MSG(mouseEventAbs.dz == -3,
+                      ("mouseEventAbs.dz=%d\n", (int) mouseEvent.dz));
+    RTTESTI_CHECK_MSG(mouseEventAbs.dw == 2,
+                      ("mouseEventAbs.dw=%d\n", (int) mouseEvent.dw));
+    mouseEventAbs.cx = mouseEventAbs.cy = 0xffff;
     pMouse->PutMouseEventAbsolute(-640, -480, 0, 0, 0);
-    RTTESTI_CHECK_MSG(mouseEventAbs.x = 0xffff,
-                      ("mouseEventAbs.x=%d\n", mouseEventAbs.x));
-    RTTESTI_CHECK_MSG(mouseEventAbs.y == 0xffff,
-                      ("mouseEventAbs.y=%d\n", mouseEventAbs.y));
+    RTTESTI_CHECK_MSG(mouseEventAbs.cx == 0xffff,
+                      ("mouseEventAbs.cx=%d\n", mouseEventAbs.cx));
+    RTTESTI_CHECK_MSG(mouseEventAbs.cy == 0xffff,
+                      ("mouseEventAbs.cy=%d\n", mouseEventAbs.cy));
     RTTestSubDone(hTest);
 }
 
