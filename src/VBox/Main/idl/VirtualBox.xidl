@@ -10620,13 +10620,32 @@
         <desc>Full path to file to open.</desc>
       </param>
       <param name="openMode" type="wstring" dir="in">
-        <desc>The file open mode.</desc>
+        <desc>The file opening mode. This describes the wanted access to a file, whereas
+          the parameter must be one of the following:
+          <ul>
+            <li><b>r</b>Opens a file for reading.</li>
+            <li><b>r+</b>Opens a file for reading and writing.</li>
+            <li><b>w</b>Opens a file for writing.</li>
+            <li><b>w+</b>Opens a file for writing and reading.</li>
+          </ul>
+        </desc>
       </param>
       <param name="disposition" type="wstring" dir="in">
-        <desc>The file disposition.</desc>
+        <desc>The file disposition. This describes the action to take in case a
+          file exists or does not exist, whereas the parameter must be one of the
+          following:
+          <ul>
+            <li><b>ca</b>Creates a new file, always. Overwrites an existing file.</li>
+            <li><b>ce</b>Creates a new file if it does not exist. Fail if exist.</li>
+            <li><b>oc</b>Opens and existing file or create it if it does not exist.</li>
+            <li><b>oe</b>Opens an existing file or fail if it does not exist.</li>
+            <li><b>ot</b>Opens and truncate an existing file or fail if it does not exist.</li>
+          </ul>
+        </desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
-        <desc>The file creation mode.</desc>
+        <desc>The mode to create the file with. Must be a three-digit octal number which
+          represents the access rights for the file.</desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
         <desc><link to="IGuestFile"/> object representing the opened file.</desc>
@@ -10649,19 +10668,39 @@
         <desc>Full path to file to open.</desc>
       </param>
       <param name="openMode" type="wstring" dir="in">
-        <desc>The file open mode.</desc>
+        <desc>The file opening mode. This describes the wanted access to a file, whereas
+          the parameter must be one of the following:
+          <ul>
+            <li><b>r</b>Opens a file for reading.</li>
+            <li><b>r+</b>Opens a file for reading and writing.</li>
+            <li><b>w</b>Opens a file for writing.</li>
+            <li><b>w+</b>Opens a file for writing and reading.</li>
+          </ul>
+        </desc>
       </param>
       <param name="disposition" type="wstring" dir="in">
-        <desc>The file disposition.</desc>
+        <desc>The file disposition. This describes the action to take in case a
+          file exists or does not exist, whereas the parameter must be one of the
+          following:
+          <ul>
+            <li><b>ca</b>Creates a new file, always. Overwrites an existing file.</li>
+            <li><b>ce</b>Creates a new file if it does not exist. Fail if exist.</li>
+            <li><b>oc</b>Opens and existing file or create it if it does not exist.</li>
+            <li><b>oe</b>Opens an existing file or fail if it does not exist.</li>
+            <li><b>ot</b>Opens and truncate an existing file or fail if it does not exist.</li>
+          </ul>
+        </desc>
       </param>
       <param name="sharingMode" type="wstring" dir="in">
-        <desc>The file sharing mode on the guest.</desc>
+        <desc>The file sharing mode on the guest. This parameter
+          is not implemented yet.</desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
-        <desc>The file creation mode.</desc>
+        <desc>The mode to create the file with. Must be a three-digit octal number which
+          represents the access rights for the file.</desc>
       </param>
       <param name="offset" type="long long" dir="in">
-        <desc>The initial read/write offset.</desc>
+        <desc>The initial read/write offset (in bytes).</desc>
       </param>
       <param name="file" type="IGuestFile" dir="return">
         <desc><link to="IGuestFile"/> object representing the opened file.</desc>
@@ -11263,7 +11302,7 @@
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="ceb895d7-8b2d-4a39-8f7c-7d2270f341d5"
+    uuid="984a8bb5-ec58-4685-ab5e-7b46112b6b56"
     wsmap="managed"
     >
     <desc>
@@ -11274,7 +11313,7 @@
         The creation mode.
       </desc>
     </attribute>
-    <attribute name="disposition" type="unsigned long" readonly="yes">
+    <attribute name="disposition" type="wstring" readonly="yes">
       <desc>
         The disposition mode.
       </desc>
@@ -11294,7 +11333,7 @@
         The initial size in bytes when opened.
       </desc>
     </attribute>
-    <attribute name="openMode" type="unsigned long" readonly="yes">
+    <attribute name="openMode" type="wstring" readonly="yes">
       <desc>
         The open mode.
       </desc>
