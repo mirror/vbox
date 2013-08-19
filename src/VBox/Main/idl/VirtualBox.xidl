@@ -19464,7 +19464,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="84af836d-0afc-4598-b9f4-37bf34d13cbd"
+    uuid="e40cbdc9-ef63-4407-9b7b-2d1201a39bd1"
     >
 
     <desc>
@@ -19833,8 +19833,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestUserStateChangedEvent">IGuestUserStateChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnGuestMultiTouch" value="93">
+      <desc>
+        See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
+      </desc>
+    </const>
     <!-- Last event marker -->
-    <const name="Last" value="93">
+    <const name="Last" value="94">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -20735,6 +20740,48 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
+  </interface>
+
+  <interface
+    name="IGuestMultiTouchEvent" extends="IEvent"
+    uuid="be8a0eb5-f4f4-4dd0-9d30-c89b873247ec"
+    wsmap="managed" autogen="VBoxEvent" id="OnGuestMultiTouch"
+    >
+    <desc>
+      Notification when guest touch screen event happens.
+    </desc>
+    <attribute name="contactCount" type="long" readonly="yes">
+      <desc>
+        Number of contacts in the event.
+      </desc>
+    </attribute>
+    <attribute name="xPositions" type="short" safearray="yes" readonly="yes">
+      <desc>
+        X positions.
+      </desc>
+    </attribute>
+    <attribute name="yPositions" type="short" safearray="yes" readonly="yes">
+      <desc>
+        Y positions.
+      </desc>
+    </attribute>
+    <attribute name="contactIds" type="unsigned short" safearray="yes" readonly="yes">
+      <desc>
+        Contact identifiers.
+      </desc>
+    </attribute>
+    <attribute name="contactFlags" type="unsigned short" safearray="yes" readonly="yes">
+      <desc>
+        Contact state.
+        Bit 0: in contact.
+        Bit 1: in range.
+      </desc>
+    </attribute>
+    <attribute name="scanTime" type="unsigned long" readonly="yes">
+      <desc>
+        Timestamp of the event in milliseconds. Only relative time between events is important.
+      </desc>
+    </attribute>
   </interface>
 
   <interface
