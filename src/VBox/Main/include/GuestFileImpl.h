@@ -61,6 +61,7 @@ public:
     STDMETHOD(COMGETTER(Disposition))(BSTR *aDisposition);
     STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
     STDMETHOD(COMGETTER(FileName))(BSTR *aFileName);
+    STDMETHOD(COMGETTER(Id))(ULONG *aID);
     STDMETHOD(COMGETTER(InitialSize))(LONG64 *aInitialSize);
     STDMETHOD(COMGETTER(Offset))(LONG64 *aOffset);
     STDMETHOD(COMGETTER(OpenMode))(BSTR *aOpenMode);
@@ -112,7 +113,7 @@ private:
         GuestFileOpenInfo       mOpenInfo;
         /** The file's initial size on open. */
         uint64_t                mInitialSize;
-        /** The file's internal ID. */
+        /** The file's ID. */
         uint32_t                mID;
         /** The current file status. */
         FileStatus_T            mStatus;
