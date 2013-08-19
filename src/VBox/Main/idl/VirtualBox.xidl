@@ -11302,7 +11302,7 @@
 
   <interface
     name="IFile" extends="$unknown"
-    uuid="984a8bb5-ec58-4685-ab5e-7b46112b6b56"
+    uuid="5ec56ea3-b55d-4bdb-8c4f-5f9fb26b894b"
     wsmap="managed"
     >
     <desc>
@@ -11326,6 +11326,11 @@
     <attribute name="fileName" type="wstring" readonly="yes">
       <desc>
         Full path of the actual file name of this file.
+      </desc>
+    </attribute>
+    <attribute name="id" type="unsigned long" readonly="yes">
+      <desc>
+        The file's ID.
       </desc>
     </attribute>
     <attribute name="initialSize" type="long long" readonly="yes">

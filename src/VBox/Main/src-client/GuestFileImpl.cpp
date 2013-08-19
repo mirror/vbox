@@ -315,6 +315,24 @@ STDMETHODIMP GuestFile::COMGETTER(FileName)(BSTR *aFileName)
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
+STDMETHODIMP GuestFile::COMGETTER(Id)(ULONG *aID)
+{
+#ifndef VBOX_WITH_GUEST_CONTROL
+    ReturnComNotImplemented();
+#else
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    CheckComArgOutPointerValid(aID);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aID = mData.mID;
+
+    return S_OK;
+#endif /* VBOX_WITH_GUEST_CONTROL */
+}
+
 STDMETHODIMP GuestFile::COMGETTER(InitialSize)(LONG64 *aInitialSize)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
