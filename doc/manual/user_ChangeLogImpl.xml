@@ -55,9 +55,9 @@
       </listitem>
 
       <listitem>
-        <para>VBoxManage: added support for listing active guest sessions and
-          guest processes via
-          <computeroutput>guestcontrol list &lt;all|sessions|processes&gt;</computeroutput>
+        <para>VBoxManage: added support for listing active guest sessions, guest
+          processes and/or guest files via
+          <computeroutput>guestcontrol list &lt;all|sessions|processes|files&gt;</computeroutput>
         </para>
       </listitem>
 
