@@ -35,7 +35,8 @@ namespace com
 ////////////////////////////////////////////////////////////////////////////////
 
 EventQueue::EventQueue(void)
-    : mShutdown(false)
+    : mUserCnt(0),
+      mShutdown(false)
 {
     int rc = RTCritSectInit(&mCritSect);
     AssertRC(rc);
@@ -85,67 +86,92 @@ EventQueue::~EventQueue(void)
  */
 int EventQueue::processEventQueue(RTMSINTERVAL cMsTimeout)
 {
-    bool fWait;
+    size_t cNumEvents;
     int rc = RTCritSectEnter(&mCritSect);
     if (RT_SUCCESS(rc))
     {
-        fWait = mEvents.size() == 0;
-        if (fWait)
+        if (mUserCnt == 0) /* No concurrent access allowed. */
         {
-            int rc2 = RTCritSectLeave(&mCritSect);
-            AssertRC(rc2);
+            mUserCnt++;
+
+            cNumEvents = mEvents.size();
+            if (!cNumEvents)
+            {
+                int rc2 = RTCritSectLeave(&mCritSect);
+                AssertRC(rc2);
+
+                rc = RTSemEventWaitNoResume(mSemEvent, cMsTimeout);
+
+                rc2 = RTCritSectEnter(&mCritSect);
+                AssertRC(rc2);
+
+                if (RT_SUCCESS(rc))
+                {
+                    if (mShutdown)
+                        rc = VERR_INTERRUPTED;
+                    cNumEvents = mEvents.size();
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+                rc = processPendingEvents(cNumEvents);
+
+            Assert(mUserCnt);
+            mUserCnt--;
         }
-    }
-    else
-    {
+        else
+            rc = VERR_WRONG_ORDER;
+
         int rc2 = RTCritSectLeave(&mCritSect);
-        AssertRC(rc2);
-        fWait = false;
-    }
-
-    if (fWait)
-    {
-        rc = RTSemEventWaitNoResume(mSemEvent, cMsTimeout);
         if (RT_SUCCESS(rc))
-            rc = RTCritSectEnter(&mCritSect);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        if (ASMAtomicReadBool(&mShutdown))
-        {
-            int rc2 = RTCritSectLeave(&mCritSect);
-            AssertRC(rc2);
-            return VERR_INTERRUPTED;
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            EventQueueListIterator it = mEvents.begin();
-            if (it != mEvents.end())
-            {
-                Event *pEvent = *it;
-                AssertPtr(pEvent);
-
-                mEvents.erase(it);
-
-                int rc2 = RTCritSectLeave(&mCritSect);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-
-                pEvent->handler();
-                pEvent->Release();
-            }
-            else
-            {
-                int rc2 = RTCritSectLeave(&mCritSect);
-                if (RT_SUCCESS(rc))
-                    rc = rc2;
-            }
-        }
+            rc = rc2;
     }
 
     Assert(rc != VERR_TIMEOUT || cMsTimeout != RT_INDEFINITE_WAIT);
+    return rc;
+}
+
+/**
+ * Processes all pending events in the queue at the time of
+ * calling. Note: Does no initial locking, must be done by the
+ * caller!
+ *
+ * @return  IPRT status code.
+ */
+int EventQueue::processPendingEvents(size_t cNumEvents)
+{
+    if (!cNumEvents) /* Nothing to process? Bail out early. */
+        return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    EventQueueListIterator it = mEvents.begin();
+    for (size_t i = 0;
+            i   < cNumEvents
+         && it != mEvents.end(); i++)
+    {
+        Event *pEvent = *it;
+        AssertPtr(pEvent);
+
+        mEvents.erase(it);
+
+        int rc2 = RTCritSectLeave(&mCritSect);
+        AssertRC(rc2);
+
+        pEvent->handler();
+        pEvent->Release();
+
+        rc2 = RTCritSectEnter(&mCritSect);
+        AssertRC(rc2);
+
+        it = mEvents.begin();
+        if (mShutdown)
+        {
+            rc = VERR_INTERRUPTED;
+            break;
+        }
+    }
+
     return rc;
 }
 
