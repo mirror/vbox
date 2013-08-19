@@ -10623,10 +10623,10 @@
         <desc>The file opening mode. This describes the wanted access to a file, whereas
           the parameter must be one of the following:
           <ul>
-            <li><b>r</b>Opens a file for reading.</li>
-            <li><b>r+</b>Opens a file for reading and writing.</li>
-            <li><b>w</b>Opens a file for writing.</li>
-            <li><b>w+</b>Opens a file for writing and reading.</li>
+            <li><tt>"r"</tt>: Opens a file for reading.</li>
+            <li><tt>"r+"</tt>: Opens a file for reading and writing.</li>
+            <li><tt>"w"</tt>: Opens a file for writing.</li>
+            <li><tt>"w+"</tt>: Opens a file for writing and reading.</li>
           </ul>
         </desc>
       </param>
@@ -10635,11 +10635,11 @@
           file exists or does not exist, whereas the parameter must be one of the
           following:
           <ul>
-            <li><b>ca</b>Creates a new file, always. Overwrites an existing file.</li>
-            <li><b>ce</b>Creates a new file if it does not exist. Fail if exist.</li>
-            <li><b>oc</b>Opens and existing file or create it if it does not exist.</li>
-            <li><b>oe</b>Opens an existing file or fail if it does not exist.</li>
-            <li><b>ot</b>Opens and truncate an existing file or fail if it does not exist.</li>
+            <li><tt>"ca"</tt>: Creates a new file, always. Overwrites an existing file.</li>
+            <li><tt>"ce"</tt>: Creates a new file if it does not exist. Fail if exist.</li>
+            <li><tt>"oc"</tt>: Opens and existing file or create it if it does not exist.</li>
+            <li><tt>"oe"</tt>: Opens an existing file or fail if it does not exist.</li>
+            <li><tt>"ot"</tt>: Opens and truncate an existing file or fail if it does not exist.</li>
           </ul>
         </desc>
       </param>
@@ -10671,10 +10671,10 @@
         <desc>The file opening mode. This describes the wanted access to a file, whereas
           the parameter must be one of the following:
           <ul>
-            <li><b>r</b>Opens a file for reading.</li>
-            <li><b>r+</b>Opens a file for reading and writing.</li>
-            <li><b>w</b>Opens a file for writing.</li>
-            <li><b>w+</b>Opens a file for writing and reading.</li>
+            <li><tt>"r"</tt>: Opens a file for reading.</li>
+            <li><tt>"r+"</tt>: Opens a file for reading and writing.</li>
+            <li><tt>"w"</tt>: Opens a file for writing.</li>
+            <li><tt>"w+"</tt>: Opens a file for writing and reading.</li>
           </ul>
         </desc>
       </param>
@@ -10683,11 +10683,11 @@
           file exists or does not exist, whereas the parameter must be one of the
           following:
           <ul>
-            <li><b>ca</b>Creates a new file, always. Overwrites an existing file.</li>
-            <li><b>ce</b>Creates a new file if it does not exist. Fail if exist.</li>
-            <li><b>oc</b>Opens and existing file or create it if it does not exist.</li>
-            <li><b>oe</b>Opens an existing file or fail if it does not exist.</li>
-            <li><b>ot</b>Opens and truncate an existing file or fail if it does not exist.</li>
+            <li><tt>"ca"</tt>: Creates a new file, always. Overwrites an existing file.</li>
+            <li><tt>"ce"</tt>: Creates a new file if it does not exist. Fail if exist.</li>
+            <li><tt>"oc"</tt>: Opens and existing file or create it if it does not exist.</li>
+            <li><tt>"oe"</tt>: Opens an existing file or fail if it does not exist.</li>
+            <li><tt>"ot"</tt>: Opens and truncate an existing file or fail if it does not exist.</li>
           </ul>
         </desc>
       </param>
