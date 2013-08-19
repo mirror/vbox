@@ -618,17 +618,17 @@ RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
  * to IPRT compatible flags, which then can be used with RTFileOpen* APIs.
  *
  * Access modes:
- *      "r"  - Read
- *      "r+" - Read / Write
- *      "w"  - Write
- *      "w+" - Write / Read
+ *      "r"  - Opens a file for reading.
+ *      "r+" - Opens a file for reading and writing.
+ *      "w"  - Opens a file for writing.
+ *      "w+" - Opens a file for writing and reading.
  *
  * Disposition modes:
- *      "ca" - Create a new file, always, overwrite existing
- *      "ce" - Create a new file if not exist, fail if exist
- *      "oc" - Open existing, create if not exist
- *      "oe" - Open existing, fail if not exist
- *      "ot" - Open and truncate existing, fail of not exist
+ *      "ca" - Creates a new file, always. Overwrites an existing file.
+ *      "ce" - Creates a new file if it does not exist. Fail if exist.
+ *      "oc" - Opens and existing file or create it if it does not exist.
+ *      "oe" - Opens an existing file or fail if it does not exist.
+ *      "ot" - Opens and truncate an existing file or fail if it does not exist.
  *
  * Sharing modes:
  *      Not implemented yet. RTFILE_O_DENY_NONE will be
