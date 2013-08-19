@@ -2686,6 +2686,19 @@ public class Helper
         return ret;
     }
 
+    public static List<Short> wrap(short[] values)
+    {
+        if (values == null)
+            return null;
+
+        List<Short> ret = new ArrayList<Short>(values.length);
+        for (short v : values)
+        {
+            ret.add(v);
+        }
+        return ret;
+    }
+
     public static List<Integer> wrap(int[] values)
     {
         if (values == null)
