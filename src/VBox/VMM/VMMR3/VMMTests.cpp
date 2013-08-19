@@ -228,7 +228,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         vmmR3DoTrapTest(pVM, 0x3, 0, VINF_EM_DBG_HYPER_ASSERTION,  0xf0f0f0f0, "vmmGCTestTrap3_FaultEIP", "int3");
         vmmR3DoTrapTest(pVM, 0x3, 1, VINF_EM_DBG_HYPER_ASSERTION,  0xf0f0f0f0, "vmmGCTestTrap3_FaultEIP", "int3 WP");
 
-# if defined(DEBUG_bird) /* guess most people would like to skip these since they write to com1. */
+# if 0//defined(DEBUG_bird) /* guess most people would like to skip these since they write to com1. */
         vmmR3DoTrapTest(pVM, 0x8, 0, VERR_TRPM_PANIC,       0x00000000, "vmmGCTestTrap8_FaultEIP", "#DF [#PG]");
         SELMR3Relocate(pVM); /* this resets the busy flag of the Trap 08 TSS */
         bool f;
@@ -350,7 +350,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         }
 
         /*
-         * Interrupt masking.
+         * Interrupt masking.  Failure may indiate NMI watchdog activity.
          */
         RTPrintf("VMM: interrupt masking...\n"); RTStrmFlush(g_pStdOut); RTThreadSleep(250);
         for (i = 0; i < 10000; i++)
