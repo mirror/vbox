@@ -272,7 +272,7 @@ static int gstcntlSessionHandleFileRead(const PVBOXSERVICECTRLSESSION pSession,
         void *pvDataRead = pvScratchBuf;
         size_t cbRead = 0;
 
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             if (cbToRead)
@@ -437,7 +437,7 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
     if (RT_SUCCESS(rc))
     {
         size_t cbWritten = 0;
-        PVBOXSERVICECTRLFILE pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
+        pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
             rc = RTFileWriteAt(pFile->hFile, iOffset,
