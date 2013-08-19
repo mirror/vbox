@@ -35,7 +35,7 @@
 
        <listitem>
         <para>Main: new event queue implementation which does not use the host's
-          native event queue for processing VirtualBox events anymore.</para>
+          native event queue for processing VirtualBox events anymore</para>
       </listitem>
 
       <listitem>
@@ -51,7 +51,7 @@
 
       <listitem>
         <para>VBoxManage: added support for optional command line parameters for
-          the automatic Guest Additions update.</para>
+          the automatic Guest Additions update</para>
       </listitem>
 
       <listitem>
