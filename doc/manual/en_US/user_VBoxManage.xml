@@ -3262,11 +3262,11 @@ Value: 2006.01.01</screen>
 
         <listitem>
           <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>,
-          which lists various guest control information such as open guest sessions and
-          guest processes.</para>
+          which lists various guest control information such as open guest sessions,
+          guest processes and guest files.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; list
-            &lt;all|sessions|processes&gt; [--verbose]</screen>
+            &lt;all|sessions|processes|files&gt; [--verbose]</screen>
 
           <para>where the parameters mean: <glosslist>
             <glossentry>
@@ -3278,11 +3278,11 @@ Value: 2006.01.01</screen>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>all|sessions|processes</computeroutput></glossterm>
+              <glossterm><computeroutput>all|sessions|processes|files</computeroutput></glossterm>
 
               <glossdef>
-                <para>Whether to list guest sessions, guest processes or all information
-                  available.</para>
+                <para>Whether to list guest sessions, guest processes, guest files
+                  or all information available. Mandatory.</para>
               </glossdef>
             </glossentry>
 
