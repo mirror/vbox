@@ -706,10 +706,10 @@ static BOOL implies(VBoxEventType_T who, VBoxEventType_T what)
         case VBoxEventType_Invalid:
             return FALSE;
         default:
-            return who == what;
+            break;
     }
 
-    return FALSE; /* Never reached. */
+    return who == what;
 }
 
 ListenerRecord::ListenerRecord(IEventListener*                  aListener,
