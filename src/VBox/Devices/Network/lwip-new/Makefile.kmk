@@ -1,0 +1,140 @@
+# $Id: Makefile.kmk$
+## @file
+# Adds sources list and defines required to LWIP pre-1.5.0 compilation
+#
+
+#
+# Copyright (C) 2006-2012 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+#
+# Recommended kmk flags:
+#
+# VBOX_WITH_NAT_SERVICE=1
+# VBOX_WITH_LWIP_NAT=1
+#
+
+LWIP_INCS += Network/lwip-new/src/include \
+    Network/lwip-new/src/include/ipv4 \
+    Network/lwip-new/src/include/ipv6 \
+    Network/lwip-new/vbox/include
+
+LWIP_SOURCES += Network/lwip-new/src/api/api_lib.c \
+    Network/lwip-new/src/api/api_msg.c \
+    Network/lwip-new/src/api/err.c \
+    Network/lwip-new/src/api/netbuf.c \
+    Network/lwip-new/src/api/netdb.c \
+    Network/lwip-new/src/api/netifapi.c \
+    Network/lwip-new/src/api/sockets.c \
+    Network/lwip-new/src/api/tcpip.c \
+    Network/lwip-new/src/core/def.c \
+    Network/lwip-new/src/core/dhcp.c \
+    Network/lwip-new/src/core/dns.c \
+    Network/lwip-new/src/core/inet_chksum.c \
+    Network/lwip-new/src/core/init.c \
+    Network/lwip-new/src/core/ipv4/autoip.c \
+    Network/lwip-new/src/core/ipv4/icmp.c \
+    Network/lwip-new/src/core/ipv4/igmp.c \
+    Network/lwip-new/src/core/ipv4/ip4.c \
+    Network/lwip-new/src/core/ipv4/ip4_addr.c \
+    Network/lwip-new/src/core/ipv4/ip_frag.c \
+    Network/lwip-new/src/core/ipv6/dhcp6.c \
+    Network/lwip-new/src/core/ipv6/ethip6.c \
+    Network/lwip-new/src/core/ipv6/icmp6.c \
+    Network/lwip-new/src/core/ipv6/inet6.c \
+    Network/lwip-new/src/core/ipv6/ip6.c \
+    Network/lwip-new/src/core/ipv6/ip6_addr.c \
+    Network/lwip-new/src/core/ipv6/ip6_frag.c \
+    Network/lwip-new/src/core/ipv6/mld6.c \
+    Network/lwip-new/src/core/ipv6/nd6.c \
+    Network/lwip-new/src/core/mem.c \
+    Network/lwip-new/src/core/memp.c \
+    Network/lwip-new/src/core/netif.c \
+    Network/lwip-new/src/core/pbuf.c \
+    Network/lwip-new/src/core/raw.c \
+    Network/lwip-new/src/core/snmp/asn1_dec.c \
+    Network/lwip-new/src/core/snmp/asn1_enc.c \
+    Network/lwip-new/src/core/snmp/mib2.c \
+    Network/lwip-new/src/core/snmp/mib_structs.c \
+    Network/lwip-new/src/core/snmp/msg_in.c \
+    Network/lwip-new/src/core/snmp/msg_out.c \
+    Network/lwip-new/src/core/stats.c \
+    Network/lwip-new/src/core/sys.c \
+    Network/lwip-new/src/core/tcp.c \
+    Network/lwip-new/src/core/tcp_in.c \
+    Network/lwip-new/src/core/tcp_out.c \
+    Network/lwip-new/src/core/timers.c \
+    Network/lwip-new/src/core/udp.c \
+    Network/lwip-new/src/netif/etharp.c \
+    Network/lwip-new/src/netif/ethernetif.c \
+    Network/lwip-new/src/netif/ppp/auth.c \
+    Network/lwip-new/src/netif/ppp/chap.c \
+    Network/lwip-new/src/netif/ppp/chpms.c \
+    Network/lwip-new/src/netif/ppp/fsm.c \
+    Network/lwip-new/src/netif/ppp/ipcp.c \
+    Network/lwip-new/src/netif/ppp/lcp.c \
+    Network/lwip-new/src/netif/ppp/magic.c \
+    Network/lwip-new/src/netif/ppp/md5.c \
+    Network/lwip-new/src/netif/ppp/pap.c \
+    Network/lwip-new/src/netif/ppp/ppp.c \
+    Network/lwip-new/src/netif/ppp/ppp_oe.c \
+    Network/lwip-new/src/netif/ppp/randm.c \
+    Network/lwip-new/src/netif/ppp/vj.c \
+    Network/lwip-new/src/netif/slipif.c \
+    Network/lwip-new/vbox/sys_arch.c \
+    Network/VBoxLwipCore.cpp
+
+ifdef VBOX_WITH_LWIP_NAT
+LWIP_NAT_SOURCES += Network/lwip-new/vbox/proxy_pollmgr.c \
+    Network/lwip-new/vbox/proxy_rtadvd.c \
+    Network/lwip-new/vbox/proxytest.c \
+    Network/lwip-new/vbox/pxremap.c \
+    Network/lwip-new/vbox/pxtcp.c \
+    Network/lwip-new/vbox/pxudp.c \
+    Network/lwip-new/vbox/fwtcp.c \
+    Network/lwip-new/vbox/fwudp.c \
+    Network/lwip-new/vbox/portfwd.c \
+    Network/lwip-new/vbox/proxy_dhcp6ds.c \
+    Network/lwip-new/vbox/proxy_tftpd.c
+
+  LWIP_NAT_SOURCES.linux += Network/lwip-new/vbox/rtmon_linux.c
+
+  LWIP_NAT_SOURCES.darwin += Network/lwip-new/vbox/rtmon_bsd.c
+  LWIP_NAT_SOURCES.freebsd += Network/lwip-new/vbox/rtmon_bsd.c
+  LWIP_NAT_SOURCES.solaris += Network/lwip-new/vbox/rtmon_bsd.c
+
+ LWIP_NAT_SOURCES.win += Network/lwip-new/vbox/RTWinPoll.cpp \
+    Network/lwip-new/vbox/RTWinSocketPair.cpp \
+    Network/lwip-new/vbox/rtmon_win.c 
+
+ # Magic.
+ LWIP_NAT_SOURCES += $(LWIP_NAT_SOURCES.$(KBUILD_TARGET))
+endif
+
+ifeq ($(USERNAME), vvl)
+$(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
+
+LWIPTEST_SOURCES= Network/lwip-new/test/unit/core/test_mem.c \
+    Network/lwip-new/test/unit/etharp/test_etharp.c \
+    Network/lwip-new/test/unit/lwip_unittests.c \
+    Network/lwip-new/test/unit/tcp/tcp_helper.c \
+    Network/lwip-new/test/unit/tcp/test_tcp.c \
+    Network/lwip-new/test/unit/tcp/test_tcp_oos.c \
+    Network/lwip-new/test/unit/udp/test_udp.c
+endif
+
+ifdef VBOX_WITH_INIP
+Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
+endif
+
+ifdef VBOX_WITH_ISCSI
+Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
+endif
