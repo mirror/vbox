@@ -1165,6 +1165,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_K8_IORRMASK1                    0xc0010019
 #define MSR_K8_TOP_MEM1                     0xc001001a
 #define MSR_K8_TOP_MEM2                     0xc001001d
+/** Hypertransport interrupt pending register.
+ * "BIOS and Kernel Developer's Guide for AMD NPT Family 0Fh Processors" */
+#define MSR_K8_INT_PENDING                  0xc0010055
 #define MSR_K8_VM_CR                        0xc0010114
 #define MSR_K8_VM_CR_SVM_DISABLE            RT_BIT(4)
 
