@@ -923,7 +923,7 @@ VBoxXPCOMGlue_TEMPLATE = XPCOM
 VBoxXPCOMGlue_DEFS     = XPCOM_GLUE
 if defined(VBOX_WITH_HARDENING) && defined(VBOX_PATH_APP_PRIVATE_ARCH)
  VBoxXPCOMGlue_DEFS    += MOZ_DEFAULT_VBOX_XPCOM_HOME=foo
-elsif
+endif
 VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
                          xpcom/glue/standalone/nsXPCOMGlue.cpp \
                          xpcom/glue/standalone/nsGREDirServiceProvider.cpp
