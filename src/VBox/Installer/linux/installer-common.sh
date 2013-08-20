@@ -164,7 +164,7 @@ set_selinux_permissions() {
             > /dev/null 2>&1
         chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxNetDHCP \
             > /dev/null 2>&1
-        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxNetLwipNAT \
+        chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxNetNAT \
             > /dev/null 2>&1
         chcon -t java_exec_t    "$INSTALLATION_DIR"/VBoxExtPackHelperApp \
             > /dev/null 2>&1

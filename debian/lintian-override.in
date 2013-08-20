@@ -15,7 +15,7 @@
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxHostChannel.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxDragAndDropSvc.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetDHCP.so
-%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetLwipNAT.so
+%VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxNetNAT.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxVRDP.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/VBoxAuth.so
 %VERPKG%: shlib-with-non-pic-code usr/lib/virtualbox/components/VBoxSVCM.so
