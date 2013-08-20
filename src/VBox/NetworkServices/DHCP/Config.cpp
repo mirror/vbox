@@ -227,8 +227,8 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
     if (RT_SUCCESS(rc))
     {
         hintAddress.u = *(uint32_t *)opt.au8RawOpt;
-        if (   !RT_H2N_U32(hintAddress.u) < RT_H2N_U32(pNetCfg->lowerIp().u)
-            || !RT_H2N_U32(hintAddress.u) > RT_H2N_U32(pNetCfg->upperIp().u))
+        if (   RT_H2N_U32(hintAddress.u) < RT_H2N_U32(pNetCfg->lowerIp().u)
+            || RT_H2N_U32(hintAddress.u) > RT_H2N_U32(pNetCfg->upperIp().u))
             hintAddress.u = 0; /* clear hint */
     }
 
