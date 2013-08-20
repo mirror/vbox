@@ -198,6 +198,11 @@ static SUPINSTFILE const    g_aSupInstallFiles[] =
     {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxNetDHCP" SUPLIB_EXE_SUFF },
     {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxNetDHCP" SUPLIB_DLL_SUFF },
 //#endif
+
+//#ifdef VBOX_WITH_LWIP_NAT
+    {   kSupIFT_Exe,  kSupID_AppBin,             true, "VBoxNetLwipNAT" SUPLIB_EXE_SUFF },
+    {   kSupIFT_Dll,  kSupID_AppPrivArch,        true, "VBoxNetLwipNAT" SUPLIB_DLL_SUFF },
+//#endif
 };
 
 
