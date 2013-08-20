@@ -108,8 +108,6 @@ public:
 
     STDMETHOD(COMGETTER(LocalMappings))(ComSafeArrayOut(BSTR, aLocalMappings));
     STDMETHOD(AddLocalMapping)(IN_BSTR aHostId, LONG aOffset);
-    STDMETHOD(GetOffsetForService)(NATNetworkServiceType_T service, LONG *aOffset);
-    STDMETHOD(SetOffsetForService)(NATNetworkServiceType_T service, LONG aOffset);
 
     STDMETHOD(COMGETTER(PortForwardRules4))(ComSafeArrayOut(BSTR, aPortForwardRules4));
     STDMETHOD(COMGETTER(PortForwardRules6))(ComSafeArrayOut(BSTR, aPortForwardRules6));
