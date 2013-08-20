@@ -165,6 +165,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--name <name>]\n"
                      "                            [--groups <group>, ...]\n"
                      "                            [--ostype <ostype>]\n"
+                     "                            [--iconfile <filename>]\n"
                      "                            [--memory <memorysize in MB>]\n"
                      "                            [--pagefusion on|off]\n"
                      "                            [--vram <vramsize in MB>]\n"
