@@ -1456,9 +1456,9 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
     uint64_t u64StartMS = RTTimeMilliTS();
     for (;;)
     {
-        uint64_t u32ElapsedMS = RTTimeMilliTS() - u64StartMS;
+        uint64_t u64ElapsedMS = RTTimeMilliTS() - u64StartMS;
         if (   uTimeoutMS   != RT_INDEFINITE_WAIT
-            && u32ElapsedMS >= uTimeoutMS)
+            && u64ElapsedMS >= uTimeoutMS)
         {
             vrc = VERR_TIMEOUT;
             break;
@@ -1466,7 +1466,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResu
 
         vrc = waitForStatusChange(pEvent,
                                     uTimeoutMS == RT_INDEFINITE_WAIT
-                                  ? RT_INDEFINITE_WAIT : uTimeoutMS - u32ElapsedMS,
+                                  ? RT_INDEFINITE_WAIT : uTimeoutMS - (uint32_t)u64ElapsedMS,
                                   &processStatus, pGuestRc);
         if (RT_SUCCESS(vrc))
         {
