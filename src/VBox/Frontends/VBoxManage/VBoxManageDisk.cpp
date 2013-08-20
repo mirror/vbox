@@ -410,6 +410,7 @@ static const RTGETOPTDEF g_aModifyHardDiskOptions[] =
     { "--autoreset",    'z', RTGETOPT_REQ_STRING },
     { "-autoreset",     'z', RTGETOPT_REQ_STRING },     // deprecated
     { "autoreset",      'z', RTGETOPT_REQ_STRING },     // deprecated
+    { "--property",     'p', RTGETOPT_REQ_STRING },
     { "--compact",      'c', RTGETOPT_REQ_NOTHING },
     { "-compact",       'c', RTGETOPT_REQ_NOTHING },    // deprecated
     { "compact",        'c', RTGETOPT_REQ_NOTHING },    // deprecated
@@ -424,7 +425,12 @@ int handleModifyHardDisk(HandlerArg *a)
     ComPtr<IMedium> hardDisk;
     MediumType_T DiskType;
     bool AutoReset = false;
-    bool fModifyDiskType = false, fModifyAutoReset = false, fModifyCompact = false;
+    SafeArray<BSTR> mediumPropNames;
+    SafeArray<BSTR> mediumPropValues;
+    bool fModifyDiskType = false;
+    bool fModifyAutoReset = false;
+    bool fModifyProperties = false;
+    bool fModifyCompact = false;
     bool fModifyResize = false;
     uint64_t cbResize = 0;
     const char *FilenameOrUuid = NULL;
@@ -452,6 +458,38 @@ int handleModifyHardDisk(HandlerArg *a)
                     return errorArgument("Invalid autoreset parameter '%s'", ValueUnion.psz);
                 fModifyAutoReset = true;
                 break;
+
+            case 'p':   // --property
+            {
+                /* Parse 'name=value' */
+                char *pszProperty = RTStrDup(ValueUnion.psz);
+                if (pszProperty)
+                {
+                    char *pDelimiter = strchr(pszProperty, '=');
+                    if (pDelimiter)
+                    {
+                        *pDelimiter = '\0';
+
+                        Bstr bstrName(pszProperty);
+                        Bstr bstrValue(&pDelimiter[1]);
+                        bstrName.detachTo(mediumPropNames.appendedRaw());
+                        bstrValue.detachTo(mediumPropValues.appendedRaw());
+                        fModifyProperties = true;
+                    }
+                    else
+                    {
+                        errorArgument("Invalid --property argument '%s'", ValueUnion.psz);
+                        rc = E_FAIL;
+                    }
+                    RTStrFree(pszProperty);
+                }
+                else
+                {
+                    RTStrmPrintf(g_pStdErr, "Error: Failed to allocate memory for medium property '%s'\n", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
 
             case 'c':   // --compact
                 fModifyCompact = true;
@@ -494,7 +532,7 @@ int handleModifyHardDisk(HandlerArg *a)
     if (!FilenameOrUuid)
         return errorSyntax(USAGE_MODIFYHD, "Disk name or UUID required");
 
-    if (!fModifyDiskType && !fModifyAutoReset && !fModifyCompact && !fModifyResize)
+    if (!fModifyDiskType && !fModifyAutoReset && !fModifyProperties && !fModifyCompact && !fModifyResize)
         return errorSyntax(USAGE_MODIFYHD, "No operation specified");
 
     /* Always open the medium if necessary, there is no other way. */
@@ -521,6 +559,11 @@ int handleModifyHardDisk(HandlerArg *a)
     if (fModifyAutoReset)
     {
         CHECK_ERROR(hardDisk, COMSETTER(AutoReset)(AutoReset));
+    }
+
+    if (fModifyProperties)
+    {
+        CHECK_ERROR(hardDisk, SetProperties(ComSafeArrayAsInParam(mediumPropNames), ComSafeArrayAsInParam(mediumPropValues)));
     }
 
     if (fModifyCompact)

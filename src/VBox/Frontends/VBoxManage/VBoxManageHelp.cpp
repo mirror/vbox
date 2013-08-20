@@ -592,6 +592,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--type normal|writethrough|immutable|shareable|\n"
                      "                                    readonly|multiattach]\n"
                      "                            [--autoreset on|off]\n"
+                     "                            [--property <name=[value]>]\n"
                      "                            [--compact]\n"
                      "                            [--resize <megabytes>|--resizebyte <bytes>]\n"
                      "\n", SEP);
