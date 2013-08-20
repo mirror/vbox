@@ -50,6 +50,7 @@ enum
     MODIFYVM_GROUPS,
     MODIFYVM_DESCRIPTION,
     MODIFYVM_OSTYPE,
+    MODIFYVM_ICONFILE,
     MODIFYVM_MEMORY,
     MODIFYVM_PAGEFUSION,
     MODIFYVM_VRAM,
@@ -211,6 +212,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--groups",                   MODIFYVM_GROUPS,                    RTGETOPT_REQ_STRING },
     { "--description",              MODIFYVM_DESCRIPTION,               RTGETOPT_REQ_STRING },
     { "--ostype",                   MODIFYVM_OSTYPE,                    RTGETOPT_REQ_STRING },
+    { "--iconfile",                 MODIFYVM_ICONFILE,                  RTGETOPT_REQ_STRING },
     { "--memory",                   MODIFYVM_MEMORY,                    RTGETOPT_REQ_UINT32 },
     { "--pagefusion",               MODIFYVM_PAGEFUSION,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vram",                     MODIFYVM_VRAM,                      RTGETOPT_REQ_UINT32 },
@@ -502,9 +504,46 @@ int handleModifyVM(HandlerArg *a)
                 }
                 else
                 {
-                    errorArgument("Invalid guest OS type '%s'", Utf8Str(ValueUnion.psz).c_str());
+                    errorArgument("Invalid guest OS type '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                break;
+            }
+
+            case MODIFYVM_ICONFILE:
+            {
+                RTFILE iconFile;
+                int vrc = RTFileOpen(&iconFile, ValueUnion.psz, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
+                if (RT_FAILURE(vrc))
+                {
+                    RTMsgError("Cannot open file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    rc = E_FAIL;
+                    break;
+                }
+                uint64_t cbSize;
+                vrc = RTFileGetSize(iconFile, &cbSize);
+                if (RT_FAILURE(vrc))
+                {
+                    RTMsgError("Cannot get size of file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    rc = E_FAIL;
+                    break;
+                }
+                if (cbSize > _256K)
+                {
+                    RTMsgError("File \"%s\" is bigger than 256KByte", ValueUnion.psz);
+                    rc = E_FAIL;
+                    break;
+                }
+                SafeArray<BYTE> icon(cbSize);
+                rc = RTFileRead(iconFile, icon.raw(), cbSize, NULL);
+                if (RT_FAILURE(vrc))
+                {
+                    RTMsgError("Cannot read contents of file \"%s\": %Rrc", ValueUnion.psz, vrc);
+                    rc = E_FAIL;
+                    break;
+                }
+                RTFileClose(iconFile);
+                CHECK_ERROR(machine, COMSETTER(Icon)(ComSafeArrayAsInParam(icon)));
                 break;
             }
 
