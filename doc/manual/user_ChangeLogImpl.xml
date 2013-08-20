@@ -14,6 +14,10 @@
       </listitem>
 
       <listitem>
+        <para>Emulated USB touch screen</para>
+      </listitem>
+
+      <listitem>
         <para>VRDP: support for IPv6</para>
       </listitem>
 
