@@ -174,11 +174,11 @@ void MachineCloneVMPrivate::updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAtta
          * it. Adding the biggest size in the chain should balance this a
          * little bit more, i.e. the weight is the sum of the data which
          * needs to be read and written. */
-        uint64_t uMaxSize = 0;
+        ULONG uMaxWeight = 0;
         for (size_t e = mtc.chain.size(); e > 0; --e)
         {
             MEDIUMTASK &mt = mtc.chain.at(e - 1);
-            mt.uWeight += uMaxSize;
+            mt.uWeight += uMaxWeight;
 
             /* Calculate progress data */
             ++uCount;
@@ -186,7 +186,7 @@ void MachineCloneVMPrivate::updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAtta
 
             /* Save the max size for better weighting of diff image
              * creation. */
-            uMaxSize = RT_MAX(uMaxSize, mt.uWeight);
+            uMaxWeight = RT_MAX(uMaxWeight, mt.uWeight);
         }
     }
 }
@@ -207,7 +207,7 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, U
             return p->setError(VBOX_E_IPRT_ERROR, p->tr("Could not query file size of '%s' (%Rrc)"), sst.strSaveStateFile.c_str(), vrc);
         /* same rule as above: count both the data which needs to
          * be read and written */
-        sst.uWeight = 2 * (cbSize + _1M - 1) / _1M;
+        sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
         llSaveStateFiles.append(sst);
         ++uCount;
         uTotalWeight += sst.uWeight;
@@ -289,7 +289,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             if (fAttachLinked)
                 mt.uWeight = 0; /* dummy */
             else
-                mt.uWeight = (lSize + _1M - 1) / _1M;
+                mt.uWeight = (ULONG)((lSize + _1M - 1) / _1M);
             mtc.chain.append(mt);
 
             /* Update the progress info. */
@@ -389,7 +389,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
                 MEDIUMTASK mt;
                 mt.uIdx    = UINT32_MAX;
                 mt.pMedium = pSrcMedium;
-                mt.uWeight = (lSize + _1M - 1) / _1M;
+                mt.uWeight = (ULONG)((lSize + _1M - 1) / _1M);
                 mtc.chain.append(mt);
 
                 /* Query next parent. */
@@ -523,7 +523,7 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
                 MEDIUMTASK mt;
                 mt.uIdx    = UINT32_MAX;
                 mt.pMedium = pSrcMedium;
-                mt.uWeight = (lSize + _1M - 1) / _1M;
+                mt.uWeight = (ULONG)((lSize + _1M - 1) / _1M);
                 mtc.chain.append(mt);
 
                 /* Query next parent. */
