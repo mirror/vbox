@@ -249,6 +249,9 @@ int main(int argc, char **argv)
      * Test thread-context hooks.
      */
     RTTestSub(hTest, "RTThreadCtxHooks");
+    uint64_t u64StartTS = RTTimeMilliTS();
+    uint64_t cMsMax     = 60000;        /* ca. 1 minute timeout. */
+    uint64_t cMsElapsed;
     for (unsigned i = 0; i < 50; i++)
     {
         Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
@@ -264,6 +267,15 @@ int main(int argc, char **argv)
             RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
         if (!(i % 10))
             RTTestIPrintf(RTTESTLVL_ALWAYS, "RTThreadCtxHooks passed %u iteration(s)\n", i);
+
+        /* Check timeout and bail. */
+        cMsElapsed = RTTimeMilliTS() - u64StartTS;
+        if (cMsElapsed > cMsMax)
+        {
+            RTTestIPrintf(RTTESTLVL_INFO, "RTThreadCtxHooks Stopping iterations. %RU64 ms. for %u iterations.\n",
+                          cMsElapsed, i);
+            break;
+        }
     }
 
     /*
