@@ -622,7 +622,7 @@ STDMETHODIMP VFSExplorer::CdUp(IProgress **aProgress)
     return Cd(Bstr(strUpPath).raw(), aProgress);
 }
 
-STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes), ComSafeArrayOut(ULONG, aSizes), ComSafeArrayOut(ULONG, aModes))
+STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(VFSFileType_T, aTypes), ComSafeArrayOut(LONG64, aSizes), ComSafeArrayOut(ULONG, aModes))
 {
     if (ComSafeArrayOutIsNull(aNames) ||
         ComSafeArrayOutIsNull(aTypes))
@@ -635,7 +635,7 @@ STDMETHODIMP VFSExplorer::EntryList(ComSafeArrayOut(BSTR, aNames), ComSafeArrayO
 
     com::SafeArray<BSTR> sfaNames(m->entryList.size());
     com::SafeArray<ULONG> sfaTypes(m->entryList.size());
-    com::SafeArray<ULONG> sfaSizes(m->entryList.size());
+    com::SafeArray<LONG64> sfaSizes(m->entryList.size());
     com::SafeArray<ULONG> sfaModes(m->entryList.size());
 
     std::list<VFSExplorer::Data::DirEntry>::const_iterator it;
