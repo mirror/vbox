@@ -3809,8 +3809,6 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 
         Utf8Str str;
         elmMachine.getAttributeValue("Description", machineUserData.strDescription);
-        elmMachine.getAttributeValue("Icon", machineUserData.ovIcon);
-
         elmMachine.getAttributeValue("OSType", machineUserData.strOsType);
         if (m->sv < SettingsVersion_v1_5)
             convertOldOSType_pre1_5(machineUserData.strOsType);
@@ -3829,6 +3827,8 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
             // constructor has called RTTimeNow(&timeLastStateChange) before
         if (elmMachine.getAttributeValue("aborted", fAborted))
             fAborted = true;
+
+        elmMachine.getAttributeValue("icon", machineUserData.ovIcon);
 
         // parse Hardware before the other elements because other things depend on it
         const xml::ElementNode *pelmHardware;
@@ -5100,8 +5100,6 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
         elmMachine.setAttribute("nameSync", machineUserData.fNameSync);
     if (machineUserData.strDescription.length())
         elmMachine.createChild("Description")->addContent(machineUserData.strDescription);
-    if (machineUserData.ovIcon.length())
-        elmMachine.setAttribute("Icon", machineUserData.ovIcon);
     elmMachine.setAttribute("OSType", machineUserData.strOsType);
     if (    strStateFile.length()
          && !(fl & BuildMachineXML_SuppressSavedState)
@@ -5120,6 +5118,10 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
     elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));
     if (fAborted)
         elmMachine.setAttribute("aborted", fAborted);
+    // Please keep the icon last so that one doesn't have to check if there
+    // is anything in the line after this very long attribute in the XML.
+    if (machineUserData.ovIcon.length())
+        elmMachine.setAttribute("icon", machineUserData.ovIcon);
     if (    m->sv >= SettingsVersion_v1_9
         &&  (   machineUserData.fTeleporterEnabled
             ||  machineUserData.uTeleporterPort
