@@ -2391,13 +2391,32 @@ STDMETHODIMP Medium::SetProperty(IN_BSTR aName, IN_BSTR aValue)
             return setStateError();
     }
 
-    settings::StringsMap::iterator it = m->mapProperties.find(Utf8Str(aName));
-    if (it == m->mapProperties.end())
-        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                        tr("Property '%ls' does not exist"),
-                        aName);
-
-    it->second = aValue;
+    Utf8Str strName(aName);
+    Utf8Str strValue(aValue);
+    settings::StringsMap::iterator it = m->mapProperties.find(strName);
+    if (!strName.startsWith("Special/"))
+    {
+        if (it == m->mapProperties.end())
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                            tr("Property '%s' does not exist"),
+                            strName.c_str());
+        it->second = strValue;
+    }
+    else
+    {
+        if (it == m->mapProperties.end())
+        {
+            if (!strValue.isEmpty())
+                m->mapProperties[strName] = strValue;
+        }
+        else
+        {
+            if (!strValue.isEmpty())
+                it->second = aValue;
+            else
+                m->mapProperties.erase(it);
+        }
+    }
 
     // save the settings
     mlock.release();
@@ -2460,9 +2479,11 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
          i < names.size();
          ++i)
     {
-        if (m->mapProperties.find(Utf8Str(names[i])) == m->mapProperties.end())
+        Utf8Str strName(names[i]);
+        if (   !strName.startsWith("Special/")
+            && m->mapProperties.find(strName) == m->mapProperties.end())
             return setError(VBOX_E_OBJECT_NOT_FOUND,
-                            tr("Property '%ls' does not exist"), names[i]);
+                            tr("Property '%s' does not exist"), strName.c_str());
     }
 
     /* second pass: assign */
@@ -2470,10 +2491,29 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
          i < names.size();
          ++i)
     {
-        settings::StringsMap::iterator it = m->mapProperties.find(Utf8Str(names[i]));
-        AssertReturn(it != m->mapProperties.end(), E_FAIL);
-
-        it->second = Utf8Str(values[i]);
+        Utf8Str strName(names[i]);
+        Utf8Str strValue(values[i]);
+        settings::StringsMap::iterator it = m->mapProperties.find(strName);
+        if (!strName.startsWith("Special/"))
+        {
+            AssertReturn(it != m->mapProperties.end(), E_FAIL);
+            it->second = strValue;
+        }
+        else
+        {
+            if (it == m->mapProperties.end())
+            {
+                if (!strValue.isEmpty())
+                    m->mapProperties[strName] = strValue;
+            }
+            else
+            {
+                if (!strValue.isEmpty())
+                    it->second = strValue;
+                else
+                    m->mapProperties.erase(it);
+            }
+        }
     }
 
     // save the settings
