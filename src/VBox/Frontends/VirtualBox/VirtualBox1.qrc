@@ -262,6 +262,8 @@
         <file alias="vm_save_state_disabled_16px.png">images/vm_save_state_disabled_16px.png</file>
         <file alias="video_capture_16px.png">images/video_capture_16px.png</file>
         <file alias="video_capture_disabled_16px.png">images/video_capture_disabled_16px.png</file>
+        <file alias="video_capture_on_16px.png">images/video_capture_on_16px.png</file>
+        <file alias="video_capture_on_disabled_16px.png">images/video_capture_on_disabled_16px.png</file>
         <file alias="video_capture_settings_16px.png">images/video_capture_settings_16px.png</file>
         <file alias="video_capture_write_16px.png">images/video_capture_write_16px.png</file>
         <file alias="drag_drop_16px.png">images/drag_drop_16px.png</file>

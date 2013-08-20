@@ -908,7 +908,8 @@ public:
 
     UIActionToggleVideoCapture(UIActionPool *pParent)
         : UIActionToggle(pParent,
-                         ":/video_capture_16px.png", ":/video_capture_disabled_16px.png")
+                         ":/video_capture_on_16px.png", ":/video_capture_16px.png",
+                         ":/video_capture_on_disabled_16px.png", ":/video_capture_disabled_16px.png")
     {
         retranslateUi();
     }
