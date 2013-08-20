@@ -77,7 +77,7 @@ bool UIWizardNewVD::createVirtualDisk()
     for (int i = 0; i < variants.size(); ++i)
     {
         qulonglong temp = uVariant;
-        temp &= 1<<i;
+        temp &= UINT64_C(1)<<i;
         variants[i] = (KMediumVariant)temp;
     }
 
