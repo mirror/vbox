@@ -878,8 +878,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Enable R&emote Display"));
-        setStatusTip(QApplication::translate("UIActionPool", "Enable remote desktop (RDP) connections to this machine"));
+        setName(QApplication::translate("UIActionPool", "R&emote Display"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle remote desktop (RDP) connections to this machine"));
     }
 };
 
@@ -923,8 +923,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Enable &Video Capture"));
-        setStatusTip(QApplication::translate("UIActionPool", "Enable video capture"));
+        setName(QApplication::translate("UIActionPool", "&Video Capture"));
+        setStatusTip(QApplication::translate("UIActionPool", "Toggle video capture"));
     }
 };
 
@@ -1077,7 +1077,7 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Enable &Logging...", "debug action"));
+        setName(QApplication::translate("UIActionPool", "&Logging...", "debug action"));
     }
 };
 #endif /* VBOX_WITH_DEBUGGER_GUI */
