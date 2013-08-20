@@ -959,6 +959,7 @@ cleanup_install()
 
     # Stop our other daemons, non-fatal
     stop_process "VBoxNetDHCP"
+    stop_process "VBoxNetLwipNAT"
 
    # Stop VBoxSVC quickly using SIGUSR1
     procname="VBoxSVC"

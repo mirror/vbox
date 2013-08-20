@@ -209,6 +209,7 @@ SOLARIS_STRIP_EXES = \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL,) \
 	$(if $(VBOX_WITH_NETADP),VBoxNetAdpCtl,) \
 	VBoxNetDHCP \
+	VBoxNetLwipNAT \
 	$(if $(VBOX_WITH_EXTPACK),VBoxExtPackHelperApp,) \
 	VBoxSVC \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
@@ -268,6 +269,7 @@ SOLARIS_STRIP_BINS = \
 ifdef VBOX_WITH_HARDENING
 SOLARIS_STRIP_BINS += \
 	VBoxNetDHCP.so \
+	VBoxNetLwipNAT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
 	$(if $(VBOX_WITH_QTGUI),VirtualBox.so,)
 endif
