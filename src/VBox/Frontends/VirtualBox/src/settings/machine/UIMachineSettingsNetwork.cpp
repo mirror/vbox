@@ -176,7 +176,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("no bridged network adapter is selected");
+                strWarning = tr("No bridged network adapter is currently selected.");
                 fValid = false;
             }
             break;
@@ -185,7 +185,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("no internal network name is specified");
+                strWarning = tr("No internal network name is currently specified.");
                 fValid = false;
             }
             break;
@@ -194,7 +194,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("no host-only network adapter is selected");
+                strWarning = tr("No host-only network adapter is currently selected.");
                 fValid = false;
             }
             break;
@@ -203,7 +203,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("no generic driver is selected");
+                strWarning = tr("No generic driver is currently selected.");
                 fValid = false;
             }
             break;
@@ -215,7 +215,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
     /* Validate MAC-address length: */
     if (fValid && m_pMACEditor->text().size() < 12)
     {
-        strWarning = tr("the MAC address must be 12 hexadecimal digits long.");
+        strWarning = tr("The MAC address must be 12 hexadecimal digits long.");
         fValid = false;
     }
     /* Make sure MAC-address is unicast: */
@@ -224,8 +224,7 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         QRegExp validator("^[0-9A-Fa-f][02468ACEace]");
         if (validator.indexIn(m_pMACEditor->text()) != 0)
         {
-            strWarning = tr("the second digit in the MAC address may not be odd "
-                            "as only unicast addresses are allowed.");
+            strWarning = tr("The second digit in the MAC address may not be odd as only unicast addresses are allowed.");
             fValid = false;
         }
     }

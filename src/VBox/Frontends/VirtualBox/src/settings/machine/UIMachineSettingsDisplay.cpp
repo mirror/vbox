@@ -307,9 +307,9 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
 
     if (m_pCheckbox3D->isChecked() && !vboxGlobal().is3DAvailable())
     {
-        strWarning = tr("you enabled 3D acceleration. However, 3D acceleration is not "
-                        "working on the current host setup so you will not be able to "
-                        "start the VM.");
+        strWarning = tr("The virtual machine is set to use hardware graphics acceleration. "
+                        "However the host system does not currently provide this, "
+                        "so you will not be able to start the machine.");
         return true;
     }
 
@@ -321,9 +321,8 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
         /* Basic video RAM amount test: */
         if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
         {
-            strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
-                            "the minimum amount required to switch the virtual machine to "
-                            "fullscreen or seamless mode.")
+            strWarning = tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
+                            "which is the minimum amount required to switch to fullscreen or seamless mode.")
                             .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
             return true;
         }
@@ -334,8 +333,8 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
             uNeedBytes += VBoxGlobal::required2DOffscreenVideoMemory();
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
             {
-                strWarning = tr("you have assigned less than <b>%1</b> of video memory which is "
-                                "the minimum amount required for HD Video to be played efficiently.")
+                strWarning = tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
+                                "which is the minimum amount required for High Definition Video to be played efficiently.")
                                 .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 return true;
             }
@@ -351,8 +350,9 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
             uNeedBytes = qMin(uNeedBytes, 256 * _1M);
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
             {
-                strWarning = tr("you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. "
-                                "For maximal performance set the guest VRAM to at least <b>%1</b>.")
+                strWarning = tr("The virtual machine is set to use hardware graphics acceleration "
+                                "and the operating system hint is set to Windows Vista or later. "
+                                "For best performance you should set the machine's video memory to at least b>%1</b>.")
                                 .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
                 return true;
             }
@@ -366,8 +366,8 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
     /* 2D video acceleration is available for Windows guests only: */
     if (m_pCheckbox2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
     {
-        strWarning = tr("you have 2D Video Acceleration enabled. As 2D Video Acceleration "
-                        "is supported for Windows guests only, this feature will be disabled.");
+        strWarning = tr("The virtual machine is set to use Video Stream Acceleration. "
+                        "As this feature only works with Windows guest systems it will be disabled.");
         return true;
     }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
@@ -375,14 +375,14 @@ bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
     /* Check VRDE server port: */
     if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
     {
-        strWarning = tr("server port value was not specified.");
+        strWarning = tr("The VRDE server port value is not currently specified.");
         return false;
     }
 
     /* Check VRDE server timeout: */
     if (m_pEditorRemoteDisplayTimeout->text().trimmed().isEmpty())
     {
-        strWarning = tr("authentication timeout value was not specified.");
+        strWarning = tr("The VRDE authentication timeout value is not currently specified.");
         return false;
     }
 
