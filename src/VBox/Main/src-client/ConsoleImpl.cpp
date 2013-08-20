@@ -4406,8 +4406,8 @@ HRESULT Console::onNATRedirectRuleChange(ULONG ulInstance, BOOL aNatRuleRemove,
 
             bool fUdp = aProto == NATProtocol_UDP;
             vrc = pNetNatCfg->pfnRedirectRuleCommand(pNetNatCfg, !!aNatRuleRemove, fUdp,
-                                                     Utf8Str(aHostIP).c_str(), aHostPort, Utf8Str(aGuestIP).c_str(),
-                                                     aGuestPort);
+                                                     Utf8Str(aHostIP).c_str(), (uint16_t)aHostPort, Utf8Str(aGuestIP).c_str(),
+                                                     (uint16_t)aGuestPort);
             if (RT_FAILURE(vrc))
                 rc = E_FAIL;
         } while (0); /* break loop */
@@ -5225,7 +5225,7 @@ HRESULT Console::onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
             {
                 int vrc = VINF_SUCCESS;
                 if (enmType == BandwidthGroupType_Disk)
-                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
+                    vrc = PDMR3AsyncCompletionBwMgrSetMaxForFile(ptrVM.rawUVM(), Utf8Str(strName).c_str(), (uint32_t)cMax);
 #ifdef VBOX_WITH_NETSHAPER
                 else if (enmType == BandwidthGroupType_Network)
                     vrc = PDMR3NsBwGroupSetLimit(ptrVM.rawUVM(), Utf8Str(strName).c_str(), cMax);
@@ -7453,6 +7453,7 @@ HRESULT Console::fetchSharedFolders(BOOL aGlobal)
     }
     catch (HRESULT rc2)
     {
+        rc = rc2;
         if (online)
             setVMRuntimeErrorCallbackF(0, "BrokenSharedFolder",
                                        N_("Broken shared folder!"));

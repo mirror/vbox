@@ -1405,7 +1405,6 @@ STDMETHODIMP MachineDebugger::GetRegisters(ULONG a_idCpu, ComSafeArrayOut(BSTR, 
 
                             for (uint32_t iReg = 0; iReg < cRegs; iReg++)
                             {
-                                char szHex[128];
                                 Bstr bstrValue;
 
                                 hrc = formatRegisterValue(&bstrValue, &paRegs[iReg].Val, paRegs[iReg].enmType);
