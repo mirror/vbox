@@ -202,7 +202,7 @@ int main(int argc, char **argv)
 
 
     RTTestSub(hTest, "Pending Preemption");
-RTThreadSleep(250); /** @todo fix GIP initialization? */
+    RTThreadSleep(250); /** @todo fix GIP initialization? */
     for (int i = 0; ; i++)
     {
         Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
@@ -249,17 +249,22 @@ RTThreadSleep(250); /** @todo fix GIP initialization? */
      * Test thread-context hooks.
      */
     RTTestSub(hTest, "RTThreadCtxHooks");
-    Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.szMsg[0] = '\0';
-    RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
-                                             TSTR0THREADPREEMPTION_CTXHOOKS, 0, &Req.Hdr), VINF_SUCCESS);
-    if (RT_FAILURE(rc))
-        return RTTestSummaryAndDestroy(hTest);
-    if (Req.szMsg[0] == '!')
-        RTTestIFailed("%s", &Req.szMsg[1]);
-    else if (Req.szMsg[0])
-        RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+    for (unsigned i = 0; i < 50; i++)
+    {
+        Req.Hdr.u32Magic = SUPR0SERVICEREQHDR_MAGIC;
+        Req.Hdr.cbReq = sizeof(Req);
+        Req.szMsg[0] = '\0';
+        RTTESTI_CHECK_RC(rc = SUPR3CallR0Service("tstR0ThreadPreemption", sizeof("tstR0ThreadPreemption") - 1,
+                                                 TSTR0THREADPREEMPTION_CTXHOOKS, 0, &Req.Hdr), VINF_SUCCESS);
+        if (RT_FAILURE(rc))
+            return RTTestSummaryAndDestroy(hTest);
+        if (Req.szMsg[0] == '!')
+            RTTestIFailed("%s", &Req.szMsg[1]);
+        else if (Req.szMsg[0])
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "%s", Req.szMsg);
+        if (!(i % 10))
+            RTTestIPrintf(RTTESTLVL_ALWAYS, "RTThreadCtxHooks passed %u iteration(s)\n", i);
+    }
 
     /*
      * Done.
