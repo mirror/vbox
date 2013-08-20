@@ -26,9 +26,9 @@ struct ARGDEF
 };
 
 #ifdef RT_OS_WINDOWS
-# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT.exe"
+# define NATSR_EXECUTABLE_NAME "VBoxNetNAT.exe"
 #else
-# define NATSR_EXECUTABLE_NAME "VBoxNetLwipNAT"
+# define NATSR_EXECUTABLE_NAME "VBoxNetNAT"
 #endif
 
 static const ARGDEF g_aArgDefs[] =

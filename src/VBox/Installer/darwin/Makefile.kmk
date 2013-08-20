@@ -444,7 +444,7 @@ ifdef VBOX_WITH_HARDENING
  VBOX_DI_VBAPP_DYLIBS += \
  	MacOS/VirtualBox.dylib \
  	MacOS/VBoxNetDHCP.dylib \
-	MacOS/VBoxNetLwipNAT.dylib \
+	MacOS/VBoxNetNAT.dylib \
  	MacOS/VBoxHeadless.dylib
 endif
 ifdef VBOX_WITH_HDDPARALLELS_INSTALL
@@ -496,7 +496,7 @@ VBOX_DI_VBAPP_PROGS = \
 	MacOS/VirtualBoxVM \
 	MacOS/VBoxNetAdpCtl \
 	MacOS/VBoxNetDHCP \
-	MacOS/VBoxNetLwipNAT \
+	MacOS/VBoxNetNAT \
 	MacOS/VBoxExtPackHelperApp \
 	MacOS/VBoxBalloonCtrl \
 	MacOS/VBoxAutostart
@@ -828,12 +828,12 @@ endif
 ifdef VBOX_WITH_HARDENING
  ifdef VBOX_WITH_COMBINED_PACKAGE
 	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetLwipNAT,\
+		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-x86 \
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-amd64)
  else
 	sudo chmod u+s \
-		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetLwipNAT,\
+		$(foreach bin,VBoxHeadless VirtualBox VirtualBoxVM VBoxNetAdpCtl VBoxNetDHCP VBoxNetNAT,\
 			$(VBOX_PATH_PACK_TMP)/VirtualBox.pkg.root/Applications/VirtualBox.app/Contents/MacOS/$(bin)-$(KBUILD_TARGET_ARCH))
  endif
 endif

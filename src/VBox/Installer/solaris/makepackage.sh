@@ -205,8 +205,8 @@ $VBOX_AWK 'NF == 6 \
         ||  $3 == "opt/VirtualBox/i386/VBoxNetAdpCtl" \
         ||  $3 == "opt/VirtualBox/amd64/VBoxNetDHCP" \
         ||  $3 == "opt/VirtualBox/i386/VBoxNetDHCP" \
-        ||  $3 == "opt/VirtualBox/amd64/VBoxNetLwipNAT" \
-        ||  $3 == "opt/VirtualBox/i386/VBoxNetLwipNAT" \
+        ||  $3 == "opt/VirtualBox/amd64/VBoxNetNAT" \
+        ||  $3 == "opt/VirtualBox/i386/VBoxNetNAT" \
         ) \
    { $4 = "4755" } { print }' prototype > prototype2
 mv -f prototype2 prototype

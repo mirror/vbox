@@ -150,7 +150,7 @@ VBOX_LNX_STRIP_BIN = \
 		VBoxBalloonCtrl \
 		VBoxManage \
 		VBoxNetDHCP $(if $(VBOX_WITH_HARDENING),VBoxNetDHCP.so,) \
-		$(if $(VBOX_WITH_LWIP_NAT),VBoxNetLwipNAT $(if $(VBOX_WITH_HARDENING),VBoxNetLwipNAT.so,),) \
+		$(if $(VBOX_WITH_LWIP_NAT),VBoxNetNAT $(if $(VBOX_WITH_HARDENING),VBoxNetNAT.so,),) \
 		VBoxNetAdpCtl \
 		$(if $(VBOX_WITH_DEVMAPPER),VBoxVolInfo,) \
 		VBoxSVC \

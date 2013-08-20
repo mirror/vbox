@@ -75,9 +75,9 @@ endif
 
 ifdef VBOX_WITH_HARDENING
  VBoxNetLwipNATHardened_SOURCES += VBoxNetNATHardened.cpp
- VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=\"VBoxNetLwipNAT\"
+ VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=\"VBoxNetNAT\"
  VBoxNetLwipNATHardened_TEMPLATE=VBOXR3HARDENEDEXE
- VBoxNetLwipNATHardened_NAME = VBoxNetLwipNAT
+ VBoxNetLwipNATHardened_NAME = VBoxNetNAT
 endif
 
 VBoxNetLwipNAT_TEMPLATE =

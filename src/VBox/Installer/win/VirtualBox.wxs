@@ -434,8 +434,8 @@
                         <!-- Misc tools -->
                         <File Id="file_VBoxNetDHCP.exe" Name="VBoxNetDHCP.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxNetDHCP.exe"/>
-			<File Id="file_VBoxNetLwipNAT.exe" Name="VBoxNetLwipNAT.exe"
-                              Source="$(env.PATH_OUT)\bin\VBoxNetLwipNAT.exe"/>
+			<File Id="file_VBoxNetNAT.exe" Name="VBoxNetNAT.exe"
+                              Source="$(env.PATH_OUT)\bin\VBoxNetNAT.exe"/>
 <?if $(env.VBOX_WITH_EXTPACK) = "yes" ?>
                         <File Id="file_VBoxExtPackHelperApp.exe" Name="VBoxExtPackHelperApp.exe"
                               Source="$(env.PATH_OUT)\bin\VBoxExtPackHelperApp.exe"/>

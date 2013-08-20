@@ -162,10 +162,10 @@ if test ! -z "$VBOXNETDHCP_PID" && test "$VBOXNETDHCP_PID" -ge 0; then
     abort_error
 fi
 
-# Check if VBoxNetLwipNAT is currently running
-VBOXNETLWIPNAT_PID=`ps -eo pid,fname | grep VBoxNetLwipNAT | grep -v grep | awk '{ print $1 }'`
-if test ! -z "$VBOXNETLWIPNAT_PID" && test "$VBOXNETLWIPNAT_PID" -ge 0; then
-    errorprint "VirtualBox's VBoxNetLwipNAT (pid $VBOXNETLWIPNAT_PID) still appears to be running."
+# Check if VBoxNetNAT is currently running
+VBOXNETNAT_PID=`ps -eo pid,fname | grep VBoxNetNAT | grep -v grep | awk '{ print $1 }'`
+if test ! -z "$VBOXNETNAT_PID" && test "$VBOXNETNAT_PID" -ge 0; then
+    errorprint "VirtualBox's VBoxNetNAT (pid $VBOXNETNAT_PID) still appears to be running."
     abort_error
 fi
 

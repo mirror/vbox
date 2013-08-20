@@ -246,7 +246,7 @@ if [ "$ACTION" = "install" ]; then
     # Terminate Server and VBoxNetDHCP if running
     terminate_proc VBoxSVC
     terminate_proc VBoxNetDHCP
-    terminate_proc VBoxNetLwipNAT
+    terminate_proc VBoxNetNAT
 
     # Remove previous installation
     if [ -n "$PREV_INSTALLATION" -a -z "$FORCE_UPGRADE" -a ! "$VERSION" = "$INSTALL_VER" ] &&
@@ -360,7 +360,7 @@ if [ "$ACTION" = "install" ]; then
         test -e $INSTALLATION_DIR/VBoxSDL        && chmod 4511 $INSTALLATION_DIR/VBoxSDL
         test -e $INSTALLATION_DIR/VBoxHeadless   && chmod 4511 $INSTALLATION_DIR/VBoxHeadless
         test -e $INSTALLATION_DIR/VBoxNetDHCP    && chmod 4511 $INSTALLATION_DIR/VBoxNetDHCP
-        test -e $INSTALLATION_DIR/VBoxNetLwipNAT && chmod 4511 $INSTALLATION_DIR/VBoxNetLwipNAT
+        test -e $INSTALLATION_DIR/VBoxNetNAT     && chmod 4511 $INSTALLATION_DIR/VBoxNetNAT
 
         ln -sf $INSTALLATION_DIR/VBoxVMM.so   $INSTALLATION_DIR/components/VBoxVMM.so
         ln -sf $INSTALLATION_DIR/VBoxRT.so    $INSTALLATION_DIR/components/VBoxRT.so
