@@ -392,9 +392,9 @@ VBOX_WITH_INIP = 1
 # Enable new (pre-1.5.0 release) version of LWIP.
 VBOX_WITH_NEW_LWIP = 1
 # Enables lwip as a core of NAT service
-VBOX_WITH_LWIP_NAT=1
+VBOX_WITH_LWIP_NAT = 1
 # Enables compilation of NAT service 
-VBOX_WITH_NAT_SERVICE=1
+VBOX_WITH_NAT_SERVICE = 1
 # Enable the E1000 feature.
 VBOX_WITH_E1000 = 1
 # Enable the Virtio feature.
