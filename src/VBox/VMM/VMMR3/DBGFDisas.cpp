@@ -565,7 +565,10 @@ dbgfR3DisasInstrExOnVCpu(PVM pVM, PVMCPU pVCpu, RTSEL Sel, PRTGCPTR pGCPtr, uint
     rc = dbgfR3DisasInstrFirst(pVM, pVCpu, &SelInfo, enmMode, GCPtr, fFlags, &State);
     if (RT_FAILURE(rc))
     {
-        RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc\n", rc);
+        if (State.Cpu.cbCachedInstr)
+            RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc; %.*Rhxs\n", rc, (size_t)State.Cpu.cbCachedInstr, State.Cpu.abInstr);
+        else
+            RTStrPrintf(pszOutput, cbOutput, "Disas -> %Rrc\n", rc);
         return rc;
     }
 

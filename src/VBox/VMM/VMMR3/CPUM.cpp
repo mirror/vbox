@@ -3099,9 +3099,9 @@ static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, cons
         pVCpu = &pVM->aCpus[0];
 
     char szInstruction[256];
-    int rc = DBGFR3DisasInstrCurrent(pVCpu, szInstruction, sizeof(szInstruction));
-    if (RT_SUCCESS(rc))
-        pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
+    szInstruction[0] = '\0';
+    DBGFR3DisasInstrCurrent(pVCpu, szInstruction, sizeof(szInstruction));
+    pHlp->pfnPrintf(pHlp, "\nCPUM: %s\n\n", szInstruction);
 }
 
 
