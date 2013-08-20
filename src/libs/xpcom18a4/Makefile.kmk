@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -756,6 +756,9 @@ VBox-xpcom-ds_SOURCES = \
 VBox-xpcom-io_TEMPLATE = XPCOM
 VBox-xpcom-io_INSTTYPE = none
 VBox-xpcom-io_DEFS = _IMPL_NS_COM MOZ_USER_DIR=\".mozilla\"
+if defined(VBOX_WITH_HARDENING) && defined(VBOX_PATH_APP_PRIVATE_ARCH)
+ VBox-xpcom-io_DEFS += MOZ_DEFAULT_VBOX_XPCOM_HOME=$(VBOX_PATH_APP_PRIVATE_ARCH)
+endif
 VBox-xpcom-io_INCS.darwin = \
 	xpcom/MoreFiles
 VBox-xpcom-io_SOURCES = \
@@ -918,6 +921,9 @@ VBoxXPCOMGlue_s_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
 # the code inside #ifdef XPCOM_GLUE compiles)
 VBoxXPCOMGlue_TEMPLATE = XPCOM
 VBoxXPCOMGlue_DEFS     = XPCOM_GLUE
+if defined(VBOX_WITH_HARDENING) && defined(VBOX_PATH_APP_PRIVATE_ARCH)
+ VBoxXPCOMGlue_DEFS    += MOZ_DEFAULT_VBOX_XPCOM_HOME=foo
+elsif
 VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
                          xpcom/glue/standalone/nsXPCOMGlue.cpp \
                          xpcom/glue/standalone/nsGREDirServiceProvider.cpp
