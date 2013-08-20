@@ -1390,17 +1390,6 @@
   /////////////////////////////////////////////////////////////////////////
   -->
   <!-- This is experimental interface to LWIP based NAT server -->
-  
-  <enum
-    name="NATNetworkServiceType"
-    uuid="d19dcba6-9bec-43d5-93f2-75d25a446aa4"
-    >
-    <const name="Gateway"           value="1"/>
-    <const name="Dhcp"              value="2"/>
-    <const name="Tftp"              value="3"/>
-    <const name="DnsProxy"          value="4"/>
-  </enum>
-
   <interface name="INATNetwork" extends="$unknown"
     uuid="448ea897-0ce9-4362-a07e-9ab7833afc33"
     wsmap="managed">
