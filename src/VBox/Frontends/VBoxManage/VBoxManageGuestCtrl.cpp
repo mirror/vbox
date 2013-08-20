@@ -3120,7 +3120,7 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                                     FileStatus_T fileStatus;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(Status)(&fileStatus));
 
-                                    RTPrintf("\n\t\tFile #%-03zu PID=%-6RU32 Status=[%s] Name=%ls",
+                                    RTPrintf("\n\t\tFile #%-03zu ID=%-6RU32 Status=[%s] Name=%ls",
                                              a, uID, ctrlFileStatusToText(fileStatus), strName.raw());
                                 }
                             }
