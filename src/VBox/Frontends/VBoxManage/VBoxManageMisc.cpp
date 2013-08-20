@@ -955,7 +955,7 @@ int handleSharedFolder(HandlerArg *a)
 
         if (fTransient)
         {
-            ComPtr <IConsole> console;
+            ComPtr<IConsole> console;
 
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);
@@ -1021,7 +1021,7 @@ int handleSharedFolder(HandlerArg *a)
 
         if (fTransient)
         {
-            ComPtr <IConsole> console;
+            ComPtr<IConsole> console;
 
             /* open an existing session for the VM */
             CHECK_ERROR_RET(machine, LockMachine(a->session, LockType_Shared), 1);

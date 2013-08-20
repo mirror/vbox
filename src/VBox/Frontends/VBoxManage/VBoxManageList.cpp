@@ -357,7 +357,7 @@ static HRESULT listUsbHost(const ComPtr<IVirtualBox> &pVirtualBox)
     {
         for (size_t i = 0; i < CollPtr.size(); ++i)
         {
-            ComPtr <IHostUSBDevice> dev = CollPtr[i];
+            ComPtr<IHostUSBDevice> dev = CollPtr[i];
 
             /* Query info. */
             Bstr id;

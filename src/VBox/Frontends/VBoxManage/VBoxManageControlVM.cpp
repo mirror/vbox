@@ -64,7 +64,7 @@ static unsigned parseNum(const char *psz, unsigned cMaxNum, const char *name)
 
 unsigned int getMaxNics(IVirtualBox* vbox, IMachine* mach)
 {
-    ComPtr <ISystemProperties> info;
+    ComPtr<ISystemProperties> info;
     ChipsetType_T aChipset;
     ULONG NetworkAdapterCount = 0;
     HRESULT rc;
@@ -90,7 +90,7 @@ int handleControlVM(HandlerArg *a)
         return errorSyntax(USAGE_CONTROLVM, "Not enough parameters");
 
     /* try to find the given machine */
-    ComPtr <IMachine> machine;
+    ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(a->argv[0]).raw(),
                                            machine.asOutParam()));
     if (FAILED(rc))
@@ -931,11 +931,11 @@ int handleControlVM(HandlerArg *a)
                 // assume address
                 if (attach)
                 {
-                    ComPtr <IHost> host;
+                    ComPtr<IHost> host;
                     CHECK_ERROR_BREAK(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
                     SafeIfaceArray <IHostUSBDevice> coll;
                     CHECK_ERROR_BREAK(host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
-                    ComPtr <IHostUSBDevice> dev;
+                    ComPtr<IHostUSBDevice> dev;
                     CHECK_ERROR_BREAK(host, FindUSBDeviceByAddress(Bstr(a->argv[2]).raw(),
                                                                    dev.asOutParam()));
                     CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
@@ -944,7 +944,7 @@ int handleControlVM(HandlerArg *a)
                 {
                     SafeIfaceArray <IUSBDevice> coll;
                     CHECK_ERROR_BREAK(console, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(coll)));
-                    ComPtr <IUSBDevice> dev;
+                    ComPtr<IUSBDevice> dev;
                     CHECK_ERROR_BREAK(console, FindUSBDeviceByAddress(Bstr(a->argv[2]).raw(),
                                                                       dev.asOutParam()));
                     CHECK_ERROR_BREAK(dev, COMGETTER(Id)(usbId.asOutParam()));
@@ -961,7 +961,7 @@ int handleControlVM(HandlerArg *a)
                 CHECK_ERROR_BREAK(console, AttachUSBDevice(usbId.raw()));
             else
             {
-                ComPtr <IUSBDevice> dev;
+                ComPtr<IUSBDevice> dev;
                 CHECK_ERROR_BREAK(console, DetachUSBDevice(usbId.raw(),
                                                            dev.asOutParam()));
             }
@@ -1211,7 +1211,7 @@ int handleControlVM(HandlerArg *a)
                 break;
             }
             /* guest is running; update IGuest */
-            ComPtr <IGuest> pGuest;
+            ComPtr<IGuest> pGuest;
             rc = console->COMGETTER(Guest)(pGuest.asOutParam());
             if (SUCCEEDED(rc))
             {

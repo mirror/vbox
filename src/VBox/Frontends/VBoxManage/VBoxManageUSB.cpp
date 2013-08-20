@@ -398,8 +398,8 @@ int handleUSBFilter(HandlerArg *a)
 
     USBFilterCmd::USBFilter &f = cmd.mFilter;
 
-    ComPtr <IHost> host;
-    ComPtr <IUSBDeviceFilters> flts;
+    ComPtr<IHost> host;
+    ComPtr<IUSBDeviceFilters> flts;
     if (cmd.mGlobal)
         CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
     else
@@ -418,7 +418,7 @@ int handleUSBFilter(HandlerArg *a)
         {
             if (cmd.mGlobal)
             {
-                ComPtr <IHostUSBDeviceFilter> flt;
+                ComPtr<IHostUSBDeviceFilter> flt;
                 CHECK_ERROR_BREAK(host, CreateUSBDeviceFilter(f.mName.raw(),
                                                               flt.asOutParam()));
 
@@ -444,7 +444,7 @@ int handleUSBFilter(HandlerArg *a)
             }
             else
             {
-                ComPtr <IUSBDeviceFilter> flt;
+                ComPtr<IUSBDeviceFilter> flt;
                 CHECK_ERROR_BREAK(flts, CreateDeviceFilter(f.mName.raw(),
                                                           flt.asOutParam()));
 
@@ -476,7 +476,7 @@ int handleUSBFilter(HandlerArg *a)
                 SafeIfaceArray <IHostUSBDeviceFilter> coll;
                 CHECK_ERROR_BREAK(host, COMGETTER(USBDeviceFilters)(ComSafeArrayAsOutParam(coll)));
 
-                ComPtr <IHostUSBDeviceFilter> flt = coll[cmd.mIndex];
+                ComPtr<IHostUSBDeviceFilter> flt = coll[cmd.mIndex];
 
                 if (!f.mName.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Name)(f.mName.raw()));
@@ -503,7 +503,7 @@ int handleUSBFilter(HandlerArg *a)
                 SafeIfaceArray <IUSBDeviceFilter> coll;
                 CHECK_ERROR_BREAK(flts, COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(coll)));
 
-                ComPtr <IUSBDeviceFilter> flt = coll[cmd.mIndex];
+                ComPtr<IUSBDeviceFilter> flt = coll[cmd.mIndex];
 
                 if (!f.mName.isEmpty())
                     CHECK_ERROR_BREAK(flt, COMSETTER(Name)(f.mName.raw()));
@@ -530,12 +530,12 @@ int handleUSBFilter(HandlerArg *a)
         {
             if (cmd.mGlobal)
             {
-                ComPtr <IHostUSBDeviceFilter> flt;
+                ComPtr<IHostUSBDeviceFilter> flt;
                 CHECK_ERROR_BREAK(host, RemoveUSBDeviceFilter(cmd.mIndex));
             }
             else
             {
-                ComPtr <IUSBDeviceFilter> flt;
+                ComPtr<IUSBDeviceFilter> flt;
                 CHECK_ERROR_BREAK(flts, RemoveDeviceFilter(cmd.mIndex, flt.asOutParam()));
             }
             break;
