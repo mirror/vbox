@@ -1114,7 +1114,8 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         /*
          * AMD specific MSRs:
          */
-        case MSR_K8_SYSCFG: /** @todo can be written, but we ignore that for now. */
+        case MSR_K8_SYSCFG:
+        case MSR_K8_INT_PENDING:
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
@@ -1370,7 +1371,8 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
         /*
          * AMD specific MSRs:
          */
-        case MSR_K8_SYSCFG: /** @todo can be written, but we ignore that for now. */
+        case MSR_K8_SYSCFG:      /** @todo can be written, but we ignore that for now. */
+        case MSR_K8_INT_PENDING: /** @todo can be written, but we ignore that for now. */
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
                 Log(("MSR %#x is AMD, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
