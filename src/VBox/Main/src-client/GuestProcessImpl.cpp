@@ -991,7 +991,6 @@ int GuestProcess::setProcessStatus(ProcessStatus_T procStatus, int procRc)
 
         /* Copy over necessary data before releasing lock again. */
         uint32_t uPID =  mData.mPID;
-        ProcessStatus_T procStatus = mData.mStatus;
         /** @todo Also handle mSession? */
 
         alock.release(); /* Release lock before firing off event. */

@@ -944,9 +944,6 @@ int GuestFile::setFileStatus(FileStatus_T fileStatus, int fileRc)
             ComAssertComRC(hr);
         }
 
-        /* Copy over necessary data before releasing lock again. */
-        FileStatus_T fileStatus = mData.mStatus;
-
         alock.release(); /* Release lock before firing off event. */
 
         fireGuestFileStateChangedEvent(mEventSource, mSession,
