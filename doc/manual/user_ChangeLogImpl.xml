@@ -103,6 +103,11 @@
        </listitem>
 
        <listitem>
+         <para>Windows hosts: consider symlinks when retrieving volume information
+           (bug #11962)</para>
+       </listitem>
+
+       <listitem>
          <para>Windows Additions: fixed misbehavior with guest display
            power management (WDDM driver only; bug #11170)</para>
        </listitem>
