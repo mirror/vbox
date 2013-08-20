@@ -406,46 +406,56 @@
   </sect1>
 
   <sect1 id="network_nat_service">
-    <title>Network Address Translation (NAT) Service (experimental)</title>
+    <title>Network Address Translation Service (experimental)</title>
     
-    <para>NAT service provides router functionality similar to home network 
-    configuration, hiding each member from direct outer access, but let establish 
-    communication to from internal network to LAN and WAN resources over TCP and UDP
-    (IPv4 and IPv6).</para>
+    <para>The Network Address Translation (NAT) service works in a similar way
+    to a home router, grouping the systems using it into a network and
+    preventing systems outside of this network from directly accessing systems
+    inside it, but letting systems inside communicate with each other and with
+    systems outside using TCP and UDP over IPv4 and IPv6.</para>
 
-    <para>NAT service attached to internal network and guests supposed to get natted 
-    connection should be attached to the same internal network. Name of internal network
-    selected during creation (it doesn't metter whether network exists or not).
+    <para>A NAT service is attached to an internal network and virtual machines
+    which are to make use of it should be attached to that internal network.
+    The name of internal network is chosen when the NAT service is created and
+    the internal network will be created if it does not already exist.  An
+    example command to create a NAT network is:
     </para>
     <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e
-    </screen>
-    "-t nat-int-network" points to name of internal network, that should be pointed while VM
-    network attachment configuration, -n "192.168.15.0/24" - sets network id and mask, of NAT
-    service interface, by default in static configuration gateway should assigned to 192.168.15.1 
-    (networkid +1, note after release it could be changed). It's possible to attach DHCP server,
-    to the internal network, it could be done while creation:
-    <screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e -h on</screen> or
-    in modification:
-    <screen>VBoxManage natnetwork modify -t nat-int-network -h on</screen> -h on|off, enable or 
-    disable DHCP server.
-    </para>
-    <para>Note: current limitation of DHCP server it doesn't provide nameserver information, so 
-    guest should be explicitly configured to use right DNS servers.</para>
-    <para>To start NAT service, following command should be executed:<screen>
-    VBoxManage natnetwork start -t nat-int-network</screen> note if network configured with DHCP server
-    it will start together with NAT network service.</para>
-    <para><screen>VBoxManage natnetwork start -t nat-int-network</screen> Stops, NAT network service, 
-    together with DHCP server, if one's enabled.
-    </para>
-    <para>To delete NAT network service:<screen>VBoxManage natnetwork remove -t nat-int-network</screen>
-    Note: this command doesn't remove DHCP server, if one is enabled on the network.</para>
-    <para>Port-forwarding, is supported (controlled via -p for IPv4 and -P for IPv6):<screen>
-VBoxManage natnetwork modify -t nat-int-network -p "ssh:tcp:[]:10022:[192.168.15.15]:22"
-  </screen> this adds port-forwarding rule from host's TCP 10022 port to guest with IP 
-  192.168.15.15 on port 22, and to delete rule <screen>
-VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
-    <para>To get the list of registered natnetworks:
-    <screen>VBoxManage list natnetworks</screen></para>
+    </screen></para>
+    <para>
+    Here, "nat-int-network" is the name of the internal network to be used and
+    "192.168.15.0/24" is the network address and mask of the NAT service
+    interface.  By default in this static configuration the gateway will be
+    assigned the address 192.168.15.1 (the address following the interface
+    address), though this is subject to change.  To attach a DHCP server to the
+    internal network, we modify the example as follows:</para>
+    <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e -h on</screen></para>
+    <para> or to add a DHCP server to the network after creation:</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -h on</screen></para>
+    <para>To disable it again, use:</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -h off</screen></para>
+    <para>A current limitation of the DHCP server is that it does not provide
+    nameserver information, so systems using it should be explicitly configured
+    to use the right DNS servers.</para>
+    <para>To start the NAT service, use the following command:</para>
+    <para><screen>VBoxManage natnetwork start -t nat-int-network</screen></para>
+    <para>If the network has a DHCP server attached then it will start together
+    with the NAT network service.</para>
+    <para><screen>VBoxManage natnetwork stop -t nat-int-network</screen> stops
+    the NAT network service, together with DHCP server if any.</para>
+    <para>To delete the NAT network service use:</para>
+    <para><screen>VBoxManage natnetwork remove -t nat-int-network</screen></para>
+    <para>This command does not remove the DHCP server if one is enabled on the
+    internal network.</para>
+    <para>Port-forwarding is supported (using the "-p" switch for IPv4 and "-P"
+    for IPv6):</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -p "ssh:tcp:[]:10022:[192.168.15.15]:22"</screen></para>
+    <para>This adds a port-forwarding rule from the host's TCP 10022 port to
+    the port 22 on the guest with IP address 192.168.15.15.  To delete the rule,
+    use:</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
+    <para>To see the list of registered NAT networks, use:</para>
+    <para><screen>VBoxManage list natnetworks</screen></para>
   </sect1>
 
   <sect1 id="network_bridged">
