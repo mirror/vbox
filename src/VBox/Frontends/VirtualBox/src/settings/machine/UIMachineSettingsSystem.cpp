@@ -330,8 +330,9 @@ bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
     if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxApic->isChecked())
     {
         strWarning = tr(
-            "An IO-APIC is required to support more than one virtual CPU assigned to a virtual machine. "
-            "This will be done automatically if you confirm your changes.");
+            "The IO APIC feature is not currently enabled in the Motherboard section of the System page. "
+            "This is needed in order to support more than one virtual processor. "
+            "It will be done automatically if you confirm your changes.");
         return true;
     }
 
@@ -339,8 +340,9 @@ bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
     if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxVirtualization->isChecked())
     {
         strWarning = tr(
-            "A hardware virtualization is required to support more than one virtual CPU assigned to a virtual machine. "
-            "This will be done automatically if you confirm your changes.");
+            "Hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+            "This is needed in order to support more than one virtual processor. "
+            "It will be done automatically if you confirm your changes.");
         return true;
     }
 
@@ -356,8 +358,9 @@ bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
     if ((KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9 && !m_pCheckBoxApic->isChecked())
     {
         strWarning = tr(
-            "An IO-APIC is required to support chip set of type ICH9 assigned to a virtual machine. "
-            "This will be done automatically if you confirm your changes.");
+            "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
+            "This is needed in order to support a chip set of type ICH9. "
+            "It will be done automatically if you confirm your changes.");
         return true;
     }
 
@@ -365,8 +368,9 @@ bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
     if (isHIDEnabled() && !m_fOHCIEnabled)
     {
         strWarning = tr(
-            "A USB emulation is required to support USB mouse/tablet device attached to a virtual machine. "
-            "This will be done automatically if you confirm your changes.");
+            "USB controller emulation is not currently enabled on the USB page. "
+            "This is needed to support an emulated USB input device. "
+            "It will be done automatically if you confirm your changes.");
         return true;
     }
 
