@@ -109,6 +109,9 @@ public:
     STDMETHOD(COMGETTER(LocalMappings))(ComSafeArrayOut(BSTR, aLocalMappings));
     STDMETHOD(AddLocalMapping)(IN_BSTR aHostId, LONG aOffset);
 
+    STDMETHOD(COMGETTER(LoopbackIp6))(LONG *aLoopbackIp6);
+    STDMETHOD(COMSETTER(LoopbackIp6))(LONG aLoopbackIp6);
+
     STDMETHOD(COMGETTER(PortForwardRules4))(ComSafeArrayOut(BSTR, aPortForwardRules4));
     STDMETHOD(COMGETTER(PortForwardRules6))(ComSafeArrayOut(BSTR, aPortForwardRules6));
 

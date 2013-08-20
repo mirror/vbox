@@ -485,6 +485,16 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
     return E_NOTIMPL;
 }
 
+STDMETHODIMP NATNetwork::COMGETTER(LoopbackIp6)(LONG *aLoopbackIp6)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
+{
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPortForwardRules4))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules4);
