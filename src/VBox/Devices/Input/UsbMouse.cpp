@@ -339,7 +339,7 @@ static const VUSBDESCENDPOINTEX g_aUsbHidTEndpointDescs[] =
             /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
             /* .bEndpointAddress = */   0x81 /* ep=1, in */,
             /* .bmAttributes = */       3 /* interrupt */,
-            /* .wMaxPacketSize = */     6,
+            /* .wMaxPacketSize = */     8,
             /* .bInterval = */          10,
         },
         /* .pvMore = */     NULL,
