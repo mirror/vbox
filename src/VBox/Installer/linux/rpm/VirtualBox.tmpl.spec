@@ -79,6 +79,7 @@ mv *.gc $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv *.r0 $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv *.rel $RPM_BUILD_ROOT/usr/lib/virtualbox || true
 mv VBoxNetDHCP $RPM_BUILD_ROOT/usr/lib/virtualbox
+mv VBoxNetLwipNAT $RPM_BUILD_ROOT/usr/lib/virtualbox
 mv VBoxNetAdpCtl $RPM_BUILD_ROOT/usr/lib/virtualbox
 if [ -f VBoxVolInfo ]; then
   mv VBoxVolInfo $RPM_BUILD_ROOT/usr/lib/virtualbox
@@ -120,7 +121,7 @@ if %WEBSVC%; then
   for i in vboxwebsrv webtest; do
     mv $i $RPM_BUILD_ROOT/usr/lib/virtualbox; done
 fi
-for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetAdpCtl; do
+for i in VBoxSDL VirtualBox VBoxHeadless VBoxNetDHCP VBoxNetLwipNAT VBoxNetAdpCtl; do
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/$i; done
 if [ -f $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo ]; then
   chmod 4511 $RPM_BUILD_ROOT/usr/lib/virtualbox/VBoxVolInfo
