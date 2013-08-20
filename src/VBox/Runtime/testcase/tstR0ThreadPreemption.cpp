@@ -102,6 +102,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
                             "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_PREEMPTING]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
                             pData->hSourceThread, hCurrentThread);
+                break;
             }
 
             RTCPUID uCurrentCpuId = RTMpCpuId();
@@ -129,6 +130,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
             {
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
                             "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Called before preempting callback was invoked.");
+                break;
             }
 
             RTNATIVETHREAD hCurrentThread = RTThreadNativeSelf();
@@ -137,6 +139,7 @@ static DECLCALLBACK(void) tstR0ThreadCtxHook(RTTHREADCTXEVENT enmEvent, void *pv
                 RTStrPrintf(pData->achResult, sizeof(pData->achResult),
                             "!tstR0ThreadCtxHook[RTTHREADCTXEVENT_RESUMED]: Thread switched! Source=%RTnthrd Current=%RTnthrd.",
                             pData->hSourceThread, hCurrentThread);
+                break;
             }
 
             ASMAtomicWriteBool(&pData->fResumedSuccess, true);
