@@ -1110,6 +1110,20 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             }
             break;
 
+
+        /*
+         * AMD specific MSRs:
+         */
+        case MSR_K8_SYSCFG: /** @todo can be written, but we ignore that for now. */
+            *puValue = 0;
+            if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
+            {
+                Log(("MSR %#x is AMD, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+            /* ignored */
+            break;
+
         default:
             /*
              * Hand the X2APIC range to PDM and the APIC.
@@ -1333,6 +1347,7 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             pVCpu->cpum.s.GuestMsrs.msr.TscAux  = uValue;
             break;
 
+
         /*
          * Intel specifics MSRs:
          */
@@ -1351,6 +1366,19 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             }
             /* ignored */
             break;
+
+        /*
+         * AMD specific MSRs:
+         */
+        case MSR_K8_SYSCFG: /** @todo can be written, but we ignore that for now. */
+            if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
+            {
+                Log(("MSR %#x is AMD, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
+                return VERR_CPUM_RAISE_GP_0;
+            }
+            /* ignored */
+            break;
+
 
         default:
             /*
