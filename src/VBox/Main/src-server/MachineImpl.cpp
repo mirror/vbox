@@ -7592,7 +7592,7 @@ STDMETHODIMP Machine::COMSETTER(Icon)(ComSafeArrayIn(BYTE, aIcon))
             setModified(IsModified_MachineData);
             mUserData.backup();
             com::SafeArray<BYTE> icon(ComSafeArrayInArg(aIcon));
-            mUserData->mIcon.clear();
+            mUserData->mIcon.resize(icon.size());
             memcpy(&mUserData->mIcon[0], icon.raw(), mUserData->mIcon.size());
          }
     }
@@ -8930,10 +8930,10 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
                                              const Guid *puuidRegistry)
 {
     // copy name, description, OS type, teleporter, UTC etc.
-    #define DECODE_STR_MAX _1M
     mUserData->s = config.machineUserData;
 
     // Decode the Icon overide data from config userdata and set onto Machine.
+    #define DECODE_STR_MAX _1M
     const char* pszStr = config.machineUserData.ovIcon.c_str();
     ssize_t cbOut = RTBase64DecodedSize(pszStr, NULL);
     if (cbOut > DECODE_STR_MAX)
@@ -8948,7 +8948,8 @@ HRESULT Machine::loadMachineDataFromSettings(const settings::MachineConfigFile &
                         tr("Failure to Decode Icon Data. '%s' (%d)"),
                         pszStr,
                         rc);
-    COMSETTER(Icon)(ComSafeArrayAsInParam(iconByte));
+    mUserData->mIcon.resize(iconByte.size());
+    memcpy(&mUserData->mIcon[0], iconByte.raw(), mUserData->mIcon.size());
 
     // look up the object by Id to check it is valid
     ComPtr<IGuestOSType> guestOSType;
