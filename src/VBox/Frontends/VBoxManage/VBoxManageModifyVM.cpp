@@ -534,8 +534,8 @@ int handleModifyVM(HandlerArg *a)
                     rc = E_FAIL;
                     break;
                 }
-                SafeArray<BYTE> icon(cbSize);
-                rc = RTFileRead(iconFile, icon.raw(), cbSize, NULL);
+                SafeArray<BYTE> icon((size_t)cbSize);
+                rc = RTFileRead(iconFile, icon.raw(), (size_t)cbSize, NULL);
                 if (RT_FAILURE(vrc))
                 {
                     RTMsgError("Cannot read contents of file \"%s\": %Rrc", ValueUnion.psz, vrc);
