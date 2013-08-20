@@ -1390,8 +1390,19 @@
   /////////////////////////////////////////////////////////////////////////
   -->
   <!-- This is experimental interface to LWIP based NAT server -->
+  
+  <enum
+    name="NATNetworkServiceType"
+    uuid="d19dcba6-9bec-43d5-93f2-75d25a446aa4"
+    >
+    <const name="Gateway"           value="1"/>
+    <const name="Dhcp"              value="2"/>
+    <const name="Tftp"              value="3"/>
+    <const name="DnsProxy"          value="4"/>
+  </enum>
+
   <interface name="INATNetwork" extends="$unknown"
-    uuid="03DFD6F7-1B78-48A3-8345-C785281E9523"
+    uuid="d09da50a-ab33-4f83-a879-00f5b74e8dfc"
     wsmap="managed">
     <attribute name="networkName" type="wstring">
       <desc>
@@ -1437,6 +1448,29 @@
       "name:protocolid:[host ip]:host port:[guest ip]:guest port".
       </desc>
     </attribute>
+    <attribute name="localMappings" type="wstring" readonly="yes" safearray="yes">
+      <desc>Array of mappings (hostid,offset) where hostid is network id 127/8, e.g.
+      ("0.1.1;4") maps 127.0.1.1 to networkid + 4. 
+      </desc>
+    </attribute>
+    
+    <method name="addLocalMapping">
+      <desc>
+      </desc>
+      <param name="hostid" type="wstring" dir="in"/>
+      <param name="offset" type="long" dir="in"/>
+    </method>
+    
+    <method name="getOffsetForService">
+      <param name="service" type="NATNetworkServiceType" dir="in"/>
+      <param name="offset" type="long" dir="return"/>
+    </method>
+
+    <method name="setOffsetForService">
+      <param name="service" type="NATNetworkServiceType" dir="in"/>
+      <param name="offset" type="long" dir="in"/>
+    </method>
+
     <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
       <desc>Array of NAT port-forwarding rules in string representation, in the
       following format: "name:protocolid:[host ip]:host port:[guest ip]:guest port".

@@ -475,6 +475,26 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
     return rc;
 }
 
+STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMappings))
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP NATNetwork::GetOffsetForService(NATNetworkServiceType_T service, LONG *aOffset)
+{
+    return E_NOTIMPL;
+}
+
+STDMETHODIMP NATNetwork::SetOffsetForService(NATNetworkServiceType_T service, LONG aOffset)
+{
+    return E_NOTIMPL;
+}
+
 STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPortForwardRules4))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules4);
