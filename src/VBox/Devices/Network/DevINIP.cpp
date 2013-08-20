@@ -127,7 +127,7 @@ typedef struct DEVINTNETIP
      * In callback we're getting status of interface adding operation (TCPIP thread),
      * but we need inform constructing routine whether it was success or not(EMT thread).
      */ 
-    bool rcInitialization;
+    int rcInitialization;
 } DEVINTNETIP, *PDEVINTNETIP;
 
 
@@ -451,8 +451,8 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface, c
 
         ethhdr = (const struct eth_hdr *)p->payload;
         struct netif *iface = &g_pDevINIPData->IntNetIF;
-        err_t lrc;
 #ifndef VBOX_WITH_NEW_LWIP
+        err_t lrc;
         switch (htons(ethhdr->type))
         {
             case ETHTYPE_IP:    /* IP packet */
@@ -474,7 +474,6 @@ static DECLCALLBACK(int) devINIPNetworkDown_Input(PPDMINETWORKDOWN pInterface, c
 #endif
     }
 
-out:
     LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
