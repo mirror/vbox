@@ -1391,7 +1391,7 @@
   -->
   <!-- This is experimental interface to LWIP based NAT server -->
   <interface name="INATNetwork" extends="$unknown"
-    uuid="448ea897-0ce9-4362-a07e-9ab7833afc33"
+    uuid="a63c75da-4c99-4e9d-8351-eb73651c18cc"
     wsmap="managed">
     <attribute name="networkName" type="wstring">
       <desc>
@@ -1449,6 +1449,11 @@
       <param name="hostid" type="wstring" dir="in"/>
       <param name="offset" type="long" dir="in"/>
     </method>
+
+    <attribute name="loopbackIp6" type="long">
+      <desc>Offset in ipv6 network from network id for address mapped into loopback6 interface of the host.
+      </desc>
+    </attribute>
     
     <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
       <desc>Array of NAT port-forwarding rules in string representation, in the
