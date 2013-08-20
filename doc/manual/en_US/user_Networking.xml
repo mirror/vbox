@@ -414,14 +414,13 @@
     inside it, but letting systems inside communicate with each other and with
     systems outside using TCP and UDP over IPv4 and IPv6.</para>
 
-    <para>A NAT service is attached to an internal network and virtual machines
+    <para>A NAT service is attached to an internal network. Virtual machines
     which are to make use of it should be attached to that internal network.
     The name of internal network is chosen when the NAT service is created and
     the internal network will be created if it does not already exist.  An
     example command to create a NAT network is:
     </para>
-    <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e
-    </screen></para>
+    <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e</screen></para>
     <para>
     Here, "nat-int-network" is the name of the internal network to be used and
     "192.168.15.0/24" is the network address and mask of the NAT service
