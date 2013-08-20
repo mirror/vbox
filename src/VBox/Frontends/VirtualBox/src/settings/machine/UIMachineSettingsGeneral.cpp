@@ -228,16 +228,16 @@ bool UIMachineSettingsGeneral::validate(QString &strWarning, QString&)
     /* VM name validation: */
     if (m_pNameAndSystemEditor->name().trimmed().isEmpty())
     {
-        strWarning = tr("you have not specified name for this VM.");
+        strWarning = tr("No name specified for the virtual machine.");
         return false;
     }
 
     /* OS type & VT-x/AMD-v correlation: */
     if (is64BitOSTypeSelected() && !m_fHWVirtExEnabled)
     {
-        strWarning = tr("you have selected a 64-bit guest OS type for this VM. As such guests "
-                        "require hardware virtualization (VT-x/AMD-V), this feature will be enabled "
-                        "automatically.");
+        strWarning = tr("The virtual machine operating system hint is set to a 64-bit type. "
+                        "64-bit guest systems require hardware virtualization, "
+                        "so this will be enabled automatically if you confirm the changes.");
         return true;
     }
 

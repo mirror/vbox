@@ -2118,15 +2118,14 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
         /* Check for name emptiness: */
         if (ctrName.isEmpty())
         {
-            strWarning = tr("no name specified for controller at position <b>%1</b>.").arg(i + 1);
+            strWarning = tr("No name is currently specified for the controller at position <b>%1</b>.").arg(i + 1);
             return false;
         }
         /* Check for name coincidence: */
         if (names.values().contains(ctrName))
         {
-            strWarning = tr("controller at position <b>%1</b> uses the name that is "
-                          "already used by controller at position <b>%2</b>.")
-                          .arg(i + 1).arg(names.key(ctrName) + 1);
+            strWarning = tr("The controller at position <b>%1</b> has the same name as the controller at position <b>%2</b>.")
+                            .arg(i + 1).arg(names.key(ctrName) + 1);
             return false;
         }
         else names.insert(i, ctrName);
@@ -2141,14 +2140,14 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
             /* Check for emptiness */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
-                strWarning = tr ("no hard disk is selected for <i>%1</i>.").arg (value);
+                strWarning = tr("No hard disk is selected for <i>%1</i>.").arg (value);
                 return false;
             }
             /* Check for coincidence */
             if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
             {
-                strWarning = tr ("<i>%1</i> uses a medium that is already attached to <i>%2</i>.")
-                              .arg (value).arg (config [key]);
+                strWarning = tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
+                                .arg (value).arg (config [key]);
                 return false;
             }
             else config.insert (key, value);
@@ -2173,9 +2172,9 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
     }
     if (!excessiveList.isEmpty())
     {
-        strWarning = tr("you are currently using more storage controllers than a %1 chipset supports. "
+        strWarning = tr("The machine currently has more storage controllers assigned than a %1 chipset supports. "
                         "Please change the chipset type on the System settings page or reduce the number "
-                        "of the following storage controllers on the Storage settings page: %2.")
+                        "of the following storage controllers on the Storage settings page: %2")
                         .arg(gpConverter->toString(mStorageModel->chipsetType()))
                         .arg(excessiveList.join(", "));
         return false;

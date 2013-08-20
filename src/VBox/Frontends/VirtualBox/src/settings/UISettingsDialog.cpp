@@ -308,7 +308,7 @@ void UISettingsDialog::revalidate(UIPageValidator *pValidator)
         pValidator->setLastMessage(QString());
     else
     {
-        pValidator->setLastMessage(tr("On the <b>%1</b> page, %2").arg(strPageTitle, strMessageText));
+        pValidator->setLastMessage(tr("<b>%1</b> page:<br><br>%2").arg(strPageTitle, strMessageText));
         LogRel(("Settings Dialog:  Page validation FAILED: {%s}\n",
                 pValidator->lastMessage().toUtf8().constData()));
     }

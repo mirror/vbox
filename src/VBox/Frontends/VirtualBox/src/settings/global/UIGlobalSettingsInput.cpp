@@ -166,13 +166,13 @@ bool UIGlobalSettingsInput::validate(QString &strWarning, QString &strTitle)
     if (!m_pSelectorModel->isAllShortcutsUnique())
     {
         strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
-        strWarning = tr("there are duplicated shortcuts.");
+        strWarning = tr("Some items have the same shortcuts assigned.");
         return false;
     }
     else if (!m_pMachineModel->isAllShortcutsUnique())
     {
         strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
-        strWarning = tr("there are duplicated shortcuts.");
+        strWarning = tr("Some items have the same shortcuts assigned.");
         return false;
     }
 
