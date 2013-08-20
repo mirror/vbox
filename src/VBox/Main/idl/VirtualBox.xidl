@@ -1402,7 +1402,7 @@
   </enum>
 
   <interface name="INATNetwork" extends="$unknown"
-    uuid="d09da50a-ab33-4f83-a879-00f5b74e8dfc"
+    uuid="448ea897-0ce9-4362-a07e-9ab7833afc33"
     wsmap="managed">
     <attribute name="networkName" type="wstring">
       <desc>
@@ -1461,16 +1461,6 @@
       <param name="offset" type="long" dir="in"/>
     </method>
     
-    <method name="getOffsetForService">
-      <param name="service" type="NATNetworkServiceType" dir="in"/>
-      <param name="offset" type="long" dir="return"/>
-    </method>
-
-    <method name="setOffsetForService">
-      <param name="service" type="NATNetworkServiceType" dir="in"/>
-      <param name="offset" type="long" dir="in"/>
-    </method>
-
     <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
       <desc>Array of NAT port-forwarding rules in string representation, in the
       following format: "name:protocolid:[host ip]:host port:[guest ip]:guest port".
