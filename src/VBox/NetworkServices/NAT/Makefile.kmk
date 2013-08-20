@@ -76,12 +76,12 @@ endif
 ifdef VBOX_WITH_HARDENING
  VBoxNetLwipNATHardened_SOURCES += VBoxNetNATHardened.cpp
  VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=VBoxNetLwipNAT
- VBoxNetLwipNATHardened_TEMPLATE=VBOXR3EXE
+ VBoxNetLwipNATHardened_TEMPLATE=VBOXR3HARDENEDEXE
 endif
 
 PROGRAMS += VBoxNetLwipNAT
 VBoxNetLwipNAT_TEMPLATE =
-VBoxNetLwipNAT_TEMPLATE := VBOXMAINCLIENT$(if-expr defined(VBOX_WITH_HARDENING),DLL,EXE)
+VBoxNetLwipNAT_TEMPLATE := VBOXMAIN$(if-expr defined(VBOX_WITH_HARDENING),DLL,CLIENTEXE)
 VBoxNetLwipNAT_INCS += ../../Devices/Network \
 	../../Devices/Network/lwip-new/vbox # testproxy.h
 VBoxNetLwipNAT_DEFS += ${LWIP_DEFS}
