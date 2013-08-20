@@ -66,6 +66,9 @@ if [ "$1" = "configure" ]; then
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetDHCP > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetDHCP
   fi
+  if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetLwipNAT > /dev/null 2>&1; then
+    chmod 4511 /usr/lib/virtualbox/VBoxNetLwipNAT
+  fi
   if ! dpkg-statoverride --list /usr/lib/virtualbox/VBoxNetAdpCtl > /dev/null 2>&1; then
     chmod 4511 /usr/lib/virtualbox/VBoxNetAdpCtl
   fi
