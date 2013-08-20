@@ -246,7 +246,9 @@ void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneI
     if ((iButton1 || iButton2) && fProposeAutoConfirmation)
     {
         QStringList confirmedPopupList = vboxGlobal().virtualBox().GetExtraData(GUI_SuppressMessages).split(',');
-        if (confirmedPopupList.contains(strPopupPaneID))
+        if (   confirmedPopupList.contains(strPopupPaneID)
+            || confirmedPopupList.contains("AllPopupPanes")
+            || confirmedPopupList.contains("All") )
         {
             int iResultCode = AlertOption_AutoConfirmed;
             if (iButton1 & AlertButtonOption_Default)

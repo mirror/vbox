@@ -2652,7 +2652,9 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
     {
         vbox = vboxGlobal().virtualBox();
         confirmedMessageList = vbox.GetExtraData(GUI_SuppressMessages).split(',');
-        if (confirmedMessageList.contains(strAutoConfirmId))
+        if (   confirmedMessageList.contains(strAutoConfirmId)
+            || confirmedMessageList.contains("AllMessageBoxes")
+            || confirmedMessageList.contains("All") )
         {
             int iResultCode = AlertOption_AutoConfirmed;
             if (iButton1 & AlertButtonOption_Default)
