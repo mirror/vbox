@@ -4070,8 +4070,6 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
     strReconfig = getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
-    if (FAILED(rc))
-        return rc;
     if (   mData->mMachineState == MachineState_Paused
         && strReconfig == "1")
         fSilent = true;
@@ -4634,8 +4632,6 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     /* Check whether the flag to allow silent storage attachment reconfiguration is set. */
     strReconfig = getExtraData(Utf8Str("VBoxInternal2/SilentReconfigureWhilePaused"));
-    if (FAILED(rc))
-        return rc;
     if (   mData->mMachineState == MachineState_Paused
         && strReconfig == "1")
         fSilent = true;
@@ -7934,7 +7930,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     szPath[sz++] = RTPATH_DELIMITER;
     szPath[sz] = 0;
     char *cmd = szPath + sz;
-    sz = RTPATH_MAX - sz;
+    sz = sizeof(szPath) - sz;
 
     int vrc = VINF_SUCCESS;
     RTPROCESS pid = NIL_RTPROCESS;
@@ -7994,11 +7990,40 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
     if (strFrontend == "gui" || strFrontend == "GUI/Qt")
     {
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
-        const char VirtualBox_exe[] = "../Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM";
+        /* Modify the base path so that we don't need to use ".." below. */
+        RTPathStripTrailingSlash(szPath);
+        RTPathStripFilename(szPath);
+        sz = strlen(szPath);
+        cmd = szPath + sz;
+        sz = sizeof(szPath) - sz;
+
+#define OSX_APP_NAME "VirtualBoxVM"
+#define OSX_APP_PATH_FMT "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
+
+        Utf8Str strAppOverride = getExtraData(Utf8Str("VBoxInternal2/VirtualBoxVMAppOverride"));
+        if (   strAppOverride.contains(".")
+            || strAppOverride.contains("/")
+            || strAppOverride.contains("\\")
+            || strAppOverride.contains(":"))
+            strAppOverride.setNull();
+        Utf8Str strAppPath;
+        if (!strAppOverride.isEmpty())
+        {
+            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, strAppOverride.c_str());
+            Utf8Str strFullPath(szPath);
+            strFullPath.append(strAppPath);
+            /* there is a race, but people using this deserve the failure */
+            if (!RTFileExists(strFullPath.c_str()))
+                strAppOverride.setNull();
+        }
+        if (strAppOverride.isEmpty())
+            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, OSX_APP_NAME);
+        const char *VirtualBox_exe = strAppPath.c_str();
+        AssertReturn(sz >= strlen(VirtualBox_exe), E_UNEXPECTED);
 # else
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
-# endif
         Assert(sz >= sizeof(VirtualBox_exe));
+# endif
         strcpy(cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
