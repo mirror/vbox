@@ -3113,9 +3113,7 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                                 ComPtr<IGuestFile> pCurFile = collFiles[a];
                                 if (!pCurFile.isNull())
                                 {
-                                    ULONG uID;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(Id)(&uID));
-                                    Bstr strName;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(FileName)(strName.asOutParam()));
                                     FileStatus_T fileStatus;
                                     CHECK_ERROR_BREAK(pCurFile, COMGETTER(Status)(&fileStatus));
