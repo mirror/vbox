@@ -80,7 +80,6 @@ ifdef VBOX_WITH_HARDENING
  VBoxNetLwipNATHardened_NAME = VBoxNetLwipNAT
 endif
 
-PROGRAMS += VBoxNetLwipNAT
 VBoxNetLwipNAT_TEMPLATE =
 VBoxNetLwipNAT_TEMPLATE := VBOXMAIN$(if-expr defined(VBOX_WITH_HARDENING),DLL,CLIENTEXE)
 VBoxNetLwipNAT_INCS += ../../Devices/Network \
