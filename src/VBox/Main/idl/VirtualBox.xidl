@@ -944,7 +944,7 @@
     </const>
     <const name="LongMode"             value="3">
       <desc>
-        This setting determines whether VirtualBox will advertice long mode
+        This setting determines whether VirtualBox will advertise long mode
         (i.e. 64-bit guest support) and let the guest enter it.
       </desc>
     </const>
@@ -1211,13 +1211,13 @@
       <desc>EFI Firmware, bitness detected basing on OS type.</desc>
     </const>
     <const name="EFI32"             value="3">
-      <desc>Efi firmware, 32-bit.</desc>
+      <desc>EFI firmware, 32-bit.</desc>
     </const>
     <const name="EFI64"             value="4">
-      <desc>Efi firmware, 64-bit.</desc>
+      <desc>EFI firmware, 64-bit.</desc>
     </const>
     <const name="EFIDUAL"           value="5">
-      <desc>Efi firmware, combined 32 and 64-bit.</desc>
+      <desc>EFI firmware, combined 32 and 64-bit.</desc>
     </const>
   </enum>
 
@@ -1404,9 +1404,9 @@
     <attribute name="enabled" type="boolean"/>
     <attribute name="network" type="wstring">
       <desc>
-        This is CIDR IPv4 string. Specifiying it user defines IPv4 addresses
-        of gateway (low address + 1) and dhcp server (= low address + 2).
-        Note: if there're defined IPv4 port-forward rules update of network
+        This is CIDR IPv4 string. Specifying it user defines IPv4 addresses
+        of gateway (low address + 1) and DHCP server (= low address + 2).
+        Note: If there are defined IPv4 port-forward rules update of network
         will be ignored (because new assignment could break existing rules).
       </desc>
     </attribute>
@@ -1570,7 +1570,7 @@
     wsmap="managed"
     >
     <desc>
-      The IDHCPServer interface represents the vbox DHCP server configuration.
+      The IDHCPServer interface represents the VirtualBox DHCP server configuration.
 
       To enumerate all the DHCP servers on the host, use the
       <link to="IVirtualBox::DHCPServers"/> attribute.
@@ -2588,7 +2588,7 @@
       </param>
     </method>
 
-    <!-- bunch of metods to create NAT -->
+    <!-- bunch of methods to create NAT -->
     <method name="createNATNetwork">
       <!-- Here we create a record in NAT network array with name
            and gateway/network parameters this information should
@@ -2600,7 +2600,7 @@
     </method>
 
      <!--
-          Returns the NATNetwork by name, e.g. for adding porforward rule or delition.
+          Returns the NATNetwork by name, e.g. for adding port forward rule or deletion.
       -->
      <method name="findNATNetworkByName">
       <param name="networkName" type="wstring" dir="in"/>
@@ -2932,7 +2932,7 @@
             <li>Chunk size (optional unsigned integer if the image is split into chunks;
             presently unsupported and always -1)</li>
 
-            <li>Compression (optional string equalling "gzip" if the image is gzip-compressed)</li>
+            <li>Compression (optional string equaling "gzip" if the image is gzip-compressed)</li>
         </ol>
       </desc>
     </attribute>
@@ -3241,8 +3241,8 @@
         of the "type=&lt;X&gt;" format, where &lt;X&gt; must be either "NAT" or "Bridged".
       </li>
       <li>
-          "USBController": a USB controller. There can be at most one such item. If and only if such an
-          item ispresent, USB support will be enabled for the new virtual machine.
+          "USBController": a USB controller. There can be at most one such item. If, and only if, such an
+          item is present, USB support will be enabled for the new virtual machine.
       </li>
       <li>
           "SoundCard": a sound card. There can be at most one such item. If and only if such an item is
@@ -4190,7 +4190,7 @@
     </attribute>
 
     <attribute name="icon" type="octet" safearray="yes">
-      <desc>Overriden VM Icon details.</desc>
+      <desc>Overridden VM Icon details.</desc>
     </attribute>
 
     <attribute name="accessible" type="boolean" readonly="yes">
@@ -4875,7 +4875,7 @@
         more details on available tracepoint groups and such.
 
         Note that on hosts supporting DTrace (or similar), a lot of the
-        tracepoints may be implemented exclusivly as DTrace probes. So, the
+        tracepoints may be implemented exclusively as DTrace probes. So, the
         effect of the same config may differ between Solaris and Windows for
         example.
       </desc>
@@ -5553,7 +5553,7 @@
     <method name="setAutoDiscardForDevice">
       <desc>
         Sets a flag in the device information which indicates that the medium
-        supports discarding unsused blocks (called trimming for SATA or unmap
+        supports discarding unused blocks (called trimming for SATA or unmap
         for SCSI devices) .This may or may not be supported by a particular drive,
         and is silently ignored in the latter case. At the moment only hard disks
         (which is a misnomer in this context) accept this setting. Changing the
@@ -5677,7 +5677,7 @@
             SATA device, SATA port, IDE port or IDE slot out of range.
             </result>
             <result name="VBOX_E_INVALID_OBJECT_STATE">
-            Attempt to unmount medium that is not removeable - not dvd or floppy.
+            Attempt to unmount medium that is not removable - not DVD or floppy.
             </result>
             <result name="VBOX_E_INVALID_VM_STATE">
             Invalid machine state.
@@ -5834,7 +5834,7 @@
           Virtual machine does not have a PCI controller allowing attachment of physical devices.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
-          Hardware or host OS doesn't allow PCI device passthrought.
+          Hardware or host OS doesn't allow PCI device passthrough.
         </result>
       </desc>
       <param name="hostAddress" type="long" dir="in">
@@ -5868,7 +5868,7 @@
           Virtual machine does not have a PCI controller allowing attachment of physical devices.
         </result>
         <result name="VBOX_E_NOT_SUPPORTED">
-          Hardware or host OS doesn't allow PCI device passthrought.
+          Hardware or host OS doesn't allow PCI device passthrough.
         </result>
       </desc>
       <param name="hostAddress" type="long" dir="in">
@@ -6575,7 +6575,7 @@
         <desc>Full path to the shared folder in the host file system.</desc>
       </param>
       <param name="writable" type="boolean" dir="in">
-        <desc>Whether the share is writable or readonly.</desc>
+        <desc>Whether the share is writable or read-only.</desc>
       </param>
       <param name="automount" type="boolean" dir="in">
         <desc>Whether the share gets automatically mounted by the guest
@@ -7126,7 +7126,7 @@
           to="IVirtualBox::createMachine"/>, and all the settings will be
         transferred except the VM name and the hardware UUID. You can set the
         VM name and the new hardware UUID when creating the target machine. The
-        network MAC addresses are newly created for all newtwork adapters. You
+        network MAC addresses are newly created for all network adapters. You
         can change that behaviour with the options parameter. The operation is
         performed asynchronously, so the machine object will be not be usable
         until the @a progress object signals completion.
@@ -8165,7 +8165,7 @@
     >
     <desc>
       Represents one of host's network interfaces. IP V6 address and network
-      mask are strings of 32 hexdecimal digits grouped by four. Groups are
+      mask are strings of 32 hexadecimal digits grouped by four. Groups are
       separated by colons.
       For example, fe80:0000:0000:0000:021e:c2ff:fed2:b030.
     </desc>
@@ -8329,11 +8329,11 @@
     </attribute>
 
     <attribute name="domainName" type="wstring" readonly="yes">
-      <desc>Domain name used for name resoving.</desc>
+      <desc>Domain name used for name resolving.</desc>
     </attribute>
 
     <attribute name="searchStrings" type="wstring" safearray="yes" readonly="yes">
-      <desc>Search string registered for name resoving.</desc>
+      <desc>Search string registered for name resolving.</desc>
     </attribute>
 
     <attribute name="processorCount" type="unsigned long" readonly="yes">
@@ -10531,7 +10531,7 @@
 
     <method name="environmentUnset">
       <desc>
-        Unsets session environment variable.
+        Unsets a session environment variable.
 
         <result name="VBOX_E_IPRT_ERROR">
           Error while unsetting the session environment variable.
@@ -12343,7 +12343,7 @@
           thread are not processed while waiting. Neglecting event queues may
           have dire consequences (degrade performance, resource hogs,
           deadlocks, etc.), this is specially so for the main thread on
-          platforms using XPCOM. Callers are adviced wait for short periods
+          platforms using XPCOM. Callers are advised wait for short periods
           and service their event queues between calls, or to create a worker
           thread to do the waiting.
 
@@ -12585,7 +12585,7 @@
 
     <method name="getChildrenCount" const="yes">
       <desc>
-        Returns the number of direct childrens of this snapshot.
+        Returns the number of direct children of this snapshot.
       </desc>
       <param name="childrenCount" type="unsigned long" dir="return">
         <desc>
@@ -15391,7 +15391,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
         <note>This API can be used only locally by a VM process through the
             COM/XPCOM C++ API as it requires pointer support. It is not
-            available for scripting langages, Java or any webservice clients.
+            available for scripting languages, Java or any webservice clients.
             Unless you are writing a new VM frontend use
             <link to="#takeScreenShotToArray" />.
         </note>
@@ -15667,13 +15667,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="AllowNetwork"          value="2">
       <desc>
-        Allow promicuous mode, but restrict the scope it to the internal
+        Allow promiscuous mode, but restrict the scope it to the internal
         network so that it only applies to other VMs.
       </desc>
     </const>
     <const name="AllowAll"              value="3">
       <desc>
-        Allow promicuous mode, include unrelated traffic going over the wire
+        Allow promiscuous mode, include unrelated traffic going over the wire
         and internally on the host.
       </desc>
     </const>
@@ -16297,7 +16297,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="values" type="wstring" dir="out" safearray="yes">
         <desc>
-          Array paralell to the names holding the register values as if the
+          Array parallel to the names holding the register values as if the
           register was returned by <link to="IMachineDebugger::getRegister"/>.
         </desc>
       </param>
@@ -19348,7 +19348,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="reference" type="unsigned long" readonly="yes">
-      <desc>How many devices/medium attachements use this group.</desc>
+      <desc>How many devices/medium attachments use this group.</desc>
     </attribute>
 
     <attribute name="maxBytesPerSec" type="long long">
@@ -19899,7 +19899,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="subordinates" type="IEventSource" dir="in" safearray="yes">
         <desc>
-          Subordinate event source this one aggregatres.
+          Subordinate event source this one aggregates.
         </desc>
       </param>
       <param name="result" type="IEventSource" dir="return">
@@ -20155,7 +20155,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="timeout" type="long" dir="in">
         <desc>
-          Maximum time to wait for event processeing, in ms;
+          Maximum time to wait for event processing, in ms;
           0 = no wait, -1 = indefinite wait.
         </desc>
       </param>
