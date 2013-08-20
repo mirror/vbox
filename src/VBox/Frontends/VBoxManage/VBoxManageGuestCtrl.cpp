@@ -814,11 +814,11 @@ inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL c
     if (!cMsTimeout || cMsTimeout == RT_INDEFINITE_WAIT) /* If no timeout specified, wait forever. */
         return RT_INDEFINITE_WAIT;
 
-    uint32_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
+    uint64_t u64ElapsedMs = RTTimeMilliTS() - u64StartMs;
     if (u64ElapsedMs >= cMsTimeout)
         return 0;
 
-    return cMsTimeout - u64ElapsedMs;
+    return cMsTimeout - (RTMSINTERVAL)u64ElapsedMs;
 }
 
 /* <Missing documentation> */
