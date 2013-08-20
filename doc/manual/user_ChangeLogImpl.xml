@@ -14,11 +14,26 @@
       </listitem>
 
       <listitem>
-        <para>GUI: support for video capturing (bug #4766)</para>
+        <para>GUI: keyboard shortcuts management (input page of global preferences
+          extended with possibility to edit general keyboard shortcuts for
+          VirtualBox Manager and Virtual Machine)</para>
       </listitem>
 
       <listitem>
-        <para>Emulated USB touch screen</para>
+        <para>GUI: extended messaging mechanism (new non-modal popup overlays
+          used to show non-critical warnings and provide user with additional information)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: video capturing support (bug #4766)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: host touch devices support (GUI passes host touch-events to guest)</para>
+      </listitem>
+
+      <listitem>
+        <para>Emulated USB touch devices</para>
       </listitem>
 
       <listitem>
@@ -45,6 +60,10 @@
 
       <listitem>
         <para>GUI: update check uses https</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI: lot of internal stuff rewritten (cleanup and bug-fixes)</para>
       </listitem>
 
       <listitem>
