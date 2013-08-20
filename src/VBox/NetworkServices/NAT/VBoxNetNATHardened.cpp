@@ -17,8 +17,11 @@
 
 #include <VBox/sup.h>
 
+#ifndef SERVICE_NAME
+# error "Please define SERVICE_NAME"
+#endif
 
 int main(int argc, char **argv, char **envp)
 {
-    return SUPR3HardenedMain("VBoxNetNAT", 0 /* fFlags */, argc, argv, envp);
+    return SUPR3HardenedMain(RT_STR(SERVICE_NAME), 0 /* fFlags */, argc, argv, envp);
 }

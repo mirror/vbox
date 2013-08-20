@@ -66,9 +66,22 @@ VBoxNetNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
 ifdef VBOX_WITH_LWIP_NAT
 
+ifdef VBOX_WITH_HARDENING
+ PROGRAMS += VBoxNetLwipNATHardened
+ DLLS += VBoxNetLwipNAT
+else
+ PROGRAMS += VBoxNetLwipNAT
+endif
+
+ifdef VBOX_WITH_HARDENING
+ VBoxNetLwipNATHardened_SOURCES += VBoxNetNATHardened.cpp
+ VBoxNetLwipNATHardened_DEFS += SERVICE_NAME=VBoxNetLwipNAT
+ VBoxNetLwipNATHardened_TEMPLATE=VBOXR3EXE
+endif
+
 PROGRAMS += VBoxNetLwipNAT
 VBoxNetLwipNAT_TEMPLATE =
-VBoxNetLwipNAT_TEMPLATE := VBOXMAINCLIENTEXE
+VBoxNetLwipNAT_TEMPLATE := VBOXMAINCLIENT$(if-expr defined(VBOX_WITH_HARDENING),DLL,EXE)
 VBoxNetLwipNAT_INCS += ../../Devices/Network \
 	../../Devices/Network/lwip-new/vbox # testproxy.h
 VBoxNetLwipNAT_DEFS += ${LWIP_DEFS}
