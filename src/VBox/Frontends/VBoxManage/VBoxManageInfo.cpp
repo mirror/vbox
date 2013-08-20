@@ -353,7 +353,7 @@ HRESULT showBandwidthGroups(ComPtr<IBandwidthControl> &bwCtrl,
 HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                    ComPtr<IMachine> machine,
                    VMINFO_DETAILS details /*= VMINFO_NONE*/,
-                   ComPtr<IConsole> console /*= ComPtr <IConsole> ()*/)
+                   ComPtr<IConsole> console /*= ComPtr<IConsole> ()*/)
 {
     HRESULT rc;
 
@@ -579,7 +579,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
     if (!cFound && details != VMINFO_MACHINEREADABLE)
         RTPrintf("None\n");
 
-    ComPtr <IBIOSSettings> biosSettings;
+    ComPtr<IBIOSSettings> biosSettings;
     CHECK_ERROR2_RET(machine, COMGETTER(BIOSSettings)(biosSettings.asOutParam()), hrcCheck);
 
     BIOSBootMenuMode_T bootMenuMode;
@@ -1894,7 +1894,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 {
                     for (size_t index = 0; index < coll.size(); ++index)
                     {
-                        ComPtr <IHostUSBDevice> dev = coll[index];
+                        ComPtr<IHostUSBDevice> dev = coll[index];
 
                         /* Query info. */
                         Bstr id;
@@ -1983,7 +1983,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 {
                     for (size_t index = 0; index < coll.size(); ++index)
                     {
-                        ComPtr <IUSBDevice> dev = coll[index];
+                        ComPtr<IUSBDevice> dev = coll[index];
 
                         /* Query info. */
                         Bstr id;
@@ -2140,7 +2140,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr <ISharedFolder> sf = folders[i];
+            ComPtr<ISharedFolder> sf = folders[i];
 
             Bstr name, hostPath;
             BOOL writable;
@@ -2171,7 +2171,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
 
         for (size_t i = 0; i < folders.size(); ++i)
         {
-            ComPtr <ISharedFolder> sf = folders[i];
+            ComPtr<ISharedFolder> sf = folders[i];
 
             Bstr name, hostPath;
             sf->COMGETTER(Name)(name.asOutParam());
@@ -2590,7 +2590,7 @@ int handleShowVMInfo(HandlerArg *a)
         return errorSyntax(USAGE_SHOWVMINFO, "VM name or UUID required");
 
     /* try to find the given machine */
-    ComPtr <IMachine> machine;
+    ComPtr<IMachine> machine;
     CHECK_ERROR(a->virtualBox, FindMachine(Bstr(VMNameOrUuid).raw(),
                                            machine.asOutParam()));
     if (FAILED(rc))

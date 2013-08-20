@@ -443,8 +443,8 @@ int handleModifyVM(HandlerArg *a)
     Bstr name;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetOptState;
-    ComPtr <IMachine> machine;
-    ComPtr <IBIOSSettings> biosSettings;
+    ComPtr<IMachine> machine;
+    ComPtr<IBIOSSettings> biosSettings;
 
     /* VM ID + at least one parameter. Parameter arguments are checked
      * individually. */

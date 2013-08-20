@@ -77,7 +77,7 @@ static int parseFilterParameters(int argc, char *argv[],
         }
         else
         {
-            ComPtr <IMachine> machine;
+            ComPtr<IMachine> machine;
             rc = aVirtualBox->FindMachine(Bstr(argv[0]).raw(),
                                           machine.asOutParam());
             if (SUCCEEDED (rc))
