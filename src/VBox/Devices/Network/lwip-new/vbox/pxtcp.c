@@ -1832,7 +1832,9 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
     nread = recvmsg(pxtcp->sock, &mh, 0);
 #else
     dwFlags = 0;
-    /* In case of error we shouldn't fool code relying on count of readed bytes */
+    /* We can't assign nread to -1 expecting, that we'll got it back in case of error,
+     * instead, WSARecv(,,,DWORD *,,,) will rewrite only half of the 64bit value.
+     */
     nread = 0;
     rc = WSARecv(pxtcp->sock, iov, iovlen, (DWORD *)&nread, &dwFlags, NULL, NULL);
     if (rc == SOCKET_ERROR) {
