@@ -2371,9 +2371,10 @@ QString UIMessageCenter::formatErrorInfo(const CProgress &progress)
     if (!errorInfo.isNull())
         return formatErrorInfo(errorInfo);
     /* Handle NULL error-info otherwise: */
-    return tr("Progress result-code: %1")
-             .arg(QString::number(progress.GetResultCode(), 16 /* hex */))
-             .prepend("<!--EOM-->") /* move to details instead of mesasage body */;
+    return QString("<table><tr><td>%1</td><td><tt>%2</tt></td></tr></table>")
+                   .arg(tr("Result&nbsp;Code: ", "error info"))
+                   .arg(formatRC(progress.GetResultCode()))
+                   .prepend("<!--EOM-->") /* move to details */;
 }
 
 /* static */
