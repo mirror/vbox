@@ -38,6 +38,8 @@ UIGlobalSettingsProxy::UIGlobalSettingsProxy()
 
     /* Setup connections: */
     connect(m_pCheckboxProxy, SIGNAL(toggled(bool)), this, SLOT(sltProxyToggled()));
+    connect(m_pHostEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
+    connect(m_pPortEditor, SIGNAL(textEdited(const QString&)), this, SLOT(revalidate()));
 
     /* Apply language settings: */
     retranslateUi();
