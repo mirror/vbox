@@ -477,7 +477,10 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
 
 STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMappings))
 {
-    NOREF(aLocalMappings); NOREF(aLocalMappingsSize);
+    NOREF(aLocalMappings);
+#ifndef RT_OS_WINDOWS
+    NOREF(aLocalMappingsSize);
+#endif
     return E_NOTIMPL;
 }
 
