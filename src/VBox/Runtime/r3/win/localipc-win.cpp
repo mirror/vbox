@@ -828,15 +828,15 @@ RTDECL(int) RTLocalIpcSessionRead(RTLOCALIPCSESSION hSession, void *pvBuffer, si
                     {
                         DWORD dwErr = GetLastError();
                         AssertMsgFailed(("err=%ld\n",  dwErr));
-                            rc = RTErrConvertFromWin32(dwErr);
+                        rc = RTErrConvertFromWin32(dwErr);
                     }
                 }
-                 else
-                    {
-                        DWORD dwErr = GetLastError();
-                        AssertMsgFailed(("err2=%ld\n",  dwErr));
-                            rc = RTErrConvertFromWin32(dwErr);
-                    }
+                else
+                {
+                    DWORD dwErr = GetLastError();
+                    AssertMsgFailed(("err2=%ld\n",  dwErr));
+                    rc = RTErrConvertFromWin32(dwErr);
+                }
 
                 RTCritSectEnter(&pThis->CritSect);
                 pThis->fIOPending = false;
