@@ -770,11 +770,10 @@
     Internal network case.</para>
 
     <para><note>
-         On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible to bind to ports below 1024 from applications that are not run by 
-
-        <computeroutput>root</computeroutput>
-
-         . As a result, if you try to configure such a source UDP port, the VM will refuse to start. 
+        On Unix-based hosts (e.g. Linux, Solaris, Mac OS X) it is not possible
+        to bind to ports below 1024 from applications that are not run by 
+        <computeroutput>root</computeroutput>. As a result, if you try to
+        configure such a source UDP port, the VM will refuse to start. 
       </note></para>
   </sect1>
 
