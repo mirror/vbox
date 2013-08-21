@@ -813,6 +813,7 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
 {
     AssertPtrReturn(pCache, VERR_INVALID_POINTER);
     AssertPtrReturn(pszUser, VERR_INVALID_POINTER);
+    /* pszDomain is optional. */
 
     int rc = VINF_SUCCESS;
 
@@ -820,6 +821,9 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
     if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
                     VBOXTRAY_IPC_PIPE_PREFIX, pszUser))
     {
+        bool fReportToHost = false;
+        VBoxGuestUserState userState = VBoxGuestUserState_Unknown;
+
         RTLOCALIPCSESSION hSession;
         rc = RTLocalIpcSessionConnect(&hSession, szPipeName, 0 /* Flags */);
         if (RT_SUCCESS(rc))
@@ -838,9 +842,9 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                  * user's last input time. This might happen when running on Windows NT4 or older. */
                 && ipcRes.uLastInput != UINT32_MAX)
             {
-                VBoxGuestUserState userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
-                                             ? VBoxGuestUserState_InUse
-                                             : VBoxGuestUserState_Idle;
+                userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
+                          ? VBoxGuestUserState_InUse
+                          : VBoxGuestUserState_Idle;
 
                 rc = vboxServiceUserUpdateF(pCache, pszUser, pszDomain, "UsageState",
                                               userState == VBoxGuestUserState_InUse
@@ -851,10 +855,9 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                  *       to update. So only report the user's status to host when we really got something
                  *       new.
                  */
-                if (rc == VINF_SUCCESS)
-                {
-                    VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32s\n",
-                                       pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput);
+                fReportToHost = rc == VINF_SUCCESS;
+                VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32, fReportToHost=%RTbool\n",
+                                   pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput, fReportToHost);
 
 #if 0 /* Do we want to write the idle time as well? */
                     /* Also write the user's current idle time, if there is any. */
@@ -867,13 +870,10 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
 
                     if (RT_SUCCESS(rc))
 #endif
-                        rc = VbglR3GuestUserReportState(pszUser, pszDomain, userState,
-                                                        NULL /* No details */, 0);
-                }
             }
 #ifdef DEBUG
             else if (ipcRes.uLastInput == UINT32_MAX)
-                VBoxServiceVerbose(4, "Last input for user \"%s\" is not available, skipping\n",
+                VBoxServiceVerbose(4, "Last input for user \"%s\" is not supported, skipping\n",
                                    pszUser, rc);
 
             VBoxServiceVerbose(4, "Getting last input for user \"%s\" ended with rc=%Rrc\n",
@@ -888,19 +888,40 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
             switch (rc)
             {
                 case VERR_FILE_NOT_FOUND:
+                {
                     /* No VBoxTray (or too old version which does not support IPC) running
                        for the given user. Not much we can do then. */
-                    VBoxServiceVerbose(4, "User \"%s\" not logged in, no last input available\n",
+                    VBoxServiceVerbose(4, "VBoxTray for user \"%s\" not running (anymore), no last input available\n",
                                        pszUser);
+
+                    /* Overwrite rc from above. */
+                    rc = vboxServiceUserUpdateF(pCache, pszUser, pszDomain,
+                                                "UsageState", "Idle");
+
+                    fReportToHost = rc == VINF_SUCCESS;
+                    if (fReportToHost)
+                        userState = VBoxGuestUserState_Idle;
                     break;
+                }
 
                 default:
-                    VBoxServiceVerbose(4, "Error querying last input for user \"%s\", rc=%Rrc\n",
-                                       pszUser, rc);
+                    VBoxServiceError("Error querying last input for user \"%s\", rc=%Rrc\n",
+                                     pszUser, rc);
                     break;
             }
+        }
 
-            rc = VINF_SUCCESS;
+        if (fReportToHost)
+        {
+            Assert(userState != VBoxGuestUserState_Unknown);
+            int rc2 = VbglR3GuestUserReportState(pszUser, pszDomain, userState,
+                                                 NULL /* No details */, 0);
+            if (RT_FAILURE(rc2))
+                VBoxServiceError("Error reporting usage state %ld for user \"%s\" to host, rc=%Rrc\n",
+                                 userState, pszUser, rc2);
+
+            if (RT_SUCCESS(rc))
+                rc = rc2;
         }
     }
 

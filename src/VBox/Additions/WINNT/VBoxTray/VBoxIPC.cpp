@@ -52,6 +52,9 @@ typedef struct VBOXIPCCONTEXT
 } VBOXIPCCONTEXT, *PVBOXIPCCONTEXT;
 static VBOXIPCCONTEXT gCtx = {0};
 
+/** Function pointer for GetLastInputInfo(). */
+typedef BOOL (WINAPI *PFNGETLASTINPUTINFO)(PLASTINPUTINFO);
+
 /**
  * IPC per-session thread data.
  */
@@ -68,10 +71,11 @@ typedef struct VBOXIPCSESSION
     bool volatile                       fTerminate;
     /** The thread handle. */
     RTTHREAD                            hThread;
-    /** Pointer to GetLastInputInfo() function. */
-    BOOL (WINAPI * pfnGetLastInputInfo)(PLASTINPUTINFO);
 
 } VBOXIPCSESSION, *PVBOXIPCSESSION;
+
+/** Static pointer to GetLastInputInfo() function. */
+static PFNGETLASTINPUTINFO s_pfnGetLastInputInfo = NULL;
 
 int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession);
 
@@ -117,16 +121,15 @@ static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEAD
 
     bool fLastInputAvailable = false;
     VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
-    if (pSession->pfnGetLastInputInfo)
+    if (s_pfnGetLastInputInfo)
     {
         /* Note: This only works up to 49.7 days (= 2^32, 32-bit counter)
            since Windows was started. */
         LASTINPUTINFO lastInput;
         lastInput.cbSize = sizeof(LASTINPUTINFO);
-        BOOL fRc = pSession->pfnGetLastInputInfo(&lastInput);
+        BOOL fRc = s_pfnGetLastInputInfo(&lastInput);
         if (fRc)
         {
-            VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
             ipcRes.uLastInput = (GetTickCount() - lastInput.dwTime) / 1000;
             fLastInputAvailable = true;
         }
@@ -195,6 +198,10 @@ int VBoxIPCInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThre
 
                         *ppInstance = &gCtx;
                         *pfStartThread = true;
+
+                        /* GetLastInputInfo only is available starting at Windows 2000. */
+                        s_pfnGetLastInputInfo = (PFNGETLASTINPUTINFO)
+                            RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
 
                         LogRelFunc(("Local IPC server now running at \"%s\"\n",
                                     szPipeName));
@@ -437,13 +444,6 @@ static int vboxIPCSessionCreate(PVBOXIPCCONTEXT pCtx, RTLOCALIPCSESSION hSession
         else
             rc = VERR_NO_MEMORY;
 
-        if (RT_SUCCESS(rc))
-        {
-            *(void **)&pSession->pfnGetLastInputInfo =
-                RTLdrGetSystemSymbol("User32.dll", "GetLastInputInfo");
-            /* GetLastInputInfo only is available starting at Windows 2000. */
-        }
-
         int rc2 = RTCritSectLeave(&pCtx->CritSect);
         AssertRC(rc2);
     }
@@ -456,7 +456,6 @@ static int vboxIPCSessionDestroyLocked(PVBOXIPCSESSION pSession)
     AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
     pSession->hThread = NIL_RTTHREAD;
-    pSession->pfnGetLastInputInfo = NULL;
 
     RTLOCALIPCSESSION hSession;
     ASMAtomicXchgHandle(&pSession->hSession, NIL_RTLOCALIPCSESSION, &hSession);
