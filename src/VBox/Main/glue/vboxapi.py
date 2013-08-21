@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# $Id$
+"""
+VirtualBox Python API Glue.
+"""
+
+__copyright__ = \
 """
 Copyright (C) 2009-2013 Oracle Corporation
 
@@ -9,12 +16,20 @@ Foundation, in version 2 as it comes in the "COPYING" file of the
 VirtualBox OSE distribution. VirtualBox OSE is distributed in the
 hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 """
+__version__ = "$Revision$"
 
+
+# Note! To set Python bitness on OSX use 'export VERSIONER_PYTHON_PREFER_32_BIT=yes'
+
+
+# Standard Python imports.
 import sys, os
 import traceback
 
-# To set Python bitness on OSX use 'export VERSIONER_PYTHON_PREFER_32_BIT=yes'
 
+#
+# Globals, environment and sys.path changes.
+#
 VBoxBinDir = os.environ.get("VBOX_PROGRAM_PATH", None)
 VBoxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 
@@ -30,9 +45,14 @@ os.environ["VBOX_PROGRAM_PATH"] = VBoxBinDir
 os.environ["VBOX_SDK_PATH"] = VBoxSdkDir
 sys.path.append(VBoxBinDir)
 
+
+#
+# Import the generated VirtualBox constants.
+#
 from VirtualBox_constants import VirtualBoxReflectionInfo
 
-class PerfCollector:
+
+class PerfCollector(object):
     """ This class provides a wrapper over IPerformanceCollector in order to
     get more 'pythonic' interface.
 
@@ -106,11 +126,19 @@ class PerfCollector:
             })
         return out
 
+#
+# Attribute hacks.
+#
 def ComifyName(name):
     return name[0].capitalize()+name[1:]
 
-_COMForward = { 'getattr' : None,
-                'setattr' : None}
+
+## This is for saving the original DispatchBaseClass __getattr__ and __setattr__
+#  method references.
+_g_dCOMForward = {
+    'getattr': None,
+    'setattr': None,
+}
 
 def CustomGetAttr(self, attr):
     # fastpath
@@ -123,19 +151,162 @@ def CustomGetAttr(self, attr):
             self.__class__.__dict__[attr] = self.__class__.__dict__[k]
             return getattr(self, k)
     try:
-        return _COMForward['getattr'](self, ComifyName(attr))
+        return _g_dCOMForward['getattr'](self, ComifyName(attr))
     except AttributeError:
-        return _COMForward['getattr'](self, attr)
+        return _g_dCOMForward['getattr'](self, attr)
 
 def CustomSetAttr(self, attr, value):
     try:
-        return _COMForward['setattr'](self, ComifyName(attr), value)
+        return _g_dCOMForward['setattr'](self, ComifyName(attr), value)
     except AttributeError:
-        return _COMForward['setattr'](self, attr, value)
+        return _g_dCOMForward['setattr'](self, attr, value)
 
-class PlatformMSCOM:
-    # Class to fake access to constants in style of foo.bar.boo
-    class ConstantFake:
+
+
+class PlatformBase(object):
+    """
+    Base class for the platform specific code.
+    """
+
+    def __init__(self, aoParams):
+        _ = aoParams;
+
+    def getVirtualBox(self):
+        """
+        Gets a the IVirtualBox singleton.
+        """
+        return None;
+
+    def getSessionObject(self, oIVBox):
+        """
+        Get a session object that can be used for opening machine sessions.
+
+        The oIVBox parameter is an getVirtualBox() return value, i.e. an
+        IVirtualBox reference.
+
+        See also openMachineSession.
+        """
+        _ = oIVBox;
+        return None;
+
+    def getType(self):
+        """ Returns the platform type (class name sans 'Platform'). """
+        return None;
+
+    def isRemote(self):
+        """
+        Returns True if remote (web services) and False if local (COM/XPCOM).
+        """
+        return False
+
+    def getArray(self, oInterface, sAttrib):
+        """
+        Retrives the value of the array attribute 'sAttrib' from
+        interface 'oInterface'.
+
+        This is for hiding platform specific differences in attributes
+        returning arrays.
+        """
+        _ = oInterface;
+        _ = sAttrib;
+        return None;
+
+    def initPerThread(self):
+        """
+        Does backend specific initialization for the calling thread.
+        """
+        return True;
+
+    def deinitPerThread(self):
+        """
+        Does backend specific uninitialization for the calling thread.
+        """
+        return True;
+
+    def createListener(self, oImplClass, dArgs):
+        """
+        Instantiates and wraps an active event listener class so it can be
+        passed to an event source for registration.
+
+        oImplClass is a class (type, not instance) which implements
+        IEventListener.
+
+        dArgs is a dictionary with string indexed variables.  This may be
+        modified by the method to pass platform specific parameters. Can
+        be None.
+
+        This currently only works on XPCOM.  COM support is not possible due to
+        shortcuts taken in the COM bridge code, which is not under our control.
+        Use passive listeners for COM and web services.
+        """
+        _ = oImplClass;
+        _ = dArgs;
+        raise Exception("No active listeners for this platform");
+        return None;
+
+    def waitForEvents(self, cMsTimeout):
+        """
+        Wait for events to arrive and process them.
+
+        The timeout (cMsTimeout) is in milliseconds for how long to wait for
+        events to arrive.  A negative value means waiting for ever, while 0
+        does not wait at all.
+
+        Returns 0 if events was processed.
+        Returns 1 if timed out or interrupted in some way.
+        Returns 2 on error (like not supported for web services).
+
+        Raises an exception if the calling thread is not the main thread (the one
+        that initialized VirtualBoxManager) or if the time isn't an integer.
+        """
+        _ = cMsTimeout;
+        return 2;
+
+    def interruptWaitEvents(self):
+        """
+        Interrupt a waitForEvents call.
+        This is normally called from a worker thread to wake up the main thread.
+
+        Returns True on success, False on failure.
+        """
+        return False;
+
+    def deinit(self):
+        """
+        Unitializes the platform specific backend.
+        """
+        return None;
+
+    def queryInterface(self, oIUnknown, sClassName):
+        """
+        IUnknown::QueryInterface wrapper.
+
+        oIUnknown is who to ask.
+        sClassName is the name of the interface we're asking for.
+        """
+        return None;
+
+
+class PlatformMSCOM(PlatformBase):
+    """
+    Platform specific code for MS COM.
+    """
+
+    ## @name VirtualBox COM Typelib definitions (should be generate)
+    #
+    # @remarks Must be updated when the corresponding VirtualBox.xidl bits
+    #          are changed.  Fortunately this isn't very often.
+    # @{
+    VBOX_TLB_GUID  = '{D7569351-1750-46F0-936E-BD127D5BC264}'
+    VBOX_TLB_LCID  = 0
+    VBOX_TLB_MAJOR = 1
+    VBOX_TLB_MINOR = 3
+    ## @}
+
+
+    class ConstantFake(object):
+        """ Class to fake access to constants in style of foo.bar.boo """
+
         def __init__(self, parent, name):
             self.__dict__['_parent'] = parent
             self.__dict__['_name'] = name
@@ -192,12 +363,13 @@ class PlatformMSCOM:
                 except AttributeError, e:
                     return self.__dict__['_rootFake'].__getattr__(a)
 
-    VBOX_TLB_GUID  = '{D7569351-1750-46F0-936E-BD127D5BC264}'
-    VBOX_TLB_LCID  = 0
-    VBOX_TLB_MAJOR = 1
-    VBOX_TLB_MINOR = 3
+    def __init__(self, dParams):
+        PlatformBase.__init__(self, dParams);
 
-    def __init__(self, params):
+        #
+        # Since the code runs on all platforms, we have to do a lot of
+        # importing here instead of at the top of the file where it's normally located.
+        #
         from win32com import universal
         from win32com.client import gencache, DispatchBaseClass
         from win32com.client import constants, getevents
@@ -207,21 +379,36 @@ class PlatformMSCOM:
         from win32con import DUPLICATE_SAME_ACCESS
         from win32api import GetCurrentThread, GetCurrentThreadId, DuplicateHandle, GetCurrentProcess
         import threading
-        pid = GetCurrentProcess()
+
+        pid      = GetCurrentProcess()
         self.tid = GetCurrentThreadId()
         handle = DuplicateHandle(pid, GetCurrentThread(), pid, 0, 0, DUPLICATE_SAME_ACCESS)
         self.handles = []
         self.handles.append(handle)
-        _COMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
-        DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr
-        _COMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
-        DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
+
+        # Hack the COM dispatcher base class so we can modify method and
+        # attribute names to match those in xpcom.
+        if _g_dCOMForward['setattr'] is None:
+            _g_dCOMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
+            DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr
+            _g_dCOMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
+            DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
+
+        # Hack the exception base class so the users doesn't need to check for
+        # XPCOM or COM and do different things.
+        ## @todo
+
+
         win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
         win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+
         self.oIntCv = threading.Condition()
         self.fInterrupted = False;
 
-    def getSessionObject(self, vbox):
+        _ = dParams;
+
+    def getSessionObject(self, oIVBox):
+        _ = oIVBox
         import win32com
         from win32com.client import Dispatch
         return win32com.client.Dispatch("VirtualBox.Session")
@@ -234,11 +421,8 @@ class PlatformMSCOM:
     def getType(self):
         return 'MSCOM'
 
-    def getRemote(self):
-        return False
-
-    def getArray(self, obj, field):
-        return obj.__getattr__(field)
+    def getArray(self, oInterface, sAttrib):
+        return oInterface.__getattr__(sAttrib)
 
     def initPerThread(self):
         import pythoncom
@@ -248,16 +432,16 @@ class PlatformMSCOM:
         import pythoncom
         pythoncom.CoUninitialize()
 
-    def createListener(self, impl, arg):
+    def createListener(self, oImplClass, dArgs):
         if True:
             raise Exception('no active listeners on Windows as PyGatewayBase::QueryInterface() '
                             'returns new gateway objects all the time, thus breaking EventQueue '
                             'assumptions about the listener interface pointer being constants between calls ');
         # Did this code ever really work?
         d = {}
-        d['BaseClass'] = impl
-        d['arg'] = arg
-        d['tlb_guid'] = PlatformMSCOM.VBOX_TLB_GUID
+        d['BaseClass'] = oImplClass
+        d['dArgs']     = dArgs
+        d['tlb_guid']  = PlatformMSCOM.VBOX_TLB_GUID
         d['tlb_major'] = PlatformMSCOM.VBOX_TLB_MAJOR
         d['tlb_minor'] = PlatformMSCOM.VBOX_TLB_MINOR
         str = ""
@@ -274,9 +458,9 @@ class PlatformMSCOM:
 
         # capitalized version of listener method
         str += "   HandleEvent=BaseClass.handleEvent\n"
-        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
+        str += "   def __init__(self): BaseClass.__init__(self, dArgs)\n"
         str += "result = win32com.server.util.wrap(ListenerImpl())\n"
-        exec (str, d, d)
+        exec(str, d, d)
         return d['result']
 
     def waitForEvents(self, timeout):
@@ -319,7 +503,7 @@ class PlatformMSCOM:
 
     def interruptWaitEvents(self):
         """
-        Basically a python implementation of EventQueue::postEvent().
+        Basically a python implementation of NativeEventQueue::postEvent().
 
         The magic value must be in sync with the C++ implementation or this
         won't work.
@@ -349,18 +533,26 @@ class PlatformMSCOM:
         pythoncom.CoUninitialize()
         pass
 
-    def queryInterface(self, obj, className):
+    def queryInterface(self, oIUnknown, sClassName):
         from win32com.client import CastTo
-        return CastTo(obj, className)
+        return CastTo(oIUnknown, sClassName)
 
-class PlatformXPCOM:
-    def __init__(self, params):
+
+class PlatformXPCOM(PlatformBase):
+    """
+    Platform specific code for XPCOM.
+    """
+
+    def __init__(self, dParams):
+        PlatformBase.__init__(self, dParams);
         sys.path.append(VBoxSdkDir+'/bindings/xpcom/python/')
         import xpcom.vboxxpcom
         import xpcom
         import xpcom.components
+        _ = dParams;
 
-    def getSessionObject(self, vbox):
+    def getSessionObject(self, oIVBox):
+        _ = oIVBox;
         import xpcom.components
         return xpcom.components.classes["@virtualbox.org/Session;1"].createInstance()
 
@@ -371,11 +563,8 @@ class PlatformXPCOM:
     def getType(self):
         return 'XPCOM'
 
-    def getRemote(self):
-        return False
-
-    def getArray(self, obj, field):
-        return obj.__getattr__('get'+ComifyName(field))()
+    def getArray(self, oInterface, sAttrib):
+        return oInterface.__getattr__('get'+ComifyName(sAttrib))()
 
     def initPerThread(self):
         import xpcom
@@ -385,15 +574,15 @@ class PlatformXPCOM:
         import xpcom
         xpcom._xpcom.DetachThread()
 
-    def createListener(self, impl, arg):
+    def createListener(self, oImplClass, dArgs):
         d = {}
-        d['BaseClass'] = impl
-        d['arg'] = arg
+        d['BaseClass'] = oImplClass
+        d['dArgs']     = dArgs
         str = ""
         str += "import xpcom.components\n"
         str += "class ListenerImpl(BaseClass):\n"
         str += "   _com_interfaces_ = xpcom.components.interfaces.IEventListener\n"
-        str += "   def __init__(self): BaseClass.__init__(self, arg)\n"
+        str += "   def __init__(self): BaseClass.__init__(self, dArgs)\n"
         str += "result = ListenerImpl()\n"
         exec (str, d, d)
         return d['result']
@@ -410,32 +599,84 @@ class PlatformXPCOM:
         import xpcom
         xpcom._xpcom.DeinitCOM()
 
-    def queryInterface(self, obj, className):
+    def queryInterface(self, oIUnknown, sClassName):
         import xpcom.components
-        return obj.queryInterface(getattr(xpcom.components.interfaces, className))
+        return oIUnknown.queryInterface(getattr(xpcom.components.interfaces, sClassName))
 
-class PlatformWEBSERVICE:
-    def __init__(self, params):
-        sys.path.append(os.path.join(VBoxSdkDir, 'bindings', 'webservice', 'python', 'lib'))
-        #import VirtualBox_services
+
+class PlatformWEBSERVICE(PlatformBase):
+    """
+    VirtualBox Web Services API specific code.
+    """
+
+    def __init__(self, dParams):
+        PlatformBase.__init__(self, dParams);
+        # Import web services stuff.  Fix the sys.path the first time.
+        sWebServLib = os.path.join(VBoxSdkDir, 'bindings', 'webservice', 'python', 'lib');
+        if sWebServLib not in sys.path:
+            sys.path.append(sWebServLib);
         import VirtualBox_wrappers
         from VirtualBox_wrappers import IWebsessionManager2
 
-        if params is not None:
-            self.user = params.get("user", "")
-            self.password = params.get("password", "")
-            self.url = params.get("url", "")
+        # Initialize instance variables from parameters.
+        if dParams is not None:
+            self.user     = dParams.get("user", "")
+            self.password = dParams.get("password", "")
+            self.url      = dParams.get("url", "")
         else:
-            self.user = ""
+            self.user     = ""
             self.password = ""
-            self.url = None
-        self.vbox = None
+            self.url      = None
+        self.vbox  = None
+        self.wsmgr = None;
 
-    def getSessionObject(self, vbox):
-        return self.wsmgr.getSessionObject(vbox)
+    #
+    # Base class overrides.
+    #
+
+    def getSessionObject(self, oIVBox):
+        return self.wsmgr.getSessionObject(oIVBox)
 
     def getVirtualBox(self):
         return self.connect(self.url, self.user, self.password)
+
+    def getType(self):
+        return 'WEBSERVICE'
+
+    def isRemote(self):
+        """ Returns True if remote VBox host, False if local. """
+        return True
+
+    def getArray(self, oInterface, sAttrib):
+        return oInterface.__getattr__(sAttrib)
+
+    def waitForEvents(self, timeout):
+        # Webservices cannot do that yet
+        return 2;
+
+    def interruptWaitEvents(self, timeout):
+        # Webservices cannot do that yet
+        return False;
+
+    def deinit(self):
+        try:
+           disconnect()
+        except:
+           pass
+
+    def queryInterface(self, oIUnknown, sClassName):
+        d = {}
+        d['oIUnknown'] = oIUnknown
+        str = ""
+        str += "from VirtualBox_wrappers import "+sClassName+"\n"
+        str += "result = "+sClassName+"(oIUnknown.mgr, oIUnknown.handle)\n"
+        # wrong, need to test if class indeed implements this interface
+        exec (str, d, d)
+        return d['result']
+
+    #
+    # Web service specific methods.
+    #
 
     def connect(self, url, user, passwd):
         if self.vbox is not None:
@@ -458,75 +699,44 @@ class PlatformWEBSERVICE:
 
     def disconnect(self):
         if self.vbox is not None and self.wsmgr is not None:
-                self.wsmgr.logoff(self.vbox)
-                self.vbox = None
-                self.wsmgr = None
+            self.wsmgr.logoff(self.vbox)
+            self.vbox  = None
+            self.wsmgr = None
 
-    def getType(self):
-        return 'WEBSERVICE'
 
-    def getRemote(self):
-        return True
 
-    def getArray(self, obj, field):
-        return obj.__getattr__(field)
+class VirtualBoxManager(object):
+    """
+    VirtualBox API manager class.
 
-    def initPerThread(self):
-        pass
+    The API users will have to instantiate this.  If no parameters are given,
+    it will default to interface with the VirtualBox running on the local
+    machine.  sStyle can be None (default), MSCOM, XPCOM or WEBSERVICES.  Most
+    users will either be specifying None or WEBSERVICES.
 
-    def deinitPerThread(self):
-        pass
+    The dPlatformParams is an optional dictionary for passing parameters to the
+    WEBSERVICE backend.
+    """
 
-    def createListener(self, impl, arg):
-        raise Exception("no active listeners for webservices")
-
-    def waitForEvents(self, timeout):
-        # Webservices cannot do that yet
-        return 2;
-
-    def interruptWaitEvents(self, timeout):
-        # Webservices cannot do that yet
-        return False;
-
-    def deinit(self):
-        try:
-           disconnect()
-        except:
-           pass
-
-    def queryInterface(self, obj, className):
-        d = {}
-        d['obj'] = obj
-        str = ""
-        str += "from VirtualBox_wrappers import "+className+"\n"
-        str += "result = "+className+"(obj.mgr, obj.handle)\n"
-        # wrong, need to test if class indeed implements this interface
-        exec (str, d, d)
-        return d['result']
-
-class SessionManager:
-    def __init__(self, mgr):
-        self.mgr = mgr
-
-    def getSessionObject(self, vbox):
-        return self.mgr.platform.getSessionObject(vbox)
-
-class VirtualBoxManager:
-    def __init__(self, style, platparams):
-        if style is None:
+    def __init__(self, sStyle = None, dPlatformParams = None):
+        if sStyle is None:
             if sys.platform == 'win32':
-                style = "MSCOM"
+                sStyle = "MSCOM"
             else:
-                style = "XPCOM"
-
-
-        exec "self.platform = Platform"+style+"(platparams)"
+                sStyle = "XPCOM"
+        if sStyle == 'XPCOM':
+            self.platform = PlatformXPCOM(dPlatformParams);
+        elif sStyle == 'MSCOM':
+            self.platform = PlatformMSCOM(dPlatformParams);
+        elif sStyle == 'WEBSERVICE':
+            self.platform = PlatformWEBSERVICE(dPlatformParams);
+        else:
+            raise Exception('Unknown sStyle=%s' % (sStyle,));
+        self.style     = sStyle
+        self.type      = self.platform.getType()
+        self.remote    = self.platform.isRemote()
         # for webservices, enums are symbolic
-        self.constants = VirtualBoxReflectionInfo(style == "WEBSERVICE")
-        self.type = self.platform.getType()
-        self.remote = self.platform.getRemote()
-        self.style = style
-        self.mgr = SessionManager(self)
+        self.constants = VirtualBoxReflectionInfo(sStyle == "WEBSERVICE")
 
         try:
             self.vbox = self.platform.getVirtualBox()
@@ -541,73 +751,107 @@ class VirtualBoxManager:
                 self.vbox = None
             else:
                 raise e
-
-    def getArray(self, obj, field):
-        return self.platform.getArray(obj, field)
-
-    def getVirtualBox(self):
-        return self.platform.getVirtualBox()
+        ## @deprecated
+        # This used to refer to a session manager class with only one method
+        # called getSessionObject.  The method has moved into this call.
+        self.mgr = self;
 
     def __del__(self):
         self.deinit()
 
+
+    #
+    # Wrappers for self.platform methods.
+    #
+
+    def getVirtualBox(self):
+        """ See PlatformBase::getVirtualBox(). """
+        return self.platform.getVirtualBox()
+
+    def getSessionObject(self, oIVBox):
+        """ See PlatformBase::getSessionObject(). """
+        return self.platform.getSessionObject(oIVBox);
+
+    def getArray(self, oInterface, sAttrib):
+        """ See PlatformBase::getArray(). """
+        return self.platform.getArray(oInterface, sAttrib)
+
+    def createListener(self, oImplClass, dArgs = None):
+        """ See PlatformBase::createListener(). """
+        return self.platform.createListener(oImplClass, dArgs)
+
+    def waitForEvents(self, cMsTimeout):
+        """ See PlatformBase::waitForEvents(). """
+        return self.platform.waitForEvents(cMsTimeout)
+
+    def interruptWaitEvents(self):
+        """ See PlatformBase::interruptWaitEvents(). """
+        return self.platform.interruptWaitEvents()
+
+    def queryInterface(self, oIUnknown, sClassName):
+        """ See PlatformBase::queryInterface(). """
+        return self.platform.queryInterface(oIUnknown, sClassName)
+
+
+    #
+    # Init and uninit.
+    #
+
+    def initPerThread(self):
+        """ See PlatformBase::deinitPerThread(). """
+        self.platform.initPerThread()
+
+    def deinitPerThread(self):
+        """ See PlatformBase::deinitPerThread(). """
+        return self.platform.deinitPerThread()
+
     def deinit(self):
+        """
+        For unitializing the manager.
+        Do not access it after calling this method.
+        """
         if hasattr(self, "vbox"):
             del self.vbox
             self.vbox = None
         if hasattr(self, "platform"):
             self.platform.deinit()
             self.platform = None
+        return True;
 
-    def initPerThread(self):
-        self.platform.initPerThread()
 
-    def openMachineSession(self, mach, permitSharing = True):
-         session = self.mgr.getSessionObject(self.vbox)
-         if permitSharing:
-             type = self.constants.LockType_Shared
-         else:
-             type = self.constants.LockType_Write
-         mach.lockMachine(session, type)
-         return session
+    #
+    # Utility methods.
+    #
 
-    def closeMachineSession(self, session):
-        if session is not None:
-            session.unlockMachine()
-
-    def deinitPerThread(self):
-        self.platform.deinitPerThread()
-
-    def createListener(self, impl, arg = None):
-        return self.platform.createListener(impl, arg)
-
-    def waitForEvents(self, timeout):
+    def openMachineSession(self, oIMachine, fPermitSharing = True):
         """
-        Wait for events to arrive and process them.
-
-        The timeout is in milliseconds.  A negative value means waiting for
-        ever, while 0 does not wait at all.
-
-        Returns 0 if events was processed.
-        Returns 1 if timed out or interrupted in some way.
-        Returns 2 on error (like not supported for web services).
-
-        Raises an exception if the calling thread is not the main thread (the one
-        that initialized VirtualBoxManager) or if the time isn't an integer.
+        Attemts to open the a session to the machine.
+        Returns a session object on success.
+        Raises exception on failure.
         """
-        return self.platform.waitForEvents(timeout)
+        oSession = self.mgr.getSessionObject(self.vbox);
+        if fPermitSharing:
+            type = self.constants.LockType_Shared;
+        else:
+            type = self.constants.LockType_Write;
+        oIMachine.lockMachine(oSession, type);
+        return oSession;
 
-    def interruptWaitEvents(self):
+    def closeMachineSession(self, oSession):
         """
-        Interrupt a waitForEvents call.
-        This is normally called from a worker thread.
-
-        Returns True on success, False on failure.
+        Closes a session opened by openMachineSession.
+        Ignores None parameters.
         """
-        return self.platform.interruptWaitEvents()
+        if oSession is not None:
+            oSession.unlockMachine()
+        return True;
 
-    def getPerfCollector(self, vbox):
-        return PerfCollector(self, vbox)
+    def getPerfCollector(self, oIVBox):
+        """
+        Returns a helper class (PerfCollector) for accessing performance
+        collector goodies.  See PerfCollector for details.
+        """
+        return PerfCollector(self, oIVBox)
 
     def getBinDir(self):
         """
@@ -623,5 +867,3 @@ class VirtualBoxManager:
         global VBoxSdkDir
         return VBoxSdkDir
 
-    def queryInterface(self, obj, className):
-        return self.platform.queryInterface(obj, className)
