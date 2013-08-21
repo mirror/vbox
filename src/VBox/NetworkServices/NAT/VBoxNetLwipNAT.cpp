@@ -777,7 +777,7 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
      */
     memcpy(pFwCopy, &natPf.FWSpec, sizeof(fwspec));
 
-    lrc = portfwd_rule_add(&natPf.FWSpec);
+    lrc = portfwd_rule_add(pFwCopy);
     
     AssertReturn(!lrc, VERR_IGNORED);
 
