@@ -1468,17 +1468,24 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
 
         nsent = sendmsg(pxtcp->sock, &mh, send_flags);
 #else
-        nsent = -1; /* unix send*'s "assignment" semantic, that different from WSA */
+        /**
+         * WSASend(,,,DWORD *,,,) - takes SSIZE_T (64bit value) ... so all nsent's 
+         * bits should be zeroed before passing to WSASent.
+         */
+        nsent = 0; 
         rc = WSASend(pxtcp->sock, iov, (DWORD)i, (DWORD *)&nsent, 0, NULL, NULL);
         if (rc == SOCKET_ERROR) {
-            /* WSASent reports both status code and nsent
-             * need some eurisitic how to work with it.
+            /* WSASent reports SOCKET_ERROR and updates error accessible with 
+             * WSAGetLastError(). We assign nsent to -1, enforcing code below
+             * to access error in BSD style.
              */
             warn("pxtcp_pcb_forward_outbound:WSASend error:%d nsent:%d\n", 
                  WSAGetLastError(),
                  nsent);
-        }
+            nsent = -1; 
+       }
 #endif
+ 
         if (nsent == (ssize_t)fwd1) {
             /* successfully sent this chain fragment completely */
             forwarded += nsent;
