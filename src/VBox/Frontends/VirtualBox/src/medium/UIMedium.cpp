@@ -41,7 +41,8 @@ QString UIMedium::mRow = QString ("<tr><td>%1</td></tr>");
 
 UIMedium& UIMedium::operator= (const UIMedium &aOther)
 {
-    m_fAttachedToHiddenMachinesOnly = aOther.isAttachedToHiddenMachinesOnly();
+    m_fHide = aOther.m_fHide;
+    m_fAttachedToHiddenMachinesOnly = aOther.m_fAttachedToHiddenMachinesOnly;
 
     mMedium = aOther.medium();
     mType = aOther.type();
@@ -122,7 +123,8 @@ void UIMedium::blockAndQueryState()
  */
 void UIMedium::refresh()
 {
-    /* We assume this flag is 'false' by default: */
+    /* We assume these flags are 'false' by default: */
+    m_fHide = false;
     m_fAttachedToHiddenMachinesOnly = false;
 
     /* Detect basic parameters */
@@ -141,6 +143,16 @@ void UIMedium::refresh()
 
     mLocation = mMedium.isNull() || mIsHostDrive ? QString ("--") :
                 QDir::toNativeSeparators (mMedium.GetLocation());
+
+    QString tmp;
+    if (!mMedium.isNull())
+        tmp = mMedium.GetProperty("Special/GUI/Hints");
+    if (!tmp.isEmpty())
+    {
+        QStringList tmpList(tmp.split(','));
+        if (tmpList.contains("Hide", Qt::CaseInsensitive))
+            m_fHide = true;
+    }
 
     if (mType == UIMediumType_HardDisk)
     {
