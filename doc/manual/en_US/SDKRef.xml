@@ -3681,6 +3681,16 @@ AuthResult AUTHCALL AuthEntry(
           <para><computeroutput>IDisplay::getScreenResolution</computeroutput>
           has been extended to return the display position in the guest.</para>
         </listitem>
+
+        <listitem>
+          <para>
+            The <xref linkend="IUSBController" xreflabel="IUSBController"/>
+            class is not a singleton of <xref linkend="IMachine" xreflabel="IMachine"/>
+            anymore but <xref linkend="IMachine" xreflabel="IMachine"/> contains
+            a list of USB controllers present in the VM. The USB device filter
+            handling was moved to <xref linkend="IUSBDeviceFilters" xreflabel="IUSBDeviceFilters"/>.
+          </para>
+        </listitem>
       </itemizedlist>
     </sect1>
 
