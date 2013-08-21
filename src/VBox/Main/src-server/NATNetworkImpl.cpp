@@ -477,21 +477,25 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
 
 STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMappings))
 {
+    NOREF(aLocalMappings); NOREF(aLocalMappingsSize);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
 {
+    NOREF(aHostId); NOREF(aOffset);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(LoopbackIp6)(LONG *aLoopbackIp6)
 {
+    NOREF(aLoopbackIp6);
     return E_NOTIMPL;
 }
 
 STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
 {
+    NOREF(aLoopbackIp6);
     return E_NOTIMPL;
 }
 
