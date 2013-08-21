@@ -423,29 +423,38 @@ void UIMachineSettingsUSB::saveFromCacheTo(QVariant &data)
     uploadData(data);
 }
 
-bool UIMachineSettingsUSB::validate(QString &strWarningText, QString&)
+bool UIMachineSettingsUSB::validate(QList<UIValidationMessage> &messages)
 {
-    NOREF(strWarningText);
+    Q_UNUSED(messages);
+
+    /* Pass by default: */
+    bool fPass = true;
 
 #ifdef VBOX_WITH_EXTPACK
     /* USB 2.0 Extension Pack presence test: */
     CExtPack extPack = vboxGlobal().virtualBox().GetExtensionPackManager().Find(GUI_ExtPackName);
     if (mGbUSB->isChecked() && mCbUSB2->isChecked() && (extPack.isNull() || !extPack.GetUsable()))
     {
-        strWarningText = tr("USB 2.0 is currently enabled for this virtual machine. "
-                            "However, this requires the <b>%1</b> to be installed. "
-                            "Please install the Extension Pack from the VirtualBox download site. "
-                            "After this you will be able to re-enable USB 2.0. "
-                            "It will be disabled in the meantime unless you cancel the current settings changes.")
-                            .arg(GUI_ExtPackName);
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.second << tr("USB 2.0 is currently enabled for this virtual machine. "
+                             "However, this requires the <b>%1</b> to be installed. "
+                             "Please install the Extension Pack from the VirtualBox download site. "
+                             "After this you will be able to re-enable USB 2.0. "
+                             "It will be disabled in the meantime unless you cancel the current settings changes.")
+                             .arg(GUI_ExtPackName);
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
+        /* Show message-center warning: */
         msgCenter().warnAboutUnsupportedUSB2(GUI_ExtPackName, this);
+        /* Disable USB2.0 if enabled: */
         mCbUSB2->setChecked(false);
-        return true;
     }
 #endif /* VBOX_WITH_EXTPACK */
 
-    /* Pass by default: */
-    return true;
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsUSB::setOrderAfter (QWidget *aWidget)

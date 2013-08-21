@@ -2103,8 +2103,14 @@ void UIMachineSettingsStorage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
+bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
 {
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+
     /* Check controllers for name emptiness & coincidence.
      * Check attachments for the hd presence / uniqueness. */
     QModelIndex rootIndex = mStorageModel->root();
@@ -2115,20 +2121,23 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
     {
         QModelIndex ctrIndex = rootIndex.child (i, 0);
         QString ctrName = mStorageModel->data (ctrIndex, StorageModel::R_CtrName).toString();
+
         /* Check for name emptiness: */
         if (ctrName.isEmpty())
         {
-            strWarning = tr("No name is currently specified for the controller at position <b>%1</b>.").arg(i + 1);
-            return false;
+            message.second << tr("No name is currently specified for the controller at position <b>%1</b>.").arg(i + 1);
+            fPass = false;
         }
         /* Check for name coincidence: */
         if (names.values().contains(ctrName))
         {
-            strWarning = tr("The controller at position <b>%1</b> has the same name as the controller at position <b>%2</b>.")
-                            .arg(i + 1).arg(names.key(ctrName) + 1);
-            return false;
+            message.second << tr("The controller at position <b>%1</b> has the same name as the controller at position <b>%2</b>.")
+                                 .arg(i + 1).arg(names.key(ctrName) + 1);
+            fPass = false;
         }
-        else names.insert(i, ctrName);
+        else
+            names.insert(i, ctrName);
+
         /* For each attachment: */
         for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
         {
@@ -2137,20 +2146,21 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
             KDeviceType attDevice = mStorageModel->data (attIndex, StorageModel::R_AttDevice).value <KDeviceType>();
             QString key (mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString());
             QString value (QString ("%1 (%2)").arg (ctrName, gpConverter->toString (attSlot)));
-            /* Check for emptiness */
+            /* Check for emptiness: */
             if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
             {
-                strWarning = tr("No hard disk is selected for <i>%1</i>.").arg (value);
-                return false;
+                message.second << tr("No hard disk is selected for <i>%1</i>.").arg (value);
+                fPass = false;
             }
-            /* Check for coincidence */
+            /* Check for coincidence: */
             if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
             {
-                strWarning = tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
-                                .arg (value).arg (config [key]);
-                return false;
+                message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
+                                     .arg (value).arg (config [key]);
+                fPass = false;
             }
-            else config.insert (key, value);
+            else
+                config.insert (key, value);
         }
     }
 
@@ -2172,16 +2182,20 @@ bool UIMachineSettingsStorage::validate(QString &strWarning, QString&)
     }
     if (!excessiveList.isEmpty())
     {
-        strWarning = tr("The machine currently has more storage controllers assigned than a %1 chipset supports. "
-                        "Please change the chipset type on the System settings page or reduce the number "
-                        "of the following storage controllers on the Storage settings page: %2")
-                        .arg(gpConverter->toString(mStorageModel->chipsetType()))
-                        .arg(excessiveList.join(", "));
-        return false;
+        message.second << tr("The machine currently has more storage controllers assigned than a %1 chipset supports. "
+                             "Please change the chipset type on the System settings page or reduce the number "
+                             "of the following storage controllers on the Storage settings page: %2")
+                             .arg(gpConverter->toString(mStorageModel->chipsetType()))
+                             .arg(excessiveList.join(", "));
+        fPass = false;
     }
 
-    /* Pass by default: */
-    return true;
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsStorage::retranslateUi()

@@ -160,24 +160,33 @@ void UIGlobalSettingsInput::saveFromCacheTo(QVariant &data)
     UISettingsPageGlobal::uploadData(data);
 }
 
-bool UIGlobalSettingsInput::validate(QString &strWarning, QString &strTitle)
+bool UIGlobalSettingsInput::validate(QList<UIValidationMessage> &messages)
 {
-    /* Check for unique shortcuts: */
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Check VirtualBox Manager page for unique shortcuts: */
     if (!m_pSelectorModel->isAllShortcutsUnique())
     {
-        strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
-        strWarning = tr("Some items have the same shortcuts assigned.");
-        return false;
-    }
-    else if (!m_pMachineModel->isAllShortcutsUnique())
-    {
-        strTitle += ": " + VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
-        strWarning = tr("Some items have the same shortcuts assigned.");
-        return false;
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Selector));
+        message.second << tr("Some items have the same shortcuts assigned.");
+        messages << message;
+        fPass = false;
     }
 
-    /* Pass by default: */
-    return true;
+    /* Check Virtual Machine page for unique shortcuts: */
+    if (!m_pMachineModel->isAllShortcutsUnique())
+    {
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(UIHotKeyTableIndex_Machine));
+        message.second << tr("Some items have the same shortcuts assigned.");
+        messages << message;
+        fPass = false;
+    }
+
+    /* Return result: */
+    return fPass;
 }
 
 /* Navigation stuff: */

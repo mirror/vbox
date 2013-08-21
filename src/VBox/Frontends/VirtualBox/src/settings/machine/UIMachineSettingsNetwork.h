@@ -109,7 +109,7 @@ public:
     void uploadAdapterCache(UICacheSettingsMachineNetworkAdapter &adapterCache);
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     /* Navigation stuff: */
     QWidget* setOrderAfter(QWidget *pAfter);
@@ -206,7 +206,7 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     /* Translation stuff: */
     void retranslateUi();

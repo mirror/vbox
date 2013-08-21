@@ -71,6 +71,9 @@ struct UISettingsDataMachine
 };
 Q_DECLARE_METATYPE(UISettingsDataMachine);
 
+/* Validation message type: */
+typedef QPair<QString, QStringList> UIValidationMessage;
+
 /* Settings page base class: */
 class UISettingsPage : public QIWithRetranslateUI<QWidget>
 {
@@ -95,7 +98,7 @@ public:
     /* Validation stuff: */
     void setValidator(UIPageValidator *pValidator);
     void setValidatorBlocked(bool fIsValidatorBlocked) { m_fIsValidatorBlocked = fIsValidatorBlocked; }
-    virtual bool validate(QString& /* strWarningText */, QString& /* strTitle */) { return true; }
+    virtual bool validate(QList<UIValidationMessage>& /* messages */) { return true; }
 
     /* Navigation stuff: */
     QWidget* firstWidget() const { return m_pFirstWidget; }

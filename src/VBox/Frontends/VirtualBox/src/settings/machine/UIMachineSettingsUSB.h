@@ -142,7 +142,7 @@ protected:
     bool changed() const { return m_cache.wasChanged(); }
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarningText, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     void setOrderAfter (QWidget *aWidget);
 
