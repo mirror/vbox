@@ -375,7 +375,7 @@ crStateFreeContext(CRContext *ctx)
     else
     {
 #ifndef DEBUG_misha
-        crWarning("freeing context 0x%x, id(%d) not being in the context list", ctx, ctx->id);
+        crWarning("freeing context %p, id(%d) not being in the context list", ctx, ctx->id);
 #endif
     }
 
@@ -526,7 +526,7 @@ void crStateDestroy(void)
  * (i.e. the old context to the new context).  The transformation
  * is accomplished by calling GL functions through the 'diff_api'
  * so that the downstream GL machine (represented by the __currentContext
- * structure) is updated to reflect the new context state.  Finally, 
+ * structure) is updated to reflect the new context state.  Finally,
  * we point __currentContext to the new context.
  *
  * A subtle problem we have to deal with is context destruction.
