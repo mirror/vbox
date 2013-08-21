@@ -140,6 +140,7 @@ static uint64_t rtMpSolarisGetFrequency(RTCPUID idCpu, const char *pszStatName)
             {
                 if (kstat_read(g_pKsCtl, g_papCpuInfo[idCpu], 0) != -1)
                 {
+                    /* Solaris really need to fix their APIs. Explicitly cast for now. */
                     kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(g_papCpuInfo[idCpu], (char*)pszStatName);
                     if (pStat)
                     {
@@ -175,7 +176,6 @@ static uint64_t rtMpSolarisGetFrequency(RTCPUID idCpu, const char *pszStatName)
 
 RTDECL(uint32_t) RTMpGetCurFrequency(RTCPUID idCpu)
 {
-    /* Solaris really need to fix their APIs. */
     return rtMpSolarisGetFrequency(idCpu, "current_clock_Hz") / 1000000;
 }
 
