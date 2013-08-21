@@ -35,10 +35,19 @@
 #  define __attribute__(x) /* IGNORE */
 #  define inet_ntop(dom, pvaddr, pstrbuf, cbstrbuf) InetNtop((dom),(pvaddr),(pstrbuf),(cbstrbuf))
 
+/**
+ * inet_pton(3) returns 1 on success (network address was successfully
+ * converted).  0 is returned if src does not contain a character string
+ * representing a valid network address in the specified address family.
+ * If af does not contain a valid address family, -1 is returned and
+ * errno is set to EAFNOSUPPORT(value 97). 
+ * WSA has value most close in our case 
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEAFNOSUPPORT (10047)
+ */
 DECLINLINE(int) inet_pton(int af_family, const char *str, void *dst)
 {
-    AssertPtrReturn(str, -1);
-    AssertPtrReturn(dst, -1);
+    AssertPtrReturn(str, 0);
+    AssertPtrReturn(dst, 0);
     
     switch (af_family) {
     case AF_INET: {
@@ -55,15 +64,17 @@ DECLINLINE(int) inet_pton(int af_family, const char *str, void *dst)
       AssertRCReturn(rc, -1);
       memcpy(dst, &a6, sizeof(RTNETADDRIPV6));
 #else
-      /* RTNetStrToIPv6Addr isn't implemented yet. */
+      /* XXX: RTNetStrToIPv6Addr isn't implemented yet. */
+      WSASetLastError(WSAEAFNOSUPPORT);
       return -1;
 #endif
       break;
     }
     default:
+      WSASetLastError(WSAEAFNOSUPPORT);
       AssertMsgFailedReturn(("Unsupported internet family"), -1);
     }
-    return 0;
+    return 1;
 }
 
 /**
