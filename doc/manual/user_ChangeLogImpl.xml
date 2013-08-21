@@ -164,6 +164,11 @@
        </listitem>
 
        <listitem>
+         <para>Linux Additions: fixed udev detection in the init script
+           with Linux 3.x kernels</para>
+       </listitem>
+
+       <listitem>
          <para>Windows guests: ability to track guest user idle times through
            the newly introduced event IGuestUserStateChangedEvent</para>
        </listitem>
