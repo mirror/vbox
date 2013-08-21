@@ -378,6 +378,10 @@ void UIPopupPane::showEvent(QShowEvent *pEvent)
 
 void UIPopupPane::polishEvent(QShowEvent*)
 {
+    /* Focus if marked as 'focused': */
+    if (m_fFocused)
+        setFocus();
+
     /* Emit signal to start *show* animation: */
     emit sigToShow();
 }
