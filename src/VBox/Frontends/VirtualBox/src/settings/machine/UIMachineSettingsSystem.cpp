@@ -284,97 +284,116 @@ void UIMachineSettingsSystem::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsSystem::validate(QString &strWarning, QString&)
+bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
 {
-    /* RAM amount test: */
-    ulong uFullSize = vboxGlobal().host().GetMemorySize();
-    if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMAlw())
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Motherboard tab: */
     {
-        strWarning = tr(
-            "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
-            "Not enough memory is left for the host operating system. Please select a smaller amount.")
-            .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMAlw() / uFullSize * 100.0))
-            .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
-        return false;
-    }
-    if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMOpt())
-    {
-        strWarning = tr(
-            "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
-            "There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.")
-            .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMOpt() / uFullSize * 100.0))
-            .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
-        return true;
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(0));
+
+        /* RAM amount test: */
+        ulong uFullSize = vboxGlobal().host().GetMemorySize();
+        if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMAlw())
+        {
+            message.second << tr(
+                "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
+                "Not enough memory is left for the host operating system. Please select a smaller amount.")
+                .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMAlw() / uFullSize * 100.0))
+                .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
+            fPass = false;
+        }
+        else if (m_pSliderMemorySize->value() > (int)m_pSliderMemorySize->maxRAMOpt())
+        {
+            message.second << tr(
+                "More than <b>%1%</b> of the host computer's memory (<b>%2</b>) is assigned to the virtual machine. "
+                "There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.")
+                .arg((unsigned)qRound((double)m_pSliderMemorySize->maxRAMOpt() / uFullSize * 100.0))
+                .arg(vboxGlobal().formatSize((uint64_t)uFullSize * _1M));
+        }
+
+        /* Chipset type vs IO-APIC test: */
+        if ((KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9 && !m_pCheckBoxApic->isChecked())
+        {
+            message.second << tr(
+                "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
+                "This is needed in order to support a chip set of type ICH9. "
+                "It will be done automatically if you confirm your changes.");
+        }
+
+        /* HID vs OHCI test: */
+        if (isHIDEnabled() && !m_fOHCIEnabled)
+        {
+            message.second << tr(
+                "USB controller emulation is not currently enabled on the USB page. "
+                "This is needed to support an emulated USB input device. "
+                "It will be done automatically if you confirm your changes.");
+        }
+
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
     }
 
-    /* VCPU amount test: */
-    int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
-    if (m_pSliderCPUCount->value() > 2 * cTotalCPUs)
+    /* CPU tab: */
     {
-        strWarning = tr(
-            "For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number "
-            "of physical CPUs on the host (<b>%1</b>). Please reduce the number of virtual CPUs.")
-            .arg(cTotalCPUs);
-        return false;
-    }
-    if (m_pSliderCPUCount->value() > cTotalCPUs)
-    {
-        strWarning = tr(
-            "More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (<b>%1</b>). "
-            "This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.")
-            .arg(cTotalCPUs);
-        return true;
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(1));
+
+        /* VCPU amount test: */
+        int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
+        if (m_pSliderCPUCount->value() > 2 * cTotalCPUs)
+        {
+            message.second << tr(
+                "For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number "
+                "of physical CPUs on the host (<b>%1</b>). Please reduce the number of virtual CPUs.")
+                .arg(cTotalCPUs);
+            fPass = false;
+        }
+        else if (m_pSliderCPUCount->value() > cTotalCPUs)
+        {
+            message.second << tr(
+                "More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (<b>%1</b>). "
+                "This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.")
+                .arg(cTotalCPUs);
+        }
+
+        /* VCPU vs IO-APIC test: */
+        if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxApic->isChecked())
+        {
+            message.second << tr(
+                "The IO APIC feature is not currently enabled in the Motherboard section of the System page. "
+                "This is needed in order to support more than one virtual processor. "
+                "It will be done automatically if you confirm your changes.");
+        }
+
+        /* VCPU vs VT-x/AMD-V test: */
+        if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxVirtualization->isChecked())
+        {
+            message.second << tr(
+                "Hardware virtualization is not currently enabled in the Acceleration section of the System page. "
+                "This is needed in order to support more than one virtual processor. "
+                "It will be done automatically if you confirm your changes.");
+        }
+
+        /* CPU execution cap test: */
+        if (m_pSliderCPUExecCap->value() < (int)m_uMedGuestCPUExecCap)
+        {
+            message.second << tr(
+                "The processor execution cap is set to a low value. This may make the machine feel slow to respond.");
+        }
+
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
     }
 
-    /* VCPU IO-APIC test: */
-    if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxApic->isChecked())
-    {
-        strWarning = tr(
-            "The IO APIC feature is not currently enabled in the Motherboard section of the System page. "
-            "This is needed in order to support more than one virtual processor. "
-            "It will be done automatically if you confirm your changes.");
-        return true;
-    }
-
-    /* VCPU VT-x/AMD-V test: */
-    if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxVirtualization->isChecked())
-    {
-        strWarning = tr(
-            "Hardware virtualization is not currently enabled in the Acceleration section of the System page. "
-            "This is needed in order to support more than one virtual processor. "
-            "It will be done automatically if you confirm your changes.");
-        return true;
-    }
-
-    /* CPU execution cap is low: */
-    if (m_pSliderCPUExecCap->value() < (int)m_uMedGuestCPUExecCap)
-    {
-        strWarning = tr(
-            "The processor execution cap is set to a low value. This may make the machine feel slow to respond.");
-        return true;
-    }
-
-    /* Chipset type & IO-APIC test: */
-    if ((KChipsetType)m_pComboChipsetType->itemData(m_pComboChipsetType->currentIndex()).toInt() == KChipsetType_ICH9 && !m_pCheckBoxApic->isChecked())
-    {
-        strWarning = tr(
-            "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
-            "This is needed in order to support a chip set of type ICH9. "
-            "It will be done automatically if you confirm your changes.");
-        return true;
-    }
-
-    /* HID dependency from OHCI feature: */
-    if (isHIDEnabled() && !m_fOHCIEnabled)
-    {
-        strWarning = tr(
-            "USB controller emulation is not currently enabled on the USB page. "
-            "This is needed to support an emulated USB input device. "
-            "It will be done automatically if you confirm your changes.");
-        return true;
-    }
-
-    return true;
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsSystem::setOrderAfter(QWidget *pWidget)

@@ -61,7 +61,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     /* Helper: Navigation stuff: */
     void setOrderAfter(QWidget *pWidget);

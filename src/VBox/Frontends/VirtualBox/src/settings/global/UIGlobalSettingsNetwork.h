@@ -96,7 +96,7 @@ public:
     void uploadNetworkData(UIHostNetworkData &data);
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     /* API: Update stuff: */
     QString updateInfo();
@@ -163,7 +163,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     /* Navigation stuff: */
     void setOrderAfter (QWidget *aWidget);

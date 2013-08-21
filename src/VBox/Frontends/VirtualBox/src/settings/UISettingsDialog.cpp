@@ -296,19 +296,35 @@ void UISettingsDialog::revalidate(UIPageValidator *pValidator)
 {
     /* Perform page revalidation: */
     UISettingsPage *pSettingsPage = pValidator->page();
-    QString strPageTitle = m_pSelector->itemTextByPage(pSettingsPage);
-    QString strMessageText;
-    bool fIsValid = pSettingsPage->validate(strMessageText, strPageTitle);
+    QList<UIValidationMessage> messages;
+    bool fIsValid = pSettingsPage->validate(messages);
 
     /* Remember revalidation result: */
     pValidator->setValid(fIsValid);
 
     /* Remember warning/error message: */
-    if (strMessageText.isEmpty())
+    if (messages.isEmpty())
         pValidator->setLastMessage(QString());
     else
     {
-        pValidator->setLastMessage(tr("<b>%1</b> page:<br><br>%2").arg(strPageTitle, strMessageText));
+        /* Prepare title prefix: */
+        // Its the only thing preventing us from moving this method to validator.
+        const QString strTitlePrefix(m_pSelector->itemTextByPage(pSettingsPage));
+        /* Prepare text: */
+        QStringList text;
+        foreach (const UIValidationMessage &message, messages)
+        {
+            /* Prepare title: */
+            const QString strTitle(message.first.isNull() ? tr("<b>%1</b> page:").arg(strTitlePrefix) :
+                                                            tr("<b>%1: %2</b> page:").arg(strTitlePrefix, message.first));
+            /* Prepare paragraph: */
+            QStringList paragraph(message.second);
+            paragraph.prepend(strTitle);
+            /* Format text for iterated message: */
+            text << paragraph.join("<br>");
+        }
+        /* Remember text: */
+        pValidator->setLastMessage(text.join("<br><br>"));
         LogRel(("Settings Dialog:  Page validation FAILED: {%s}\n",
                 pValidator->lastMessage().toUtf8().constData()));
     }

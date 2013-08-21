@@ -106,7 +106,7 @@ protected:
     void saveFromCacheTo(QVariant &data);
 
     /* API: Validation stuff: */
-    bool validate(QString &strWarning, QString &strTitle);
+    bool validate(QList<UIValidationMessage> &messages);
 
     void setOrderAfter (QWidget *aWidget);
 

@@ -223,26 +223,36 @@ void UIMachineSettingsGeneral::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsGeneral::validate(QString &strWarning, QString&)
+bool UIMachineSettingsGeneral::validate(QList<UIValidationMessage> &messages)
 {
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+    message.first = VBoxGlobal::removeAccelMark(mTwGeneral->tabText(0));
+
     /* VM name validation: */
     if (m_pNameAndSystemEditor->name().trimmed().isEmpty())
     {
-        strWarning = tr("No name specified for the virtual machine.");
-        return false;
+        message.second << tr("No name specified for the virtual machine.");
+        fPass = false;
     }
 
     /* OS type & VT-x/AMD-v correlation: */
     if (is64BitOSTypeSelected() && !m_fHWVirtExEnabled)
     {
-        strWarning = tr("The virtual machine operating system hint is set to a 64-bit type. "
-                        "64-bit guest systems require hardware virtualization, "
-                        "so this will be enabled automatically if you confirm the changes.");
-        return true;
+        message.second << tr("The virtual machine operating system hint is set to a 64-bit type. "
+                             "64-bit guest systems require hardware virtualization, "
+                             "so this will be enabled automatically if you confirm the changes.");
     }
 
-    /* Pass by default: */
-    return true;
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsGeneral::setOrderAfter (QWidget *aWidget)

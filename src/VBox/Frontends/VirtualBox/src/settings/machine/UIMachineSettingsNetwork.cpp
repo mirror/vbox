@@ -162,22 +162,28 @@ void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkA
     adapterCache.cacheCurrentData(adapterData);
 }
 
-bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
+bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 {
     /* Pass if adapter is disabled: */
     if (!m_pEnableAdapterCheckBox->isChecked())
         return true;
 
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+    message.first = vboxGlobal().removeAccelMark(tabTitle());
+
     /* Validate alternatives: */
-    bool fValid = true;
     switch (attachmentType())
     {
         case KNetworkAttachmentType_Bridged:
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("No bridged network adapter is currently selected.");
-                fValid = false;
+                message.second << tr("No bridged network adapter is currently selected.");
+                fPass = false;
             }
             break;
         }
@@ -185,8 +191,8 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("No internal network name is currently specified.");
-                fValid = false;
+                message.second << tr("No internal network name is currently specified.");
+                fPass = false;
             }
             break;
         }
@@ -194,8 +200,8 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("No host-only network adapter is currently selected.");
-                fValid = false;
+                message.second << tr("No host-only network adapter is currently selected.");
+                fPass = false;
             }
             break;
         }
@@ -203,8 +209,8 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
         {
             if (alternativeName().isNull())
             {
-                strWarning = tr("No generic driver is currently selected.");
-                fValid = false;
+                message.second << tr("No generic driver is currently selected.");
+                fPass = false;
             }
             break;
         }
@@ -213,26 +219,29 @@ bool UIMachineSettingsNetwork::validate(QString &strWarning, QString &strTitle)
     }
 
     /* Validate MAC-address length: */
-    if (fValid && m_pMACEditor->text().size() < 12)
+    if (m_pMACEditor->text().size() < 12)
     {
-        strWarning = tr("The MAC address must be 12 hexadecimal digits long.");
-        fValid = false;
+        message.second << tr("The MAC address must be 12 hexadecimal digits long.");
+        fPass = false;
     }
+
     /* Make sure MAC-address is unicast: */
-    if (fValid && m_pMACEditor->text().size() >= 2)
+    if (m_pMACEditor->text().size() >= 2)
     {
         QRegExp validator("^[0-9A-Fa-f][02468ACEace]");
         if (validator.indexIn(m_pMACEditor->text()) != 0)
         {
-            strWarning = tr("The second digit in the MAC address may not be odd as only unicast addresses are allowed.");
-            fValid = false;
+            message.second << tr("The second digit in the MAC address may not be odd as only unicast addresses are allowed.");
+            fPass = false;
         }
     }
 
-    if (!fValid)
-        strTitle += ": " + vboxGlobal().removeAccelMark(tabTitle());
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
 
-    return fValid;
+    /* Return result: */
+    return fPass;
 }
 
 QWidget* UIMachineSettingsNetwork::setOrderAfter(QWidget *pAfter)
@@ -937,21 +946,21 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsNetworkPage::validate(QString &strWarning, QString &strTitle)
+bool UIMachineSettingsNetworkPage::validate(QList<UIValidationMessage> &messages)
 {
     /* Pass by default: */
     bool fValid = true;
 
-    /* Delegate validation to adapters: */
+    /* Delegate validation to adapter tabs: */
     for (int i = 0; i < m_pTwAdapters->count(); ++i)
     {
         UIMachineSettingsNetwork *pTab = qobject_cast<UIMachineSettingsNetwork*>(m_pTwAdapters->widget(i));
-        Assert(pTab);
-        fValid = pTab->validate(strWarning, strTitle);
-        if (!fValid)
-            break;
+        AssertMsg(pTab, ("Can't get adapter tab!\n"));
+        if (!pTab->validate(messages))
+            fValid = false;
     }
 
+    /* Return result: */
     return fValid;
 }
 

@@ -57,8 +57,14 @@ void UIHostInterfaceItem::uploadNetworkData(UIHostNetworkData &data)
 }
 
 /* Validation stuff: */
-bool UIHostInterfaceItem::validate(QString &strWarning, QString&)
+bool UIHostInterfaceItem::validate(QList<UIValidationMessage> &messages)
 {
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Prepare message: */
+    UIValidationMessage message;
+
     /* Host-only interface validation: */
     if (!m_data.m_interface.m_fDhcpClientEnabled)
     {
@@ -66,15 +72,15 @@ bool UIHostInterfaceItem::validate(QString &strWarning, QString&)
             (QHostAddress(m_data.m_interface.m_strInterfaceAddress) == QHostAddress::Any ||
              QHostAddress(m_data.m_interface.m_strInterfaceAddress).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv4 address.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv4 address.").arg(text(0));
+            fPass = false;
         }
         if (!m_data.m_interface.m_strInterfaceMask.isEmpty() &&
             (QHostAddress(m_data.m_interface.m_strInterfaceMask) == QHostAddress::Any ||
              QHostAddress(m_data.m_interface.m_strInterfaceMask).protocol() != QAbstractSocket::IPv4Protocol))
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv4 network mask.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv4 network mask.").arg(text(0));
+            fPass = false;
         }
         if (m_data.m_interface.m_fIpv6Supported)
         {
@@ -82,8 +88,8 @@ bool UIHostInterfaceItem::validate(QString &strWarning, QString&)
                 (QHostAddress(m_data.m_interface.m_strInterfaceAddress6) == QHostAddress::AnyIPv6 ||
                  QHostAddress(m_data.m_interface.m_strInterfaceAddress6).protocol() != QAbstractSocket::IPv6Protocol))
             {
-                strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv6 address.").arg(text(0));
-                return false;
+                message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid IPv6 address.").arg(text(0));
+                fPass = false;
             }
         }
     }
@@ -94,29 +100,35 @@ bool UIHostInterfaceItem::validate(QString &strWarning, QString&)
         if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress) == QHostAddress::Any ||
             QHostAddress(m_data.m_dhcpserver.m_strDhcpServerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server address.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server address.").arg(text(0));
+            fPass = false;
         }
         if (QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask) == QHostAddress::Any ||
             QHostAddress(m_data.m_dhcpserver.m_strDhcpServerMask).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server mask.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server mask.").arg(text(0));
+            fPass = false;
         }
         if (QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress) == QHostAddress::Any ||
             QHostAddress(m_data.m_dhcpserver.m_strDhcpLowerAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server lower address bound.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server lower address bound.").arg(text(0));
+            fPass = false;
         }
         if (QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress) == QHostAddress::Any ||
             QHostAddress(m_data.m_dhcpserver.m_strDhcpUpperAddress).protocol() != QAbstractSocket::IPv4Protocol)
         {
-            strWarning = UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server upper address bound.").arg(text(0));
-            return false;
+            message.second << UIGlobalSettingsNetwork::tr("The host interface <b>%1</b> does not currently have a valid DHCP server upper address bound.").arg(text(0));
+            fPass = false;
         }
     }
-    return true;
+
+    /* Serialize message: */
+    if (!message.second.isEmpty())
+        messages << message;
+
+    /* Return result: */
+    return fPass;
 }
 
 QString UIHostInterfaceItem::updateInfo()
@@ -370,11 +382,11 @@ void UIGlobalSettingsNetwork::saveFromCacheTo(QVariant &data)
 }
 
 /* Validation processing: */
-bool UIGlobalSettingsNetwork::validate(QString &strWarning, QString &strTitle)
+bool UIGlobalSettingsNetwork::validate(QList<UIValidationMessage> &messages)
 {
     /* Redirect validation to items: */
     UIHostInterfaceItem *pItem = static_cast<UIHostInterfaceItem*>(m_pInterfacesTree->currentItem());
-    return pItem ? pItem->validate(strWarning, strTitle) : true;
+    return pItem ? pItem->validate(messages) : true;
 }
 
 /* Navigation stuff: */

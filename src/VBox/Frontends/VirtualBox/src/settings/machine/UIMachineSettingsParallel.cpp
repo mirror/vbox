@@ -324,60 +324,70 @@ void UIMachineSettingsParallelPage::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsParallelPage::validate(QString &strWarning, QString &strTitle)
+bool UIMachineSettingsParallelPage::validate(QList<UIValidationMessage> &messages)
 {
-    bool valid = true;
+    /* Pass by default: */
+    bool fPass = true;
+
+    /* Validation stuff: */
     QList<QPair<QString, QString> > ports;
     QStringList paths;
 
-    int index = 0;
-    for (; index < mTabWidget->count(); ++ index)
+    /* Validate all the ports: */
+    for (int iIndex = 0; iIndex < mTabWidget->count(); ++iIndex)
     {
-        QWidget *tab = mTabWidget->widget (index);
-        UIMachineSettingsParallel *page =
-            static_cast<UIMachineSettingsParallel*> (tab);
-
-        if (!page->mGbParallel->isChecked())
+        /* Get current tab/page: */
+        QWidget *pTab = mTabWidget->widget(iIndex);
+        UIMachineSettingsParallel *pPage = static_cast<UIMachineSettingsParallel*> (pTab);
+        if (!pPage->mGbParallel->isChecked())
             continue;
 
-        /* Check the predefined port attributes uniqueness: */
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.first = vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(pTab)));
+
+        /* Check the port attribute emptiness & uniqueness: */
+        const QString strIRQ(pPage->mLeIRQ->text());
+        const QString strIOPort(pPage->mLeIOPort->text());
+        const QString strPath(pPage->mLePath->text());
+        QPair<QString, QString> pair(strIRQ, strIOPort);
+
+        if (strIRQ.isEmpty())
         {
-            QString strIRQ = page->mLeIRQ->text();
-            QString strIOPort = page->mLeIOPort->text();
-            QPair<QString, QString> pair(strIRQ, strIOPort);
-            valid = !strIRQ.isEmpty() && !strIOPort.isEmpty() && !ports.contains(pair);
-            if (!valid)
-            {
-                if (strIRQ.isEmpty())
-                    strWarning = tr("No IRQ is currently specified.");
-                else if (strIOPort.isEmpty())
-                    strWarning = tr("No I/O port is currently specified.");
-                else
-                    strWarning = tr("Two or more ports have the same settings.");
-                strTitle += ": " +
-                    vboxGlobal().removeAccelMark(mTabWidget->tabText(mTabWidget->indexOf(tab)));
-            }
-            ports << pair;
+            message.second << tr("No IRQ is currently specified.");
+            fPass = false;
+        }
+        if (strIOPort.isEmpty())
+        {
+            message.second << tr("No I/O port is currently specified.");
+            fPass = false;
+        }
+        if (ports.contains(pair))
+        {
+            message.second << tr("Two or more ports have the same settings.");
+            fPass = false;
+        }
+        if (strPath.isEmpty())
+        {
+            message.second << tr("No port path is currently specified.");
+            fPass = false;
+        }
+        if (paths.contains(strPath))
+        {
+            message.second << tr("There are currently duplicate port paths specified.");
+            fPass = false;
         }
 
-        /* Check the port path emptiness & unicity */
-        {
-            QString path = page->mLePath->text();
-            valid = !path.isEmpty() && !paths.contains (path);
-            if (!valid)
-            {
-                strWarning = path.isEmpty() ?
-                    tr("No port path is currently specified.") :
-                    tr("There are currently duplicate port paths specified.");
-                strTitle += ": " +
-                    vboxGlobal().removeAccelMark (mTabWidget->tabText (mTabWidget->indexOf (tab)));
-                break;
-            }
-            paths << path;
-        }
+        ports << pair;
+        paths << strPath;
+
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
     }
 
-    return valid;
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsParallelPage::retranslateUi()

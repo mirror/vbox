@@ -300,94 +300,115 @@ void UIMachineSettingsDisplay::saveFromCacheTo(QVariant &data)
     UISettingsPageMachine::uploadData(data);
 }
 
-bool UIMachineSettingsDisplay::validate(QString &strWarning, QString&)
+bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
 {
     /* Check if video RAM requirement changed first: */
     checkVRAMRequirements();
 
-    if (m_pCheckbox3D->isChecked() && !vboxGlobal().is3DAvailable())
-    {
-        strWarning = tr("The virtual machine is set to use hardware graphics acceleration. "
-                        "However the host system does not currently provide this, "
-                        "so you will not be able to start the machine.");
-        return true;
-    }
+    /* Pass by default: */
+    bool fPass = true;
 
-    /* Video RAM amount test: */
-    if (shouldWeWarnAboutLowVideoMemory() && !m_guestOSType.isNull())
+    /* Video tab: */
     {
-        quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), m_pEditorVideoScreenCount->value());
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(0));
 
-        /* Basic video RAM amount test: */
-        if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
+        /* 3D acceleration test: */
+        if (m_pCheckbox3D->isChecked() && !vboxGlobal().is3DAvailable())
         {
-            strWarning = tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
-                            "which is the minimum amount required to switch to fullscreen or seamless mode.")
-                            .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
-            return true;
+            message.second << tr("The virtual machine is set to use hardware graphics acceleration. "
+                                 "However the host system does not currently provide this, "
+                                 "so you will not be able to start the machine.");
         }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-        /* 2D acceleration video RAM amount test: */
-        if (m_pCheckbox2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
+
+        /* Video RAM amount test: */
+        if (shouldWeWarnAboutLowVideoMemory() && !m_guestOSType.isNull())
         {
-            uNeedBytes += VBoxGlobal::required2DOffscreenVideoMemory();
+            quint64 uNeedBytes = VBoxGlobal::requiredVideoMemory(m_guestOSType.GetId(), m_pEditorVideoScreenCount->value());
+
+            /* Basic video RAM amount test: */
             if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
             {
-                strWarning = tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
-                                "which is the minimum amount required for High Definition Video to be played efficiently.")
-                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
-                return true;
+                message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
+                                     "which is the minimum amount required to switch to fullscreen or seamless mode.")
+                                     .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
             }
-        }
+#ifdef VBOX_WITH_VIDEOHWACCEL
+            /* 2D acceleration video RAM amount test: */
+            else if (m_pCheckbox2DVideo->isChecked() && m_f2DVideoAccelerationSupported)
+            {
+                uNeedBytes += VBoxGlobal::required2DOffscreenVideoMemory();
+                if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
+                {
+                    message.second << tr("The virtual machine is currently assigned less than <b>%1</b> of video memory "
+                                         "which is the minimum amount required for High Definition Video to be played efficiently.")
+                                         .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
+                }
+            }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 #if 0
 # ifdef VBOX_WITH_CRHGSMI
-        if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
-        {
-            int cGuestScreenCount = m_pEditorVideoScreenCount->value();
-            uNeedBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount);
-            uNeedBytes = qMax(uNeedBytes, 128 * _1M);
-            uNeedBytes = qMin(uNeedBytes, 256 * _1M);
-            if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
+            /* 3D acceleration video RAM amount test: */
+            else if (m_pCheckbox3D->isChecked() && m_fWddmModeSupported)
             {
-                strWarning = tr("The virtual machine is set to use hardware graphics acceleration "
-                                "and the operating system hint is set to Windows Vista or later. "
-                                "For best performance you should set the machine's video memory to at least b>%1</b>.")
-                                .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
-                return true;
+                int cGuestScreenCount = m_pEditorVideoScreenCount->value();
+                uNeedBytes += VBoxGlobal::required3DWddmOffscreenVideoMemory(m_guestOSType.GetId(), cGuestScreenCount);
+                uNeedBytes = qMax(uNeedBytes, 128 * _1M);
+                uNeedBytes = qMin(uNeedBytes, 256 * _1M);
+                if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
+                {
+                    message.second << tr("The virtual machine is set to use hardware graphics acceleration "
+                                         "and the operating system hint is set to Windows Vista or later. "
+                                         "For best performance you should set the machine's video memory to at least b>%1</b>.")
+                                         .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
+                }
             }
-        }
 # endif /* VBOX_WITH_CRHGSMI */
 #endif /* 0 */
-    }
+        }
 
-    /* Check mode availability: */
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* 2D video acceleration is available for Windows guests only: */
-    if (m_pCheckbox2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
-    {
-        strWarning = tr("The virtual machine is set to use Video Stream Acceleration. "
-                        "As this feature only works with Windows guest systems it will be disabled.");
-        return true;
-    }
+        /* 2D video acceleration is available for Windows guests only: */
+        if (m_pCheckbox2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
+        {
+            message.second << tr("The virtual machine is set to use Video Stream Acceleration. "
+                                 "As this feature only works with Windows guest systems it will be disabled.");
+        }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
-    /* Check VRDE server port: */
-    if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
-    {
-        strWarning = tr("The VRDE server port value is not currently specified.");
-        return false;
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
     }
 
-    /* Check VRDE server timeout: */
-    if (m_pEditorRemoteDisplayTimeout->text().trimmed().isEmpty())
+    /* Remote Display tab: */
     {
-        strWarning = tr("The VRDE authentication timeout value is not currently specified.");
-        return false;
+        /* Prepare message: */
+        UIValidationMessage message;
+        message.first = VBoxGlobal::removeAccelMark(m_pTabWidget->tabText(1));
+
+        /* Check VRDE server port: */
+        if (m_pEditorRemoteDisplayPort->text().trimmed().isEmpty())
+        {
+            message.second << tr("The VRDE server port value is not currently specified.");
+            fPass = false;
+        }
+
+        /* Check VRDE server timeout: */
+        if (m_pEditorRemoteDisplayTimeout->text().trimmed().isEmpty())
+        {
+            message.second << tr("The VRDE authentication timeout value is not currently specified.");
+            fPass = false;
+        }
+
+        /* Serialize message: */
+        if (!message.second.isEmpty())
+            messages << message;
     }
 
-    /* Pass by default: */
-    return true;
+    /* Return result: */
+    return fPass;
 }
 
 void UIMachineSettingsDisplay::setOrderAfter(QWidget *pWidget)
