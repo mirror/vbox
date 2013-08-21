@@ -26,6 +26,7 @@
 class UIPageValidator;
 class QHBoxLayout;
 class QLabel;
+class QTimer;
 
 /* Warning-pane prototype: */
 class UIWarningPane: public QWidget
@@ -49,6 +50,11 @@ public:
     /* API: Registry stuff: */
     void registerValidator(UIPageValidator *pValidator);
 
+private slots:
+
+    /* Handler: Hover stuff: */
+    void sltHandleHoverTimer();
+
 private:
 
     /* Helpers: Prepare stuff: */
@@ -64,6 +70,8 @@ private:
     QList<UIPageValidator*> m_validators;
     QList<QLabel*> m_icons;
     QList<bool> m_hovered;
+    QTimer *m_pHoverTimer;
+    int m_iHoveredIconLabelPosition;
 };
 
 #endif /* __UIWarningPane_h__ */
