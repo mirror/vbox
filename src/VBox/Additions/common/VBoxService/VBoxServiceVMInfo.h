@@ -25,7 +25,7 @@ extern int vboxServiceUserUpdateF(PVBOXSERVICEVEPROPCACHE pCache, const char *ps
 
 //RT_C_DECLS_END
 
-extern uint32_t g_uVMInfoUserIdleThreshold;
+extern uint32_t g_uVMInfoUserIdleThresholdMS;
 
 #endif /* ___VBoxServiceVMInfo_h */
 
