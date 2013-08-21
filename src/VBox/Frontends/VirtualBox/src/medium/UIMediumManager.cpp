@@ -777,7 +777,8 @@ void UIMediumManager::mediumAdded (const UIMedium &aMedium)
         (aMedium.isHostDrive()))
         return;
 
-    /* Ignore mediums (and their children) attached to hidden machines only: */
+    /* Ignore mediums (and their children) which are marked as hidden or
+     * which are attached to hidden machines only: */
     if (isMediumAttachedToHiddenMachinesOnly(aMedium))
         return;
 
@@ -892,7 +893,8 @@ void UIMediumManager::mediumUpdated (const UIMedium &aMedium)
         (aMedium.isHostDrive()))
         return;
 
-    /* Ignore mediums (and their children) attached to hidden machines only: */
+    /* Ignore mediums (and their children) which are marked as hidden or
+     * which are attached to hidden machines only: */
     if (isMediumAttachedToHiddenMachinesOnly(aMedium))
         return;
 
@@ -1997,8 +1999,8 @@ bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(const UIMedium &mediu
     const UIMedium *pMedium = &medium;
     do
     {
-        /* Ignore medium if its attached to hidden machines only: */
-        if (pMedium->isAttachedToHiddenMachinesOnly())
+        /* Ignore medium if its hidden or attached to hidden machines only: */
+        if (pMedium->isHidden())
             return true;
         /* Move iterator to parent: */
         pMedium = pMedium->parent();

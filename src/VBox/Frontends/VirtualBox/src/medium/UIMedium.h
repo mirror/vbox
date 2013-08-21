@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -129,7 +129,7 @@ public:
     void blockAndQueryState();
     void refresh();
 
-    bool isAttachedToHiddenMachinesOnly() const { return m_fAttachedToHiddenMachinesOnly; }
+    bool isHidden() const { return m_fHide | m_fAttachedToHiddenMachinesOnly; }
 
     const CMedium &medium() const { return mMedium; }
 
@@ -243,8 +243,6 @@ private:
 
     void checkNoDiffs (bool aNoDiffs);
 
-    bool m_fAttachedToHiddenMachinesOnly;
-
     CMedium mMedium;
 
     UIMediumType mType;
@@ -271,6 +269,8 @@ private:
     bool mIsReadOnly        : 1;
     bool mIsUsedInSnapshots : 1;
     bool mIsHostDrive       : 1;
+    bool m_fHide            : 1;
+    bool m_fAttachedToHiddenMachinesOnly : 1;
 
     QList <QString> mCurStateMachineIds;
 
