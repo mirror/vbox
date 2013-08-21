@@ -110,9 +110,9 @@ static uint64_t                 g_idVMInfoSession;
 static uint64_t                 g_LAClientAttachedTS = 0;
 /** The current LA client info. */
 static VBOXSERVICELACLIENTINFO  g_LAClientInfo;
-/** User idle threshold. This specifies the minimum time a user is considered
- *  being idle and then will be reported to the host. Default is 5s. */
-uint32_t                        g_uVMInfoUserIdleThreshold = 5 * 1000;
+/** User idle threshold (in ms). This specifies the minimum time a user is considered
+ *  as being idle and then will be reported to the host. Default is 5s. */
+uint32_t                        g_uVMInfoUserIdleThresholdMS = 5 * 1000;
 
 
 /*******************************************************************************
@@ -171,7 +171,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoOption(const char **ppszShort, int arg
                                   &g_cMsVMInfoInterval, 1, UINT32_MAX - 1);
     else if (!strcmp(argv[*pi], "--vminfo-user-idle-threshold"))
         rc = VBoxServiceArgUInt32(argc, argv, "", pi,
-                                  &g_uVMInfoUserIdleThreshold, 1, UINT32_MAX - 1);
+                                  &g_uVMInfoUserIdleThresholdMS, 1, UINT32_MAX - 1);
     return rc;
 }
 
@@ -255,7 +255,7 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
         if (RT_SUCCESS(rc2))
         {
             AssertPtr(pszValue);
-            g_uVMInfoUserIdleThreshold = RT_CLAMP(RTStrToUInt32(pszValue), 1000, UINT32_MAX - 1);
+            g_uVMInfoUserIdleThresholdMS = RT_CLAMP(RTStrToUInt32(pszValue), 1000, UINT32_MAX - 1);
             RTStrFree(pszValue);
         }
     }
@@ -1486,7 +1486,7 @@ VBOXSERVICE g_VMInfo =
     "                            VM information. The default is 10000 ms.\n"
     "    --vminfo-user-idle-threshold <ms>\n"
     "                            Specifies the user idle threshold (in ms) for\n"
-    "                            considering a guest user being as idle. The default\n"
+    "                            considering a guest user as being idle. The default\n"
     "                            is 5000 (5 seconds).\n"
     ,
     /* methods */

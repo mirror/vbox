@@ -127,7 +127,7 @@ static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEAD
         if (fRc)
         {
             VBOXTRAYIPCRES_USERLASTINPUT ipcRes;
-            ipcRes.uLastInputMs = GetTickCount() - lastInput.dwTime;
+            ipcRes.uLastInput = (GetTickCount() - lastInput.dwTime) / 1000;
             fLastInputAvailable = true;
         }
         else
@@ -137,7 +137,7 @@ static int vboxIPCHandleUserLastInput(PVBOXIPCSESSION pSession, PVBOXTRAYIPCHEAD
     if (!fLastInputAvailable)
     {
         /* No last input available. */
-        ipcRes.uLastInputMs = UINT32_MAX;
+        ipcRes.uLastInput = UINT32_MAX;
     }
 
     int rc2 = RTLocalIpcSessionWrite(pSession->hSession, &ipcRes, sizeof(ipcRes));

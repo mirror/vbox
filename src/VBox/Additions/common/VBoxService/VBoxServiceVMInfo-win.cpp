@@ -834,11 +834,11 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                 rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes),
                                            NULL /* Exact read */);
             if (   RT_SUCCESS(rc)
-                /* If uLastInputMs is set to UINT32_MAX VBoxTray was not able to retrieve the
+                /* If uLastInput is set to UINT32_MAX VBoxTray was not able to retrieve the
                  * user's last input time. This might happen when running on Windows NT4 or older. */
-                && ipcRes.uLastInputMs != UINT32_MAX)
+                && ipcRes.uLastInput != UINT32_MAX)
             {
-                VBoxGuestUserState userState = ipcRes.uLastInputMs < g_uVMInfoUserIdleThreshold
+                VBoxGuestUserState userState = (ipcRes.uLastInput * 1000) < g_uVMInfoUserIdleThresholdMS
                                              ? VBoxGuestUserState_InUse
                                              : VBoxGuestUserState_Idle;
 
@@ -853,8 +853,8 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                  */
                 if (rc == VINF_SUCCESS)
                 {
-                    VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32ms\n",
-                                       pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInputMs);
+                    VBoxServiceVerbose(4, "User \"%s\" (domain \"%s\") is idle for %RU32s\n",
+                                       pszUser, pszDomain ? pszDomain : "<None>", ipcRes.uLastInput);
 
 #if 0 /* Do we want to write the idle time as well? */
                     /* Also write the user's current idle time, if there is any. */
@@ -872,7 +872,7 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                 }
             }
 #ifdef DEBUG
-            else if (ipcRes.uLastInputMs == UINT32_MAX)
+            else if (ipcRes.uLastInput == UINT32_MAX)
                 VBoxServiceVerbose(4, "Last input for user \"%s\" is not available, skipping\n",
                                    pszUser, rc);
 

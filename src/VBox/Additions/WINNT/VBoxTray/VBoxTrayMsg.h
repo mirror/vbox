@@ -90,8 +90,8 @@ typedef struct VBOXTRAYIPCMSG_SHOWBALLOONMSG
  */
 typedef struct VBOXTRAYIPCRES_USERLASTINPUT
 {
-    /** Last occurred user input event (in ms). */
-    uint32_t uLastInputMs;
+    /** Last occurred user input event (in seconds). */
+    uint32_t uLastInput;
 } VBOXTRAYIPCRES_USERLASTINPUT, *PVBOXTRAYIPCRES_USERLASTINPUT;
 
 #endif /* !___VBOXTRAY_MSG_H */
