@@ -1398,6 +1398,8 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
  * Initializes the bare minimum state required for entering HM context.
  *
  * @param   pvCpu       Pointer to the VMCPU.
+ *
+ * @remarks No-long-jump zone!!!
  */
 VMMR0_INT_DECL(void) HMR0EnterEx(PVMCPU pVCpu)
 {
@@ -1454,12 +1456,12 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     int rc  = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertRC(rc);
 
-    /* We must save the host context here (VT-x) as we might be rescheduled on
-       a different cpu after a long jump back to ring 3. */
-    /** @todo This will change with preemption hooks. */
+    /* Load the host as we may be resuming code after a longjmp and quite
+       possibly be scheduled on a different CPU. */
     rc |= g_HvmR0.pfnSaveHostState(pVM, pVCpu);
     AssertRC(rc);
 
+    /** @todo This is not needed to be done here anymore, can fix/optimize later. */
     rc |= g_HvmR0.pfnLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
 
