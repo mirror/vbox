@@ -833,7 +833,10 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
             if (RT_SUCCESS(rc))
                 rc = RTLocalIpcSessionRead(hSession, &ipcRes, sizeof(ipcRes),
                                            NULL /* Exact read */);
-            if (RT_SUCCESS(rc))
+            if (   RT_SUCCESS(rc)
+                /* If uLastInputMs is set to UINT32_MAX VBoxTray was not able to retrieve the
+                 * user's last input time. This might happen when running on Windows NT4 or older. */
+                && ipcRes.uLastInputMs != UINT32_MAX)
             {
                 VBoxGuestUserState userState = ipcRes.uLastInputMs < g_uVMInfoUserIdleThreshold
                                              ? VBoxGuestUserState_InUse
@@ -869,6 +872,10 @@ static int vboxServiceVMInfoWinWriteLastInput(PVBOXSERVICEVEPROPCACHE pCache,
                 }
             }
 #ifdef DEBUG
+            else if (ipcRes.uLastInputMs == UINT32_MAX)
+                VBoxServiceVerbose(4, "Last input for user \"%s\" is not available, skipping\n",
+                                   pszUser, rc);
+
             VBoxServiceVerbose(4, "Getting last input for user \"%s\" ended with rc=%Rrc\n",
                                pszUser, rc);
 #endif
