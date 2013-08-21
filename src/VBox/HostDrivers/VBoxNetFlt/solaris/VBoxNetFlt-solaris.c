@@ -854,10 +854,10 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
     pStream->Type = g_VBoxNetFltSolarisStreamType;
     switch (pStream->Type)
     {
-        case kIp4Stream:        ASMAtomicUoWritePtr(&pThis->u.s.pIp4Stream, pStream);        break;
-        case kIp6Stream:        ASMAtomicUoWritePtr(&pThis->u.s.pIp6Stream, pStream);        break;
-        case kArpStream:        ASMAtomicUoWritePtr(&pThis->u.s.pArpStream, pStream);        break;
-        case kPromiscStream:    ASMAtomicUoWritePtr(&pThis->u.s.pPromiscStream, pStream);    break;
+        case kIp4Stream:        ASMAtomicUoWritePtr((void**)&pThis->u.s.pIp4Stream, pStream);        break;
+        case kIp6Stream:        ASMAtomicUoWritePtr((void**)&pThis->u.s.pIp6Stream, pStream);        break;
+        case kArpStream:        ASMAtomicUoWritePtr((void**)&pThis->u.s.pArpStream, pStream);        break;
+        case kPromiscStream:    ASMAtomicUoWritePtr((void**)&pThis->u.s.pPromiscStream, pStream);    break;
         default:    /* Heh. */
         {
             LogRel((DEVICE_NAME ":VBoxNetFltSolarisModOpen huh!? Invalid stream type %d\n", pStream->Type));
