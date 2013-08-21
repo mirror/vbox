@@ -323,7 +323,7 @@ void createVM(IVirtualBox *virtualBox)
          * a dynamically expanding image.
          */
         nsCOMPtr <IProgress> progress;
-        com::SafeArray<MediumVariant_T> mediumVariant(sizeof(MediumVariant_T)*8); 
+        com::SafeArray<MediumVariant_T> mediumVariant;
         mediumVariant.push_back(MediumVariant_Standard);
         rc = hardDisk->CreateBaseStorage(100,                                // size in megabytes
                                          ComSafeArrayAsInParam(mediumVariant),
