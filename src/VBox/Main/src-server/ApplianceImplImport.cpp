@@ -3283,13 +3283,32 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     /* USB controller */
     if (stack.fUSBEnabled)
     {
-        settings::USBController ctrl;
+        /** @todo r=klaus add support for arbitrary USB controller types, this can't handle multiple controllers due to its design anyway */
 
-        ctrl.strName = "OHCI";
-        ctrl.enmType = USBControllerType_OHCI;
+        /* usually the OHCI controller is enabled already, need to check */
+        bool fOHCIEnabled = false;
+        settings::USBControllerList &llUSBControllers = config.hardwareMachine.usbSettings.llUSBControllers;
+        settings::USBControllerList::iterator it;
+        for (it = llUSBControllers.begin(); it != llUSBControllers.end(); ++it)
+        {
+            if (it->enmType == USBControllerType_OHCI)
+            {
+                fOHCIEnabled = true;
+                break;
+            }
+        }
 
-        config.hardwareMachine.usbSettings.llUSBControllers.push_back(ctrl);
+        if (!fOHCIEnabled)
+        {
+            settings::USBController ctrl;
+            ctrl.strName = "OHCI";
+            ctrl.enmType = USBControllerType_OHCI;
+
+            llUSBControllers.push_back(ctrl);
+        }
     }
+    else
+        config.hardwareMachine.usbSettings.llUSBControllers.clear();
 #endif
     /* Audio adapter */
     if (stack.strAudioAdapter.isNotEmpty())
