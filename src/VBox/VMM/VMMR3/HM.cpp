@@ -2894,7 +2894,14 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM:\n"));
                 LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError));
                 LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32ExitReason));
-                if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
+
+                if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS
+                    || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS)
+                {
+                    LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idEnteredCpu));
+                    LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idCurrentCpu));
+                }
+                else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
                     LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32PinCtls));
                     LogRel(("HM: CPU[%u] ProcCtls         %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls));
