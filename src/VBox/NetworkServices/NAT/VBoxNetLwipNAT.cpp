@@ -847,9 +847,10 @@ int VBoxNetLwipNAT::init()
         {
             Log(("%d-rule: %ls\n", idxRules, rules[idxRules]));
             NATSEVICEPORTFORWARDRULE Rule;
+            RT_ZERO(Rule);
             rc = netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 0, &Rule.Pfr);
             AssertRC(rc);
-            natServicePfRegister(Rule);
+            m_vecPortForwardRule4.push_back(Rule);
         }
 
         rules.setNull();
@@ -861,7 +862,7 @@ int VBoxNetLwipNAT::init()
             Log(("%d-rule: %ls\n", idxRules, rules[idxRules]));
             NATSEVICEPORTFORWARDRULE Rule;
             netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 1, &Rule.Pfr);
-            natServicePfRegister(Rule);
+            m_vecPortForwardRule4.push_back(Rule);
         }
     } /* if (!fDontLoadRulesOnStartup) */
 
