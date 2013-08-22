@@ -757,7 +757,8 @@ class PlatformXPCOM(PlatformBase):
         return xpcom.Exception;
 
     def errSetupConstants(self, oDst):
-        oDst = self.errCopyErrorConstants(oDst, winerror);
+        import xpcom;
+        oDst = self.errCopyErrorConstants(oDst, xpcom.nsError);
 
         # COM compatability constants.
         oDst.E_ACCESSDENIED           = -2147024891; # see VBox/com/defs.h
