@@ -56,10 +56,33 @@ VBoxNetLwipNAT_LIBS = \
 VBoxNetLwipNAT_LIBS.solaris += socket nsl
 VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
+VBoxNetLwipNAT_SOURCES += \
+    proxy_pollmgr.c \
+    proxy_rtadvd.c \
+    proxytest.c \
+    pxremap.c \
+    pxtcp.c \
+    pxudp.c \
+    fwtcp.c \
+    fwudp.c \
+    portfwd.c \
+    proxy_dhcp6ds.c \
+    proxy_tftpd.c
+
+VBoxNetLwipNAT_SOURCES.darwin  += rtmon_bsd.c
+VBoxNetLwipNAT_SOURCES.freebsd += rtmon_bsd.c
+VBoxNetLwipNAT_SOURCES.linux   += rtmon_linux.c
+VBoxNetLwipNAT_SOURCES.solaris += rtmon_bsd.c
+VBoxNetLwipNAT_SOURCES.win     += rtmon_win.c
+
+VBoxNetLwipNAT_SOURCES.win += \
+    RTWinPoll.cpp \
+    RTWinSocketPair.cpp
+
 #
 # Note: not spaces please in "Devices,$("
 #
-$(foreach file,$(LWIP_SOURCES) $(LWIP_NAT_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
+$(foreach file,$(LWIP_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
 
 $(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBoxNetLwipNAT, ../../Devices,$(incs))))
 

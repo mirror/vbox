@@ -92,33 +92,6 @@ LWIP_SOURCES += Network/lwip-new/src/api/api_lib.c \
     Network/lwip-new/vbox/sys_arch.c \
     Network/VBoxLwipCore.cpp
 
-ifdef VBOX_WITH_LWIP_NAT
-LWIP_NAT_SOURCES += Network/lwip-new/vbox/proxy_pollmgr.c \
-    Network/lwip-new/vbox/proxy_rtadvd.c \
-    Network/lwip-new/vbox/proxytest.c \
-    Network/lwip-new/vbox/pxremap.c \
-    Network/lwip-new/vbox/pxtcp.c \
-    Network/lwip-new/vbox/pxudp.c \
-    Network/lwip-new/vbox/fwtcp.c \
-    Network/lwip-new/vbox/fwudp.c \
-    Network/lwip-new/vbox/portfwd.c \
-    Network/lwip-new/vbox/proxy_dhcp6ds.c \
-    Network/lwip-new/vbox/proxy_tftpd.c
-
-  LWIP_NAT_SOURCES.linux += Network/lwip-new/vbox/rtmon_linux.c
-
-  LWIP_NAT_SOURCES.darwin += Network/lwip-new/vbox/rtmon_bsd.c
-  LWIP_NAT_SOURCES.freebsd += Network/lwip-new/vbox/rtmon_bsd.c
-  LWIP_NAT_SOURCES.solaris += Network/lwip-new/vbox/rtmon_bsd.c
-
- LWIP_NAT_SOURCES.win += Network/lwip-new/vbox/RTWinPoll.cpp \
-    Network/lwip-new/vbox/RTWinSocketPair.cpp \
-    Network/lwip-new/vbox/rtmon_win.c 
-
- # Magic.
- LWIP_NAT_SOURCES += $(LWIP_NAT_SOURCES.$(KBUILD_TARGET))
-endif
-
 ifeq ($(USERNAME), vvl)
 $(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
 
