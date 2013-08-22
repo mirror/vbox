@@ -93,7 +93,30 @@ AssertCompileMemberOffset(VMXRESTOREHOST, HostIdtr.uAddr, 32);
 AssertCompileMemberOffset(VMXRESTOREHOST, uHostFSBase,    40);
 AssertCompileSize(VMXRESTOREHOST, 56);
 
+/** @name VMX HM-error codes for VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO.
+ *  UFC = Unsupported Feature Combination.
+ * @{
+ */
+/** Unsupported pin-based VM-execution controls combo. */
+#define VMX_UFC_CTRL_PIN_EXEC                                   0
+/** Unsupported processor-based VM-execution controls combo. */
+#define VMX_UFC_CTRL_PROC_EXEC                                  1
+/** Unsupported pin-based VM-execution controls combo. */
+#define VMX_UFC_CTRL_PROC_MOV_DRX_EXIT                          2
+/** Unsupported VM-entry controls combo. */
+#define VMX_UFC_CTRL_ENTRY                                      3
+/** Unsupported VM-exit controls combo. */
+#define VMX_UFC_CTRL_EXIT                                       4
+/** MSR storage capacity of the VMCS autoload/store area is not sufficient
+ *  for storing host MSRs. */
+#define VMX_UFC_INSUFFICIENT_HOST_MSR_STORAGE                   5
+/** MSR storage capacity of the VMCS autoload/store area is not sufficient
+ *  for storing guest MSRs. */
+#define VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE                  6
+/** @} */
+
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.
+ *  IGS = Invalid Guest State.
  * @{
  */
 /** An error occurred while checking invalid-guest-state. */
