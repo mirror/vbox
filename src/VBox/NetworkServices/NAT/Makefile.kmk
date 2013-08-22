@@ -16,24 +16,6 @@
 
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
-#
-# Disable Slirp based service.
-#ifdef VBOX_WITH_HARDENING
-# PROGRAMS += VBoxNetSlirpNATHardened
-# DLLS += VBoxNetSlirpNAT
-#else
-# PROGRAMS += VBoxNetSlirpNAT
-#endif
-VBoxNetSlirpNAT_TEMPLATE =
-VBoxNetSlirpNAT_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
-VBoxNetSlirpNAT_INCS = ../../Devices/Network/slirp
-VBoxNetSlirpNAT_DEFS = VBOX_WITH_NAT_SERVICE
-VBoxNetSlirpNAT_SOURCES += VBoxNetSlirpNAT.cpp
-VBoxNetSlirpNAT_DEFS += VBOX_WITH_NAT_SERVICE
-
-#define def_vbox_slirp_service_cflags
-#  $(file)_DEFS += VBOX_WITH_NAT_SERVICE
-#endef
 
 define def_vbox_nat_network_service_sources
     $(1)_SOURCES += $2/$3
@@ -42,27 +24,6 @@ endef
 define def_vbox_nat_network_service_incs
     $(1)_INCS += $2/$3
 endef
-
-VBOX_NOT_IN_NATSERVICE = Network/DrvNAT.cpp
-$(foreach file,$(filter-out $(VBOX_NOT_IN_NATSERVICE), $(VBOX_SLIRP_SOURCES)),$(eval $(call def_vbox_nat_network_service_sources,VBoxNetSlirpNAT,../../Devices,$(file))))
-$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxSlirpNetNAT,../../Devices,$(file))))
-$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetSlirpNAT,../../Devices,$(file))))
-
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_cflags,../../Devices/Network)))
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_bsd_cflags,../../Devices/Network)))
-$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_service_cflags, ../../Devices/Network)))
-$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_cflags,../../Devices/Network)))
-
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
-
-
-$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_alias_cflags, ../../Devices/Network)))
-
-VBoxNetSlirpNAT_SOURCES += ../NetLib/VBoxNetBaseService.cpp
-
-VBoxNetSlirpNAT_LIBS = \
-	$(LIB_RUNTIME)
-VBoxNetSlirpNAT_LDFLAGS.win = /SUBSYSTEM:windows
 
 ifdef VBOX_WITH_LWIP_NAT
 
