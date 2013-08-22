@@ -6131,7 +6131,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             AssertRC(rc);
             pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
         }
-
+        pVCpu->hm.s.vmx.uVmcsState &= ~HMVMX_VMCS_STATE_LAUNCHED;
         pVCpu->hm.s.fLeaveDone = true;
     }
 
@@ -6877,14 +6877,17 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             /* Save the guest-state, restore host-state (FPU, debug etc.). */
             hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
 
-            /* Flush VMCS CPU state to the VMCS region in memory. */
             int rc;
+#if 0
+            /* Flush VMCS CPU state to the VMCS region in memory. */
             if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
             {
                 rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
                 AssertRC(rc);
                 pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
             }
+            pVCpu->hm.s.vmx.uVmcsState &= ~HMVMX_VMCS_STATE_LAUNCHED;
+#endif
 
             /* Leave HM context, takes care of local init (term). */
             rc = HMR0LeaveEx(pVCpu);
