@@ -261,12 +261,17 @@ typedef struct VRDEVIDEOINFRAMEDESC
     /* Supported frame intervals (in 100ns units) follow if VRDE_VIDEOIN_F_FRM_DISCRETE_INTERVALS is set.
      * uint32_t au32FrameIntervals[u32NumFrameIntervals];
      */
+    /* Supported min and max bitrate in bits per second follow if VRDE_VIDEOIN_F_FRM_BITRATE is set.
+     * uint32_t u32MinBitRate;
+     * uint32_t u32MaxBitRate;
+     */
     /* Other frame specific data may follow. */
 } VRDEVIDEOINFRAMEDESC;
 
 /* VRDEVIDEOINFRAMEDESC::u8FrameFlags. */
 #define VRDE_VIDEOIN_F_FRM_STILL              0x01 /* If still images are supported for this frame. */
 #define VRDE_VIDEOIN_F_FRM_DISCRETE_INTERVALS 0x02 /* If the discrete intervals list is included. */
+#define VRDE_VIDEOIN_F_FRM_BITRATE            0x04 /* If the bitrate fields are included. */
 
 /*
  * Controls.
