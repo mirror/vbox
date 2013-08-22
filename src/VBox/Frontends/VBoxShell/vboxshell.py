@@ -204,7 +204,11 @@ def progressBar(ctx, progress, wait=1000):
         return 0
 
 def printErr(_ctx, e):
-    print colored(str(e), 'red')
+    oVBoxMgr = _ctx['global'];
+    if oVBoxMgr.errIsOurXcptKind(e):
+        print colored('%s: %s' % (oVBoxMgr.errToString(e), oVBoxMgr.errGetMessage(e)), 'red');
+    else:
+        print colored(str(e), 'red')
 
 def reportError(_ctx, progress):
     errorinfo = progress.errorInfo

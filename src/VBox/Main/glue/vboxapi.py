@@ -130,7 +130,7 @@ class PerfCollector(object):
 # Attribute hacks.
 #
 def ComifyName(name):
-    return name[0].capitalize()+name[1:]
+    return name[0].capitalize() + name[1:]
 
 
 ## This is for saving the original DispatchBaseClass __getattr__ and __setattr__
@@ -140,26 +140,32 @@ _g_dCOMForward = {
     'setattr': None,
 }
 
-def CustomGetAttr(self, attr):
-    # fastpath
-    if self.__class__.__dict__.get(attr) != None:
-        return self.__class__.__dict__.get(attr)
+def _CustomGetAttr(self, sAttr):
+    """ Our getattr replacement for DispatchBaseClass. """
+    # Fastpath.
+    oRet = self.__class__.__dict__.get(sAttr);
+    if oRet != None:
+        return oRet;
 
-    # try case-insensitivity workaround for class attributes (COM methods)
-    for k in self.__class__.__dict__.keys():
-        if k.lower() == attr.lower():
-            self.__class__.__dict__[attr] = self.__class__.__dict__[k]
-            return getattr(self, k)
-    try:
-        return _g_dCOMForward['getattr'](self, ComifyName(attr))
-    except AttributeError:
-        return _g_dCOMForward['getattr'](self, attr)
+    # Try case-insensitivity workaround for class attributes (COM methods).
+    sAttrLower = sAttr.lower();
+    for sKey in self.__class__.__dict__.keys():
+        if sKey.lower() == sAttrLower:
+            self.__class__.__dict__[sAttr] = self.__class__.__dict__[sKey]
+            return getattr(self, sKey)
 
-def CustomSetAttr(self, attr, value):
+    # Slow path.
     try:
-        return _g_dCOMForward['setattr'](self, ComifyName(attr), value)
+        return _g_dCOMForward['getattr'](self, ComifyName(sAttr))
     except AttributeError:
-        return _g_dCOMForward['setattr'](self, attr, value)
+        return _g_dCOMForward['getattr'](self, sAttr)
+
+def _CustomSetAttr(self, sAttr, oValue):
+    """ Our setattr replacement for DispatchBaseClass. """
+    try:
+        return _g_dCOMForward['setattr'](self, ComifyName(sAttr), oValue)
+    except AttributeError:
+        return _g_dCOMForward['setattr'](self, sAttr, oValue)
 
 
 
@@ -286,6 +292,71 @@ class PlatformBase(object):
         """
         return None;
 
+    #
+    # Error (exception) access methods.
+    #
+
+    def errGetStatus(self, oXcpt):
+        """
+        Returns the COM status code from the VBox API given exception.
+        """
+        return None;
+
+    def errIsDeadInterface(self, oXcpt):
+        """
+        Returns True if the exception indicates that the interface is dead, False if not.
+        """
+        return False;
+
+    def errIsEqual(oXcpt, hrStatus):
+        """
+        Checks if the exception oXcpt is equal to the COM/XPCOM status code
+        hrStatus.
+
+        The oXcpt parameter can be any kind of object, we'll just return True
+        if it doesn't behave like a our exception class.
+
+        Will not raise any exception as long as hrStatus and self are not bad.
+        """
+        try:
+            hrXcpt = self.errGetStatus(oXcpt);
+        except AttributeError:
+            return False;
+        return hrXcpt == hrStatus;
+
+    def errGetMessage(self, oXcpt):
+        """
+        Returns the best error message found in the COM-like exception.
+        Returns None to fall back on errToString.
+        Raises exception if oXcpt isn't our kind of exception object.
+        """
+        return None;
+
+    def errGetBaseXcpt(self):
+        """
+        Returns the base exception class.
+        """
+        return None;
+
+    def errSetupConstants(self, oDst):
+        """
+        Copy/whatever all error constants onto oDst.
+        """
+        return oDst;
+
+    @staticmethod
+    def errCopyErrorConstants(oDst, oSrc):
+        """
+        Copy everything that looks like error constants from oDst to oSrc.
+        """
+        for sAttr in dir(oSrc):
+            if sAttr[0].isupper() and (sAttr[1].isupper() or sAttr[1] == '_'):
+                oAttr = getattr(oSrc, sAttr);
+                if type(oAttr) is int:
+                    setattr(oDst, sAttr, oAttr);
+        return oDst;
+
+
 
 class PlatformMSCOM(PlatformBase):
     """
@@ -376,9 +447,12 @@ class PlatformMSCOM(PlatformBase):
         import win32com
         import pythoncom
         import win32api
+        import winerror
         from win32con import DUPLICATE_SAME_ACCESS
         from win32api import GetCurrentThread, GetCurrentThreadId, DuplicateHandle, GetCurrentProcess
         import threading
+
+        self.winerror = winerror;
 
         pid      = GetCurrentProcess()
         self.tid = GetCurrentThreadId()
@@ -390,9 +464,9 @@ class PlatformMSCOM(PlatformBase):
         # attribute names to match those in xpcom.
         if _g_dCOMForward['setattr'] is None:
             _g_dCOMForward['getattr'] = DispatchBaseClass.__dict__['__getattr__']
-            DispatchBaseClass.__dict__['__getattr__'] = CustomGetAttr
+            DispatchBaseClass.__dict__['__getattr__'] = _CustomGetAttr
             _g_dCOMForward['setattr'] = DispatchBaseClass.__dict__['__setattr__']
-            DispatchBaseClass.__dict__['__setattr__'] = CustomSetAttr
+            DispatchBaseClass.__dict__['__setattr__'] = _CustomSetAttr
 
         # Hack the exception base class so the users doesn't need to check for
         # XPCOM or COM and do different things.
@@ -537,6 +611,62 @@ class PlatformMSCOM(PlatformBase):
         from win32com.client import CastTo
         return CastTo(oIUnknown, sClassName)
 
+    def errGetStatus(self, oXcpt):
+        # The DISP_E_EXCEPTION + excptinfo fun needs checking up, only
+        # empirical info on it so far.
+        hrXcpt = oXcpt.hresult
+        if hrXcpt == self.winerror.DISP_E_EXCEPTION:
+            try:    hrXcpt = oXcpt.excepinfo[5];
+            except: pass;
+        return hrXcpt;
+
+    def errIsDeadInterface(self, oXcpt):
+        return self.errGetStatus(oXcpt) in [
+            0x800706ba, -2147023174, # RPC_S_SERVER_UNAVAILABLE.
+            0x800706be, -2147023170, # RPC_S_CALL_FAILED.
+            0x800706bf, -2147023169, # RPC_S_CALL_FAILED_DNE.
+            0x80010108, -2147417848, # RPC_E_DISCONNECTED.
+        ];
+
+
+    def errGetMessage(self, oXcpt):
+        if hasattr(oXcpt, 'excepinfo'):
+            try:
+                if len(oXcpt.excepinfo) >= 3:
+                    sRet = oXcpt.excepinfo[2];
+                    if len(sRet) > 0:
+                        return sRet[0:];
+            except:
+                pass;
+        if hasattr(oXcpt, 'strerror'):
+            try:
+                sRet = oXcpt.strerror;
+                if len(sRet) > 0:
+                    return sRet;
+            except:
+                pass;
+        return None;
+
+    def errGetBaseXcpt(self):
+        import pythoncom;
+        return pythoncom.com_error;
+
+    def errSetupConstants(self, oDst):
+        import winerror;
+        oDst = self.errCopyErrorConstants(oDst, winerror);
+
+        # XPCOM compatability constants.
+        oDst.NS_OK                    = oDst.S_OK;
+        oDst.NS_ERROR_FAILURE         = oDst.E_FAIL;
+        oDst.NS_ERROR_ABORT           = oDst.E_ABORT;
+        oDst.NS_ERROR_NULL_POINTER    = oDst.E_POINTER;
+        oDst.NS_ERROR_NO_INTERFACE    = oDst.E_NOINTERFACE;
+        oDst.NS_ERROR_INVALID_ARG     = oDst.E_INVALIDARG;
+        oDst.NS_ERROR_OUT_OF_MEMORY   = oDst.E_OUTOFMEMORY;
+        oDst.NS_ERROR_NOT_IMPLEMENTED = oDst.E_NOTIMPL;
+        oDst.NS_ERROR_UNEXPECTED      = oDst.E_UNEXPECTED;
+        return oDst;
+
 
 class PlatformXPCOM(PlatformBase):
     """
@@ -602,6 +732,48 @@ class PlatformXPCOM(PlatformBase):
     def queryInterface(self, oIUnknown, sClassName):
         import xpcom.components
         return oIUnknown.queryInterface(getattr(xpcom.components.interfaces, sClassName))
+
+    def errGetStatus(self, oXcpt):
+        return oXcpt.errno;
+
+    def errIsDeadInterface(self, oXcpt):
+        import winerror;
+        return self.errGetStatus(oXcpt) in [
+            0x80004004, -2147467260, # NS_ERROR_ABORT
+            0x800706be, -2147023170, # NS_ERROR_CALL_FAILED (RPC_S_CALL_FAILED)
+        ];
+
+    def errGetMessage(self, oXcpt):
+        if hasattr(oXcpt, 'msg'):
+            try:
+                sRet = oXcpt.msg;
+                if len(sRet) > 0:
+                    return sRet;
+            except:
+                pass;
+        return None;
+
+    def errGetBaseXcpt(self):
+        import xpcom;
+        return xpcom.Exception;
+
+    def errSetupConstants(self, oDst):
+        import winerror;
+        oDst = self.errCopyErrorConstants(oDst, winerror);
+
+        # COM compatability constants.
+        oDst.E_ACCESSDENIED           = -2147024891; # see VBox/com/defs.h
+        oDst.S_OK                     = oDst.NS_OK;
+        oDst.E_FAIL                   = oDst.NS_ERROR_FAILURE;
+        oDst.E_ABORT                  = oDst.NS_ERROR_ABORT;
+        oDst.E_POINTER                = oDst.NS_ERROR_NULL_POINTER;
+        oDst.E_NOINTERFACE            = oDst.NS_ERROR_NO_INTERFACE;
+        oDst.E_INVALIDARG             = oDst.NS_ERROR_INVALID_ARG;
+        oDst.E_OUTOFMEMORY            = oDst.NS_ERROR_OUT_OF_MEMORY;
+        oDst.E_NOTIMPL                = oDst.NS_ERROR_NOT_IMPLEMENTED;
+        oDst.E_UNEXPECTED             = oDst.NS_ERROR_UNEXPECTED;
+        oDst.DISP_E_EXCEPTION         = -2147352567; # For COM compatability only.
+        return oDst;
 
 
 class PlatformWEBSERVICE(PlatformBase):
@@ -704,6 +876,14 @@ class PlatformWEBSERVICE(PlatformBase):
             self.wsmgr = None
 
 
+## The current (last) exception class.
+# This is reinitalized whenever VirtualBoxManager is called, so it will hold
+# the reference to the error exception class for the last platform/style that
+# was used.  Most clients does talk to multiple VBox instance on different
+# platforms at the same time, so this should be sufficent for most uses and
+# be way simpler to use than VirtualBoxManager::oXcptClass.
+CurXctpClass = None;
+
 
 class VirtualBoxManager(object):
     """
@@ -717,6 +897,10 @@ class VirtualBoxManager(object):
     The dPlatformParams is an optional dictionary for passing parameters to the
     WEBSERVICE backend.
     """
+
+    class Statuses(object):
+        def __init__(self):
+            pass;
 
     def __init__(self, sStyle = None, dPlatformParams = None):
         if sStyle is None:
@@ -735,9 +919,21 @@ class VirtualBoxManager(object):
         self.style     = sStyle
         self.type      = self.platform.getType()
         self.remote    = self.platform.isRemote()
-        # for webservices, enums are symbolic
+        ## VirtualBox API constants (for webservices, enums are symbolic).
         self.constants = VirtualBoxReflectionInfo(sStyle == "WEBSERVICE")
 
+        ## Status constants.
+        self.statuses  = self.platform.errSetupConstants(VirtualBoxManager.Statuses());
+        ## @todo Add VBOX_E_XXX to statuses? They're already in constants...
+        ## Dictionary for errToString, built on demand.
+        self._dErrorValToName = None;
+
+        ## The exception class for the selected platform.
+        self.oXcptClass = self.platform.errGetBaseXcpt();
+        global CurXcptClass;
+        CurXcptClass = self.oXcptClass;
+
+        # Get the virtualbox singleton.
         try:
             self.vbox = self.platform.getVirtualBox()
         except NameError, ne:
@@ -758,6 +954,13 @@ class VirtualBoxManager(object):
 
     def __del__(self):
         self.deinit()
+
+    def getPythonApiRevision(self):
+        """
+        Returns a Python API revision number.
+        This will be incremented when features are added to this file.
+        """
+        return 2;
 
 
     #
@@ -866,4 +1069,80 @@ class VirtualBoxManager(object):
         """
         global VBoxSdkDir
         return VBoxSdkDir
+
+
+    #
+    # Error code utilities.
+    #
+
+    ## @todo port to webservices!
+
+    def errGetStatus(self, oXcpt):
+        """
+        Gets the status code from an exception.
+        """
+        return self.platform.errGetStatus(oXcpt);
+
+    def errIsDeadInterface(self, oXcpt):
+        """
+        Returns True if the exception indicates that the interface is dead, False if not.
+        """
+        return self.platform.errIsDeadInterface(oXcpt);
+
+    def errIsOurXcptKind(self, oXcpt):
+        """
+        Checks if the exception is one that could come from the VBox API.
+        """
+        if self.oXcptClass is None: ## @todo find the exception class for web services!
+            return False;
+        return isinstance(oXcpt, self.oXcptClass);
+
+    def errIsEqual(self, oXcpt, hrStatus):
+        """ See PlatformBase::errIsEqual(). """
+        return self.platform.errIsEqual(oXcpt, hrStatus);
+
+    def errIsNotEqual(self, oXcpt, hrStatus):
+        """
+        Negated errIsEqual.
+        """
+        return self.errIsEqual(oXcpt, hrStatus);
+
+    def errToString(self, hrStatusOrXcpt):
+        """
+        Converts the specified COM status code, or the status code of the
+        specified exception, to a C constant string.
+        """
+
+        # Deal with exceptions.
+        if self.errIsOurXcptKind(hrStatusOrXcpt):
+            hrStatus = self.errGetStatus(hrStatusOrXcpt);
+        else:
+            hrStatus = hrStatusOrXcpt;
+
+        # Build the dictionary on demand.
+        if self._dErrorValToName is None:
+            dErrorValToName = dict();
+            for sKey in dir(self.statuses):
+                if sKey[0].isupper():
+                    oValue = getattr(self.statuses, sKey);
+                    if type(oValue) is int:
+                        dErrorValToName[oValue] = sKey;
+            self._dErrorValToName = dErrorValToName;
+
+        # Do the lookup, falling back on formatting the status number.
+        try:
+            sStr = self._dErrorValToName[int(hrStatus)];
+        except KeyError:
+            hrLong = long(hrStatus);
+            sStr = '%#x (%d)' % (hrLong, hrLong);
+        return sStr;
+
+    def errGetMessage(self, oXcpt):
+        """
+        Returns the best error message found in the COM-like exception.
+        """
+        sRet = self.platform.errGetMessage(oXcpt);
+        if sRet is None:
+            sRet = self.errToString(oXcpt);
+        return sRet;
 
