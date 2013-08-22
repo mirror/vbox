@@ -987,7 +987,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         /* HWVirtEx exclusive mode */
         BOOL fHMExclusive = true;
-        hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Exclusive, &fHMExclusive); H();
+        hrc = systemProperties->COMGETTER(ExclusiveHwVirt)(&fHMExclusive);                  H();
         InsertConfigInteger(pHM, "Exclusive", fHMExclusive);
 
         /* Nested paging (VT-x/AMD-V) */

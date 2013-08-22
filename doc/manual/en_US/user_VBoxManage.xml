@@ -325,7 +325,6 @@ IOAPIC:          on
 PAE:             on
 Time offset:     0 ms
 Hardw. virt.ext: on
-Hardw. virt.ext exclusive: on
 Nested Paging:   on
 VT-x VPID:       off
 State:           powered off (since 2009-10-20T14:52:19.000000000)
@@ -580,16 +579,6 @@ Statistics update:  disabled
             enables or disables the use of hardware virtualization extensions
             (Intel VT-x or AMD-V) in the processor of your host system; see
             <xref linkend="hwvirt" />.</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--hwvirtexexcl on|off</computeroutput>: This
-            specifies whether VirtualBox will make exclusive use of the
-            hardware virtualization extensions (Intel VT-x or AMD-V) in the
-            processor of your host system; see <xref linkend="hwvirt" />. If
-            you wish to simultaneously share these extensions with other
-            hypervisors, then you must disable this setting. Doing so has
-            negative performance implications.</para>
           </listitem>
 
           <listitem>
@@ -2483,6 +2472,17 @@ Value: 2006.01.01</screen>
             details.</para>
           </glossdef>
         </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>hwvirtexclusive</computeroutput></glossterm>
+          <para>This specifies whether VirtualBox will make exclusive use of
+          the hardware virtualization extensions (Intel VT-x or AMD-V) of the
+          host system's processor; see <xref linkend="hwvirt" />. If you wish to
+          share these extensions with other hypervisors running at the same time,
+          you must disable this setting. Doing so has negative performance implications.
+          </para>
+        </glossentry>
+
 
         <glossentry>
           <glossterm><computeroutput>vrdeauthlibrary</computeroutput></glossterm>

@@ -1439,6 +1439,7 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                         pelmGlobalChild->getAttributeValue("LogHistoryCount", systemProperties.ulLogHistoryCount);
                         pelmGlobalChild->getAttributeValue("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
                         pelmGlobalChild->getAttributeValue("defaultFrontend", systemProperties.strDefaultFrontend);
+                        pelmGlobalChild->getAttributeValue("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
                     }
                     else if (pelmGlobalChild->nameEquals("ExtraData"))
                         readExtraData(*pelmGlobalChild, mapExtraDataItems);
@@ -1505,6 +1506,7 @@ void MainConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_14;
     }
 }
+
 
 /**
  * Called from the IVirtualBox interface to write out VirtualBox.xml. This
@@ -1653,6 +1655,7 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
         pelmSysProps->setAttribute("autostartDatabasePath", systemProperties.strAutostartDatabasePath);
     if (systemProperties.strDefaultFrontend.length())
         pelmSysProps->setAttribute("defaultFrontend", systemProperties.strDefaultFrontend);
+    pelmSysProps->setAttribute("exclusiveHwVirt", systemProperties.fExclusiveHwVirt);
 
     buildUSBDeviceFilters(*pelmGlobal->createChild("USBDeviceFilters"),
                           host.llUSBDeviceFilters,
@@ -1839,19 +1842,9 @@ bool GuestProperty::operator==(const GuestProperty &g) const
            );
 }
 
-// use a define for the platform-dependent default value of
-// hwvirt exclusivity, since we'll need to check that value
-// in bumpSettingsVersionIfNeeded()
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
-    #define HWVIRTEXCLUSIVEDEFAULT false
-#else
-    #define HWVIRTEXCLUSIVEDEFAULT true
-#endif
-
 Hardware::Hardware()
         : strVersion("1"),
           fHardwareVirt(true),
-          fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(true),
           fVPID(true),
           fUnrestrictedExecution(true),
@@ -1922,7 +1915,6 @@ bool Hardware::operator==(const Hardware& h) const
              || (    (strVersion                == h.strVersion)
                   && (uuid                      == h.uuid)
                   && (fHardwareVirt             == h.fHardwareVirt)
-                  && (fHardwareVirtExclusive    == h.fHardwareVirtExclusive)
                   && (fNestedPaging             == h.fNestedPaging)
                   && (fLargePages               == h.fLargePages)
                   && (fVPID                     == h.fVPID)
@@ -2652,7 +2644,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtEx")))
             {
                 pelmCPUChild->getAttributeValue("enabled", hw.fHardwareVirt);
-                pelmCPUChild->getAttributeValue("exclusive", hw.fHardwareVirtExclusive);        // settings version 1.9
             }
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExNestedPaging")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
@@ -3924,8 +3915,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmHwVirtEx = pelmCPU->createChild("HardwareVirtEx");
     pelmHwVirtEx->setAttribute("enabled", hw.fHardwareVirt);
-    if (m->sv >= SettingsVersion_v1_9)
-        pelmHwVirtEx->setAttribute("exclusive", hw.fHardwareVirtExclusive);
 
     pelmCPU->createChild("HardwareVirtExNestedPaging")->setAttribute("enabled", hw.fNestedPaging);
     pelmCPU->createChild("HardwareVirtExVPID")->setAttribute("enabled", hw.fVPID);
@@ -5675,7 +5664,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     // all the following require settings version 1.9
     if (    (m->sv < SettingsVersion_v1_9)
          && (    (hardwareMachine.firmwareType >= FirmwareType_EFI)
-              || (hardwareMachine.fHardwareVirtExclusive != HWVIRTEXCLUSIVEDEFAULT)
               || machineUserData.fTeleporterEnabled
               || machineUserData.uTeleporterPort
               || !machineUserData.strTeleporterAddress.isEmpty()

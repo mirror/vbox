@@ -178,7 +178,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--ioapic on|off]\n"
                      "                            [--hpet on|off]\n"
                      "                            [--hwvirtex on|off]\n"
-                     "                            [--hwvirtexexcl on|off]\n"
                      "                            [--nestedpaging on|off]\n"
                      "                            [--largepages on|off]\n"
                      "                            [--vtxvpid on|off]\n"
@@ -634,6 +633,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
     if (u64Cmd & USAGE_SETPROPERTY)
         RTStrmPrintf(pStrm,
                            "%s setproperty %s     machinefolder default|<folder> |\n"
+                     "                            hwvirtexclusive on|off |\n"
                      "                            vrdeauthlibrary default|<library> |\n"
                      "                            websrvauthlibrary default|null|<library> |\n"
                      "                            vrdeextpack null|<library> |\n"

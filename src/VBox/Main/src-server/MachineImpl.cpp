@@ -180,11 +180,6 @@ Machine::HWData::HWData()
     mHWVirtExVPIDEnabled = true;
     mHWVirtExUXEnabled = true;
     mHWVirtExForceEnabled = false;
-#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
-    mHWVirtExExclusive = false;
-#else
-    mHWVirtExExclusive = true;
-#endif
 #if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     mPAEEnabled = true;
 #else
@@ -2539,10 +2534,6 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             *aVal = mHWData->mHWVirtExEnabled;
             break;
 
-        case HWVirtExPropertyType_Exclusive:
-            *aVal = mHWData->mHWVirtExExclusive;
-            break;
-
         case HWVirtExPropertyType_VPID:
             *aVal = mHWData->mHWVirtExVPIDEnabled;
             break;
@@ -2588,12 +2579,6 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mHWVirtExEnabled = !!aVal;
-            break;
-
-        case HWVirtExPropertyType_Exclusive:
-            setModified(IsModified_MachineData);
-            mHWData.backup();
-            mHWData->mHWVirtExExclusive = !!aVal;
             break;
 
         case HWVirtExPropertyType_VPID:
@@ -9158,7 +9143,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mHardwareUUID = data.uuid;
 
         mHWData->mHWVirtExEnabled             = data.fHardwareVirt;
-        mHWData->mHWVirtExExclusive           = data.fHardwareVirtExclusive;
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
         mHWData->mHWVirtExLargePagesEnabled   = data.fLargePages;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
@@ -10483,7 +10467,6 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
 
         // CPU
         data.fHardwareVirt          = !!mHWData->mHWVirtExEnabled;
-        data.fHardwareVirtExclusive = !!mHWData->mHWVirtExExclusive;
         data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
         data.fLargePages            = !!mHWData->mHWVirtExLargePagesEnabled;
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
