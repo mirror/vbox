@@ -1230,7 +1230,11 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         AssertMsgFailed(("%Rrc\n", rc));
         LogRel(("HM: VMX setup failed with rc=%Rrc!\n", rc));
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
-            LogRel(("HM: CPU[%RU32] Last instruction error %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError));
+        {
+            PVMCPU pVCpu = &pVM->aCpus[i];
+            LogRel(("HM: CPU[%u] Last instruction error %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
+            LogRel(("HM: CPU[%u] HM error               %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
+        }
         return VMSetError(pVM, rc, RT_SRC_POS, "VT-x setup failed: %Rrc", rc);
     }
 
@@ -2876,6 +2880,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 {
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
+        PVMCPU pVCpu = &pVM->aCpus[i];
         switch (iStatusCode)
         {
             case VERR_VMX_INVALID_VMCS_FIELD:
@@ -2883,36 +2888,36 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
             case VERR_VMX_INVALID_VMCS_PTR:
                 LogRel(("HM: VERR_VMX_INVALID_VMCS_PTR:\n"));
-                LogRel(("HM: CPU[%u] Current pointer      %#RGp vs %#RGp\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u64VMCSPhys,
-                                                                                pVM->aCpus[i].hm.s.vmx.HCPhysVmcs));
-                LogRel(("HM: CPU[%u] Current VMCS version %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32VMCSRevision));
-                LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idEnteredCpu));
-                LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idCurrentCpu));
+                LogRel(("HM: CPU[%u] Current pointer      %#RGp vs %#RGp\n", i, pVCpu->hm.s.vmx.LastError.u64VMCSPhys,
+                                                                                pVCpu->hm.s.vmx.HCPhysVmcs));
+                LogRel(("HM: CPU[%u] Current VMCS version %#x\n", i, pVCpu->hm.s.vmx.LastError.u32VMCSRevision));
+                LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
+                LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 break;
 
             case VERR_VMX_UNABLE_TO_START_VM:
                 LogRel(("HM: VERR_VMX_UNABLE_TO_START_VM:\n"));
-                LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError));
-                LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVM->aCpus[i].hm.s.vmx.LastError.u32ExitReason));
+                LogRel(("HM: CPU[%u] Instruction error    %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
+                LogRel(("HM: CPU[%u] Exit reason          %#x\n", i, pVCpu->hm.s.vmx.LastError.u32ExitReason));
 
                 if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS
                     || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS)
                 {
-                    LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idEnteredCpu));
-                    LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVM->aCpus[i].hm.s.vmx.LastError.idCurrentCpu));
+                    LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
+                    LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 }
                 else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
-                    LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32PinCtls));
-                    LogRel(("HM: CPU[%u] ProcCtls         %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls));
-                    LogRel(("HM: CPU[%u] ProcCtls2        %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ProcCtls2));
-                    LogRel(("HM: CPU[%u] EntryCtls        %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32EntryCtls));
-                    LogRel(("HM: CPU[%u] ExitCtls         %#RX32\n", i, pVM->aCpus[i].hm.s.vmx.u32ExitCtls));
-                    LogRel(("HM: CPU[%u] MSRBitmapPhys    %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysMsrBitmap));
+                    LogRel(("HM: CPU[%u] PinCtls          %#RX32\n", i, pVCpu->hm.s.vmx.u32PinCtls));
+                    LogRel(("HM: CPU[%u] ProcCtls         %#RX32\n", i, pVCpu->hm.s.vmx.u32ProcCtls));
+                    LogRel(("HM: CPU[%u] ProcCtls2        %#RX32\n", i, pVCpu->hm.s.vmx.u32ProcCtls2));
+                    LogRel(("HM: CPU[%u] EntryCtls        %#RX32\n", i, pVCpu->hm.s.vmx.u32EntryCtls));
+                    LogRel(("HM: CPU[%u] ExitCtls         %#RX32\n", i, pVCpu->hm.s.vmx.u32ExitCtls));
+                    LogRel(("HM: CPU[%u] MSRBitmapPhys    %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysMsrBitmap));
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-                    LogRel(("HM: CPU[%u] GuestMSRPhys     %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysGuestMsr));
-                    LogRel(("HM: CPU[%u] HostMsrPhys      %#RHp\n",  i, pVM->aCpus[i].hm.s.vmx.HCPhysHostMsr));
-                    LogRel(("HM: CPU[%u] cGuestMSRs       %u\n",     i, pVM->aCpus[i].hm.s.vmx.cGuestMsrs));
+                    LogRel(("HM: CPU[%u] GuestMSRPhys     %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysGuestMsr));
+                    LogRel(("HM: CPU[%u] HostMsrPhys      %#RHp\n",  i, pVCpu->hm.s.vmx.HCPhysHostMsr));
+                    LogRel(("HM: CPU[%u] cGuestMSRs       %u\n",     i, pVCpu->hm.s.vmx.cGuestMsrs));
 #endif
                 }
                 /** @todo Log VM-entry event injection control fields
@@ -2923,6 +2928,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_VMX_INVALID_VMXON_PTR:
                 break;
 
+            case VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO:
             case VERR_VMX_INVALID_GUEST_STATE:
             case VERR_VMX_UNEXPECTED_EXIT_CODE:
             case VERR_SVM_UNKNOWN_EXIT:
@@ -2930,7 +2936,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_SVM_UNEXPECTED_PATCH_TYPE:
             case VERR_SVM_UNEXPECTED_XCPT_EXIT:
             {
-                LogRel(("HM: CPU[%u] HM error         %#x (%u)\n", i, pVM->aCpus[i].hm.s.u32HMError, pVM->aCpus[i].hm.s.u32HMError));
+                LogRel(("HM: CPU[%u] HM error         %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
                 break;
             }
         }
