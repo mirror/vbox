@@ -2669,6 +2669,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 
 public class Helper
@@ -2764,17 +2765,37 @@ public class Helper
         return ret;
     }
 
+    @SuppressWarnings( "unchecked")
     public static <T> List<T> wrapEnum(Class<T> wrapperClass, long values[])
     {
         try
         {
             if (values == null)
                 return null;
-            Constructor<T> c = wrapperClass.getConstructor(int.class);
+            //// This code is questionable, as it invokes a private constructor
+            //// (all enums only have default constructors), and we don't really
+            //// know what to pass as the name, and the ordinal may or may not
+            //// be sensible, especially if the long was abused as a bitset.
+            //Constructor<T> c = wrapperClass.getDeclaredConstructor(String.class, int.class, int.class);
+            //c.setAccessible(true); // make it callable
+            //List<T> ret = new ArrayList<T>(values.length);
+            //for (long v : values)
+            //{
+            //    T convEnum = c.newInstance("unknown", (int)v, (int)v);
+            //    ret.add(convEnum);
+            //}
+
+            // Alternative implementation: use the fromValue method, which is
+            // what the code handling single enums will do. I see no reason to
+            // use the above very ugly hack if there are better alternatives,
+            // which as a bonus complain about unknown values. This variant is
+            // slower, but also orders of magnitude safer.
+            java.lang.reflect.Method fromValue = wrapperClass.getMethod("fromValue", long.class);
             List<T> ret = new ArrayList<T>(values.length);
             for (long v : values)
             {
-                ret.add(c.newInstance(v));
+                T convEnum = (T)fromValue.invoke(null, v);
+                ret.add(convEnum);
             }
             return ret;
         }
@@ -2782,10 +2803,10 @@ public class Helper
         {
             throw new AssertionError(e);
         }
-        catch (InstantiationException e)
-        {
-            throw new AssertionError(e);
-        }
+        //catch (InstantiationException e)
+        //{
+        //    throw new AssertionError(e);
+        //}
         catch (IllegalAccessException e)
         {
             throw new AssertionError(e);
@@ -3997,24 +4018,18 @@ public class Helper
         {
             if (values == null)
                 return null;
-            java.lang.reflect.Method fromValue = toClass.getMethod("fromValue", String.class);
             List<T2> ret = new ArrayList<T2>(values.size());
             for (T1 v : values)
             {
-                // static method is called with null this
-                ret.add((T2)fromValue.invoke(null, v.name()));
+                // Ordinal based enum conversion, as JAX-WS "invents" its own
+                // enum names and has string values with the expected content.
+                int enumOrdinal = v.ordinal();
+                T2 convEnum = toClass.getEnumConstants()[enumOrdinal];
+                ret.add(convEnum);
             }
             return ret;
         }
-        catch (NoSuchMethodException e)
-        {
-            throw new AssertionError(e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new AssertionError(e);
-        }
-        catch (InvocationTargetException e)
+        catch (ArrayIndexOutOfBoundsException e)
         {
             throw new AssertionError(e);
         }
