@@ -650,7 +650,10 @@ typedef struct VMCPU
 #ifdef IN_RC
 # define VMCPU_ASSERT_EMT(pVCpu)            Assert(VMCPU_IS_EMT(pVCpu))
 #elif defined(IN_RING0)
-# define VMCPU_ASSERT_EMT(pVCpu)            Assert(VMCPU_IS_EMT(pVCpu))
+# define VMCPU_ASSERT_EMT(pVCpu)            AssertMsg(VMCPU_IS_EMT(pVCpu), \
+                                                      ("Not emulation thread! Thread=%RTnthrd ThreadEMT=%RTnthrd idCpu=%u\n", \
+                                                      RTThreadNativeSelf(), (pVCpu) ? (pVCpu)->hNativeThreadR0 : 0, \
+                                                      (pVCpu) ? (pVCpu)->idCpu : 0))
 #else
 # define VMCPU_ASSERT_EMT(pVCpu) \
     AssertMsg(VMCPU_IS_EMT(pVCpu), \
