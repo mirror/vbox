@@ -384,9 +384,9 @@ public:
 signals:
 
     /* Notifiers: Medium-enumeration stuff: */
-    void mediumEnumStarted();
-    void mediumEnumerated(const UIMedium &medum);
-    void mediumEnumFinished(const VBoxMediaList &mediums);
+    void sigMediumEnumerationStarted();
+    void sigMediumEnumerated(const UIMedium &medium);
+    void sigMediumEnumerationFinished(const VBoxMediaList &mediums);
 
     /** Emitted when a new media is added using #addMedia(). */
     void mediumAdded (const UIMedium &);

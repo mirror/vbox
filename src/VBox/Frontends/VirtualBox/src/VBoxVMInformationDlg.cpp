@@ -115,7 +115,7 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt:
      * more than one screens. */
     connect (pMachineWindow->machineView(), SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
     connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList&)), this, SLOT(updateDetails()));
     connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
 
     /* Loading language constants */

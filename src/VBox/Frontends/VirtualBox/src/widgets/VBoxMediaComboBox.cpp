@@ -37,11 +37,11 @@ VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     sp1.setHorizontalStretch (2);
     setSizePolicy (sp1);
 
-    /* Setup enumeration handlers */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
-             this, SLOT (mediumEnumStarted()));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const UIMedium &)),
-             this, SLOT (mediumEnumerated (const UIMedium &)));
+    /* Setup medium-enumeration handlers: */
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
+            this, SLOT(sltHandleMediumEnumerationStart()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated (const UIMedium&)),
+            this, SLOT(sltHandleMediumEnumerated(const UIMedium&)));
 
     /* Setup update handlers */
     connect (&vboxGlobal(), SIGNAL (mediumAdded (const UIMedium &)),
@@ -167,12 +167,12 @@ void VBoxMediaComboBox::setShowDiffs (bool aShowDiffs)
 }
 
 
-void VBoxMediaComboBox::mediumEnumStarted()
+void VBoxMediaComboBox::sltHandleMediumEnumerationStart()
 {
     refresh();
 }
 
-void VBoxMediaComboBox::mediumEnumerated (const UIMedium &aMedium)
+void VBoxMediaComboBox::sltHandleMediumEnumerated(const UIMedium &aMedium)
 {
     mediumUpdated (aMedium);
 }

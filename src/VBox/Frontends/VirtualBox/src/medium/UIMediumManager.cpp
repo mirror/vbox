@@ -489,15 +489,13 @@ void UIMediumManager::setup (UIMediumType aType, bool aDoSelect,
 
     mButtonBox->button (QDialogButtonBox::Cancel)->setVisible (mDoSelect);
 
-    /* Listen to "media enumeration started" signals */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumStarted()),
-             this, SLOT (mediumEnumStarted()));
-    /* Listen to "media enumeration" signals */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const UIMedium &)),
-             this, SLOT (mediumEnumerated (const UIMedium &)));
-    /* Listen to "media enumeration finished" signals */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)),
-             this, SLOT (mediumEnumFinished (const VBoxMediaList &)));
+    /* Configure medium-enumeration connections: */
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
+            this, SLOT(sltHandleMediumEnumerationStart()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const UIMedium&)),
+            this, SLOT(sltHandleMediumEnumerated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList&)),
+            this, SLOT(sltHandleMediumEnumerationFinish(const VBoxMediaList&)));
 
     /* Listen to "media add" signals */
     connect (&vboxGlobal(), SIGNAL (mediumAdded (const UIMedium &)),
@@ -527,7 +525,7 @@ void UIMediumManager::setup (UIMediumType aType, bool aDoSelect,
 
         /* Emulate the finished signal to reuse the code */
         if (!vboxGlobal().isMediaEnumerationStarted())
-            mediumEnumFinished (list);
+            sltHandleMediumEnumerationFinish(list);
     }
 
     /* For a newly opened dialog, select the first item */
@@ -966,7 +964,7 @@ void UIMediumManager::mediumRemoved (UIMediumType aType, const QString &aId)
     setCurrentItem (tree, tree->currentItem());
 }
 
-void UIMediumManager::mediumEnumStarted()
+void UIMediumManager::sltHandleMediumEnumerationStart()
 {
     /* Reset inaccessible flags */
     mHardDisksInaccessible =
@@ -1000,14 +998,14 @@ void UIMediumManager::mediumEnumStarted()
     processCurrentChanged();
 }
 
-void UIMediumManager::mediumEnumerated (const UIMedium &aMedium)
+void UIMediumManager::sltHandleMediumEnumerated(const UIMedium &aMedium)
 {
     mediumUpdated (aMedium);
 
     mProgressBar->setValue (mProgressBar->value() + 1);
 }
 
-void UIMediumManager::mediumEnumFinished (const VBoxMediaList &/* aList */)
+void UIMediumManager::sltHandleMediumEnumerationFinish(const VBoxMediaList &/* aList */)
 {
     mProgressBar->setVisible (false);
 

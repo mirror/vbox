@@ -51,8 +51,8 @@ public:
 
 protected slots:
 
-    void mediumEnumStarted();
-    void mediumEnumerated (const UIMedium &);
+    void sltHandleMediumEnumerationStart();
+    void sltHandleMediumEnumerated(const UIMedium &);
 
     void mediumAdded (const UIMedium &);
     void mediumUpdated (const UIMedium &);

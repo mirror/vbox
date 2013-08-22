@@ -80,9 +80,9 @@ private slots:
     void mediumUpdated (const UIMedium &aMedium);
     void mediumRemoved (UIMediumType aType, const QString &aId);
 
-    void mediumEnumStarted();
-    void mediumEnumerated (const UIMedium &aMedium);
-    void mediumEnumFinished (const VBoxMediaList &aList);
+    void sltHandleMediumEnumerationStart();
+    void sltHandleMediumEnumerated(const UIMedium &aMedium);
+    void sltHandleMediumEnumerationFinish(const VBoxMediaList &aList);
 
     void doNewMedium();
     void doAddMedium();
