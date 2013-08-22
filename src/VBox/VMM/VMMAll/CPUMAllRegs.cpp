@@ -1102,11 +1102,24 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         /*case MSR_IA32_MCP_CTRL:       - indicated as not present in CAP */
         case MSR_IA32_MC0_CTL:
         case MSR_IA32_MC0_STATUS:
+        case MSR_RAPL_POWER_UNIT:
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
             {
                 Log(("MSR %#x is Intel, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
                 rc = VERR_CPUM_RAISE_GP_0;
+                break;
+            }
+
+            /* Provide more plausive values for some of them. */
+            switch (idMsr)
+            {
+                case MSR_RAPL_POWER_UNIT:
+                    *puValue = RT_MAKE_U32_FROM_U8(3 /* power units (1/8 W)*/,
+                                                   16 /* 15.3 micro-Joules */,
+                                                   10 /* 976 microseconds increments */,
+                                                   0);
+                    break;
             }
             break;
 

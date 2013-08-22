@@ -1092,6 +1092,8 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_VMX_EPT_VPID_CAP           0x48C
 /** DS Save Area (R/W). */
 #define MSR_IA32_DS_AREA                    0x600
+/** Running Average Power Limit (RAPL) power units. */
+#define MSR_RAPL_POWER_UNIT                 0x606
 /** X2APIC MSR ranges. */
 #define MSR_IA32_X2APIC_START               0x800
 #define MSR_IA32_X2APIC_TPR                 0x808
