@@ -1091,10 +1091,11 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             /* no break */
 #endif
         /*
-         * The BIOS_SIGN_ID MSR exists on AMD64 as well, at least bulldozer
-         * have it. Windows 7 is querying it. Just fake it.
+         * The BIOS_SIGN_ID MSR and MSR_IA32_MCP_CAP exist on AMD64 as well, at 
+         * least bulldozer have it. Windows 7 is querying them.  Just fake them.
          */
         case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
+        case MSR_IA32_MCP_CAP:              /* fam/mod >= 6_01 */
             *puValue = 0;
             break;
 
@@ -1104,7 +1105,6 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
          */
         case MSR_IA32_PLATFORM_ID:          /* fam/mod >= 6_01 */
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
-        case MSR_IA32_MCP_CAP:              /* fam/mod >= 6_01 */
         /*case MSR_IA32_MCP_STATUS:     - indicated as not present in CAP */
         /*case MSR_IA32_MCP_CTRL:       - indicated as not present in CAP */
         case MSR_IA32_MC0_CTL:
