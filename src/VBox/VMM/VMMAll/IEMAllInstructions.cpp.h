@@ -5734,12 +5734,12 @@ FNIEMOP_DEF(iemOp_Grp8)
                 uint8_t u8Bit; IEM_OPCODE_GET_NEXT_U8(&u8Bit);
                 IEM_MC_ASSIGN(u16Src, u8Bit & 0x0f);
                 IEM_MC_FETCH_EFLAGS(EFlags);
-                IEM_MC_MEM_MAP(pu16Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu16Dst, fAccess, pIemCpu->iEffSeg, GCPtrEffDst, 0);
                 if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU16, pu16Dst, u16Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU16, pu16Dst, u16Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu16Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
@@ -5757,12 +5757,12 @@ FNIEMOP_DEF(iemOp_Grp8)
                 uint8_t u8Bit; IEM_OPCODE_GET_NEXT_U8(&u8Bit);
                 IEM_MC_ASSIGN(u32Src, u8Bit & 0x1f);
                 IEM_MC_FETCH_EFLAGS(EFlags);
-                IEM_MC_MEM_MAP(pu32Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu32Dst, fAccess, pIemCpu->iEffSeg, GCPtrEffDst, 0);
                 if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU32, pu32Dst, u32Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU32, pu32Dst, u32Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu32Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
@@ -5780,12 +5780,12 @@ FNIEMOP_DEF(iemOp_Grp8)
                 uint8_t u8Bit; IEM_OPCODE_GET_NEXT_U8(&u8Bit);
                 IEM_MC_ASSIGN(u64Src, u8Bit & 0x3f);
                 IEM_MC_FETCH_EFLAGS(EFlags);
-                IEM_MC_MEM_MAP(pu64Dst, IEM_ACCESS_DATA_RW, pIemCpu->iEffSeg, GCPtrEffDst, 0);
+                IEM_MC_MEM_MAP(pu64Dst, fAccess, pIemCpu->iEffSeg, GCPtrEffDst, 0);
                 if (!(pIemCpu->fPrefixes & IEM_OP_PRF_LOCK))
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnNormalU64, pu64Dst, u64Src, pEFlags);
                 else
                     IEM_MC_CALL_VOID_AIMPL_3(pImpl->pfnLockedU64, pu64Dst, u64Src, pEFlags);
-                IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, IEM_ACCESS_DATA_RW);
+                IEM_MC_MEM_COMMIT_AND_UNMAP(pu64Dst, fAccess);
 
                 IEM_MC_COMMIT_EFLAGS(EFlags);
                 IEM_MC_ADVANCE_RIP();
