@@ -61,7 +61,6 @@ enum
     MODIFYVM_LONGMODE,
     MODIFYVM_SYNTHCPU,
     MODIFYVM_HWVIRTEX,
-    MODIFYVM_HWVIRTEXEXCLUSIVE,
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_LARGEPAGES,
     MODIFYVM_VTXVPID,
@@ -223,7 +222,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--longmode",                 MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
-    { "--hwvirtexexcl",             MODIFYVM_HWVIRTEXEXCLUSIVE,         RTGETOPT_REQ_BOOL_ONOFF },
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
     { "--vtxvpid",                  MODIFYVM_VTXVPID,                   RTGETOPT_REQ_BOOL_ONOFF },
@@ -628,12 +626,6 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_HWVIRTEX:
             {
                 CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Enabled, ValueUnion.f));
-                break;
-            }
-
-            case MODIFYVM_HWVIRTEXEXCLUSIVE:
-            {
-                CHECK_ERROR(machine, SetHWVirtExProperty(HWVirtExPropertyType_Exclusive, ValueUnion.f));
                 break;
             }
 

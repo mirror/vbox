@@ -953,7 +953,7 @@
 
   <enum
     name="HWVirtExPropertyType"
-    uuid="39463ecd-b4b8-401f-b168-76cfa87e11f0"
+    uuid="411ad0ea-aeeb-44cb-9d03-1624d0d025ac"
     >
     <desc>
       Hardware virtualization property type. This enumeration represents possible values
@@ -969,34 +969,27 @@
         such extensions are not available, they will not be used.
       </desc>
     </const>
-    <const name="Exclusive"             value="2">
-      <desc>
-        Whether hardware virtualization is used exclusively by VirtualBox. When enabled,
-        VirtualBox assumes it can acquire full and exclusive access to the VT-x or AMD-V
-        feature of the host. To share these with other hypervisors, you must disable this property.
-      </desc>
-    </const>
-    <const name="VPID"                  value="3">
+    <const name="VPID"                  value="2">
       <desc>
         Whether VT-x VPID is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
-    <const name="NestedPaging"          value="4">
+    <const name="NestedPaging"          value="3">
       <desc>
         Whether Nested Paging is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
-    <const name="UnrestrictedExecution" value="5">
+    <const name="UnrestrictedExecution" value="4">
       <desc>
         Whether VT-x unrestricted execution is enabled. If this feature is not available, it will not be used.
       </desc>
     </const>
-    <const name="LargePages"            value="6">
+    <const name="LargePages"            value="5">
       <desc>
         Whether large page allocation is enabled; requires nested paging and a 64-bit host.
       </desc>
     </const>
-    <const name="Force"                 value="7">
+    <const name="Force"                 value="6">
       <desc>
         Whether the VM should fail to start if hardware virtualization (VT-x/AMD-V) cannot be used. If
         not set, there will be an automatic fallback to software virtualization.
@@ -8727,7 +8720,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="856be1bc-0525-46b1-a27a-fe17d9a4939f"
+    uuid="1254a96a-ae57-4484-946a-22d86c1f98af"
     wsmap="managed"
     >
     <desc>
@@ -8792,6 +8785,15 @@
         to the total number of devices a machine can boot from, to make it
         possible to include all possible devices to the boot list.
         <see><link to="IMachine::setBootOrder"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="exclusiveHwVirt" type="boolean">
+      <desc>
+        Exclusive use of hardware virtualization by VirtualBox. When enabled,
+        VirtualBox assumes it can obtain full and exclusive access to the VT-x
+        or AMD-V feature of the host. To share hardware virtualization with
+        other hypervisors, this property must be disabled.
       </desc>
     </attribute>
 

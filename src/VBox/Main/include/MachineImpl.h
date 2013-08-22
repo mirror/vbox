@@ -269,7 +269,6 @@ public:
         BOOL                maVideoCaptureScreens[SchemaDefs::MaxGuestMonitors];
         ULONG               mMonitorCount;
         BOOL                mHWVirtExEnabled;
-        BOOL                mHWVirtExExclusive;
         BOOL                mHWVirtExNestedPagingEnabled;
         BOOL                mHWVirtExLargePagesEnabled;
         BOOL                mHWVirtExVPIDEnabled;

@@ -823,6 +823,18 @@ int handleSetProperty(HandlerArg *a)
         else
             CHECK_ERROR(systemProperties, COMSETTER(DefaultMachineFolder)(Bstr(a->argv[1]).raw()));
     }
+    else if (!strcmp(a->argv[0], "hwvirtexclusive"))
+    {
+        bool   fHwVirtExclusive;
+
+        if (!strcmp(a->argv[1], "on"))
+            fHwVirtExclusive = true;
+        else if (!strcmp(a->argv[1], "off"))
+            fHwVirtExclusive = false;
+        else
+            return errorArgument("Invalid hwvirtexclusive argument '%s'", a->argv[1]);
+        CHECK_ERROR(systemProperties, COMSETTER(ExclusiveHwVirt)(fHwVirtExclusive));
+    }
     else if (   !strcmp(a->argv[0], "vrdeauthlibrary")
              || !strcmp(a->argv[0], "vrdpauthlibrary"))
     {

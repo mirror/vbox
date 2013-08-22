@@ -69,6 +69,8 @@ public:
     STDMETHOD(COMGETTER(SerialPortCount))(ULONG *count);
     STDMETHOD(COMGETTER(ParallelPortCount))(ULONG *count);
     STDMETHOD(COMGETTER(MaxBootPosition))(ULONG *aMaxBootPosition);
+    STDMETHOD(COMGETTER(ExclusiveHwVirt))(BOOL *aExclusiveHwVirt);
+    STDMETHOD(COMSETTER(ExclusiveHwVirt))(BOOL aExclusiveHwVirt);
     STDMETHOD(COMGETTER(LoggingLevel))(BSTR *aLoggingLevel);
     STDMETHOD(COMSETTER(LoggingLevel))(IN_BSTR aLoggingLevel);
     STDMETHOD(COMGETTER(DefaultMachineFolder))(BSTR *aDefaultMachineFolder);

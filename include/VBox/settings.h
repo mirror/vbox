@@ -276,6 +276,7 @@ struct SystemProperties
     com::Utf8Str            strDefaultFrontend;
     com::Utf8Str            strLoggingLevel;
     uint32_t                ulLogHistoryCount;
+    bool                    fExclusiveHwVirt;
 };
 
 struct MachineRegistryEntry
@@ -840,7 +841,6 @@ struct Hardware
     com::Guid           uuid;                   // hardware uuid, optional (null).
 
     bool                fHardwareVirt,
-                        fHardwareVirtExclusive,
                         fNestedPaging,
                         fLargePages,
                         fVPID,
