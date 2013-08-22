@@ -123,7 +123,6 @@ public:
 
     const QRect availableGeometry(int iScreen = 0) const;
 
-    bool agressiveCaching() const { return mAgressiveCaching; }
     bool shouldRestoreCurrentSnapshot() const { return mRestoreCurrentSnapshot; }
     bool isPatmDisabled() const { return mDisablePatm; }
     bool isCsamDisabled() const { return mDisableCsam; }
@@ -240,23 +239,13 @@ public:
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession(const QString &aId) { return openSession(aId, KLockType_Shared); }
 
-    void startEnumeratingMedia(bool fReallyNecessary);
-
     void reloadProxySettings();
 
-    /**
-     * Returns a list of all currently registered media. This list is used to
-     * globally track the accessibility state of all media on a dedicated thread.
-     *
-     * Note that the media list is initially empty (i.e. before the enumeration
-     * process is started for the first time using #startEnumeratingMedia()).
-     * See #startEnumeratingMedia() for more information about how meida are
-     * sorted in the returned list.
-     */
-    const VBoxMediaList &currentMediaList() const { return mMediaList; }
-
-    /** Returns true if the media enumeration is in progress. */
-    bool isMediaEnumerationStarted() const { return mMediaEnumThread != NULL; }
+    /* API: Medium-enumeration stuff: */
+    void startEnumeratingMedia(bool fForceStart = true);
+    bool agressiveCaching() const { return mAgressiveCaching; }
+    bool isMediaEnumerationStarted() const { return !!m_pMediumEnumerationThread; }
+    const VBoxMediaList &currentMediaList() const { return m_mediums; }
 
     void addMedium (const UIMedium &);
     void updateMedium (const UIMedium &);
@@ -394,24 +383,10 @@ public:
 
 signals:
 
-    /**
-     * Emitted at the beginning of the enumeration process started by
-     * #startEnumeratingMedia().
-     */
+    /* Notifiers: Medium-enumeration stuff: */
     void mediumEnumStarted();
-
-    /**
-     * Emitted when a new medium item from the list has updated its
-     * accessibility state.
-     */
-    void mediumEnumerated (const UIMedium &aMedum);
-
-    /**
-     * Emitted at the end of the enumeration process started by
-     * #startEnumeratingMedia(). The @a aList argument is passed for
-     * convenience, it is exactly the same as returned by #currentMediaList().
-     */
-    void mediumEnumFinished (const VBoxMediaList &aList);
+    void mediumEnumerated(const UIMedium &medum);
+    void mediumEnumFinished(const VBoxMediaList &mediums);
 
     /** Emitted when a new media is added using #addMedia(). */
     void mediumAdded (const UIMedium &);
@@ -468,8 +443,8 @@ private:
     /** Whether to show error message boxes for VM start errors. */
     bool mShowStartVMErrors;
 
-    QThread *mMediaEnumThread;
-    VBoxMediaList mMediaList;
+    QThread *m_pMediumEnumerationThread;
+    VBoxMediaList m_mediums;
 
     RenderMode vm_render_mode;
     const char * vm_render_mode_str;

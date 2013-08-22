@@ -381,8 +381,8 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     /* Preventing application from closing in case of window(s) closed: */
     qApp->setQuitOnLastWindowClosed(false);
 
-    /* Cache IMedium data: */
-    vboxGlobal().startEnumeratingMedia(false /*fReallyNecessary*/);
+    /* Cache medium data only if really necessary: */
+    vboxGlobal().startEnumeratingMedia(false /* force start */);
 
     /* Load machine settings: */
     loadMachineSettings();

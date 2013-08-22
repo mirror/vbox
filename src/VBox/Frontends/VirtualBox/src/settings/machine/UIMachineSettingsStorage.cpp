@@ -1734,7 +1734,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     /* Enumerate Mediums. We need at least the MediaList filled, so this is the
      * lasted point, where we can start. The rest of the media checking is done
      * in a background thread. */
-    vboxGlobal().startEnumeratingMedia(true /*fReallyNecessary*/);
+    vboxGlobal().startEnumeratingMedia();
 
     /* Initialize pixmap pool */
     PixmapPool::pool (this);

@@ -510,7 +510,7 @@ void UIMediumManager::setup (UIMediumType aType, bool aDoSelect,
              this, SLOT (mediumRemoved (UIMediumType, const QString &)));
 
     if (aRefresh && !vboxGlobal().isMediaEnumerationStarted())
-        vboxGlobal().startEnumeratingMedia(true /*fReallyNecessary*/);
+        vboxGlobal().startEnumeratingMedia();
     else
     {
         /* Insert already enumerated media */
@@ -615,7 +615,7 @@ QString UIMediumManager::selectedLocation() const
 void UIMediumManager::refreshAll()
 {
     /* Start enumerating media */
-    vboxGlobal().startEnumeratingMedia(true /*fReallyNecessary*/);
+    vboxGlobal().startEnumeratingMedia();
 }
 
 void UIMediumManager::retranslateUi()

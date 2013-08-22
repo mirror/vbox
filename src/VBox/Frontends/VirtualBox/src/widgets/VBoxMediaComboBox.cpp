@@ -89,7 +89,7 @@ void VBoxMediaComboBox::refresh()
 void VBoxMediaComboBox::repopulate()
 {
     if (!vboxGlobal().isMediaEnumerationStarted())
-        vboxGlobal().startEnumeratingMedia(true /*fReallyNecessary*/);
+        vboxGlobal().startEnumeratingMedia();
     else
         refresh();
 }
