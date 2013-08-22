@@ -263,6 +263,11 @@ struct SystemProperties
 {
     SystemProperties()
         : ulLogHistoryCount(3)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
+        , fExclusiveHwVirt(false)
+#else
+        , fExclusiveHwVirt(true)
+#endif
     {}
 
     com::Utf8Str            strDefaultMachineFolder;
