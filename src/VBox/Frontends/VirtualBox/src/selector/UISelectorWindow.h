@@ -64,7 +64,7 @@ private slots:
     void sltDetailsViewIndexChanged(int iWidgetIndex);
 
     /* Handler: Medium enumeration stuff: */
-    void sltMediumEnumFinished();
+    void sltHandleMediumEnumerationFinish();
 
     /* Handler: Menubar/status stuff: */
     void sltShowSelectorContextMenu(const QPoint &pos);

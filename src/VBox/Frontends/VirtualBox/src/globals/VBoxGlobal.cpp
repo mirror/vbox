@@ -1798,9 +1798,9 @@ void VBoxGlobal::startEnumeratingMedia(bool fForceStart /*= true*/)
     m_pMediumEnumerationThread = new MediaEnumThread(m_mediums);
     AssertReturnVoid(m_pMediumEnumerationThread);
 
-    /* Emit mediumEnumStarted() after we set m_pMediumEnumerationThread to != NULL
+    /* Emit signal *after* we set m_pMediumEnumerationThread to != NULL
      * to cause isMediaEnumerationStarted() to return TRUE from slots: */
-    emit mediumEnumStarted();
+    emit sigMediumEnumerationStarted();
 
     m_pMediumEnumerationThread->start();
 }
@@ -4034,7 +4034,7 @@ bool VBoxGlobal::event (QEvent *e)
                     msgCenter().cannotGetMediaAccessibility (ev->mMedium);
                 Assert (ev->mIterator != m_mediums.end());
                 *(ev->mIterator) = ev->mMedium;
-                emit mediumEnumerated (*ev->mIterator);
+                emit sigMediumEnumerated(*ev->mIterator);
             }
             else
             {
@@ -4042,7 +4042,7 @@ bool VBoxGlobal::event (QEvent *e)
                 m_pMediumEnumerationThread->wait();
                 delete m_pMediumEnumerationThread;
                 m_pMediumEnumerationThread = 0;
-                emit mediumEnumFinished (m_mediums);
+                emit sigMediumEnumerationFinished(m_mediums);
             }
 
             return true;

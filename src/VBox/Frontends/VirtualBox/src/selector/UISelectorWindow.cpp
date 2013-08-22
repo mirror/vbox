@@ -176,7 +176,7 @@ void UISelectorWindow::sltDetailsViewIndexChanged(int iWidgetIndex)
         m_pContainer->setCurrentWidget(m_pDetails);
 }
 
-void UISelectorWindow::sltMediumEnumFinished()
+void UISelectorWindow::sltHandleMediumEnumerationFinish()
 {
     /* We try to warn about inaccessible mediums only once
      * (after media emumeration started from main() at startup),
@@ -1035,7 +1035,7 @@ void UISelectorWindow::polishEvent(QShowEvent*)
 {
     /* Make sure user warned about inaccessible medium(s)
      * even if enumeration had finished before selector window shown: */
-    QTimer::singleShot(0, this, SLOT(sltMediumEnumFinished()));
+    QTimer::singleShot(0, this, SLOT(sltHandleMediumEnumerationFinish()));
 }
 
 #ifdef Q_WS_MAC
@@ -1402,7 +1402,7 @@ void UISelectorWindow::prepareWidgets()
 void UISelectorWindow::prepareConnections()
 {
     /* Medium enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(mediumEnumFinished(const VBoxMediaList &)), this, SLOT(sltMediumEnumFinished()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList &)), this, SLOT(sltHandleMediumEnumerationFinish()));
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));

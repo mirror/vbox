@@ -1830,12 +1830,12 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbUsageValue->setFullSizeSelection (true);
 
     /* Setup connections */
-    connect (&vboxGlobal(), SIGNAL (mediumEnumerated (const UIMedium &)),
-             this, SLOT (mediumUpdated (const UIMedium &)));
+    connect (&vboxGlobal(), SIGNAL (sigMediumEnumerated (const UIMedium &)),
+             this, SLOT (sltHandleMediumUpdated (const UIMedium &)));
     connect (&vboxGlobal(), SIGNAL (mediumUpdated (const UIMedium &)),
-             this, SLOT (mediumUpdated (const UIMedium &)));
+             this, SLOT (sltHandleMediumUpdated (const UIMedium &)));
     connect (&vboxGlobal(), SIGNAL (mediumRemoved (UIMediumType, const QString &)),
-             this, SLOT (mediumRemoved (UIMediumType, const QString &)));
+             this, SLOT (sltHandleMediumRemoved (UIMediumType, const QString &)));
     connect (mAddCtrAction, SIGNAL (triggered (bool)), this, SLOT (addController()));
     connect (mAddIDECtrAction, SIGNAL (triggered (bool)), this, SLOT (addIDEController()));
     connect (mAddSATACtrAction, SIGNAL (triggered (bool)), this, SLOT (addSATAController()));
@@ -2270,7 +2270,7 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
     UISettingsPageMachine::showEvent (aEvent);
 }
 
-void UIMachineSettingsStorage::mediumUpdated (const UIMedium &aMedium)
+void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &aMedium)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
@@ -2291,7 +2291,7 @@ void UIMachineSettingsStorage::mediumUpdated (const UIMedium &aMedium)
     }
 }
 
-void UIMachineSettingsStorage::mediumRemoved (UIMediumType /* aType */, const QString &aMediumId)
+void UIMachineSettingsStorage::sltHandleMediumRemoved(UIMediumType /* aType */, const QString &aMediumId)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
