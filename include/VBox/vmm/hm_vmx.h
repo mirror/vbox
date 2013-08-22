@@ -1898,6 +1898,7 @@ vmxon_good:
 the_end:
         add     esp, 8
     }
+    return rc;
 # endif
 }
 #endif
