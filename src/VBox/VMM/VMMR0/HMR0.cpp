@@ -474,7 +474,11 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                         ASMSetCR4(g_HvmR0.vmx.hostCR4 | X86_CR4_VMXE);
                     }
 
-                    /* Enter VMX Root Mode */
+                    /*
+                     * The only way of checking if we're in VMX root mode or not is to try and enter it.
+                     * There is no instruction or control bit that tells us if we're in VMX root mode.
+                     * Therefore, try and enter VMX root mode here.
+                     */
                     rc = VMXEnable(HCPhysScratchPage);
                     if (RT_SUCCESS(rc))
                     {
@@ -988,8 +992,9 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
     for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
     {
         Assert(g_HvmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
-        g_HvmR0.aCpuInfo[i].fConfigured = false;
-        g_HvmR0.aCpuInfo[i].cTlbFlushes = 0;
+        g_HvmR0.aCpuInfo[i].fConfigured  = false;
+        g_HvmR0.aCpuInfo[i].cTlbFlushes  = 0;
+        g_HvmR0.aCpuInfo[i].uCurrentAsid = 0;
     }
 
     int rc;
@@ -1011,7 +1016,7 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
         /*
          * We're doing the job ourselves.
          */
-        /* Allocate one page per cpu for the global vt-x and amd-v pages */
+        /* Allocate one page per cpu for the global VT-x and AMD-V pages */
         for (unsigned i = 0; i < RT_ELEMENTS(g_HvmR0.aCpuInfo); i++)
         {
             Assert(g_HvmR0.aCpuInfo[i].hMemObj == NIL_RTR0MEMOBJ);
@@ -1029,7 +1034,8 @@ static DECLCALLBACK(int32_t) hmR0EnableAllCpuOnce(void *pvUser)
         rc = VINF_SUCCESS;
     }
 
-    if (RT_SUCCESS(rc) && g_HvmR0.fGlobalInit)
+    if (   RT_SUCCESS(rc)
+        && g_HvmR0.fGlobalInit)
     {
         /* First time, so initialize each cpu/core. */
         HMR0FIRSTRC FirstRc;
@@ -1410,11 +1416,8 @@ VMMR0_INT_DECL(void) HMR0EnterEx(PVMCPU pVCpu)
     AssertPtr(pCpu);
 
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a freshly onlined CPU. */
-    if (   !pCpu->fConfigured
-        || !g_HvmR0.fGlobalInit)
-    {
+    if (!pCpu->fConfigured)
         hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
-    }
 
     /* Reload host-context (back from ring-3/migrated CPUs), reload guest CR0 (for FPU bits). */
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0;
@@ -1454,16 +1457,16 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
 
     int rc  = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
-    AssertRC(rc);
+    AssertMsgRC(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
 
     /* Load the host as we may be resuming code after a longjmp and quite
        possibly be scheduled on a different CPU. */
     rc |= g_HvmR0.pfnSaveHostState(pVM, pVCpu);
-    AssertRC(rc);
+    AssertMsgRC(rc, ("pfnSaveHostState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
 
     /** @todo This is not needed to be done here anymore, can fix/optimize later. */
     rc |= g_HvmR0.pfnLoadGuestState(pVM, pVCpu, pCtx);
-    AssertRC(rc);
+    AssertMsgRC(rc, ("pfnLoadGuestState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     if (fStartedSet)
@@ -1488,15 +1491,20 @@ VMMR0_INT_DECL(int) HMR0LeaveEx(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    if (!g_HvmR0.fGlobalInit)
+    RTCPUID          idCpu = RTMpCpuId();
+    PHMGLOBALCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
+
+    if (   !g_HvmR0.fGlobalInit
+        && pCpu->fConfigured)
     {
-        RTCPUID idCpu = RTMpCpuId();
         int rc = hmR0DisableCpu(idCpu);
         AssertRCReturn(rc, rc);
+        Assert(!pCpu->fConfigured);
     }
 
     /* Reset these to force a TLB flush for the next entry. */
     pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
+    pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
     pVCpu->hm.s.uCurrentAsid = 0;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
@@ -1519,35 +1527,50 @@ VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
     /** @todo r=bird: This can't be entirely right? */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
-    PCPUMCTX pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
     AssertPtr(pCtx);
+
+    bool fDisabledPreempt = false;
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    {
+        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+        RTThreadPreemptDisable(&PreemptState);
+        fDisabledPreempt = true;
+    }
 
     int rc = g_HvmR0.pfnLeaveSession(pVM, pVCpu, pCtx);
 
-    /*
-     * When thread-context hooks are not used, leave HM context and if necessary disable HM on the CPU.
-     * When thread-context hooks -are- used, this work would be done in the VT-x and AMD-V thread-context callback.
-     */
     if (!VMMR0ThreadCtxHooksAreRegistered(pVCpu))
     {
-        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-        RTCPUID idCpu = RTMpCpuId();
-
         /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
            and ring-3 calls when thread-context hooks are not supported. */
+        RTCPUID idCpu = RTMpCpuId();
         AssertMsgStmt(   pVCpu->hm.s.idEnteredCpu == idCpu
                       || RT_FAILURE_NP(rc), ("Owner is %u, I'm %u", pVCpu->hm.s.idEnteredCpu, idCpu),
                       rc = VERR_HM_WRONG_CPU_1);
+    }
 
+    /* Leave HM context, takes care of local init (term). */
+    if (RT_SUCCESS(rc))
+    {
         rc = HMR0LeaveEx(pVCpu);
         AssertRCReturn(rc, rc);
     }
+
+    /* Deregister hook now that we've left HM context before re-enabling preemption. */
+    /** @todo This is bad. Deregistering here means we need to VMCLEAR always
+     *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
+    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+        VMMR0ThreadCtxHooksDeregister(pVCpu);
+
+    if (fDisabledPreempt)
+        RTThreadPreemptRestore(&PreemptState);
 
     /* Guest FPU and debug state shouldn't be active now, it's likely that we're going back to ring-3. */
     Assert(!CPUMIsGuestFPUStateActive(pVCpu));
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
 
-    pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
 }
 

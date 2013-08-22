@@ -118,6 +118,16 @@
             (a_rc) = VINF_EM_DBG_STEPPED; \
     } while (0)
 
+/** Assert that preemption is disabled or covered by thread-context hooks. */
+#define HMSVM_ASSERT_PREEMPT_SAFE()           Assert(   VMMR0ThreadCtxHooksAreRegistered(pVCpu) \
+                                                     || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+/** Assert that we haven't migrated CPUs when thread-context hooks are not
+ *  used. */
+#define HMSVM_ASSERT_CPU_SAFE()               AssertMsg(   VMMR0ThreadCtxHooksAreRegistered(pVCpu) \
+                                                        || pVCpu->hm.s.idEnteredCpu == RTMpCpuId(), \
+                                                        ("Illegal migration! Entered on CPU %u Current %u\n", \
+                                                        pVCpu->hm.s.idEnteredCpu, RTMpCpuId()));
 
 /** Exception bitmap mask for all contributory exceptions.
  *
@@ -1570,7 +1580,6 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  */
 VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     NOREF(pVM);
     NOREF(pVCpu);
     NOREF(pCtx);
@@ -1594,6 +1603,8 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
         case RTTHREADCTXEVENT_PREEMPTING:
         {
             Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            VMCPU_ASSERT_EMT(pVCpu);
 
             PVM         pVM  = pVCpu->CTX_SUFF(pVM);
             PCPUMCTX    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
@@ -1610,17 +1621,21 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
         case RTTHREADCTXEVENT_RESUMED:
         {
-            /* Disable preemption, we don't want to be migrated to another CPU while re-initializing AMD-V state. */
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            RTThreadPreemptDisable(&PreemptState);
+            Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+            Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
+            VMCPU_ASSERT_EMT(pVCpu);
 
-            /* Initialize the bare minimum state required for HM. This takes care of
-               initializing AMD-V if necessary (onlined CPUs, local init etc.) */
+            VMMRZCallRing3Disable(pVCpu);                        /* No longjmps (log-flush, locks) in this fragile context. */
+
+            /*
+             * Initialize the bare minimum state required for HM. This takes care of
+             * initializing AMD-V if necessary (onlined CPUs, local init etc.)
+             */
             HMR0EnterEx(pVCpu);
             Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
 
             pVCpu->hm.s.fLeaveDone = false;
-            RTThreadPreemptRestore(&PreemptState);
+            VMMRZCallRing3Enable(pVCpu);                        /* Restore longjmp state. */
             break;
         }
 
@@ -1910,14 +1925,14 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * Restore host debug registers if necessary and resync on next R0 reentry.
          */
-    #ifdef VBOX_STRICT
+#ifdef VBOX_STRICT
         if (CPUMIsHyperDebugStateActive(pVCpu))
         {
             PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
             Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
             Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
         }
-    #endif
+#endif
         if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
 
@@ -1975,7 +1990,7 @@ DECLCALLBACK(void) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
     Assert(pVCpu);
     Assert(pvUser);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    HMSVM_ASSERT_PREEMPT_SAFE();
 
     VMMRZCallRing3Disable(pVCpu);
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
@@ -2005,7 +2020,7 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
     Assert(pVM);
     Assert(pVCpu);
     Assert(pCtx);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    HMSVM_ASSERT_PREEMPT_SAFE();
 
     if (RT_UNLIKELY(rcExit == VERR_SVM_INVALID_GUEST_STATE))
     {
@@ -2449,7 +2464,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 static void hmR0SvmReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PCPUMCTX pCtx)
 {
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    HMSVM_ASSERT_PREEMPT_SAFE();
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     if (rcVMRun == VERR_SVM_INVALID_GUEST_STATE)
@@ -2930,7 +2945,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    HMSVM_ASSERT_PREEMPT_SAFE();
 
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
@@ -2941,9 +2956,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     for (;; cLoops++)
     {
         Assert(!HMR0SuspendPending());
-        AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
-                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
-                  (unsigned)RTMpCpuId(), cLoops));
+        HMSVM_ASSERT_CPU_SAFE();
 
         /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
@@ -3251,10 +3264,10 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
         AssertPtr(pCtx); \
         AssertPtr(pSvmTransient); \
         Assert(ASMIntAreEnabled()); \
-        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
+        HMSVM_ASSERT_PREEMPT_SAFE(); \
         HMSVM_ASSERT_PREEMPT_CPUID_VAR(); \
         Log4Func(("vcpu[%u] -v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-v-\n", (uint32_t)pVCpu->idCpu)); \
-        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD)); \
+        HMSVM_ASSERT_PREEMPT_SAFE(); \
         if (VMMR0IsLogFlushDisabled(pVCpu)) \
             HMSVM_ASSERT_PREEMPT_CPUID(); \
     } while (0)

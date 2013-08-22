@@ -467,14 +467,15 @@ VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
 /**
  * Registers the thread-context hook for this VCPU.
  *
+ * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pfnThreadHook   Pointer to the thread-context callback.
- * @returns VBox status code.
  *
  * @thread EMT.
  */
 VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnThreadHook)
 {
+    VMCPU_ASSERT_EMT(pVCpu);
     return RTThreadCtxHooksRegister(pVCpu->vmm.s.hR0ThreadCtx, pfnThreadHook, pVCpu);
 }
 
@@ -484,6 +485,7 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnT
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
+ *
  * @thread EMT.
  */
 VMMR0DECL(int) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
@@ -516,6 +518,65 @@ VMMR0DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
 VMMR0DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
 {
     return RTThreadCtxHooksAreRegistered(pVCpu->vmm.s.hR0ThreadCtx);
+}
+
+
+/**
+ * VMM ring-0 thread-context callback.
+ *
+ * This does common HM state updating and calls the HM-specific thread-context
+ * callback.
+ *
+ * @param   enmEvent    The thread-context event.
+ * @param   pvUser      Opaque pointer to the VMCPU.
+ */
+static void vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
+{
+    PVMCPU pVCpu = (PVMCPU)pvUser;
+
+    switch (enmEvent)
+    {
+        case RTTHREADCTXEVENT_RESUMED:
+        {
+            /** @todo Linux may call us with preemption enabled (really!) but technically we
+             * cannot get preempted here, otherwise we end up in an infinite recursion
+             * scenario (i.e. preempted in resume hook -> preempt hook -> resume hook... ad
+             * infinitum). Let's just disable preemption for now...
+             */
+            bool fPreemptDisabled = false;
+            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+            if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+            {
+                RTThreadPreemptDisable(&PreemptState);
+                fPreemptDisabled = true;
+            }
+
+            /* We need to update the VCPU <-> host CPU mapping. */
+            RTCPUID idHostCpu = RTMpCpuId();
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, idHostCpu);
+
+            /* Invoke the HM-specific thread-context callback. */
+            HMR0ThreadCtxCallback(enmEvent, pvUser);
+
+            /* Restore preemption. */
+            if (fPreemptDisabled)
+                RTThreadPreemptRestore(&PreemptState);
+            break;
+        }
+
+        case RTTHREADCTXEVENT_PREEMPTING:
+            /*
+             * Sigh. See VMMGetCpu() used by VMCPU_ASSERT_EMT(). We cannot let several VCPUs
+             * have the same host CPU associated with it.
+             */
+            ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+            /* fallthru, no break! */
+        default:
+            /* Invoke the HM-specific thread-context callback. */
+            HMR0ThreadCtxCallback(enmEvent, pvUser);
+            break;
+    }
+
 }
 
 
@@ -837,10 +898,10 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 #elif !defined(RT_OS_WINDOWS)
             RTCCUINTREG uFlags = ASMIntDisableFlags();
 #endif
+            /* Update the VCPU <-> host CPU mapping before doing anything else. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
             if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
                 GVMMR0SchedUpdatePeriodicPreemptionTimer(pVM, pVCpu->idHostCpu, TMCalcHostTimerFrequency(pVM, pVCpu));
-
 #ifdef LOG_ENABLED
             if (pVCpu->idCpu > 0)
             {
@@ -854,16 +915,39 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
                 }
             }
 #endif
-            int rc;
+
+            int  rc;
+            bool fPreemptRestored = false;
             if (!HMR0SuspendPending())
             {
-                /** @todo VMMR0ThreadCtxHooks support. */
+                /* Register thread-context hooks if required. */
+#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
+                if (    VMMR0ThreadCtxHooksAreCreated(pVCpu)
+                    && !VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+                {
+                    rc = VMMR0ThreadCtxHooksRegister(pVCpu, vmmR0ThreadCtxCallback);
+                    AssertRC(rc);
+                }
+#endif
+
+                /* Enter HM context. */
                 rc = HMR0Enter(pVM, pVCpu);
+
+                /* When preemption hooks are in place, enable preemption now that we're in HM context. */
+                if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+                {
+                    fPreemptRestored = true;
+                    RTThreadPreemptRestore(&PreemptState);
+                }
+
                 if (RT_SUCCESS(rc))
                 {
                     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
-                    rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu); /* this may resume code. */
+                    /* Setup the longjmp machinery and execute guest code. */
+                    rc = vmmR0CallRing3SetJmp(&pVCpu->vmm.s.CallRing3JmpBufR0, HMR0RunGuestCode, pVM, pVCpu);
+
+                    /* Leave HM context. This deregisters thread-context hooks if any. */
                     int rc2 = HMR0Leave(pVM, pVCpu);
                     AssertRC(rc2);
 
@@ -887,9 +971,12 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             }
             pVCpu->vmm.s.iLastGZRc = rc;
 
+            /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-            RTThreadPreemptRestore(&PreemptState);
+            if (!fPreemptRestored)
+                RTThreadPreemptRestore(&PreemptState);
 #elif !defined(RT_OS_WINDOWS)
             ASMSetFlags(uFlags);
 #endif
@@ -1486,7 +1573,7 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
  * Checks whether we've armed the ring-0 long jump machinery.
  *
  * @returns @c true / @c false
- * @param   pVCpu           The caller's cross context virtual CPU structure.
+ * @param   pVCpu           Pointer to the VMCPU.
  * @thread  EMT
  * @sa      VMMIsLongJumpArmed
  */
@@ -1499,6 +1586,19 @@ VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
     return pVCpu->vmm.s.CallRing3JmpBufR0.rip
         && !pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
 #endif
+}
+
+
+/**
+ * Checks whether we've done a ring-3 long jump.
+ *
+ * @returns @c true / @c false
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @thread EMT
+ */
+VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu)
+{
+    return pVCpu->vmm.s.CallRing3JmpBufR0.fInRing3Call;
 }
 
 
