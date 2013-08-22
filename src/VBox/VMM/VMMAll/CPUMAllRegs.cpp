@@ -1090,12 +1090,19 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             }
             /* no break */
 #endif
+        /*
+         * The BIOS_SIGN_ID MSR exists on AMD64 as well, at least bulldozer
+         * have it. Windows 7 is querying it. Just fake it.
+         */
+        case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
+            *puValue = 0;
+            break;
+
 
         /*
          * Intel specifics MSRs:
          */
         case MSR_IA32_PLATFORM_ID:          /* fam/mod >= 6_01 */
-        case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_IA32_MCP_CAP:              /* fam/mod >= 6_01 */
         /*case MSR_IA32_MCP_STATUS:     - indicated as not present in CAP */
@@ -1129,6 +1136,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
          */
         case MSR_K8_SYSCFG:
         case MSR_K8_INT_PENDING:
+        case MSR_K8_NB_CFG:             /* (All known values are 0 on reset.) */
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
@@ -1386,6 +1394,7 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
          */
         case MSR_K8_SYSCFG:      /** @todo can be written, but we ignore that for now. */
         case MSR_K8_INT_PENDING: /** @todo can be written, but we ignore that for now. */
+        case MSR_K8_NB_CFG:      /** @todo can be written; the apicid swapping might be used and would need saving, but probably unnecessary. */
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
                 Log(("MSR %#x is AMD, the virtual CPU isn't an Intel one -> #GP\n", idMsr));

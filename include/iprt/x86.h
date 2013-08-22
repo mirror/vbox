@@ -1100,7 +1100,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_X2APIC_END                 0xBFF
 
 /** K6 EFER - Extended Feature Enable Register. */
-#define MSR_K6_EFER                         0xc0000080
+#define MSR_K6_EFER                         UINT32_C(0xc0000080)
 /** @todo document EFER */
 /** Bit 0 - SCE - System call extensions (SYSCALL / SYSRET). (R/W) */
 #define  MSR_K6_EFER_SCE                     RT_BIT(0)
@@ -1117,68 +1117,71 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Bit 14 - FFXSR - Fast FXSAVE / FXRSTOR (skip XMM*). (R/W) */
 #define  MSR_K6_EFER_FFXSR                   RT_BIT(14)
 /** K6 STAR - SYSCALL/RET targets. */
-#define MSR_K6_STAR                         0xc0000081
+#define MSR_K6_STAR                         UINT32_C(0xc0000081)
 /** Shift value for getting the SYSRET CS and SS value. */
 #define  MSR_K6_STAR_SYSRET_CS_SS_SHIFT     48
 /** Shift value for getting the SYSCALL CS and SS value. */
 #define  MSR_K6_STAR_SYSCALL_CS_SS_SHIFT    32
 /** Selector mask for use after shifting. */
-#define  MSR_K6_STAR_SEL_MASK               0xffff
+#define  MSR_K6_STAR_SEL_MASK               UINT32_C(0xffff)
 /** The mask which give the SYSCALL EIP. */
-#define  MSR_K6_STAR_SYSCALL_EIP_MASK       0xffffffff
+#define  MSR_K6_STAR_SYSCALL_EIP_MASK       UINT32_C(0xffffffff)
 /** K6 WHCR - Write Handling Control Register. */
-#define MSR_K6_WHCR                         0xc0000082
+#define MSR_K6_WHCR                         UINT32_C(0xc0000082)
 /** K6 UWCCR - UC/WC Cacheability Control Register. */
-#define MSR_K6_UWCCR                        0xc0000085
+#define MSR_K6_UWCCR                        UINT32_C(0xc0000085)
 /** K6 PSOR - Processor State Observability Register. */
-#define MSR_K6_PSOR                         0xc0000087
+#define MSR_K6_PSOR                         UINT32_C(0xc0000087)
 /** K6 PFIR - Page Flush/Invalidate Register. */
-#define MSR_K6_PFIR                         0xc0000088
+#define MSR_K6_PFIR                         UINT32_C(0xc0000088)
 
 /** Performance counter MSRs. (AMD only) */
-#define MSR_K7_EVNTSEL0                     0xc0010000
-#define MSR_K7_EVNTSEL1                     0xc0010001
-#define MSR_K7_EVNTSEL2                     0xc0010002
-#define MSR_K7_EVNTSEL3                     0xc0010003
-#define MSR_K7_PERFCTR0                     0xc0010004
-#define MSR_K7_PERFCTR1                     0xc0010005
-#define MSR_K7_PERFCTR2                     0xc0010006
-#define MSR_K7_PERFCTR3                     0xc0010007
+#define MSR_K7_EVNTSEL0                     UINT32_C(0xc0010000)
+#define MSR_K7_EVNTSEL1                     UINT32_C(0xc0010001)
+#define MSR_K7_EVNTSEL2                     UINT32_C(0xc0010002)
+#define MSR_K7_EVNTSEL3                     UINT32_C(0xc0010003)
+#define MSR_K7_PERFCTR0                     UINT32_C(0xc0010004)
+#define MSR_K7_PERFCTR1                     UINT32_C(0xc0010005)
+#define MSR_K7_PERFCTR2                     UINT32_C(0xc0010006)
+#define MSR_K7_PERFCTR3                     UINT32_C(0xc0010007)
 
 /** K8 LSTAR - Long mode SYSCALL target (RIP). */
-#define MSR_K8_LSTAR                        0xc0000082
+#define MSR_K8_LSTAR                        UINT32_C(0xc0000082)
 /** K8 CSTAR - Compatibility mode SYSCALL target (RIP). */
-#define MSR_K8_CSTAR                        0xc0000083
+#define MSR_K8_CSTAR                        UINT32_C(0xc0000083)
 /** K8 SF_MASK - SYSCALL flag mask. (aka SFMASK) */
-#define MSR_K8_SF_MASK                      0xc0000084
+#define MSR_K8_SF_MASK                      UINT32_C(0xc0000084)
 /** K8 FS.base - The 64-bit base FS register. */
-#define MSR_K8_FS_BASE                      0xc0000100
-/** K8 GS.base - The 64-bit base GS register. */
-#define MSR_K8_GS_BASE                      0xc0000101
+#define MSR_K8_FS_BASE                      UINT32_C(0xc0000100)
+/** K8 GS.base - The 64-bit base GS register. */      
+#define MSR_K8_GS_BASE                      UINT32_C(0xc0000101)
 /** K8 KernelGSbase - Used with SWAPGS. */
-#define MSR_K8_KERNEL_GS_BASE               0xc0000102
+#define MSR_K8_KERNEL_GS_BASE               UINT32_C(0xc0000102)
 /** K8 TSC_AUX - Used with RDTSCP. */
-#define MSR_K8_TSC_AUX                      0xc0000103
-#define MSR_K8_SYSCFG                       0xc0010010
-#define MSR_K8_HWCR                         0xc0010015
-#define MSR_K8_IORRBASE0                    0xc0010016
-#define MSR_K8_IORRMASK0                    0xc0010017
-#define MSR_K8_IORRBASE1                    0xc0010018
-#define MSR_K8_IORRMASK1                    0xc0010019
-#define MSR_K8_TOP_MEM1                     0xc001001a
-#define MSR_K8_TOP_MEM2                     0xc001001d
+#define MSR_K8_TSC_AUX                      UINT32_C(0xc0000103)
+#define MSR_K8_SYSCFG                       UINT32_C(0xc0010010)
+#define MSR_K8_HWCR                         UINT32_C(0xc0010015)
+#define MSR_K8_IORRBASE0                    UINT32_C(0xc0010016)
+#define MSR_K8_IORRMASK0                    UINT32_C(0xc0010017)
+#define MSR_K8_IORRBASE1                    UINT32_C(0xc0010018)
+#define MSR_K8_IORRMASK1                    UINT32_C(0xc0010019)
+#define MSR_K8_TOP_MEM1                     UINT32_C(0xc001001a)
+#define MSR_K8_TOP_MEM2                     UINT32_C(0xc001001d)
+/** North bridge config? See BIOS & Kernel dev guides for
+ * details. */
+#define MSR_K8_NB_CFG                       UINT32_C(0xc001001f)
+
 /** Hypertransport interrupt pending register.
  * "BIOS and Kernel Developer's Guide for AMD NPT Family 0Fh Processors" */
-#define MSR_K8_INT_PENDING                  0xc0010055
-#define MSR_K8_VM_CR                        0xc0010114
+#define MSR_K8_INT_PENDING                  UINT32_C(0xc0010055)
+#define MSR_K8_VM_CR                        UINT32_C(0xc0010114)
 #define MSR_K8_VM_CR_SVM_DISABLE            RT_BIT(4)
 
-#define MSR_K8_IGNNE                        0xc0010115
-#define MSR_K8_SMM_CTL                      0xc0010116
+#define MSR_K8_IGNNE                        UINT32_C(0xc0010115)
+#define MSR_K8_SMM_CTL                      UINT32_C(0xc0010116)
 /** SVM - VM_HSAVE_PA - Physical address for saving and restoring
- *                      host state during world switch.
- */
-#define MSR_K8_VM_HSAVE_PA                  0xc0010117
+ *                      host state during world switch. */
+#define MSR_K8_VM_HSAVE_PA                  UINT32_C(0xc0010117)
 
 /** @} */
 
