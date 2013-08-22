@@ -354,7 +354,7 @@ static int vmmR0InitVM(PVM pVM, uint32_t uSvnRev, uint32_t uBuildType)
         rc = HMR0InitVM(pVM);
         if (RT_SUCCESS(rc))
         {
-            rc = CPUMR0Init(pVM); /** @todo rename to CPUMR0InitVM */
+            rc = CPUMR0InitVM(pVM);
             if (RT_SUCCESS(rc))
             {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE

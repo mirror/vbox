@@ -169,7 +169,7 @@ static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *p
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  */
-VMMR0_INT_DECL(int) CPUMR0Init(PVM pVM)
+VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
 {
     LogFlow(("CPUMR0Init: %p\n", pVM));
 
