@@ -183,7 +183,7 @@ CollectorGuestRequest* CollectorGuestQueue::pop()
     return NULL;
 }
 
-int CGRQEnable::execute()
+HRESULT CGRQEnable::execute()
 {
     Assert(mCGuest);
     return mCGuest->enableInternal(mMask);
@@ -198,7 +198,7 @@ void CGRQEnable::debugPrint(void *aObject, const char *aFunction, const char *aT
                 aObject, aFunction, mMask, aText));
 }
 
-int CGRQDisable::execute()
+HRESULT CGRQDisable::execute()
 {
     Assert(mCGuest);
     return mCGuest->disableInternal(mMask);
@@ -213,7 +213,7 @@ void CGRQDisable::debugPrint(void *aObject, const char *aFunction, const char *a
                 aObject, aFunction, mMask, aText));
 }
 
-int CGRQAbort::execute()
+HRESULT CGRQAbort::execute()
 {
     return E_ABORT;
 }
@@ -281,7 +281,7 @@ int CollectorGuest::disable(ULONG mask)
     return enqueueRequest(new CGRQDisable(mask));
 }
 
-int CollectorGuest::enableInternal(ULONG mask)
+HRESULT CollectorGuest::enableInternal(ULONG mask)
 {
     HRESULT ret = S_OK;
 
