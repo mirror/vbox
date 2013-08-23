@@ -85,12 +85,12 @@ static uint32_t kstatGet(const char *name)
         return 0;
     }
 
-    kstat_t *ksAdapter = kstat_lookup(kc, "link", -1, (char *)name);
+    kstat_t *ksAdapter = kstat_lookup(kc, (char *)"link", -1, (char *)name);
     if (ksAdapter == 0)
     {
         char szModule[KSTAT_STRLEN];
         uint32_t uInstance = getInstance(name, szModule);
-        ksAdapter = kstat_lookup(kc, szModule, uInstance, "phys");
+        ksAdapter = kstat_lookup(kc, szModule, uInstance, (char *)"phys");
         if (ksAdapter == 0)
             ksAdapter = kstat_lookup(kc, szModule, uInstance, (char*)name);
     }
