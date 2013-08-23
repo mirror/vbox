@@ -95,6 +95,7 @@ RT_C_DECLS_END
 #define KBD_CCMD_DISABLE_A20    0xDD    /* HP vectra only ? */
 #define KBD_CCMD_ENABLE_A20     0xDF    /* HP vectra only ? */
 #define KBD_CCMD_READ_TSTINP    0xE0    /* Read test inputs T0, T1 */
+#define KBD_CCMD_RESET_ALT      0xF0
 #define KBD_CCMD_RESET          0xFE
 
 /* Status Register Bits */
@@ -494,6 +495,7 @@ static int kbd_write_command(void *opaque, uint32_t addr, uint32_t val)
         kbc_dbb_out(s, val);
         break;
     case KBD_CCMD_RESET:
+    case KBD_CCMD_RESET_ALT:
 #ifndef IN_RING3
         rc = VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
