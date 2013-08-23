@@ -1610,9 +1610,13 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             PCPUMCTX    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
             VMMRZCallRing3Disable(pVCpu);                        /* No longjmps (log-flush, locks) in this fragile context. */
 
-            hmR0SvmLeave(pVM, pVCpu, pCtx);
+            if (!pVCpu->hm.s.fLeaveDone)
+            {
+                hmR0SvmLeave(pVM, pVCpu, pCtx);
+                pVCpu->hm.s.fLeaveDone = true;
+            }
 
-            int rc = HMR0LeaveEx(pVCpu);                         /* Leave HM context, takes care of local init (term). */
+            int rc = HMR0LeaveCpu(pVCpu);                         /* Leave HM context, takes care of local init (term). */
             AssertRC(rc); NOREF(rc);
 
             VMMRZCallRing3Enable(pVCpu);                         /* Restore longjmp state. */
@@ -1631,8 +1635,9 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
              * Initialize the bare minimum state required for HM. This takes care of
              * initializing AMD-V if necessary (onlined CPUs, local init etc.)
              */
-            HMR0EnterEx(pVCpu);
-            Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
+            int rc = HMR0EnterCpu(pVCpu);
+            AssertRC(rc); NOREF(rc);
+            Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
             pVCpu->hm.s.fLeaveDone = false;
             VMMRZCallRing3Enable(pVCpu);                        /* Restore longjmp state. */
@@ -1717,9 +1722,11 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                       | HM_CHANGED_SVM_RESERVED2
                                       | HM_CHANGED_SVM_RESERVED3);
 
-    AssertMsg(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_ALL_GUEST),
-             ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
-              pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
+    /* All the guest state bits should be loaded except maybe the host context and shared host/guest bits. */
+    AssertMsg(   !(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_ALL_GUEST)
+              || !(pVCpu->hm.s.fContextUseFlags & ~(HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE)),
+               ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
+                pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
 
     Log4(("Load: CS:RIP=%04x:%RX64 EFL=%#x SS:RSP=%04x:%RX64\n", pCtx->cs.Sel, pCtx->rip, pCtx->eflags.u, pCtx->ss, pCtx->rsp));
 
@@ -1898,11 +1905,51 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
+    /* Restore host FPU state if necessary and resync on next R0 reentry .*/
+    if (CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
+        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+    }
+
+    /*
+     * Restore host debug registers if necessary and resync on next R0 reentry.
+     */
+#ifdef VBOX_STRICT
+    if (CPUMIsHyperDebugStateActive(pVCpu))
+    {
+        PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+        Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
+        Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
+    }
+#endif
+    if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+
+    Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
+    STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
+
+    VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
+}
+
+
+DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+
     /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
-       which would've done this work from the SVMR0ThreadCtxCallback(). */
+       which would've done this work from the VMXR0ThreadCtxCallback(). */
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     bool fPreemptDisabled = false;
     if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -1914,41 +1961,19 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     if (!pVCpu->hm.s.fLeaveDone)
     {
-        /* Restore host FPU state if necessary and resync on next R0 reentry .*/
-        if (CPUMIsGuestFPUStateActive(pVCpu))
-        {
-            CPUMR0SaveGuestFPU(pVM, pVCpu, pCtx);
-            Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
-        }
-
-        /*
-         * Restore host debug registers if necessary and resync on next R0 reentry.
-         */
-#ifdef VBOX_STRICT
-        if (CPUMIsHyperDebugStateActive(pVCpu))
-        {
-            PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-            Assert(pVmcb->ctrl.u16InterceptRdDRx == 0xffff);
-            Assert(pVmcb->ctrl.u16InterceptWrDRx == 0xffff);
-        }
-#endif
-        if (CPUMR0DebugStateMaybeSaveGuestAndRestoreHost(pVCpu, false /* save DR6 */))
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
-
-        Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-
-        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
-        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
-        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit1);
-        STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatExit2);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
-
-        VMCPU_CMPXCHG_STATE(pVCpu, VMCPUSTATE_STARTED_HM, VMCPUSTATE_STARTED_EXEC);
-
+        hmR0SvmLeave(pVM, pVCpu, pCtx);
         pVCpu->hm.s.fLeaveDone = true;
     }
+
+    /* Deregister hook now that we've left HM context before re-enabling preemption. */
+    /** @todo This is bad. Deregistering here means we need to VMCLEAR always
+     *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
+    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+        VMMR0ThreadCtxHooksDeregister(pVCpu);
+
+    /* Leave HM context. This takes care of local init (term). */
+    int rc = HMR0LeaveCpu(pVCpu);
+    AssertRC(rc); NOREF(rc);
 
     /* Restore preemption if we previous disabled it ourselves. */
     if (fPreemptDisabled)
@@ -1967,7 +1992,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    hmR0SvmLeave(pVM, pVCpu, pCtx);
+    hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
 }
 
 
@@ -2040,7 +2065,7 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
     }
 
     /* Sync. the necessary state for going back to ring-3. */
-    hmR0SvmLeave(pVM, pVCpu, pCtx);
+    hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
