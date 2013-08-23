@@ -162,38 +162,43 @@ int testNetwork(pm::CollectorHAL *collector)
         return 1;
     }
     rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStart, &hostTxStart);
-    if (RT_FAILURE(rc))
+    if (rc == VERR_NOT_IMPLEMENTED)
+        RTPrintf("tstCollector: getRawHostNetworkLoad() not implemented, skipping\n");
+    else
     {
-        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
-        return 1;
-    }
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+            return 1;
+        }
 
-    RTThreadSleep(5000); // Sleep for five seconds
+        RTThreadSleep(5000); // Sleep for five seconds
 
-    rc = collector->preCollect(hints, 0);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
-        return 1;
+        rc = collector->preCollect(hints, 0);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+            return 1;
+        }
+        hostRxStop = hostRxStart;
+        hostTxStop = hostTxStart;
+        rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStop, &hostTxStop);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
+            return 1;
+        }
+        RTPrintf("tstCollector: host network speed = %llu bytes/sec (%llu mbit/sec)\n",
+                speed, speed/(1000000/8));
+        RTPrintf("tstCollector: host network rx    = %llu bytes/sec (%llu mbit/sec, %u.%u %%)\n",
+                (hostRxStop - hostRxStart)/5, (hostRxStop - hostRxStart)/(5000000/8),
+                (hostRxStop - hostRxStart) * 100 / (speed * 5),
+                (hostRxStop - hostRxStart) * 10000 / (speed * 5) % 100);
+        RTPrintf("tstCollector: host network tx    = %llu bytes/sec (%llu mbit/sec, %u.%u %%)\n\n",
+                (hostTxStop - hostTxStart)/5, (hostTxStop - hostTxStart)/(5000000/8),
+                (hostTxStop - hostTxStart) * 100 / (speed * 5),
+                (hostTxStop - hostTxStart) * 10000 / (speed * 5) % 100);
     }
-    hostRxStop = hostRxStart;
-    hostTxStop = hostTxStart;
-    rc = collector->getRawHostNetworkLoad(NETIFNAME, &hostRxStop, &hostTxStop);
-    if (RT_FAILURE(rc))
-    {
-        RTPrintf("tstCollector: getRawHostNetworkLoad() -> %Rrc\n", rc);
-        return 1;
-    }
-    RTPrintf("tstCollector: host network speed = %llu bytes/sec (%llu mbit/sec)\n",
-             speed, speed/(1000000/8));
-    RTPrintf("tstCollector: host network rx    = %llu bytes/sec (%llu mbit/sec, %u.%u %%)\n",
-             (hostRxStop - hostRxStart)/5, (hostRxStop - hostRxStart)/(5000000/8),
-             (hostRxStop - hostRxStart) * 100 / (speed * 5),
-             (hostRxStop - hostRxStart) * 10000 / (speed * 5) % 100);
-    RTPrintf("tstCollector: host network tx    = %llu bytes/sec (%llu mbit/sec, %u.%u %%)\n\n",
-             (hostTxStop - hostTxStart)/5, (hostTxStop - hostTxStart)/(5000000/8),
-             (hostTxStop - hostTxStart) * 100 / (speed * 5),
-             (hostTxStop - hostTxStart) * 10000 / (speed * 5) % 100);
 
     return 0;
 }
@@ -225,72 +230,77 @@ int testDisk(pm::CollectorHAL *collector)
 
     pm::DiskList disksUsage, disksLoad;
     int rc = collector->getDiskListByFs(FSNAME, disksUsage, disksLoad);
-    if (RT_FAILURE(rc))
+    if (rc == VERR_NOT_IMPLEMENTED)
+        RTPrintf("tstCollector: getDiskListByFs() not implemented, skipping\n");
+    else
     {
-        RTPrintf("tstCollector: getDiskListByFs(%s) -> %Rrc\n", FSNAME, rc);
-        return 1;
-    }
-    if (disksUsage.empty())
-    {
-        RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
-        return 1;
-    }
-    if (disksLoad.empty())
-    {
-        RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
-        return 1;
-    }
-
-    pm::DiskList::iterator it;
-    for (it = disksUsage.begin(); it != disksUsage.end(); ++it)
-    {
-        uint64_t diskSize = 0;
-        rc = collector->getHostDiskSize(it->c_str(), &diskSize);
-        RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", it->c_str(), diskSize);
         if (RT_FAILURE(rc))
         {
-            RTPrintf("tstCollector: getHostDiskSize() -> %Rrc\n", rc);
+            RTPrintf("tstCollector: getDiskListByFs(%s) -> %Rrc\n", FSNAME, rc);
             return 1;
         }
-    }
-
-    for (it = disksLoad.begin(); it != disksLoad.end(); ++it)
-    {
-        RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", it->c_str());
-
-        hints.collectHostCpuLoad();
-        rc = collector->preCollect(hints, 0);
-        if (RT_FAILURE(rc))
+        if (disksUsage.empty())
         {
-            RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+            RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
             return 1;
         }
-        rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStart, &totalMsStart);
-        if (RT_FAILURE(rc))
+        if (disksLoad.empty())
         {
-            RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
+            RTPrintf("tstCollector: getDiskListByFs(%s) returned empty usage list\n", FSNAME);
             return 1;
         }
 
-        RTThreadSleep(5000); // Sleep for five seconds
+        pm::DiskList::iterator it;
+        for (it = disksUsage.begin(); it != disksUsage.end(); ++it)
+        {
+            uint64_t diskSize = 0;
+            rc = collector->getHostDiskSize(it->c_str(), &diskSize);
+            RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", it->c_str(), diskSize);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstCollector: getHostDiskSize() -> %Rrc\n", rc);
+                return 1;
+            }
+        }
 
-        rc = collector->preCollect(hints, 0);
-        if (RT_FAILURE(rc))
+        for (it = disksLoad.begin(); it != disksLoad.end(); ++it)
         {
-            RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
-            return 1;
+            RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", it->c_str());
+
+            hints.collectHostCpuLoad();
+            rc = collector->preCollect(hints, 0);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+                return 1;
+            }
+            rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStart, &totalMsStart);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
+                return 1;
+            }
+
+            RTThreadSleep(5000); // Sleep for five seconds
+
+            rc = collector->preCollect(hints, 0);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
+                return 1;
+            }
+            rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStop, &totalMsStop);
+            if (RT_FAILURE(rc))
+            {
+                RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
+                return 1;
+            }
+            RTPrintf("tstCollector: host disk util    = %llu msec (%u.%u %%), total = %llu msec\n\n",
+                     (diskMsStop - diskMsStart),
+                     (unsigned)((diskMsStop - diskMsStart) * 100 / (totalMsStop - totalMsStart)),
+                     (unsigned)((diskMsStop - diskMsStart) * 10000 / (totalMsStop - totalMsStart) % 100),
+                     totalMsStop - totalMsStart);
         }
-        rc = collector->getRawHostDiskLoad(it->c_str(), &diskMsStop, &totalMsStop);
-        if (RT_FAILURE(rc))
-        {
-            RTPrintf("tstCollector: getRawHostDiskLoad() -> %Rrc\n", rc);
-            return 1;
-        }
-        RTPrintf("tstCollector: host disk util    = %llu msec (%u.%u %%), total = %llu msec\n\n",
-                 (diskMsStop - diskMsStart),
-                 (unsigned)((diskMsStop - diskMsStart) * 100 / (totalMsStop - totalMsStart)),
-                 (unsigned)((diskMsStop - diskMsStart) * 10000 / (totalMsStop - totalMsStart) % 100),
-                 totalMsStop - totalMsStart);
     }
 
     return 0;
