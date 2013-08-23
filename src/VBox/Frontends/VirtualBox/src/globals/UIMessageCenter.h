@@ -219,7 +219,6 @@ public:
 
     /* API: Machine settings warnings: */
     void warnAboutUnaccessibleUSB(const COMBaseWithEI &object, QWidget *pParent = 0) const;
-    void warnAboutUnsupportedUSB2(const QString &strExtPackName, QWidget *pParent = 0);
     void warnAboutStateChange(QWidget *pParent = 0) const;
     bool confirmSettingsReloading(QWidget *pParent = 0) const;
     int confirmHardDiskAttachmentCreation(const QString &strControllerName, QWidget *pParent = 0) const;
