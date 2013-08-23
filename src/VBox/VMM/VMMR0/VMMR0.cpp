@@ -567,18 +567,23 @@ static void vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
         }
 
         case RTTHREADCTXEVENT_PREEMPTING:
+        {
+            /* Invoke the HM-specific thread-context callback. */
+            HMR0ThreadCtxCallback(enmEvent, pvUser);
+
             /*
              * Sigh. See VMMGetCpu() used by VMCPU_ASSERT_EMT(). We cannot let several VCPUs
              * have the same host CPU associated with it.
              */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
-            /* fallthru, no break! */
+            break;
+        }
+
         default:
             /* Invoke the HM-specific thread-context callback. */
             HMR0ThreadCtxCallback(enmEvent, pvUser);
             break;
     }
-
 }
 
 

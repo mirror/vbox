@@ -6161,8 +6161,6 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
-    /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
-       which would've done this work from the VMXR0ThreadCtxCallback(). */
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     bool fPreemptDisabled = false;
     if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
@@ -6172,6 +6170,8 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         fPreemptDisabled = true;
     }
 
+    /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
+       which would've done this work from the VMXR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
         hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
@@ -6236,7 +6236,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
 
     if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_GUEST_STATE))
     {
-        /* We want to see what the guest-state was before VM-entry, don't resync here, as we won't continue guest execution. */
+        /* We've done what is required in hmR0VmxExitErrInvalidGuestState(). We're not going to continue guest execution... */
         return;
     }
     else if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_VMCS_PTR))
@@ -6244,7 +6244,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
         VMXGetActivatedVmcs(&pVCpu->hm.s.vmx.LastError.u64VMCSPhys);
         pVCpu->hm.s.vmx.LastError.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
         pVCpu->hm.s.vmx.LastError.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
-        pVCpu->hm.s.vmx.LastError.idCurrentCpu    = RTMpCpuId();
+        /* LastError.idCurrentCpu was updated in hmR0VmxPreRunGuestCommitted(). */
         return;
     }
 
@@ -9092,6 +9092,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     NOREF(uInvalidReason);
 
+#ifdef VBOX_STRICT
     Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntrInfo));
     Log4(("VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE    %#RX32\n", pVmxTransient->uEntryXcptErrorCode));
     Log4(("VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH         %#RX32\n", pVmxTransient->cbEntryInstr));
@@ -9109,6 +9110,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     Log4(("VMX_VMCS_CTRL_CR4_READ_SHADOW              %#RHr\n", uHCReg));
     rc = VMXReadVmcs64(VMX_VMCS64_CTRL_EPTP_FULL, &u64Val);                 AssertRC(rc);
     Log4(("VMX_VMCS64_CTRL_EPTP_FULL                  %#RX64\n", u64Val));
+#endif
 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     HMDumpRegs(pVM, pVCpu, pMixedCtx);
