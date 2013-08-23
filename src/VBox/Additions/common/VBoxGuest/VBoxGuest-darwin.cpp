@@ -798,20 +798,20 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                             {
                                 /* register the service. */
                                 registerService();
-                                printf("VBoxGuest: Successfully started I/O kit class instance.\n");
+                                LogRel(("VBoxGuest: Successfully started I/O kit class instance.\n"));
                                 return true;
                             }
 
-                            printf("VBoxGuest: Failed to set up interrupts\n");
+                            LogRel(("VBoxGuest: Failed to set up interrupts\n"));
                             VbgdDarwinCharDevRemove();
                         }
                         else
-                            printf("VBoxGuest: Failed to initialize character device (rc=%d).\n", rc);
+                            LogRel(("VBoxGuest: Failed to initialize character device (rc=%d).\n", rc));
 
                         VBoxGuestDeleteDevExt(&g_DevExt);
                     }
                     else
-                        printf("VBoxGuest: Failed to initialize common code (rc=%d).\n", rc);
+                        LogRel(("VBoxGuest: Failed to initialize common code (rc=%d).\n", rc));
 
                     if (m_pMap)
                     {
@@ -821,14 +821,14 @@ bool org_virtualbox_VBoxGuest::start(IOService *pProvider)
                 }
             }
             else
-                printf("VBoxGuest: The device missing is the I/O port range (#0).\n");
+                LogRel(("VBoxGuest: The device missing is the I/O port range (#0).\n"));
         }
         else
-            printf("VBoxGuest: Not the VMMDev (%#x:%#x).\n",
-                   m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID), m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID));
+            LogRel(("VBoxGuest: Not the VMMDev (%#x:%#x).\n",
+                   m_pIOPCIDevice->configRead16(kIOPCIConfigVendorID), m_pIOPCIDevice->configRead16(kIOPCIConfigDeviceID)));
     }
     else
-        printf("VBoxGuest: Provider is not an instance of IOPCIDevice.\n");
+        LogRel(("VBoxGuest: Provider is not an instance of IOPCIDevice.\n"));
 
     ASMAtomicXchgBool(&g_fInstantiated, false);
 
@@ -849,7 +849,7 @@ void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
 
     /* Low level termination should be performed only once */
     if (!disableVmmDevInterrupts())
-        printf("vboxguest: unable to unregister interrupt handler\n");
+        LogRel(("vboxguest: unable to unregister interrupt handler\n"));
 
     VbgdDarwinCharDevRemove();
     VBoxGuestDeleteDevExt(&g_DevExt);
@@ -864,7 +864,7 @@ void org_virtualbox_VBoxGuest::stop(IOService *pProvider)
 
     ASMAtomicWriteBool(&g_fInstantiated, false);
 
-    printf("vboxguest module unloaded\n");
+    LogRel(("vboxguest module unloaded\n"));
 }
 
 

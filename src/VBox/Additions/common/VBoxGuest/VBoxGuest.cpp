@@ -750,6 +750,20 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     int rc, rc2;
     unsigned i;
 
+#ifdef VBOX_GUESTDRV_WITH_RELEASE_LOGGER
+    /*
+     * Create the release log.
+     */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    PRTLOGGER pRelLogger;
+    rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
+                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups, RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+    if (RT_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(pRelLogger);
+    /** @todo Add native hook for getting logger config parameters and setting
+     *        them. On linux we should use the module parameter stuff... */
+#endif
+
     /*
      * Adjust fFixedEvents.
      */
@@ -904,6 +918,11 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
     rc2 = RTSemFastMutexDestroy(pDevExt->MemBalloon.hMtx); AssertRC(rc2);
     rc2 = RTSpinlockDestroy(pDevExt->EventSpinlock); AssertRC(rc2);
     rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock); AssertRC(rc2);
+
+#ifdef VBOX_GUESTDRV_WITH_RELEASE_LOGGER
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
+#endif
     return rc; /* (failed) */
 }
 
@@ -973,6 +992,12 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 
     pDevExt->IOPortBase = 0;
     pDevExt->pIrqAckEvents = NULL;
+
+#ifdef VBOX_GUESTDRV_WITH_RELEASE_LOGGER
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
+#endif
+
 }
 
 
@@ -1384,7 +1409,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
     iEvent = ASMBitFirstSetU32(fReqEvents) - 1;
     if (RT_UNLIKELY(iEvent < 0))
     {
-        Log(("VBoxGuestCommonIOCtl: WAITEVENT: Invalid input mask %#x!!\n", fReqEvents));
+        LogRel(("VBoxGuestCommonIOCtl: WAITEVENT: Invalid input mask %#x!!\n", fReqEvents));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1714,13 +1739,13 @@ static int VBoxGuestCommonIOCtl_VMMRequest(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
     if (cbReq < cbMinSize)
     {
-        Log(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid hdr size %#x, expected >= %#x; type=%#x!!\n",
+        LogRel(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid hdr size %#x, expected >= %#x; type=%#x!!\n",
              cbReq, cbMinSize, enmType));
         return VERR_INVALID_PARAMETER;
     }
     if (cbReq > cbData)
     {
-        Log(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid size %#x, expected >= %#x (hdr); type=%#x!!\n",
+        LogRel(("VBoxGuestCommonIOCtl: VMMREQUEST: invalid size %#x, expected >= %#x (hdr); type=%#x!!\n",
              cbData, cbReq, enmType));
         return VERR_INVALID_PARAMETER;
     }
