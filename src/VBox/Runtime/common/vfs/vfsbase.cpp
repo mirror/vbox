@@ -1554,7 +1554,8 @@ RTDECL(int) RTVfsUtilPumpIoStreams(RTVFSIOSTREAM hVfsIosSrc, RTVFSIOSTREAM hVfsI
         rc = RTVfsIoStrmRead(hVfsIosSrc, pvBuf, cbBuf, true /*fBlocking*/, &cbRead);
         if (RT_FAILURE(rc))
             break;
-        if (rc == VINF_EOF && cbRead == 0)
+        if (cbRead == 0) /* will never return VINF_EOF as we passed cbRead so the
+                            caller is expected to handle partial reads. */
             break;
 
         rc = RTVfsIoStrmWrite(hVfsIosDst, pvBuf, cbRead, true /*fBlocking*/, NULL /*cbWritten*/);
