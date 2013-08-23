@@ -276,7 +276,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
     strncpy(Info.szShortName, szNICInstance, sizeof(Info.szShortName) - 1);
 
     HostNetworkInterfaceType_T enmType;
-    if (strncmp("vboxnet", szNICInstance, 7))
+    if (strncmp(szNICInstance, RT_STR_TUPLE("vboxnet")))
         enmType = HostNetworkInterfaceType_Bridged;
     else
         enmType = HostNetworkInterfaceType_HostOnly;
@@ -292,15 +292,15 @@ static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostN
     /*
      * Skip IPSEC interfaces. It's at IP level.
      */
-    if (!strncmp(pszIface, "ip.tun", 6))
+    if (!strncmp(pszIface, RT_STR_TUPLE("ip.tun")))
         return _B_FALSE;
 
     /*
      * Skip our own dynamic VNICs but don't skip VNIC templates.
      * These names originate from VBoxNetFltBow-solaris.c, hardcoded here for now.
      */
-    if (    strncmp(pszIface, "vboxvnic_template", 17)
-        && !strncmp(pszIface, "vboxvnic", 8))
+    if (    strncmp(pszIface, RT_STR_TUPLE("vboxvnic_template"))
+        && !strncmp(pszIface, RT_STR_TUPLE("vboxvnic")))
         return _B_FALSE;
 
     /*
@@ -436,7 +436,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
                         /*
                          * Skip loopback interfaces.
                          */
-                        if (!strncmp(Ifaces[i].lifr_name, "lo", 2))
+                        if (!strncmp(Ifaces[i].lifr_name, RT_STR_TUPLE("lo")))
                             continue;
 
 #if 0
