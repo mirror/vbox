@@ -1075,10 +1075,9 @@ static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
         pThis->SendSem = NIL_RTSEMEVENT;
     }
 
-    int rc;
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 
-    rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
+    int rc = RTPipeClose(pThis->hWakeupPipeW); AssertRC(rc);
     pThis->hWakeupPipeW = NIL_RTPIPE;
     rc = RTPipeClose(pThis->hWakeupPipeR); AssertRC(rc);
     pThis->hWakeupPipeR = NIL_RTPIPE;

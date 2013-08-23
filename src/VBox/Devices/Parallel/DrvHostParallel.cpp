@@ -1022,7 +1022,6 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS, N_("HostParallel#%d cannot create monitor thread"), pDrvIns->iInstance);
 
 #else /* VBOX_WITH_WIN_PARPORT_SUP */
-    HANDLE hPort;
     pThis->fParportAvail     = false;
     pThis->u32LptAddr        = 0;
     pThis->u32LptAddrControl = 0;
