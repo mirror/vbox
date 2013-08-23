@@ -52,7 +52,7 @@ if "$(KBUILD_TARGET_ARCH)" == "x86"
   VBoxStub.cpp_INCS += $(VBoxStub_0_OUTDIR)
   VBoxStub.cpp_DEFS += VBOX_WITH_CODE_SIGNING
 
-  $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h: $(VBOX_BIN2C) $(PATH_ROOT)/src/VBox/Additions/WINNT/tools/oracle-vbox.cer
+  $$(VBoxStub_0_OUTDIR)/VBoxStubPublicCert.h: $(VBOX_BIN2C) $(PATH_ROOT)/src/VBox/Additions/WINNT/tools/oracle-vbox.cer | $$(dir $$@)
 	$(VBOX_BIN2C) _VBoxStubPublicCert $(PATH_ROOT)/src/VBox/Additions/WINNT/tools/oracle-vbox.cer $@
 
  endif
