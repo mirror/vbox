@@ -1717,7 +1717,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                                       | HM_CHANGED_SVM_RESERVED2
                                       | HM_CHANGED_SVM_RESERVED3);
 
-    AssertMsg(!pVCpu->hm.s.fContextUseFlags,
+    AssertMsg(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_ALL_GUEST),
              ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p fContextUseFlags=%#RX32\n",
               pVM, pVCpu, pVCpu->hm.s.fContextUseFlags));
 
@@ -2769,6 +2769,7 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
     /* Load the guest state. */
     int rc = hmR0SvmLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
+    pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;       /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
     STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
 
