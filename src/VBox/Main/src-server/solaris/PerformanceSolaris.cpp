@@ -384,13 +384,13 @@ int CollectorSolaris::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint
     static bool g_fNotReported = true;
     AssertReturn(strlen(name) < KSTAT_STRLEN, VERR_INVALID_PARAMETER);
     LogFlowThisFunc(("m=%s i=%d n=%s\n", "link", -1, name));
-    kstat_t *ksAdapter = kstat_lookup(mKC, "link", -1, (char *)name);
+    kstat_t *ksAdapter = kstat_lookup(mKC, (char *)"link", -1, (char *)name);
     if (ksAdapter == 0)
     {
         char szModule[KSTAT_STRLEN];
         uint32_t uInstance = getInstance(name, szModule);
         LogFlowThisFunc(("m=%s i=%u n=%s\n", szModule, uInstance, "phys"));
-        ksAdapter = kstat_lookup(mKC, szModule, uInstance, "phys");
+        ksAdapter = kstat_lookup(mKC, szModule, uInstance, (char *)"phys");
         if (ksAdapter == 0)
         {
             LogFlowThisFunc(("m=%s i=%u n=%s\n", szModule, uInstance, name));
