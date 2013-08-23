@@ -36,7 +36,7 @@ void ParsedIntervalFilter_base::parse (const char *aFilter,
     that->mValid = true;
     that->mErrorPosition = 0;
 
-    if (!aFilter || strncmp (aFilter, "int:", 4) != 0)
+    if (!aFilter || strncmp(aFilter, RT_STR_TUPLE("int:")) != 0)
         return;
 
     that->mNull = false;
