@@ -525,7 +525,6 @@ uint64_t CollectorSolaris::getZfsTotal(uint64_t cbTotal, const char *szFsType, c
 int CollectorSolaris::getHostFilesystemUsage(const char *path, ULONG *total, ULONG *used, ULONG *available)
 {
     struct statvfs64 stats;
-    const unsigned _MB = 1024 * 1024;
 
     if (statvfs64(path, &stats) == -1)
     {
@@ -533,10 +532,10 @@ int CollectorSolaris::getHostFilesystemUsage(const char *path, ULONG *total, ULO
         return VERR_ACCESS_DENIED;
     }
     uint64_t cbBlock = stats.f_frsize ? stats.f_frsize : stats.f_bsize;
-    *total = (ULONG)(getZfsTotal(cbBlock * stats.f_blocks, stats.f_basetype, path) / _MB);
+    *total = (ULONG)(getZfsTotal(cbBlock * stats.f_blocks, stats.f_basetype, path) / _1M);
     LogFlowThisFunc(("f_blocks=%llu.\n", stats.f_blocks));
-    *used  = (ULONG)(cbBlock * (stats.f_blocks - stats.f_bfree) / _MB);
-    *available = (ULONG)(cbBlock * stats.f_bavail / _MB);
+    *used  = (ULONG)(cbBlock * (stats.f_blocks - stats.f_bfree) / _1M);
+    *available = (ULONG)(cbBlock * stats.f_bavail / _1M);
 
     return VINF_SUCCESS;
 }
