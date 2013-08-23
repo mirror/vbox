@@ -6081,9 +6081,12 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         fPreemptDisabled = true;
     }
 
+    RTCPUID idCpu = RTMpCpuId();
+    Log4Func(("HostCpuId=%u\n", idCpu));
+
     if (!pVCpu->hm.s.fLeaveDone)
     {
-        Log4Func(("HostCpuId=%u\n", RTMpCpuId()));
+        Log4Func(("Leaving: HostCpuId=%u\n", idCpu));
 
         /* Save the guest state if necessary. */
         if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
@@ -6114,6 +6117,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         /* Restore host-state bits that VT-x only restores partially. */
         if (pVCpu->hm.s.vmx.fRestoreHostFlags)
         {
+            Log4Func(("Restoring Host State: fRestoreHostFlags=%#RX32 HostCpuId=%u\n", pVCpu->hm.s.vmx.fRestoreHostFlags, idCpu));
             VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
             pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
         }
@@ -6139,12 +6143,14 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             int rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
             AssertRC(rc);
             pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
-            Log4Func(("Cleared Vmcs\n"));
+            Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
         }
 
         pVCpu->hm.s.vmx.uVmcsState &= ~HMVMX_VMCS_STATE_LAUNCHED;
         pVCpu->hm.s.fLeaveDone = true;
     }
+
+    NOREF(idCpu);
 
     /* Restore preemption if we previous disabled it ourselves. */
     if (fPreemptDisabled)
@@ -6855,7 +6861,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 
     pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
     pVCpu->hm.s.fLeaveDone = false;
-    Log4Func(("Activated: HostCpuId=%u\n", RTMpCpuId()));
+    Log4Func(("Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
 
     return VINF_SUCCESS;
 }
@@ -6922,7 +6928,7 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
                 int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
                 AssertRC(rc); NOREF(rc);
                 pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
-                Log4Func(("Activated: HostCpuId=%u\n", RTMpCpuId()));
+                Log4Func(("Resumed: Activated Vmcs. HostCpuId=%u\n", RTMpCpuId()));
             }
             pVCpu->hm.s.fLeaveDone = false;
             VMMRZCallRing3Enable(pVCpu);
