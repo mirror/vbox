@@ -152,7 +152,7 @@ int testNetwork(pm::CollectorHAL *collector)
     uint64_t hostRxStart, hostTxStart;
     uint64_t hostRxStop, hostTxStop, speed = 125000000; /* Assume 1Gbit/s */
 
-    RTPrintf("tstCollector: TESTING - Network load, sleeping for 5 sec...\n");
+    RTPrintf("tstCollector: TESTING - Network load, sleeping for 5 s...\n");
 
     hostRxStart = hostTxStart = 0;
     int rc = collector->preCollect(hints, 0);
@@ -211,14 +211,19 @@ int testFsUsage(pm::CollectorHAL *collector)
     ULONG total, used, available;
 
     int rc = collector->getHostFilesystemUsage(FSNAME, &total, &used, &available);
-    if (RT_FAILURE(rc))
+    if (rc == VERR_NOT_IMPLEMENTED)
+        RTPrintf("tstCollector: getHostFilesystemUsage() not implemented, skipping\n");
+    else
     {
-        RTPrintf("tstCollector: getHostFilesystemUsage() -> %Rrc\n", rc);
-        return 1;
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("tstCollector: getHostFilesystemUsage() -> %Rrc\n", rc);
+            return 1;
+        }
+        RTPrintf("tstCollector: host root fs total     = %lu mB\n", total);
+        RTPrintf("tstCollector: host root fs used      = %lu mB\n", used);
+        RTPrintf("tstCollector: host root fs available = %lu mB\n\n", available);
     }
-    RTPrintf("tstCollector: host root fs total     = %lu mB\n", total);
-    RTPrintf("tstCollector: host root fs used      = %lu mB\n", used);
-    RTPrintf("tstCollector: host root fs available = %lu mB\n\n", available);
     return 0;
 }
 
@@ -256,7 +261,9 @@ int testDisk(pm::CollectorHAL *collector)
             uint64_t diskSize = 0;
             rc = collector->getHostDiskSize(it->c_str(), &diskSize);
             RTPrintf("tstCollector: TESTING - Disk size (%s) = %llu\n", it->c_str(), diskSize);
-            if (RT_FAILURE(rc))
+            if (rc == VERR_FILE_NOT_FOUND)
+                RTPrintf("tstCollector: getHostDiskSize(%s) returned VERR_FILE_NOT_FOUND\n", it->c_str());
+            else if (RT_FAILURE(rc))
             {
                 RTPrintf("tstCollector: getHostDiskSize() -> %Rrc\n", rc);
                 return 1;
@@ -265,7 +272,7 @@ int testDisk(pm::CollectorHAL *collector)
 
         for (it = disksLoad.begin(); it != disksLoad.end(); ++it)
         {
-            RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 sec...\n", it->c_str());
+            RTPrintf("tstCollector: TESTING - Disk utilization (%s), sleeping for 5 s...\n", it->c_str());
 
             hints.collectHostCpuLoad();
             rc = collector->preCollect(hints, 0);
@@ -404,7 +411,7 @@ int main(int argc, char *argv[])
     }
     if (cpuTest)
     {
-        RTPrintf("tstCollector: TESTING - CPU load, sleeping for 5 sec\n");
+        RTPrintf("tstCollector: TESTING - CPU load, sleeping for 5 s...\n");
 
         rc = collector->getRawHostCpuLoad(&hostUserStart, &hostKernelStart, &hostIdleStart);
         if (RT_FAILURE(rc))
@@ -458,7 +465,7 @@ int main(int argc, char *argv[])
                  (unsigned)((processKernelStop - processKernelStart) * 100 / (processTotalStop - processTotalStart)),
                  (unsigned)((processKernelStop - processKernelStart) * 10000 / (processTotalStop - processTotalStart) % 100));
 
-        RTPrintf("tstCollector: TESTING - CPU load, looping for 5 sec\n");
+        RTPrintf("tstCollector: TESTING - CPU load, looping for 5 s...\n");
         rc = collector->preCollect(hints, 0);
         if (RT_FAILURE(rc))
         {
