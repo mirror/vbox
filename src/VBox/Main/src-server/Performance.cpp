@@ -49,57 +49,57 @@ using namespace pm;
 
 int CollectorHAL::getHostCpuLoad(ULONG * /* user */, ULONG * /* kernel */, ULONG * /* idle */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getProcessCpuLoad(RTPROCESS  /* process */, ULONG * /* user */, ULONG * /* kernel */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getRawHostCpuLoad(uint64_t * /* user */, uint64_t * /* kernel */, uint64_t * /* idle */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getRawHostNetworkLoad(const char * /* name */, uint64_t * /* rx */, uint64_t * /* tx */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getRawHostDiskLoad(const char * /* name */, uint64_t * /* disk_ms */, uint64_t * /* total_ms */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getRawProcessCpuLoad(RTPROCESS  /* process */, uint64_t * /* user */, uint64_t * /* kernel */, uint64_t * /* total */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getHostMemoryUsage(ULONG * /* total */, ULONG * /* used */, ULONG * /* available */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getHostFilesystemUsage(const char * /* name */, ULONG * /* total */, ULONG * /* used */, ULONG * /* available */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getHostDiskSize(const char * /* name */, uint64_t * /* size */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getProcessMemoryUsage(RTPROCESS /* process */, ULONG * /* used */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorHAL::getDiskListByFs(const char * /* name */, DiskList& /* listUsage */, DiskList& /* listLoad */)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 /* Generic implementations */
