@@ -534,11 +534,11 @@ int RegistryAddStringToMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyValue,
         {
 
             /* Look if the network provider is already in the list. */
-            int iPos = 0;
+            unsigned int iPos = 0;
             size_t cb = 0;
 
             /* Replace delimiting "\0"'s with "," to make tokenizing work. */
-            for (int i = 0; i < cbKeyValue / sizeof(TCHAR); i++)
+            for (unsigned i = 0; i < cbKeyValue / sizeof(TCHAR); i++)
                 if (szKeyValue[i] == '\0') szKeyValue[i] = ',';
 
             TCHAR *pszToken = wcstok(szKeyValue, _T(","));
@@ -635,7 +635,7 @@ int RegistryRemoveStringFromMultiSZ(const TCHAR *pszSubKey, const TCHAR *pszKeyV
             TCHAR szFinalString[1024] = { 0 };
             int iIndex = 0;
             int iNewIndex = 0;
-            for (int i = 0; i < cbKeyValue / sizeof(TCHAR); i++)
+            for (unsigned i = 0; i < cbKeyValue / sizeof(TCHAR); i++)
             {
                 if (szKeyValue[i] != _T('\0'))
                     szCurString[iIndex++] = szKeyValue[i];

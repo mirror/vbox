@@ -132,7 +132,7 @@ static void vboxPushResultAsString(HRESULT hr)
  * @return  IPRT status code.
  * @param   phSession               Where to store the IPC session.
  */
-static int vboxConnectToVBoxTray(RTLOCALIPCSESSION hSession)
+static int vboxConnectToVBoxTray(RTLOCALIPCSESSION *phSession)
 {
     int rc = VINF_SUCCESS;
 
@@ -152,7 +152,7 @@ static int vboxConnectToVBoxTray(RTLOCALIPCSESSION hSession)
             if (RTStrPrintf(szPipeName, sizeof(szPipeName), "%s%s",
                             VBOXTRAY_IPC_PIPE_PREFIX, pszUserName))
             {
-                rc = RTLocalIpcSessionConnect(&hSession, szPipeName, 0 /* Flags */);
+                rc = RTLocalIpcSessionConnect(phSession, szPipeName, 0 /* Flags */);
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -474,8 +474,8 @@ VBOXINSTALLHELPER_EXPORT VBoxTrayShowBallonMsg(HWND hwndParent, int string_size,
 
             if (SUCCEEDED(hr))
             {
-                RTLOCALIPCSESSION hSession;
-                int rc = vboxConnectToVBoxTray(hSession);
+                RTLOCALIPCSESSION hSession = 0;
+                int rc = vboxConnectToVBoxTray(&hSession);
                 if (RT_SUCCESS(rc))
                 {
                     VBOXTRAYIPCHEADER ipcHdr = { VBOXTRAY_IPC_HDR_MAGIC, 0 /* Header version */,
