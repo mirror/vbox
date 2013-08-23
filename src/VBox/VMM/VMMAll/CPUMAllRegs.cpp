@@ -1076,6 +1076,11 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 #endif
             break;
 
+        /** @todo virtualize DEBUGCTL and relatives */
+        case MSR_IA32_DEBUGCTL:
+            *puValue = 0;
+            break;
+
 #if 0 /*def IN_RING0 */
         case MSR_IA32_PLATFORM_ID:
         case MSR_IA32_BIOS_SIGN_ID:
@@ -1368,6 +1373,10 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 
         case MSR_K8_TSC_AUX:
             pVCpu->cpum.s.GuestMsrs.msr.TscAux  = uValue;
+            break;
+
+        case MSR_IA32_DEBUGCTL:
+            /** @todo virtualize DEBUGCTL and relatives */
             break;
 
 
