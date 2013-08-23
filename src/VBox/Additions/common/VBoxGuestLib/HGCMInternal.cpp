@@ -49,10 +49,10 @@
 #define VBGLR0_MAX_HGCM_USER_PARM       (24*_1M)
 /** The max parameter buffer size for a kernel request. */
 #define VBGLR0_MAX_HGCM_KERNEL_PARM     (16*_1M)
-#if defined(RT_OS_LINUX) || (defined(RT_OS_DARWIN) && defined(RT_ARCH_X86))
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN)
 /** Linux needs to use bounce buffers since RTR0MemObjLockUser has unwanted
  * side effects.
- * Darwin 32bit also needs this because of 4GB/4GB user/kernel space. */
+ * Darwin 32bit & 64bit also needs this because of 4GB/4GB user/kernel space. */
 # define USE_BOUNCE_BUFFERS
 #endif
 
