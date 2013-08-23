@@ -489,7 +489,7 @@ rem_driver()
     fi
 }
 
-# unload_module(modname, moddesc, [fatal])
+# unload_module(modname, moddesc, retry, [fatal])
 # failure: fatal
 unload_module()
 {
@@ -505,16 +505,42 @@ unload_module()
 
     modname=$1
     moddesc=$2
-    fatal=$3
+    retry=$3
+    fatal=$4
     modid=`$BIN_MODINFO | grep "$modname " | cut -f 1 -d ' ' `
     if test -n "$modid"; then
         $BIN_MODUNLOAD -i $modid
         if test $? -eq 0; then
             subprint "Unloaded: $moddesc module"
         else
-            subprint "Unloading: $moddesc module ...FAILED!"
-            if test "$fatal" = "$FATALOP"; then
-                exit 1
+            #
+            # Hack for vboxdrv. Delayed removing when VMM thread-context hooks are used.
+            # Our automated tests are probably too quick... Fix properly later.
+            #
+            result=$?
+            if test "$retry" -eq 1; then
+                cmax=15
+                cslept=0
+                while test "$result" -ne 0;
+                do
+                    subprint "Unloading: $moddesc module ...FAILED! Busy? Retrying in 3 seconds..."
+                    sleep 3
+                    cslept=`expr $cslept + 3`
+                    if test "$cslept" -ge "$cmax"; then
+                        break
+                    fi
+                    $BIN_MODUNLOAD -i $modid
+                    result=$?
+                done
+            fi
+    
+            if test "$result" -ne 0; then
+                subprint "Unloading: $moddesc module ...FAILED!"
+                if test "$fatal" = "$FATALOP"; then
+                    exit 1
+                fi
+            else
+                subprint "Unloaded: $moddesc module"
             fi
             return 1
         fi
@@ -707,22 +733,22 @@ remove_drivers()
         fi
     fi
 
-    unload_module "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$fatal"
+    unload_module "$MOD_VBOXUSB" "$DESC_VBOXUSB" 0 "$fatal"
     rem_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$fatal"
 
-    unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
+    unload_module "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" 0 "$fatal"
     rem_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$fatal"
 
-    unload_module "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
+    unload_module "$MOD_VBOXFLT" "$DESC_VBOXFLT" 0 "$fatal"
     rem_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$fatal"
 
-    unload_module "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$fatal"
+    unload_module "$MOD_VBOXBOW" "$DESC_VBOXBOW" 0 "$fatal"
     rem_driver "$MOD_VBOXBOW" "$DESC_VBOXBOW" "$fatal"
 
-    unload_module "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
+    unload_module "$MOD_VBOXNET" "$DESC_VBOXNET" 0 "$fatal"
     rem_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$fatal"
 
-    unload_module "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
+    unload_module "$MOD_VBOXDRV" "$DESC_VBOXDRV" 1 "$fatal"
     rem_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$fatal"
 
     # remove devlinks
