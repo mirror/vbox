@@ -31,6 +31,7 @@
 #include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/mp.h>
+#include <iprt/linux/sysfs.h>
 
 #include <map>
 #include <vector>
@@ -61,7 +62,7 @@ public:
 private:
     virtual int _getRawHostCpuLoad();
     int getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uint64_t *cpuKernel, ULONG *memPagesUsed);
-    char *getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits);
+    void getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits);
     void addVolumeDependencies(const char *pcszVolume, DiskList& listDisks);
     void addRaidDisks(const char *pcszDevice, DiskList& listDisks);
     char *trimTrailingDigits(char *pszName);
@@ -239,28 +240,25 @@ int CollectorLinux::getHostFilesystemUsage(const char *path, ULONG *total, ULONG
     return VINF_SUCCESS;
 }
 
-int CollectorLinux::getHostDiskSize(const char *name, uint64_t *size)
+int CollectorLinux::getHostDiskSize(const char *pszFile, uint64_t *size)
 {
+    char *pszPath = NULL;
+
+    RTStrAPrintf(&pszPath, "/sys/block/%s/size", pszFile);
+    Assert(pszPath);
+
     int rc = VINF_SUCCESS;
-    char *pszName = NULL;
-    long long unsigned int u64Size;
-
-    RTStrAPrintf(&pszName, "/sys/block/%s/size", name);
-    Assert(pszName);
-    FILE *f = fopen(pszName, "r");
-    RTMemFree(pszName);
-
-    if (f)
-    {
-        if (fscanf(f, "%llu", &u64Size) == 1)
-            *size = u64Size * 512;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
-    }
+    if (!RTLinuxSysFsExists(pszPath))
+        rc = VERR_FILE_NOT_FOUND;
     else
-        rc = VERR_ACCESS_DENIED;
-
+    {
+        int64_t cSize = RTLinuxSysFsReadIntFile(0, pszPath);
+        if (cSize < 0)
+            rc = VERR_ACCESS_DENIED;
+        else
+            *size = cSize * 512;
+    }
+    RTStrFree(pszPath);
     return rc;
 }
 
@@ -292,9 +290,8 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     char buf[80]; /* @todo: this should be tied to max allowed proc name. */
 
     RTStrAPrintf(&pszName, "/proc/%d/stat", process);
-    //printf("Opening %s...\n", pszName);
     FILE *f = fopen(pszName, "r");
-    RTMemFree(pszName);
+    RTStrFree(pszName);
 
     if (f)
     {
@@ -319,38 +316,31 @@ int CollectorLinux::getRawProcessStats(RTPROCESS process, uint64_t *cpuUser, uin
     return rc;
 }
 
-int CollectorLinux::getRawHostNetworkLoad(const char *name, uint64_t *rx, uint64_t *tx)
+int CollectorLinux::getRawHostNetworkLoad(const char *pszFile, uint64_t *rx, uint64_t *tx)
 {
     int rc = VINF_SUCCESS;
     char szIfName[/*IFNAMSIZ*/ 16 + 36];
-    long long unsigned int u64Rx, u64Tx;
 
-    RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/rx_bytes", name);
-    FILE *f = fopen(szIfName, "r");
-    if (f)
-    {
-        if (fscanf(f, "%llu", &u64Rx) == 1)
-            *rx = u64Rx;
-        else
-            rc = VERR_FILE_IO_ERROR;
-        fclose(f);
-        RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/tx_bytes", name);
-        f = fopen(szIfName, "r");
-        if (f)
-        {
-            if (fscanf(f, "%llu", &u64Tx) == 1)
-                *tx = u64Tx;
-            else
-                rc = VERR_FILE_IO_ERROR;
-            fclose(f);
-        }
-        else
-            rc = VERR_ACCESS_DENIED;
-    }
-    else
-        rc = VERR_ACCESS_DENIED;
+    RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/rx_bytes", pszFile);
+    if (!RTLinuxSysFsExists(szIfName))
+        return VERR_FILE_NOT_FOUND;
 
-    return rc;
+    int64_t cSize = RTLinuxSysFsReadIntFile(0, szIfName);
+    if (cSize < 0)
+        return VERR_ACCESS_DENIED;
+
+    *rx = cSize;
+
+    RTStrPrintf(szIfName, sizeof(szIfName), "/sys/class/net/%s/statistics/tx_bytes", pszFile);
+    if (!RTLinuxSysFsExists(szIfName))
+        return VERR_FILE_NOT_FOUND;
+
+    cSize = RTLinuxSysFsReadIntFile(0, szIfName);
+    if (cSize < 0)
+        return VERR_ACCESS_DENIED;
+
+    *tx = cSize;
+    return VINF_SUCCESS;
 }
 
 int CollectorLinux::getRawHostDiskLoad(const char *name, uint64_t *disk_ms, uint64_t *total_ms)
@@ -449,7 +439,17 @@ char *CollectorLinux::trimTrailingDigits(char *pszName)
     return pszName;
 }
 
-char *CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits)
+/**
+ * Use the partition name to get the name of the disk. Any path component is stripped.
+ * if fTrimDigits is true, trailing digits are stripped as well, for example '/dev/sda5'
+ * is converted to 'sda'.
+ *
+ * @param   pszDiskName     Where to store the name of the disk.
+ * @param   cbDiskName      The size of the buffer pszDiskName points to.
+ * @param   pszDevName      The device name used to get the disk name.
+ * @param   fTrimDigits     Trim trailing digits (e.g. /dev/sda5)
+ */
+void CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const char *pszDevName, bool fTrimDigits)
 {
     unsigned cbName = 0;
     unsigned cbDevName = strlen(pszDevName);
@@ -463,7 +463,6 @@ char *CollectorLinux::getDiskName(char *pszDiskName, size_t cbDiskName, const ch
         pszEnd--;
     }
     RTStrCopy(pszDiskName, RT_MIN(cbName + 1, cbDiskName), pszEnd + 1);
-    return pszDiskName;
 }
 
 void CollectorLinux::addRaidDisks(const char *pcszDevice, DiskList& listDisks)
@@ -532,7 +531,7 @@ void CollectorLinux::addVolumeDependencies(const char *pcszVolume, DiskList& lis
         char szBuf[128];
 
         while (fgets(szBuf, sizeof(szBuf), fp))
-            if (strncmp(szBuf, "dm-", 3))
+            if (strncmp(szBuf, RT_STR_TUPLE("dm-")))
                 listDisks.push_back(RTCString(trimTrailingDigits(szBuf)));
             else
                 listDisks.push_back(RTCString(trimNewline(szBuf)));
@@ -558,36 +557,35 @@ int CollectorLinux::getDiskListByFs(const char *pszPath, DiskList& listUsage, Di
             {
                 char szDevName[128];
                 char szFsName[1024];
-                /* Try to resolve symbolic link if necessary */
-                ssize_t cbFsName = readlink(mntent->mnt_fsname, szFsName, sizeof(szFsName) - 1);
-                if (cbFsName != -1)
-                    szFsName[cbFsName] = '\0';
-                else
-                    strcpy(szFsName, mntent->mnt_fsname);
-                if (!strncmp(szFsName, "/dev/mapper", 11))
+                /* Try to resolve symbolic link if necessary. Yes, we access the file system here! */
+                int rc = RTPathReal(mntent->mnt_fsname, szFsName, sizeof(szFsName));
+                if (RT_FAILURE(rc))
+                    continue; /* something got wrong, just ignore this path */
+                if (!strncmp(szFsName, RT_STR_TUPLE("/dev/mapper")))
                 {
                     /* LVM */
-                    getDiskName(szDevName, sizeof(szDevName), szFsName, false);
+                    getDiskName(szDevName, sizeof(szDevName), szFsName, false /*=fTrimDigits*/);
                     addVolumeDependencies(szDevName, listUsage);
                     listLoad = listUsage;
                 }
-                else if (!strncmp(szFsName, "/dev/md", 7))
+                else if (!strncmp(szFsName, RT_STR_TUPLE("/dev/md")))
                 {
                     /* Software RAID */
-                    getDiskName(szDevName, sizeof(szDevName), szFsName, false);
+                    getDiskName(szDevName, sizeof(szDevName), szFsName, false /*=fTrimDigits*/);
                     listUsage.push_back(RTCString(szDevName));
                     addRaidDisks(szDevName, listLoad);
                 }
                 else
                 {
-                    /* Plain disk partition */
-                    getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname, true);
+                    /* Plain disk partition. Trim the trailing digits to get the drive name */
+                    getDiskName(szDevName, sizeof(szDevName), szFsName, true /*=fTrimDigits*/);
                     listUsage.push_back(RTCString(szDevName));
                     listLoad.push_back(RTCString(szDevName));
                 }
                 if (listUsage.empty() || listLoad.empty())
                 {
-                    LogRel(("Failed to retrive disk info: getDiskName(%s) --> %s\n", mntent->mnt_fsname, szDevName));
+                    LogRel(("Failed to retrive disk info: getDiskName(%s) --> %s\n",
+                           mntent->mnt_fsname, szDevName));
                 }
                 break;
             }
