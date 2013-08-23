@@ -61,10 +61,483 @@
 
 using namespace com;
 
+/** @todo Move this into a helper module. */
+static const char *ctrlFileStatusToText(FileStatus_T enmStatus);
+static const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus);
+static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus);
+
+class GuestFileEventListener;
+typedef ListenerImpl<GuestFileEventListener> GuestFileEventListenerImpl;
+VBOX_LISTENER_DECLARE(GuestFileEventListenerImpl)
+
+class GuestProcessEventListener;
+typedef ListenerImpl<GuestProcessEventListener> GuestProcessEventListenerImpl;
+VBOX_LISTENER_DECLARE(GuestProcessEventListenerImpl)
+
+class GuestSessionEventListener;
+typedef ListenerImpl<GuestSessionEventListener> GuestSessionEventListenerImpl;
+VBOX_LISTENER_DECLARE(GuestSessionEventListenerImpl)
+
+/** Simple statistics class for binding locally
+ *  held data to a specific guest object. */
+class GuestEventStats
+{
+
+public:
+
+    GuestEventStats(void)
+        : uLastUpdatedMS(RTTimeMilliTS())
+    {
+    }
+
+    /** @todo Make this more a class than a structure. */
+public:
+
+    uint64_t uLastUpdatedMS;
+};
+
+class GuestFileStats : public GuestEventStats
+{
+
+public:
+
+    GuestFileStats(void) { }
+
+    GuestFileStats(ComObjPtr<GuestFileEventListenerImpl> pListenerImpl)
+        : mListener(pListenerImpl)
+    {
+    }
+
+public: /** @todo */
+
+    ComObjPtr<GuestFileEventListenerImpl> mListener;
+};
+
+class GuestProcStats : public GuestEventStats
+{
+
+public:
+
+    GuestProcStats(void) { }
+
+    GuestProcStats(ComObjPtr<GuestProcessEventListenerImpl> pListenerImpl)
+        : mListener(pListenerImpl)
+    {
+    }
+
+public: /** @todo */
+
+    ComObjPtr<GuestProcessEventListenerImpl> mListener;
+};
+
+class GuestSessionStats : public GuestEventStats
+{
+
+public:
+
+    GuestSessionStats(void) { }
+
+    GuestSessionStats(ComObjPtr<GuestSessionEventListenerImpl> pListenerImpl)
+        : mListener(pListenerImpl)
+    {
+    }
+
+public: /** @todo */
+
+    ComObjPtr<GuestSessionEventListenerImpl> mListener;
+};
+
+/** Map containing all watched guest files. */
+typedef std::map< ComPtr<IGuestFile>, GuestFileStats > GuestEventFiles;
+/** Map containing all watched guest processes. */
+typedef std::map< ComPtr<IGuestProcess>, GuestProcStats > GuestEventProcs;
+/** Map containing all watched guest sessions. */
+typedef std::map< ComPtr<IGuestSession>, GuestSessionStats > GuestEventSessions;
+
+class GuestListenerBase
+{
+public:
+
+    GuestListenerBase(void)
+        : mfVerbose(false)
+    {
+    }
+
+    virtual ~GuestListenerBase(void)
+    {
+    }
+
+    HRESULT init(bool fVerbose = false)
+    {
+        mfVerbose = fVerbose;
+        return S_OK;
+    }
+
+protected:
+
+    /** Verbose flag. */
+    bool mfVerbose;
+};
+
+/**
+ *  Handler for guest process events.
+ */
+class GuestFileEventListener : public GuestListenerBase
+{
+public:
+
+    GuestFileEventListener(void)
+    {
+    }
+
+    virtual ~GuestFileEventListener(void)
+    {
+    }
+
+    void uninit(void)
+    {
+
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestFileStateChanged:
+            {
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestFileStateChangedEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
+
+                    ComPtr<IGuestFile> pProcess;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(File)(pProcess.asOutParam()));
+                    AssertBreak(!pProcess.isNull());
+                    FileStatus_T fileSts;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Status)(&fileSts));
+                    Bstr strPath;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(FileName)(strPath.asOutParam()));
+                    ULONG uID;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(Id)(&uID));
+
+                    RTPrintf("File ID=%RU32 \"%s\" changed status to [%s]\n",
+                             uID, Utf8Str(strPath).c_str(),
+                             ctrlFileStatusToText(fileSts));
+
+                } while (0);
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+
+protected:
+
+};
+
+/**
+ *  Handler for guest process events.
+ */
+class GuestProcessEventListener : public GuestListenerBase
+{
+public:
+
+    GuestProcessEventListener(void)
+    {
+    }
+
+    virtual ~GuestProcessEventListener(void)
+    {
+    }
+
+    void uninit(void)
+    {
+
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestProcessStateChanged:
+            {
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestProcessStateChangedEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
+
+                    ComPtr<IGuestProcess> pProcess;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Process)(pProcess.asOutParam()));
+                    AssertBreak(!pProcess.isNull());
+                    ProcessStatus_T procSts;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Status)(&procSts));
+                    Bstr strPath;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExecutablePath)(strPath.asOutParam()));
+                    ULONG uPID;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
+
+                    RTPrintf("Process PID=%RU32 \"%s\" changed status to [%s]\n",
+                             uPID, Utf8Str(strPath).c_str(),
+                             ctrlProcessStatusToText(procSts));
+
+                } while (0);
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+
+protected:
+
+};
+
+/**
+ *  Handler for guest session events.
+ */
+class GuestSessionEventListener : public GuestListenerBase
+{
+public:
+
+    GuestSessionEventListener(void)
+    {
+    }
+
+    virtual ~GuestSessionEventListener(void)
+    {
+    }
+
+    void uninit(void)
+    {
+        GuestEventProcs::iterator itProc = mProcs.begin();
+        while (itProc != mProcs.end())
+        {
+            if (!itProc->first.isNull())
+            {
+                HRESULT rc;
+                do
+                {
+                    /* Listener unregistration. */
+                    ComPtr<IEventSource> pES;
+                    CHECK_ERROR_BREAK(itProc->first, COMGETTER(EventSource)(pES.asOutParam()));
+                    if (!pES.isNull())
+                        CHECK_ERROR_BREAK(pES, UnregisterListener(itProc->second.mListener));
+                } while (0);
+                itProc->first->Release();
+            }
+
+            itProc++;
+        }
+        mProcs.clear();
+
+        GuestEventFiles::iterator itFile = mFiles.begin();
+        while (itFile != mFiles.end())
+        {
+            if (!itFile->first.isNull())
+            {
+                HRESULT rc;
+                do
+                {
+                    /* Listener unregistration. */
+                    ComPtr<IEventSource> pES;
+                    CHECK_ERROR_BREAK(itFile->first, COMGETTER(EventSource)(pES.asOutParam()));
+                    if (!pES.isNull())
+                        CHECK_ERROR_BREAK(pES, UnregisterListener(itFile->second.mListener));
+                } while (0);
+                itFile->first->Release();
+            }
+
+            itFile++;
+        }
+        mFiles.clear();
+    }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
+    {
+        switch (aType)
+        {
+            case VBoxEventType_OnGuestFileRegistered:
+            {
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestFileRegisteredEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
+
+                    ComPtr<IGuestFile> pFile;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(File)(pFile.asOutParam()));
+                    AssertBreak(!pFile.isNull());
+                    BOOL fRegistered;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
+                    Bstr strPath;
+                    CHECK_ERROR_BREAK(pFile, COMGETTER(FileName)(strPath.asOutParam()));
+
+                    RTPrintf("File \"%s\" %s\n",
+                             Utf8Str(strPath).c_str(),
+                             fRegistered ? "registered" : "unregistered");
+                    if (fRegistered)
+                    {
+                        if (mfVerbose)
+                            RTPrintf("Registering ...\n");
+
+                        /* Register for IGuestFile events. */
+                        ComObjPtr<GuestFileEventListenerImpl> pListener;
+                        pListener.createObject();
+                        CHECK_ERROR_BREAK(pListener, init(new GuestFileEventListener()));
+
+                        ComPtr<IEventSource> es;
+                        CHECK_ERROR_BREAK(pFile, COMGETTER(EventSource)(es.asOutParam()));
+                        com::SafeArray<VBoxEventType_T> eventTypes;
+                        eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
+                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
+                                                               true /* Active listener */));
+
+                        GuestFileStats fileStats(pListener);
+                        mFiles[pFile] = fileStats;
+                    }
+                    else
+                    {
+                        GuestEventFiles::iterator itFile = mFiles.find(pFile);
+                        if (itFile != mFiles.end())
+                        {
+                            if (mfVerbose)
+                                RTPrintf("Unregistering file ...\n");
+
+                            if (!itFile->first.isNull())
+                            {
+                                /* Listener unregistration. */
+                                ComPtr<IEventSource> pES;
+                                CHECK_ERROR(itFile->first, COMGETTER(EventSource)(pES.asOutParam()));
+                                if (!pES.isNull())
+                                    CHECK_ERROR(pES, UnregisterListener(itFile->second.mListener));
+                                itFile->first->Release();
+                            }
+
+                            mFiles.erase(itFile);
+                        }
+                    }
+
+                } while (0);
+                break;
+            }
+
+            case VBoxEventType_OnGuestProcessRegistered:
+            {
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestProcessRegisteredEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
+
+                    ComPtr<IGuestProcess> pProcess;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Process)(pProcess.asOutParam()));
+                    AssertBreak(!pProcess.isNull());
+                    BOOL fRegistered;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
+                    Bstr strPath;
+                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExecutablePath)(strPath.asOutParam()));
+
+                    RTPrintf("Process \"%s\" %s\n",
+                             Utf8Str(strPath).c_str(),
+                             fRegistered ? "registered" : "unregistered");
+                    if (fRegistered)
+                    {
+                        if (mfVerbose)
+                            RTPrintf("Registering ...\n");
+
+                        /* Register for IGuestProcess events. */
+                        ComObjPtr<GuestProcessEventListenerImpl> pListener;
+                        pListener.createObject();
+                        CHECK_ERROR_BREAK(pListener, init(new GuestProcessEventListener()));
+
+                        ComPtr<IEventSource> es;
+                        CHECK_ERROR_BREAK(pProcess, COMGETTER(EventSource)(es.asOutParam()));
+                        com::SafeArray<VBoxEventType_T> eventTypes;
+                        eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
+                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
+                                                               true /* Active listener */));
+
+                        GuestProcStats procStats(pListener);
+                        mProcs[pProcess] = procStats;
+                    }
+                    else
+                    {
+                        GuestEventProcs::iterator itProc = mProcs.find(pProcess);
+                        if (itProc != mProcs.end())
+                        {
+                            if (mfVerbose)
+                                RTPrintf("Unregistering process ...\n");
+
+                            if (!itProc->first.isNull())
+                            {
+                                /* Listener unregistration. */
+                                ComPtr<IEventSource> pES;
+                                CHECK_ERROR(itProc->first, COMGETTER(EventSource)(pES.asOutParam()));
+                                if (!pES.isNull())
+                                    CHECK_ERROR(pES, UnregisterListener(itProc->second.mListener));
+                                itProc->first->Release();
+                            }
+
+                            mProcs.erase(itProc);
+                        }
+                    }
+
+                } while (0);
+                break;
+            }
+
+            case VBoxEventType_OnGuestSessionStateChanged:
+            {
+                HRESULT rc;
+                do
+                {
+                    ComPtr<IGuestSessionStateChangedEvent> pEvent = aEvent;
+                    Assert(!pEvent.isNull());
+                    ComPtr<IGuestSession> pSession;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(pSession.asOutParam()));
+                    AssertBreak(!pSession.isNull());
+
+                    GuestSessionStatus_T sessSts;
+                    CHECK_ERROR_BREAK(pSession, COMGETTER(Status)(&sessSts));
+                    ULONG uID;
+                    CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
+                    Bstr strName;
+                    CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
+
+                    RTPrintf("Session ID=%RU32 \"%s\" changed status to [%s]\n",
+                             uID, Utf8Str(strName).c_str(),
+                             ctrlSessionStatusToText(sessSts));
+
+                } while (0);
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+
+        return S_OK;
+    }
+
+protected:
+
+    GuestEventFiles mFiles;
+    GuestEventProcs mProcs;
+};
+
 /**
  *  Handler for guest events.
  */
-class GuestEventListener
+class GuestEventListener : public GuestListenerBase
 {
 public:
     GuestEventListener(void)
@@ -75,26 +548,35 @@ public:
     {
     }
 
-    HRESULT init(void)
-    {
-        return S_OK;
-    }
-
     void uninit(void)
     {
-        mSession.setNull();
+        GuestEventSessions::iterator itSession = mSessions.begin();
+        while (itSession != mSessions.end())
+        {
+            if (!itSession->first.isNull())
+            {
+                HRESULT rc;
+                do
+                {
+                    /* Listener unregistration. */
+                    ComPtr<IEventSource> pES;
+                    CHECK_ERROR_BREAK(itSession->first, COMGETTER(EventSource)(pES.asOutParam()));
+                    if (!pES.isNull())
+                        CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
+
+                } while (0);
+                itSession->first->Release();
+            }
+
+            itSession++;
+        }
+        mSessions.clear();
     }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
     {
         switch (aType)
         {
-            case VBoxEventType_OnGuestFileRegistered:
-                break;
-
-            case VBoxEventType_OnGuestProcessRegistered:
-                break;
-
             case VBoxEventType_OnGuestSessionRegistered:
             {
                 HRESULT rc;
@@ -103,34 +585,60 @@ public:
                     ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
                     Assert(!pEvent.isNull());
 
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(mSession.asOutParam()));
-                    AssertBreak(!mSession.isNull());
+                    ComPtr<IGuestSession> pSession;
+                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(pSession.asOutParam()));
+                    AssertBreak(!pSession.isNull());
                     BOOL fRegistered;
                     CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
                     Bstr strName;
-                    CHECK_ERROR_BREAK(mSession, COMGETTER(Name)(strName.asOutParam()));
+                    CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
                     ULONG uID;
-                    CHECK_ERROR_BREAK(mSession, COMGETTER(Id)(&uID));
+                    CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
 
                     RTPrintf("Session ID=%RU32 \"%s\" %s\n",
                              uID, Utf8Str(strName).c_str(),
                              fRegistered ? "registered" : "unregistered");
                     if (fRegistered)
                     {
-                    #if 0
+                        if (mfVerbose)
+                            RTPrintf("Registering ...\n");
+
                         /* Register for IGuestSession events. */
+                        ComObjPtr<GuestSessionEventListenerImpl> pListener;
+                        pListener.createObject();
+                        CHECK_ERROR_BREAK(pListener, init(new GuestSessionEventListener()));
+
                         ComPtr<IEventSource> es;
                         CHECK_ERROR_BREAK(pSession, COMGETTER(EventSource)(es.asOutParam()));
                         com::SafeArray<VBoxEventType_T> eventTypes;
                         eventTypes.push_back(VBoxEventType_OnGuestFileRegistered);
                         eventTypes.push_back(VBoxEventType_OnGuestProcessRegistered);
-                        CHECK_ERROR_BREAK(es, RegisterListener(this, ComSafeArrayAsInParam(eventTypes),
+                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
                                                                true /* Active listener */));
-                    #endif
+
+                        GuestSessionStats sessionStats(pListener);
+                        mSessions[pSession] = sessionStats;
                     }
                     else
                     {
-                        mSession.setNull();
+                        GuestEventSessions::iterator itSession = mSessions.find(pSession);
+                        if (itSession != mSessions.end())
+                        {
+                            if (mfVerbose)
+                                RTPrintf("Unregistering ...\n");
+
+                            if (!itSession->first.isNull())
+                            {
+                                /* Listener unregistration. */
+                                ComPtr<IEventSource> pES;
+                                CHECK_ERROR_BREAK(itSession->first, COMGETTER(EventSource)(pES.asOutParam()));
+                                if (!pES.isNull())
+                                    CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
+                                itSession->first->Release();
+                            }
+
+                            mSessions.erase(itSession);
+                        }
                     }
 
                 } while (0);
@@ -146,7 +654,7 @@ public:
 
 protected:
 
-    ComPtr<IGuestSession> mSession;
+    GuestEventSessions mSessions;
 };
 typedef ListenerImpl<GuestEventListener> GuestEventListenerImpl;
 VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
@@ -474,7 +982,7 @@ static int ctrlSignalHandlerUninstall(void)
  * Translates a process status to a human readable
  * string.
  */
-static const char *ctrlExecProcessStatusToText(ProcessStatus_T enmStatus)
+static const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus)
 {
     switch (enmStatus)
     {
@@ -1201,12 +1709,12 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&exitCode));
                     if (fVerbose)
                         RTPrintf("Exit code=%u (Status=%u [%s])\n",
-                                 exitCode, procStatus, ctrlExecProcessStatusToText(procStatus));
+                                 exitCode, procStatus, ctrlProcessStatusToText(procStatus));
 
                     rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
                 }
                 else if (fVerbose)
-                    RTPrintf("Process now is in status [%s]\n", ctrlExecProcessStatusToText(procStatus));
+                    RTPrintf("Process now is in status [%s]\n", ctrlProcessStatusToText(procStatus));
             }
             else
             {
@@ -3096,7 +3604,7 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
                                     CHECK_ERROR_BREAK(pCurProcess, COMGETTER(Status)(&procStatus));
 
                                     RTPrintf("\n\t\tProcess #%-03zu PID=%-6RU32 Status=[%s] Command=%ls",
-                                             a, uPID, ctrlExecProcessStatusToText(procStatus), strExecPath.raw());
+                                             a, uPID, ctrlProcessStatusToText(procStatus), strExecPath.raw());
                                 }
                             }
 
@@ -3586,7 +4094,7 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
         while (!g_fGuestCtrlCanceled)
         {
             /** @todo Timeout handling (see above)? */
-            RTThreadYield();
+            RTThreadSleep(10);
         }
 
         if (fVerbose)
