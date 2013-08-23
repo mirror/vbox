@@ -39,7 +39,7 @@ CollectorHAL *createHAL()
 
 int CollectorFreeBSD::getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorFreeBSD::getHostCpuMHz(ULONG *mhz)
@@ -101,12 +101,12 @@ int CollectorFreeBSD::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
 
 int CollectorFreeBSD::getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 int CollectorFreeBSD::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
-    return E_NOTIMPL;
+    return VERR_NOT_IMPLEMENTED;
 }
 
 } /* namespace pm */
