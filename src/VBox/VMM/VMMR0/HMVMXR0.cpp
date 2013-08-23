@@ -4132,6 +4132,8 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                     Log4(("InstrError Desc.  \"%s\"\n", g_apszVmxInstrErrors[pVCpu->hm.s.vmx.LastError.u32InstrError]));
                 else
                     Log4(("InstrError Desc.    Range exceeded %u\n", HMVMX_INSTR_ERROR_MAX));
+                Log4(("Entered host CPU   %u\n", pVCpu->hm.s.vmx.LastError.idEnteredCpu));
+                Log4(("Current host CPU   %u\n", pVCpu->hm.s.vmx.LastError.idCurrentCpu));
 
                 /* VMX control bits. */
                 uint32_t        u32Val;
@@ -4188,7 +4190,7 @@ static void hmR0VmxReportWorldSwitchError(PVM pVM, PVMCPU pVCpu, int rcVMRun, PC
                 rc = VMXReadVmcs32(VMX_VMCS_GUEST_RFLAGS, &u32Val);         AssertRC(rc);
                 Log4(("Old Guest Rflags %#RX32 New %#RX32\n", pCtx->eflags.u32, u32Val));
                 rc = VMXReadVmcs32(VMX_VMCS16_GUEST_FIELD_VPID, &u32Val);   AssertRC(rc);
-                Log4(("VMX_VMCS16_GUEST_FIELD_VPID %u\n", u32Val));
+                Log4(("VMX_VMCS16_GUEST_FIELD_VPID             %u\n", u32Val));
 
                 /* Host bits. */
                 rc = VMXReadVmcsHstN(VMX_VMCS_HOST_CR0, &uHCReg);           AssertRC(rc);
@@ -6137,7 +6139,9 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             int rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
             AssertRC(rc);
             pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
+            Log4Func(("Cleared Vmcs\n"));
         }
+
         pVCpu->hm.s.vmx.uVmcsState &= ~HMVMX_VMCS_STATE_LAUNCHED;
         pVCpu->hm.s.fLeaveDone = true;
     }
@@ -6848,9 +6852,11 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     if (RT_FAILURE(rc))
         return rc;
-    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
 
+    pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_ACTIVE;
     pVCpu->hm.s.fLeaveDone = false;
+    Log4Func(("Activated: HostCpuId=%u\n", RTMpCpuId()));
+
     return VINF_SUCCESS;
 }
 
@@ -6884,20 +6890,8 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             /* Save the guest-state, restore host-state (FPU, debug etc.). */
             hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
 
-            int rc;
-#if 0
-            /* Flush VMCS CPU state to the VMCS region in memory. */
-            if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
-            {
-                rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
-                AssertRC(rc);
-                pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
-            }
-            pVCpu->hm.s.vmx.uVmcsState &= ~HMVMX_VMCS_STATE_LAUNCHED;
-#endif
-
             /* Leave HM context, takes care of local init (term). */
-            rc = HMR0LeaveEx(pVCpu);
+            int rc = HMR0LeaveEx(pVCpu);
             AssertRC(rc);
 
             /* Restore longjmp state. */

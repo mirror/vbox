@@ -2891,8 +2891,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 LogRel(("HM: CPU[%u] Current pointer      %#RGp vs %#RGp\n", i, pVCpu->hm.s.vmx.LastError.u64VMCSPhys,
                                                                                 pVCpu->hm.s.vmx.HCPhysVmcs));
                 LogRel(("HM: CPU[%u] Current VMCS version %#x\n", i, pVCpu->hm.s.vmx.LastError.u32VMCSRevision));
-                LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
-                LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
+                LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
+                LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 break;
 
             case VERR_VMX_UNABLE_TO_START_VM:
@@ -2903,8 +2903,8 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
                 if (   pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMLAUCH_NON_CLEAR_VMCS
                     || pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMRESUME_NON_LAUNCHED_VMCS)
                 {
-                    LogRel(("HM: CPU[%u] Entered Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
-                    LogRel(("HM: CPU[%u] Current Cpu          %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
+                    LogRel(("HM: CPU[%u] Entered Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idEnteredCpu));
+                    LogRel(("HM: CPU[%u] Current Host Cpu     %u\n",  i, pVCpu->hm.s.vmx.LastError.idCurrentCpu));
                 }
                 else if (pVM->aCpus[i].hm.s.vmx.LastError.u32InstrError == VMX_ERROR_VMENTRY_INVALID_CONTROL_FIELDS)
                 {
