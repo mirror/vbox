@@ -7094,10 +7094,6 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /* Clear any unused and reserved bits. */
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
 
-    AssertMsg(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_ALL_GUEST),
-             ("Missed updating flags while loading guest state. pVM=%p pVCpu=%p idCpu=%RU32 fContextUseFlags=%#RX32\n",
-              pVM, pVCpu, pVCpu->idCpu, pVCpu->hm.s.fContextUseFlags));
-
 #ifdef LOG_ENABLED
     /* Only reenable log-flushing if the caller has it enabled. */
     if (!fCallerDisabledLogFlush)
@@ -7163,9 +7159,9 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
         STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
     }
 
+#ifdef VBOX_STRICT
     /* When thread-context hooks are available, we could be preempted which means re-updating Guest.CR0
        (shared FPU state) and debug controls (shared debug state). This is done in hmR0VmxPreRunGuestCommitted() */
-#ifdef VBOX_STRICT
     if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
     {
         AssertMsg(   !(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_ALL_GUEST)
