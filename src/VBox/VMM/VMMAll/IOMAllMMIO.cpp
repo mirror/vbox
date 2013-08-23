@@ -1478,10 +1478,10 @@ static int iomInterpretXCHG(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCP
                 AssertMsg(fRc, ("Failed to store register value!\n")); NOREF(fRc);
             }
             else
-                AssertMsg(rc == VINF_IOM_R3_MMIO_READ_WRITE || rc == VINF_IOM_R3_MMIO_WRITE || rc == VINF_PATM_HC_MMIO_PATCH_WRITE, ("rc=%Rrc\n", rc));
+                AssertMsg(rc == VINF_IOM_R3_MMIO_READ_WRITE || rc == VINF_IOM_R3_MMIO_WRITE || rc == VINF_PATM_HC_MMIO_PATCH_WRITE || rc == VINF_EM_RAW_EMULATE_IO_BLOCK, ("rc=%Rrc\n", rc));
         }
         else
-            AssertMsg(rc == VINF_IOM_R3_MMIO_READ_WRITE || rc == VINF_IOM_R3_MMIO_READ || rc == VINF_PATM_HC_MMIO_PATCH_READ, ("rc=%Rrc\n", rc));
+            AssertMsg(rc == VINF_IOM_R3_MMIO_READ_WRITE || rc == VINF_IOM_R3_MMIO_READ || rc == VINF_PATM_HC_MMIO_PATCH_READ || rc == VINF_EM_RAW_EMULATE_IO_BLOCK, ("rc=%Rrc\n", rc));
     }
     else
     {
