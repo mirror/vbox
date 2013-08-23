@@ -1401,27 +1401,31 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
 
 
 /**
- * Initializes the bare minimum state required for entering HM context.
+ * Turns on HM on the CPU if necessary and initializes the bare minimum state
+ * required for entering HM context.
  *
+ * @returns VBox status code.
  * @param   pvCpu       Pointer to the VMCPU.
  *
  * @remarks No-long-jump zone!!!
  */
-VMMR0_INT_DECL(void) HMR0EnterEx(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0EnterCpu(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    int              rc    = VINF_SUCCESS;
     RTCPUID          idCpu = RTMpCpuId();
     PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
     AssertPtr(pCpu);
 
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a freshly onlined CPU. */
     if (!pCpu->fConfigured)
-        hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
+        rc = hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
 
-    /* Reload host-context (back from ring-3/migrated CPUs), reload guest CR0 (for FPU bits). */
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0;
+    /* Reload host-context (back from ring-3/migrated CPUs), reload host context & shared bits. */
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE;
     pVCpu->hm.s.idEnteredCpu = idCpu;
+    return rc;
 }
 
 
@@ -1436,13 +1440,13 @@ VMMR0_INT_DECL(void) HMR0EnterEx(PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 {
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-
     /* Make sure we can't enter a session after we've disabled HM in preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* Load the bare minimum state required for entering HM. */
-    HMR0EnterEx(pVCpu);
+    int rc = HMR0EnterCpu(pVCpu);
+    AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     AssertReturn(!VMMR0ThreadCtxHooksAreRegistered(pVCpu), VERR_HM_IPE_5);
@@ -1454,19 +1458,19 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     PCPUMCTX         pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(pCpu);
     Assert(pCtx);
-    Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_GUEST_CR0));
+    Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
-    int rc  = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
-    AssertMsgRC(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
+    rc = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
+    AssertMsgRCReturn(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
     /* Load the host as we may be resuming code after a longjmp and quite
        possibly be scheduled on a different CPU. */
-    rc |= g_HvmR0.pfnSaveHostState(pVM, pVCpu);
-    AssertMsgRC(rc, ("pfnSaveHostState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
+    rc = g_HvmR0.pfnSaveHostState(pVM, pVCpu);
+    AssertMsgRCReturn(rc, ("pfnSaveHostState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
     /** @todo This is not needed to be done here anymore, can fix/optimize later. */
-    rc |= g_HvmR0.pfnLoadGuestState(pVM, pVCpu, pCtx);
-    AssertMsgRC(rc, ("pfnLoadGuestState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu));
+    rc = g_HvmR0.pfnLoadGuestState(pVM, pVCpu, pCtx);
+    AssertMsgRCReturn(rc, ("pfnLoadGuestState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     if (fStartedSet)
@@ -1482,12 +1486,13 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 
 
 /**
- * Deinitializes the bare minimum state used for HM context.
+ * Deinitializes the bare minimum state used for HM context and if necessary
+ * disable HM on the CPU.
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  */
-VMMR0_INT_DECL(int) HMR0LeaveEx(PVMCPU pVCpu)
+VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1508,6 +1513,9 @@ VMMR0_INT_DECL(int) HMR0LeaveEx(PVMCPU pVCpu)
     pVCpu->hm.s.uCurrentAsid = 0;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
+    /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
+    ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
+
     return VINF_SUCCESS;
 }
 
@@ -1524,54 +1532,9 @@ VMMR0_INT_DECL(int) HMR0LeaveEx(PVMCPU pVCpu)
  */
 VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
 {
-    /** @todo r=bird: This can't be entirely right? */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
-
-    PCPUMCTX pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    AssertPtr(pCtx);
-
-    bool fDisabledPreempt = false;
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-    {
-        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
-        RTThreadPreemptDisable(&PreemptState);
-        fDisabledPreempt = true;
-    }
-
-    int rc = g_HvmR0.pfnLeaveSession(pVM, pVCpu, pCtx);
-
-    if (!VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-    {
-        /* Keep track of the CPU owning the VMCS for debugging scheduling weirdness
-           and ring-3 calls when thread-context hooks are not supported. */
-        RTCPUID idCpu = RTMpCpuId();
-        AssertMsgStmt(   pVCpu->hm.s.idEnteredCpu == idCpu
-                      || RT_FAILURE_NP(rc), ("Owner is %u, I'm %u", pVCpu->hm.s.idEnteredCpu, idCpu),
-                      rc = VERR_HM_WRONG_CPU_1);
-    }
-
-    /* Leave HM context, takes care of local init (term). */
-    if (RT_SUCCESS(rc))
-    {
-        rc = HMR0LeaveEx(pVCpu);
-        AssertRCReturn(rc, rc);
-    }
-
-    /* Deregister hook now that we've left HM context before re-enabling preemption. */
-    /** @todo This is bad. Deregistering here means we need to VMCLEAR always
-     *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
-    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-        VMMR0ThreadCtxHooksDeregister(pVCpu);
-
-    if (fDisabledPreempt)
-        RTThreadPreemptRestore(&PreemptState);
-
-    /* Guest FPU and debug state shouldn't be active now, it's likely that we're going back to ring-3. */
-    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-    Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-
-    return rc;
+    /* Nothing to do currently. Taken care of HMR0LeaveCpu() and in hmR0VmxLeaveSession() and hmR0SvmLeaveSession(). */
+    /** @todo refactor later to more common code. */
+    return VINF_SUCCESS;
 }
 
 
