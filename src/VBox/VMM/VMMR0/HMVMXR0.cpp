@@ -9077,22 +9077,25 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
  */
 HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
-    uint32_t       uIntrState;
-    HMVMXHCUINTREG uHCReg;
-    uint64_t       u64Val;
-    uint32_t       u32Val;
-
-    int rc  = hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
-    rc     |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
-    rc     |= hmR0VmxReadEntryInstrLenVmcs(pVCpu, pVmxTransient);
-    rc     |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
-    rc     |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
+    int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     uint32_t uInvalidReason = hmR0VmxCheckGuestState(pVCpu->CTX_SUFF(pVM), pVCpu, pMixedCtx);
     NOREF(uInvalidReason);
 
 #ifdef VBOX_STRICT
+    uint32_t       uIntrState;
+    HMVMXHCUINTREG uHCReg;
+    uint64_t       u64Val;
+    uint32_t       u32Val;
+
+    rc  = hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
+    rc |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
+    rc |= hmR0VmxReadEntryInstrLenVmcs(pVCpu, pVmxTransient);
+    rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
+    AssertRCReturn(rc, rc);
+
+    Log4(("uInvalidReason                             %u\n", uInvalidReason));
     Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntrInfo));
     Log4(("VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE    %#RX32\n", pVmxTransient->uEntryXcptErrorCode));
     Log4(("VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH         %#RX32\n", pVmxTransient->cbEntryInstr));
