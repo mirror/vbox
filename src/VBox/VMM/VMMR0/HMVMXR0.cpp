@@ -6801,6 +6801,9 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 {
                     pMixedCtx->cr2 = GCPtrFaultAddress;
                 }
+
+                /* If any other guest-state bits are changed here, make sure to update
+                   hmR0VmxPreRunGuestCommitted() when thread-context hooks are used. */
                 pVCpu->hm.s.fContextUseFlags |=   HM_CHANGED_GUEST_SEGMENT_REGS
                                                 | HM_CHANGED_GUEST_RIP
                                                 | HM_CHANGED_GUEST_RFLAGS
@@ -7416,10 +7419,14 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
         /*
          * If we are injecting events real-on-v86 mode guest then we potentially have to update
          * RIP and other registers, i.e. hmR0VmxPreRunGuest()->hmR0VmxInjectPendingEvent().
-         * Just reload the state here if we're in real-on-v86 mode.
+         * Reload only the necessary state, the assertion will catch if other parts of the code
+         * change.
          */
         if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
-            hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
+        {
+            hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
+            hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
+        }
     }
 
     /* Load the state shared between host and guest (FPU, debug). */
