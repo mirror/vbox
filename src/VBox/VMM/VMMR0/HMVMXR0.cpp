@@ -7048,7 +7048,14 @@ VMMR0DECL(int) VMXR0SaveHostState(PVM pVM, PVMCPU pVCpu)
     AssertPtr(pVCpu);
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
-    return hmR0VmxSaveHostState(pVM, pVCpu);
+
+    /* When thread-context hooks are available, this is done later (when preemption/interrupts are disabled). */
+    if (!VMMR0ThreadCtxHooksAreRegistered(pVCpu))
+    {
+        Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+        return hmR0VmxSaveHostState(pVM, pVCpu);
+    }
+    return VINF_SUCCESS;
 }
 
 
