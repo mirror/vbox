@@ -967,7 +967,7 @@ class VirtualBoxManager(object):
         Returns a Python API revision number.
         This will be incremented when features are added to this file.
         """
-        return 2;
+        return 3;
 
 
     #
