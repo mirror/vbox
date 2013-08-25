@@ -1491,6 +1491,8 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
+ *
+ * @remarks No-long-jump zone!!!
  */
 VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
 {

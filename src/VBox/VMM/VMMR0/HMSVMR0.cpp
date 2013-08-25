@@ -1946,19 +1946,12 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
 DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+    HM_DISABLE_PREEMPT_IF_NEEDED();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
-       which would've done this work from the VMXR0ThreadCtxCallback(). */
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-    bool fPreemptDisabled = false;
-    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-    {
-        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
-        RTThreadPreemptDisable(&PreemptState);
-        fPreemptDisabled = true;
-    }
-
+    /* When thread-context hooks are used, we can avoid doing the leave again if we had been preempted before
+       and done this from the VMXR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
         hmR0SvmLeave(pVM, pVCpu, pCtx);
@@ -1975,9 +1968,7 @@ DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     int rc = HMR0LeaveCpu(pVCpu);
     AssertRC(rc); NOREF(rc);
 
-    /* Restore preemption if we previous disabled it ourselves. */
-    if (fPreemptDisabled)
-        RTThreadPreemptRestore(&PreemptState);
+    HM_RESTORE_PREEMPT_IF_NEEDED();
 }
 
 
