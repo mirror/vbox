@@ -6088,6 +6088,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  */
 static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
@@ -6159,19 +6160,12 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
 DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    HM_DISABLE_PREEMPT_IF_NEEDED();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-    bool fPreemptDisabled = false;
-    if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-    {
-        Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
-        RTThreadPreemptDisable(&PreemptState);
-        fPreemptDisabled = true;
-    }
-
-    /* Avoid repeating this work when thread-context hooks are used and we had been preempted before
-       which would've done this work from the VMXR0ThreadCtxCallback(). */
+    /* When thread-context hooks are used, we can avoid doing the leave again if we had been preempted before
+       and done this from the VMXR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
         hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
@@ -6188,9 +6182,7 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     int rc = HMR0LeaveCpu(pVCpu);
     AssertRC(rc); NOREF(rc);
 
-    /* Restore preemption if we previous disabled it ourselves. */
-    if (fPreemptDisabled)
-        RTThreadPreemptRestore(&PreemptState);
+    HM_RESTORE_PREEMPT_IF_NEEDED();
 }
 
 
@@ -9659,6 +9651,9 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
                         || DBGFBpIsHwIoArmed(pVM)))
         {
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
+
+            /* We're playing with the host CPU state here, make sure we don't preempt. */
+            HM_DISABLE_PREEMPT_IF_NEEDED();
             bool fIsGuestDbgActive = CPUMR0DebugStateMaybeSaveGuest(pVCpu, true /*fDr6*/);
 
             VBOXSTRICTRC rcStrict2 = DBGFBpCheckIo(pVM, pVCpu, pMixedCtx, uIOPort, cbValue);
@@ -9676,6 +9671,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             else if (   rcStrict2 != VINF_SUCCESS
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
+
+            HM_RESTORE_PREEMPT_IF_NEEDED();
         }
     }
 
@@ -9881,10 +9878,15 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 #endif
         }
 
+        /* We're playing with the host CPU state here, make sure we can't preempt. */
+        HM_DISABLE_PREEMPT_IF_NEEDED();
+
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu));
+
+        HM_RESTORE_PREEMPT_IF_NEEDED();
 
 #ifdef VBOX_WITH_STATISTICS
         rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
@@ -10147,10 +10149,14 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
          * IA32_DEBUGCTL.LBR before forwarding it.
          * (See Intel spec. 27.1 "Architectural State before a VM-Exit".)
          */
+        HM_DISABLE_PREEMPT_IF_NEEDED();
+
         pMixedCtx->dr[6] &= ~X86_DR6_B_MASK;
         pMixedCtx->dr[6] |= uDR6;
         if (CPUMIsGuestDebugStateActive(pVCpu))
             ASMSetDR6(pMixedCtx->dr[6]);
+
+        HM_RESTORE_PREEMPT_IF_NEEDED();
 
         rc = hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
@@ -10205,16 +10211,23 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
+    /* We're playing with the host CPU state here, have to disable preemption. */
+    HM_DISABLE_PREEMPT_IF_NEEDED();
+
     /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     rc = CPUMR0LoadGuestFPU(pVM, pVCpu, pMixedCtx);
     if (rc == VINF_SUCCESS)
     {
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
+        HM_RESTORE_PREEMPT_IF_NEEDED();
+
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
         return VINF_SUCCESS;
     }
+
+    HM_RESTORE_PREEMPT_IF_NEEDED();
 
     /* Forward #NM to the guest. */
     Assert(rc == VINF_EM_RAW_GUEST_TRAP);

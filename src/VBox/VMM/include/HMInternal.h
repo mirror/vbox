@@ -136,6 +136,25 @@ RT_C_DECLS_BEGIN
                                                   | HM_CHANGED_GUEST_DEBUG)
 /** @} */
 
+/** Disables preemption if required. */
+# define HM_DISABLE_PREEMPT_IF_NEEDED() \
+   RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+   bool fPreemptDisabledInternal = false; \
+   if (RTThreadPreemptIsEnabled(NIL_RTTHREAD)) \
+   { \
+       Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
+       RTThreadPreemptDisable(&PreemptStateInternal); \
+       fPreemptDisabledInternal = true; \
+   }
+
+/** Restores preemption if previously disabled by HM_DISABLE_PREEMPT(). */
+# define HM_RESTORE_PREEMPT_IF_NEEDED() \
+   do \
+   { \
+        if (fPreemptDisabledInternal) \
+            RTThreadPreemptRestore(&PreemptStateInternal); \
+   } while (0)
+
 /** Maximum number of page flushes we are willing to remember before considering a full TLB flush. */
 #define HM_MAX_TLB_SHOOTDOWN_PAGES      8
 
