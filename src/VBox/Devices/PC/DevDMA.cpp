@@ -179,6 +179,14 @@ enum {
     DMODE_CASCADE   /* Cascade mode. */
 };
 
+/* DMA transfer types. */
+enum {
+    DTYPE_VERIFY,   /* Verify transfer type. */
+    DTYPE_WRITE,    /* Write transfer type. */
+    DTYPE_READ,     /* Read transfer type. */
+    DTYPE_ILLEGAL   /* Undefined. */
+};
+
 /* Convert DMA channel number (0-7) to controller number (0-1). */
 #define DMACH2C(c)      (c < 4 ? 0 : 1)
 
@@ -196,6 +204,8 @@ static int dmaMapChannel[4] = {7, 3, 1, 2};
 #define IS_MODE_DEC(c)  ((c) & 0x20)
 /* Test the auto-init bit of mode register. */
 #define IS_MODE_AI(c)   ((c) & 0x10)
+/* Extract the transfer type bits of mode register. */
+#define GET_MODE_XTYP(c)(((c) & 0x0c) >> 2)
 
 /* Perform a master clear (reset) on a DMA controller. */
 static void dmaClear(DMAControl *dc)
@@ -701,6 +711,12 @@ static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChann
     uint32_t    addr;
 
     LogFlow(("dmaWriteMemory: pThis=%p uChannel=%u pvBuffer=%p off=%u cbBlock=%u\n", pThis, uChannel, pvBuffer, off, cbBlock));
+    if (GET_MODE_XTYP(ch->u8Mode) == DTYPE_VERIFY)
+    {
+        Log(("DMA verify transfer, ignoring write.\n"));
+        return cbBlock;
+    }
+
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     /* Build the address for this transfer. */
