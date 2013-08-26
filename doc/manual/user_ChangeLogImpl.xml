@@ -159,7 +159,8 @@
        </listitem>
 
        <listitem>
-         <para>Windows hosts: don't cause massive DPC latency (bug #6242)</para>
+         <para>Windows hosts: don't cause massive DPC latency (only on certain
+           hosts; still needs improving; bug #6242)</para>
        </listitem>
 
        <listitem>
