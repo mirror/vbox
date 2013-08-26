@@ -37,6 +37,10 @@
 
 #include "wined3d_private.h"
 
+#if defined(VBOX) && defined(RT_ARCH_AMD64)
+# define copysignf _copysignf
+#endif
+
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_constants);
 WINE_DECLARE_DEBUG_CHANNEL(d3d);
@@ -46,6 +50,9 @@ WINE_DECLARE_DEBUG_CHANNEL(winediag);
 #define WINED3D_GLSL_SAMPLE_NPOT        0x2
 #define WINED3D_GLSL_SAMPLE_LOD         0x4
 #define WINED3D_GLSL_SAMPLE_GRAD        0x8
+
+static const float srgb_const0[] = {0.41666f, 1.055f, 0.055f, 12.92f};  /* pow, mul_high, sub_high, mul_low */
+static const float srgb_const1[] = {0.0031308f, 0.0f, 0.0f, 0.0f};      /* cmp */
 
 struct glsl_dst_param
 {
@@ -240,6 +247,68 @@ static const char *shader_glsl_get_prefix(enum wined3d_shader_type type)
             FIXME("Unhandled shader type %#x.\n", type);
             return "unknown";
     }
+}
+
+/* This should be equivalent to using the %.8e format specifier, but always
+ * using '.' as decimal separator. This doesn't handle +/-INF or NAN, since
+ * the GLSL parser wouldn't be able to handle those anyway. */
+static void shader_glsl_ftoa(float value, char *s)
+{
+    int x, frac, exponent;
+    const char *sign = "";
+    double d;
+
+    d = value;
+#if defined(VBOX) && !defined(RT_ARCH_AMD64)
+    if (value < 0.0f)
+#else
+    if (copysignf(1.0f, value) < 0.0f)
+#endif
+    {
+        d = -d;
+        sign = "-";
+    }
+
+    if (d == 0.0f)
+    {
+        x = 0;
+        frac = 0;
+        exponent = 0;
+    }
+    else
+    {
+        double t, diff;
+
+        exponent = floorf(log10f(d));
+        d /= pow(10.0, exponent);
+
+        x = d;
+        t = (d - x) * 100000000;
+        frac = t;
+        diff = t - frac;
+
+        if ((diff > 0.5) || (diff == 0.5 && (frac & 1)))
+        {
+            if (++frac >= 100000000)
+            {
+                frac = 0;
+                ++x;
+            }
+        }
+    }
+
+    sprintf(s, "%s%d.%08de%+03d", sign, x, frac, exponent);
+}
+
+static void shader_glsl_append_imm_vec4(struct wined3d_shader_buffer *buffer, const float *values)
+{
+    char str[4][16];
+
+    shader_glsl_ftoa(values[0], str[0]);
+    shader_glsl_ftoa(values[1], str[1]);
+    shader_glsl_ftoa(values[2], str[2]);
+    shader_glsl_ftoa(values[3], str[3]);
+    shader_addline(buffer, "vec4(%s, %s, %s, %s)", str[0], str[1], str[2], str[3]);
 }
 
 /* Extract a line from the info log.
@@ -1206,10 +1275,12 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
 
         if (ps_args->srgb_correction)
         {
-            shader_addline(buffer, "const vec4 srgb_const0 = vec4(%.8e, %.8e, %.8e, %.8e);\n",
-                    srgb_pow, srgb_mul_high, srgb_sub_high, srgb_mul_low);
-            shader_addline(buffer, "const vec4 srgb_const1 = vec4(%.8e, 0.0, 0.0, 0.0);\n",
-                    srgb_cmp);
+            shader_addline(buffer, "const vec4 srgb_const0 = ");
+            shader_glsl_append_imm_vec4(buffer, srgb_const0);
+            shader_addline(buffer, ";\n");
+            shader_addline(buffer, "const vec4 srgb_const1 = ");
+            shader_glsl_append_imm_vec4(buffer, srgb_const1);
+            shader_addline(buffer, ";\n");
         }
         if (reg_maps->vpos || reg_maps->usesdsy)
         {
@@ -1221,13 +1292,21 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
             }
             else
             {
-                /* This happens because we do not have proper tracking of the constant registers that are
-                 * actually used, only the max limit of the shader version
-                 */
-                FIXME("Cannot find a free uniform for vpos correction params\n");
-                shader_addline(buffer, "const vec4 ycorrection = vec4(%f, %f, 0.0, 0.0);\n",
+                float ycorrection[] =
+                {
                         context->render_offscreen ? 0.0f : fb->render_targets[0]->resource.height,
-                        context->render_offscreen ? 1.0f : -1.0f);
+                    context->render_offscreen ? 1.0f : -1.0f,
+                    0.0f,
+                    0.0f,
+                };
+
+                /* This happens because we do not have proper tracking of the
+                 * constant registers that are actually used, only the max
+                 * limit of the shader version. */
+                FIXME("Cannot find a free uniform for vpos correction params\n");
+                shader_addline(buffer, "const vec4 ycorrection = ");
+                shader_glsl_append_imm_vec4(buffer, ycorrection);
+                shader_addline(buffer, ";\n");
             }
             shader_addline(buffer, "vec4 vpos;\n");
         }
@@ -1261,10 +1340,9 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
     {
         LIST_FOR_EACH_ENTRY(lconst, &shader->constantsF, struct wined3d_shader_lconst, entry)
         {
-            const float *value;
-            value = (const float *)lconst->value;
-            shader_addline(buffer, "const vec4 %s_lc%u = vec4(%.8e, %.8e, %.8e, %.8e);\n",
-                    prefix, lconst->idx, value[0], value[1], value[2], value[3]);
+            shader_addline(buffer, "const vec4 %s_lc%u = ", prefix, lconst->idx);
+            shader_glsl_append_imm_vec4(buffer, (const float *)lconst->value);
+            shader_addline(buffer, ";\n");
         }
     }
 
@@ -1388,6 +1466,7 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
     const struct wined3d_gl_info *gl_info = ins->ctx->gl_info;
     const char *prefix = shader_glsl_get_prefix(version->type);
     struct glsl_src_param rel_param0, rel_param1;
+    char imm_str[4][16];
 
     if (reg->idx[0].offset != ~0U && reg->idx[0].rel_addr)
         shader_glsl_add_src_param(ins, reg->idx[0].rel_addr, WINED3DSP_WRITEMASK_0, &rel_param0);
@@ -1583,7 +1662,7 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
                     switch (reg->data_type)
                     {
                         case WINED3D_DATA_FLOAT:
-                            sprintf(register_name, "%.8e", *(const float *)reg->immconst_data);
+                            shader_glsl_ftoa(*(const float *)reg->immconst_data, register_name);
                             break;
                         case WINED3D_DATA_INT:
                             sprintf(register_name, "%#x", reg->immconst_data[0]);
@@ -1603,9 +1682,12 @@ static void shader_glsl_get_register_name(const struct wined3d_shader_register *
                     switch (reg->data_type)
                     {
                         case WINED3D_DATA_FLOAT:
-                            sprintf(register_name, "vec4(%.8e, %.8e, %.8e, %.8e)",
-                                    *(const float *)&reg->immconst_data[0], *(const float *)&reg->immconst_data[1],
-                                    *(const float *)&reg->immconst_data[2], *(const float *)&reg->immconst_data[3]);
+                            shader_glsl_ftoa(*(const float *)&reg->immconst_data[0], imm_str[0]);
+                            shader_glsl_ftoa(*(const float *)&reg->immconst_data[1], imm_str[1]);
+                            shader_glsl_ftoa(*(const float *)&reg->immconst_data[2], imm_str[2]);
+                            shader_glsl_ftoa(*(const float *)&reg->immconst_data[3], imm_str[3]);
+                            sprintf(register_name, "vec4(%s, %s, %s, %s)",
+                                    imm_str[0], imm_str[1], imm_str[2], imm_str[3]);
                             break;
                         case WINED3D_DATA_INT:
                             sprintf(register_name, "ivec4(%#x, %#x, %#x, %#x)",
@@ -2955,14 +3037,11 @@ static void shader_glsl_cnd(const struct wined3d_shader_instruction *ins)
         shader_glsl_add_src_param(ins, &ins->src[1], write_mask, &src1_param);
         shader_glsl_add_src_param(ins, &ins->src[2], write_mask, &src2_param);
 
-        /* Fun: The D3DSI_COISSUE flag changes the semantic of the cnd instruction for < 1.4 shaders */
-        if (ins->coissue)
-        {
+        if (ins->coissue && ins->dst->write_mask != WINED3DSP_WRITEMASK_3)
             shader_addline(ins->ctx->buffer, "%s /* COISSUE! */);\n", src1_param.param_str);
-        } else {
+        else
             shader_addline(ins->ctx->buffer, "%s > 0.5 ? %s : %s);\n",
                     src0_param.param_str, src1_param.param_str, src2_param.param_str);
-        }
         return;
     }
 
@@ -4952,11 +5031,20 @@ static GLhandleARB shader_glsl_generate_ffp_vertex_shader(struct wined3d_shader_
     shader_addline(buffer, "float m;\n");
     shader_addline(buffer, "vec3 r;\n");
 
+    if (settings->transformed)
+    {
+        shader_addline(buffer, "vec4 ec_pos = vec4(gl_Vertex.xyz, 1.0);\n");
+        shader_addline(buffer, "gl_Position = gl_ProjectionMatrix * ec_pos;\n");
+        shader_addline(buffer, "if (gl_Vertex.w != 0.0) gl_Position /= gl_Vertex.w;\n");
+    }
+    else
+    {
     shader_addline(buffer, "vec4 ec_pos = gl_ModelViewMatrix * gl_Vertex;\n");
     shader_addline(buffer, "gl_Position = gl_ProjectionMatrix * ec_pos;\n");
     if (settings->clipping)
         shader_addline(buffer, "gl_ClipVertex = ec_pos;\n");
     shader_addline(buffer, "ec_pos /= ec_pos.w;\n");
+    }
 
     if (!settings->normal)
         shader_addline(buffer, "vec3 normal = vec3(0.0);\n");
@@ -5414,10 +5502,12 @@ static GLuint shader_glsl_generate_ffp_fragment_shader(struct wined3d_shader_buf
 
     if (settings->sRGB_write)
     {
-        shader_addline(buffer, "const vec4 srgb_const0 = vec4(%.8e, %.8e, %.8e, %.8e);\n",
-                srgb_pow, srgb_mul_high, srgb_sub_high, srgb_mul_low);
-        shader_addline(buffer, "const vec4 srgb_const1 = vec4(%.8e, 0.0, 0.0, 0.0);\n",
-                srgb_cmp);
+        shader_addline(buffer, "const vec4 srgb_const0 = ");
+        shader_glsl_append_imm_vec4(buffer, srgb_const0);
+        shader_addline(buffer, ";\n");
+        shader_addline(buffer, "const vec4 srgb_const1 = ");
+        shader_glsl_append_imm_vec4(buffer, srgb_const1);
+        shader_addline(buffer, ";\n");
     }
 
     shader_addline(buffer, "void main()\n{\n");
@@ -6688,6 +6778,7 @@ static void glsl_vertex_pipe_vp_enable(const struct wined3d_gl_info *gl_info, BO
 
 static void glsl_vertex_pipe_vp_get_caps(const struct wined3d_gl_info *gl_info, struct wined3d_vertex_caps *caps)
 {
+    caps->xyzrhw = TRUE;
     caps->max_active_lights = gl_info->limits.lights;
     caps->max_vertex_blend_matrices = 0;
     caps->max_vertex_blend_matrix_index = 0;
@@ -6850,7 +6941,7 @@ static const struct StateEntryTemplate glsl_vertex_pipe_vp_states[] =
     {STATE_RENDER(WINED3D_RS_CLIPPLANEENABLE),                   {STATE_RENDER(WINED3D_RS_CLIPPING),                          NULL                   }, WINED3D_GL_EXT_NONE          },
     {STATE_RENDER(WINED3D_RS_LIGHTING),                          {STATE_VDECL,                                                NULL                   }, WINED3D_GL_EXT_NONE          },
     {STATE_RENDER(WINED3D_RS_AMBIENT),                           {STATE_RENDER(WINED3D_RS_AMBIENT),                           state_ambient          }, WINED3D_GL_EXT_NONE          },
-    {STATE_RENDER(WINED3D_RS_COLORVERTEX),                       {STATE_VDECL,                                                NULL                   }, WINED3D_GL_EXT_NONE          },
+    {STATE_RENDER(WINED3D_RS_COLORVERTEX),                       {STATE_RENDER(WINED3D_RS_COLORVERTEX),                       glsl_vertex_pipe_shader}, WINED3D_GL_EXT_NONE          },
     {STATE_RENDER(WINED3D_RS_LOCALVIEWER),                       {STATE_VDECL,                                                NULL                   }, WINED3D_GL_EXT_NONE          },
     {STATE_RENDER(WINED3D_RS_NORMALIZENORMALS),                  {STATE_VDECL,                                                NULL                   }, WINED3D_GL_EXT_NONE          },
     {STATE_RENDER(WINED3D_RS_DIFFUSEMATERIALSOURCE),             {STATE_VDECL,                                                NULL                   }, WINED3D_GL_EXT_NONE          },
@@ -7035,6 +7126,8 @@ static void glsl_fragment_pipe_fog(struct wined3d_context *context,
 {
     BOOL use_vshader = use_vs(state);
     enum fogsource new_source;
+    DWORD fogstart = state->render_states[WINED3D_RS_FOGSTART];
+    DWORD fogend = state->render_states[WINED3D_RS_FOGEND];
 
     context->select_shader = 1;
     context->load_constants = 1;
@@ -7056,7 +7149,7 @@ static void glsl_fragment_pipe_fog(struct wined3d_context *context,
         new_source = FOGSOURCE_FFP;
     }
 
-    if (new_source != context->fog_source)
+    if (new_source != context->fog_source || fogstart == fogend)
     {
         context->fog_source = new_source;
         state_fogstartend(context, state, STATE_RENDER(WINED3D_RS_FOGSTART));

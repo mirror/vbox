@@ -140,7 +140,7 @@ static void surface_cleanup(struct wined3d_surface *surface)
     }
 
     if (surface->flags & SFLAG_USERPTR)
-        wined3d_surface_set_mem(surface, NULL);
+        wined3d_surface_set_mem(surface, NULL, 0);
     if (surface->overlay_dest)
         list_remove(&surface->overlay_entry);
 
@@ -2523,12 +2523,11 @@ static void surface_download_data(struct wined3d_surface *surface, const struct 
             src_data = mem;
             dst_data = surface->resource.allocatedMemory;
             TRACE("(%p) : Repacking the surface data from pitch %d to pitch %d\n", surface, src_pitch, dst_pitch);
-            for (y = 1; y < surface->resource.height; ++y)
+            for (y = 0; y < surface->resource.height; ++y)
             {
-                /* skip the first row */
+                memcpy(dst_data, src_data, dst_pitch);
                 src_data += src_pitch;
                 dst_data += dst_pitch;
-                memcpy(dst_data, src_data, dst_pitch);
             }
 
             HeapFree(GetProcessHeap(), 0, mem);
@@ -3487,6 +3486,9 @@ DWORD CDECL wined3d_surface_get_pitch(const struct wined3d_surface *surface)
 
     TRACE("surface %p.\n", surface);
 
+    if (surface->pitch)
+        return surface->pitch;
+
     if (format->flags & WINED3DFMT_FLAG_BLOCKS)
     {
         /* Since compressed formats are block based, pitch means the amount of
@@ -3506,7 +3508,7 @@ DWORD CDECL wined3d_surface_get_pitch(const struct wined3d_surface *surface)
     return pitch;
 }
 
-HRESULT CDECL wined3d_surface_set_mem(struct wined3d_surface *surface, void *mem)
+HRESULT CDECL wined3d_surface_set_mem(struct wined3d_surface *surface, void *mem, UINT pitch)
 {
 #ifndef VBOX_WITH_WDDM
     TRACE("surface %p, mem %p.\n", surface, mem);
@@ -3575,6 +3577,8 @@ HRESULT CDECL wined3d_surface_set_mem(struct wined3d_surface *surface, void *mem
 
         surface_modify_location(surface, SFLAG_INSYSMEM, TRUE);
     }
+
+    surface->pitch = pitch;
 
     return WINED3D_OK;
 #else
