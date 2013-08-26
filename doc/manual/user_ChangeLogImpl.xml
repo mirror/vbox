@@ -33,7 +33,11 @@
       </listitem>
 
       <listitem>
-        <para>Emulated USB touch devices</para>
+        <para>Added USB touch device emulation</para>
+      </listitem>
+
+      <listitem>
+        <para>Added SCSI CD-ROM emulation, including boot support</para>
       </listitem>
 
       <listitem>
@@ -68,7 +72,22 @@
       </listitem>
 
       <listitem>
-        <para>VMM: fixed losing host NMIs while in guest-context</para>
+        <para>VMM: significantly improved performance of NetWare 5.x/6.x
+          guests on host systems without nested paging support</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM: fixed losing host NMIs while in VT-x guest-context</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: Implemented AHA-154x compatibility mode in the
+         emulated BusLogic SCSI HBA</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: significantly improved performance of large ATAPI PIO
+          transfers (BeOS, Minix 3 guests affected)</para>
       </listitem>
 
       <listitem>
@@ -76,7 +95,7 @@
       </listitem>
 
       <listitem>
-        <para>GUI: lot of internal stuff rewritten (cleanup and bug-fixes)</para>
+        <para>GUI: numerous minor internal cleanups and bug fixes</para>
       </listitem>
 
       <listitem>
@@ -89,7 +108,12 @@
           will lead to decreased performance and may trigger crashes</para>
       </listitem>
 
-       <listitem>
+      <listitem>
+        <para>Settings: the per-VM hwvirtextexcl setting has been replaced
+          by a global hwvirtexclusive property</para>
+      </listitem>
+
+      <listitem>
         <para>Main: new event queue implementation which does not use the host's
           native event queue for processing VirtualBox events anymore</para>
       </listitem>
