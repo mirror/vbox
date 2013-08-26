@@ -68,6 +68,10 @@
       </listitem>
 
       <listitem>
+        <para>VMM: fixed losing host NMIs while in guest-context</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: update check uses https</para>
       </listitem>
 
