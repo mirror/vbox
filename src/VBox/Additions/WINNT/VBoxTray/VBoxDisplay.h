@@ -22,6 +22,9 @@ int                VBoxDisplayInit    (const VBOXSERVICEENV *pEnv, void **ppInst
 unsigned __stdcall VBoxDisplayThread  (void *pInstance);
 void               VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
+DWORD VBoxGetDisplayConfigCount();
+DWORD VBoxGetDisplayConfig(const DWORD NumDevices, DWORD *pDevPrimaryNum, DWORD *pNumDevices, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes);
+
 #ifndef VBOX_WITH_WDDM
 static bool isVBoxDisplayDriverActive (void);
 #else

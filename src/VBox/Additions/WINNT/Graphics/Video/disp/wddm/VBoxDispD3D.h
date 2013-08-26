@@ -20,7 +20,7 @@
 #define ___VBoxDispD3D_h___
 
 #include "VBoxDispD3DIf.h"
-#include "common/wddm/VBoxMPIf.h"
+#include "../../common/wddm/VBoxMPIf.h"
 #ifdef VBOX_WITH_CRHGSMI
 #include "VBoxUhgsmiDisp.h"
 #endif

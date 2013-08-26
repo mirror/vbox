@@ -572,8 +572,6 @@ VOID vboxWddmSwapchainCtxTerm(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_CONTEXT pContext
     vboxWddmHTableDestroy(&pContext->Swapchains);
 }
 
-#define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
-
 NTSTATUS vboxWddmRegQueryDrvKeyName(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
 {
     WCHAR fallBackBuf[2];
@@ -605,13 +603,6 @@ NTSTATUS vboxWddmRegQueryDrvKeyName(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR 
 
     return Status;
 }
-
-#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_VISTA L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\Current\\System\\CurrentControlSet\\Control\\VIDEO\\"
-#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7 L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\UnitedVideo\\CONTROL\\VIDEO\\"
-
-#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELX L"Attach.RelativeX"
-#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELY L"Attach.RelativeY"
-#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_DESKTOP L"Attach.ToDesktop"
 
 NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId,
         ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
@@ -659,9 +650,6 @@ NTSTATUS vboxWddmRegQueryDisplaySettingsKeyName(PVBOXMP_DEVEXT pDevExt, D3DDDI_V
 
     return Status;
 }
-
-#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Video\\"
-#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY L"\\Video"
 
 NTSTATUS vboxWddmRegQueryVideoGuidString(PVBOXMP_DEVEXT pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
 {
@@ -890,6 +878,50 @@ NTSTATUS vboxWddmDisplaySettingsQueryPos(IN PVBOXMP_DEVEXT pDeviceExtension, D3D
     return Status;
 }
 
+NTSTATUS vboxWddmRegDrvFlagsSet(PVBOXMP_DEVEXT pDevExt, DWORD fVal)
+{
+    HANDLE hKey = NULL;
+    NTSTATUS Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_WRITE, &hKey);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("IoOpenDeviceRegistryKey failed, Status = 0x%x", Status));
+        return Status;
+    }
+
+    Status = vboxWddmRegSetValueDword(hKey, VBOXWDDM_REG_DRV_FLAGS_NAME, fVal);
+    if (!NT_SUCCESS(Status))
+        WARN(("vboxWddmRegSetValueDword failed, Status = 0x%x", Status));
+
+    NTSTATUS tmpStatus = ZwClose(hKey);
+    Assert(tmpStatus == STATUS_SUCCESS);
+
+    return Status;
+}
+
+DWORD vboxWddmRegDrvFlagsGet(PVBOXMP_DEVEXT pDevExt, DWORD fDefault)
+{
+    HANDLE hKey = NULL;
+    NTSTATUS Status = IoOpenDeviceRegistryKey(pDevExt->pPDO, PLUGPLAY_REGKEY_DRIVER, GENERIC_READ, &hKey);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("IoOpenDeviceRegistryKey failed, Status = 0x%x", Status));
+        return fDefault;
+    }
+
+    DWORD dwVal = 0;
+    Status = vboxWddmRegQueryValueDword(hKey, VBOXWDDM_REG_DRV_FLAGS_NAME, &dwVal);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxWddmRegQueryValueDword failed, Status = 0x%x", Status));
+        dwVal = fDefault;
+    }
+
+    NTSTATUS tmpStatus = ZwClose(hKey);
+    Assert(tmpStatus == STATUS_SUCCESS);
+
+    return dwVal;
+}
+
 NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword)
 {
     struct
@@ -919,7 +951,7 @@ NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD 
     return STATUS_INVALID_PARAMETER;
 }
 
-NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val)
+NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, IN DWORD val)
 {
     UNICODE_STRING RtlStr;
     RtlInitUnicodeString(&RtlStr, pName);

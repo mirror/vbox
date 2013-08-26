@@ -111,7 +111,8 @@ static unsigned hlpNextAdjacentRectYN(RECTL *paRects, unsigned nRects, unsigned 
 }
 
 void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
-                   unsigned uResized, int iNewWidth, int iNewHeight)
+                   unsigned uResized, int iNewWidth, int iNewHeight,
+                   int iNewPosX, int iNewPosY)
 {
     DDCLOG(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, uPrimary, uResized, iNewWidth, iNewHeight));
 
@@ -119,6 +120,10 @@ void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary,
     memcpy (paNewRects, paRects, sizeof (RECTL) * nRects);
     paNewRects[uResized].right += iNewWidth - (paNewRects[uResized].right - paNewRects[uResized].left);
     paNewRects[uResized].bottom += iNewHeight - (paNewRects[uResized].bottom - paNewRects[uResized].top);
+    paNewRects[uResized].right += iNewPosX - paNewRects[uResized].left;
+    paNewRects[uResized].bottom += iNewPosY - paNewRects[uResized].top;
+    paNewRects[uResized].left = iNewPosX;
+    paNewRects[uResized].top = iNewPosY;
 
     /* Verify all pairs of originally adjacent rectangles for all 4 directions.
      * If the pair has a "good" delta (that is the first rectangle intersects the second)

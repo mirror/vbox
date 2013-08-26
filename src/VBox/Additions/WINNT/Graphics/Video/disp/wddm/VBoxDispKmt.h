@@ -21,6 +21,8 @@
 
 #include <D3dkmthk.h>
 
+#include "../../common/wddm/VBoxMPIf.h"
+
 /* win8 release preview-specific stuff */
 typedef struct _D3DKMT_ADAPTERINFO
 {
@@ -81,6 +83,11 @@ typedef struct VBOXDISPKMT_CALLBACKS
     PFND3DKMT_LOCK pfnD3DKMTLock;
     PFND3DKMT_UNLOCK pfnD3DKMTUnlock;
 
+    /* auto resize support */
+    PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
+    PFND3DKMT_POLLDISPLAYCHILDREN pfnD3DKMTPollDisplayChildren;
+
+    /* win8 specifics */
     PFND3DKMT_ENUMADAPTERS pfnD3DKMTEnumAdapters;
     PFND3DKMT_OPENADAPTERFROMLUID pfnD3DKMTOpenAdapterFromLuid;
 } VBOXDISPKMT_CALLBACKS, *PVBOXDISPKMT_CALLBACKS;
@@ -90,7 +97,7 @@ typedef struct VBOXDISPKMT_ADAPTER
     D3DKMT_HANDLE hAdapter;
     HDC hDc;
     LUID Luid;
-    PVBOXDISPKMT_CALLBACKS pCallbacks;
+    const VBOXDISPKMT_CALLBACKS *pCallbacks;
 }VBOXDISPKMT_ADAPTER, *PVBOXDISPKMT_ADAPTER;
 
 typedef struct VBOXDISPKMT_DEVICE
@@ -120,7 +127,7 @@ typedef struct VBOXDISPKMT_CONTEXT
 HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks);
 HRESULT vboxDispKmtCallbacksTerm(PVBOXDISPKMT_CALLBACKS pCallbacks);
 
-HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter);
+HRESULT vboxDispKmtOpenAdapter(const VBOXDISPKMT_CALLBACKS *pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter);
 HRESULT vboxDispKmtCloseAdapter(PVBOXDISPKMT_ADAPTER pAdapter);
 HRESULT vboxDispKmtCreateDevice(PVBOXDISPKMT_ADAPTER pAdapter, PVBOXDISPKMT_DEVICE pDevice);
 HRESULT vboxDispKmtDestroyDevice(PVBOXDISPKMT_DEVICE pDevice);

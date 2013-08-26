@@ -16,7 +16,11 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxDispD3DCmn.h"
+#include "VBoxDispD3DBase.h"
+#include "VBoxDispKmt.h"
+
+#include <iprt/assert.h>
+#include <iprt/log.h>
 
 #ifndef NT_SUCCESS
 # define NT_SUCCESS(_Status) ((_Status) >= 0)
@@ -102,6 +106,14 @@ HRESULT vboxDispKmtCallbacksInit(PVBOXDISPKMT_CALLBACKS pCallbacks)
         pCallbacks->pfnD3DKMTUnlock = (PFND3DKMT_UNLOCK)GetProcAddress(pCallbacks->hGdi32, "D3DKMTUnlock");
         Log((__FUNCTION__": pfnD3DKMTUnlock = %p\n", pCallbacks->pfnD3DKMTUnlock));
         bSupported &= !!(pCallbacks->pfnD3DKMTUnlock);
+
+        pCallbacks->pfnD3DKMTInvalidateActiveVidPn = (PFND3DKMT_INVALIDATEACTIVEVIDPN)GetProcAddress(pCallbacks->hGdi32, "D3DKMTInvalidateActiveVidPn");
+        Log((__FUNCTION__": pfnD3DKMTInvalidateActiveVidPn = %p\n", pCallbacks->pfnD3DKMTInvalidateActiveVidPn));
+        bSupported &= !!(pCallbacks->pfnD3DKMTInvalidateActiveVidPn);
+
+        pCallbacks->pfnD3DKMTPollDisplayChildren = (PFND3DKMT_POLLDISPLAYCHILDREN)GetProcAddress(pCallbacks->hGdi32, "D3DKMTPollDisplayChildren");
+        Log((__FUNCTION__": pfnD3DKMTPollDisplayChildren = %p\n", pCallbacks->pfnD3DKMTPollDisplayChildren));
+        bSupported &= !!(pCallbacks->pfnD3DKMTPollDisplayChildren);
 
         pCallbacks->pfnD3DKMTEnumAdapters = (PFND3DKMT_ENUMADAPTERS)GetProcAddress(pCallbacks->hGdi32, "D3DKMTEnumAdapters");
         Log((__FUNCTION__": pfnD3DKMTEnumAdapters = %p\n", pCallbacks->pfnD3DKMTEnumAdapters));
@@ -203,7 +215,7 @@ HRESULT vboxDispKmtAdpHdcCreate(HDC *phDc)
     return hr;
 }
 
-static HRESULT vboxDispKmtOpenAdapterViaHdc(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+static HRESULT vboxDispKmtOpenAdapterViaHdc(const VBOXDISPKMT_CALLBACKS *pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
 {
     D3DKMT_OPENADAPTERFROMHDC OpenAdapterData = {0};
     HRESULT hr = vboxDispKmtAdpHdcCreate(&OpenAdapterData.hDc);
@@ -231,7 +243,7 @@ static HRESULT vboxDispKmtOpenAdapterViaHdc(PVBOXDISPKMT_CALLBACKS pCallbacks, P
     return hr;
 }
 
-static HRESULT vboxDispKmtOpenAdapterViaLuid(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+static HRESULT vboxDispKmtOpenAdapterViaLuid(const VBOXDISPKMT_CALLBACKS *pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
 {
     if (pCallbacks->enmVersion < VBOXDISPKMT_CALLBACKS_VERSION_WIN8)
         return E_NOTIMPL;
@@ -280,7 +292,7 @@ static HRESULT vboxDispKmtOpenAdapterViaLuid(PVBOXDISPKMT_CALLBACKS pCallbacks, 
     return E_FAIL;
 }
 
-HRESULT vboxDispKmtOpenAdapter(PVBOXDISPKMT_CALLBACKS pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
+HRESULT vboxDispKmtOpenAdapter(const VBOXDISPKMT_CALLBACKS *pCallbacks, PVBOXDISPKMT_ADAPTER pAdapter)
 {
     HRESULT hr = vboxDispKmtOpenAdapterViaHdc(pCallbacks, pAdapter);
     if (SUCCEEDED(hr))

@@ -34,6 +34,9 @@ typedef struct VBOXWDDM_ALLOCATION *PVBOXWDDM_ALLOCATION;
 
 #include <cr_vreg.h>
 
+#ifdef DEBUG_misha
+extern DWORD g_VBoxDbgBreakModes;
+#endif
 
 #if 0
 #include <iprt/avl.h>
@@ -138,6 +141,11 @@ typedef struct VBOXWDDM_TARGET
     uint32_t ScanLineState;
     uint32_t HeightVisible;
     uint32_t HeightTotal;
+    /* since there coul be multiple state changes on auto-resize,
+     * we pend notifying host to avoi flickering */
+    volatile bool fStateSyncPening;
+    bool fConnected;
+    bool fConfigured;
 } VBOXWDDM_TARGET, *PVBOXWDDM_TARGET;
 
 /* allocation */
