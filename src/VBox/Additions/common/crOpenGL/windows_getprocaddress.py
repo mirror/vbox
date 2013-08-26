@@ -143,7 +143,7 @@ CR_PROC CR_APIENTRY crGetProcAddress( const char *name )
 
     if (!crStrcmp( name, "wglSwapIntervalEXT" )) return (CR_PROC) wglSwapIntervalEXT;
     
-    crWarning("Returning GetProcAddress:NULL for %s", name);
+    crDebug("Returning GetProcAddress:NULL for %s", name);
     return NULL;
 }
 
