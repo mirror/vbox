@@ -43,6 +43,8 @@
 #include "inlines.h"
 #include "biosint.h"
 
+extern uint16_t get_floppy_dpt(uint8_t drive_type);
+
 //////////////////////
 // FLOPPY functions //
 //////////////////////
@@ -1056,7 +1058,7 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         
         /* set es & di to point to 11 byte diskette param table in ROM */
         ES = 0xF000;    // @todo: any way to make this relocatable?
-        DI = (uint16_t)&diskette_param_table;
+        DI = get_floppy_dpt(drive_type);
         CLEAR_CF(); // success
         /* disk status not changed upon success */
         return;
