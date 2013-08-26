@@ -1148,9 +1148,11 @@ static DWORD g_VBoxVehEnable = 0;
 /* exit on exception */
 #define VBOXVEH_F_EXIT  0x00000004
 
-static DWORD g_VBoxVehFlags = VBOXVEH_F_DUMP
+static DWORD g_VBoxVehFlags = 0
 #ifdef DEBUG_misha
                             | VBOXVEH_F_BREAK
+#else
+                            | VBOXVEH_F_DUMP
 #endif
         ;
 
@@ -1283,6 +1285,7 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
             if (g_VBoxVehFlags & VBOXVEH_F_BREAK)
             {
                 BOOL fBreak = TRUE;
+#ifndef DEBUG_misha
                 if (pExceptionRecord->ExceptionCode == EXCEPTION_BREAKPOINT)
                 {
                     HANDLE hProcess = GetCurrentProcess();
@@ -1293,6 +1296,7 @@ LONG WINAPI vboxVDbgVectoredHandler(struct _EXCEPTION_POINTERS *pExceptionInfo)
                     else
                         fBreak = FALSE; /* <- the function has failed, don't break for sanity */
                 }
+#endif
 
                 if (fBreak)
                 {
@@ -1350,6 +1354,9 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
 #ifdef VDBG_VEHANDLER
         g_VBoxVehEnable = !!crGetenv("CR_DBG_VEH_ENABLE");
+# ifdef DEBUG_misha
+        g_VBoxVehEnable = 1;
+# endif
         if (g_VBoxVehEnable)
             vboxVDbgVEHandlerRegister();
 #endif
