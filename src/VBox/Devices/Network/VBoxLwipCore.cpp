@@ -54,9 +54,6 @@ typedef struct {
 typedef struct LWIPCORE 
 {
     int iLWIPInitiatorCounter;
-    PRTTIMER LwipArpTimer;
-    PRTTIMER LwipTcpFastTimer;
-    PRTTIMER LwipTcpSlowTimer;
     /* semaphore to coordinate 'tcpip' thread initialization */
     sys_sem_t LwipTcpIpSem;
     /* Initalization user defined callback */
@@ -68,24 +65,6 @@ typedef struct LWIPCORE
 
 static LWIPCORE g_LwipCore;
 
-
-/* Lwip Core Timer functions */
-void tmrLwipCoreArp(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
-{
-    lwip_etharp_tmr();
-}
-
-
-void tmrLwipCoreTcpFast(PRTTIMER pTimer, void *pvUser, uint64_t iTick) 
-{
-    lwip_tcp_fasttmr();
-}
-
-
-void tmrLwipCoreTcpSlow(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
-{
-    lwip_tcp_slowtmr();
-}
 
 /**
  * @note: this function executed on TCPIP thread.
