@@ -1739,60 +1739,56 @@ void VBoxGlobal::startEnumeratingMedia(bool fForceStart /*= true*/)
     if (!fForceStart && !agressiveCaching())
         return;
 
-    /* composes a list of all currently known media & their children */
+    /* Compose a list of all currently known mediums & their children: */
     m_mediums.clear();
-    addNullMediumToList (m_mediums, m_mediums.end());
-    addHardDisksToList (mVBox.GetHardDisks(), m_mediums, m_mediums.end());
-    addMediumsToList (mHost.GetDVDDrives(), m_mediums, m_mediums.end(), UIMediumType_DVD);
-    addMediumsToList (mVBox.GetDVDImages(), m_mediums, m_mediums.end(), UIMediumType_DVD);
-    addMediumsToList (mHost.GetFloppyDrives(), m_mediums, m_mediums.end(), UIMediumType_Floppy);
-    addMediumsToList (mVBox.GetFloppyImages(), m_mediums, m_mediums.end(), UIMediumType_Floppy);
+    addNullMediumToList(m_mediums, m_mediums.end());
+    addHardDisksToList(mVBox.GetHardDisks(), m_mediums, m_mediums.end());
+    addMediumsToList(mHost.GetDVDDrives(), m_mediums, m_mediums.end(), UIMediumType_DVD);
+    addMediumsToList(mVBox.GetDVDImages(), m_mediums, m_mediums.end(), UIMediumType_DVD);
+    addMediumsToList(mHost.GetFloppyDrives(), m_mediums, m_mediums.end(), UIMediumType_Floppy);
+    addMediumsToList(mVBox.GetFloppyImages(), m_mediums, m_mediums.end(), UIMediumType_Floppy);
 
-    /* enumeration thread class */
+    /* Enumeration thread class: */
     class MediaEnumThread : public QThread
     {
     public:
 
-        MediaEnumThread (VBoxMediaList &aList)
-            : mVector (aList.size())
-            , mSavedIt (aList.begin())
+        MediaEnumThread(VBoxMediaList &mediums)
+            : m_mediums(mediums.size())
+            , m_iterator(mediums.begin())
         {
             int i = 0;
-            for (VBoxMediaList::const_iterator it = aList.begin();
-                 it != aList.end(); ++ it)
-                mVector [i ++] = *it;
+            for (VBoxMediaList::const_iterator it = mediums.begin(); it != mediums.end(); ++it)
+                m_mediums[i++] = *it;
         }
 
-        virtual void run()
+        void run()
         {
-            LogFlow (("MediaEnumThread started.\n"));
+            LogFlow(("MediaEnumThread started.\n"));
             COMBase::InitializeCOM(false);
 
-            CVirtualBox mVBox = vboxGlobal().virtualBox();
-            QObject *self = &vboxGlobal();
+            QObject *pSelf = &vboxGlobal();
 
-            /* Enumerate the list */
-            for (int i = 0; i < mVector.size() && !m_sfCleanupInProgress; ++ i)
+            /* Enumerate medium list: */
+            for (int i = 0; i < m_mediums.size() && !m_sfCleanupInProgress; ++i)
             {
-                mVector [i].blockAndQueryState();
-                QApplication::
-                    postEvent (self,
-                               new VBoxMediaEnumEvent (mVector [i], mSavedIt));
-                ++mSavedIt;
+                m_mediums[i].blockAndQueryState();
+                QApplication::postEvent(pSelf, new VBoxMediaEnumEvent(m_mediums[i], m_iterator));
+                ++m_iterator;
             }
 
-            /* Post the end-of-enumeration event */
+            /* Post the end-of-enumeration event: */
             if (!m_sfCleanupInProgress)
-                QApplication::postEvent (self, new VBoxMediaEnumEvent (mSavedIt));
+                QApplication::postEvent(pSelf, new VBoxMediaEnumEvent(m_iterator));
 
             COMBase::CleanupCOM();
-            LogFlow (("MediaEnumThread finished.\n"));
+            LogFlow(("MediaEnumThread finished.\n"));
         }
 
     private:
 
-        QVector <UIMedium> mVector;
-        VBoxMediaList::iterator mSavedIt;
+        QVector<UIMedium> m_mediums;
+        VBoxMediaList::iterator m_iterator;
     };
 
     m_pMediumEnumerationThread = new MediaEnumThread(m_mediums);
