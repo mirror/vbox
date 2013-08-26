@@ -216,8 +216,8 @@ RTDECL(uint32_t) RTThreadCtxHooksRelease(RTTHREADCTX hThreadCtx)
     ASMAtomicWriteBool(&pThis->fRegistered, false);
     uint32_t cRefs = ASMAtomicDecU32(&pThis->cRefs);
 
-    if (   pThis->hOwner == RTThreadNativeSelf()
-        && cRefs == 1)
+    if (   cRefs == 1
+        && pThis->hOwner == RTThreadNativeSelf())
     {
         /*
          * removectx() will invoke rtThreadCtxHooksSolFree() and there is no way to bypass it and still use
