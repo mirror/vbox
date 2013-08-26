@@ -15,7 +15,12 @@
 #endif
 
 typedef uint8_t u8_t;
+#ifndef RT_OS_SOLARIS
 typedef int8_t s8_t;
+#else
+/* Solaris /usr/include/sys/int_types.h incorrectly defines int8_t as "char" */
+typedef signed char s8_t;
+#endif
 typedef uint16_t u16_t;
 typedef int16_t s16_t;
 typedef uint32_t u32_t;
