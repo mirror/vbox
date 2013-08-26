@@ -373,24 +373,6 @@ bx_bool floppy_media_sense(uint16_t drive)
         retval = 1;
     }
     // Extended floppy size uses special cmos setting
-    else if ( drive_type == 6 ) {
-        // 160k 5.25" drive
-        config_data = 0x00; // 0000 0000
-        media_state = 0x27; // 0010 0111
-        retval = 1;
-    }
-    else if ( drive_type == 7 ) {
-        // 180k 5.25" drive
-        config_data = 0x00; // 0000 0000
-        media_state = 0x27; // 0010 0111
-        retval = 1;
-    }
-    else if ( drive_type == 8 ) {
-        // 320k 5.25" drive
-        config_data = 0x00; // 0000 0000
-        media_state = 0x27; // 0010 0111
-        retval = 1;
-    }
     else if ( drive_type == 14 || drive_type == 15 ) {
         // 15.6 MB 3.5" (fake) || 63.5 MB 3.5" (fake) - report same as 2.88 MB.
         config_data = 0xCC; // 1100 1100
@@ -1057,20 +1039,6 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         
         case 5: // 2.88MB, 3.5"
             CX = 0x4f24;    // 80 tracks, 36 sectors
-            break;
-        
-        case 6: // 160k, 5.25"
-            CX = 0x2708;    // 40 tracks, 8 sectors
-            SET_DH(0);      // max head #
-            break;
-        
-        case 7: // 180k, 5.25"
-            CX = 0x2709;    // 40 tracks, 9 sectors
-            SET_DH(0);      // max head #
-            break;
-        
-        case 8: // 320k, 5.25"
-            CX = 0x2708;    // 40 tracks, 8 sectors
             break;
         
         case 14: // 15.6 MB 3.5" (fake)
