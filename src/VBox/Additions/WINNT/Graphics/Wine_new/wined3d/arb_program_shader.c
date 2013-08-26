@@ -39,6 +39,13 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
 WINE_DECLARE_DEBUG_CHANNEL(d3d_constants);
 WINE_DECLARE_DEBUG_CHANNEL(d3d);
 
+/* sRGB correction constants */
+static const float srgb_cmp = 0.0031308f;
+static const float srgb_mul_low = 12.92f;
+static const float srgb_pow = 0.41666f;
+static const float srgb_mul_high = 1.055f;
+static const float srgb_sub_high = 0.055f;
+
 static BOOL shader_is_pshader_version(enum wined3d_shader_type type)
 {
     return type == WINED3D_SHADER_TYPE_PIXEL;
@@ -271,6 +278,7 @@ struct shader_arb_ctx_priv
     BOOL                                muted;
     unsigned int                        num_loops, loop_depth, num_ifcs;
     int                                 aL;
+    BOOL                                ps_post_process;
 
     unsigned int                        vs_clipplanes;
     BOOL                                footer_written;
@@ -1153,7 +1161,7 @@ static void shader_arb_get_register_name(const struct wined3d_shader_instruction
             break;
 
         case WINED3DSPR_COLOROUT:
-            if (ctx->cur_ps_args->super.srgb_correction && !reg->idx[0].offset)
+            if (ctx->ps_post_process && !reg->idx[0].offset)
             {
                 strcpy(register_name, "TMP_COLOR");
             }
@@ -1622,8 +1630,8 @@ static void pshader_hw_cnd(const struct wined3d_shader_instruction *ins)
     shader_arb_get_dst_param(ins, dst, dst_name);
     shader_arb_get_src_param(ins, &ins->src[1], 1, src_name[1]);
 
-    /* The coissue flag changes the semantic of the cnd instruction in <= 1.3 shaders */
-    if (shader_version <= WINED3D_SHADER_VERSION(1, 3) && ins->coissue)
+    if (shader_version <= WINED3D_SHADER_VERSION(1, 3) && ins->coissue
+            && ins->dst->write_mask != WINED3DSP_WRITEMASK_3)
     {
         shader_addline(buffer, "MOV%s %s, %s;\n", shader_arb_get_modifier(ins), dst_name, src_name[1]);
     }
@@ -1843,9 +1851,9 @@ static void shader_hw_mov(const struct wined3d_shader_instruction *ins)
     }
     else if (ins->dst[0].reg.type == WINED3DSPR_COLOROUT && !ins->dst[0].reg.idx[0].offset && pshader)
     {
-        if (ctx->cur_ps_args->super.srgb_correction && shader->u.ps.color0_mov)
+        if (ctx->ps_post_process && shader->u.ps.color0_mov)
         {
-            shader_addline(buffer, "#mov handled in srgb write code\n");
+            shader_addline(buffer, "#mov handled in srgb write or fog code\n");
             return;
         }
         shader_hw_map2gl(ins);
@@ -3552,6 +3560,14 @@ static void init_ps_input(const struct wined3d_shader *shader,
     }
 }
 
+static void arbfp_add_linear_fog(struct wined3d_shader_buffer *buffer,
+        const char *fragcolor, const char *tmp)
+{
+    shader_addline(buffer, "SUB %s.x, state.fog.params.z, fragment.fogcoord.x;\n", tmp);
+    shader_addline(buffer, "MUL_SAT %s.x, %s.x, state.fog.params.w;\n", tmp, tmp);
+    shader_addline(buffer, "LRP %s.rgb, %s.x, %s, state.fog.color;\n", fragcolor, tmp, fragcolor);
+}
+
 /* Context activation is done by the caller. */
 static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
         const struct wined3d_gl_info *gl_info, struct wined3d_shader_buffer *buffer,
@@ -3568,6 +3584,7 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
     struct arb_pshader_private *shader_priv = shader->backend_data;
     GLint errPos;
     DWORD map;
+    BOOL custom_linear_fog = FALSE;
 
     char srgbtmp[4][4];
     unsigned int i, found = 0;
@@ -3615,6 +3632,7 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
     priv_ctx.cur_np2fixup_info = &compiled->np2fixup_info;
     init_ps_input(shader, args, &priv_ctx);
     list_init(&priv_ctx.control_frames);
+    priv_ctx.ps_post_process = args->super.srgb_correction;
 
     /* Avoid enabling NV_fragment_program* if we do not need it.
      *
@@ -3667,6 +3685,12 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
             case WINED3D_FFP_PS_FOG_OFF:
                 break;
             case WINED3D_FFP_PS_FOG_LINEAR:
+                if (gl_info->quirks & WINED3D_QUIRK_BROKEN_ARB_FOG)
+                {
+                    custom_linear_fog = TRUE;
+                    priv_ctx.ps_post_process = TRUE;
+                    break;
+                }
                 shader_addline(buffer, "OPTION ARB_fog_linear;\n");
                 break;
             case WINED3D_FFP_PS_FOG_EXP:
@@ -3696,7 +3720,7 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
     }
     else
     {
-        if (args->super.srgb_correction)
+        if (priv_ctx.ps_post_process)
         {
             if (shader->u.ps.color0_mov)
             {
@@ -3846,6 +3870,9 @@ static GLuint shader_arb_generate_pshader(const struct wined3d_shader *shader,
         arbfp_add_sRGB_correction(buffer, fragcolor, srgbtmp[0], srgbtmp[1], srgbtmp[2], srgbtmp[3],
                                   priv_ctx.target_version >= NV2);
     }
+
+    if (custom_linear_fog)
+        arbfp_add_linear_fog(buffer, fragcolor, "TA");
 
     if(strcmp(fragcolor, "result.color")) {
         shader_addline(buffer, "MOV result.color, %s;\n", fragcolor);
@@ -6140,6 +6167,7 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
     BOOL op_equal;
     const char *final_combiner_src = "ret";
     GLint pos;
+    BOOL custom_linear_fog = FALSE;
 
     /* Find out which textures are read */
     for (stage = 0; stage < MAX_TEXTURES; ++stage)
@@ -6212,7 +6240,15 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
     switch (settings->fog)
     {
         case WINED3D_FFP_PS_FOG_OFF:                                                         break;
-        case WINED3D_FFP_PS_FOG_LINEAR: shader_addline(&buffer, "OPTION ARB_fog_linear;\n"); break;
+        case WINED3D_FFP_PS_FOG_LINEAR:
+            if (gl_info->quirks & WINED3D_QUIRK_BROKEN_ARB_FOG)
+            {
+                custom_linear_fog = TRUE;
+                break;
+            }
+            shader_addline(&buffer, "OPTION ARB_fog_linear;\n");
+            break;
+
         case WINED3D_FFP_PS_FOG_EXP:    shader_addline(&buffer, "OPTION ARB_fog_exp;\n");    break;
         case WINED3D_FFP_PS_FOG_EXP2:   shader_addline(&buffer, "OPTION ARB_fog_exp2;\n");   break;
         default: FIXME("Unexpected fog setting %d\n", settings->fog);
@@ -6377,12 +6413,19 @@ static GLuint gen_arbfp_ffp_shader(const struct ffp_frag_settings *settings, con
         }
     }
 
-    if(settings->sRGB_write) {
+    if (settings->sRGB_write || custom_linear_fog)
+    {
         shader_addline(&buffer, "MAD ret, fragment.color.secondary, specular_enable, %s;\n", final_combiner_src);
+        if (settings->sRGB_write)
         arbfp_add_sRGB_correction(&buffer, "ret", "arg0", "arg1", "arg2", "tempreg", FALSE);
+        if (custom_linear_fog)
+            arbfp_add_linear_fog(&buffer, "ret", "arg0");
         shader_addline(&buffer, "MOV result.color, ret;\n");
-    } else {
-        shader_addline(&buffer, "MAD result.color, fragment.color.secondary, specular_enable, %s;\n", final_combiner_src);
+    }
+    else
+    {
+        shader_addline(&buffer, "MAD result.color, fragment.color.secondary, specular_enable, %s;\n",
+                final_combiner_src);
     }
 
     /* Footer */
@@ -6506,6 +6549,8 @@ static void fragment_prog_arbfp(struct wined3d_context *context, const struct wi
 static void state_arbfp_fog(struct wined3d_context *context, const struct wined3d_state *state, DWORD state_id)
 {
     enum fogsource new_source;
+    DWORD fogstart = state->render_states[WINED3D_RS_FOGSTART];
+    DWORD fogend = state->render_states[WINED3D_RS_FOGEND];
 
     TRACE("context %p, state %p, state_id %#x.\n", context, state, state_id);
 
@@ -6534,7 +6579,7 @@ static void state_arbfp_fog(struct wined3d_context *context, const struct wined3
         new_source = FOGSOURCE_FFP;
     }
 
-    if (new_source != context->fog_source)
+    if (new_source != context->fog_source || fogstart == fogend)
     {
         context->fog_source = new_source;
         state_fogstartend(context, state, STATE_RENDER(WINED3D_RS_FOGSTART));

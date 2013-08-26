@@ -812,6 +812,101 @@ static BOOL match_r200(const struct wined3d_gl_info *gl_info, const char *gl_ren
     return FALSE;
 }
 
+static BOOL match_broken_arb_fog(const struct wined3d_gl_info *gl_info, const char *gl_renderer,
+        enum wined3d_gl_vendor gl_vendor, enum wined3d_pci_vendor card_vendor, enum wined3d_pci_device device)
+{
+    DWORD data[4];
+    GLuint tex, fbo;
+    GLenum status;
+    float color[4] = {0.0f, 1.0f, 0.0f, 0.0f};
+    GLuint prog;
+    GLint err_pos;
+    static const char *program_code =
+        "!!ARBfp1.0\n"
+        "OPTION ARB_fog_linear;\n"
+        "MOV result.color, {1.0, 0.0, 0.0, 0.0};\n"
+        "END\n";
+
+    if (wined3d_settings.offscreen_rendering_mode != ORM_FBO)
+        return FALSE;
+    if (!gl_info->supported[ARB_FRAGMENT_PROGRAM])
+        return FALSE;
+
+    gl_info->gl_ops.gl.p_glGenTextures(1, &tex);
+    gl_info->gl_ops.gl.p_glBindTexture(GL_TEXTURE_2D, tex);
+    gl_info->gl_ops.gl.p_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl_info->gl_ops.gl.p_glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gl_info->gl_ops.gl.p_glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, 4, 1, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, NULL);
+    checkGLcall("glTexImage2D");
+
+    gl_info->fbo_ops.glGenFramebuffers(1, &fbo);
+    gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+    gl_info->fbo_ops.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
+    checkGLcall("glFramebufferTexture2D");
+
+    status = gl_info->fbo_ops.glCheckFramebufferStatus(GL_FRAMEBUFFER);
+    if (status != GL_FRAMEBUFFER_COMPLETE) ERR("FBO status %#x\n", status);
+    checkGLcall("glCheckFramebufferStatus");
+
+    gl_info->gl_ops.gl.p_glClearColor(0.0f, 0.0f, 1.0f, 0.0f);
+    gl_info->gl_ops.gl.p_glClear(GL_COLOR_BUFFER_BIT);
+    checkGLcall("glClear");
+    gl_info->gl_ops.gl.p_glViewport(0, 0, 4, 1);
+    checkGLcall("glViewport");
+
+    gl_info->gl_ops.gl.p_glEnable(GL_FOG);
+    gl_info->gl_ops.gl.p_glFogf(GL_FOG_START, 0.5f);
+    gl_info->gl_ops.gl.p_glFogf(GL_FOG_END, 0.5f);
+    gl_info->gl_ops.gl.p_glFogi(GL_FOG_MODE, GL_LINEAR);
+    gl_info->gl_ops.gl.p_glHint(GL_FOG_HINT, GL_NICEST);
+    gl_info->gl_ops.gl.p_glFogfv(GL_FOG_COLOR, color);
+    checkGLcall("fog setup");
+
+    GL_EXTCALL(glGenProgramsARB(1, &prog));
+    GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, prog));
+    GL_EXTCALL(glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
+            strlen(program_code), program_code));
+    gl_info->gl_ops.gl.p_glEnable(GL_FRAGMENT_PROGRAM_ARB);
+    checkGLcall("Test fragment program setup");
+
+    gl_info->gl_ops.gl.p_glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &err_pos);
+    if (err_pos != -1)
+    {
+        const char *error_str;
+        error_str = (const char *)gl_info->gl_ops.gl.p_glGetString(GL_PROGRAM_ERROR_STRING_ARB);
+        FIXME("Fog test program error at position %d: %s\n\n", err_pos, debugstr_a(error_str));
+    }
+
+    gl_info->gl_ops.gl.p_glBegin(GL_TRIANGLE_STRIP);
+    gl_info->gl_ops.gl.p_glVertex3f(-1.0f, -1.0f,  0.0f);
+    gl_info->gl_ops.gl.p_glVertex3f( 1.0f, -1.0f,  1.0f);
+    gl_info->gl_ops.gl.p_glVertex3f(-1.0f,  1.0f,  0.0f);
+    gl_info->gl_ops.gl.p_glVertex3f( 1.0f,  1.0f,  1.0f);
+    gl_info->gl_ops.gl.p_glEnd();
+    checkGLcall("ARBfp fog test draw");
+
+    gl_info->gl_ops.gl.p_glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, data);
+    checkGLcall("glGetTexImage");
+    data[0] &= 0x00ffffff;
+    data[1] &= 0x00ffffff;
+    data[2] &= 0x00ffffff;
+    data[3] &= 0x00ffffff;
+
+    gl_info->fbo_ops.glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    gl_info->gl_ops.gl.p_glBindTexture(GL_TEXTURE_2D, 0);
+
+    gl_info->fbo_ops.glDeleteFramebuffers(1, &fbo);
+    gl_info->gl_ops.gl.p_glDeleteTextures(1, &tex);
+    gl_info->gl_ops.gl.p_glDisable(GL_FOG);
+    GL_EXTCALL(glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, 0));
+    gl_info->gl_ops.gl.p_glDisable(GL_FRAGMENT_PROGRAM_ARB);
+    GL_EXTCALL(glDeleteProgramsARB(1, &prog));
+    checkGLcall("ARBfp fog test teardown");
+
+    TRACE("Fog test data: %08x %08x %08x %08x\n", data[0], data[1], data[2], data[3]);
+    return data[0] != 0x00ff0000 || data[3] != 0x0000ff00;
+}
+
 static void quirk_apple_glsl_constants(struct wined3d_gl_info *gl_info)
 {
     /* MacOS needs uniforms for relative addressing offsets. This can accumulate to quite a few uniforms.
@@ -933,6 +1028,11 @@ static void quirk_r200_constants(struct wined3d_gl_info *gl_info)
      * linear fog with start and end other than 0.0 and 1.0. */
     TRACE("Reserving 1 ARB constant for compiler private use.\n");
     gl_info->reserved_arb_constants = max(gl_info->reserved_arb_constants, 1);
+}
+
+static void quirk_broken_arb_fog(struct wined3d_gl_info *gl_info)
+{
+    gl_info->quirks |= WINED3D_QUIRK_BROKEN_ARB_FOG;
 }
 
 #ifdef VBOX_WITH_WINE_FIX_QUIRKS
@@ -1069,6 +1169,11 @@ static const struct driver_quirk quirk_table[] =
         match_r200,
         quirk_r200_constants,
         "r200 vertex shader constants"
+    },
+    {
+        match_broken_arb_fog,
+        quirk_broken_arb_fog,
+        "ARBfp fogstart == fogend workaround"
     },
 #ifdef VBOX_WITH_WINE_FIX_QUIRKS
     {
@@ -1253,7 +1358,9 @@ static const struct gpu_description gpu_description_table[] =
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX660,     "NVIDIA GeForce GTX 660",           DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX660TI,   "NVIDIA GeForce GTX 660 Ti",        DRIVER_NVIDIA_GEFORCE6,  2048},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX670,     "NVIDIA GeForce GTX 670",           DRIVER_NVIDIA_GEFORCE6,  2048},
+    {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX670MX,   "NVIDIA GeForce GTX 670MX",         DRIVER_NVIDIA_GEFORCE6,  3072},
     {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX680,     "NVIDIA GeForce GTX 680",           DRIVER_NVIDIA_GEFORCE6,  2048},
+    {HW_VENDOR_NVIDIA,     CARD_NVIDIA_GEFORCE_GTX770M,    "NVIDIA GeForce GTX 770M",          DRIVER_NVIDIA_GEFORCE6,  3072},
 
     /* AMD cards */
     {HW_VENDOR_AMD,        CARD_AMD_RAGE_128PRO,           "ATI Rage Fury",                    DRIVER_AMD_RAGE_128PRO,  16  },
@@ -1664,7 +1771,9 @@ static enum wined3d_pci_device select_card_nvidia_binary(const struct wined3d_gl
         }
         cards[] =
         {
+            {"GTX 770M",    CARD_NVIDIA_GEFORCE_GTX770M},   /* Geforce 700 - midend high mobile */
             {"GTX 680",     CARD_NVIDIA_GEFORCE_GTX680},    /* Geforce 600 - highend */
+            {"GTX 670MX",   CARD_NVIDIA_GEFORCE_GTX670MX},  /* Geforce 600 - highend */
             {"GTX 670",     CARD_NVIDIA_GEFORCE_GTX670},    /* Geforce 600 - midend high */
             {"GTX 660 Ti",  CARD_NVIDIA_GEFORCE_GTX660TI},  /* Geforce 600 - midend high */
             {"GTX 660",     CARD_NVIDIA_GEFORCE_GTX660},    /* Geforce 600 - midend high */
@@ -2163,6 +2272,7 @@ static enum wined3d_pci_device select_card_nvidia_mesa(const struct wined3d_gl_i
     cards[] =
     {
         /* Kepler */
+        {"NVE6",    CARD_NVIDIA_GEFORCE_GTX770M},
         {"NVE4",    CARD_NVIDIA_GEFORCE_GTX680},
         /* Fermi */
         {"NVD9",    CARD_NVIDIA_GEFORCE_GT520},
@@ -2789,6 +2899,7 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter)
     struct wined3d_driver_info *driver_info = &adapter->driver_info;
     const char *gl_vendor_str, *gl_renderer_str, *gl_version_str;
     struct wined3d_gl_info *gl_info = &adapter->gl_info;
+    struct wined3d_vertex_caps vertex_caps;
     enum wined3d_pci_vendor card_vendor;
     struct fragment_caps fragment_caps;
     struct shader_caps shader_caps;
@@ -3018,6 +3129,9 @@ static BOOL wined3d_adapter_init_gl_caps(struct wined3d_adapter *adapter)
     adapter->d3d_info.limits.ps_version = shader_caps.ps_version;
     adapter->d3d_info.limits.vs_uniform_count = shader_caps.vs_uniform_count;
     adapter->d3d_info.limits.ps_uniform_count = shader_caps.ps_uniform_count;
+
+    adapter->vertex_pipe->vp_get_caps(gl_info, &vertex_caps);
+    adapter->d3d_info.xyzrhw = vertex_caps.xyzrhw;
 
     adapter->fragment_pipe->get_caps(gl_info, &fragment_caps);
     adapter->d3d_info.limits.ffp_blend_stages = fragment_caps.MaxTextureBlendStages;
@@ -4869,12 +4983,18 @@ static void WINE_GLAPI warn_no_specular_func(const void *data)
     WARN("GL_EXT_secondary_color not supported\n");
 }
 
-static void fillGLAttribFuncs(const struct wined3d_gl_info *gl_info)
+static void wined3d_adapter_init_ffp_attrib_ops(const struct wined3d_adapter *adapter)
 {
+    const struct wined3d_d3d_info *d3d_info = &adapter->d3d_info;
+    const struct wined3d_gl_info *gl_info = &adapter->gl_info;
+
     position_funcs[WINED3D_FFP_EMIT_FLOAT1]      = invalid_func;
     position_funcs[WINED3D_FFP_EMIT_FLOAT2]      = invalid_func;
     position_funcs[WINED3D_FFP_EMIT_FLOAT3]      = (glAttribFunc)gl_info->gl_ops.gl.p_glVertex3fv;
+    if (!d3d_info->xyzrhw)
     position_funcs[WINED3D_FFP_EMIT_FLOAT4]      = position_float4;
+    else
+        position_funcs[WINED3D_FFP_EMIT_FLOAT4]  = (glAttribFunc)gl_info->gl_ops.gl.p_glVertex4fv;
     position_funcs[WINED3D_FFP_EMIT_D3DCOLOR]    = position_d3dcolor;
     position_funcs[WINED3D_FFP_EMIT_UBYTE4]      = invalid_func;
     position_funcs[WINED3D_FFP_EMIT_SHORT2]      = invalid_func;
@@ -5296,7 +5416,7 @@ static BOOL wined3d_adapter_init(struct wined3d_adapter *adapter, UINT ordinal)
 
     WineD3D_ReleaseFakeGLContext(&fake_gl_ctx);
 
-    fillGLAttribFuncs(&adapter->gl_info);
+    wined3d_adapter_init_ffp_attrib_ops(adapter);
 
 #ifdef VBOX_WITH_WDDM
     VBoxCrHgsmiDestroy(pHgsmi);
