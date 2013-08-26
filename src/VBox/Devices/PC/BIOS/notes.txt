@@ -46,6 +46,11 @@
   and clear the memory. For those, the FDPT must be in the BIOS ROM area, or
   the OS will destroy it (even when it's at 0:300 in the IVT).
 
+- Windows NT (including XP) uses INT 13h/08h to obtain the DPT for each floppy
+  drive. NT assumes a 13-byte DPT which includes the number of tracks. NT will
+  refuse to read more tracks than the DPT specifies and formats as many tracks
+  as the DPT specifies.
+
 - Windows 98 SE boot CD uses 32-bit registers in real mode and will fail in
   mysterious ways if BIOS trashes high bits of EAX (and likely others).
 

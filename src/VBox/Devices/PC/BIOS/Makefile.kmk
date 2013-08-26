@@ -45,6 +45,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	print.c \
  	ata.c \
  	floppy.c \
+ 	floppyt.c \
  	eltorito.c \
  	boot.c \
  	keyboard.c \
