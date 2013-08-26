@@ -977,11 +977,11 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #endif
 
 /** Machine Check Global Capabilities Register. */
-#define MSR_IA32_MCP_CAP                    0x179
+#define MSR_IA32_MCG_CAP                    0x179
 /** Machine Check Global Status Register. */
-#define MSR_IA32_MCP_STATUS                 0x17A
+#define MSR_IA32_MCG_STATUS                 0x17A
 /** Machine Check Global Control Register. */
-#define MSR_IA32_MCP_CTRL                   0x17B
+#define MSR_IA32_MCG_CTRL                   0x17B
 
 /** Trace/Profile Resource Control (R/W) */
 #define MSR_IA32_DEBUGCTL                   0x1D9
