@@ -7351,7 +7351,8 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
      */
     /** @todo Rework event evaluation and injection to be completely separate.
      *  Update: Tried it, problem with handling halts. Control never returns to VT-x
-     *        if we exit VT-x with external interrupt pending in a TRPM event. */
+     *        if we exit VT-x with external interrupt pending in a TRPM event.
+     *        The EM loop probably needs to check for interrupts while halting. */
     if (TRPMHasTrap(pVCpu))
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
 
@@ -7409,8 +7410,8 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     else
     {
         /*
-         * If we are injecting events real-on-v86 mode guest then we potentially have to update
-         * RIP and other registers, i.e. hmR0VmxPreRunGuest()->hmR0VmxInjectPendingEvent().
+         * If we are injecting events to a real-on-v86 mode guest, we may have to update
+         * RIP and soem other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
          * Reload only the necessary state, the assertion will catch if other parts of the code
          * change.
          */
