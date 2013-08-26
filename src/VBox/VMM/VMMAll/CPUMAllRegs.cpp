@@ -1101,9 +1101,9 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
          * XP has been observed querying MSR_IA32_MC0_CTL.
          */
         case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
-        case MSR_IA32_MCP_CAP:              /* fam/mod >= 6_01 */
-        /*case MSR_IA32_MCP_STATUS:     - indicated as not present in CAP */
-        /*case MSR_IA32_MCP_CTRL:       - indicated as not present in CAP */
+        case MSR_IA32_MCG_CAP:              /* fam/mod >= 6_01 */
+        case MSR_IA32_MCG_STATUS:           /* indicated as not present in CAP */
+        /*case MSR_IA32_MCG_CTRL:       - indicated as not present in CAP */
         case MSR_IA32_MC0_CTL:
         case MSR_IA32_MC0_STATUS:
             *puValue = 0;
@@ -1387,8 +1387,8 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
         case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
         case MSR_IA32_BIOS_UPDT_TRIG:       /* fam/mod >= 6_01 */
         /*case MSR_IA32_MCP_CAP:     - read-only */
-        /*case MSR_IA32_MCP_STATUS:  - read-only */
-        /*case MSR_IA32_MCP_CTRL:    - indicated as not present in CAP */
+        /*case MSR_IA32_MCG_STATUS:  - read-only */
+        /*case MSR_IA32_MCG_CTRL:    - indicated as not present in CAP */
         /*case MSR_IA32_MC0_CTL:     - read-only? */
         /*case MSR_IA32_MC0_STATUS:  - read-only? */
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
