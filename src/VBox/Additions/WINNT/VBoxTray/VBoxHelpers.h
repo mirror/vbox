@@ -28,7 +28,7 @@
 
 extern int hlpReportStatus(VBoxGuestFacilityStatus statusCurrent);
 extern void hlpReloadCursor(void);
-extern void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary, unsigned uResized, int iNewWidth, int iNewHeight);
+extern void hlpResizeRect(RECTL *paRects, unsigned nRects, unsigned uPrimary, unsigned uResized, int iNewWidth, int iNewHeight, int iNewPosX, int iNewPosY);
 extern int hlpShowBalloonTip(HINSTANCE hInst, HWND hWnd, UINT uID, const char *pszMsg, const char *pszTitle, UINT uTimeout, DWORD dwInfoFlags);
 
 #endif /* !___VBOXTRAY_HELPERS_H */

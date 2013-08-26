@@ -23,9 +23,9 @@ unsigned __stdcall VBoxSeamlessThread   (void *pInstance);
 void               VBoxSeamlessDestroy  (const VBOXSERVICEENV *pEnv, void *pInstance);
 
 
-void VBoxSeamlessInstallHook();
-void VBoxSeamlessRemoveHook();
-void VBoxSeamlessCheckWindows();
+void VBoxSeamlessEnable();
+void VBoxSeamlessDisable();
+void VBoxSeamlessCheckWindows(bool fForce);
 
 void VBoxSeamlessSetSupported(BOOL fSupported);
 

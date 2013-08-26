@@ -899,6 +899,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
 
 #ifdef VBOX_WDDM_MINIPORT
 static VBOXWDDM_VIDEOMODES_INFO g_aVBoxVideoModeInfos[VBOX_VIDEO_MAX_SCREENS] = {0};
+static VBOXWDDM_VIDEOMODES_INFO g_VBoxVideoModeTmp;
 
 bool VBoxWddmFillMode(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, VIDEO_MODE_INFORMATION *pInfo, D3DDDIFORMAT enmFormat, ULONG w, ULONG h)
 {
@@ -953,6 +954,7 @@ VBoxWddmBuildResolutionTable(PVIDEO_MODE_INFORMATION pModesTable, size_t tableSi
     uint32_t cResolutions = 0;
 
     *piPreferredResolution = -1;
+    *pcResolutions = 0;
 
     for (uint32_t i=0; i<tableSize; ++i)
     {
@@ -1002,6 +1004,7 @@ static void VBoxWddmBuildResolutionTableForModes(PVBOXWDDM_VIDEOMODES_INFO pMode
             (SIZE*)((void*)pModes->aResolutions), &pModes->cResolutions, &pModes->iPreferredResolution);
     Assert(pModes->aResolutions[pModes->iPreferredResolution].cx == pModes->aModes[pModes->iPreferredMode].VisScreenWidth
             && pModes->aResolutions[pModes->iPreferredResolution].cy == pModes->aModes[pModes->iPreferredMode].VisScreenHeight);
+    Assert(pModes->cModes >= pModes->cResolutions);
 }
 
 AssertCompile(sizeof (SIZE) == sizeof (D3DKMDT_2DREGION));
@@ -1224,52 +1227,276 @@ VBoxWddmBuildVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID 
     VBoxWddmBuildResolutionTableForModes(pModes);
 }
 
-void VBoxWddmInvalidateVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
+static void VBoxWddmInitVideoMode(PVBOXMP_DEVEXT pExt, int i)
 {
-    if (VidPnTargetId != D3DDDI_ID_ALL)
-    {
-        if (VidPnTargetId >= RT_ELEMENTS(g_aVBoxVideoModeInfos))
-        {
-            WARN(("VidPnTargetId (%d) must be less than (%d)", VidPnTargetId, RT_ELEMENTS(g_aVBoxVideoModeInfos)));
-            return;
-        }
-        LOG(("invalidating videomede info for screen %d", VidPnTargetId));
-        g_aVBoxVideoModeInfos[VidPnTargetId].cModes = 0;
-        return;
-    }
+    VBoxWddmBuildVideoModesInfo(pExt, (D3DDDI_VIDEO_PRESENT_TARGET_ID)i, &g_aVBoxVideoModeInfos[i], NULL, 0);
+}
 
-    LOG(("invalidating ALL videomede infos"));
-
-    for (UINT i = 0; i < RT_ELEMENTS(g_aVBoxVideoModeInfos); ++i)
+void VBoxWddmInitVideoModes(PVBOXMP_DEVEXT pExt)
+{
+    for (int i = 0; i < VBoxCommonFromDeviceExt(pExt)->cDisplays; ++i)
     {
-        g_aVBoxVideoModeInfos[i].cModes = 0;
+        VBoxWddmInitVideoMode(pExt, i);
     }
 }
 
-void VBoxWddmInvalidateAllVideoModesInfos(PVBOXMP_DEVEXT pExt)
+static NTSTATUS vboxWddmChildStatusReportPerform(PVBOXMP_DEVEXT pDevExt, PVBOXVDMA_CHILD_STATUS pChildStatus, D3DDDI_VIDEO_PRESENT_TARGET_ID iChild)
 {
-    VBoxWddmInvalidateVideoModesInfo(pExt, D3DDDI_ID_ALL);
+    DXGK_CHILD_STATUS DdiChildStatus;
+
+    Assert(iChild < UINT32_MAX/2);
+    Assert(iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+
+    PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[iChild];
+
+    if ((pChildStatus->fFlags & VBOXVDMA_CHILD_STATUS_F_DISCONNECTED)
+            && pTarget->fConnected)
+    {
+        /* report disconnected */
+        memset(&DdiChildStatus, 0, sizeof (DdiChildStatus));
+        DdiChildStatus.Type = StatusConnection;
+        DdiChildStatus.ChildUid = iChild;
+        DdiChildStatus.HotPlug.Connected = FALSE;
+
+        LOG(("Reporting DISCONNECT to child %d", DdiChildStatus.ChildUid));
+
+        NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("DxgkCbIndicateChildStatus failed with Status (0x%x)", Status));
+            return Status;
+        }
+        pTarget->fConnected = FALSE;
+    }
+
+    if ((pChildStatus->fFlags & VBOXVDMA_CHILD_STATUS_F_CONNECTED)
+            && !pTarget->fConnected)
+    {
+        /* report disconnected */
+        memset(&DdiChildStatus, 0, sizeof (DdiChildStatus));
+        DdiChildStatus.Type = StatusConnection;
+        DdiChildStatus.ChildUid = iChild;
+        DdiChildStatus.HotPlug.Connected = TRUE;
+
+        LOG(("Reporting CONNECT to child %d", DdiChildStatus.ChildUid));
+
+        NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("DxgkCbIndicateChildStatus failed with Status (0x%x)", Status));
+            return Status;
+        }
+        pTarget->fConnected = TRUE;
+    }
+
+    if (pChildStatus->fFlags & VBOXVDMA_CHILD_STATUS_F_ROTATED)
+    {
+        /* report disconnected */
+        memset(&DdiChildStatus, 0, sizeof (DdiChildStatus));
+        DdiChildStatus.Type = StatusRotation;
+        DdiChildStatus.ChildUid = iChild;
+        DdiChildStatus.Rotation.Angle = pChildStatus->u8RotationAngle;
+
+        LOG(("Reporting ROTATED to child %d", DdiChildStatus.ChildUid));
+
+        NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbIndicateChildStatus(pDevExt->u.primary.DxgkInterface.DeviceHandle, &DdiChildStatus);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("DxgkCbIndicateChildStatus failed with Status (0x%x)", Status));
+            return Status;
+        }
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxWddmChildStatusHandleRequest(PVBOXMP_DEVEXT pDevExt, VBOXVDMACMD_CHILD_STATUS_IRQ *pBody)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (UINT i = 0; i < pBody->cInfos; ++i)
+    {
+        PVBOXVDMA_CHILD_STATUS pInfo = &pBody->aInfos[i];
+        if (pBody->fFlags & VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL)
+        {
+            for (D3DDDI_VIDEO_PRESENT_TARGET_ID iChild = 0; iChild < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++iChild)
+            {
+                Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, iChild);
+                if (!NT_SUCCESS(Status))
+                {
+                    WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
+                    break;
+                }
+            }
+        }
+        else
+        {
+            Status = vboxWddmChildStatusReportPerform(pDevExt, pInfo, pInfo->iChild);
+            if (!NT_SUCCESS(Status))
+            {
+                WARN(("vboxWddmChildStatusReportPerform failed with Status (0x%x)", Status));
+                break;
+            }
+        }
+    }
+
+    return Status;
+}
+
+#ifdef VBOX_WDDM_MONITOR_REPLUG_IRQ
+typedef struct VBOXWDDMCHILDSTATUSCB
+{
+    PVBOXVDMACBUF_DR pDr;
+    PKEVENT pEvent;
+} VBOXWDDMCHILDSTATUSCB, *PVBOXWDDMCHILDSTATUSCB;
+
+static DECLCALLBACK(VOID) vboxWddmChildStatusReportCompletion(PVBOXMP_DEVEXT pDevExt, PVBOXVDMADDI_CMD pCmd, PVOID pvContext)
+{
+    /* we should be called from our DPC routine */
+    Assert(KeGetCurrentIrql() == DISPATCH_LEVEL);
+
+    PVBOXWDDMCHILDSTATUSCB pCtx = (PVBOXWDDMCHILDSTATUSCB)pvContext;
+    PVBOXVDMACBUF_DR pDr = pCtx->pDr;
+    PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
+    VBOXVDMACMD_CHILD_STATUS_IRQ *pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHILD_STATUS_IRQ);
+
+    vboxWddmChildStatusHandleRequest(pDevExt, pBody);
+
+    vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
+
+    if (pCtx->pEvent)
+    {
+        KeSetEvent(pCtx->pEvent, 0, FALSE);
+    }
+}
+#endif
+
+static NTSTATUS vboxWddmChildStatusReportReconnected(PVBOXMP_DEVEXT pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID idTarget)
+{
+#ifdef VBOX_WDDM_MONITOR_REPLUG_IRQ
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    UINT cbCmd = VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (VBOXVDMACMD_CHILD_STATUS_IRQ));
+
+    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate(&pDevExt->u.primary.Vdma, cbCmd);
+    if (pDr)
+    {
+        // vboxVdmaCBufDrCreate zero initializes the pDr
+        /* the command data follows the descriptor */
+        pDr->fFlags = VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR;
+        pDr->cbBuf = cbCmd;
+        pDr->rc = VERR_NOT_IMPLEMENTED;
+
+        PVBOXVDMACMD pHdr = VBOXVDMACBUF_DR_TAIL(pDr, VBOXVDMACMD);
+        pHdr->enmType = VBOXVDMACMD_TYPE_CHILD_STATUS_IRQ;
+        pHdr->u32CmdSpecific = 0;
+        PVBOXVDMACMD_CHILD_STATUS_IRQ pBody = VBOXVDMACMD_BODY(pHdr, VBOXVDMACMD_CHILD_STATUS_IRQ);
+        pBody->cInfos = 1;
+        if (idTarget == D3DDDI_ID_ALL)
+        {
+            pBody->fFlags |= VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL;
+        }
+        pBody->aInfos[0].iChild = idTarget;
+        pBody->aInfos[0].fFlags = VBOXVDMA_CHILD_STATUS_F_DISCONNECTED | VBOXVDMA_CHILD_STATUS_F_CONNECTED;
+        /* we're going to KeWaitForSingleObject */
+        Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
+
+        PVBOXVDMADDI_CMD pDdiCmd = VBOXVDMADDI_CMD_FROM_BUF_DR(pDr);
+        VBOXWDDMCHILDSTATUSCB Ctx;
+        KEVENT Event;
+        KeInitializeEvent(&Event, NotificationEvent, FALSE);
+        Ctx.pDr = pDr;
+        Ctx.pEvent = &Event;
+        vboxVdmaDdiCmdInit(pDdiCmd, 0, 0, vboxWddmChildStatusReportCompletion, &Ctx);
+        /* mark command as submitted & invisible for the dx runtime since dx did not originate it */
+        vboxVdmaDdiCmdSubmittedNotDx(pDdiCmd);
+        int rc = vboxVdmaCBufDrSubmit(pDevExt, &pDevExt->u.primary.Vdma, pDr);
+        Assert(rc == VINF_SUCCESS);
+        if (RT_SUCCESS(rc))
+        {
+            Status = KeWaitForSingleObject(&Event, Executive, KernelMode, FALSE, NULL);
+            Assert(Status == STATUS_SUCCESS);
+            return STATUS_SUCCESS;
+        }
+
+        Status = STATUS_UNSUCCESSFUL;
+
+        vboxVdmaCBufDrFree(&pDevExt->u.primary.Vdma, pDr);
+    }
+    else
+    {
+        /* @todo: try flushing.. */
+        WARN(("vboxVdmaCBufDrCreate returned NULL"));
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+#else
+    VBOXVDMACMD_CHILD_STATUS_IRQ Body = {0};
+    Body.cInfos = 1;
+    if (idTarget == D3DDDI_ID_ALL)
+    {
+        Body.fFlags |= VBOXVDMACMD_CHILD_STATUS_IRQ_F_APPLY_TO_ALL;
+    }
+    Body.aInfos[0].iChild = idTarget;
+    Body.aInfos[0].fFlags = VBOXVDMA_CHILD_STATUS_F_DISCONNECTED | VBOXVDMA_CHILD_STATUS_F_CONNECTED;
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    return vboxWddmChildStatusHandleRequest(pDevExt, &Body);
+#endif
+}
+
+NTSTATUS vboxWddmChildStatusConnect(PVBOXMP_DEVEXT pDevExt, uint32_t iChild, BOOLEAN fConnect)
+{
+#ifdef VBOX_WDDM_MONITOR_REPLUG_IRQ
+# error "port me!"
+#else
+    Assert(iChild < (uint32_t)VBoxCommonFromDeviceExt(pDevExt)->cDisplays);
+    NTSTATUS Status = STATUS_SUCCESS;
+    VBOXVDMACMD_CHILD_STATUS_IRQ Body = {0};
+    Body.cInfos = 1;
+    Body.aInfos[0].iChild = iChild;
+    Body.aInfos[0].fFlags = fConnect ? VBOXVDMA_CHILD_STATUS_F_CONNECTED : VBOXVDMA_CHILD_STATUS_F_DISCONNECTED;
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    Status = vboxWddmChildStatusHandleRequest(pDevExt, &Body);
+    if (!NT_SUCCESS(Status))
+        WARN(("vboxWddmChildStatusHandleRequest failed Status 0x%x", Status));
+
+    return Status;
+#endif
+}
+
+void VBoxWddmUpdateVideoMode(PVBOXMP_DEVEXT pExt, int i)
+{
+    g_VBoxVideoModeTmp = g_aVBoxVideoModeInfos[i];
+
+    Assert(g_aVBoxVideoModeInfos[i].cModes);
+
+    VBoxWddmInitVideoMode(pExt, i);
+
+    if (!memcmp(&g_VBoxVideoModeTmp, &g_aVBoxVideoModeInfos[i], sizeof (g_VBoxVideoModeTmp)))
+        return;
+
+#ifdef DEBUG_misha
+    g_VBoxDbgBreakModes = 0;
+#endif
+
+#ifdef DEBUG_misha
+    LOGREL(("modes changed for target %d", i));
+#else
+    LOG(("modes changed for target %d", i));
+#endif
+    vboxWddmChildStatusReportReconnected(pExt, (D3DDDI_VIDEO_PRESENT_TARGET_ID)i);
 }
 
 PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateVideoModesInfoByMask(PVBOXMP_DEVEXT pExt, uint8_t *pScreenIdMask)
 {
     for (int i = 0; i < VBoxCommonFromDeviceExt(pExt)->cDisplays; ++i)
     {
-        if (ASMBitTest(pScreenIdMask, i))
-            VBoxWddmInvalidateVideoModesInfo(pExt, i);
+        if (!pScreenIdMask || ASMBitTest(pScreenIdMask, i))
+        {
+            VBoxWddmUpdateVideoMode(pExt, i);
+        }
     }
 
-    /* ensure we have all the rest populated */
-    VBoxWddmGetAllVideoModesInfos(pExt);
-    return g_aVBoxVideoModeInfos;
-}
-
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateAllVideoModesInfos(PVBOXMP_DEVEXT pExt)
-{
-    VBoxWddmInvalidateAllVideoModesInfos(pExt);
-
-    /* ensure we have all the rest populated */
-    VBoxWddmGetAllVideoModesInfos(pExt);
     return g_aVBoxVideoModeInfos;
 }
 
@@ -1363,50 +1590,8 @@ NTSTATUS VBoxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32
     return Status;
 }
 
-static PVBOXWDDM_VIDEOMODES_INFO vboxWddmGetVideoModesInfoInternal(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId)
-{
-    Assert(VidPnTargetId < (D3DDDI_VIDEO_PRESENT_TARGET_ID)VBoxCommonFromDeviceExt(pExt)->cDisplays);
-    if (VidPnTargetId >= (D3DDDI_VIDEO_PRESENT_TARGET_ID)VBoxCommonFromDeviceExt(pExt)->cDisplays)
-    {
-        WARN(("video mode info for invalid screen (%d) requested", VidPnTargetId));
-        return NULL;
-    }
-
-    PVBOXWDDM_VIDEOMODES_INFO pInfo = &g_aVBoxVideoModeInfos[VidPnTargetId];
-
-    if (!pInfo->cModes)
-    {
-        VBoxWddmBuildVideoModesInfo(pExt, VidPnTargetId, pInfo, NULL, 0);
-        Assert(pInfo->cModes);
-    }
-
-    return pInfo;
-}
-
-static VOID vboxWddmAddVideoModes(PVBOXMP_DEVEXT pExt, PVBOXWDDM_VIDEOMODES_INFO pDstInfo, PVBOXWDDM_VIDEOMODES_INFO pSrcInfo)
-{
-    for (int i = 0; i < (int)pSrcInfo->cModes; ++i)
-    {
-        int foundIdx = VBoxMPFindVideoMode(pDstInfo->aModes, pDstInfo->cModes, &pSrcInfo->aModes[i]);
-        if (foundIdx >= 0)
-            continue;
-
-        Assert(0);
-        pDstInfo->aModes[pDstInfo->cModes] = pSrcInfo->aModes[i];
-        ++pDstInfo->cModes;
-    }
-
-    VBoxWddmBuildResolutionTableForModes(pDstInfo);
-}
-
 PVBOXWDDM_VIDEOMODES_INFO VBoxWddmGetAllVideoModesInfos(PVBOXMP_DEVEXT pExt)
 {
-    /* ensure all modes are initialized */
-    for (int i = 0; i < VBoxCommonFromDeviceExt(pExt)->cDisplays; ++i)
-    {
-        vboxWddmGetVideoModesInfoInternal(pExt, (D3DDDI_VIDEO_PRESENT_TARGET_ID)i);
-    }
-
     return g_aVBoxVideoModeInfos;
 }
 

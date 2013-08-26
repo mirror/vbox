@@ -18,6 +18,7 @@
 #ifdef VBOX_WITH_WDDM
 # define D3DKMDT_SPECIAL_MULTIPLATFORM_TOOL
 # include <d3dkmthk.h>
+# include "../Graphics/Video/disp/wddm/VBoxDispKmt.h"
 #endif
 
 #include <VBoxDisplay.h>
@@ -29,6 +30,7 @@ typedef enum
     VBOXDISPIF_MODE_XPDM
 #ifdef VBOX_WITH_WDDM
     , VBOXDISPIF_MODE_WDDM
+    , VBOXDISPIF_MODE_WDDM_W7
 #endif
 } VBOXDISPIF_MODE;
 /* display driver interface abstraction for XPDM & WDDM
@@ -58,16 +60,7 @@ typedef struct VBOXDISPIF
             /* EnumDisplayDevices does not exist in NT. isVBoxDisplayDriverActive et al. are using these functions. */
             BOOL (WINAPI * pfnEnumDisplayDevices)(IN LPCSTR lpDevice, IN DWORD iDevNum, OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags);
 
-            /* open adapter */
-            PFND3DKMT_OPENADAPTERFROMHDC pfnD3DKMTOpenAdapterFromHdc;
-            PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME pfnD3DKMTOpenAdapterFromGdiDisplayName;
-            /* close adapter */
-            PFND3DKMT_CLOSEADAPTER pfnD3DKMTCloseAdapter;
-            /* escape */
-            PFND3DKMT_ESCAPE pfnD3DKMTEscape;
-            /* auto resize support */
-            PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
-            PFND3DKMT_POLLDISPLAYCHILDREN pfnD3DKMTPollDisplayChildren;
+            VBOXDISPKMT_CALLBACKS KmtCallbacks;
         } wddm;
 #endif
     } modeData;
@@ -83,9 +76,34 @@ DECLINLINE(VBOXDISPIF_MODE) VBoxDispGetMode(PVBOXDISPIF pIf) { return pIf->enmMo
 DWORD VBoxDispIfTerm(PVBOXDISPIF pIf);
 DWORD VBoxDispIfEscape(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, int cbData);
 DWORD VBoxDispIfEscapeInOut(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, int cbData);
-DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel);
-DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes);
+DWORD VBoxDispIfResizeModes(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes);
 DWORD VBoxDispIfCancelPendingResize(PCVBOXDISPIF const pIf);
-DWORD vboxDispIfWddmEnableDisplay(PCVBOXDISPIF const pIf, UINT Id, bool fEnabled);
-DWORD vboxDispIfWddmResizeDisplay(PCVBOXDISPIF const pIf, UINT Id, DISPLAY_DEVICE * paDisplayDevices, DEVMODE *paDeviceMode, UINT devModes);
-//DWORD VBoxDispIfReninitModes(PCVBOXDISPIF const pIf, uint8_t *pScreenIdMask, BOOL fReconnectDisplaysOnChange);
+
+DWORD VBoxDispIfResizeStarted(PCVBOXDISPIF const pIf);
+
+
+typedef struct VBOXDISPIF_SEAMLESS
+{
+    PCVBOXDISPIF pIf;
+
+    union
+    {
+#ifdef VBOX_WITH_WDDM
+        struct
+        {
+            VBOXDISPKMT_ADAPTER Adapter;
+            VBOXDISPKMT_DEVICE Device;
+            VBOXDISPKMT_CONTEXT Context;
+        } wddm;
+#endif
+    } modeData;
+} VBOXDISPIF_SEAMLESS;
+
+DECLINLINE(bool) VBoxDispIfSeamlesIsValid(VBOXDISPIF_SEAMLESS *pSeamless)
+{
+    return !!pSeamless->pIf;
+}
+
+DWORD VBoxDispIfSeamlesCreate(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAMLESS *pSeamless, HANDLE hEvent);
+DWORD VBoxDispIfSeamlesTerm(VBOXDISPIF_SEAMLESS *pSeamless);
+DWORD VBoxDispIfSeamlesSubmit(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDISPIFESCAPE *pData, int cbData);

@@ -71,7 +71,7 @@ typedef struct VBOXVIDEOCM_SESSION
     /* event used to notify UMD about pending commands */
     PKEVENT pUmEvent;
     /* sync lock */
-    FAST_MUTEX Mutex;
+    KSPIN_LOCK SynchLock;
     /* indicates whether event signaling is needed on cmd add */
     bool bEventNeeded;
 } VBOXVIDEOCM_SESSION, *PVBOXVIDEOCM_SESSION;
@@ -180,8 +180,10 @@ static void vboxVideoCmCmdPostByHdr(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_
         pHdr->CmdHdr.cbCmd = cbSize;
     }
 
-    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    ExAcquireFastMutex(&pSession->Mutex);
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
 
     InsertHeadList(&pSession->CommandsList, &pHdr->QueueList);
     if (pSession->bEventNeeded)
@@ -190,7 +192,7 @@ static void vboxVideoCmCmdPostByHdr(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_
         bSignalEvent = true;
     }
 
-    ExReleaseFastMutex(&pSession->Mutex);
+    KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
 
     if (bSignalEvent)
         KeSetEvent(pSession->pUmEvent, 0, FALSE);
@@ -224,7 +226,8 @@ NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOLEAN bEntireSession, 
     PLIST_ENTRY pCurEntry = NULL;
     PVBOXVIDEOCM_CMD_DR pHdr;
 
-    ExAcquireFastMutex(&pSession->Mutex);
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
 
     pCurEntry = pSession->CommandsList.Blink;
     do
@@ -259,7 +262,7 @@ NTSTATUS vboxVideoCmCmdVisit(PVBOXVIDEOCM_CTX pContext, BOOLEAN bEntireSession, 
     } while (1);
 
 
-    ExReleaseFastMutex(&pSession->Mutex);
+    KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
 
     return STATUS_SUCCESS;
 }
@@ -279,11 +282,20 @@ static void vboxVideoCmSessionCtxAddLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXV
 
 void vboxVideoCmSessionCtxAdd(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEOCM_CTX pContext)
 {
-    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    ExAcquireFastMutex(&pSession->Mutex);
-    vboxVideoCmSessionCtxAddLocked(pSession, pContext);
-    ExReleaseFastMutex(&pSession->Mutex);
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
 
+    vboxVideoCmSessionCtxAddLocked(pSession, pContext);
+
+    KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
+}
+
+void vboxVideoCmSessionSignalEvent(PVBOXVIDEOCM_SESSION pSession)
+{
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    if (pSession->pUmEvent)
+        KeSetEvent(pSession->pUmEvent, 0, FALSE);
 }
 
 static void vboxVideoCmSessionDestroyLocked(PVBOXVIDEOCM_SESSION pSession)
@@ -345,8 +357,10 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
     LIST_ENTRY *pCur;
     InitializeListHead(&RemainedList);
     InitializeListHead(&RemainedPpList);
-    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    ExAcquireFastMutex(&pSession->Mutex);
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
+
     pContext->pSession = NULL;
     RemoveEntryList(&pContext->SessionEntry);
     bDestroy = !!(IsListEmpty(&pSession->ContextList));
@@ -361,7 +375,8 @@ bool vboxVideoCmSessionCtxRemoveLocked(PVBOXVIDEOCM_SESSION pSession, PVBOXVIDEO
         vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->CommandsList, pContext, &RemainedList);
         vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->PpCommandsList, pContext, &RemainedPpList);
     }
-    ExReleaseFastMutex(&pSession->Mutex);
+
+    KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
 
     for (pCur = RemainedList.Flink; pCur != &RemainedList; pCur = RemainedList.Flink)
     {
@@ -392,8 +407,8 @@ NTSTATUS vboxVideoCmSessionCreateLocked(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_SESS
         InitializeListHead(&pSession->CommandsList);
         InitializeListHead(&pSession->PpCommandsList);
         pSession->pUmEvent = pUmEvent;
-        Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-        ExInitializeFastMutex(&pSession->Mutex);
+        Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+        KeInitializeSpinLock(&pSession->SynchLock);
         pSession->bEventNeeded = true;
         vboxVideoCmSessionCtxAddLocked(pSession, pContext);
         InsertHeadList(&pMgr->SessionList, &pSession->QueueEntry);
@@ -420,44 +435,39 @@ NTSTATUS vboxVideoCmCtxAdd(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext, HAN
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
-        Status = KeWaitForSingleObject(&pMgr->SynchEvent, Executive, KernelMode,
-                FALSE, /* BOOLEAN Alertable */
-                NULL /* PLARGE_INTEGER Timeout */
-            );
-        Assert(Status == STATUS_SUCCESS);
+        KIRQL OldIrql;
+        KeAcquireSpinLock(&pMgr->SynchLock, &OldIrql);
+
+        bool bFound = false;
+        PVBOXVIDEOCM_SESSION pSession = NULL;
+        for (PLIST_ENTRY pEntry = pMgr->SessionList.Flink; pEntry != &pMgr->SessionList; pEntry = pEntry->Flink)
+        {
+            pSession = VBOXCMENTRY_2_SESSION(pEntry);
+            if (pSession->pUmEvent == pUmEvent)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        pContext->u64UmData = u64UmData;
+
+        if (!bFound)
+        {
+            Status = vboxVideoCmSessionCreateLocked(pMgr, &pSession, pUmEvent, pContext);
+            Assert(Status == STATUS_SUCCESS);
+        }
+        else
+        {
+            /* Status = */vboxVideoCmSessionCtxAdd(pSession, pContext);
+            /*Assert(Status == STATUS_SUCCESS);*/
+        }
+
+        KeReleaseSpinLock(&pMgr->SynchLock, OldIrql);
+
         if (Status == STATUS_SUCCESS)
         {
-            bool bFound = false;
-            PVBOXVIDEOCM_SESSION pSession = NULL;
-            for (PLIST_ENTRY pEntry = pMgr->SessionList.Flink; pEntry != &pMgr->SessionList; pEntry = pEntry->Flink)
-            {
-                pSession = VBOXCMENTRY_2_SESSION(pEntry);
-                if (pSession->pUmEvent == pUmEvent)
-                {
-                    bFound = true;
-                    break;
-                }
-            }
-
-            pContext->u64UmData = u64UmData;
-
-            if (!bFound)
-            {
-                Status = vboxVideoCmSessionCreateLocked(pMgr, &pSession, pUmEvent, pContext);
-                Assert(Status == STATUS_SUCCESS);
-            }
-            else
-            {
-                /* Status = */vboxVideoCmSessionCtxAdd(pSession, pContext);
-                /*Assert(Status == STATUS_SUCCESS);*/
-            }
-            LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
-            Assert(!tstL);
-
-            if (Status == STATUS_SUCCESS)
-            {
-                return STATUS_SUCCESS;
-            }
+            return STATUS_SUCCESS;
         }
 
         ObDereferenceObject(pUmEvent);
@@ -471,24 +481,19 @@ NTSTATUS vboxVideoCmCtxRemove(PVBOXVIDEOCM_MGR pMgr, PVBOXVIDEOCM_CTX pContext)
     if (!pSession)
         return STATUS_SUCCESS;
 
-    NTSTATUS Status = KeWaitForSingleObject(&pMgr->SynchEvent, Executive, KernelMode,
-                FALSE, /* BOOLEAN Alertable */
-                NULL /* PLARGE_INTEGER Timeout */
-    );
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
-    {
-        vboxVideoCmSessionCtxRemoveLocked(pSession, pContext);
-        LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
-        Assert(!tstL);
-    }
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pMgr->SynchLock, &OldIrql);
 
-    return Status;
+    vboxVideoCmSessionCtxRemoveLocked(pSession, pContext);
+
+    KeReleaseSpinLock(&pMgr->SynchLock, OldIrql);
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS vboxVideoCmInit(PVBOXVIDEOCM_MGR pMgr)
 {
-    KeInitializeEvent(&pMgr->SynchEvent, SynchronizationEvent, TRUE);
+    KeInitializeSpinLock(&pMgr->SynchLock);
     InitializeListHead(&pMgr->SessionList);
     return STATUS_SUCCESS;
 }
@@ -496,6 +501,25 @@ NTSTATUS vboxVideoCmInit(PVBOXVIDEOCM_MGR pMgr)
 NTSTATUS vboxVideoCmTerm(PVBOXVIDEOCM_MGR pMgr)
 {
     Assert(IsListEmpty(&pMgr->SessionList));
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxVideoCmSignalEvents(PVBOXVIDEOCM_MGR pMgr)
+{
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    PVBOXVIDEOCM_SESSION pSession = NULL;
+
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pMgr->SynchLock, &OldIrql);
+
+    for (PLIST_ENTRY pEntry = pMgr->SessionList.Flink; pEntry != &pMgr->SessionList; pEntry = pEntry->Flink)
+    {
+        pSession = VBOXCMENTRY_2_SESSION(pEntry);
+        vboxVideoCmSessionSignalEvent(pSession);
+    }
+
+    KeReleaseSpinLock(&pMgr->SynchLock, OldIrql);
+
     return STATUS_SUCCESS;
 }
 
@@ -514,9 +538,10 @@ VOID vboxVideoCmProcessKm(PVBOXVIDEOCM_CTX pContext, PVBOXVIDEOCM_CMD_CTL_KM pCm
         case VBOXVIDEOCM_CMD_CTL_KM_TYPE_POST_INVOKE:
         {
             PVBOXVIDEOCM_CMD_DR pHdr = VBOXVIDEOCM_HEAD(pCmd);
-            ExAcquireFastMutex(&pSession->Mutex);
+            KIRQL OldIrql;
+            KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
             InsertTailList(&pSession->PpCommandsList, &pHdr->QueueList);
-            ExReleaseFastMutex(&pSession->Mutex);
+            KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
             break;
         }
 
@@ -549,8 +574,9 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     InitializeListHead(&DetachedPpList);
 //    PVBOXWDDM_GETVBOXVIDEOCMCMD_HDR *pvCmd
 
-    Assert(KeGetCurrentIrql() < DISPATCH_LEVEL);
-    ExAcquireFastMutex(&pSession->Mutex);
+    Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
+    KIRQL OldIrql;
+    KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
 
     vboxVideoCmSessionCtxDetachCmdsLocked(&pSession->PpCommandsList, pContext, &DetachedPpList);
 
@@ -605,7 +631,7 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
         }
     } while (1);
 
-    ExReleaseFastMutex(&pSession->Mutex);
+    KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
 
     vboxVideoCmSessionCtxPpList(pContext, &DetachedPpList);
 
@@ -646,103 +672,22 @@ NTSTATUS vboxVideoCmEscape(PVBOXVIDEOCM_CTX pContext, PVBOXDISPIFESCAPE_GETVBOXV
     return STATUS_SUCCESS;
 }
 
-VOID vboxVideoCmLock(PVBOXVIDEOCM_CTX pContext)
-{
-    ExAcquireFastMutex(&pContext->pSession->Mutex);
-}
-
-VOID vboxVideoCmUnlock(PVBOXVIDEOCM_CTX pContext)
-{
-    ExReleaseFastMutex(&pContext->pSession->Mutex);
-}
-
 static BOOLEAN vboxVideoCmHasUncompletedCmdsLocked(PVBOXVIDEOCM_MGR pMgr)
 {
     PVBOXVIDEOCM_SESSION pSession = NULL;
     for (PLIST_ENTRY pEntry = pMgr->SessionList.Flink; pEntry != &pMgr->SessionList; pEntry = pEntry->Flink)
     {
         pSession = VBOXCMENTRY_2_SESSION(pEntry);
-        ExAcquireFastMutex(&pSession->Mutex);
+        KIRQL OldIrql;
+        KeAcquireSpinLock(&pSession->SynchLock, &OldIrql);
+
         if (pSession->bEventNeeded)
         {
             /* commands still being processed */
-            ExReleaseFastMutex(&pSession->Mutex);
+            KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
             return TRUE;
         }
-        ExReleaseFastMutex(&pSession->Mutex);
+        KeReleaseSpinLock(&pSession->SynchLock, OldIrql);
     }
     return FALSE;
 }
-
-/* waits for all outstanding commands to completed by client
- * assumptions here are:
- * 1. no new commands are submitted while we are waiting
- * 2. it is assumed that a client completes all previously received commands
- *    once it queries for the new set of commands */
-NTSTATUS vboxVideoCmWaitCompletedCmds(PVBOXVIDEOCM_MGR pMgr, uint32_t msTimeout)
-{
-    LARGE_INTEGER Timeout;
-    PLARGE_INTEGER pTimeout;
-    uint32_t cIters;
-
-    if (msTimeout != RT_INDEFINITE_WAIT)
-    {
-        uint32_t msIter = 2;
-        cIters = msTimeout/msIter;
-        if (!cIters)
-        {
-            msIter = msTimeout;
-            cIters = 1;
-        }
-        Timeout.QuadPart = -(int64_t) msIter /* ms */ * 10000;
-        pTimeout = &Timeout;
-    }
-    else
-    {
-        pTimeout = NULL;
-        cIters = 1;
-    }
-
-    Assert(cIters);
-    do
-    {
-        NTSTATUS Status = KeWaitForSingleObject(&pMgr->SynchEvent, Executive, KernelMode,
-                    FALSE, /* BOOLEAN Alertable */
-                    pTimeout /* PLARGE_INTEGER Timeout */
-        );
-        if (Status == STATUS_TIMEOUT)
-        {
-            --cIters;
-        }
-        else
-        {
-            if (!NT_SUCCESS(Status))
-            {
-                WARN(("KeWaitForSingleObject failed with Status (0x%x)", Status));
-                return Status;
-            }
-
-            /* succeeded */
-            if (!vboxVideoCmHasUncompletedCmdsLocked(pMgr))
-            {
-                LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
-                Assert(!tstL);
-                return STATUS_SUCCESS;
-            }
-
-            LONG tstL = KeSetEvent(&pMgr->SynchEvent, 0, FALSE);
-            Assert(!tstL);
-        }
-
-        if (!cIters)
-            break;
-
-        KeDelayExecutionThread(KernelMode, FALSE, pTimeout);
-        --cIters;
-        if (!cIters)
-            break;
-    } while (0);
-
-    return STATUS_TIMEOUT;
-}
-

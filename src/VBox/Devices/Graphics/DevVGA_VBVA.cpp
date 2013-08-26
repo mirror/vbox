@@ -1506,8 +1506,7 @@ int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Vers
                     AssertRCReturn(rc, rc);
                 }
 
-                if (   pView->u32VBVAOffset == HGSMIOFFSET_VOID
-                    || pView->screen.u32LineSize == 0) /* Earlier broken saved states. */
+                if (pView->u32VBVAOffset == HGSMIOFFSET_VOID)
                 {
                     pView->pVBVA = NULL;
                 }
@@ -1844,7 +1843,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
              * implemented. */
             int64_t offEnd =   (int64_t)pScreen->u32Height * pScreen->u32LineSize
                              + pScreen->u32Width + pScreen->u32StartOffset;
-            LogRelFlowFunc(("VBVA_INFO_SCREEN: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
+            LogRel(("VBVA_INFO_SCREEN: [%d] @%d,%d %dx%d, line 0x%x, BPP %d, flags 0x%x\n",
                             pScreen->u32ViewIndex, pScreen->i32OriginX, pScreen->i32OriginY,
                             pScreen->u32Width, pScreen->u32Height,
                             pScreen->u32LineSize,  pScreen->u16BitsPerPixel, pScreen->u16Flags));

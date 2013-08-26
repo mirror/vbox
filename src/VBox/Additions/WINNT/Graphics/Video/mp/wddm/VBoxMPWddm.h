@@ -36,9 +36,31 @@
 
 //#define VBOXWDDM_DEBUG_VIDPN
 
+#define VBOXWDDM_CFG_DRV_DEFAULT                        0
+#define VBOXWDDM_CFG_DRV_SECONDARY_TARGETS_CONNECTED    1
+
+#define VBOXWDDM_CFG_DRVTARGET_CONNECTED                1
+
 #define VBOXWDDM_CFG_LOG_UM_BACKDOOR 0x00000001
 #define VBOXWDDM_CFG_LOG_UM_DBGPRINT 0x00000002
 #define VBOXWDDM_CFG_STR_LOG_UM L"VBoxLogUm"
+
+#define VBOXWDDM_REG_DRV_FLAGS_NAME L"VBoxFlags"
+#define VBOXWDDM_REG_DRV_DISPFLAGS_PREFIX L"VBoxDispFlags"
+
+#define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
+
+#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Video\\"
+#define VBOXWDDM_REG_DISPLAYSETTINGSVIDEOKEY_SUBKEY L"\\Video"
+
+
+#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_VISTA L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\Current\\System\\CurrentControlSet\\Control\\VIDEO\\"
+#define VBOXWDDM_REG_DISPLAYSETTINGSKEY_PREFIX_WIN7 L"\\Registry\\Machine\\System\\CurrentControlSet\\Hardware Profiles\\UnitedVideo\\CONTROL\\VIDEO\\"
+
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELX L"Attach.RelativeX"
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_RELY L"Attach.RelativeY"
+#define VBOXWDDM_REG_DISPLAYSETTINGS_ATTACH_DESKTOP L"Attach.ToDesktop"
+
 extern DWORD g_VBoxLogUm;
 
 RT_C_DECLS_BEGIN
@@ -80,10 +102,14 @@ DECLINLINE(VOID) vboxWddmAllocationRetain(PVBOXWDDM_ALLOCATION pAllocation)
     ASMAtomicIncU32(&pAllocation->cRefs);
 }
 
-DECLINLINE(VOID) vboxWddmAddrSetVram(PVBOXWDDM_ADDR pAddr, UINT SegmentId, VBOXVIDEOOFFSET offVram)
+DECLINLINE(BOOLEAN) vboxWddmAddrSetVram(PVBOXWDDM_ADDR pAddr, UINT SegmentId, VBOXVIDEOOFFSET offVram)
 {
+    if (pAddr->SegmentId == SegmentId && pAddr->offVram == offVram)
+        return FALSE;
+
     pAddr->SegmentId = SegmentId;
     pAddr->offVram = offVram;
+    return TRUE;
 }
 
 DECLINLINE(bool) vboxWddmAddrVramEqual(PVBOXWDDM_ADDR pAddr1, PVBOXWDDM_ADDR pAddr2)
@@ -190,6 +216,8 @@ DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmAquirePrimary(PVBOXMP_DEVEXT pDevExt, P
     KeReleaseSpinLock(&pSource->AllocationLock, OldIrql);
     return pPrimary;
 }
+
+bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource);
 
 #define VBOXWDDMENTRY_2_SWAPCHAIN(_pE) ((PVBOXWDDM_SWAPCHAIN)((uint8_t*)(_pE) - RT_OFFSETOF(VBOXWDDM_SWAPCHAIN, DevExtListEntry)))
 

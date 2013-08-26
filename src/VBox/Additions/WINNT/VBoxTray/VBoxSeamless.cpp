@@ -115,12 +115,12 @@ void VBoxSeamlessDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
     return;
 }
 
-void VBoxSeamlessInstallHook()
+static void VBoxSeamlessInstallHook()
 {
     if (gCtx.pfnVBoxHookInstallWindowTracker)
     {
         /* Check current visible region state */
-        VBoxSeamlessCheckWindows();
+        VBoxSeamlessCheckWindows(true);
 
         HMODULE hMod = (HMODULE)RTLdrGetNativeHandle(gCtx.hModHook);
         Assert(hMod != (HMODULE)~(uintptr_t)0);
@@ -128,7 +128,7 @@ void VBoxSeamlessInstallHook()
     }
 }
 
-void VBoxSeamlessRemoveHook()
+static void VBoxSeamlessRemoveHook()
 {
     if (gCtx.pfnVBoxHookRemoveWindowTracker)
         gCtx.pfnVBoxHookRemoveWindowTracker();
@@ -138,6 +138,27 @@ void VBoxSeamlessRemoveHook()
         free(gCtx.lpEscapeData);
         gCtx.lpEscapeData = NULL;
     }
+}
+
+extern HANDLE ghSeamlessKmNotifyEvent;
+
+static VBOXDISPIF_SEAMLESS gVBoxDispIfSeamless;
+
+
+void VBoxSeamlessEnable()
+{
+    Assert(ghSeamlessKmNotifyEvent);
+
+    VBoxDispIfSeamlesCreate(&gCtx.pEnv->dispIf, &gVBoxDispIfSeamless, ghSeamlessKmNotifyEvent);
+
+    VBoxSeamlessInstallHook();
+}
+
+void VBoxSeamlessDisable()
+{
+    VBoxSeamlessRemoveHook();
+
+    VBoxDispIfSeamlesTerm(&gVBoxDispIfSeamless);
 }
 
 BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
@@ -244,8 +265,11 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
     return TRUE; /* continue enumeration */
 }
 
-void VBoxSeamlessCheckWindows()
+void VBoxSeamlessCheckWindows(bool fForce)
 {
+    if (!VBoxDispIfSeamlesIsValid(&gVBoxDispIfSeamless))
+        return;
+
     VBOX_ENUM_PARAM param;
 
     param.hdc       = GetDC(HWND_DESKTOP);
@@ -279,12 +303,13 @@ void VBoxSeamlessCheckWindows()
                     }
 #endif
                     LPRGNDATA lpCtxRgnData = VBOXDISPIFESCAPE_DATA(gCtx.lpEscapeData, RGNDATA);
-                    if (    !gCtx.lpEscapeData
+                    if (fForce
+                        ||  !gCtx.lpEscapeData
                         ||  (lpCtxRgnData->rdh.dwSize + lpCtxRgnData->rdh.nRgnSize != cbSize)
                         ||  memcmp(lpCtxRgnData, lpRgnData, cbSize))
                     {
                         /* send to display driver */
-                        VBoxDispIfEscape(&gCtx.pEnv->dispIf, lpEscapeData, cbSize);
+                        VBoxDispIfSeamlesSubmit(&gVBoxDispIfSeamless, lpEscapeData, cbSize);
 
                         if (gCtx.lpEscapeData)
                             free(gCtx.lpEscapeData);

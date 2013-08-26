@@ -41,10 +41,8 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt);
 #endif
 
 #ifdef VBOX_WDDM_MINIPORT
-void VBoxWddmInvalidateAllVideoModesInfos(PVBOXMP_DEVEXT pExt);
-void VBoxWddmInvalidateVideoModesInfo(PVBOXMP_DEVEXT pExt, D3DDDI_VIDEO_PRESENT_TARGET_ID VidPnTargetId);
 PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateVideoModesInfoByMask(PVBOXMP_DEVEXT pExt, uint8_t *pScreenIdMask);
-PVBOXWDDM_VIDEOMODES_INFO VBoxWddmUpdateAllVideoModesInfos(PVBOXMP_DEVEXT pExt);
+void VBoxWddmInitVideoModes(PVBOXMP_DEVEXT pExt);
 NTSTATUS VBoxWddmGetModesForResolution(VIDEO_MODE_INFORMATION *pAllModes, uint32_t cAllModes, int iSearchPreferredMode,
                                        const D3DKMDT_2DREGION *pResolution, VIDEO_MODE_INFORMATION * pModes,
                                        uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode);
