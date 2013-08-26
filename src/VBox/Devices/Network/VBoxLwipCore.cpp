@@ -153,10 +153,7 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
     g_LwipCore.userInitClbk.pfn = pfnCallback;
     g_LwipCore.userInitClbk.pvUser = pvCallbackArg;
 
-    /* _block mean that we might be blocked on post to mailbox and the last 1 is our 
-     * agreement with this fact
-     */
-    lwipRc = tcpip_callback_with_block(lwipCoreUserCallback, &g_LwipCore.userInitClbk, 1);
+    lwipRc = tcpip_callback(lwipCoreUserCallback, &g_LwipCore.userInitClbk);
     if (lwipRc != ERR_OK) 
     {
         rc = VERR_INTERNAL_ERROR;
@@ -194,7 +191,7 @@ void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)
     g_LwipCore.userFiniClbk.pfn = pfnCallback;
     g_LwipCore.userFiniClbk.pvUser = pvCallbackArg;
     
-    lwipRc = tcpip_callback_with_block(lwipCoreUserCallback, &g_LwipCore.userFiniClbk, 1);
+    lwipRc = tcpip_callback(lwipCoreUserCallback, &g_LwipCore.userFiniClbk);
 
     if (lwipRc == ERR_OK)
         lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
