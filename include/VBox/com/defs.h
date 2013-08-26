@@ -95,9 +95,12 @@
  * COM status codes:
  *      0x800706ba - RPC_S_SERVER_UNAVAILABLE.  Killed before call was made.
  *      0x800706be - RPC_S_CALL_FAILED.         Killed after call was made.
- *      0x800706bf - RPC_S_CALL_FAILED_DNE.     Not observed, but should be matter of timing.
+ *      0x800706bf - RPC_S_CALL_FAILED_DNE.     Not observed, but should be
+ *                                              matter of timing.
  *      0x80010108 - RPC_E_DISCONNECTED.        Observed deregistering
  *                                              python event listener.
+ *      0x800706b5 - RPC_S_UNKNOWN_IF.          Observed deregistering python
+ *                                              event listener
  */
 #define FAILED_DEAD_INTERFACE(rc) \
     (   (rc) == HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE) \
