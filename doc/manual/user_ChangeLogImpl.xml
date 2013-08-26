@@ -81,6 +81,14 @@
       </listitem>
 
       <listitem>
+        <para>Snapshots: made live snapshots work again (bug #9255)</para>
+      </listitem>
+
+      <listitem>
+        <para>Teleportation: made it work again (bug #9455)</para>
+      </listitem>
+
+      <listitem>
         <para>Storage: Implemented AHA-154x compatibility mode in the
          emulated BusLogic SCSI HBA</para>
       </listitem>
