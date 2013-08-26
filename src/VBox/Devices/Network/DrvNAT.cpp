@@ -51,6 +51,10 @@
 #endif
 #include <iprt/semaphore.h>
 #include <iprt/req.h>
+#ifdef RT_OS_DARWIN
+# include <SystemConfiguration/SystemConfiguration.h>
+# include <CoreFoundation/CoreFoundation.h>
+#endif
 
 #define COUNTERS_INIT
 #include "counters.h"
@@ -196,6 +200,11 @@ typedef struct DRVNAT
 
     /** Transmit lock taken by BeginXmit and released by EndXmit. */
     RTCRITSECT              XmitLock;
+
+#ifdef RT_OS_DARWIN
+    /* Handle of the DNS watcher runloop source. */
+    CFRunLoopSourceRef      hRunLoopSrcDnsWatcher;
+#endif
 } DRVNAT;
 AssertCompileMemberAlignment(DRVNAT, StatNATRecvWakeups, 8);
 /** Pointer to the NAT driver instance data. */
@@ -939,6 +948,24 @@ void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 }
 
 
+#ifdef RT_OS_DARWIN
+/**
+ * Callback for the SystemConfiguration framework to notify us whenever the DNS
+ * server changes.
+ *
+ * @returns nothing.
+ * @param   hDynStor    The DynamicStore handle.
+ * @param   hChangedKey Array of changed keys we watch for.
+ * @param   pvUser      Opaque user data (NAT driver instance).
+ */
+static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRef hChangedKeys, void *pvUser)
+{
+    PDRVNAT pThis = (PDRVNAT)pvUser;
+
+    pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, PDMNETWORKLINKSTATE_DOWN_RESUME);
+}
+#endif
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -1009,8 +1036,10 @@ static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
              * Host resumed from a suspend and the network might have changed.
              * Disconnect the guest from the network temporarily to let it pick up the changes.
              */
+#ifndef RT_OS_DARWIN
             pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, 
                                                   PDMNETWORKLINKSTATE_DOWN_RESUME);
+#endif
             return;
         default: /* Ignore every other resume reason. */
             /* do nothing */
@@ -1202,6 +1231,16 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
 
     if (RTCritSectIsInitialized(&pThis->XmitLock))
         RTCritSectDelete(&pThis->XmitLock);
+
+#ifdef RT_OS_DARWIN
+    /* Cleanup the DNS watcher. */
+    CFRunLoopRef hRunLoopMain = CFRunLoopGetMain();
+    CFRetain(hRunLoopMain);
+    CFRunLoopRemoveSource(hRunLoopMain, pThis->hRunLoopSrcDnsWatcher, kCFRunLoopCommonModes);
+    CFRelease(hRunLoopMain);
+    CFRelease(pThis->hRunLoopSrcDnsWatcher);
+    pThis->hRunLoopSrcDnsWatcher = NULL;
+#endif
 }
 
 
@@ -1228,6 +1267,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pThis->hUrgRecvReqQueue             = NIL_RTREQQUEUE;
     pThis->EventRecv                    = NIL_RTSEMEVENT;
     pThis->EventUrgRecv                 = NIL_RTSEMEVENT;
+#ifdef RT_OS_DARWIN
+    pThis->hRunLoopSrcDnsWatcher        = NULL;
+#endif
 
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
@@ -1435,6 +1477,60 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
             AssertRCReturn(rc, rc);
 
             pThis->enmLinkState = pThis->enmLinkStateWant = PDMNETWORKLINKSTATE_UP;
+
+#ifdef RT_OS_DARWIN
+            /* Set up a watcher which notifies us everytime the DNS server changes. */
+            int rc2 = VINF_SUCCESS;
+            SCDynamicStoreContext SCDynStorCtx;
+
+            SCDynStorCtx.version = 0;
+            SCDynStorCtx.info = pThis;
+            SCDynStorCtx.retain = NULL;
+            SCDynStorCtx.release = NULL;
+            SCDynStorCtx.copyDescription = NULL;
+
+            SCDynamicStoreRef hDynStor = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.drvnat"), drvNatDnsChanged, &SCDynStorCtx);
+            if (hDynStor)
+            {
+                CFRunLoopSourceRef hRunLoopSrc = SCDynamicStoreCreateRunLoopSource(NULL, hDynStor, 0);
+                if (hRunLoopSrc)
+                {
+                    CFStringRef aWatchKeys[] =
+                    {
+                        CFSTR("State:/Network/Global/DNS")
+                    };
+                    CFArrayRef hArray = CFArrayCreate(NULL, (const void **)aWatchKeys, 1, &kCFTypeArrayCallBacks);
+
+                    if (hArray)
+                    {
+                        if (SCDynamicStoreSetNotificationKeys(hDynStor, hArray, NULL))
+                        {
+                            CFRunLoopRef hRunLoopMain = CFRunLoopGetMain();
+                            CFRetain(hRunLoopMain);
+                            CFRunLoopAddSource(hRunLoopMain, hRunLoopSrc, kCFRunLoopCommonModes);
+                            CFRelease(hRunLoopMain);
+                            pThis->hRunLoopSrcDnsWatcher = hRunLoopSrc;
+                        }
+                        else
+                            rc2 = VERR_NO_MEMORY;
+
+                        CFRelease(hArray);
+                    }
+                    else
+                        rc2 = VERR_NO_MEMORY;
+
+                    if (RT_FAILURE(rc2)) /* Keep the runloop source referenced for destruction. */
+                        CFRelease(hRunLoopSrc);
+                }
+                CFRelease(hDynStor);
+            }
+            else
+                rc2 = VERR_NO_MEMORY;
+
+            if (RT_FAILURE(rc2))
+                LogRel(("NAT#%d: Failed to install DNS change notifier. The guest might loose DNS access when switching networks on the host\n",
+                         pDrvIns->iInstance));
+#endif
 
             /* might return VINF_NAT_DNS */
             return rc;
