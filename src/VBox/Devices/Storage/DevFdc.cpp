@@ -1198,6 +1198,10 @@ static void fdctrl_stop_transfer(fdctrl_t *fdctrl, uint8_t status0,
     fdctrl->fifo[4] = cur_drv->head;
     fdctrl->fifo[5] = cur_drv->sect;
     fdctrl->fifo[6] = FD_SECTOR_SC;
+    FLOPPY_DPRINTF("ST0:%02x ST1:%02x ST2:%02x C:%02x H:%02x R:%02x N:%02x\n",
+                   fdctrl->fifo[0], fdctrl->fifo[1], fdctrl->fifo[2], fdctrl->fifo[3],
+                   fdctrl->fifo[4], fdctrl->fifo[5], fdctrl->fifo[6]);
+
     fdctrl->data_dir = FD_DIR_READ;
     if (!(fdctrl->msr & FD_MSR_NONDMA)) {
 #ifdef VBOX
@@ -1226,6 +1230,10 @@ static void fdctrl_start_transfer(fdctrl_t *fdctrl, int direction)
     FLOPPY_DPRINTF("Start transfer at %d %d %02x %02x (%d)\n",
                    GET_CUR_DRV(fdctrl), kh, kt, ks,
                    fd_sector_calc(kh, kt, ks, cur_drv->last_sect, NUM_SIDES(cur_drv)));
+    FLOPPY_DPRINTF("CMD:%02x SEL:%02x C:%02x H:%02x R:%02x N:%02x EOT:%02x GPL:%02x DTL:%02x\n",
+                   fdctrl->fifo[0], fdctrl->fifo[1], fdctrl->fifo[2],
+                   fdctrl->fifo[3], fdctrl->fifo[4], fdctrl->fifo[5],
+                   fdctrl->fifo[6], fdctrl->fifo[7], fdctrl->fifo[8]);
     switch (fd_seek(cur_drv, kh, kt, ks, fdctrl->config & FD_CONFIG_EIS)) {
     case 2:
         /* sect too big */
@@ -1801,6 +1809,8 @@ static void fdctrl_handle_readid(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
 
+    FLOPPY_DPRINTF("CMD:%02x SEL:%02x\n", fdctrl->fifo[0], fdctrl->fifo[1]);
+
     /* XXX: should set main status register to busy */
     cur_drv->head = (fdctrl->fifo[1] >> 2) & 1;
 #ifdef VBOX
@@ -1814,9 +1824,20 @@ static void fdctrl_handle_readid(fdctrl_t *fdctrl, int direction)
 static void fdctrl_handle_format_track(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
+    uint8_t ns, dp;
+    int did_seek = 0;
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
+    ns = fdctrl->fifo[3];
+    dp = fdctrl->fifo[5];
+
+    FLOPPY_DPRINTF("Format track %d at %d, %d sectors, filler %02x\n",
+                   cur_drv->track, GET_CUR_DRV(fdctrl), ns, dp);
+    FLOPPY_DPRINTF("CMD:%02x SEL:%02x N:%02x SC:%02x GPL:%02x D:%02x\n",
+                   fdctrl->fifo[0], fdctrl->fifo[1], fdctrl->fifo[2],
+                   fdctrl->fifo[3], fdctrl->fifo[4], fdctrl->fifo[5]);
+
     fdctrl->data_state |= FD_STATE_FORMAT;
     if (fdctrl->fifo[0] & 0x80)
         fdctrl->data_state |= FD_STATE_MULTI;
@@ -1889,6 +1910,7 @@ static void fdctrl_handle_sense_interrupt_status(fdctrl_t *fdctrl, int direction
 {
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
 
+    FLOPPY_DPRINTF("CMD:%02x\n", fdctrl->fifo[0]);
     if(fdctrl->reset_sensei > 0) {
         fdctrl->fifo[0] =
             FD_SR0_RDYCHG + FD_RESET_SENSEI_COUNT - fdctrl->reset_sensei;
@@ -1906,12 +1928,16 @@ static void fdctrl_handle_sense_interrupt_status(fdctrl_t *fdctrl, int direction
 
     fdctrl->fifo[1] = cur_drv->track;
     fdctrl_set_fifo(fdctrl, 2, 0);
+    FLOPPY_DPRINTF("ST0:%02x PCN:%02x\n", fdctrl->fifo[0], fdctrl->fifo[1]);
     fdctrl->status0 = FD_SR0_RDYCHG;
 }
 
 static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
+
+    FLOPPY_DPRINTF("CMD:%02x SEL:%02x NCN:%02x\n", fdctrl->fifo[0], 
+                   fdctrl->fifo[1], fdctrl->fifo[2]);
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
     cur_drv = get_cur_drv(fdctrl);
