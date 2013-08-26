@@ -637,9 +637,30 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                         int vrc = ::RTProcWait(pid, RTPROCWAIT_FLAGS_NOBLOCK, &status);
                         if (vrc == VINF_SUCCESS)
                         {
-                            LogFlowFunc(("pid %d (%x) was reaped, status=%d, reason=%d\n",
-                                         pid, pid, status.iStatus,
-                                         status.enmReason));
+                            if (   status.enmReason != RTPROCEXITREASON_NORMAL
+                                || status.iStatus   != RTEXITCODE_SUCCESS)
+                            {
+                                switch (status.enmReason)
+                                {
+                                    default:
+                                    case RTPROCEXITREASON_NORMAL:
+                                        LogRel(("Reaper: Pid %d (%x) exited normally: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                    case RTPROCEXITREASON_ABEND:
+                                        LogRel(("Reaper: Pid %d (%x) abended: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                    case RTPROCEXITREASON_SIGNAL:
+                                        LogRel(("Reaper: Pid %d (%x) was signalled: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                }
+                            }
+                            else
+                                LogFlowFunc(("pid %d (%x) was reaped, status=%d, reason=%d\n",
+                                             pid, pid, status.iStatus,
+                                             status.enmReason));
                             it = that->mProcesses.erase(it);
                         }
                         else
