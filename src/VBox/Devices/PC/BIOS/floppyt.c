@@ -97,7 +97,7 @@ dpt_ext *get_floppy_dpt(uint8_t drv_typ)
 
     for (i = 0; i < sizeof(fd_map) / sizeof(fd_map[0]); ++i)
         if (fd_map[i].type == drv_typ)
-            return &fd_parm[i];
+            return &fd_parm[fd_map[i].dpt_entry];
 
     /* As a fallback, return the 1.44M DPT. */
     return &fd_parm[5];
