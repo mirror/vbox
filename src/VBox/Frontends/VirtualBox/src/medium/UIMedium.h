@@ -88,8 +88,6 @@ public:
     UIMedium()
         : m_type(UIMediumType_Invalid)
         , m_state(KMediumState_NotCreated)
-        , m_fReadOnly(false)
-        , m_fUsedInSnapshots(false)
         , m_pParent(0) { refresh(); }
 
     /**
@@ -107,8 +105,6 @@ public:
         : m_medium(medium)
         , m_type(type)
         , m_state(KMediumState_NotCreated)
-        , m_fReadOnly(false)
-        , m_fUsedInSnapshots(false)
         , m_pParent(pParent) { refresh(); }
 
     /**
@@ -120,8 +116,6 @@ public:
         : m_medium(medium)
         , m_type(type)
         , m_state(state)
-        , m_fReadOnly(false)
-        , m_fUsedInSnapshots(false)
         , m_pParent(0) { refresh(); }
 
     UIMedium& operator=(const UIMedium &other);
@@ -266,11 +260,11 @@ private:
     QString m_strUsage;
     QString m_strToolTip;
 
+    bool m_fHidden                       : 1;
+    bool m_fAttachedToHiddenMachinesOnly : 1;
     bool m_fReadOnly                     : 1;
     bool m_fUsedInSnapshots              : 1;
     bool m_fHostDrive                    : 1;
-    bool m_fHidden                       : 1;
-    bool m_fAttachedToHiddenMachinesOnly : 1;
 
     QList<QString> m_curStateMachineIds;
 
