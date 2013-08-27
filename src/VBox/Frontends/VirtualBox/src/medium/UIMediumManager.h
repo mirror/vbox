@@ -33,7 +33,7 @@
 /* Forward declarations: */
 class UIToolBar;
 class UIMediumItem;
-class VBoxProgressBar;
+class UIEnumerationProgressBar;
 
 /* Medium Manager Dialog: */
 class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
@@ -173,7 +173,7 @@ private:
     QString m_strSelectedIdFD;
 
     /* Variables: Menu & Toolbar stuff: */
-    UIToolBar *mToolBar;
+    UIToolBar *m_pToolBar;
     QMenu     *m_pContextMenu;
     QMenu     *m_pMenu;
     QAction   *m_pActionCopy;
@@ -183,7 +183,7 @@ private:
     QAction   *m_pActionRefresh;
 
     /* Variable: Progress-bar stuff: */
-    VBoxProgressBar *m_pProgressBar;
+    UIEnumerationProgressBar *m_pProgressBar;
 };
 
 #endif /* __UIMediumManager_h__ */
