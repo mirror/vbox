@@ -60,5 +60,7 @@ private:
     QPointer<QEventLoop> m_pEventLoop;
 };
 
+typedef QPointer<QIDialog> UISafePointerDialog;
+
 #endif /* __QIDialog_h__ */
 
