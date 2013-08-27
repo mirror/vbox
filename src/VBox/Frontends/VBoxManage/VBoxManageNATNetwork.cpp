@@ -47,6 +47,7 @@
 #include <VBox/log.h>
 
 #include <vector>
+#include <string>
 
 #include "VBoxManage.h"
 #include "VBoxPortForwardString.h"
@@ -74,6 +75,9 @@ static const RTGETOPTDEF g_aNATNetworkIPOptions[]
         { "--disable",          'd', RTGETOPT_REQ_NOTHING },
         { "--port-forward-4",   'p', RTGETOPT_REQ_STRING },
         { "--port-forward-6",   'P', RTGETOPT_REQ_STRING },
+        { "--loopback-4",       'l', RTGETOPT_REQ_STRING },
+        { "--loopback-6",       'L', RTGETOPT_REQ_STRING },
+
       };
 
 typedef struct PFNAME2DELETE
@@ -88,6 +92,8 @@ typedef VPF2DELETE::const_iterator VPF2DELETEITERATOR;
 typedef std::vector<PORTFORWARDRULE> VPF2ADD;
 typedef VPF2ADD::const_iterator VPF2ADDITERATOR;
 
+typedef std::vector<std::string>  LOOPBACK2DELETEADD;
+typedef LOOPBACK2DELETEADD::iterator LOOPBACK2DELETEADDITERATOR;
 
 static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 {
@@ -105,6 +111,11 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
     VPF2DELETE vPfName2Delete;
     VPF2ADD vPf2Add;
+
+    LOOPBACK2DELETEADD vLoopback2Delete;
+    LOOPBACK2DELETEADD vLoopback2Add;
+
+    LONG loopback6Offset = 0; /* ignore me */
 
     int c;
     RTGETOPTUNION ValueUnion;
@@ -168,6 +179,39 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6 once.");
                 ipv6 = ValueUnion.f;
                 break;
+
+	    case 'L': /* ipv6 loopback */
+	    case 'l': /* ipv4 loopback */
+		if (RTStrCmp(ValueUnion.psz, "delete") == 0)
+		{
+		    /* deletion */
+		    if (enmCode != OP_MODIFY)
+		      errorSyntax(USAGE_NATNETWORK,
+				  "loopback couldn't be deleted on modified\n");
+		    if (c == 'L')
+		      loopback6Offset = -1;
+		    else
+		    {
+			int vrc;
+			RTGETOPTUNION Addr2Delete;
+			vrc = RTGetOptFetchValue(&GetState,
+						 &Addr2Delete,
+						 RTGETOPT_REQ_STRING);
+			if (RT_FAILURE(vrc))
+			  return errorSyntax(USAGE_NATNETWORK,
+					     "Not enough parmaters\n");
+
+			vLoopback2Delete.push_back(std::string(Addr2Delete.psz));
+		    }
+		}
+		else /* addition */
+		{
+		    if (c == 'L')
+		      loopback6Offset = ValueUnion.u32;
+		    else
+		      vLoopback2Add.push_back(std::string(ValueUnion.psz));
+		}
+		break;
 
             case 'P': /* ipv6 portforwarding*/
             case 'p': /* ipv4 portforwarding */
@@ -348,6 +392,58 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
             }
         }
+        
+        if (loopback6Offset)
+        {
+            if (loopback6Offset == -1)
+                loopback6Offset = 0; /* deletion */
+            
+            CHECK_ERROR_RET(net, COMSETTER(LoopbackIp6)(loopback6Offset), rc);
+        }
+        
+        /* addLocalMapping (hostid, offset) */
+        if (!vLoopback2Add.empty())
+        {
+            /* we're expecting stings 127.0.0.1;5 */
+            LOOPBACK2DELETEADDITERATOR it;
+            for (it = vLoopback2Add.begin(); 
+                 it != vLoopback2Add.end();
+                 ++it)
+            {
+                std::string address, strOffset;
+                int pos = it->find(';');
+                LONG lOffset = 0;
+                Bstr bstrAddress;
+
+                AssertReturn(pos != -1, errorArgument("invalid loopback string"));
+
+                address = it->substr(0, pos);
+                strOffset = it->substr(pos + 1);
+                
+                lOffset = RTStrToUInt32(strOffset.c_str());
+                AssertReturn(lOffset > 0, errorArgument("invalid loopback string"));
+                
+                bstrAddress = Bstr(address.c_str());
+
+                CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), lOffset), rc);
+            }
+        } 
+
+        if (!vLoopback2Delete.empty())
+        {
+            /* we're expecting stings 127.0.0.1 */
+            LOOPBACK2DELETEADDITERATOR it;
+            for (it = vLoopback2Add.begin(); 
+                 it != vLoopback2Add.end();
+                 ++it)
+            {
+                Bstr bstrAddress;
+                bstrAddress = Bstr(it->c_str());
+
+                CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), 0), rc);
+            }
+        } 
+
         
         if(enable >= 0)
         {
