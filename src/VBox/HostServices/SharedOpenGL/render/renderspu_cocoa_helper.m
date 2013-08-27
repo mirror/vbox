@@ -1780,6 +1780,9 @@ void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int 
 void cocoaViewPresentComposition(NativeNSViewRef pView, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    
+    /* view should not necesserily have a context set 
+     * @todo: check and set default shared one */
 
     [(OverlayView*)pView presentComposition:pChangedEntry];
 
