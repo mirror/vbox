@@ -8166,6 +8166,10 @@
       <desc>Returns the host network interface name.</desc>
     </attribute>
 
+    <attribute name="shortName" type="wstring" readonly="yes">
+      <desc>Returns the host network interface short name.</desc>
+    </attribute>
+
     <attribute name="id" type="uuid" mod="string" readonly="yes">
       <desc>Returns the interface UUID.</desc>
     </attribute>

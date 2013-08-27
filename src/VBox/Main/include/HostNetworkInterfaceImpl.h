@@ -59,6 +59,7 @@ public:
 
     // IHostNetworkInterface properties
     STDMETHOD(COMGETTER(Name))(BSTR *aInterfaceName);
+    STDMETHOD(COMGETTER(ShortName))(BSTR *aShortName);
     STDMETHOD(COMGETTER(Id))(BSTR *aGuid);
     STDMETHOD(COMGETTER(DHCPEnabled))(BOOL *aDHCPEnabled);
     STDMETHOD(COMGETTER(IPAddress))(BSTR *aIPAddress);
