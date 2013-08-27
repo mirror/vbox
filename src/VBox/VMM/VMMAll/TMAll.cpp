@@ -96,7 +96,7 @@ VMMDECL(void) TMNotifyStartOfExecution(PVMCPU pVCpu)
 
 
 /**
- * Notification that execution is about to start.
+ * Notification that execution has ended.
  *
  * This call must always be paired with a TMNotifyStartOfExecution call.
  *
