@@ -29,7 +29,7 @@
 #include "VBoxLwipCore.h"
 /* @todo: lwip or nat ? */
 #define LOG_GROUP LOG_GROUP_DRV_NAT
-#include <iprt/critsect.h>
+#include <iprt/cpp/lock.h>
 #include <iprt/timer.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
@@ -51,69 +51,68 @@ typedef struct {
 } LWIPCOREUSERCALLBACK, *PLWIPCOREUSERCALLBACK; 
 
 
+RTCLockMtx g_mtxLwip;
+
 typedef struct LWIPCORE 
 {
     int iLWIPInitiatorCounter;
-    /* semaphore to coordinate 'tcpip' thread initialization */
     sys_sem_t LwipTcpIpSem;
-    /* Initalization user defined callback */
-    LWIPCOREUSERCALLBACK userInitClbk;
-    /* Finitialization user defined callback */
-    LWIPCOREUSERCALLBACK userFiniClbk;
-    RTCRITSECT csLwipCore;
 } LWIPCORE;
 
 static LWIPCORE g_LwipCore;
 
 
 /**
- * @note: this function executed on TCPIP thread.
- */
-static DECLCALLBACK(void) lwipCoreInitDone(void *pvArg)
-{
-    sys_sem_t *pLwipSem = (sys_sem_t *)pvArg;
-    LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
-    AssertPtrReturnVoid(pvArg);
-    lwip_sys_sem_signal(pLwipSem);
-    LogFlowFuncLeave();
-}
-
-/**
- * @note: this function executed on TCPIP thread.
- */
-static DECLCALLBACK(void) lwipCoreFiniDone(void *pvArg)
-{
-    sys_sem_t *pLwipSem = (sys_sem_t *)pvArg;
-    LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
-    AssertPtrReturnVoid(pvArg);
-    lwip_sys_sem_signal(pLwipSem);
-    LogFlowFuncLeave();
-}
-
-/**
- * @note: this function executed on TCPIP thread.
+ * @note: this function executes on TCPIP thread.
  */
 static DECLCALLBACK(void) lwipCoreUserCallback(void *pvArg)
 {
-    PLWIPCOREUSERCALLBACK pUserClbk = (PLWIPCOREUSERCALLBACK)pvArg;
     LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
-    
-    if (pUserClbk->pfn)
+
+    PLWIPCOREUSERCALLBACK pUserClbk = (PLWIPCOREUSERCALLBACK)pvArg;
+    if (pUserClbk != NULL && pUserClbk->pfn != NULL)
         pUserClbk->pfn(pUserClbk->pvUser);
 
-    /* we've finished on tcpip thread and want to wake up, waiters on EMT/main */
+    /* wake up caller on EMT/main */
     lwip_sys_sem_signal(&g_LwipCore.LwipTcpIpSem);
-    AssertPtrReturnVoid(pvArg);
     LogFlowFuncLeave();
 }
 
+
 /**
- * This function initialize lwip core once 
- * further NAT instancies should just add netifs configured according 
- * their needs.
+ * @note: this function executes on TCPIP thread.
+ */
+static DECLCALLBACK(void) lwipCoreInitDone(void *pvArg)
+{
+    LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
+
+    /* ... init code goes here if need be ... */
+
+    lwipCoreUserCallback(pvArg);
+    LogFlowFuncLeave();
+}
+
+
+/**
+ * @note: this function executes on TCPIP thread.
+ */
+static DECLCALLBACK(void) lwipCoreFiniDone(void *pvArg)
+{
+    LogFlowFunc(("ENTER: pvArg:%p\n", pvArg));
+
+    /* ... fini code goes here if need be ... */
+
+    lwipCoreUserCallback(pvArg);
+    LogFlowFuncLeave();
+}
+
+
+/**
+ * This function initializes lwip core once.  Further NAT instancies
+ * should just add netifs configured according their needs.
  *
- * We're on EMT-n or main thread of the network service, we want execute
- * anything on tcpip thread.
+ * We're on EMT-n or on the main thread of a network service, and we
+ * want to execute something on the lwip tcpip thread.
  */
 int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
 {
@@ -121,59 +120,47 @@ int vboxLwipCoreInitialize(PFNRT1 pfnCallback, void *pvCallbackArg)
     int lwipRc = ERR_OK;
     LogFlowFuncEnter();
 
-    if (!RTCritSectIsInitialized(&g_LwipCore.csLwipCore))
+    LWIPCOREUSERCALLBACK callback;
+    callback.pfn = pfnCallback;
+    callback.pvUser = pvCallbackArg;
+
     {
-        AssertReturn(g_LwipCore.iLWIPInitiatorCounter == 0, VERR_INTERNAL_ERROR);
-        rc = RTCritSectInit(&g_LwipCore.csLwipCore);
+        RTCLock lock(g_mtxLwip);
 
-        AssertRCReturn(rc, rc);
-    }
-
-    RTCritSectEnter(&g_LwipCore.csLwipCore);
-    
-    g_LwipCore.iLWIPInitiatorCounter++;
-
-    if (g_LwipCore.iLWIPInitiatorCounter == 1)
-    {
-        lwipRc = lwip_sys_sem_new(&g_LwipCore.LwipTcpIpSem, 0);
-        /* @todo: VERR_INTERNAL_ERROR perhaps should be replaced with right error code */
-        if (lwipRc != ERR_OK) 
+        if (g_LwipCore.iLWIPInitiatorCounter == 0)
         {
-            rc = VERR_INTERNAL_ERROR;
-            goto done;
+            lwipRc = lwip_sys_sem_new(&g_LwipCore.LwipTcpIpSem, 0);
+            if (lwipRc != ERR_OK)
+            {
+                LogFlow(("%s: sys_sem_new error %d\n", __FUNCTION__, lwipRc));
+                goto done;
+            }
+
+            lwip_tcpip_init(lwipCoreInitDone, &callback);
+        }
+        else
+        {
+            lwipRc = tcpip_callback(lwipCoreUserCallback, &callback);
+            if (lwipRc != ERR_OK)
+            {
+                LogFlow(("%s: tcpip_callback error %d\n", __FUNCTION__, lwipRc));
+                goto done;
+            }
         }
 
-        lwip_tcpip_init(lwipCoreInitDone, &g_LwipCore.LwipTcpIpSem,
-                        lwipCoreFiniDone, &g_LwipCore.LwipTcpIpSem);
         lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
-    } /* end of if (g_LwipCore.iLWIPInitiatorCounter == 1) */
-
-
-    /* tcpip thread launched */
-    g_LwipCore.userInitClbk.pfn = pfnCallback;
-    g_LwipCore.userInitClbk.pvUser = pvCallbackArg;
-
-    lwipRc = tcpip_callback(lwipCoreUserCallback, &g_LwipCore.userInitClbk);
-    if (lwipRc != ERR_OK) 
-    {
-        rc = VERR_INTERNAL_ERROR;
-        goto done;
+        ++g_LwipCore.iLWIPInitiatorCounter;
     }
-
-
-    /* we're waiting the result here */
-    lwipRc = lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
-    if (lwipRc != ERR_OK) 
+  done:
+    if (lwipRc != ERR_OK)
     {
+        /* @todo: map lwip error code? */
         rc = VERR_INTERNAL_ERROR;
-        goto done;
     }
-    
-done:
-    RTCritSectLeave(&g_LwipCore.csLwipCore);
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
+
 
 /**
  * This function decrement lwip reference counter 
@@ -183,27 +170,49 @@ void vboxLwipCoreFinalize(PFNRT1 pfnCallback, void *pvCallbackArg)
 {
     int lwipRc = ERR_OK;
     LogFlowFuncEnter();
-    AssertReleaseReturnVoid(   RTCritSectIsInitialized(&g_LwipCore.csLwipCore)
-                            && g_LwipCore.iLWIPInitiatorCounter >= 1);
-    RTCritSectEnter(&g_LwipCore.csLwipCore);
-    
-    g_LwipCore.iLWIPInitiatorCounter--;
-    g_LwipCore.userFiniClbk.pfn = pfnCallback;
-    g_LwipCore.userFiniClbk.pvUser = pvCallbackArg;
-    
-    lwipRc = tcpip_callback(lwipCoreUserCallback, &g_LwipCore.userFiniClbk);
 
-    if (lwipRc == ERR_OK)
-        lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
-    
-    if (g_LwipCore.iLWIPInitiatorCounter == 0)
+    LWIPCOREUSERCALLBACK callback;
+    callback.pfn = pfnCallback;
+    callback.pvUser = pvCallbackArg;
+
     {
-        tcpip_terminate();
-        RTCritSectLeave(&g_LwipCore.csLwipCore);
-        RTCritSectDelete(&g_LwipCore.csLwipCore);
+        RTCLock lock(g_mtxLwip);
+
+        if (g_LwipCore.iLWIPInitiatorCounter == 1)
+        {
+            /*
+             * TCPIP_MSG_CALLBACK_TERMINATE is like a static callback,
+             * but causes tcpip_thread() to return afterward.
+             *
+             * This should probably be hidden in a function inside
+             * lwip, but for it to be static callback the semaphore
+             * dance should also be done inside that function.  There
+             * is tcpip_msg::sem, but it seems to be unused and may be
+             * gone in future versions of lwip.
+             */
+            struct tcpip_msg msg;
+            msg.type = TCPIP_MSG_CALLBACK_TERMINATE;
+            msg.msg.cb.function = lwipCoreFiniDone;
+            msg.msg.cb.ctx = &callback;
+
+            lwipRc = tcpip_callbackmsg((struct tcpip_callback_msg *)&msg);
+            if (lwipRc != ERR_OK)
+            {
+                LogFlow(("%s: tcpip_callback_msg error %d\n", __FUNCTION__, lwipRc));
+            }
+        }
+        else
+        {
+            lwipRc = tcpip_callback(lwipCoreUserCallback, &callback);
+            if (lwipRc != ERR_OK)
+            {
+                LogFlow(("%s: tcpip_callback error %d\n", __FUNCTION__, lwipRc));
+            }
+        }
+
+        if (lwipRc == ERR_OK)
+            lwip_sys_sem_wait(&g_LwipCore.LwipTcpIpSem, 0);
     }
-    else
-        RTCritSectLeave(&g_LwipCore.csLwipCore);
 
     LogFlowFuncLeave();
 }

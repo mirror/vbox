@@ -91,20 +91,11 @@ extern sys_mutex_t lock_tcpip_core;
 typedef void (*tcpip_init_done_fn)(void *arg);
 /** Function prototype for functions passed to tcpip_callback() */
 typedef void (*tcpip_callback_fn)(void *ctx);
-# ifdef VBOX
-/** Function prototype for the fini_done function passed to tcpip_fini */
-typedef void (*tcpip_fini_done_fn)(void *arg);
-# endif
+
 /* Forward declarations */
 struct tcpip_callback_msg;
 
-# ifdef VBOX
-/* The way vbox inform TCPIP thread to finalize ones activity. */
-void tcpip_terminate(void);
-void tcpip_init(tcpip_init_done_fn tcpip_init_done, void *init_arg, tcpip_fini_done_fn tcpip_fini_done, void *fini_arg);
-# else
 void tcpip_init(tcpip_init_done_fn tcpip_init_done, void *arg);
-# endif
 
 #if LWIP_NETCONN
 err_t tcpip_apimsg(struct api_msg *apimsg);
@@ -153,10 +144,9 @@ enum tcpip_msg_type {
   TCPIP_MSG_CALLBACK,
   TCPIP_MSG_CALLBACK_STATIC
 #ifdef VBOX
-  ,
-  TCPIP_MSG_TERM /* VBOX termination message */
+  /* like CALLBACK_STATIC, but then makes tcpip_thread() return */
+  , TCPIP_MSG_CALLBACK_TERMINATE
 #endif
-
 };
 
 struct tcpip_msg {
