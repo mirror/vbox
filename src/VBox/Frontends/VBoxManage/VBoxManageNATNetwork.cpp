@@ -20,7 +20,6 @@
 *******************************************************************************/
 #ifndef VBOX_ONLY_DOCS
 
-
 #include <VBox/com/com.h>
 #include <VBox/com/array.h>
 #include <VBox/com/ErrorInfo.h>
@@ -134,49 +133,41 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         {
             case 't':   // --netname
                 if (pNetName)
-                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --netname once.");
+                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --netname only once.");
                 else
-                {
                     pNetName = ValueUnion.psz;
-                }
-            break;
+                break;
 
             case 'n':   // --network
                 if (pNetworkCidr)
-                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --network once.");
+                    return errorSyntax(USAGE_NATNETWORK, "You can only specify --network only once.");
                 else
-                {
                     pNetworkCidr = ValueUnion.psz;
-                }
-            break;
+                break;
 
             case 'e':   // --enable
-                if(enable >= 0)
+                if (enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
                 else
-                {
                     enable = 1;
-                }
-            break;
+                break;
 
             case 'd':   // --disable
                 if (enable >= 0)
                     return errorSyntax(USAGE_NATNETWORK, "You can specify either --enable or --disable once.");
                 else
-                {
                     enable = 0;
-                }
-            break;
-           
+                break;
+
             case 'h':
                 if (dhcp != -1)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify --dhcp once.");
+                    return errorSyntax(USAGE_NATNETWORK, "You can specify --dhcp only once.");
                 dhcp = ValueUnion.f;
                 break;
 
             case '6':
                 if (ipv6 != -1)
-                    return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6 once.");
+                    return errorSyntax(USAGE_NATNETWORK, "You can specify --ipv6 only once.");
                 ipv6 = ValueUnion.f;
                 break;
 
@@ -189,7 +180,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 		      errorSyntax(USAGE_NATNETWORK,
 				  "loopback couldn't be deleted on modified\n");
 		    if (c == 'L')
-		      loopback6Offset = -1;
+                        loopback6Offset = -1;
 		    else
 		    {
 			int vrc;
@@ -226,7 +217,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                         return errorSyntax(USAGE_NATNETWORK,
                                            "Invalid port-forward rule %s\n",
                                            ValueUnion.psz);
-                    
+
                     vPf2Add.push_back(Pfr);
                 }
                 else
@@ -239,21 +230,19 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                         return errorSyntax(USAGE_NATNETWORK,
                                            "Port-forward could be deleted on modify \n");
 
-                    vrc = RTGetOptFetchValue(&GetState, 
-                                             &NamePf2DeleteUnion, 
+                    vrc = RTGetOptFetchValue(&GetState,
+                                             &NamePf2DeleteUnion,
                                              RTGETOPT_REQ_STRING);
                     if (RT_FAILURE(vrc))
                         return errorSyntax(USAGE_NATNETWORK,
                                            "Not enough parmaters\n");
-                    
+
                     if (strlen(NamePf2DeleteUnion.psz) > PF_NAMELEN)
                         return errorSyntax(USAGE_NATNETWORK,
                                            "Port-forward rule name is too long\n");
 
                     RT_ZERO(Name2Delete);
-                    RTStrCopy(Name2Delete.aszName, 
-                              PF_NAMELEN, 
-                              NamePf2DeleteUnion.psz);
+                    RTStrCopy(Name2Delete.aszName, PF_NAMELEN, NamePf2DeleteUnion.psz);
                     Name2Delete.fIPv6 = (c == 'P');
 
                     vPfName2Delete.push_back(Name2Delete);
@@ -262,8 +251,8 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             }
 
             case VINF_GETOPT_NOT_OPTION:
-                return errorSyntax(USAGE_NATNETWORK, 
-                                   "unhandled parameter: %s", 
+                return errorSyntax(USAGE_NATNETWORK,
+                                   "unhandled parameter: %s",
                                    ValueUnion.psz);
             break;
 
@@ -271,17 +260,17 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                 if (c > 0)
                 {
                     if (RT_C_IS_GRAPH(c))
-                        return errorSyntax(USAGE_NATNETWORK, 
+                        return errorSyntax(USAGE_NATNETWORK,
                                            "unhandled option: -%c", c);
                     else
-                        return errorSyntax(USAGE_NATNETWORK, 
+                        return errorSyntax(USAGE_NATNETWORK,
                                            "unhandled option: %i", c);
                 }
                 else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    return errorSyntax(USAGE_NATNETWORK, 
+                    return errorSyntax(USAGE_NATNETWORK,
                                        "unknown option: %s", ValueUnion.psz);
                 else if (ValueUnion.pDef)
-                    return errorSyntax(USAGE_NATNETWORK, 
+                    return errorSyntax(USAGE_NATNETWORK,
                                        "%s: %Rrs", ValueUnion.pDef->pszLong, c);
                 else
                     return errorSyntax(USAGE_NATNETWORK, "%Rrs", c);
@@ -289,15 +278,15 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     }
 
     if (!pNetName)
-        return errorSyntax(USAGE_NATNETWORK, 
-                           "You need to specify --netname option");
+        return errorSyntax(USAGE_NATNETWORK,
+                           "You need to specify the --netname option");
     /* verification */
     switch (enmCode)
     {
         case OP_ADD:
             if (!pNetworkCidr)
-                return errorSyntax(USAGE_NATNETWORK, 
-                                   "You need to specify --network option");
+                return errorSyntax(USAGE_NATNETWORK,
+                                   "You need to specify the --network option");
             break;
         case OP_MODIFY:
         case OP_REMOVE:
@@ -310,11 +299,10 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
 
     Bstr NetName;
     NetName = Bstr(pNetName);
-    
 
     ComPtr<INATNetwork> net;
     rc = a->virtualBox->FindNATNetworkByName(NetName.mutableRaw(), net.asOutParam());
-    if(enmCode == OP_ADD)
+    if (enmCode == OP_ADD)
     {
         if (SUCCEEDED(rc))
             return errorArgument("NATNetwork server already exists");
@@ -324,158 +312,151 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             return errorArgument("Failed to create the NAT network service");
     }
     else if (FAILED(rc))
-    {
         return errorArgument("NATNetwork server does not exist");
-    }
 
     switch (enmCode)
     {
-    case OP_ADD:
-    case OP_MODIFY:
-    {
-        if (pNetworkCidr)
+        case OP_ADD:
+        case OP_MODIFY:
         {
-            CHECK_ERROR(net, COMSETTER(Network)(Bstr(pNetworkCidr).raw()));
-            if(FAILED(rc))
-              return errorArgument("Failed to set configuration");
-        }
-        if (dhcp >= 0)
-        {
-              CHECK_ERROR(net, COMSETTER(NeedDhcpServer) ((BOOL)dhcp));
-              if(FAILED(rc))
-                return errorArgument("Failed to set configuration");
-        }
-        
-        if (ipv6 >= 0)
-        {
-              CHECK_ERROR(net, COMSETTER(IPv6Enabled) ((BOOL)ipv6));
-              if(FAILED(rc))
-                return errorArgument("Failed to set configuration");
-        }
-        
-        if (!vPfName2Delete.empty())
-        {
-            VPF2DELETEITERATOR it;
-            for (it = vPfName2Delete.begin(); it != vPfName2Delete.end(); ++it)
+            if (pNetworkCidr)
             {
-                CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
-                                                       Bstr((*it).aszName).raw()));
-                if(FAILED(rc))
-                    return errorArgument("Failed to delete pf");
-
+                CHECK_ERROR(net, COMSETTER(Network)(Bstr(pNetworkCidr).raw()));
+                if (FAILED(rc))
+                    return errorArgument("Failed to set configuration");
             }
-        }
-
-        if (!vPf2Add.empty())
-        {
-            VPF2ADDITERATOR it;
-            for(it = vPf2Add.begin(); it != vPf2Add.end(); ++it)
+            if (dhcp >= 0)
             {
-                NATProtocol_T proto = NATProtocol_TCP;
-                if ((*it).iPfrProto == IPPROTO_TCP)
-                    proto = NATProtocol_TCP;
-                else if ((*it).iPfrProto == IPPROTO_UDP)
-                    proto = NATProtocol_UDP;
-                else
-                    continue; /* XXX: warning here. */
-
-                CHECK_ERROR(net, AddPortForwardRule(
-                              (BOOL)(*it).fPfrIPv6,
-                              Bstr((*it).aszPfrName).raw(),
-                              proto,
-                              Bstr((*it).aszPfrHostAddr).raw(),
-                              (*it).u16PfrHostPort,
-                              Bstr((*it).aszPfrGuestAddr).raw(),
-                              (*it).u16PfrGuestPort));
-                if(FAILED(rc))
-                    return errorArgument("Failed to add pf");
-
+                CHECK_ERROR(net, COMSETTER(NeedDhcpServer) ((BOOL)dhcp));
+                if (FAILED(rc))
+                    return errorArgument("Failed to set configuration");
             }
-        }
-        
-        if (loopback6Offset)
-        {
-            if (loopback6Offset == -1)
-                loopback6Offset = 0; /* deletion */
-            
-            CHECK_ERROR_RET(net, COMSETTER(LoopbackIp6)(loopback6Offset), rc);
-        }
-        
-        /* addLocalMapping (hostid, offset) */
-        if (!vLoopback2Add.empty())
-        {
-            /* we're expecting stings 127.0.0.1;5 */
-            LOOPBACK2DELETEADDITERATOR it;
-            for (it = vLoopback2Add.begin(); 
-                 it != vLoopback2Add.end();
-                 ++it)
+
+            if (ipv6 >= 0)
             {
-                std::string address, strOffset;
-                int pos = it->find(';');
-                LONG lOffset = 0;
-                Bstr bstrAddress;
-
-                AssertReturn(pos != -1, errorArgument("invalid loopback string"));
-
-                address = it->substr(0, pos);
-                strOffset = it->substr(pos + 1);
-                
-                lOffset = RTStrToUInt32(strOffset.c_str());
-                AssertReturn(lOffset > 0, errorArgument("invalid loopback string"));
-                
-                bstrAddress = Bstr(address.c_str());
-
-                CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), lOffset), rc);
+                CHECK_ERROR(net, COMSETTER(IPv6Enabled) ((BOOL)ipv6));
+                if (FAILED(rc))
+                    return errorArgument("Failed to set configuration");
             }
-        } 
 
-        if (!vLoopback2Delete.empty())
-        {
-            /* we're expecting stings 127.0.0.1 */
-            LOOPBACK2DELETEADDITERATOR it;
-            for (it = vLoopback2Add.begin(); 
-                 it != vLoopback2Add.end();
-                 ++it)
+            if (!vPfName2Delete.empty())
             {
-                Bstr bstrAddress;
-                bstrAddress = Bstr(it->c_str());
-
-                CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), 0), rc);
+                VPF2DELETEITERATOR it;
+                for (it = vPfName2Delete.begin(); it != vPfName2Delete.end(); ++it)
+                {
+                    CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
+                                                           Bstr((*it).aszName).raw()));
+                    if (FAILED(rc))
+                        return errorArgument("Failed to delete pf");
+                }
             }
-        } 
 
-        
-        if(enable >= 0)
-        {
-            CHECK_ERROR(net, COMSETTER(Enabled) ((BOOL)enable));
-            if(FAILED(rc))
-              return errorArgument("Failed to set configuration");
+            if (!vPf2Add.empty())
+            {
+                VPF2ADDITERATOR it;
+                for (it = vPf2Add.begin(); it != vPf2Add.end(); ++it)
+                {
+                    NATProtocol_T proto = NATProtocol_TCP;
+                    if ((*it).iPfrProto == IPPROTO_TCP)
+                        proto = NATProtocol_TCP;
+                    else if ((*it).iPfrProto == IPPROTO_UDP)
+                        proto = NATProtocol_UDP;
+                    else
+                        continue; /* XXX: warning here. */
 
+                    CHECK_ERROR(net, AddPortForwardRule((BOOL)(*it).fPfrIPv6,
+                                                        Bstr((*it).aszPfrName).raw(),
+                                                        proto,
+                                                        Bstr((*it).aszPfrHostAddr).raw(),
+                                                        (*it).u16PfrHostPort,
+                                                        Bstr((*it).aszPfrGuestAddr).raw(),
+                                                        (*it).u16PfrGuestPort));
+                    if (FAILED(rc))
+                        return errorArgument("Failed to add pf");
+                }
+            }
+
+            if (loopback6Offset)
+            {
+                if (loopback6Offset == -1)
+                    loopback6Offset = 0; /* deletion */
+
+                CHECK_ERROR_RET(net, COMSETTER(LoopbackIp6)(loopback6Offset), rc);
+            }
+
+            /* addLocalMapping (hostid, offset) */
+            if (!vLoopback2Add.empty())
+            {
+                /* we're expecting stings 127.0.0.1;5 */
+                LOOPBACK2DELETEADDITERATOR it;
+                for (it = vLoopback2Add.begin();
+                     it != vLoopback2Add.end();
+                     ++it)
+                {
+                    std::string address, strOffset;
+                    int pos = it->find(';');
+                    LONG lOffset = 0;
+                    Bstr bstrAddress;
+
+                    AssertReturn(pos != -1, errorArgument("invalid loopback string"));
+
+                    address = it->substr(0, pos);
+                    strOffset = it->substr(pos + 1);
+
+                    lOffset = RTStrToUInt32(strOffset.c_str());
+                    AssertReturn(lOffset > 0, errorArgument("invalid loopback string"));
+
+                    bstrAddress = Bstr(address.c_str());
+
+                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), lOffset), rc);
+                }
+            }
+
+            if (!vLoopback2Delete.empty())
+            {
+                /* we're expecting stings 127.0.0.1 */
+                LOOPBACK2DELETEADDITERATOR it;
+                for (it = vLoopback2Add.begin();
+                     it != vLoopback2Add.end();
+                     ++it)
+                {
+                    Bstr bstrAddress;
+                    bstrAddress = Bstr(it->c_str());
+
+                    CHECK_ERROR_RET(net, AddLocalMapping(bstrAddress.raw(), 0), rc);
+                }
+            }
+
+            if (enable >= 0)
+            {
+                CHECK_ERROR(net, COMSETTER(Enabled) ((BOOL)enable));
+                if (FAILED(rc))
+                    return errorArgument("Failed to set configuration");
+            }
+            break;
         }
-        break;
-    }
-    case OP_REMOVE:
-    {
-        CHECK_ERROR(a->virtualBox, RemoveNATNetwork(net));
-        if(FAILED(rc))
-          return errorArgument("Failed to remove nat network");
-        break;
-    }
-    case OP_START:
-    {
-        CHECK_ERROR(net, Start(Bstr("whatever").raw()));
-        if(FAILED(rc))
-          return errorArgument("Failed to start network");
-        break;
-    }
-    case OP_STOP:
-    {
-        CHECK_ERROR(net, Stop());
-        if(FAILED(rc))
-          return errorArgument("Failed to start network");
-        break;
-    }
-    default:;
+        case OP_REMOVE:
+        {
+            CHECK_ERROR(a->virtualBox, RemoveNATNetwork(net));
+            if (FAILED(rc))
+                return errorArgument("Failed to remove nat network");
+            break;
+        }
+        case OP_START:
+        {
+            CHECK_ERROR(net, Start(Bstr("whatever").raw()));
+            if (FAILED(rc))
+                return errorArgument("Failed to start network");
+            break;
+        }
+        case OP_STOP:
+        {
+            CHECK_ERROR(net, Stop());
+            if (FAILED(rc))
+                return errorArgument("Failed to start network");
+            break;
+        }
+        default:;
     }
     return 0;
 }
