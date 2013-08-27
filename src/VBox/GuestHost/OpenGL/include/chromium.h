@@ -723,6 +723,8 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 #define GL_HOST_WND_CREATED_HIDDEN_CR 0x8B2B
 /* guest requests host whether e debug break is needed*/
 #define GL_DBG_CHECK_BREAK_CR         0x8B2C
+/* Tells renderspu the default context id being used by the crserver */
+#define GL_HH_SET_DEFAULT_SHARED_CTX  0x8B2D
 
 /**********************************************************************/
 /*****                Chromium-specific API                       *****/

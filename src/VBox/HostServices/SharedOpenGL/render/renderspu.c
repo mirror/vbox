@@ -15,6 +15,8 @@
 
 #include <iprt/asm.h>
 
+uint32_t renderspuContextRelease(ContextInfo *context);
+uint32_t renderspuContextRetain(ContextInfo *context);
 
 static void
 DoSync(void)
@@ -182,7 +184,8 @@ static ContextInfo * renderspuCreateContextInternal(const char *dpyName, GLint v
     */
 
     if (sharedContext)
-        ASMAtomicIncU32(&sharedContext->cRefs);
+        renderspuContextRetain(sharedContext);
+
     context->cRefs = 1;
 
     return context;
@@ -214,7 +217,6 @@ renderspuCreateContext(const char *dpyName, GLint visBits, GLint shareCtx)
     return renderspuCreateContextEx(dpyName, visBits, 0, shareCtx);
 }
 
-static uint32_t renderspuContextRelease( ContextInfo *context );
 static void renderspuDestroyContextTerminate( ContextInfo *context )
 {
     CRASSERT(context->BltInfo.Base.id == -1);
@@ -230,7 +232,13 @@ static void renderspuDestroyContextTerminate( ContextInfo *context )
     crFree(context);
 }
 
-static uint32_t renderspuContextRelease( ContextInfo *context )
+uint32_t renderspuContextRetain( ContextInfo *context )
+{
+    Assert(context->cRefs);
+    return ASMAtomicIncU32(&context->cRefs);
+}
+
+uint32_t renderspuContextRelease( ContextInfo *context )
 {
     uint32_t cRefs = ASMAtomicDecU32(&context->cRefs);
     if (!cRefs)
@@ -250,6 +258,22 @@ uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context )
     return renderspuContextRelease( context );
 }
 
+ContextInfo * renderspuDefaultSharedContextAcquire()
+{
+    ContextInfo * pCtx = render_spu.defaultSharedContext;
+    if (!pCtx)
+        return NULL;
+
+    renderspuContextRetain(pCtx);
+    return pCtx;
+}
+
+void renderspuDefaultSharedContextRelease(ContextInfo * pCtx)
+{
+    renderspuContextRelease(pCtx);
+}
+
+
 static void RENDER_APIENTRY
 renderspuDestroyContext( GLint ctx )
 {
@@ -264,13 +288,17 @@ renderspuDestroyContext( GLint ctx )
     }
 
     context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
-    CRASSERT(context);
+
+    if (!context)
     {
-        if (!context)
-        {
-            crWarning("request to delete inexistent context");
-            return;
-        }
+        crWarning("request to delete inexistent context");
+        return;
+    }
+
+    if (render_spu.defaultSharedContext == context)
+    {
+        renderspuContextRelease(render_spu.defaultSharedContext);
+        render_spu.defaultSharedContext = NULL;
     }
 
     curCtx = GET_CONTEXT_VAL();
@@ -747,7 +775,8 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
         if (!pBlitter)
         {
             int rc;
-            CR_BLITTER_CONTEXT ctx;
+            ContextInfo * pDefaultCtxInfo;
+
             pBlitter = (PCR_BLITTER)crCalloc(sizeof (*pBlitter));
             if (!pBlitter)
             {
@@ -755,11 +784,19 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
                 return NULL;
             }
 
-            /* @todo: this is the assumption that crserverlib uses context 1 as a default one
-             * need to do it in a more proper way */
-            ctx.Base.id = 1;
-            ctx.Base.visualBits = window->visual->visAttribs;
-            rc = CrBltInit(pBlitter, &ctx, true, true, render_spu.blitterDispatch);
+            pDefaultCtxInfo = renderspuDefaultSharedContextAcquire();
+            if (!pDefaultCtxInfo)
+            {
+                crWarning("no default ctx info!");
+                crFree(pBlitter);
+                return NULL;
+            }
+
+            rc = CrBltInit(pBlitter, &pDefaultCtxInfo->BltInfo, true, true, render_spu.blitterDispatch);
+
+            /* we can release it either way, since it will be retained when used as a shared context */
+            renderspuDefaultSharedContextRelease(pDefaultCtxInfo);
+
             if (!RT_SUCCESS(rc))
             {
                 crWarning("CrBltInit failed, rc %d", rc);
@@ -1230,6 +1267,23 @@ static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint v
 
     switch (target)
     {
+        case GL_HH_SET_DEFAULT_SHARED_CTX:
+            if (render_spu.defaultSharedContext)
+            {
+                renderspuContextRelease(render_spu.defaultSharedContext);
+                render_spu.defaultSharedContext = NULL;
+            }
+
+            if (value)
+            {
+                render_spu.defaultSharedContext = (ContextInfo *) crHashtableSearch(render_spu.contextTable, value);
+                if (render_spu.defaultSharedContext)
+                    renderspuContextRetain(render_spu.defaultSharedContext);
+                else
+                    crWarning("invalid default shared context id %d", value);
+            }
+
+            break;
         default:
 //            crWarning("Unhandled target in renderspuChromiumParameteriCR()");
             break;

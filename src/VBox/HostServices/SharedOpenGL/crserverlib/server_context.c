@@ -62,6 +62,8 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
         CRASSERT(cr_server.MainContextInfo.pContext);
         cr_server.firstCallCreateContext = GL_FALSE;
         fFirst = GL_TRUE;
+
+        cr_server.head_spu->dispatch_table.ChromiumParameteriCR(GL_HH_SET_DEFAULT_SHARED_CTX, cr_server.MainContextInfo.SpuContext);
     }
     else {
         /* second or third or ... context */
@@ -70,7 +72,7 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
 
             /* the new context needs new visual attributes */
             cr_server.MainContextInfo.CreateInfo.visualBits |= visualBits;
-            crDebug("crServerDispatchCreateContext requires new visual (0x%x).",
+            crWarning("crServerDispatchCreateContext requires new visual (0x%x).",
                     cr_server.MainContextInfo.CreateInfo.visualBits);
 
             /* Here, we used to just destroy the old rendering context.
@@ -94,6 +96,10 @@ GLint crServerDispatchCreateContextEx(const char *dpyName, GLint visualBits, GLi
                 crFree(pContextInfo);
                 return -1;
             }
+
+            /* we do not need to clean up the old default context explicitly, since the above cr_server.head_spu->dispatch_table.DestroyContext call
+             * will do that for us */
+            cr_server.head_spu->dispatch_table.ChromiumParameteriCR(GL_HH_SET_DEFAULT_SHARED_CTX, cr_server.MainContextInfo.SpuContext);
         }
     }
 

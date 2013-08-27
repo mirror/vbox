@@ -445,6 +445,12 @@ static int renderSPUCleanup(void)
         crHashtableWalk(render_spu.windowTable, renderspuBlitterCleanupCB, NULL);
     }
 
+    if (render_spu.defaultSharedContext)
+    {
+        renderspuContextRelease(render_spu.defaultSharedContext);
+        render_spu.defaultSharedContext = NULL;
+    }
+
     crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
     render_spu.contextTable = NULL;
     crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);

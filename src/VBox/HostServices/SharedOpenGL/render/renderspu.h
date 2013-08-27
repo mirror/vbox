@@ -258,6 +258,8 @@ typedef struct {
     CRHashTable *windowTable;
     CRHashTable *contextTable;
 
+    ContextInfo *defaultSharedContext;
+
 #ifndef CHROMIUM_THREADSAFE
     ContextInfo *currentContext;
 #endif
@@ -416,6 +418,11 @@ extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWin
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 
 extern uint32_t renderspuContextMarkDeletedAndRelease( ContextInfo *context );
+
+ContextInfo * renderspuDefaultSharedContextAcquire();
+void renderspuDefaultSharedContextRelease(ContextInfo * pCtx);
+uint32_t renderspuContextRelease(ContextInfo *context);
+uint32_t renderspuContextRetain(ContextInfo *context);
 
 #ifdef __cplusplus
 extern "C" {
