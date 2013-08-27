@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox Main - interface for VBox DHCP server
+ * VirtualBox Main - interface for VBox DHCP server.
  */
 
 /*
@@ -14,6 +14,7 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
+
 #include <iprt/err.h>
 #include <iprt/types.h>
 #include <iprt/string.h>
@@ -31,7 +32,7 @@ typedef enum
     NETCFG_NETMASK,
     NETCFG_VERBOSE,
     NETCFG_NOTOPT_MAXVAL
-}NETCFG;
+} NETCFG;
 
 #define TRUNKTYPE_WHATEVER "whatever"
 #define TRUNKTYPE_NETFLT   "netflt"
@@ -41,13 +42,16 @@ typedef enum
 class NetworkServiceRunner
 {
 public:
-    NetworkServiceRunner(const char *aProcName):
-      mProcName(aProcName),
-      mProcess(NIL_RTPROCESS)
+    NetworkServiceRunner(const char *aProcName)
+        : mProcName(aProcName)
+        , mProcess(NIL_RTPROCESS)
     {
-        memset(mOptionEnabled, 0, sizeof(mOptionEnabled));
+        RT_ZERO(mOptionEnabled);
     };
-    ~NetworkServiceRunner() { stop(); /* don't leave abandoned servers */}
+    ~NetworkServiceRunner()
+    {
+        stop(); /* don't leave abandoned servers */
+    }
 
     int setOption(NETCFG opt, const char *val, bool enabled)
     {
@@ -77,3 +81,4 @@ private:
     const char *mProcName;
     RTPROCESS mProcess;
 };
+
