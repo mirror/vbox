@@ -47,11 +47,14 @@ void crServerWindowSetIsVisible(CRMuralInfo *pMural, GLboolean fIsVisible)
     if (fIsVisible)
     {
         ++cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows;
+        cr_server.aWinVisibilityInfos[pMural->screenId].fVisibleChanged = 1;
     }
     else
     {
         --cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows;
         CRASSERT(cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows < UINT32_MAX/2);
+        if (!cr_server.aWinVisibilityInfos[pMural->screenId].cVisibleWindows)
+            cr_server.aWinVisibilityInfos[pMural->screenId].fVisibleChanged = 0;
     }
 
     crVBoxServerCheckVisibilityEvent(pMural->screenId);
