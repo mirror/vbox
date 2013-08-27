@@ -1037,6 +1037,31 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
                 RTPrintf("DHCP Enabled:   %s\n", fEnabled ? "Yes" : "No");
                 net->COMGETTER(Enabled)(&fEnabled);
                 RTPrintf("Enabled:        %s\n", fEnabled ? "Yes" : "No");
+                
+#define PRINT_STRING_ARRAY(title) \
+                if (strs.size() > 0)    \
+                { \
+                    RTPrintf(title); \
+                    size_t j = 0; \
+                    for (;j < strs.size(); ++j) \
+                        RTPrintf("        %s\n", Utf8Str(strs[j]).c_str()); \
+                } 
+
+                com::SafeArray<BSTR> strs;
+
+                CHECK_ERROR(nets[i], COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(strs)));
+                PRINT_STRING_ARRAY("Port-forwarding (ipv4)\n");
+                strs.setNull();
+
+                CHECK_ERROR(nets[i], COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(strs)));
+                PRINT_STRING_ARRAY("Port-forwarding (ipv6)\n");
+                strs.setNull();
+
+                CHECK_ERROR(nets[i], COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs)));
+                PRINT_STRING_ARRAY("loopback mappings (ipv4)\n");
+                strs.setNull();
+
+#undef PRINT_STRING_ARRAY
                 RTPrintf("\n");
             }
             break;
