@@ -254,15 +254,6 @@ public:
     bool findMedium (const CMedium &, UIMedium &) const;
     UIMedium findMedium (const QString &aMediumId) const;
 
-    /** Compact version of #findMediumTo(). Asserts if not found. */
-    UIMedium getMedium (const CMedium &aObj) const
-    {
-        UIMedium medium;
-        if (!findMedium (aObj, medium))
-            AssertFailed();
-        return medium;
-    }
-
     QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
     QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);

@@ -41,9 +41,6 @@ QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
 
 UIMedium& UIMedium::operator=(const UIMedium &other)
 {
-    m_fHidden = other.m_fHidden;
-    m_fAttachedToHiddenMachinesOnly = other.m_fAttachedToHiddenMachinesOnly;
-
     m_medium = other.medium();
     m_type = other.type();
     m_state = other.state();
@@ -65,6 +62,8 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_strUsage = other.usage();
     m_strToolTip = other.tip();
 
+    m_fHidden = other.m_fHidden;
+    m_fAttachedToHiddenMachinesOnly = other.m_fAttachedToHiddenMachinesOnly;
     m_fReadOnly = other.isReadOnly();
     m_fUsedInSnapshots = other.isUsedInSnapshots();
     m_fHostDrive = other.isHostDrive();
@@ -124,9 +123,12 @@ void UIMedium::blockAndQueryState()
  */
 void UIMedium::refresh()
 {
-    /* We assume these flags are 'false' by default: */
+    /* Flags are 'false' by default: */
     m_fHidden = false;
     m_fAttachedToHiddenMachinesOnly = false;
+    m_fReadOnly = false;
+    m_fUsedInSnapshots = false;
+    m_fHostDrive = false;
 
     /* Detect basic parameters */
     m_strId = m_medium.isNull() ? QUuid().toString().remove ('{').remove ('}') : m_medium.GetId();
