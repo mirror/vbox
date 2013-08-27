@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -124,7 +124,7 @@ private:
     /* Handler: Translation stuff: */
     void retranslateUi();
 
-    /* Helper: Medium-modification stuff: */
+    /* Helpers: Medium-modification stuff: */
     bool releaseMediumFrom(const UIMedium &medium, const QString &strMachineId);
     bool releaseHardDiskFrom(const UIMedium &medium, CMachine &machine);
     bool releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine);
@@ -134,23 +134,23 @@ private:
     QTreeWidget* treeWidget(UIMediumType type) const;
     UIMediumType currentTreeWidgetType() const;
     QTreeWidget* currentTreeWidget() const;
-    UIMediumItem* toMediumItem(QTreeWidgetItem *aItem) const;
     void setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem);
+    UIMediumItem* toMediumItem(QTreeWidgetItem *pItem) const;
+    UIMediumItem* searchItem(QTreeWidget *pTree, const QString &strId) const;
+    UIMediumItem* createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const;
 
-    UIMediumItem* createHardDiskItem (QTreeWidget *aTree, const UIMedium &aMedium) const;
+    /* Internal API: Tab-widget access stuff: */
+    void updateTabIcons(UIMediumItem *pItem, ItemAction action);
 
-    void updateTabIcons (UIMediumItem *aItem, ItemAction aAction);
-
-    UIMediumItem* searchItem (QTreeWidget *aTree, const QString &aId) const;
-
-    bool checkMediumFor (UIMediumItem *aItem, Action aAction);
-
+    /* Helpers: Other stuff: */
+    bool checkMediumFor(UIMediumItem *pItem, Action action);
     void clearInfoPanes();
-    void prepareToRefresh (int aTotal = 0);
+    void prepareToRefresh(int iTotal = 0);
 
-    QString formatPaneText (const QString &aText, bool aCompact = true, const QString &aElipsis = "middle");
+    /* Static helper: Formatting stuff: */
+    static QString formatPaneText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
-    /* Helper: Enumeration stuff: */
+    /* Static helper: Enumeration stuff: */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
 
     /* Variable: Singleton instance: */
@@ -187,4 +187,3 @@ private:
 };
 
 #endif /* __UIMediumManager_h__ */
-

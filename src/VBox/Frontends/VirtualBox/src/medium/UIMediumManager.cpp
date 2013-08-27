@@ -1444,15 +1444,6 @@ QTreeWidget* UIMediumManager::currentTreeWidget() const
     return treeWidget(currentTreeWidgetType());
 }
 
-UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem) const
-{
-    /* Return UIMediumItem based on QTreeWidgetItem if it is valid: */
-    if (pItem && pItem->type() == UIMediumItem::MediaItemType)
-        return static_cast<UIMediumItem*>(pItem);
-    /* Null by default: */
-    return 0;
-}
-
 void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
 {
     if (pTree && pItem)
@@ -1464,6 +1455,34 @@ void UIMediumManager::setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem)
     }
     else
         sltHandleCurrentTabChanged();
+}
+
+UIMediumItem* UIMediumManager::toMediumItem(QTreeWidgetItem *pItem) const
+{
+    /* Return UIMediumItem based on QTreeWidgetItem if it is valid: */
+    if (pItem && pItem->type() == UIMediumItem::MediaItemType)
+        return static_cast<UIMediumItem*>(pItem);
+    /* Null by default: */
+    return 0;
+}
+
+UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const QString &strId) const
+{
+    /* Make sure passed ID is valid: */
+    if (strId.isNull())
+        return 0;
+
+    /* Iterate other all the mediums of passed tree: */
+    UIMediumItemIterator iterator(pTree);
+    while (*iterator)
+    {
+        if ((*iterator)->id() == strId)
+            return *iterator;
+        ++iterator;
+    }
+
+    /* Null by default: */
+    return 0;
 }
 
 UIMediumItem* UIMediumManager::createHardDiskItem(QTreeWidget *pTree, const UIMedium &medium) const
@@ -1581,25 +1600,6 @@ void UIMediumManager::updateTabIcons(UIMediumItem *pMediumItem, ItemAction actio
     }
 }
 
-UIMediumItem* UIMediumManager::searchItem(QTreeWidget *pTree, const QString &strId) const
-{
-    /* Make sure passed ID is valid: */
-    if (strId.isNull())
-        return 0;
-
-    /* Iterate other all the mediums of passed tree: */
-    UIMediumItemIterator iterator(pTree);
-    while (*iterator)
-    {
-        if ((*iterator)->id() == strId)
-            return *iterator;
-        ++iterator;
-    }
-
-    /* Null by default: */
-    return 0;
-}
-
 bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
 {
     /* Make sure passed ID is valid: */
@@ -1701,6 +1701,7 @@ void UIMediumManager::prepareToRefresh(int iTotal)
     mTwFD->clear();
 }
 
+/* static */
 QString UIMediumManager::formatPaneText(const QString &strText, bool fCompact /* = true */,
                                         const QString &strElipsis /* = "middle" */)
 {
