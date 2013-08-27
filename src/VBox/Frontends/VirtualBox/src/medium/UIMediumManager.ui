@@ -286,7 +286,7 @@
     <item>
      <widget class="QIDialogButtonBox" name="mButtonBox" >
       <property name="standardButtons" >
-       <set>QDialogButtonBox::Cancel|QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
+       <set>QDialogButtonBox::Help|QDialogButtonBox::Ok</set>
       </property>
      </widget>
     </item>

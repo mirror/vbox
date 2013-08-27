@@ -186,7 +186,7 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
     m_fWarningAboutInaccessibleMediumShown = true;
 
     /* Make sure MM window is not opened: */
-    if (UIMediumManager::modelessInstance())
+    if (UIMediumManager::instance())
         return;
 
     /* Look for at least one inaccessible medium: */

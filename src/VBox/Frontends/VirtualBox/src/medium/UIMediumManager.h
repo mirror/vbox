@@ -19,113 +19,131 @@
 #ifndef __UIMediumManager_h__
 #define __UIMediumManager_h__
 
-/* GUI includes */
+/* GUI includes: */
 #include "UIMediumManager.gen.h"
-#include "QIMainDialog.h"
 #include "QIWithRetranslateUI.h"
-#include "VBoxMediaComboBox.h"
+#include "QIMainDialog.h"
+#include "UIMedium.h"
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CMachine.h"
+#include "CVirtualBox.h"
 
 /* Forward declarations: */
-class MediaItem;
-class VBoxProgressBar;
 class UIToolBar;
+class UIMediumItem;
+class VBoxProgressBar;
 
-class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>,
-                            public Ui::UIMediumManager
+/* Medium Manager Dialog: */
+class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
 {
     Q_OBJECT;
 
+    /* Enumerators: */
     enum TabIndex { HDTab = 0, CDTab, FDTab };
     enum ItemAction { ItemAction_Added, ItemAction_Updated, ItemAction_Removed };
-    enum Action { Action_Select, Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
+    enum Action { Action_Edit, Action_Copy, Action_Modify, Action_Remove, Action_Release };
+
+    /* Constructor/destructor: */
+    UIMediumManager(QWidget *pCenterWidget, bool fRefresh = true);
+    ~UIMediumManager();
 
 public:
 
-    UIMediumManager (QWidget *aParent = NULL,
-                         Qt::WindowFlags aFlags = Qt::Dialog);
-    ~UIMediumManager();
-
-    void setup (UIMediumType aType, bool aDoSelect,
-                bool aRefresh = true,
-                const CMachine &aSessionMachine = CMachine(),
-                const QString &aSelectId = QString::null,
-                bool aShowDiffs = true,
-                const QStringList &aUsedMediaIds = QStringList());
-
-    static void showModeless (QWidget *aParent = NULL, bool aRefresh = true);
-    static UIMediumManager* modelessInstance();
-
-    QString selectedId() const;
-    QString selectedLocation() const;
-
-    bool showDiffs() const { return mShowDiffs; };
-    bool inAttachMode() const { return !mSessionMachine.isNull(); };
+    /* Static API: Singleton stuff: */
+    static UIMediumManager* instance();
+    static void showModeless(QWidget *pCenterWidget, bool fRefresh = true);
 
 public slots:
 
+    /* Handler: Refresh stuff: */
     void refreshAll();
-
-protected:
-
-    void retranslateUi();
-    virtual void closeEvent (QCloseEvent *aEvent);
-    virtual bool eventFilter (QObject *aObject, QEvent *aEvent);
 
 private slots:
 
-    void mediumAdded (const UIMedium &aMedium);
-    void mediumUpdated (const UIMedium &aMedium);
-    void mediumRemoved (UIMediumType aType, const QString &aId);
+    /* Handlers: Medium-processing stuff: */
+    void sltHandleMediumAdded(const UIMedium &medium);
+    void sltHandleMediumUpdated(const UIMedium &medium);
+    void sltHandleMediumRemoved(UIMediumType type, const QString &strId);
 
+    /* Handlers: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationStart();
-    void sltHandleMediumEnumerated(const UIMedium &aMedium);
-    void sltHandleMediumEnumerationFinish(const VBoxMediaList &aList);
+    void sltHandleMediumEnumerated(const UIMedium &medium);
+    void sltHandleMediumEnumerationFinish();
 
-    void doNewMedium();
-    void doAddMedium();
-    void doCopyMedium();
-    void doModifyMedium();
-    void doRemoveMedium();
-    void doReleaseMedium();
+    /* Handlers: Medium-modification stuff: */
+    void sltCopyMedium();
+    void sltModifyMedium();
+    void sltRemoveMedium();
+    void sltReleaseMedium();
 
-    bool releaseMediumFrom (const UIMedium &aMedium, const QString &aMachineId);
+    /* Handlers: Navigation stuff: */
+    void sltHandleCurrentTabChanged();
+    void sltHandleCurrentItemChanged(QTreeWidgetItem *pItem, QTreeWidgetItem *pPrevItem = 0);
+    void sltHandleDoubleClick();
+    void sltHandleContextMenuCall(const QPoint &position);
 
-    void processCurrentChanged (int index = -1);
-    void processCurrentChanged (QTreeWidgetItem *aItem, QTreeWidgetItem *aPrevItem = 0);
-    void processDoubleClick (QTreeWidgetItem *aItem, int aColumn);
-    void showContextMenu (const QPoint &aPos);
+    /* Handler: Machine stuff: */
+    void sltHandleMachineStateChanged(QString strId, KMachineState state);
 
-    void machineStateChanged(QString strId, KMachineState state);
-
-    void makeRequestForAdjustTable();
-    void performTablesAdjustment();
+    /* Handlers: Geometry stuff:  */
+    void sltMakeRequestForTableAdjustment();
+    void sltPerformTablesAdjustment();
 
 private:
 
-    QTreeWidget* treeWidget (UIMediumType aType) const;
+    /* Helpers: Prepare stuff: */
+    void prepare();
+    void prepareThis();
+    void prepareActions();
+    void prepareMenuBar();
+    void prepareToolBar();
+    void prepareContextMenu();
+    void preapreTabWidget();
+    void prepareTreeWidgets();
+    void prepareTreeWidgetHD();
+    void prepareTreeWidgetCD();
+    void prepareTreeWidgetFD();
+    void prepareInformationPanes();
+    void prepareButtonBox();
+    void prepareProgressBar();
+#ifdef Q_WS_MAC
+    void prepareMacWindowMenu();
+#endif /* Q_WS_MAC */
+
+    /* Helper: Populate stuff: */
+    void populateTreeWidgets();
+
+    /* Helpers: Cleanup stuff: */
+#ifdef Q_WS_MAC
+    void cleanupMacWindowMenu();
+#endif /* Q_WS_MAC */
+    void cleanup();
+
+    /* Handler: Translation stuff: */
+    void retranslateUi();
+
+    /* Helper: Medium-modification stuff: */
+    bool releaseMediumFrom(const UIMedium &medium, const QString &strMachineId);
+    bool releaseHardDiskFrom(const UIMedium &medium, CMachine &machine);
+    bool releaseOpticalDiskFrom(const UIMedium &medium, CMachine &machine);
+    bool releaseFloppyDiskFrom(const UIMedium &medium, CMachine &machine);
+
+    /* Internal API: Tree-widget access stuff: */
+    QTreeWidget* treeWidget(UIMediumType type) const;
     UIMediumType currentTreeWidgetType() const;
     QTreeWidget* currentTreeWidget() const;
+    UIMediumItem* toMediumItem(QTreeWidgetItem *aItem) const;
+    void setCurrentItem(QTreeWidget *pTree, QTreeWidgetItem *pItem);
 
-    QTreeWidgetItem* selectedItem (const QTreeWidget *aTree) const;
-    MediaItem* toMediaItem (QTreeWidgetItem *aItem) const;
+    UIMediumItem* createHardDiskItem (QTreeWidget *aTree, const UIMedium &aMedium) const;
 
-    void setCurrentItem (QTreeWidget *aTree, QTreeWidgetItem *aItem);
+    void updateTabIcons (UIMediumItem *aItem, ItemAction aAction);
 
-    void addMediumToList (const QString &aLocation, UIMediumType aType);
+    UIMediumItem* searchItem (QTreeWidget *aTree, const QString &aId) const;
 
-    MediaItem* createHardDiskItem (QTreeWidget *aTree, const UIMedium &aMedium) const;
-
-    void updateTabIcons (MediaItem *aItem, ItemAction aAction);
-
-    MediaItem* searchItem (QTreeWidget *aTree, const QString &aId) const;
-
-    bool checkMediumFor (MediaItem *aItem, Action aAction);
-
-    bool checkDndUrls (const QList<QUrl> &aUrls) const;
-    void addDndUrls (const QList<QUrl> &aUrls);
+    bool checkMediumFor (UIMediumItem *aItem, Action aAction);
 
     void clearInfoPanes();
     void prepareToRefresh (int aTotal = 0);
@@ -135,48 +153,37 @@ private:
     /* Helper: Enumeration stuff: */
     static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
 
-    /* Private member vars */
-    /* Window status */
-    bool mDoSelect;
-    static UIMediumManager *mModelessDialog;
-    VBoxProgressBar *mProgressBar;
+    /* Variable: Singleton instance: */
+    static UIMediumManager *m_spInstance;
 
-    /* The global VirtualBox instance */
-    CVirtualBox mVBox;
+    /* Variables: General stuff: */
+    CVirtualBox m_vbox;
+    QWidget *m_pCenterWidget;
+    bool m_fRefresh;
 
-    /* Type if we are in the select modus */
-    int mType;
+    /* Variables: Tab-widget stuff: */
+    bool m_fInaccessibleHD;
+    bool m_fInaccessibleCD;
+    bool m_fInaccessibleFD;
+    const QIcon m_iconHD;
+    const QIcon m_iconCD;
+    const QIcon m_iconFD;
+    QString m_strSelectedIdHD;
+    QString m_strSelectedIdCD;
+    QString m_strSelectedIdFD;
 
-    bool mShowDiffs : 1;
-    bool mSetupMode : 1;
-
-    /* Icon definitions */
-    QIcon mHardDiskIcon;
-    QIcon mDVDImageIcon;
-    QIcon mFloppyImageIcon;
-
-    /* Menu & Toolbar */
-    QMenu       *mActionsContextMenu;
-    QMenu       *mActionsMenu;
+    /* Variables: Menu & Toolbar stuff: */
     UIToolBar *mToolBar;
-    QAction     *mNewAction;
-    QAction     *mAddAction;
-    QAction     *mCopyAction;
-    QAction     *mModifyAction;
-    QAction     *mRemoveAction;
-    QAction     *mReleaseAction;
-    QAction     *mRefreshAction;
+    QMenu     *m_pContextMenu;
+    QMenu     *m_pMenu;
+    QAction   *m_pActionCopy;
+    QAction   *m_pActionModify;
+    QAction   *m_pActionRemove;
+    QAction   *m_pActionRelease;
+    QAction   *m_pActionRefresh;
 
-    /* Machine */
-    CMachine mSessionMachine;
-    QString  mSessionMachineId;
-    bool mHardDisksInaccessible;
-    bool mDVDImagesInaccessible;
-    bool mFloppyImagesInaccessible;
-    QString mHDSelectedId;
-    QString mCDSelectedId;
-    QString mFDSelectedId;
-    QStringList mUsedMediaIds;
+    /* Variable: Progress-bar stuff: */
+    VBoxProgressBar *m_pProgressBar;
 };
 
 #endif /* __UIMediumManager_h__ */
