@@ -1144,6 +1144,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_K8_INT_PENDING:
         case MSR_K8_NB_CFG:             /* (All known values are 0 on reset.) */
         case MSR_K8_HWCR:               /* Very interesting bits here. :) */
+        case MSR_K8_VM_CR:              /* Windows 8 */
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
