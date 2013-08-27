@@ -214,6 +214,7 @@ int main()
     CHECK_PADDING_VM(64, selm);
     CHECK_PADDING_VM(64, mm);
     CHECK_PADDING_VM(64, pdm);
+    PRINT_OFFSET(VM, pdm.s.CritSect);
     CHECK_PADDING_VM(64, iom);
 #ifdef VBOX_WITH_RAW_MODE
     CHECK_PADDING_VM(64, patm);
@@ -222,6 +223,7 @@ int main()
     CHECK_PADDING_VM(64, em);
     /*CHECK_PADDING_VM(64, iem);*/
     CHECK_PADDING_VM(64, tm);
+    PRINT_OFFSET(VM, tm.s.VirtualSyncLock);
     CHECK_PADDING_VM(64, dbgf);
     CHECK_PADDING_VM(64, ssm);
     CHECK_PADDING_VM(64, rem);
