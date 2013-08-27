@@ -991,7 +991,7 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
         RT_ZERO(aszDhcpUpperIp);
 
         dhcpserver.u = network.u;
-        dhcpserver.u += m->u32GatewayOffset;
+        dhcpserver.u += m->u32DhcpOffset;
 
 
         /* XXX: adding more services should change the math here */
