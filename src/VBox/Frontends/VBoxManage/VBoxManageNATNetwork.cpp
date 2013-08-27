@@ -254,7 +254,6 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                 return errorSyntax(USAGE_NATNETWORK,
                                    "unhandled parameter: %s",
                                    ValueUnion.psz);
-            break;
 
             default:
                 if (c > 0)

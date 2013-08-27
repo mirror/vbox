@@ -751,6 +751,37 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [*|host|<vmname> [<metric_list>]]\n"
                      "\n", SEP, SEP, SEP, SEP, SEP, SEP);
 
+#if defined(VBOX_WITH_NAT_SERVICE)
+    if (u64Cmd & USAGE_NATNETWORK)
+    {
+        RTStrmPrintf(pStrm,
+                           "%s natnetwork %s      add --netname <name>\n"
+                     "                            --network <network\n"
+                     "                            [--enable|--disable]\n"
+                     "                            [--dhcp on|off]\n"
+                     "                            [--port-forward-4 <rule>]\n"
+                     "                            [--loopback-4 <rule>]\n"
+                     "                            [--ipv6 on|off]\n"
+                     "                            [--port-forward-6 <rule>]\n"
+                     "                            [--loopback-6 <rule>]\n\n"
+                           "%s natnetwork %s      remove --netname <name>\n\n"
+                           "%s natnetwork %s      modify --netname <name>\n"
+                     "                            [--network <network]\n"
+                     "                            [--enable|--disable]\n"
+                     "                            [--dhcp on|off]\n"
+                     "                            [--port-forward-4 <rule>]\n"
+                     "                            [--loopback-4 <rule>]\n"
+                     "                            [--ipv6 on|off]\n"
+                     "                            [--port-forward-6 <rule>]\n"
+                     "                            [--loopback-6 <rule>]\n\n"
+                           "%s natnetwork %s      start --netname <name>\n\n"
+                           "%s natnetwork %s      stop --netname <name>\n"
+                     "\n", SEP, SEP, SEP, SEP, SEP);
+
+
+    }
+#endif
+
 #if defined(VBOX_WITH_NETFLT)
     if (u64Cmd & USAGE_HOSTONLYIFS)
     {
