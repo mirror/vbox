@@ -94,13 +94,19 @@
       </listitem>
 
       <listitem>
-        <para>Storage: Implemented AHA-154x compatibility mode in the
-         emulated BusLogic SCSI HBA</para>
+        <para>Storage: implemented AHA-154x compatibility mode in the
+          emulated BusLogic SCSI HBA</para>
       </listitem>
 
       <listitem>
         <para>Storage: significantly improved performance of large ATAPI PIO
           transfers (BeOS, Minix 3 guests affected)</para>
+      </listitem>
+
+      <listitem>
+        <para>Storage: added floppy formatting emulation (NB: cannot be used
+          to change existing media geometry)
+        </para>
       </listitem>
 
       <listitem>
