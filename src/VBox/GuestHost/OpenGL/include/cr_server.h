@@ -373,8 +373,9 @@ typedef struct CR_DISPLAY_ENTRY_MAP
 
 typedef struct CRWinVisibilityInfo
 {
-    uint32_t cVisibleWindows        : 31;
+    uint32_t cVisibleWindows        : 30;
     uint32_t fLastReportedVisible   : 1;
+    uint32_t fVisibleChanged        : 1;
 } CRWinVisibilityInfo;
 
 /* */
