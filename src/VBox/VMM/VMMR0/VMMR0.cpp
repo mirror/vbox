@@ -532,7 +532,7 @@ VMMR0DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
  * @param   enmEvent    The thread-context event.
  * @param   pvUser      Opaque pointer to the VMCPU.
  */
-static void vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
+static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
     PVMCPU pVCpu = (PVMCPU)pvUser;
 
