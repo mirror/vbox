@@ -35,6 +35,15 @@
 #include "VBoxEvents.h"
 
 #include "VirtualBoxImpl.h"
+#include <algorithm>
+#include <list>
+
+#ifndef RT_OS_WINDOWS
+#include <netinet/in.h>
+#else
+# include <ws2def.h>
+# define IN_LOOPBACKNET 127
+#endif
 
 
 // constructor / destructor
@@ -76,6 +85,10 @@ struct NATNetwork::Data
     BOOL fNeedDhcpServer;
     NATRuleMap mapName2PortForwardRule4;
     NATRuleMap mapName2PortForwardRule6;
+    settings::NATLoopbackOffsetList llNATLoopbackOffsetList;
+    uint32_t u32LoopbackIp6;
+    uint32_t u32GatewayOffset;
+    uint32_t u32DhcpOffset;
 };
 
 NATNetwork::NATNetwork()
@@ -121,12 +134,15 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
     unconst(mVirtualBox) = aVirtualBox;
     unconst(mName) = aName;
     m = new Data();
-    m->IPv4Gateway = "10.0.2.2";
+    m->u32GatewayOffset = 1;
     m->IPv4NetworkCidr = "10.0.2.0/24";
     m->IPv6Prefix = "fe80::/64";
     m->fEnabled = FALSE;
 
-
+    settings::NATHostLoopbackOffset off;
+    off.strLoopbackHostAddress = "127.0.0.1";
+    off.u32Offset = (uint32_t)2;
+    m->llNATLoopbackOffsetList.push_back(off);
 
     RecalculateIpv4AddressAssignments();
 
@@ -159,6 +175,12 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     m->fEnabled = data.fEnabled;
     m->fAdvertiseDefaultIPv6Route = data.fAdvertiseDefaultIPv6Route;
     m->fNeedDhcpServer = data.fNeedDhcpServer;
+
+    m->u32LoopbackIp6 = data.u32HostLoopback6Offset;
+
+    m->llNATLoopbackOffsetList.clear();
+    m->llNATLoopbackOffsetList.assign(data.llHostLoopbackOffsetList.begin(),
+                               data.llHostLoopbackOffsetList.end());
 
     RecalculateIpv4AddressAssignments();
 
@@ -217,14 +239,19 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
          it != m->mapName2PortForwardRule6.end(); ++it)
       data.llPortForwardRules4.push_back(it->second);
 
-    /* XXX: should we do here a copy of params */
-    /* XXX: should we unlock here? */
+    data.u32HostLoopback6Offset = m->u32LoopbackIp6;
+    
+    data.llHostLoopbackOffsetList.clear();
+    data.llHostLoopbackOffsetList.assign(m->llNATLoopbackOffsetList.begin(),
+                                         m->llNATLoopbackOffsetList.end());
+
     mVirtualBox->onNATNetworkSetting(mName.raw(),
                                      data.fEnabled ? TRUE : FALSE,
                                      m->IPv4NetworkCidr.raw(),
                                      m->IPv4Gateway.raw(),
                                      data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
                                      data.fNeedDhcpServer ? TRUE : FALSE);
+
     return S_OK;
 }
 #endif
@@ -386,6 +413,10 @@ STDMETHODIMP NATNetwork::COMGETTER(IPv6Prefix) (BSTR *aIPv6Prefix)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->IPv6Prefix.cloneTo(aIPv6Prefix);
+
     return S_OK;
 }
 
@@ -397,6 +428,7 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     /* silently ignore network cidr update */
     if (m->mapName2PortForwardRule6.empty())
     {
@@ -475,31 +507,124 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
     return rc;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMappings))
 {
-    NOREF(aLocalMappings);
-#ifndef RT_OS_WINDOWS
-    NOREF(aLocalMappingsSize);
-#endif
-    return E_NOTIMPL;
+    CheckComArgOutSafeArrayPointerValid(aLocalMappings);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    com::SafeArray<BSTR> sf(m->llNATLoopbackOffsetList.size());
+
+    size_t i = 0;
+    settings::NATLoopbackOffsetList::const_iterator it;
+
+    for (it = m->llNATLoopbackOffsetList.begin();
+         it != m->llNATLoopbackOffsetList.end(); ++it, ++i)
+      {
+          BstrFmt bstr("%s;%d",
+                       (*it).strLoopbackHostAddress.c_str(),
+                       (*it).u32Offset);
+        bstr.detachTo(&sf[i]);
+    }
+    sf.detachTo(ComSafeArrayOutArg(aLocalMappings));
+
+    return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
 {
-    NOREF(aHostId); NOREF(aOffset);
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    //AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    RTNETADDRIPV4 addr, net, mask;
+
+    int rc = RTNetStrToIPv4Addr(Utf8Str(aHostId).c_str(), &addr);
+    if (RT_FAILURE(rc)) 
+        return E_INVALIDARG;
+    
+    /* check against 127/8 */
+    if ((RT_N2H_U32(addr.u) >> IN_CLASSA_NSHIFT) != IN_LOOPBACKNET)
+        return E_INVALIDARG;
+    
+    /* check against networkid vs network mask */
+    rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr).c_str(), &net, &mask);
+    if (RT_FAILURE(rc)) 
+        return E_INVALIDARG;
+
+    if (((net.u + aOffset) & mask.u) != net.u)
+        return E_INVALIDARG;
+
+    settings::NATLoopbackOffsetList::iterator it;
+
+    it = std::find(m->llNATLoopbackOffsetList.begin(),
+                   m->llNATLoopbackOffsetList.end(), 
+                   Utf8Str(aHostId).c_str());
+
+    if (it != m->llNATLoopbackOffsetList.end())
+    {
+        if (aOffset == 0) /* erase */
+            m->llNATLoopbackOffsetList.erase(it, it);
+        else /* modify */
+        {
+            settings::NATLoopbackOffsetList::iterator it1;
+            it1 = std::find(m->llNATLoopbackOffsetList.begin(),
+                           m->llNATLoopbackOffsetList.end(), 
+                           (uint32_t)aOffset);
+            if (it1 != m->llNATLoopbackOffsetList.end())
+                return E_INVALIDARG; /* this offset is already registered. */
+
+            (*it).u32Offset = aOffset;
+        }
+
+        AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+        return mVirtualBox->saveSettings();
+    }
+
+    /* injection */
+    it = std::find(m->llNATLoopbackOffsetList.begin(),
+                   m->llNATLoopbackOffsetList.end(), 
+                   (uint32_t)aOffset);
+
+    if (it != m->llNATLoopbackOffsetList.end())
+        return E_INVALIDARG; /* offset is already registered. */
+
+    settings::NATHostLoopbackOffset off;
+    off.strLoopbackHostAddress = aHostId;
+    off.u32Offset = (uint32_t)aOffset;
+    m->llNATLoopbackOffsetList.push_back(off);
+
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    return mVirtualBox->saveSettings();
 }
+
 
 STDMETHODIMP NATNetwork::COMGETTER(LoopbackIp6)(LONG *aLoopbackIp6)
 {
-    NOREF(aLoopbackIp6);
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aLoopbackIp6 = m->u32LoopbackIp6;
+    return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
 {
-    NOREF(aLoopbackIp6);
-    return E_NOTIMPL;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    m->u32LoopbackIp6 = aLoopbackIp6;
+    
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    return mVirtualBox->saveSettings();
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPortForwardRules4))
@@ -783,6 +908,50 @@ void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRu
     sf.detachTo(ComSafeArrayOutArg(aPortForwardRules));
 }
 
+
+int NATNetwork::findFirstAvailableOffset(uint32_t *pu32Offset)
+{
+    uint32_t offset;
+    RTNETADDRIPV4 network, netmask;
+
+    int rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr.raw()).c_str(),
+                             &network,
+                             &netmask);
+    AssertRCReturn(rc, rc);
+
+    settings::NATLoopbackOffsetList::iterator it;
+    for (offset = 1; offset < (network.u & (~netmask.u)); ++offset)
+    {
+        bool skip = false;
+
+        if (offset == m->u32GatewayOffset)
+            continue;
+
+        if (offset == m->u32DhcpOffset)
+            continue;
+        
+        for (it = m->llNATLoopbackOffsetList.begin();
+             it != m->llNATLoopbackOffsetList.end();
+             ++it)
+        {
+            if ((*it).u32Offset == offset) 
+            {
+                skip = true;
+                break;
+            }
+
+        }
+        
+        if(!skip)
+            break;
+    }
+    
+    if (pu32Offset)
+        *pu32Offset = offset;
+    
+    return VINF_SUCCESS;
+}
+
 int NATNetwork::RecalculateIpv4AddressAssignments()
 {
     RTNETADDRIPV4 network, netmask, gateway;
@@ -793,13 +962,19 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
                              &netmask);
     AssertRCReturn(rc, rc);
 
+    findFirstAvailableOffset(&m->u32GatewayOffset);
+    if (m->fNeedDhcpServer)
+        findFirstAvailableOffset(&m->u32DhcpOffset);
+
     /* I don't remember the reason CIDR calcualted in host */
     gateway.u = network.u;
 
-    gateway.u += 1;
+    gateway.u += m->u32GatewayOffset;
     gateway.u = RT_H2N_U32(gateway.u);
     RTStrPrintf(aszGatewayIp, 16, "%RTnaipv4", gateway);
+
     m->IPv4Gateway = RTStrDup(aszGatewayIp);
+
     if (m->fNeedDhcpServer)
     {
         RTNETADDRIPV4 dhcpserver,
@@ -816,7 +991,7 @@ int NATNetwork::RecalculateIpv4AddressAssignments()
         RT_ZERO(aszDhcpUpperIp);
 
         dhcpserver.u = network.u;
-        dhcpserver.u += 2;
+        dhcpserver.u += m->u32GatewayOffset;
 
 
         /* XXX: adding more services should change the math here */
