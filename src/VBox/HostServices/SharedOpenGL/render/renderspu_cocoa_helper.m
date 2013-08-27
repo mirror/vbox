@@ -176,30 +176,33 @@
     while(0);
 
 
-static NSOpenGLContext * vboxCtxGetCurrent()
+static bool vboxCtxSyncCurrentInfo()
 {
-	GET_CONTEXT(pCtxInfo);
-	if (pCtxInfo)
-	{
-#ifdef DEBUG
-		NSOpenGLContext *pDbgCur = [NSOpenGLContext currentContext];
-		Assert(pCtxInfo->context == pDbgCur);
-		if (pDbgCur)
-		{
-			NSView *pDbgView = [pDbgCur view];
-			Assert(pCtxInfo->currentWindow->window == pDbgView);
-		}
-#endif
-		return pCtxInfo->context;
-	}
-
-#ifdef DEBUG
-	{
-		NSOpenGLContext *pDbgCur = [NSOpenGLContext currentContext];
-		Assert(!pDbgCur);
-	}
-#endif
-	return nil;
+    GET_CONTEXT(pCtxInfo);
+    NSOpenGLContext *pCtx = [NSOpenGLContext currentContext];
+    NSView *pView = pCtx ? [pCtx view] : nil;
+    bool fAdjusted = false;
+    if (pCtxInfo)
+    {
+        WindowInfo *pWinInfo = pCtxInfo->currentWindow;
+        Assert(pWinInfo);
+        if (pCtxInfo->context != pCtx
+            || pWinInfo->window != pView)
+        {
+            renderspu_SystemMakeCurrent(pWinInfo, 0, pCtxInfo);
+            fAdjusted = true;
+        }
+    }
+    else
+    {
+        if (pCtx)
+        {
+            [NSOpenGLContext clearCurrentContext];
+            fAdjusted = true;
+        }
+    }
+    
+    return fAdjusted;
 }
 
 typedef struct VBOX_CR_RENDER_CTX_INFO
@@ -211,7 +214,7 @@ typedef struct VBOX_CR_RENDER_CTX_INFO
 
 static void vboxCtxEnter(NSOpenGLContext*pCtx, PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 {
-    NSOpenGLContext *pOldCtx = vboxCtxGetCurrent();
+    NSOpenGLContext *pOldCtx = [NSOpenGLContext currentContext];
     NSView *pOldView = (pOldCtx ? [pOldCtx view] : nil);
     NSView *pView = [pCtx view];
     bool fNeedCtxSwitch = (pOldCtx != pCtx || pOldView != pView);
@@ -882,7 +885,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [self createDockTile];
     /* have to rebind GL_TEXTURE_RECTANGLE_ARB as m_FBOTexId could be changed in updateFBO call */
     m_fNeedViewportUpdate = true;
-    pCurCtx = vboxCtxGetCurrent();
+    pCurCtx = [NSOpenGLContext currentContext];
     if (pCurCtx && pCurCtx == m_pGLCtx && (pCurView = [pCurCtx view]) == self)
     {
         [m_pGLCtx update];
@@ -993,6 +996,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
         [self updateViewportCS];
     
         vboxCtxLeave(&CtxInfo);
+        
+        vboxCtxSyncCurrentInfo();
     }
 }
 
@@ -1161,6 +1166,10 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
 		}
         [self unlockFocus];
     }
+    else
+    {
+        [self setNeedsDisplay:YES];
+    }
 }
 
 - (void)vboxTryDrawUI
@@ -1169,14 +1178,43 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     {
         if (m_pSharedGLCtx)
 	    {
+#if 0
+            /* tmp workaround to prevent potential deadlock:
+             * crOpenGL service thread does compositor lock acquire and calls cocoa NS methods that could synchronize on the GUI thread
+             * while here we do a reverse order: acquire compositor lock being in gui thread.
+             * this is why we do only try acquire and re-submit repaint event if compositor lock is busy */
+             VBOXVR_SCR_COMPOSITOR *pCompositor = NULL;
+            int rc = renderspuVBoxCompositorTryAcquire(m_pWinInfo, &pCompositor);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(pCompositor);
+                [self vboxPresent:pCompositor];
+                renderspuVBoxCompositorRelease(m_pWinInfo);
+            }
+            else if (rc == VERR_SEM_BUSY)
+            {
+                /* re-issue to the gui thread */
+                [self setNeedsDisplay:YES];
+            }
+            else
+            {
+                /* this is somewhat we do not expect */
+                DEBUG_MSG(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
+            }
+#else
 	    	VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
 	    	if (pCompositor)
 	    	{
 	    		[self vboxPresent:pCompositor];
 				renderspuVBoxCompositorRelease(m_pWinInfo);
 			}
+#endif
 		}
         [self unlockFocus];
+    }
+    else
+    {
+        [self setNeedsDisplay:YES];
     }
 }
 
@@ -1207,6 +1245,8 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     [self vboxPresentCS:pCompositor];
     
     vboxCtxLeave(&CtxInfo);
+    
+    vboxCtxSyncCurrentInfo();
 }
 
 - (void)vboxPresentCS:(PVBOXVR_SCR_COMPOSITOR)pCompositor
@@ -1780,10 +1820,26 @@ void cocoaViewGetGeometry(NativeNSViewRef pView, int *pX, int *pY, int *pW, int 
 void cocoaViewPresentComposition(NativeNSViewRef pView, struct VBOXVR_SCR_COMPOSITOR_ENTRY *pChangedEntry)
 {
     NSAutoreleasePool *pPool = [[NSAutoreleasePool alloc] init];
+    NSOpenGLContext *pCtx;
     
-    /* view should not necesserily have a context set 
-     * @todo: check and set default shared one */
-
+    /* view should not necesserily have a context set */
+    pCtx = [(OverlayView*)pView glCtx];
+    if (!pCtx)
+    {
+        ContextInfo * pCtxInfo = renderspuDefaultSharedContextAcquire();
+        if (!pCtxInfo)
+        {
+            DEBUG_WARN(("renderspuDefaultSharedContextAcquire returned NULL"));
+            
+            [pPool release];
+            return;
+        }
+        
+        pCtx = pCtxInfo->context;
+        
+        [(OverlayView*)pView setGLCtx:pCtx];
+    }
+    
     [(OverlayView*)pView presentComposition:pChangedEntry];
 
     [pPool release];
