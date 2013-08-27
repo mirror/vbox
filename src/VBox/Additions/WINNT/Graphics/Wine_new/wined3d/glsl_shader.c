@@ -37,8 +37,16 @@
 
 #include "wined3d_private.h"
 
-#if defined(VBOX) && defined(RT_ARCH_AMD64)
-# define copysignf _copysignf
+#if defined(VBOX)
+# if defined(RT_ARCH_AMD64)
+#  define copysignf _copysignf
+# else
+#  define _VBOX_FLOAT_BITVAL(_f) (*((const uint32_t*)((const void*)(&(_f)))))
+DECLINLINE(float) copysignf(float val, float sign)
+{
+    return ((_VBOX_FLOAT_BITVAL(val) & 0x7fffffff) | (_VBOX_FLOAT_BITVAL(sign) & 0x80000000));
+}
+# endif
 #endif
 
 WINE_DEFAULT_DEBUG_CHANNEL(d3d_shader);
@@ -259,11 +267,7 @@ static void shader_glsl_ftoa(float value, char *s)
     double d;
 
     d = value;
-#if defined(VBOX) && !defined(RT_ARCH_AMD64)
-    if (value < 0.0f)
-#else
     if (copysignf(1.0f, value) < 0.0f)
-#endif
     {
         d = -d;
         sign = "-";
