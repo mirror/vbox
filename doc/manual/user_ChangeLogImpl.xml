@@ -33,6 +33,11 @@
       </listitem>
 
       <listitem>
+        <para>GUI, VBoxManage: when unregistering a VM, also unregister the
+          hard disk images which are used exclusively (bug #10311)</para>
+      </listitem>
+
+      <listitem>
         <para>Added USB touch device emulation</para>
       </listitem>
 

@@ -153,7 +153,7 @@ int handleUnregisterVM(HandlerArg *a)
                                                machine.asOutParam()),
                     RTEXITCODE_FAILURE);
     SafeIfaceArray<IMedium> aMedia;
-    CHECK_ERROR_RET(machine, Unregister(fDelete ? (CleanupMode_T)CleanupMode_DetachAllReturnHardDisksOnly : (CleanupMode_T)CleanupMode_DetachAllReturnNone,
+    CHECK_ERROR_RET(machine, Unregister(CleanupMode_DetachAllReturnHardDisksOnly,
                                         ComSafeArrayAsOutParam(aMedia)),
                     RTEXITCODE_FAILURE);
     if (fDelete)
@@ -164,6 +164,20 @@ int handleUnregisterVM(HandlerArg *a)
 
         rc = showProgress(pProgress);
         CHECK_PROGRESS_ERROR_RET(pProgress, ("Machine delete failed"), RTEXITCODE_FAILURE);
+    }
+    else
+    {
+        /* Note that the IMachine::Unregister method will return the medium
+         * reference in a sane order, which means that closing will normally
+         * succeed, unless there is still another machine which uses the
+         * medium. No harm done if we ignore the error. */
+        for (size_t i = 0; i < aMedia.size(); i++)
+        {
+            IMedium *pMedium = aMedia[i];
+            if (pMedium)
+                rc = pMedium->Close();
+        }
+        rc = S_OK;
     }
     return RTEXITCODE_SUCCESS;
 }
