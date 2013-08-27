@@ -836,6 +836,21 @@ void ConfigFileBase::readNATForwardRuleList(const xml::ElementNode &elmParent, N
     }
 }
 
+void ConfigFileBase::readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopbacks)
+{
+    xml::ElementNodesList plstLoopbacks;
+    elmParent.getChildElements(plstLoopbacks, "Loopback4");
+    for (xml::ElementNodesList::iterator lo = plstLoopbacks.begin();
+         lo != plstLoopbacks.end(); ++lo)
+    {
+        NATHostLoopbackOffset loopback;
+        (*lo)->getAttributeValue("address", loopback.strLoopbackHostAddress);
+        (*lo)->getAttributeValue("offset", (uint32_t&)loopback.u32Offset);
+        llLoopbacks.push_back(loopback);
+    }
+}
+
+
 /**
  * Adds a "version" attribute to the given XML element with the
  * VirtualBox settings version (e.g. "1.10-linux"). Used by
@@ -1191,6 +1206,19 @@ void ConfigFileBase::buildNATForwardRuleList(xml::ElementNode &elmParent, const 
     }
 }
 
+
+void ConfigFileBase::buildNATLoopbacks(xml::ElementNode &elmParent, const NATLoopbackOffsetList &natLoopbackOffsetList)
+{
+    for (NATLoopbackOffsetList::const_iterator lo = natLoopbackOffsetList.begin();
+         lo != natLoopbackOffsetList.end(); ++lo)
+    {
+        xml::ElementNode *pelmLo;
+        pelmLo = elmParent.createChild("Loopback4");
+        pelmLo->setAttribute("address", (*lo).strLoopbackHostAddress);
+        pelmLo->setAttribute("offset", (*lo).u32Offset);
+    }
+}
+
 /**
  * Cleans up memory allocated by the internal XML parser. To be called by
  * descendant classes when they're done analyzing the DOM tree to discard it.
@@ -1378,6 +1406,11 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
                  && (pelmNet->getAttributeValue("needDhcp", net.fNeedDhcpServer))
                )
             {
+                pelmNet->getAttributeValue("loopback6", net.u32HostLoopback6Offset);
+                const xml::ElementNode *pelmMappings;
+                if ((pelmMappings = pelmNet->findChildElement("Mappings")))
+                    readNATLoopbacks(*pelmMappings, net.llHostLoopbackOffsetList);
+
                 const xml::ElementNode *pelmPortForwardRules4;
                 if ((pelmPortForwardRules4 = pelmNet->findChildElement("PortForwarding4")))
                     readNATForwardRuleList(*pelmPortForwardRules4,
@@ -1632,6 +1665,13 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
             {
                 xml::ElementNode *pelmPf6 = pelmThis->createChild("PortForwarding6");
                 buildNATForwardRuleList(*pelmPf6, n.llPortForwardRules6);
+            }
+
+            if (n.llHostLoopbackOffsetList.size())
+            {
+                xml::ElementNode *pelmMappings = pelmThis->createChild("Mappings");
+                buildNATLoopbacks(*pelmMappings, n.llHostLoopbackOffsetList);
+
             }
         }
     }

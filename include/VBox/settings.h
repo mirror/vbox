@@ -191,6 +191,23 @@ struct MediaRegistry
  };
  typedef std::list<NATRule> NATRuleList;
 
+struct NATHostLoopbackOffset
+{
+    /** Note: 128/8 is only acceptable */
+    com::Utf8Str strLoopbackHostAddress;
+    uint32_t u32Offset;
+    bool operator == (const com::Utf8Str& strAddr)
+    {
+        return (strLoopbackHostAddress == strAddr);
+    }
+    
+    bool operator == (uint32_t off)
+    {
+        return (this->u32Offset == off);
+    }
+};
+typedef std::list<NATHostLoopbackOffset> NATLoopbackOffsetList;
+
 /**
  * Common base class for both MainConfigFile and MachineConfigFile
  * which contains some common logic for both.
@@ -225,6 +242,7 @@ protected:
     void readMedium(MediaType t, const xml::ElementNode &elmMedium, MediaList &llMedia);
     void readMediaRegistry(const xml::ElementNode &elmMediaRegistry, MediaRegistry &mr);
     void readNATForwardRuleList(const xml::ElementNode  &elmParent, NATRuleList &llRules);
+    void readNATLoopbacks(const xml::ElementNode &elmParent, NATLoopbackOffsetList &llLoopBacks);
 
     void setVersionAttribute(xml::ElementNode &elm);
     void createStubDocument();
@@ -240,6 +258,7 @@ protected:
     void buildMediaRegistry(xml::ElementNode &elmParent,
                             const MediaRegistry &mr);
     void buildNATForwardRuleList(xml::ElementNode &elmParent, const NATRuleList &natRuleList);
+    void buildNATLoopbacks(xml::ElementNode &elmParent, const NATLoopbackOffsetList &natLoopbackList);
     void clearDocument();
 
     struct Data;
@@ -341,6 +360,8 @@ struct NATNetwork
     com::Utf8Str strNetwork;
     bool         fIPv6;
     com::Utf8Str strIPv6Prefix;
+    uint32_t     u32HostLoopback6Offset;
+    NATLoopbackOffsetList llHostLoopbackOffsetList;
     bool         fAdvertiseDefaultIPv6Route;
     bool         fNeedDhcpServer;
     NATRuleList  llPortForwardRules4;
