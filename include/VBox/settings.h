@@ -164,32 +164,33 @@ struct MediaRegistry
 /**
  *
  */
- struct NATRule
- {
-     NATRule()
-         : proto(NATProtocol_TCP),
-           u16HostPort(0),
-           u16GuestPort(0)
-     {}
+struct NATRule
+{
+    NATRule()
+    : proto(NATProtocol_TCP),
+      u16HostPort(0),
+      u16GuestPort(0)
+    {}
 
-     bool operator==(const NATRule &r) const
-     {
-         return strName == r.strName
-             && proto == r.proto
-             && u16HostPort == r.u16HostPort
-             && strHostIP == r.strHostIP
-             && u16GuestPort == r.u16GuestPort
-             && strGuestIP == r.strGuestIP;
-     }
+    bool operator==(const NATRule &r) const
+    {
+        return    strName == r.strName
+               && proto == r.proto
+               && u16HostPort == r.u16HostPort
+               && strHostIP == r.strHostIP
+               && u16GuestPort == r.u16GuestPort
+               && strGuestIP == r.strGuestIP;
+    }
 
-     com::Utf8Str            strName;
-     NATProtocol_T           proto;
-     uint16_t                u16HostPort;
-     com::Utf8Str            strHostIP;
-     uint16_t                u16GuestPort;
-     com::Utf8Str            strGuestIP;
- };
- typedef std::list<NATRule> NATRuleList;
+    com::Utf8Str            strName;
+    NATProtocol_T           proto;
+    uint16_t                u16HostPort;
+    com::Utf8Str            strHostIP;
+    uint16_t                u16GuestPort;
+    com::Utf8Str            strGuestIP;
+};
+typedef std::list<NATRule> NATRuleList;
+
 
 struct NATHostLoopbackOffset
 {
