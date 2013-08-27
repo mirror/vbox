@@ -8153,7 +8153,7 @@
 
   <interface
     name="IHostNetworkInterface" extends="$unknown"
-    uuid="87a4153d-6889-4dd6-9654-2e9ff0ae8dec"
+    uuid="f6e556f9-d598-409b-898c-8ba99d9b05ae"
     wsmap="managed"
     >
     <desc>
