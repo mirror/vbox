@@ -52,10 +52,6 @@
 /* global variables */
 static tcpip_init_done_fn tcpip_init_done;
 static void *tcpip_init_done_arg;
-
-static tcpip_fini_done_fn tcpip_fini_done;
-static void *tcpip_fini_done_arg;
-
 static sys_mbox_t mbox;
 
 #if LWIP_TCPIP_CORE_LOCKING
@@ -149,11 +145,15 @@ tcpip_thread(void *arg)
       LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_thread: CALLBACK_STATIC %p\n", (void *)msg));
       msg->msg.cb.function(msg->msg.cb.ctx);
       break;
-# ifdef VBOX
-    case TCPIP_MSG_TERM:
-      UNLOCK_TCPIP_CORE();
+
+#ifdef VBOX
+    case TCPIP_MSG_CALLBACK_TERMINATE:
+      LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_thread: CALLBACK_TERMINATE %p\n", (void *)msg));
+      if (msg->msg.cb.function != NULL) {
+	msg->msg.cb.function(msg->msg.cb.ctx);
+      }
       goto terminate;
-# endif
+#endif
 
     default:
       LWIP_DEBUGF(TCPIP_DEBUG, ("tcpip_thread: invalid message: %d\n", msg->type));
@@ -161,10 +161,10 @@ tcpip_thread(void *arg)
       break;
     }
   }
-# ifdef VBOX
+#ifdef VBOX
  terminate:
-  if (tcpip_fini_done != NULL) 
-    tcpip_fini_done(tcpip_fini_done_arg);
+  /* XXX: TODO: lwip cleanup? */
+  UNLOCK_TCPIP_CORE();
 #endif
 }
 
@@ -470,24 +470,12 @@ tcpip_callbackmsg(struct tcpip_callback_msg* msg)
  * @param arg argument to pass to initfunc
  */
 void
-#ifdef VBOX
-tcpip_init(tcpip_init_done_fn initfunc, 
-           void *init_arg, 
-           tcpip_fini_done_fn finifunc, 
-           void *fini_arg)
-#else
-tcpip_init(tcpip_init_done_fn initfunc, 
-             void *init_arg)
-#endif
+tcpip_init(tcpip_init_done_fn initfunc, void *arg)
 {
   lwip_init();
 
   tcpip_init_done = initfunc;
-  tcpip_init_done_arg = init_arg;
-#ifdef VBOX
-  tcpip_fini_done = finifunc;
-  tcpip_fini_done_arg = fini_arg;
-#endif
+  tcpip_init_done_arg = arg;
   if(sys_mbox_new(&mbox, TCPIP_MBOX_SIZE) != ERR_OK) {
     LWIP_ASSERT("failed to create tcpip_thread mbox", 0);
   }
@@ -538,13 +526,4 @@ mem_free_callback(void *m)
   return tcpip_callback_with_block(mem_free, m, 0);
 }
 
-# ifdef VBOX
-void
-tcpip_terminate(void)
-{
-  static struct tcpip_msg msg;
-  msg.type = TCPIP_MSG_TERM;
-  sys_mbox_post(&mbox, &msg);
-}
-# endif
 #endif /* !NO_SYS */
