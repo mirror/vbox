@@ -425,7 +425,7 @@ public:
         if (length())
         {
             /* Folding an UTF-8 string may result in a shorter encoding (see
-               testcase), so recalculate the length afterwars. */
+               testcase), so recalculate the length afterwards. */
             ::RTStrToUpper(m_psz);
             size_t cchNew = strlen(m_psz);
             Assert(cchNew <= m_cch);
@@ -444,7 +444,7 @@ public:
         if (length())
         {
             /* Folding an UTF-8 string may result in a shorter encoding (see
-               testcase), so recalculate the length afterwars. */
+               testcase), so recalculate the length afterwards. */
             ::RTStrToLower(m_psz);
             size_t cchNew = strlen(m_psz);
             Assert(cchNew <= m_cch);
