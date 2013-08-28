@@ -152,13 +152,13 @@ void bios_printf(uint16_t action, const char *s, ...)
     bx_bool     in_format;
     int         i;
     uint16_t    arg, nibble, hibyte, format_width, hexadd;
-    va_list     args; 
-    
+    va_list     args;
+
     va_start( args, s );
-    
+
     in_format = 0;
     format_width = 0;
-    
+
     if ((action & BIOS_PRINTF_DEBHALT) == BIOS_PRINTF_DEBHALT) {
         bios_printf (BIOS_PRINTF_SCREEN, "FATAL: ");
     }

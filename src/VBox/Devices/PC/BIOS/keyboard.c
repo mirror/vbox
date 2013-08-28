@@ -166,7 +166,7 @@ void keyboard_panic(uint16_t status)
 {
     // If you're getting a 993 keyboard panic here,
     // please see the comment in keyboard_init
-    
+
     BX_PANIC("Keyboard error:%u\n",status);
 }
 
@@ -312,7 +312,7 @@ void BIOSCALL keyboard_init(void)
 unsigned int enqueue_key(uint8_t scan_code, uint8_t ascii_code)
 {
     uint16_t    buffer_start, buffer_end, buffer_head, buffer_tail, temp_tail;
-    
+
 #if BX_CPU < 2
     buffer_start = 0x001E;
     buffer_end   = 0x003E;
@@ -320,18 +320,18 @@ unsigned int enqueue_key(uint8_t scan_code, uint8_t ascii_code)
     buffer_start = read_word(0x0040, 0x0080);
     buffer_end   = read_word(0x0040, 0x0082);
 #endif
-    
+
     buffer_head = read_word(0x0040, 0x001A);
     buffer_tail = read_word(0x0040, 0x001C);
-    
+
     temp_tail = buffer_tail;
     buffer_tail += 2;
     if (buffer_tail >= buffer_end)
         buffer_tail = buffer_start;
-    
+
     if (buffer_tail == buffer_head)
         return(0);
-    
+
     write_byte(0x0040, temp_tail, ascii_code);
     write_byte(0x0040, temp_tail+1, scan_code);
     write_word(0x0040, 0x001C, buffer_tail);
@@ -346,25 +346,25 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
 {
     uint8_t scancode, asciicode, shift_flags;
     uint8_t mf2_flags, mf2_state, flag;
-    
+
     //
     // DS has been set to F000 before call
     //
-    
-    
+
+
     scancode = GET_AL();
-    
+
     if (scancode == 0) {
         BX_INFO("KBD: int09 handler: AL=0\n");
         return;
     }
-    
-    
+
+
     shift_flags = read_byte(0x0040, 0x17);
     mf2_flags = read_byte(0x0040, 0x18);
     mf2_state = read_byte(0x0040, 0x96);
     asciicode = 0;
-    
+
     switch (scancode) {
     case 0x3a: /* Caps Lock press */
         shift_flags ^= 0x40;
@@ -418,7 +418,7 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
             }
         }
         break;
-    
+
     case 0x38: /* Alt press */
         shift_flags |= 0x08;
         write_byte(0x0040, 0x17, shift_flags);
@@ -441,7 +441,7 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
             write_byte(0x0040, 0x18, mf2_flags);
         }
         break;
-    
+
     case 0x45: /* Num Lock press */
         if ((mf2_state & 0x03) == 0) {
             mf2_flags |= 0x20;
@@ -456,24 +456,24 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
             write_byte(0x0040, 0x18, mf2_flags);
         }
         break;
-    
+
     case 0x46: /* Scroll Lock press */
         mf2_flags |= 0x10;
         write_byte(0x0040, 0x18, mf2_flags);
         shift_flags ^= 0x10;
         write_byte(0x0040, 0x17, shift_flags);
         break;
-    
+
     case 0xc6: /* Scroll Lock release */
         mf2_flags &= ~0x10;
         write_byte(0x0040, 0x18, mf2_flags);
         break;
-    
+
     case 0x53: /* Del press */
         if ((shift_flags & 0x0c) == 0x0c)
             jmp_post();
         /* fall through */
-    
+
     default:
         if (scancode & 0x80) {
             break; /* toss key releases ... */
@@ -495,7 +495,7 @@ void BIOSCALL int09_function(uint16_t ES, uint16_t DI, uint16_t SI, uint16_t BP,
         } else if (shift_flags & 0x03) { /* LSHIFT + RSHIFT */
             /* check if lock state should be ignored
              * because a SHIFT key are pressed */
-        
+
             if (shift_flags & scan_to_scanascii[scancode].lock_flags) {
                 asciicode = scan_to_scanascii[scancode].normal;
                 scancode  = scan_to_scanascii[scancode].normal >> 8;
@@ -530,7 +530,7 @@ unsigned int dequeue_key(uint8_t __far *scan_code, uint8_t __far *ascii_code, un
 {
     uint16_t    buffer_start, buffer_end, buffer_head, buffer_tail;
     uint8_t     acode, scode;
-    
+
 #if BX_CPU < 2
     buffer_start = 0x001E;
     buffer_end   = 0x003E;
@@ -538,10 +538,10 @@ unsigned int dequeue_key(uint8_t __far *scan_code, uint8_t __far *ascii_code, un
     buffer_start = read_word(0x0040, 0x0080);
     buffer_end   = read_word(0x0040, 0x0082);
 #endif
-    
+
     buffer_head = read_word(0x0040, 0x001a);
     buffer_tail = read_word(0x0040, 0x001c);
-    
+
     if (buffer_head != buffer_tail) {
         acode = read_byte(0x0040, buffer_head);
         scode = read_byte(0x0040, buffer_head+1);
@@ -580,9 +580,9 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
 {
     uint8_t     scan_code, ascii_code, shift_flags, led_flags, count;
     uint16_t    kbd_code, max;
-    
+
     BX_DEBUG_INT16("int16: AX=%04x BX=%04x CX=%04x DX=%04x \n", AX, BX, CX, DX);
-    
+
     shift_flags = read_byte(0x0040, 0x17);
     led_flags   = read_byte(0x0040, 0x97);
     if ((((shift_flags >> 4) & 0x07) ^ (led_flags & 0x07)) != 0) {
@@ -600,7 +600,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         }
         int_enable();
     }
-    
+
     switch (GET_AH()) {
     case 0x00: /* read keyboard input */
         if ( !dequeue_key(&scan_code, &ascii_code, 1) ) {
@@ -612,7 +612,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
             ascii_code = 0;
         AX = (scan_code << 8) | ascii_code;
         break;
-    
+
     case 0x01: /* check keyboard status */
         SET_IF();   /* Enable interrupts. Some callers depend on that! */
         if ( !dequeue_key(&scan_code, &ascii_code, 0) ) {
@@ -626,12 +626,12 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         AX = (scan_code << 8) | ascii_code;
         CLEAR_ZF();
         break;
-    
+
     case 0x02: /* get shift flag status */
         shift_flags = read_byte(0x0040, 0x17);
         SET_AL(shift_flags);
         break;
-    
+
     case 0x05: /* store key-stroke into buffer */
         if ( !enqueue_key(GET_CH(), GET_CL()) ) {
             SET_AL(1);
@@ -640,7 +640,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
             SET_AL(0);
         }
         break;
-    
+
     case 0x09: /* GET KEYBOARD FUNCTIONALITY */
         // bit Bochs Description
         //  7    0   reserved
@@ -654,7 +654,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         //
         SET_AL(0x30);
         break;
-        
+
     case 0x0A: /* GET KEYBOARD ID */
         count = 2;
         kbd_code = 0x0;
@@ -680,7 +680,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         }
         BX=kbd_code;
         break;
-    
+
     case 0x10: /* read MF-II keyboard input */
         if ( !dequeue_key(&scan_code, &ascii_code, 1) ) {
             BX_PANIC("KBD: int16h: out of keyboard input\n");
@@ -689,7 +689,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
             ascii_code = 0;
         AX = (scan_code << 8) | ascii_code;
         break;
-    
+
     case 0x11: /* check MF-II keyboard status */
         SET_IF();
         if ( !dequeue_key(&scan_code, &ascii_code, 0) ) {
@@ -701,7 +701,7 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         AX = (scan_code << 8) | ascii_code;
         CLEAR_ZF();
         break;
-    
+
     case 0x12: /* get extended keyboard status */
         shift_flags = read_byte(0x0040, 0x17);
         SET_AL(shift_flags);
@@ -710,22 +710,22 @@ void BIOSCALL int16_function(volatile kbd_regs_t r)
         SET_AH(shift_flags);
         BX_DEBUG_INT16("int16: func 12 sending %04x\n",AX);
         break;
-    
+
     case 0x92: /* keyboard capability check called by DOS 5.0+ keyb */
         SET_AH(0x80); // function int16 ah=0x10-0x12 supported
         break;
-    
+
     case 0xA2: /* 122 keys capability check called by DOS 5.0+ keyb */
         // don't change AH : function int16 ah=0x20-0x22 NOT supported
         break;
-    
+
     //@todo: what's the point of handling this??
 #if 0
     case 0x6F:
         if (GET_AL() == 0x08)
         SET_AH(0x02); // unsupported, aka normal keyboard
 #endif
-    
+
     default:
         BX_INFO("KBD: unsupported int 16h function %02x\n", GET_AH());
         BX_INFO("AX=%04x BX=%04x CX=%04x DX=%04x \n", AX, BX, CX, DX);

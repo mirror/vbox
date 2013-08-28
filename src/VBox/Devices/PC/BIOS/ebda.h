@@ -216,9 +216,9 @@ typedef struct {
 
 extern uint16_t ahci_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
                                 uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
-extern uint16_t scsi_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
+extern uint16_t scsi_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                                 uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
-extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
+extern uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                                uint16_t header, uint32_t length, uint8_t inout, char __far *buffer);
 
 extern uint16_t ata_soft_reset(uint16_t device);

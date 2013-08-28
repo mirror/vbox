@@ -91,17 +91,17 @@ static const char drivetypes[][10]={"Floppy","Hard Disk","CD-ROM","LAN"};
 void print_boot_device(uint8_t cdboot, uint8_t lanboot, uint8_t drive)
 {
     int     i;
-    
+
     // cdboot contains 0 if lan/floppy/harddisk, 1 otherwise
     // lanboot contains 0 if floppy/harddisk, 1 otherwise
     // drive contains real/emulated boot drive
-    
+
     if(cdboot)i=2;                    // CD-Rom
     else if(lanboot)i=3;              // LAN
     else if((drive&0x0080)==0x00)i=0; // Floppy
     else if((drive&0x0080)==0x80)i=1; // Hard drive
     else return;
-    
+
     BX_INFO("Booting from %s...\n",drivetypes[i]);
 }
 
@@ -110,17 +110,17 @@ void print_boot_device(uint8_t cdboot, uint8_t lanboot, uint8_t drive)
 //   displays the reason why boot failed
 //--------------------------------------------------------------------------
 //@todo: pass inputs as bit flags rather than bytes?
-void print_boot_failure(uint8_t cdboot, uint8_t lanboot, uint8_t drive, 
+void print_boot_failure(uint8_t cdboot, uint8_t lanboot, uint8_t drive,
                         uint8_t reason, uint8_t lastdrive)
 {
     uint16_t    drivenum = drive&0x7f;
-    
+
     // cdboot: 1 if boot from cd, 0 otherwise
     // lanboot: 1 if boot from lan, 0 otherwise
     // drive : drive number
     // reason: 0 signature check failed, 1 read error
     // lastdrive: 1 boot drive is the last one in boot sequence
-    
+
     if (cdboot)
         BX_INFO("Boot from %s failed\n",drivetypes[2]);
     else if (lanboot)
@@ -129,7 +129,7 @@ void print_boot_failure(uint8_t cdboot, uint8_t lanboot, uint8_t drive,
         BX_INFO("Boot from %s %d failed\n", drivetypes[1],drivenum);
     else
         BX_INFO("Boot from %s %d failed\n", drivetypes[0],drivenum);
-    
+
     if (lastdrive==1) {
         if (reason==0)
             BX_PANIC("No bootable medium found! System halted.\n");
@@ -161,7 +161,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     uint16_t    bootseg;
     uint16_t    status;
     uint8_t     lastdrive=0;
-    
+
     // if BX_ELTORITO_BOOT is not defined, old behavior
     //   check bit 5 in CMOS reg 0x2d.  load either 0x00 or 0x80 into DL
     //   in preparation for the initial INT 13h (0=floppy A:, 0x80=C:)
@@ -180,7 +180,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     //     0x03 : first cdrom
     //     0x04 : local area network
     //     else : boot failure
-    
+
     // Get the boot sequence
 #if BX_ELTORITO_BOOT
     bootseq=inb_cmos(0x3d);
@@ -191,15 +191,15 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     /* Boot delay hack. */
     if (bseqnr == 1)
         delay_boot((inb_cmos(0x3c) & 0xf0) >> 4); /* Implemented in logo.c */
-    
+
     if (bseqnr==2) bootseq >>= 4;
     if (bseqnr==3) bootseq >>= 8;
     if (bseqnr==4) bootseq >>= 12;
     if (bootseq<0x10) lastdrive = 1;
     bootdrv=0x00; bootcd=0;
     bootlan=0;
-    BX_INFO("Boot : bseqnr=%d, bootseq=%x\r\n",bseqnr, bootseq);    
-    
+    BX_INFO("Boot : bseqnr=%d, bootseq=%x\r\n",bseqnr, bootseq);
+
     switch(bootseq & 0x0f) {
     case 0x01:
         bootdrv=0x00;
@@ -209,7 +209,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     {
         // Get the Boot drive.
         uint8_t boot_drive = read_byte(ebda_seg, (uint16_t)&EbdaData->uForceBootDrive);
-        
+
         bootdrv = boot_drive + 0x80;
         bootcd=0;
         break;
@@ -223,7 +223,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     }
 #else
     bootseq=inb_cmos(0x2d);
-    
+
     if (bseqnr==2) {
         bootseq ^= 0x20;
         lastdrive = 1;
@@ -231,25 +231,25 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     bootdrv=0x00; bootcd=0;
     if((bootseq&0x20)==0) bootdrv=0x80;
 #endif // BX_ELTORITO_BOOT
-    
+
 #if BX_ELTORITO_BOOT
     // We have to boot from cd
     if (bootcd != 0) {
         status = cdrom_boot();
-    
+
         // If failure
         if ( (status & 0x00ff) !=0 ) {
             print_cdromboot_failure(status);
             print_boot_failure(bootcd, bootlan, bootdrv, 1, lastdrive);
             return 0x00000000;
         }
-        
+
         bootseg = read_word(ebda_seg,(uint16_t)&EbdaData->cdemu.load_segment);
         bootdrv = (uint8_t)(status>>8);
     }
-    
+
 #endif // BX_ELTORITO_BOOT
-    
+
     // Check for boot from LAN first
     if (bootlan == 1) {
         uint8_t __far   *fplan;
@@ -270,7 +270,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
                     print_boot_device(bootcd, bootlan, bootdrv);
                     netboot_entry = (void __far *)(fplan + 6);
                     netboot_entry();
-                } 
+                }
                 else
                 {
                     //Found Normal Pnp ROM
@@ -281,7 +281,7 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
                 }
             }
         }
-        
+
         // boot from LAN will not return if successful.
         print_boot_failure(bootcd, bootlan, bootdrv, 1, lastdrive);
         return 0x00000000;
@@ -290,14 +290,14 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     // We have to boot from harddisk or floppy
     if (bootcd == 0 && bootlan == 0) {
         bootseg=0x07c0;
-                
+
         status = read_boot_sec(bootdrv,bootseg);
         if (status != 0) {
             print_boot_failure(bootcd, bootlan, bootdrv, 1, lastdrive);
             return 0x00000000;
         }
     }
-    
+
     // There is *no* requirement whatsoever for a valid floppy boot sector
     // to have a 55AAh signature. UNIX boot floppies typically have no such
     // signature. In general, it is impossible to tell a valid bootsector
@@ -309,27 +309,27 @@ uint32_t BIOSCALL int19_function(uint8_t bseqnr)
     // extremely unlikely to be valid.
     if (bootdrv != 0) bootchk = 0;
     else bootchk = 1; /* disable 0x55AA signature check on drive A: */
-    
+
 #if BX_ELTORITO_BOOT
     // if boot from cd, no signature check
     if (bootcd != 0)
         bootchk = 1;
 #endif // BX_ELTORITO_BOOT
-    
+
     if (read_word(bootseg,0) == read_word(bootseg,2)
       || (bootchk == 0 && read_word(bootseg,0x1fe) != 0xaa55))
     {
         print_boot_failure(bootcd, bootlan, bootdrv, 0, lastdrive);
         return 0x00000000;
     }
-    
+
 #if BX_ELTORITO_BOOT
     // Print out the boot string
     print_boot_device(bootcd, bootlan, bootdrv);
 #else // BX_ELTORITO_BOOT
     print_boot_device(0, bootlan, bootdrv);
 #endif // BX_ELTORITO_BOOT
-    
+
     // return the boot segment
     return (((uint32_t)bootdrv) << 16) + bootseg;
 }

@@ -80,9 +80,9 @@ bx_bool rtc_updating(void)
     // that this bit should be set is constrained to 244useconds.
     // The count I use below guarantees coverage or more than
     // this time, with any reasonable IPS setting.
-    
+
     uint16_t    iter;
-    
+
     iter = 25000;
     while (--iter != 0) {
     if ( (inb_cmos(0x0a) & 0x80) == 0 )
@@ -102,11 +102,11 @@ void BIOSCALL int70_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
 {
     // INT 70h: IRQ 8 - CMOS RTC interrupt from periodic or alarm modes
     uint8_t   registerB = 0, registerC = 0;
-    
+
     // Check which modes are enabled and have occurred.
     registerB = inb_cmos( 0xB );
     registerC = inb_cmos( 0xC );
-    
+
     if( ( registerB & 0x60 ) != 0 ) {
         if( ( registerC & 0x20 ) != 0 ) {
             // Handle Alarm Interrupt.
@@ -116,16 +116,16 @@ void BIOSCALL int70_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         }
         if( ( registerC & 0x40 ) != 0 ) {
             // Handle Periodic Interrupt.
-            
+
             if( read_byte( 0x40, 0xA0 ) != 0 ) {
                 // Wait Interval (Int 15, AH=83) active.
                 uint32_t    time;
-                
+
                 time = read_dword( 0x40, 0x9C );  // Time left in microseconds.
                 if( time < 0x3D1 ) {
                     // Done waiting.
                     uint16_t    segment, offset;
-                    
+
                     segment = read_word( 0x40, 0x98 );
                     offset  = read_word( 0x40, 0x9A );
                     write_byte( 0x40, 0xA0, 0 );  // Turn of status byte.
@@ -149,10 +149,10 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
 {
     uint8_t     val8;
 
-    BX_DEBUG_INT1A("int1a: AX=%04x BX=%04x CX=%04x DX=%04x DS=%04x\n", 
+    BX_DEBUG_INT1A("int1a: AX=%04x BX=%04x CX=%04x DX=%04x DS=%04x\n",
                    regs.u.r16.ax, regs.u.r16.bx, regs.u.r16.cx, regs.u.r16.dx, ds);
-    int_enable();    
-    
+    int_enable();
+
     switch (regs.u.r8.ah) {
     case 0: // get current clock count
         int_disable();
@@ -164,7 +164,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         // AH already 0
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 1: // Set Current Clock Count
         int_disable();
         BiosData->ticks_high = regs.u.r16.cx;
@@ -174,13 +174,13 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.ah = 0;
         ClearCF(iret_addr.flags); // OK
         break;
-        
+
     case 2: // Read CMOS Time
         if (rtc_updating()) {
             SetCF(iret_addr.flags);
             break;
         }
-        
+
         regs.u.r8.dh = inb_cmos(0x00); // Seconds
         regs.u.r8.cl = inb_cmos(0x02); // Minutes
         regs.u.r8.ch = inb_cmos(0x04); // Hours
@@ -189,7 +189,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.al = regs.u.r8.ch;
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 3: // Set CMOS Time
         // Using a debugger, I notice the following masking/setting
         // of bits in Status Register B, by setting Reg B to
@@ -216,7 +216,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.al = val8; // val last written to Reg B
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 4: // Read CMOS Date
         regs.u.r8.ah = 0;
         if (rtc_updating()) {
@@ -230,7 +230,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.al = regs.u.r8.ch;
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 5: // Set CMOS Date
         // Using a debugger, I notice the following masking/setting
         // of bits in Status Register B, by setting Reg B to
@@ -257,7 +257,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.al = val8; // AL = val last written to Reg B
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 6: // Set Alarm Time in CMOS
         // Using a debugger, I notice the following masking/setting
         // of bits in Status Register B, by setting Reg B to
@@ -288,7 +288,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         outb_cmos(0x0b, (val8 & 0x7f) | 0x20);
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     case 7: // Turn off Alarm
         // Using a debugger, I notice the following masking/setting
         // of bits in Status Register B, by setting Reg B to
@@ -307,7 +307,7 @@ void BIOSCALL int1a_function(pusha_regs_t regs, uint16_t ds, uint16_t es, iret_a
         regs.u.r8.al = val8; // val last written to Reg B
         ClearCF(iret_addr.flags); // OK
         break;
-    
+
     default:
         BX_DEBUG_INT1A("int1a: AX=%04x unsupported\n", regs.u.r16.ax);
         SetCF(iret_addr.flags); // Unsupported

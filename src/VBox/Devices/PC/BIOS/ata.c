@@ -82,9 +82,9 @@ void BIOSCALL ata_init(void)
 {
     uint8_t         channel, device;
     bio_dsk_t __far *bios_dsk;
-    
+
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-    
+
     // Channels info init.
     for (channel=0; channel<BX_MAX_ATA_INTERFACES; channel++) {
         bios_dsk->channels[channel].iface   = ATA_IFACE_NONE;
@@ -92,7 +92,7 @@ void BIOSCALL ata_init(void)
         bios_dsk->channels[channel].iobase2 = 0x0;
         bios_dsk->channels[channel].irq     = 0;
     }
-    
+
     // Devices info init.
     for (device=0; device<BX_MAX_ATA_DEVICES; device++) {
         bios_dsk->devices[device].type        = DSK_TYPE_NONE;
@@ -110,13 +110,13 @@ void BIOSCALL ata_init(void)
         bios_dsk->devices[device].pchs.spt       = 0;
         bios_dsk->devices[device].sectors     = 0;
     }
-    
+
     // hdidmap  and cdidmap init.
     for (device=0; device<BX_MAX_STORAGE_DEVICES; device++) {
         bios_dsk->hdidmap[device] = BX_MAX_STORAGE_DEVICES;
         bios_dsk->cdidmap[device] = BX_MAX_STORAGE_DEVICES;
     }
-    
+
     bios_dsk->hdcount = 0;
     bios_dsk->cdcount = 0;
 }
@@ -134,11 +134,11 @@ void   ata_reset(uint16_t device)
     uint16_t        max;
     uint16_t        pdelay;
     bio_dsk_t __far *bios_dsk;
-    
+
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
     channel = device / 2;
     slave = device % 2;
-    
+
     iobase1 = bios_dsk->channels[channel].iobase1;
     iobase2 = bios_dsk->channels[channel].iobase2;
 
@@ -184,10 +184,10 @@ void   ata_reset(uint16_t device)
     max = 0x10; /* Speed up for virtual drives. Disks are immediately ready, CDs never */
     while(--max>0) {
         uint8_t status = inb(iobase1+ATA_CB_STAT);
-        if ((status & ATA_CB_STAT_RDY) != 0) 
+        if ((status & ATA_CB_STAT_RDY) != 0)
             break;
     }
-    
+
     // Enable interrupts
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
 }
@@ -235,7 +235,7 @@ uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t c
         else
             blksize >>= 1;
     }
-    
+
     status = inb(iobase1 + ATA_CB_STAT);
     if (status & ATA_CB_STAT_BSY)
     {
@@ -271,7 +271,7 @@ uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t c
         lba >>= 16;
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
-    
+
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     outb(iobase1 + ATA_CB_FR, 0x00);
     outb(iobase1 + ATA_CB_SC, count);
@@ -280,20 +280,20 @@ uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t c
     outb(iobase1 + ATA_CB_CH, cylinder >> 8);
     outb(iobase1 + ATA_CB_DH, (slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0) | (uint8_t) head );
     outb(iobase1 + ATA_CB_CMD, command);
-    
+
     if (command == ATA_CMD_READ_MULTIPLE || command == ATA_CMD_READ_MULTIPLE_EXT) {
         mult_blk_cnt = count;
         count = 1;
     } else {
         mult_blk_cnt = 1;
     }
-    
+
     while (1) {
         status = inb(iobase1 + ATA_CB_STAT);
         if ( !(status & ATA_CB_STAT_BSY) )
             break;
     }
-    
+
     if (status & ATA_CB_STAT_ERR) {
         BX_DEBUG_ATA("%s: read error\n", __func__);
         // Enable interrupts
@@ -305,17 +305,17 @@ uint16_t ata_cmd_data_in(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t c
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 3;
     }
-    
+
     // FIXME : move seg/off translation here
-    
+
     int_enable(); // enable higher priority interrupts
-    
+
     while (1) {
-    
+
         // adjust if there will be an overrun. 2K max sector size
         if (FP_OFF(buffer) >= 0xF800)
             buffer = MK_FP(FP_SEG(buffer) + 0x80, FP_OFF(buffer) - 0x800);
-        
+
         if (mode == ATA_MODE_PIO32) {
             buffer = rep_insd(buffer, blksize, iobase1);
         } else {
@@ -364,7 +364,7 @@ void BIOSCALL ata_detect(void)
     uint8_t         hdcount, cdcount, device, type;
     uint8_t         buffer[0x0200];
     bio_dsk_t __far *bios_dsk;
-    
+
     bios_dsk = ebda_seg :> &EbdaData->bdisk;
 
 #if BX_MAX_ATA_INTERFACES > 0
@@ -404,16 +404,16 @@ void BIOSCALL ata_detect(void)
         uint16_t    iobase1, iobase2;
         uint8_t     channel, slave;
         uint8_t     sc, sn, cl, ch, st;
-        
+
         channel = device / 2;
         slave = device % 2;
-        
+
         iobase1 = bios_dsk->channels[channel].iobase1;
         iobase2 = bios_dsk->channels[channel].iobase2;
-        
+
         // Disable interrupts
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
-        
+
         // Look for device
         outb(iobase1+ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
         outb(iobase1+ATA_CB_SC, 0x55);
@@ -422,7 +422,7 @@ void BIOSCALL ata_detect(void)
         outb(iobase1+ATA_CB_SN, 0x55);
         outb(iobase1+ATA_CB_SC, 0x55);
         outb(iobase1+ATA_CB_SN, 0xaa);
-        
+
         // If we found something
         sc = inb(iobase1+ATA_CB_SC);
         sn = inb(iobase1+ATA_CB_SN);
@@ -615,7 +615,7 @@ void BIOSCALL ata_detect(void)
                 for ( i = 39; i > 0; i-- ){
                     if (*(model+i) == 0x20)
                         *(model+i) = 0x00;
-                    else 
+                    else
                         break;
                 }
                 break;
@@ -691,11 +691,11 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
     uint16_t        device;
     uint8_t         channel, slave;
     uint8_t         status, mode;
-    
+
     device  = bios_dsk->drqp.dev_id;
     channel = device / 2;
     slave   = device % 2;
-    
+
     iobase1 = bios_dsk->channels[channel].iobase1;
     iobase2 = bios_dsk->channels[channel].iobase2;
     mode    = bios_dsk->devices[device].mode;
@@ -704,7 +704,7 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
         blksize >>= 2;
     else
         blksize >>= 1;
-    
+
     status = inb(iobase1 + ATA_CB_STAT);
     if (status & ATA_CB_STAT_BSY)
     {
@@ -739,7 +739,7 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
         lba >>= 16;
         head = ((uint16_t) (lba & 0x0000000fL)) | 0x40;
     }
-    
+
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     outb(iobase1 + ATA_CB_FR, 0x00);
     outb(iobase1 + ATA_CB_SC, count);
@@ -748,13 +748,13 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
     outb(iobase1 + ATA_CB_CH, cylinder >> 8);
     outb(iobase1 + ATA_CB_DH, (slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0) | (uint8_t) head );
     outb(iobase1 + ATA_CB_CMD, command);
-    
+
     while (1) {
         status = inb(iobase1 + ATA_CB_STAT);
         if ( !(status & ATA_CB_STAT_BSY) )
             break;
     }
-    
+
     if (status & ATA_CB_STAT_ERR) {
         BX_DEBUG_ATA("%s: write error\n", __func__);
         // Enable interrupts
@@ -766,23 +766,23 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 3;
     }
-    
+
     // FIXME : move seg/off translation here
-    
+
     int_enable(); // enable higher priority interrupts
-    
+
     while (1) {
-    
+
         // adjust if there will be an overrun. 2K max sector size
         if (FP_OFF(buffer) >= 0xF800)
             buffer = MK_FP(FP_SEG(buffer) + 0x80, FP_OFF(buffer) - 0x800);
-        
+
         if (mode == ATA_MODE_PIO32) {
             buffer = rep_outsd(buffer, blksize, iobase1);
         } else {
             buffer = rep_outsw(buffer, blksize, iobase1);
         }
-        
+
         bios_dsk->drqp.trsfsectors++;
         count--;
         while (1) {
@@ -821,7 +821,7 @@ uint16_t ata_cmd_data_out(bio_dsk_t __far *bios_dsk, uint16_t command, uint16_t 
  * Read sectors from an attached ATA device.
  *
  * @returns status code.
- * @param   bios_dsk    Pointer to disk request packet (in the 
+ * @param   bios_dsk    Pointer to disk request packet (in the
  *                      EBDA).
  */
 int ata_read_sectors(bio_dsk_t __far *bios_dsk)
@@ -855,7 +855,7 @@ int ata_read_sectors(bio_dsk_t __far *bios_dsk)
  * Write sectors to an attached ATA device.
  *
  * @returns status code.
- * @param   bios_dsk    Pointer to disk request packet (in the 
+ * @param   bios_dsk    Pointer to disk request packet (in the
  *                      EBDA).
  */
 int ata_write_sectors(bio_dsk_t __far *bios_dsk)
@@ -886,7 +886,7 @@ int ata_write_sectors(bio_dsk_t __far *bios_dsk)
       // 2 : BUSY bit set
       // 3 : error
       // 4 : not ready
-uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf, 
+uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                         uint16_t header, uint32_t length, uint8_t inout, char __far *buffer)
 {
     uint16_t        iobase1, iobase2;
@@ -906,33 +906,33 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
         BX_INFO("%s: DATA_OUT not supported yet\n", __func__);
         return 1;
     }
-    
+
     // The header length must be even
     if (header & 1) {
         BX_DEBUG_ATA("%s: header must be even (%04x)\n", __func__, header);
         return 1;
     }
-    
+
     iobase1  = bios_dsk->channels[channel].iobase1;
     iobase2  = bios_dsk->channels[channel].iobase2;
     mode     = bios_dsk->devices[device].mode;
     transfer = 0L;
-    
+
     if (cmdlen < 12)
         cmdlen = 12;
     if (cmdlen > 12)
         cmdlen = 16;
     cmdlen >>= 1;
-    
+
     // Reset count of transferred data
     // @todo: clear in calling code?
     bios_dsk->drqp.trsfsectors = 0;
     bios_dsk->drqp.trsfbytes   = 0;
-    
+
     status = inb(iobase1 + ATA_CB_STAT);
     if (status & ATA_CB_STAT_BSY)
         return 2;
-    
+
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     // outb(iobase1 + ATA_CB_FR, 0x00);
     // outb(iobase1 + ATA_CB_SC, 0x00);
@@ -941,13 +941,13 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
     outb(iobase1 + ATA_CB_CH, 0xfff0 >> 8);
     outb(iobase1 + ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
     outb(iobase1 + ATA_CB_CMD, ATA_CMD_PACKET);
-    
+
     // Device should ok to receive command
     while (1) {
         status = inb(iobase1 + ATA_CB_STAT);
         if ( !(status & ATA_CB_STAT_BSY) ) break;
     }
-    
+
     if (status & ATA_CB_STAT_CHK) {
         BX_DEBUG_ATA("%s: error, status is %02x\n", __func__, status);
         // Enable interrupts
@@ -959,41 +959,41 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 4;
     }
-    
+
     int_enable(); // enable higher priority interrupts
-    
+
     // Normalize address
     BX_DEBUG_ATA("acp1 buffer ptr: %04x:%04x wlen %04x\n", FP_SEG(cmdbuf), FP_OFF(cmdbuf), cmdlen);
     cmdbuf = MK_FP(FP_SEG(cmdbuf) + FP_OFF(cmdbuf) / 16 , FP_OFF(cmdbuf) % 16);
     //  cmdseg += (cmdoff / 16);
     //  cmdoff %= 16;
-    
+
     // Send command to device
     rep_outsw(cmdbuf, cmdlen, iobase1);
-    
+
     if (inout == ATA_DATA_NO) {
         status = inb(iobase1 + ATA_CB_STAT);
     }
     else {
         while (1) {
-        
+
             while (1) {
                 status = inb(iobase1 + ATA_CB_STAT);
-                if ( !(status & ATA_CB_STAT_BSY) ) 
+                if ( !(status & ATA_CB_STAT_BSY) )
                     break;
             }
-            
+
             // Check if command completed
             if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_DRQ) ) ==0 )
                 break;
-            
+
             if (status & ATA_CB_STAT_CHK) {
                 BX_DEBUG_ATA("%s: error (status %02x)\n", __func__, status);
                 // Enable interrupts
                 outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
                 return 3;
             }
-            
+
             // Device must be ready to send data
             if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
               != (ATA_CB_STAT_RDY | ATA_CB_STAT_DRQ) ) {
@@ -1002,16 +1002,16 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
                 return 4;
             }
-            
+
             // Normalize address
             BX_DEBUG_ATA("acp2 buffer ptr: %04x:%04x\n", FP_SEG(buffer), FP_OFF(buffer));
             buffer = MK_FP(FP_SEG(buffer) + FP_OFF(buffer) / 16 , FP_OFF(buffer) % 16);
             //      bufseg += (bufoff / 16);
             //      bufoff %= 16;
-            
+
             // Get the byte count
             lcount =  ((uint16_t)(inb(iobase1 + ATA_CB_CH))<<8)+inb(iobase1 + ATA_CB_CL);
-            
+
             // adjust to read what we want
             if (header>lcount) {
                 lbefore = lcount;
@@ -1023,7 +1023,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 header  = 0;
                 lcount -= lbefore;
             }
-            
+
             if (lcount>length) {
                 lafter = lcount - length;
                 lcount = length;
@@ -1033,13 +1033,13 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 lafter  = 0;
                 length -= lcount;
             }
-            
+
             // Save byte count
             count = lcount;
-            
+
             BX_DEBUG_ATA("Trying to read %04x bytes (%04x %04x %04x) ",lbefore+lcount+lafter,lbefore,lcount,lafter);
             BX_DEBUG_ATA("to 0x%04x:0x%04x\n",FP_SEG(buffer),FP_OFF(buffer));
-            
+
             // If counts not dividable by 4, use 16bits mode
             lmode = mode;
             if (lbefore & 0x03)
@@ -1048,7 +1048,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 lmode = ATA_MODE_PIO16;
             if (lafter  & 0x03)
                 lmode = ATA_MODE_PIO16;
-            
+
             // adds an extra byte if count are odd. before is always even
             if (lcount & 0x01) {
                 lcount += 1;
@@ -1056,7 +1056,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                     lafter -= 1;
                 }
             }
-            
+
             if (lmode == ATA_MODE_PIO32) {
                 lcount  >>= 2;
                 lbefore >>= 2;
@@ -1067,7 +1067,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 lbefore >>= 1;
                 lafter  >>= 1;
             }
-            
+
             if (lmode == ATA_MODE_PIO32) {
                 if (lbefore)
                     insd_discard(lbefore, iobase1);
@@ -1081,17 +1081,17 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
                 if (lafter)
                     insw_discard(lafter, iobase1);
             }
-            
-            
+
+
             // Compute new buffer address
             buffer += count;
-            
+
             // Save transferred bytes count
             transfer += count;
             bios_dsk->drqp.trsfbytes = transfer;
         }
     }
-    
+
     // Final check, device must be ready
     if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
       != ATA_CB_STAT_RDY ) {
@@ -1100,7 +1100,7 @@ uint16_t ata_cmd_packet(uint16_t device, uint8_t cmdlen, char __far *cmdbuf,
         outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
         return 4;
     }
-    
+
     // Enable interrupts
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
     return 0;
@@ -1131,13 +1131,13 @@ uint16_t ata_soft_reset(uint16_t device)
     outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15 | ATA_CB_DC_NIEN);
     outb(iobase1 + ATA_CB_DH, slave ? ATA_CB_DH_DEV1 : ATA_CB_DH_DEV0);
     outb(iobase1 + ATA_CB_CMD, ATA_CMD_DEVICE_RESET);
-    
+
     /* Wait for the device to clear BSY. */
     while (1) {
         status = inb(iobase1 + ATA_CB_STAT);
         if ( !(status & ATA_CB_STAT_BSY) ) break;
     }
-    
+
     /* Final check, device must be ready */
     if ( (status & (ATA_CB_STAT_BSY | ATA_CB_STAT_RDY | ATA_CB_STAT_DF | ATA_CB_STAT_DRQ | ATA_CB_STAT_CHK) )
       != ATA_CB_STAT_RDY ) {
@@ -1146,7 +1146,7 @@ uint16_t ata_soft_reset(uint16_t device)
         outb(iobase2 + ATA_CB_DC, ATA_CB_DC_HD15);
         return 1;
     }
-    
+
     /* Enable interrupts */
     outb(iobase2+ATA_CB_DC, ATA_CB_DC_HD15);
     return 0;

@@ -60,8 +60,8 @@ int vds_unlock_sg( vds_edds __far *edds );
 
 
 /*
- * Convert a real mode 16:16 segmented address to a simple 32-bit 
- * linear address. 
+ * Convert a real mode 16:16 segmented address to a simple 32-bit
+ * linear address.
  */
 uint32_t vds_real_to_lin( void __far *ptr )
 {
