@@ -962,6 +962,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
 
+/** Cache control/info. */
 #define MSR_BBL_CR_CTL3                     UINT32_C(0x11e)
 
 #ifndef MSR_IA32_SYSENTER_CS /* qemu cpu.h kludge */
