@@ -1629,6 +1629,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
     char *pszFilename = 0;
     void *pvMfBuf = 0;
     void *pvCertBuf = 0;
+    Utf8Str OVFfilename;
 
     writeLock.release();
     try
@@ -1667,7 +1668,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         vrc = RTTarCurrentFile(tar, &pszFilename);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Getting the current file within the archive failed (%Rrc)"), vrc);
+                           tr("Getting the OVF file within the archive failed (%Rrc)"), vrc);
         else
         {
             if (vrc == VINF_TAR_DIR_PATH)
@@ -1678,6 +1679,14 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                           vrc);
             }
         }
+
+        /* save original OVF filename */
+        OVFfilename = pszFilename;
+        size_t cbMfSize = 0;
+        size_t cbCertSize = 0;
+        Utf8Str strMfFile = (Utf8Str(pszFilename)).stripExt().append(".mf");
+        Utf8Str strCertFile = (Utf8Str(pszFilename)).stripExt().append(".cert");
+
         /* Skip the OVF file, cause this was read in IAppliance::Read already. */
         vrc = RTTarSeekNextFile(tar);
         if (   RT_FAILURE(vrc)
@@ -1703,8 +1712,6 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * is a manifest file in the stream. */
         pStorage->fCreateDigest = true;
 
-        size_t cbMfSize = 0;
-        Utf8Str strMfFile = Utf8Str(pszFilename).stripExt().append(".mf");
         /* Create the import stack for the rollback on errors. */
         ImportStack stack(pTask->locInfo, m->pReader->m_mapDisks, pTask->pProgress);
         /*
@@ -1728,22 +1735,19 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
          * Only if the manifest file had been read successfully before
          */
         vrc = RTTarCurrentFile(tar, &pszFilename);
-        if (RT_FAILURE(vrc))
-            throw setError(VBOX_E_IPRT_ERROR,
-                           tr("Getting the current file within the archive failed (%Rrc)"), vrc);
-
-        size_t cbCertSize = 0;
-        Utf8Str strCertFile = Utf8Str(pszFilename).stripExt().append(".cert");
-        if (pvMfBuf)
+        if (RT_SUCCESS(vrc))
         {
-            if (strCertFile.compare(pszFilename) == 0)
+            if (pvMfBuf)
             {
-                rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
-                if (FAILED(rc)) throw rc;
-
-                if (pvCertBuf)
+                if (strCertFile.compare(pszFilename) == 0)
                 {
-                /* verify the certificate */
+                    rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                    if (FAILED(rc)) throw rc;
+
+                    if (pvCertBuf)
+                    {
+                    /* verify the certificate */
+                    }
                 }
             }
         }
@@ -1760,8 +1764,7 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             if (pvMfBuf)
             {
                 /* Add the ovf file to the digest list. */
-                stack.llSrcDisksDigest.push_front(STRPAIR(Utf8Str(pszFilename).stripExt().append(".ovf"),
-                                                  m->strOVFSHADigest));
+                stack.llSrcDisksDigest.push_front(STRPAIR(OVFfilename, m->strOVFSHADigest));
                 rc = verifyManifestFile(strMfFile, stack, pvMfBuf, cbMfSize);
                 if (FAILED(rc)) throw rc;
 
@@ -1771,18 +1774,17 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
                  */
 
                 vrc = RTTarCurrentFile(tar, &pszFilename);
-                if (RT_FAILURE(vrc))
-                    throw setError(VBOX_E_IPRT_ERROR,
-                                   tr("Getting the current file within the archive failed (%Rrc)"), vrc);
-
-                if (strCertFile.compare(pszFilename) == 0)
+                if (RT_SUCCESS(vrc))
                 {
-                    rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
-                    if (FAILED(rc)) throw rc;
-
-                    if (pvCertBuf)
+                    if (strCertFile.compare(pszFilename) == 0)
                     {
-                    /* verify the certificate */
+                        rc = readTarFileToBuf(tar, strCertFile, &pvCertBuf, &cbCertSize, false, pCallbacks, pStorage);
+                        if (FAILED(rc)) throw rc;
+
+                        if (pvCertBuf)
+                        {
+                        /* verify the certificate */
+                        }
                     }
                 }
             }
@@ -2381,7 +2383,6 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
             /*CD/DVD case*/
             if (strTrgFormat.compare("RAW", Utf8Str::CaseInsensitive) == 0)
             {
-                void *pvTmpBuf = 0;
                 try
                 {
                     if (fGzipUsed == true)
@@ -2404,7 +2405,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                     {
                         /* Calculating SHA digest for ISO file while copying one */
                         vrc = copyFileAndCalcShaDigest(strSrcFilePath.c_str(),
-                                                        strTargetPath->c_str(),
+                                                       strTargetPath->c_str(),
                                                        pCallbacks,
                                                        pRealUsedStorage);
 
@@ -2416,13 +2417,8 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 }
                 catch (HRESULT arc)
                 {
-                    if (pvTmpBuf)
-                        RTMemFree(pvTmpBuf);
                     throw;
                 }
-
-                if (pvTmpBuf)
-                    RTMemFree(pvTmpBuf);
 
                 /* Advance to the next operation. */
                 /* operation's weight, as set up with the IProgress originally */
