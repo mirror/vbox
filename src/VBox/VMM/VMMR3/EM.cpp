@@ -2526,6 +2526,8 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                             rc = VINF_EM_RESCHEDULE;
                         }
                     }
+                    else if (TRPMHasTrap(pVCpu))
+                        rc = VINF_EM_RESCHEDULE;
                     else
                         rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
 

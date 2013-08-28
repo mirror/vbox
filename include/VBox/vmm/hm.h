@@ -219,6 +219,25 @@ VMMR3_INT_DECL(bool)            HMR3IsVmxPreemptionTimerUsed(PVM pVM);
 /** @addtogroup grp_hm_r0
  * @{
  */
+/** Disables preemption if required. */
+# define HM_DISABLE_PREEMPT_IF_NEEDED() \
+   RTTHREADPREEMPTSTATE PreemptStateInternal = RTTHREADPREEMPTSTATE_INITIALIZER; \
+   bool fPreemptDisabledInternal = false; \
+   if (RTThreadPreemptIsEnabled(NIL_RTTHREAD)) \
+   { \
+       Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu)); \
+       RTThreadPreemptDisable(&PreemptStateInternal); \
+       fPreemptDisabledInternal = true; \
+   }
+
+/** Restores preemption if previously disabled by HM_DISABLE_PREEMPT(). */
+# define HM_RESTORE_PREEMPT_IF_NEEDED() \
+   do \
+   { \
+        if (fPreemptDisabledInternal) \
+            RTThreadPreemptRestore(&PreemptStateInternal); \
+   } while (0)
+
 VMMR0_INT_DECL(int)             HMR0SetupVM(PVM pVM);
 VMMR0_INT_DECL(int)             HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu);
 VMMR0_INT_DECL(int)             HMR0Enter(PVM pVM, PVMCPU pVCpu);

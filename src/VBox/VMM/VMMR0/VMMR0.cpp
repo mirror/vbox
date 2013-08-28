@@ -440,7 +440,7 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
 {
     VMCPU_ASSERT_EMT(pVCpu);
     Assert(pVCpu->vmm.s.hR0ThreadCtx == NIL_RTTHREADCTX);
-#if 0 /* Not stable yet. */
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     int rc = RTThreadCtxHooksCreate(&pVCpu->vmm.s.hR0ThreadCtx);
     if (   RT_FAILURE(rc)
         && rc != VERR_NOT_SUPPORTED)
@@ -545,13 +545,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
              * scenario (i.e. preempted in resume hook -> preempt hook -> resume hook... ad
              * infinitum). Let's just disable preemption for now...
              */
-            bool fPreemptDisabled = false;
-            RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-            if (RTThreadPreemptIsEnabled(NIL_RTTHREAD))
-            {
-                RTThreadPreemptDisable(&PreemptState);
-                fPreemptDisabled = true;
-            }
+            HM_DISABLE_PREEMPT_IF_NEEDED();
 
             /* We need to update the VCPU <-> host CPU mapping. */
             RTCPUID idHostCpu = RTMpCpuId();
@@ -561,8 +555,7 @@ static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void
             HMR0ThreadCtxCallback(enmEvent, pvUser);
 
             /* Restore preemption. */
-            if (fPreemptDisabled)
-                RTThreadPreemptRestore(&PreemptState);
+            HM_RESTORE_PREEMPT_IF_NEEDED();
             break;
         }
 
