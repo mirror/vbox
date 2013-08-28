@@ -368,6 +368,8 @@ void tstASMCpuId(void)
 
         if (iExt > cExtFunctions)
             continue;   /* Invalid extended functions seems change the value if ECX changes */
+        if (iExt == 0x8000001d)
+            continue;   /* Taks cache level in ecx. */
 
         u32 = ASMCpuId_EAX(iExt);
         CHECKVAL(u32, s.uEAX, "%x");
