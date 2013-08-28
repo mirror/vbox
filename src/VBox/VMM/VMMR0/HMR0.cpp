@@ -1284,10 +1284,8 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     if (!pVM->hm.s.cMaxResumeLoops) /* allow ring-3 overrides */
     {
         pVM->hm.s.cMaxResumeLoops       = 1024;
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
         if (RTThreadPreemptIsPendingTrusty())
             pVM->hm.s.cMaxResumeLoops   = 8192;
-#endif
     }
 
     /*
