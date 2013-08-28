@@ -77,7 +77,6 @@ LWIP_SOURCES += \
     Network/lwip-new/src/core/timers.c \
     Network/lwip-new/src/core/udp.c \
     Network/lwip-new/src/netif/etharp.c \
-    Network/lwip-new/src/netif/ethernetif.c \
     Network/lwip-new/src/netif/ppp/auth.c \
     Network/lwip-new/src/netif/ppp/chap.c \
     Network/lwip-new/src/netif/ppp/chpms.c \
