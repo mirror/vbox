@@ -962,6 +962,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
 
+#define MSR_BBL_CR_CTL3                     UINT32_C(0x11e)
 
 #ifndef MSR_IA32_SYSENTER_CS /* qemu cpu.h kludge */
 /** SYSENTER_CS - the R0 CS, indirectly giving R0 SS, R3 CS and R3 DS.
