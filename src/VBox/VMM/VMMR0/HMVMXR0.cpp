@@ -6157,6 +6157,17 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 }
 
 
+/**
+ * Leaves the VT-x session.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
+ *                      out-of-sync. Make sure to update the required fields
+ *                      before using them.
+ *
+ * @remarks No-long-jmp zone!!!
+ */
 DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
@@ -6992,25 +7003,6 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
         default:
             break;
     }
-}
-
-
-/**
- * Leaves the VT-x session.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
- */
-VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    NOREF(pVCpu);
-    NOREF(pVM);
-    NOREF(pCtx);
-
-    /* Everything is taken care of in hmR0VmxLeave() and VMXR0ThreadCtxCallback()'s preempt event. */
-    return VINF_SUCCESS;
 }
 
 

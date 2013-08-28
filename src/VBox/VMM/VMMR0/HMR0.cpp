@@ -86,7 +86,6 @@ static struct
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
     DECLR0CALLBACKMEMBER(int,  pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnLeaveSession,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback,(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
     DECLR0CALLBACKMEMBER(int,  pfnLoadGuestState,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
@@ -527,7 +526,6 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Install the VT-x methods.
                  */
                 g_HvmR0.pfnEnterSession      = VMXR0Enter;
-                g_HvmR0.pfnLeaveSession      = VMXR0Leave;
                 g_HvmR0.pfnThreadCtxCallback = VMXR0ThreadCtxCallback;
                 g_HvmR0.pfnSaveHostState     = VMXR0SaveHostState;
                 g_HvmR0.pfnLoadGuestState    = VMXR0LoadGuestState;
@@ -593,7 +591,6 @@ static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
          * Install the AMD-V methods.
          */
         g_HvmR0.pfnEnterSession      = SVMR0Enter;
-        g_HvmR0.pfnLeaveSession      = SVMR0Leave;
         g_HvmR0.pfnThreadCtxCallback = SVMR0ThreadCtxCallback;
         g_HvmR0.pfnSaveHostState     = SVMR0SaveHostState;
         g_HvmR0.pfnLoadGuestState    = SVMR0LoadGuestState;
@@ -658,7 +655,6 @@ VMMR0_INT_DECL(int) HMR0Init(void)
 
     /* Fill in all callbacks with placeholders. */
     g_HvmR0.pfnEnterSession      = hmR0DummyEnter;
-    g_HvmR0.pfnLeaveSession      = hmR0DummyLeave;
     g_HvmR0.pfnThreadCtxCallback = hmR0DummyThreadCtxCallback;
     g_HvmR0.pfnSaveHostState     = hmR0DummySaveHostState;
     g_HvmR0.pfnLoadGuestState    = hmR0DummyLoadGuestState;
@@ -1516,24 +1512,6 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
     /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
     ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Leaves the VT-x or AMD-V session.
- *
- * @returns VBox status code.
- * @param   pVM        Pointer to the VM.
- * @param   pVCpu      Pointer to the VMCPU.
- *
- * @remarks Called with preemption disabled just like HMR0Enter, our
- *          counterpart.
- */
-VMMR0_INT_DECL(int) HMR0Leave(PVM pVM, PVMCPU pVCpu)
-{
-    /* Nothing to do currently. Taken care of HMR0LeaveCpu() and in hmR0VmxLeaveSession() and hmR0SvmLeaveSession(). */
-    /** @todo refactor later to more common code. */
     return VINF_SUCCESS;
 }
 
