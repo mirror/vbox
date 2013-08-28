@@ -22,13 +22,15 @@
 # VBOX_WITH_LWIP_NAT=1
 #
 
-LWIP_INCS += Network/lwip-new/src/include \
+LWIP_INCS += \
+    Network/lwip-new/src/include \
     Network/lwip-new/src/include/ipv4 \
     Network/lwip-new/src/include/ipv6 \
-    Network/lwip-new/vbox \
-    Network/lwip-new/vbox/include
+    Network/lwip-new/vbox/include \
+    Network/lwip-new/vbox
 
-LWIP_SOURCES += Network/lwip-new/src/api/api_lib.c \
+LWIP_SOURCES += \
+    Network/lwip-new/src/api/api_lib.c \
     Network/lwip-new/src/api/api_msg.c \
     Network/lwip-new/src/api/err.c \
     Network/lwip-new/src/api/netbuf.c \
