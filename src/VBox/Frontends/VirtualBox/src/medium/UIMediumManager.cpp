@@ -268,7 +268,7 @@ void UIMediumManager::refreshAll()
     // To make it proper way, we have to invalidate mediums which were known as *related*
     // to machine who's event called for *full-refresh* and start medium-enumeration.
     // But medium-enumeration itself should update *only* invalidated mediums.
-    vboxGlobal().startEnumeratingMedia();
+    vboxGlobal().startMediumEnumeration();
 }
 
 void UIMediumManager::sltHandleMediumAdded(const UIMedium &medium)
@@ -1139,7 +1139,7 @@ void UIMediumManager::populateTreeWidgets()
     if (m_fRefresh && !vboxGlobal().isMediaEnumerationStarted())
     {
         /* Just start medium-enumeration: */
-        vboxGlobal().startEnumeratingMedia();
+        vboxGlobal().startMediumEnumeration();
     }
     /* If refresh was not requested or enumeration already started: */
     else

@@ -224,7 +224,7 @@ public:
 
     /* details generators */
 
-    QString details (const CMedium &aHD, bool aPredictDiff, bool fUseHtml = true);
+    QString details(const CMedium &medium, bool fPredictDiff, bool fUseHtml = true);
 
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;
@@ -242,7 +242,7 @@ public:
     void reloadProxySettings();
 
     /* API: Medium-enumeration stuff: */
-    void startEnumeratingMedia(bool fForceStart = true);
+    void startMediumEnumeration(bool fForceStart = true);
     bool agressiveCaching() const { return mAgressiveCaching; }
     bool isMediaEnumerationStarted() const { return !!m_pMediumEnumerationThread; }
     const VBoxMediaList &currentMediaList() const { return m_mediums; }
@@ -403,7 +403,7 @@ protected slots:
 
 protected:
 
-    bool event (QEvent *e);
+    bool event(QEvent *pEvent);
     bool eventFilter (QObject *, QEvent *);
 
 private:
