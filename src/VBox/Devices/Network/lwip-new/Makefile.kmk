@@ -63,12 +63,6 @@ LWIP_SOURCES += \
     Network/lwip-new/src/core/netif.c \
     Network/lwip-new/src/core/pbuf.c \
     Network/lwip-new/src/core/raw.c \
-    Network/lwip-new/src/core/snmp/asn1_dec.c \
-    Network/lwip-new/src/core/snmp/asn1_enc.c \
-    Network/lwip-new/src/core/snmp/mib2.c \
-    Network/lwip-new/src/core/snmp/mib_structs.c \
-    Network/lwip-new/src/core/snmp/msg_in.c \
-    Network/lwip-new/src/core/snmp/msg_out.c \
     Network/lwip-new/src/core/stats.c \
     Network/lwip-new/src/core/sys.c \
     Network/lwip-new/src/core/tcp.c \
@@ -77,22 +71,35 @@ LWIP_SOURCES += \
     Network/lwip-new/src/core/timers.c \
     Network/lwip-new/src/core/udp.c \
     Network/lwip-new/src/netif/etharp.c \
-    Network/lwip-new/src/netif/ppp/auth.c \
-    Network/lwip-new/src/netif/ppp/chap.c \
-    Network/lwip-new/src/netif/ppp/chpms.c \
-    Network/lwip-new/src/netif/ppp/fsm.c \
-    Network/lwip-new/src/netif/ppp/ipcp.c \
-    Network/lwip-new/src/netif/ppp/lcp.c \
-    Network/lwip-new/src/netif/ppp/magic.c \
-    Network/lwip-new/src/netif/ppp/md5.c \
-    Network/lwip-new/src/netif/ppp/pap.c \
-    Network/lwip-new/src/netif/ppp/ppp.c \
-    Network/lwip-new/src/netif/ppp/ppp_oe.c \
-    Network/lwip-new/src/netif/ppp/randm.c \
-    Network/lwip-new/src/netif/ppp/vj.c \
-    Network/lwip-new/src/netif/slipif.c \
     Network/lwip-new/vbox/sys_arch.c \
     Network/lwip-new/vbox/VBoxLwipCore.cpp
+
+# LWIP_SOURCES += \
+#     Network/lwip-new/src/core/snmp/asn1_dec.c \
+#     Network/lwip-new/src/core/snmp/asn1_enc.c \
+#     Network/lwip-new/src/core/snmp/mib2.c \
+#     Network/lwip-new/src/core/snmp/mib_structs.c \
+#     Network/lwip-new/src/core/snmp/msg_in.c \
+#     Network/lwip-new/src/core/snmp/msg_out.c \
+
+# LWIP_SOURCES += \
+#     Network/lwip-new/src/netif/slipif.c \
+
+# LWIP_SOURCES += \
+#     Network/lwip-new/src/netif/ppp/auth.c \
+#     Network/lwip-new/src/netif/ppp/chap.c \
+#     Network/lwip-new/src/netif/ppp/chpms.c \
+#     Network/lwip-new/src/netif/ppp/fsm.c \
+#     Network/lwip-new/src/netif/ppp/ipcp.c \
+#     Network/lwip-new/src/netif/ppp/lcp.c \
+#     Network/lwip-new/src/netif/ppp/magic.c \
+#     Network/lwip-new/src/netif/ppp/md5.c \
+#     Network/lwip-new/src/netif/ppp/pap.c \
+#     Network/lwip-new/src/netif/ppp/ppp.c \
+#     Network/lwip-new/src/netif/ppp/ppp_oe.c \
+#     Network/lwip-new/src/netif/ppp/randm.c \
+#     Network/lwip-new/src/netif/ppp/vj.c
+
 
 ifeq ($(USERNAME), vvl)
 $(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
