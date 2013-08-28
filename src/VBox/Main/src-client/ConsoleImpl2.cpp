@@ -3553,24 +3553,17 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
             }
         }
 
-        if (   pMedium
-            && (   lType == DeviceType_DVD
-                || lType == DeviceType_Floppy))
+        if (pMedium)
         {
-            /*
-             * Informative logging.
-             */
-            ComPtr<IMediumFormat> pMediumFormat;
-            hrc = pMedium->COMGETTER(MediumFormat)(pMediumFormat.asOutParam());             H();
-            ULONG uCaps = 0;
-            com::SafeArray <MediumFormatCapabilities_T> mediumFormatCap;
-            hrc = pMediumFormat->COMGETTER(Capabilities)(ComSafeArrayAsOutParam(mediumFormatCap));     H();
-
-            for (ULONG j = 0; j < mediumFormatCap.size(); j++)
-                uCaps |= mediumFormatCap[j];
-
-            if (uCaps & MediumFormatCapabilities_File)
+            BOOL fHostDrive;
+            hrc = pMedium->COMGETTER(HostDrive)(&fHostDrive);                               H();
+            if (  (   lType == DeviceType_DVD
+                   || lType == DeviceType_Floppy)
+                && !fHostDrive)
             {
+                /*
+                 * Informative logging.
+                 */
                 Bstr strFile;
                 hrc = pMedium->COMGETTER(Location)(strFile.asOutParam());                   H();
                 Utf8Str utfFile = Utf8Str(strFile);
