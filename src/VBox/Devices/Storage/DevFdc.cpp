@@ -2088,6 +2088,7 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
      */
     cur_drv->track = fdctrl->fifo[2];
     cur_drv->ltrk = cur_drv->track;
+    cur_drv->head = (fdctrl->fifo[1] >> 2) & 1;
     /* Raise Interrupt */
     fdctrl_raise_irq(fdctrl, FD_SR0_SEEK | GET_CUR_DRV(fdctrl));
 #else
