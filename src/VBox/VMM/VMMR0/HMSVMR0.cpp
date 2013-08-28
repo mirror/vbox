@@ -1571,25 +1571,6 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 
 
 /**
- * Leaves the AMD-V session.
- *
- * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
- */
-VMMR0DECL(int) SVMR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    NOREF(pVM);
-    NOREF(pVCpu);
-    NOREF(pCtx);
-
-    /* Nothing to do here. Everything is taken care of in hmR0SvmLeave(). */
-    return VINF_SUCCESS;
-}
-
-
-/**
  * Thread-context callback for AMD-V.
  *
  * @param   enmEvent        The thread-context event.
@@ -1944,6 +1925,14 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 }
 
 
+/**
+ * Leaves the AMD-V session.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
 DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
