@@ -25,6 +25,7 @@
 LWIP_INCS += Network/lwip-new/src/include \
     Network/lwip-new/src/include/ipv4 \
     Network/lwip-new/src/include/ipv6 \
+    Network/lwip-new/vbox \
     Network/lwip-new/vbox/include
 
 LWIP_SOURCES += Network/lwip-new/src/api/api_lib.c \
@@ -90,7 +91,7 @@ LWIP_SOURCES += Network/lwip-new/src/api/api_lib.c \
     Network/lwip-new/src/netif/ppp/vj.c \
     Network/lwip-new/src/netif/slipif.c \
     Network/lwip-new/vbox/sys_arch.c \
-    Network/VBoxLwipCore.cpp
+    Network/lwip-new/vbox/VBoxLwipCore.cpp
 
 ifeq ($(USERNAME), vvl)
 $(foreach lwip_file, $(LWIP_SOURCES), $(eval $(lwip_file)_DEFS=RTMEM_WRAP_TO_EF_APIS))
