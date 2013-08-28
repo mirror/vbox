@@ -562,10 +562,12 @@ int CollectorLinux::getDiskListByFs(const char *pszPath, DiskList& listUsage, Di
                 int rc = RTPathReal(mntent->mnt_fsname, szFsName, sizeof(szFsName));
                 if (RT_FAILURE(rc))
                     continue; /* something got wrong, just ignore this path */
-                if (!strncmp(szFsName, RT_STR_TUPLE("/dev/mapper")))
+                /* check against the actual mtab entry, NOT the real path as /dev/mapper/xyz is
+                 * often a symlink to something else */
+                if (!strncmp(mntent->mnt_fsname, RT_STR_TUPLE("/dev/mapper")))
                 {
                     /* LVM */
-                    getDiskName(szDevName, sizeof(szDevName), szFsName, false /*=fTrimDigits*/);
+                    getDiskName(szDevName, sizeof(szDevName), mntent->mnt_fsname, false /*=fTrimDigits*/);
                     addVolumeDependencies(szDevName, listUsage);
                     listLoad = listUsage;
                 }
