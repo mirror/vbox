@@ -93,7 +93,7 @@ dsk_acc_t   dskacc[DSKTYP_CNT] = {
 #define FLAGS   r.ra.flags.u.r16.flags
 
 
-/* 
+/*
  * Build translated CHS geometry given a disk size in sectors. Based on
  * Phoenix EDD 3.0. This is used as a fallback to generate sane logical
  * geometry in case none was provided in CMOS.
@@ -103,7 +103,7 @@ void set_geom_lba(chs_t __far *lgeo, uint32_t nsectors)
     uint32_t    limit = 8257536;    /* 1024 * 128 * 63 */
     unsigned    heads = 255;
     int         i;
-    
+
     /* Start with ~4GB limit, go down to 504MB. */
     for (i = 0; i < 4; ++i) {
         if (nsectors <= limit)
@@ -132,16 +132,16 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
     bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
     write_byte(0x0040, 0x008e, 0);  // clear completion flag
-    
+
     // basic check : device has to be defined
     if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_STORAGE_DEVICES) ) {
         BX_DEBUG("%s: function %02x, ELDL out of range %02x\n", __func__, GET_AH(), GET_ELDL());
         goto int13_fail;
     }
-    
+
     // Get the ata channel
     device = bios_dsk->hdidmap[GET_ELDL()-0x80];
-    
+
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
         BX_DEBUG("%s: function %02x, unmapped device for ELDL=%02x\n", __func__, GET_AH(), GET_ELDL());
@@ -177,8 +177,8 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         cylinder   |= ( ((uint16_t) GET_CL()) << 2) & 0x300;
         sector      = (GET_CL() & 0x3f);
         head        = GET_DH();
-        
-        /* Segment and offset are in ES:BX. */        
+
+        /* Segment and offset are in ES:BX. */
         if ( (count > 128) || (count == 0) ) {
             BX_INFO("%s: function %02x, count out of range!\n", __func__, GET_AH());
             goto int13_fail;
@@ -194,7 +194,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             BX_INFO("%s: function %02x, disk %02x, parameters out of range %04x/%04x/%04x!\n", __func__, GET_AH(), GET_DL(), cylinder, head, sector);
             goto int13_fail;
         }
-        
+
         // FIXME verify
         if ( GET_AH() == 0x04 )
             goto int13_success;
@@ -205,6 +205,9 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
             lba = ((((uint32_t)cylinder * (uint32_t)nlh) + (uint32_t)head) * (uint32_t)nlspt) + (uint32_t)sector - 1;
             sector = 0; // this forces the command to be lba
         }
+
+        BX_DEBUG_INT13_HD("%s: %d sectors from lba %lu @ %04x:%04x\n", __func__,
+                          count, lba, ES, BX);
 
         /* Clear the count of transferred sectors/bytes. */
         bios_dsk->drqp.trsfsectors = 0;
@@ -224,13 +227,13 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
 
         // Set nb of sector transferred
         SET_AL(bios_dsk->drqp.trsfsectors);
-        
+
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
             SET_AH(0x0c);
             goto int13_fail_noah;
         }
-        
+
         goto int13_success;
         break;
 
@@ -255,10 +258,10 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         SET_CL(((nlc >> 2) & 0xc0) | (nlspt & 0x3f));
         SET_DH(nlh - 1);
         SET_DL(count); /* FIXME returns 0, 1, or n hard drives */
-        
+
         // FIXME should set ES & DI
         // @todo: Actually, the above comment is nonsense.
-        
+
         goto int13_success;
         break;
 
@@ -286,7 +289,7 @@ void BIOSCALL int13_harddisk(disk_regs_t r)
         lba = (uint32_t)cylinder * head * sector;
         CX = lba >> 16;
         DX = lba & 0xffff;
-        
+
         SET_AH(3);  // hard disk accessible
         goto int13_success_noah;
         break;
@@ -340,19 +343,20 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
 
     bios_dsk = read_word(0x0040,0x000E) :> &EbdaData->bdisk;
 
-    BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
-    
+    BX_DEBUG_INT13_HD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x DS=%04x SI=%04x\n",
+                      __func__, AX, BX, CX, DX, ES, DS, SI);
+
     write_byte(0x0040, 0x008e, 0);  // clear completion flag
-    
+
     // basic check : device has to be defined
     if ( (GET_ELDL() < 0x80) || (GET_ELDL() >= 0x80 + BX_MAX_STORAGE_DEVICES) ) {
         BX_DEBUG("%s: function %02x, ELDL out of range %02x\n", __func__, GET_AH(), GET_ELDL());
         goto int13x_fail;
     }
-    
+
     // Get the ata channel
     device = bios_dsk->hdidmap[GET_ELDL()-0x80];
-    
+
     // basic check : device has to be valid
     if (device >= BX_MAX_STORAGE_DEVICES) {
         BX_DEBUG("%s: function %02x, unmapped device for ELDL=%02x\n", __func__, GET_AH(), GET_ELDL());
@@ -379,7 +383,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         segment = i13_ext->segment;
         offset  = i13_ext->offset;
 
-        BX_DEBUG_INT13_HD("%s: %d sectors from lba %u @ %04x:%04x\n", __func__, 
+        BX_DEBUG_INT13_HD("%s: %d sectors from lba %lu @ %04x:%04x\n", __func__,
                           count, i13_ext->lba1, segment, offset);
 
         // Can't use 64 bits lba
@@ -388,7 +392,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             BX_PANIC("%s: function %02x. Can't use 64bits lba\n", __func__, GET_AH());
             goto int13x_fail;
         }
-        
+
         // Get 32 bits lba and check
         lba = i13_ext->lba1;
 
@@ -413,18 +417,18 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         bios_dsk->drqp.sect_sz = 512;   //@todo: device specific?
         bios_dsk->drqp.sector  = 0;     /* Indicate LBA. */
         bios_dsk->drqp.dev_id  = device;
-        
+
         /* Execute the read or write command. */
         status = dskacc[type].a[GET_AH() - 0x42](bios_dsk);
         count  = bios_dsk->drqp.trsfsectors;
         i13_ext->count = count;
-        
+
         if (status != 0) {
             BX_INFO("%s: function %02x, error %02x !\n", __func__, GET_AH(), status);
             SET_AH(0x0c);
             goto int13x_fail_noah;
         }
-        
+
         goto int13x_success;
         break;
 
@@ -445,7 +449,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         /* Check if buffer is large enough. */
         if (size < 0x1a)
             goto int13x_fail;
-        
+
         /* Fill in EDD 1.x table. */
         if (size >= 0x1a) {
             uint16_t   blksize;
@@ -470,11 +474,11 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
         if (size >= 0x1e) {
             uint8_t     channel, irq, mode, checksum, i, translation;
             uint16_t    iobase1, iobase2, options;
-            
+
             dpt->size = 0x1e;
             dpt->dpte_segment = ebda_seg;
             dpt->dpte_offset  = (uint16_t)&EbdaData->bdisk.dpte;
-            
+
             // Fill in dpte
             channel = device / 2;
             iobase1 = bios_dsk->channels[channel].iobase1;
@@ -482,13 +486,13 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             irq     = bios_dsk->channels[channel].irq;
             mode    = bios_dsk->devices[device].mode;
             translation = bios_dsk->devices[device].translation;
-            
+
             options  = (translation == GEO_TRANSLATION_NONE ? 0 : 1 << 3);  // chs translation
             options |= (1 << 4);    // lba translation
             options |= (mode == ATA_MODE_PIO32 ? 1 : 0 << 7);
             options |= (translation == GEO_TRANSLATION_LBA ? 1 : 0 << 9);
             options |= (translation == GEO_TRANSLATION_RECHS ? 3 : 0 << 9);
-            
+
             bios_dsk->dpte.iobase1  = iobase1;
             bios_dsk->dpte.iobase2  = iobase2;
             bios_dsk->dpte.prefix   = (0xe | (device % 2)) << 4;
@@ -500,7 +504,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             bios_dsk->dpte.options  = options;
             bios_dsk->dpte.reserved = 0;
             bios_dsk->dpte.revision = 0x11;
-            
+
             checksum = 0;
             for (i = 0; i < 15; ++i)
                 checksum += read_byte(ebda_seg, (uint16_t)&EbdaData->bdisk.dpte + i);
@@ -516,13 +520,13 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             channel = device / 2;
             iface   = bios_dsk->channels[channel].iface;
             iobase1 = bios_dsk->channels[channel].iobase1;
-            
+
             dpt->size       = 0x42;
             dpt->key        = 0xbedd;
             dpt->dpi_length = 0x24;
             dpt->reserved1  = 0;
             dpt->reserved2  = 0;
-            
+
             if (iface == ATA_IFACE_ISA) {
                 dpt->host_bus[0] = 'I';
                 dpt->host_bus[1] = 'S';
@@ -540,7 +544,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             dpt->iface_type[5] = ' ';
             dpt->iface_type[6] = ' ';
             dpt->iface_type[7] = ' ';
-            
+
             if (iface == ATA_IFACE_ISA) {
                 ((uint16_t __far *)dpt->iface_path)[0] = iobase1;
                 ((uint16_t __far *)dpt->iface_path)[1] = 0;
@@ -552,7 +556,7 @@ void BIOSCALL int13_harddisk_ext(disk_regs_t r)
             ((uint16_t __far *)dpt->device_path)[0] = device & 1; // device % 2; @todo: correct?
             ((uint16_t __far *)dpt->device_path)[1] = 0;
             ((uint32_t __far *)dpt->device_path)[1] = 0;
-            
+
             checksum = 0;
             for (i = 30; i < 64; i++)
                 checksum += read_byte(DS, SI + i);
