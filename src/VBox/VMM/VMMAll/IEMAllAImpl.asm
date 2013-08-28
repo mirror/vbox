@@ -354,12 +354,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
-        int3
-        ret
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+  %endif ; RT_ARCH_AMD64
 
  %if %2 != 0 ; locked versions requested?
 
@@ -395,12 +390,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
-  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
-        int3
-        ret 8
-ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
-  %endif ; !RT_ARCH_AMD64
+  %endif ; RT_ARCH_AMD64
  %endif ; locked
 %endmacro
 
@@ -457,12 +447,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
-        int3
-        ret 8
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+  %endif ; RT_ARCH_AMD64
 
  %if %2 != 0 ; locked versions requested?
 
@@ -490,12 +475,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
         IEM_SAVE_FLAGS                 A2, %3, %4
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
-  %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 16
-        int3
-        ret 8
-ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
-  %endif ; !RT_ARCH_AMD64
+  %endif ; RT_ARCH_AMD64
  %endif ; locked
 %endmacro
 IEMIMPL_BIT_OP bt,  0, (X86_EFL_CF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
@@ -551,12 +531,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
         IEM_SAVE_FLAGS                 A2, %2, %3
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 16
-        int3
-        ret 8
-ENDPROC iemAImpl_ %+ %1 %+ _u64
- %endif ; !RT_ARCH_AMD64
+ %endif ; RT_ARCH_AMD64
 %endmacro
 IEMIMPL_BIT_OP bsf, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
 IEMIMPL_BIT_OP bsr, (X86_EFL_ZF), (X86_EFL_OF | X86_EFL_SF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF)
@@ -585,18 +560,16 @@ BEGINPROC_FASTCALL iemAImpl_imul_two_u32, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_imul_two_u32
 
+%ifdef RT_ARCH_AMD64
 BEGINPROC_FASTCALL iemAImpl_imul_two_u64, 16
         PROLOGUE_3_ARGS
-%ifdef RT_ARCH_AMD64
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
         imul    A1, qword [A0]
         mov     [A0], A1
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_CF), (X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF)
-%else
-        int3 ;; @todo implement me
-%endif
         EPILOGUE_3_ARGS_EX 8
 ENDPROC iemAImpl_imul_two_u64
+%endif ; RT_ARCH_AMD64
 
 
 ;
@@ -630,18 +603,15 @@ BEGINPROC_FASTCALL iemAImpl_xchg_u32, 8
         EPILOGUE_2_ARGS
 ENDPROC iemAImpl_xchg_u32
 
-BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
 %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_xchg_u64, 8
         PROLOGUE_2_ARGS
         mov     T0, [A1]
         xchg    [A0], T0
         mov     [A1], T0
         EPILOGUE_2_ARGS
-%else
-        int3
-        ret 0
-%endif
 ENDPROC iemAImpl_xchg_u64
+%endif
 
 
 ;
@@ -682,8 +652,8 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u32, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_xadd_u32
 
-BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
 %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0, [A1]
@@ -691,11 +661,8 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u64, 12
         mov     [A1], T0
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         EPILOGUE_3_ARGS
-%else
-        int3
-        ret 4
-%endif
 ENDPROC iemAImpl_xadd_u64
+%endif ; RT_ARCH_AMD64
 
 BEGINPROC_FASTCALL iemAImpl_xadd_u8_locked, 12
         PROLOGUE_3_ARGS
@@ -727,8 +694,8 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u32_locked, 12
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_xadd_u32_locked
 
-BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
 %ifdef RT_ARCH_AMD64
+BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
         PROLOGUE_3_ARGS
         IEM_MAYBE_LOAD_FLAGS A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         mov     T0, [A1]
@@ -736,11 +703,8 @@ BEGINPROC_FASTCALL iemAImpl_xadd_u64_locked, 12
         mov     [A1], T0
         IEM_SAVE_FLAGS       A2, (X86_EFL_OF | X86_EFL_SF | X86_EFL_ZF | X86_EFL_AF | X86_EFL_PF | X86_EFL_CF), 0
         EPILOGUE_3_ARGS
-%else
-        int3
-        ret 4
-%endif
 ENDPROC iemAImpl_xadd_u64_locked
+%endif ; RT_ARCH_AMD64
 
 
 ;
@@ -1016,17 +980,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
         IEM_SAVE_FLAGS       A1, %2, %3
         EPILOGUE_2_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
- %else
-        ; stub them for now.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 8
-        int3
-        ret 0
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64_locked, 8
-        int3
-        ret 0
-ENDPROC iemAImpl_ %+ %1 %+ _u64_locked
- %endif
+ %endif ; RT_ARCH_AMD64
 
 %endmacro
 
@@ -1140,12 +1094,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
         IEM_SAVE_FLAGS       A2, %2, %3
         EPILOGUE_3_ARGS
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 12
-        int3
-        ret 4
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+ %endif ; RT_ARCH_AMD64
 
 %endmacro
 
@@ -1220,12 +1169,7 @@ BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
         IEM_SAVE_FLAGS       A3, %2, %3
         EPILOGUE_4_ARGS_EX 12
 ENDPROC iemAImpl_ %+ %1 %+ _u64
- %else ; stub it for now - later, replace with hand coded stuff.
-BEGINPROC_FASTCALL iemAImpl_ %+ %1 %+ _u64, 20
-        int3
-        ret 12
-ENDPROC iemAImpl_ %+ %1 %+ _u64
-  %endif ; !RT_ARCH_AMD64
+ %endif ; RT_ARCH_AMD64
 
 %endmacro
 
