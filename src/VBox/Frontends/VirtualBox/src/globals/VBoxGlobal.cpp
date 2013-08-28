@@ -161,31 +161,35 @@ typedef long Q_LONG;                /* word up to 64 bit signed */
 typedef unsigned long Q_ULONG;      /* word up to 64 bit unsigned */
 #endif
 
-// VBoxMediaEnumEvent
-/////////////////////////////////////////////////////////////////////////////
-
-class VBoxMediaEnumEvent : public QEvent
+/* Medium enumerated event: */
+class UIMediumEnumeratedEvent : public QEvent
 {
 public:
 
-    /** Constructs a regular enum event */
-    VBoxMediaEnumEvent (const UIMedium &aMedium,
-                        const VBoxMediaList::iterator &aIterator)
-        : QEvent ((QEvent::Type) MediaEnumEventType)
-        , mMedium (aMedium), mIterator (aIterator), mLast (false)
-        {}
-    /** Constructs the last enum event */
-    VBoxMediaEnumEvent (const VBoxMediaList::iterator &aIterator)
-        : QEvent ((QEvent::Type) MediaEnumEventType)
-        , mIterator (aIterator), mLast (true)
-        {}
+    /* Constructor: */
+    UIMediumEnumeratedEvent(const UIMedium &medium, const VBoxMediaList::iterator &iterator)
+        : QEvent((QEvent::Type)MediumEnumeratedEventType)
+        , m_medium(medium), m_iterator(iterator)
+    {}
 
-    /** Last enumerated medium (not valid when #last is true) */
-    const UIMedium mMedium;
-    /* Iterator which points to the corresponding item in the GUI thread: */
-    const VBoxMediaList::iterator mIterator;
-    /** Whether this is the last event for the given enumeration or not */
-    const bool mLast;
+    /* Variables: */
+    const UIMedium m_medium;
+    const VBoxMediaList::iterator m_iterator;
+};
+
+/* Mediums enumerated event: */
+class UIMediumsEnumeratedEvent : public QEvent
+{
+public:
+
+    /* Constructor: */
+    UIMediumsEnumeratedEvent(const VBoxMediaList::iterator &iterator)
+        : QEvent((QEvent::Type)MediumsEnumeratedEventType)
+        , m_iterator(iterator)
+    {}
+
+    /* Variable: */
+    const VBoxMediaList::iterator m_iterator;
 };
 
 // VBoxGlobal
@@ -956,22 +960,26 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
     return false;
 }
 
-QString VBoxGlobal::details (const CMedium &aMedium, bool aPredictDiff, bool fUseHtml /* = true */)
+QString VBoxGlobal::details(const CMedium &medium, bool fPredictDiff, bool fUseHtml /*= true*/)
 {
-    CMedium cmedium (aMedium);
-    UIMedium medium;
-
-    if (!findMedium (cmedium, medium))
+    /* Search for corresponding UI medium: */
+    UIMedium uimedium;
+    if (!findMedium(medium, uimedium))
     {
-        /* Medium may be new and not already in the media list, request refresh */
-        startEnumeratingMedia();
-        if (!findMedium (cmedium, medium))
-            /* Medium might be deleted already, return null string */
+        /* UI medium may be new and not in medium list, request enumeration: */
+        startMediumEnumeration();
+
+        /* Search for corresponding UI medium again: */
+        if (!findMedium(medium, uimedium))
+        {
+            /* Medium might be deleted already, return null string: */
             return QString();
+        }
     }
 
-    return fUseHtml ? medium.detailsHTML (true /* aNoDiffs */, aPredictDiff) :
-                      medium.details(true /* aNoDiffs */, aPredictDiff);
+    /* Return UI medium details: */
+    return fUseHtml ? uimedium.detailsHTML(true /* aNoDiffs */, fPredictDiff) :
+                      uimedium.details(true /* aNoDiffs */, fPredictDiff);
 }
 
 /**
@@ -1717,7 +1725,7 @@ static void addHardDisksToList(const CMediumVector &inputMediums,
     }
 }
 
-void VBoxGlobal::startEnumeratingMedia(bool fForceStart /*= true*/)
+void VBoxGlobal::startMediumEnumeration(bool fForceStart /*= true*/)
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(mValid);
@@ -1773,13 +1781,13 @@ void VBoxGlobal::startEnumeratingMedia(bool fForceStart /*= true*/)
             for (int i = 0; i < m_mediums.size() && !m_sfCleanupInProgress; ++i)
             {
                 m_mediums[i].blockAndQueryState();
-                QApplication::postEvent(pSelf, new VBoxMediaEnumEvent(m_mediums[i], m_iterator));
+                QApplication::postEvent(pSelf, new UIMediumEnumeratedEvent(m_mediums[i], m_iterator));
                 ++m_iterator;
             }
 
             /* Post the end-of-enumeration event: */
             if (!m_sfCleanupInProgress)
-                QApplication::postEvent(pSelf, new VBoxMediaEnumEvent(m_iterator));
+                QApplication::postEvent(pSelf, new UIMediumsEnumeratedEvent(m_iterator));
 
             COMBase::CleanupCOM();
             LogFlow(("MediaEnumThread finished.\n"));
@@ -4015,40 +4023,51 @@ void VBoxGlobal::sltProcessGlobalSettingChange()
 // Protected members
 ////////////////////////////////////////////////////////////////////////////////
 
-bool VBoxGlobal::event (QEvent *e)
+bool VBoxGlobal::event(QEvent *pEvent)
 {
-    switch (e->type())
+    /* Handle events: */
+    switch (pEvent->type())
     {
-        case MediaEnumEventType:
+        case MediumEnumeratedEventType:
         {
-            VBoxMediaEnumEvent *ev = (VBoxMediaEnumEvent*) e;
+            /* Cast to corresponding event: */
+            UIMediumEnumeratedEvent *pMediumEnumeratedEvent = static_cast<UIMediumEnumeratedEvent*>(pEvent);
 
-            if (!ev->mLast)
-            {
-                if (ev->mMedium.state() == KMediumState_Inaccessible &&
-                    !ev->mMedium.result().isOk())
-                    msgCenter().cannotGetMediaAccessibility (ev->mMedium);
-                Assert (ev->mIterator != m_mediums.end());
-                *(ev->mIterator) = ev->mMedium;
-                emit sigMediumEnumerated(*ev->mIterator);
-            }
-            else
-            {
-                /* the thread has posted the last message, wait for termination */
-                m_pMediumEnumerationThread->wait();
-                delete m_pMediumEnumerationThread;
-                m_pMediumEnumerationThread = 0;
-                emit sigMediumEnumerationFinished(m_mediums);
-            }
+            /* Show accessibility error message if necessary: */
+            if (pMediumEnumeratedEvent->m_medium.state() == KMediumState_Inaccessible &&
+                !pMediumEnumeratedEvent->m_medium.result().isOk())
+                msgCenter().cannotGetMediaAccessibility(pMediumEnumeratedEvent->m_medium);
 
+            /* Make sure incoming iterator is valid: */
+            AssertReturn(pMediumEnumeratedEvent->m_iterator != m_mediums.end(), false);
+
+            /* Assign enumeration result to corresponding medium: */
+            *(pMediumEnumeratedEvent->m_iterator) = pMediumEnumeratedEvent->m_medium;
+
+            /* Notify listeners about newly enumerated medium: */
+            emit sigMediumEnumerated(*pMediumEnumeratedEvent->m_iterator);
+
+            /* Accept event: */
             return true;
         }
+        case MediumsEnumeratedEventType:
+        {
+            /* Cleanup enumeration thread: */
+            m_pMediumEnumerationThread->wait();
+            delete m_pMediumEnumerationThread;
+            m_pMediumEnumerationThread = 0;
 
+            /* Notify listeners about enumeration finished: */
+            emit sigMediumEnumerationFinished(m_mediums);
+
+            /* Accept event: */
+            return true;
+        }
         default:
             break;
     }
-
-    return QObject::event (e);
+    /* Call to base-class: */
+    return QObject::event(pEvent);
 }
 
 bool VBoxGlobal::eventFilter (QObject *aObject, QEvent *aEvent)
@@ -4565,7 +4584,7 @@ void VBoxGlobal::prepare()
      * but this method should be run anyway just to enumerate null UIMedium object,
      * used by some VBox smart widgets, like VBoxMediaComboBox: */
     if (agressiveCaching())
-        startEnumeratingMedia();
+        startMediumEnumeration();
 
     /* Prepare global settings change handler: */
     connect(&settings(), SIGNAL(propertyChanged(const char*, const char*)),
@@ -4648,7 +4667,7 @@ void VBoxGlobal::cleanup()
     mHost.detach();
     mVBox.detach();
 
-    /* There may be VBoxMediaEnumEvent instances still in the message
+    /* There may be UIMedium(s)EnumeratedEvent instances still in the message
      * queue which reference COM objects. Remove them to release those objects
      * before uninitializing the COM subsystem. */
     QApplication::removePostedEvents (this);
