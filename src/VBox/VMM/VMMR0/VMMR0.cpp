@@ -885,20 +885,13 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
 
         /*
          * Run guest code using the available hardware acceleration technology.
-         *
-         * Disable interrupts before we do anything interesting. On Windows we avoid
-         * this by having the support driver raise the IRQL before calling us, this way
-         * we hope to get away with page faults and later calling into the kernel.
          */
         case VMMR0_DO_HM_RUN:
         {
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             Assert(!VMMR0ThreadCtxHooksAreRegistered(pVCpu));
             RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
             RTThreadPreemptDisable(&PreemptState);
-#elif !defined(RT_OS_WINDOWS)
-            RTCCUINTREG uFlags = ASMIntDisableFlags();
-#endif
+
             /* Update the VCPU <-> host CPU mapping before doing anything else. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, RTMpCpuId());
             if (pVM->vmm.s.fUsePeriodicPreemptionTimers)
@@ -922,14 +915,12 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             if (!HMR0SuspendPending())
             {
                 /* Register thread-context hooks if required. */
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
                 if (    VMMR0ThreadCtxHooksAreCreated(pVCpu)
                     && !VMMR0ThreadCtxHooksAreRegistered(pVCpu))
                 {
                     rc = VMMR0ThreadCtxHooksRegister(pVCpu, vmmR0ThreadCtxCallback);
                     AssertRC(rc);
                 }
-#endif
 
                 /* Enter HM context. */
                 rc = HMR0Enter(pVM, pVCpu);
@@ -974,12 +965,8 @@ VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperati
             /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
             ASMAtomicWriteU32(&pVCpu->idHostCpu, NIL_RTCPUID);
 
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
             if (!fPreemptRestored)
                 RTThreadPreemptRestore(&PreemptState);
-#elif !defined(RT_OS_WINDOWS)
-            ASMSetFlags(uFlags);
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
             vmmR0RecordRC(pVM, pVCpu, rc);

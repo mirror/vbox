@@ -794,12 +794,6 @@ VBOX_DO_STRIP := $(if $(filter release profile,$(KBUILD_TYPE)),1,)
 #       the ifdefs in target or template definitions.
 #
 
-## For experimenting with disabling preemption instead of interrupts
-# when working VT-x/AMD-V in VMMR0.
-## @todo os2? Reconsider perhaps windows? (see defect) This should be made the default.
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
- VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
-endif
 # Mask all Local APIC interrupt vectors which are set up to NMI mode when switching
 # to/from the guest in raw mode. Modern Linux kernels use the performance counter
 # to raise an NMI from time to time.

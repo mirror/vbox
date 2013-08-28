@@ -2739,7 +2739,6 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
     else if (!pVCpu->hm.s.Event.fPending)
         hmR0SvmEvaluatePendingEvent(pVCpu, pCtx);
 
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
      * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
@@ -2768,7 +2767,6 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
     /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-#endif
 
     return VINF_SUCCESS;
 }
@@ -2791,13 +2789,6 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
-
-#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
-    /** @todo get rid of this. */
-    pSvmTransient->uEflags = ASMIntDisableFlags();
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-#endif
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 

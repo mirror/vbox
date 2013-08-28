@@ -451,9 +451,9 @@ NTSTATUS _stdcall VBoxDrvNtDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             || ulCmd == SUP_IOCTL_FAST_DO_NOP)
         && pSession->fUnrestricted == true)
     {
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
         int rc = supdrvIOCtlFast(ulCmd, (unsigned)(uintptr_t)pIrp->UserBuffer /* VMCPU id */, pDevExt, pSession);
-#else
+
+#if 0   /* When preemption was not used i.e. !VBOX_WITH_VMMR0_DISABLE_PREEMPTION. That's no longer required. */
         /* Raise the IRQL to DISPATCH_LEVEL to prevent Windows from rescheduling us to another CPU/core. */
         Assert(KeGetCurrentIrql() <= DISPATCH_LEVEL);
         KIRQL oldIrql;

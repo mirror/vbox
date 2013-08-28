@@ -7358,7 +7358,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     else if (!pVCpu->hm.s.Event.fPending)
         hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
-#ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
      * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
@@ -7387,7 +7386,6 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-#endif
 
     /*
      * Event injection might result in triple-faulting the VM (real-on-v86 case), which is why it's
@@ -7417,12 +7415,6 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
-#ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
-    /** @todo get rid of this. */
-    pVmxTransient->uEflags = ASMIntDisableFlags();
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-#endif
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
@@ -8548,7 +8540,7 @@ HMVMX_EXIT_DECL hmR0VmxExitExtInt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
     /* 32-bit Windows hosts (4 cores) has trouble with this; causes higher interrupt latency. */
-#if HC_ARCH_BITS == 64 && defined(VBOX_WITH_VMMR0_DISABLE_PREEMPTION)
+#if HC_ARCH_BITS == 64
     Assert(ASMIntAreEnabled());
     if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUsePreemptTimer)
         return VINF_SUCCESS;
