@@ -79,7 +79,7 @@ uint8_t get_mouse_data(uint8_t __far *data)
 
     while ((inb(0x64) & 0x21) != 0x21 && retries)
         --retries;
-    
+
     if (!retries)
         return(1);
 
@@ -92,7 +92,7 @@ void set_kbd_command_byte(uint8_t command_byte)
 {
     if (inb(0x64) & 0x02)
         BX_PANIC(panic_msg_keyb_buffer_full,"setkbdcomm");
-    
+
     outb(0x64, 0x60); // write command byte
     outb(0x60, command_byte);
 }
@@ -104,28 +104,28 @@ void BIOSCALL int74_function(volatile uint16_t make_farcall, volatile uint16_t Z
     uint16_t    ebda_seg=read_word(0x0040,0x000E);
     uint8_t     in_byte, index, package_count;
     uint8_t     mouse_flags_1, mouse_flags_2;
-    
+
     BX_DEBUG_INT74("entering int74_function\n");
     make_farcall = 0;
-    
+
     in_byte = inb(0x64);
     if ( (in_byte & 0x21) != 0x21 ) {
         return;
     }
     in_byte = inb(0x60);
     BX_DEBUG_INT74("int74: read byte %02x\n", in_byte);
-    
+
     mouse_flags_1 = read_byte(ebda_seg, 0x0026);
     mouse_flags_2 = read_byte(ebda_seg, 0x0027);
-    
+
     if ( (mouse_flags_2 & 0x80) != 0x80 ) {
         return;
     }
-    
+
     package_count = mouse_flags_2 & 0x07;
     index = mouse_flags_1 & 0x07;
     write_byte(ebda_seg, 0x28 + index, in_byte);
-    
+
     if ( index >= package_count ) {
         BX_DEBUG_INT74("int74_function: make_farcall=1\n");
         status = read_byte(ebda_seg, 0x0028 + 0);
@@ -164,7 +164,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
     //     device driver should attempt command again
     // 05: cannot enable mouse, since no far call has been installed
     // 80/86: mouse service not implemented
-    
+
     if (regs.u.r8.al > 7) {
         BX_DEBUG_INT15_MS("unsupported subfn\n");
         // invalid function
@@ -172,12 +172,12 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
         regs.u.r8.ah = 1;
         return;
     }
-    
+
     // Valid subfn; disable AUX input and IRQ12, assume no error
     set_kbd_command_byte(0x65);
     CLEAR_CF();
     regs.u.r8.ah = 0;
-    
+
     switch (regs.u.r8.al) {
     case 0: // Disable/Enable Mouse
         BX_DEBUG_INT15_MS("case 0: ");
@@ -202,7 +202,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
             BX_DEBUG_INT15_MS("Enable Mouse\n");
             mouse_cmd = 0xF4;   // enable mouse command
         }
-        
+
         ret = send_to_mouse_ctrl(mouse_cmd);  // disable mouse command
         if (ret == 0) {
             ret = get_mouse_data(&mouse_data1);
@@ -211,12 +211,12 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
                 break;
             }
         }
-        
+
         // interface error
         SET_CF();
         regs.u.r8.ah = 3;
         break;
-    
+
     case 5: // Initialize Mouse
         // Valid package sizes are 1 to 8
         if ( (regs.u.r8.bh < 1) || (regs.u.r8.bh > 8) ) {
@@ -228,7 +228,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
         mouse_flags_2 = (mouse_flags_2 & 0xf8) | (regs.u.r8.bh - 1);
         write_byte(ebda_seg, 0x0027, mouse_flags_2);
         // fall through!
-    
+
     case 1: // Reset Mouse
         BX_DEBUG_INT15_MS("case 1 or 5:\n");
         // clear current package byte index
@@ -259,12 +259,12 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
                 }
             }
         }
-        
+
         // interface error
         SET_CF();
         regs.u.r8.ah = 3;
         break;
-    
+
     case 2: // Set Sample Rate
         BX_DEBUG_INT15_MS("case 2:\n");
         switch (regs.u.r8.bh) {
@@ -295,7 +295,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
             regs.u.r8.ah = 2;
         }
         break;
-    
+
     case 3: // Set Resolution
         BX_DEBUG_INT15_MS("case 3:\n");
         // BX:
@@ -325,7 +325,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
             regs.u.r8.ah = 2;
         }
         break;
-    
+
     case 4: // Get Device ID
         BX_DEBUG_INT15_MS("case 4:\n");
         ret = send_to_mouse_ctrl(0xF2); // get mouse ID command
@@ -340,7 +340,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
             regs.u.r8.ah = 3;
         }
         break;
-    
+
     case 6: // Return Status & Set Scaling Factor...
         BX_DEBUG_INT15_MS("case 6:\n");
         switch (regs.u.r8.bh) {
@@ -367,12 +367,12 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
                     }
                 }
             }
-            
+
             // interface error
             SET_CF();
             regs.u.r8.ah = 3;
             break;
-        
+
         case 1: // Set Scaling Factor to 1:1
         case 2: // Set Scaling Factor to 2:1
             if (regs.u.r8.bh == 1) {
@@ -390,7 +390,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
                 regs.u.r8.ah = 3;
             }
             break;
-        
+
         default:
             BX_PANIC("INT 15h C2 AL=6, BH=%02x\n", (unsigned) regs.u.r8.bh);
             // invalid subfunction
@@ -398,7 +398,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
             regs.u.r8.ah = 1;
         }
         break;
-    
+
     case 7: // Set Mouse Handler Address
         BX_DEBUG_INT15_MS("case 7:\n");
         mouse_driver_seg = ES;
@@ -418,7 +418,7 @@ void BIOSCALL int15_function_mouse(pusha_regs_t regs, uint16_t ES, uint16_t DS, 
         }
         write_byte(ebda_seg, 0x0027, mouse_flags_2);
         break;
-    
+
     default:
         BX_PANIC("INT 15h C2 default case entered\n");
         // invalid subfunction

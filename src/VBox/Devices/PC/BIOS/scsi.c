@@ -93,13 +93,13 @@ int scsi_cmd_data_in(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
 
-    
+
     sizes = ((length >> 12) & 0xF0) | cbCDB;
     outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_FROM_DEVICE);    /* Write the transfer direction. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, sizes);                     /* Write CDB size and top bufsize bits. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, length);                    /* Write the buffer size. */
-    outb(io_base + VBSCSI_REGISTER_COMMAND, (length >> 8));    
+    outb(io_base + VBSCSI_REGISTER_COMMAND, (length >> 8));
     for (i = 0; i < cbCDB; i++)                                         /* Write the CDB. */
         outb(io_base + VBSCSI_REGISTER_COMMAND, aCDB[i]);
 
@@ -135,7 +135,7 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
         status = inb(io_base + VBSCSI_REGISTER_STATUS);
     while (status & VBSCSI_BUSY);
 
-    
+
     sizes = ((length >> 12) & 0xF0) | cbCDB;
     outb(io_base + VBSCSI_REGISTER_COMMAND, target_id);                 /* Write the target ID. */
     outb(io_base + VBSCSI_REGISTER_COMMAND, SCSI_TXDIR_TO_DEVICE);      /* Write the transfer direction. */
@@ -170,7 +170,7 @@ int scsi_cmd_data_out(uint16_t io_base, uint8_t target_id, uint8_t __far *aCDB,
  * Read sectors from an attached SCSI device.
  *
  * @returns status code.
- * @param   bios_dsk    Pointer to disk request packet (in the 
+ * @param   bios_dsk    Pointer to disk request packet (in the
  *                      EBDA).
  */
 int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
@@ -202,7 +202,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
     DBG_SCSI("%s: reading %u sectors, device %d, target %d\n", __func__,
              count, device_id, bios_dsk->scsidev[device_id].target_id);
 
-    rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10, 
+    rc = scsi_cmd_data_in(io_base, target_id, (void __far *)&cdb, 10,
                           bios_dsk->drqp.buffer, (count * 512L));
 
     if (!rc)
@@ -219,7 +219,7 @@ int scsi_read_sectors(bio_dsk_t __far *bios_dsk)
  * Write sectors to an attached SCSI device.
  *
  * @returns status code.
- * @param   bios_dsk    Pointer to disk request packet (in the 
+ * @param   bios_dsk    Pointer to disk request packet (in the
  *                      EBDA).
  */
 int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
@@ -273,10 +273,10 @@ int scsi_write_sectors(bio_dsk_t __far *bios_dsk)
  * Perform a "packet style" read with supplied CDB.
  *
  * @returns status code.
- * @param   bios_dsk    Pointer to disk request packet (in the 
+ * @param   bios_dsk    Pointer to disk request packet (in the
  *                      EBDA).
  */
-uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf, 
+uint16_t scsi_cmd_packet(uint16_t device_id, uint8_t cmdlen, char __far *cmdbuf,
                          uint16_t before, uint32_t length, uint8_t inout, char __far *buffer)
 {
     bio_dsk_t __far *bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
@@ -439,8 +439,8 @@ void scsi_enumerate_attached_devices(uint16_t io_base)
                     continue;
                 }
 
-                /* We need to calculate the geometry for the disk. From 
-                 * the BusLogic driver in the Linux kernel. 
+                /* We need to calculate the geometry for the disk. From
+                 * the BusLogic driver in the Linux kernel.
                  */
                 if (sectors >= (uint32_t)4 * 1024 * 1024)
                 {

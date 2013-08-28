@@ -49,7 +49,7 @@ void BIOSCALL int17_function(pusha_regs_t regs, uint16_t es, uint16_t ds, volati
     uint8_t     val8;
 
     int_enable();
-    
+
     addr = read_word(0x0040, (regs.u.r16.dx << 1) + 8);
     if ((regs.u.r8.ah < 3) && (regs.u.r16.dx < 3) && (addr > 0)) {
         timeout = read_byte(0x0040, 0x0078 + regs.u.r16.dx) << 8;
