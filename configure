@@ -580,7 +580,7 @@ check_iasl()
 {
   test_header iasl
   if check_avail "$IASL" IASL; then
-    iasl_ver=`$IASL|grep version|sed 's+^ASL.*version \([0-9]*\).*+\1+'`
+    iasl_ver=`$IASL|grep "ASL.*version"|sed 's+^ASL.*version \([0-9]*\).*+\1+'`
     if [ $? -ne 0 ]; then
       log_failure "iasl not found"
       fail
