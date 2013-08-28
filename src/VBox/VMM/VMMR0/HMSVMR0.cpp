@@ -195,7 +195,7 @@ PHYSICAL_TABLE and AVIC LOGICAL_TABLE Pointers). */
 typedef struct SVMTRANSIENT
 {
     /** The host's rflags/eflags. */
-    RTCCUINTREG     uEFlags;
+    RTCCUINTREG     uEflags;
 #if HC_ARCH_BITS == 32
     uint32_t        u32Alignment0;
 #endif
@@ -2364,15 +2364,15 @@ DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 
 
 /**
- * Injects any pending events into the guest if the guest is in a state to
- * receive them.
+ * Evaluates the event to be delivered to the guest and sets it as the pending
+ * event.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    Assert(!TRPMHasTrap(pVCpu));
+    Assert(!pVCpu->hm.s.Event.fPending);
     Log4Func(("\n"));
 
     const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
@@ -2381,61 +2381,30 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
 
     SVMEVENT Event;
     Event.u = 0;
-    if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
-    {
-        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
-        Assert(Event.n.u1Valid);
-        bool fInject = true;
-        if (   Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ
-            && (   fBlockInt
-                || fIntShadow))
-        {
-            fInject = false;
-        }
-        else if (   Event.n.u3Type == SVM_EVENT_NMI
-                 && fIntShadow)
-        {
-            fInject = false;
-        }
-
-        if (fInject)
-        {
-            Log4(("Injecting pending HM event.\n"));
-
-            hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
-            pVCpu->hm.s.Event.fPending = false;
-
-#ifdef VBOX_WITH_STATISTICS
-            if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
-            else
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
-#endif
-        }
-        else
-            hmR0SvmSetVirtIntrIntercept(pVmcb);
-    }                                                              /** @todo SMI. SMIs take priority over NMIs. */
-    else if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
+                                                              /** @todo SMI. SMIs take priority over NMIs. */
+    if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_INTERRUPT_NMI))   /* NMI. NMIs take priority over regular interrupts . */
     {
         if (!fIntShadow)
         {
-            Log4(("Injecting NMI\n"));
+            Log4(("Pending NMI\n"));
 
             Event.n.u1Valid  = 1;
             Event.n.u8Vector = X86_XCPT_NMI;
             Event.n.u3Type   = SVM_EVENT_NMI;
 
-            hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
+            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
     }
     else if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
     {
-        /* Check if there are guest external interrupts (PIC/APIC) pending and inject them, if the guest can receive them. */
+        /*
+         * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
+         * the interrupt ASAP. We must not execute any guest code until we inject the interrupt which is why it is
+         * evaluated here and not set as pending, solely based on the force-flags.
+         */
         if (   !fBlockInt
             && !fIntShadow)
         {
@@ -2449,8 +2418,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
                 Event.n.u8Vector = u8Interrupt;
                 Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
 
-                hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+                hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
             }
             else
             {
@@ -2461,6 +2429,54 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         else
             hmR0SvmSetVirtIntrIntercept(pVmcb);
+    }
+}
+
+
+/**
+ * Injects any pending events into the guest if the guest is in a state to
+ * receive them.
+ *
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Assert(!TRPMHasTrap(pVCpu));
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    Log4Func(("\n"));
+
+    const bool fIntShadow = !!hmR0SvmGetGuestIntrShadow(pVCpu, pCtx);
+    const bool fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
+    PSVMVMCB pVmcb        = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    SVMEVENT Event;
+    Event.u = 0;
+    if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
+    {
+#if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
+        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
+        Assert(Event.n.u1Valid);
+        bool fInject = true;
+        if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
+        {
+            Assert(!fBlockInt);
+            Assert(!fIntShadow);
+        }
+        else if (Event.n.u3Type == SVM_EVENT_NMI)
+            Assert(!fIntShadow);
+#endif
+
+        Log4(("Injecting pending HM event.\n"));
+        hmR0SvmInjectEventVmcb(pVCpu, pVmcb, pCtx, &Event);
+        pVCpu->hm.s.Event.fPending = false;
+
+#ifdef VBOX_WITH_STATISTICS
+        if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
+        else
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
+#endif
     }
 
     /* Update the guest interrupt shadow in the VMCB. */
@@ -2718,27 +2734,41 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
     if (rc != VINF_SUCCESS)
         return rc;
 
+    if (TRPMHasTrap(pVCpu))
+        hmR0SvmTrpmTrapToPendingEvent(pVCpu);
+    else if (!pVCpu->hm.s.Event.fPending)
+        hmR0SvmEvaluatePendingEvent(pVCpu, pCtx);
+
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /* We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.) */
-    pSvmTransient->uEFlags = ASMIntDisableFlags();
-    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    /*
+     * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
+     * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
+     *
+     * We need to check for force-flags that could've possible been altered since we last checked them (e.g.
+     * by PDMGetInterrupt() leaving the PDM critical section, see @bugref{6398}).
+     *
+     * We also check a couple of other force-flags as a last opportunity to get the EMT back to ring-3 before
+     * executing guest code.
+     */
+    pSvmTransient->uEflags = ASMIntDisableFlags();
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
-        ASMSetFlags(pSvmTransient->uEFlags);
+        ASMSetFlags(pSvmTransient->uEflags);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
+        return VINF_EM_RAW_TO_R3;
+    }
+    else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    {
+        ASMSetFlags(pSvmTransient->uEflags);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
-        /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
     }
+
+    /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
-
-    /* Convert any pending TRPM traps to HM events for injection. */
-    /** @todo Optimization: move this before disabling interrupts, restore state
-     *        using pVmcb->ctrl.EventInject.u. */
-    if (TRPMHasTrap(pVCpu))
-        hmR0SvmTrpmTrapToPendingEvent(pVCpu);
-
-    hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
     return VINF_SUCCESS;
 }
@@ -2764,9 +2794,12 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
 
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
-    pSvmTransient->uEFlags = ASMIntDisableFlags();
+    /** @todo get rid of this. */
+    pSvmTransient->uEflags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
+
+    hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
     /*
      * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
@@ -2912,7 +2945,7 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
-    ASMSetFlags(pSvmTransient->uEFlags);                        /* Enable interrupts. */
+    ASMSetFlags(pSvmTransient->uEflags);                        /* Enable interrupts. */
 
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pMixedCtx);
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */

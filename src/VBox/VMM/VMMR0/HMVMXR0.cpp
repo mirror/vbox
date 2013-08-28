@@ -6344,6 +6344,86 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
 
 
 /**
+ * Evaluates the event to be delivered to the guest and sets it as the pending
+ * event.
+ *
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
+ *                          out-of-sync. Make sure to update the required fields
+ *                          before using them.
+ */
+static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+{
+    Assert(!pVCpu->hm.s.Event.fPending);
+
+    /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
+    uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
+    bool fBlockMovSS    = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+    bool fBlockSti      = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+
+    Assert(!fBlockSti || (pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS));
+    Assert(   !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI)      /* We don't support block-by-NMI and SMI yet.*/
+           && !(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI));
+    Assert(!fBlockSti || pMixedCtx->eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
+    Assert(!TRPMHasTrap(pVCpu));
+
+                                                           /** @todo SMI. SMIs take priority over NMIs. */
+    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts . */
+    {
+        /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
+        if (   !fBlockMovSS
+            && !fBlockSti)
+        {
+            /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
+            Log4(("Pending NMI vcpu[%RU32]\n", pVCpu->idCpu));
+            uint32_t u32IntrInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
+            u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+            hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddres */);
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
+        }
+        else
+            hmR0VmxSetIntWindowExitVmcs(pVCpu);
+    }
+    else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
+             && !pVCpu->hm.s.fSingleInstruction)
+    {
+        /*
+         * Check if the guest can receive external interrupts (PIC/APIC). Once we do PDMGetInterrupt() we -must- deliver
+         * the interrupt ASAP. We must not execute any guest code until we inject the interrupt which is why it is
+         * evaluated here and not set as pending, solely based on the force-flags.
+         */
+        int rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
+        AssertRC(rc);
+        const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
+        if (   !fBlockInt
+            && !fBlockSti
+            && !fBlockMovSS)
+        {
+            uint8_t u8Interrupt;
+            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
+            if (RT_SUCCESS(rc))
+            {
+                Log4(("Pending interrupt vcpu[%RU32] u8Interrupt=%#x \n", pVCpu->idCpu, u8Interrupt));
+                uint32_t u32IntrInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
+                u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+
+                hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrfaultAddress */);
+            }
+            else
+            {
+                /** @todo Does this actually happen? If not turn it into an assertion. */
+                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
+            }
+        }
+        else
+            hmR0VmxSetIntWindowExitVmcs(pVCpu);
+    }
+}
+
+
+/**
  * Injects any pending events into the guest if the guest is in a state to
  * receive them.
  *
@@ -6352,6 +6432,8 @@ DECLINLINE(void) hmR0VmxSetIntWindowExitVmcs(PVMCPU pVCpu)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
+ *
+ * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
@@ -6367,108 +6449,46 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!TRPMHasTrap(pVCpu));
 
     int rc = VINF_SUCCESS;
-    if (pVCpu->hm.s.Event.fPending)     /* First, inject any pending HM events. */
+    if (pVCpu->hm.s.Event.fPending)
     {
+#if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
         uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo);
-        bool fInject = true;
         if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
             const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
-            if (   fBlockInt
-                || fBlockSti
-                || fBlockMovSS)
-            {
-                fInject = false;
-            }
+            Assert(!fBlockInt);
+            Assert(!fBlockSti);
+            Assert(!fBlockMovSS);
         }
-        else if (   uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
-                 && (   fBlockMovSS
-                     || fBlockSti))
+        else if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         {
-            /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-            fInject = false;
+            Assert(!fBlockSti);
+            Assert(!fBlockMovSS);
         }
+#endif
+        Log4(("Injecting pending event vcpu[%RU32] u64IntrInfo=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntrInfo));
+        rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
+                                    pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
+        AssertRCReturn(rc, rc);
 
-        if (fInject)
-        {
-            Log4(("Injecting pending event vcpu[%RU32]\n", pVCpu->idCpu));
-            rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
-                                        pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
-            AssertRCReturn(rc, rc);
-            pVCpu->hm.s.Event.fPending = false;
+        pVCpu->hm.s.Event.fPending = false;
+
+        /* Update the interruptibility-state as it could have been changed by
+           hmR0VmxInjectEventVmcs() (e.g. real-on-v86 guest injecting software interrupts) */
+        fBlockMovSS = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
+        fBlockSti   = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
 #ifdef VBOX_WITH_STATISTICS
-            if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
-            else
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
-#endif
-        }
+        if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
         else
-            hmR0VmxSetIntWindowExitVmcs(pVCpu);
-    }                                                           /** @todo SMI. SMIs take priority over NMIs. */
-    else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI))    /* NMI. NMIs take priority over regular interrupts . */
-    {
-        /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
-        if (   !fBlockMovSS
-            && !fBlockSti)
-        {
-            Log4(("Injecting NMI\n"));
-            uint32_t u32IntrInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
-            u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-            rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */,
-                                        0 /* GCPtrFaultAddress */, &uIntrState);
-            AssertRCReturn(rc, rc);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
-        }
-        else
-            hmR0VmxSetIntWindowExitVmcs(pVCpu);
-    }
-    else if (   VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC))
-             && !pVCpu->hm.s.fSingleInstruction)
-    {
-        /* Check if there are guest external interrupts (PIC/APIC) pending and inject them if the guest can receive them. */
-        rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
-        AssertRCReturn(rc, rc);
-        const bool fBlockInt = !(pMixedCtx->eflags.u32 & X86_EFL_IF);
-        if (   !fBlockInt
-            && !fBlockSti
-            && !fBlockMovSS)
-        {
-            uint8_t u8Interrupt;
-            rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
-            {
-                Log4(("Injecting interrupt u8Interrupt=%#x\n", u8Interrupt));
-                uint32_t u32IntrInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
-                u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-                rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */,  0 /* u32ErrCode */,
-                                            0 /* GCPtrFaultAddress */, &uIntrState);
-
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
-            }
-            else
-            {
-                /** @todo Does this actually happen? If not turn it into an assertion. */
-                Assert(!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)));
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
-                rc = VINF_SUCCESS;
-            }
-        }
-        else
-            hmR0VmxSetIntWindowExitVmcs(pVCpu);
+#endif
     }
 
-    /*
-     * Delivery pending debug exception if the guest is single-stepping. The interruptibility-state could have been changed by
-     * hmR0VmxInjectEventVmcs() (e.g. real-on-v86 injecting software interrupts), re-evaluate it and set the BS bit.
-     */
-    fBlockMovSS = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
-    fBlockSti   = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
+    /* Delivery pending debug exception if the guest is single-stepping. Evaluate and set the BS bit. */
     int rc2 = VINF_SUCCESS;
     if (   fBlockSti
         || fBlockMovSS)
@@ -7322,41 +7342,58 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
 #endif /* !IEM_VERIFICATION_MODE_FULL */
 
     /*
-     * When thread-context hooks are used, load the required guest-state bits
-     * here before we go ahead and disable interrupts. We can handle getting preempted
+     * When thread-context hooks are used, load the required guest-state bits here
+     * before we go ahead and disable interrupts. We can handle getting preempted
      * while loading the guest state.
      */
     if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
 
+    /*
+     * Evaluate events as pending-for-injection into the guest. Toggling of force-flags here is safe as long as
+     * we update TRPM on premature exits to ring-3 before executing guest code. We must NOT restore the force-flags.
+     */
+    if (TRPMHasTrap(pVCpu))
+        hmR0VmxTrpmTrapToPendingEvent(pVCpu);
+    else if (!pVCpu->hm.s.Event.fPending)
+        hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
+
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
-    /* We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.) */
+    /*
+     * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
+     * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
+     *
+     * We need to check for force-flags that could've possible been altered since we last checked them (e.g.
+     * by PDMGetInterrupt() leaving the PDM critical section, see @bugref{6398}).
+     *
+     * We also check a couple of other force-flags as a last opportunity to get the EMT back to ring-3 before
+     * executing guest code.
+     */
     pVmxTransient->uEflags = ASMIntDisableFlags();
-    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
+        || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
+    {
+        ASMSetFlags(pVmxTransient->uEflags);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
+        return VINF_EM_RAW_TO_R3;
+    }
+    else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pVmxTransient->uEflags);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
-        /* Don't use VINF_EM_RAW_INTERRUPT_HYPER as we can't assume the host does kernel preemption. Maybe some day? */
         return VINF_EM_RAW_INTERRUPT;
     }
+
+    /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
 
     /*
-     * Evaluates and injects any pending events, toggling force-flags and updating the guest-interruptibility
-     * state (interrupt shadow) in the VMCS. This -can- potentially be reworked to be done before disabling
-     * interrupts and handle returning to ring-3 afterwards, but requires very careful state restoration.
+     * Event injection might result in triple-faulting the VM (real-on-v86 case), which is why it's
+     * done here and not in hmR0VmxPreRunGuestCommitted() which doesn't expect failures.
      */
-    /** @todo Rework event evaluation and injection to be completely separate.
-     *  Update: Tried it, problem with handling halts. Control never returns to VT-x
-     *        if we exit VT-x with external interrupt pending in a TRPM event.
-     *        The EM loop probably needs to check for interrupts while halting. */
-    if (TRPMHasTrap(pVCpu))
-        hmR0VmxTrpmTrapToPendingEvent(pVCpu);
-
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
-    AssertRCReturn(rc, rc);
     return rc;
 }
 
@@ -7382,27 +7419,27 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 #ifndef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
     /** @todo I don't see the point of this, VMMR0EntryFast() already disables interrupts for the entire period. */
+    /** @todo get rid of this. */
     pVmxTransient->uEflags = ASMIntDisableFlags();
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 #endif
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /*
-     * Load the host state bits as we may've been preempted
-     * (only happens when thread-context hooks are used).
+     * Load the host state bits as we may've been preempted (only happens when
+     * thread-context hooks are used).
      */
-    int rc = VINF_SUCCESS;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT)
     {
         Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
-        rc = hmR0VmxSaveHostState(pVM, pVCpu);
+        int rc = hmR0VmxSaveHostState(pVM, pVCpu);
         AssertRC(rc);
     }
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
 
     /*
-     * When thread-context hooks are not used we need to load the required
-     * guest state bits here i.e. when we can no longer be preempted.
+     * When thread-context hooks are -not- used we need to load the required
+     * guest state bits here i.e. when we can no longer be rescheduled.
      */
     if (!VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
@@ -7410,7 +7447,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     {
         /*
          * If we are injecting events to a real-on-v86 mode guest, we may have to update
-         * RIP and soem other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
+         * RIP and some other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
          * Reload only the necessary state, the assertion will catch if other parts of the code
          * change.
          */
