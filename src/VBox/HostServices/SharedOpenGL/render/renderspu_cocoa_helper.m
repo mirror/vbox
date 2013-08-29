@@ -1178,7 +1178,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
     {
         if (m_pSharedGLCtx)
 	    {
-#if 0
+#if 1
             /* tmp workaround to prevent potential deadlock:
              * crOpenGL service thread does compositor lock acquire and calls cocoa NS methods that could synchronize on the GUI thread
              * while here we do a reverse order: acquire compositor lock being in gui thread.
@@ -1194,12 +1194,15 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
             else if (rc == VERR_SEM_BUSY)
             {
                 /* re-issue to the gui thread */
-                [self setNeedsDisplay:YES];
+# ifdef DEBUG_misha
+                DEBUG_WARN(("renderspuVBoxCompositorTryAcquire busy\n"));
+# endif 
+                [NSTimer scheduledTimerWithTimeInterval:0.1 target:self selector:@selector(vboxTryDrawUI) userInfo:nil repeats:NO];
             }
             else
             {
                 /* this is somewhat we do not expect */
-                DEBUG_MSG(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
+                DEBUG_WARN(("renderspuVBoxCompositorTryAcquire failed rc %d", rc));
             }
 #else
 	    	VBOXVR_SCR_COMPOSITOR *pCompositor = renderspuVBoxCompositorAcquire(m_pWinInfo);
