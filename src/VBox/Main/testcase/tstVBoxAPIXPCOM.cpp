@@ -66,11 +66,6 @@
 /*
  * Include the XPCOM headers
  */
-
-#if defined(XPCOM_GLUE)
-#include <nsXPCOMGlue.h>
-#endif
-
 #include <nsMemory.h>
 #include <nsString.h>
 #include <nsIServiceManager.h>
@@ -471,12 +466,7 @@ int main(int argc, char *argv[])
      * This is the standard XPCOM init procedure.
      * What we do is just follow the required steps to get an instance
      * of our main interface, which is IVirtualBox.
-     */
-#if defined(XPCOM_GLUE)
-    XPCOMGlueStartup(nsnull);
-#endif
-
-    /*
+     *
      * Note that we scope all nsCOMPtr variables in order to have all XPCOM
      * objects automatically released before we call NS_ShutdownXPCOM at the
      * end. This is an XPCOM requirement.
@@ -577,9 +567,6 @@ int main(int argc, char *argv[])
      * Perform the standard XPCOM shutdown procedure.
      */
     NS_ShutdownXPCOM(nsnull);
-#if defined(XPCOM_GLUE)
-    XPCOMGlueShutdown();
-#endif
     RTPrintf("Done!\n");
     return 0;
 }

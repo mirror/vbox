@@ -1,8 +1,8 @@
 #
-# tstVBoxAPILinux makefile
+# tstVBoxAPIXPCOM makefile
 #
 #
-# Copyright (C) 2006-2010 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -35,14 +35,14 @@ endif
 #
 # Link with the public XPCOM libraries
 #
-tstVBoxAPILinux: tstVBoxAPILinux.o
+tstVBoxAPIXPCOM: tstVBoxAPIXPCOM.o
 	g++ -g -o $@ $^ \
 		$(PATH_BIN)/VBoxXPCOM.so \
 		-Wl,-rpath $(PATH_BIN)/ \
 		-ldl -lpthread
 
-tstVBoxAPILinux.o: tstVBoxAPILinux.cpp
-	g++ -c -DRT_OS_LINUX -g -fshort-wchar $(addprefix -I, $(INCS_XPCOM)) $(addprefix -D, $(DEFS_XPCOM)) -o $@ tstVBoxAPILinux.cpp
+tstVBoxAPIXPCOM.o: tstVBoxAPIXPCOM.cpp
+	g++ -c -g -fshort-wchar $(addprefix -I, $(INCS_XPCOM)) $(addprefix -D, $(DEFS_XPCOM)) -o $@ tstVBoxAPIXPCOM.cpp
 
 clean:
-	rm -f tstVBoxAPILinux tstVBoxAPILinux.o
+	rm -f tstVBoxAPIXPCOM tstVBoxAPIXPCOM.o

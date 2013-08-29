@@ -24,16 +24,6 @@
 
 # include <stdlib.h>
 
-  /* XPCOM_GLUE is defined when the client uses the standalone glue
-   * (i.e. dynamically picks up the existing XPCOM shared library installation).
-   * This is not the case for VirtualBox XPCOM clients (they are always
-   * distributed with the self-built XPCOM library, and therefore have a binary
-   * dependency on it) but left here for clarity.
-   */
-# if defined(XPCOM_GLUE)
-#  include <nsXPCOMGlue.h>
-# endif
-
 # include <nsIComponentRegistrar.h>
 # include <nsIServiceManager.h>
 # include <nsCOMPtr.h>
@@ -355,10 +345,6 @@ HRESULT Initialize(bool fGui)
     LogFlowFunc(("component registry  : \"%s\"\n", szCompReg));
     LogFlowFunc(("XPTI data file      : \"%s\"\n", szXptiDat));
 
-#if defined (XPCOM_GLUE)
-    XPCOMGlueStartup(nsnull);
-#endif
-
     static const char *kAppPathsToProbe[] =
     {
         NULL, /* 0: will use VBOX_APP_HOME */
@@ -583,10 +569,6 @@ HRESULT Shutdown()
                 bool wasInited = ASMAtomicXchgBool(&gIsXPCOMInitialized, false);
                 Assert(wasInited == true);
                 NOREF(wasInited);
-
-# if defined (XPCOM_GLUE)
-                XPCOMGlueShutdown();
-# endif
             }
         }
     }
