@@ -1304,7 +1304,7 @@ static DWORD vboxDispIfReninitModesWDDM(VBOXDISPIF_OP *pOp, const uint8_t *pScre
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
 #if 0
-    /* win8.1 does not allow context-based hw-access escapes for some reason */
+    /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
 #endif
@@ -1695,7 +1695,7 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
 #if 0
-    /* win8.1 does not allow context-based hw-access escapes for some reason */
+    /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
 #endif
