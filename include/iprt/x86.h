@@ -161,16 +161,20 @@ typedef const X86RFLAGS *PCX86RFLAGS;
  */
 /** Bit 0 - CF - Carry flag - Status flag. */
 #define X86_EFL_CF          RT_BIT(0)
+#define X86_EFL_CF_BIT      0
 /** Bit 1 - Reserved, reads as 1. */
 #define X86_EFL_1           RT_BIT(1)
 /** Bit 2 - PF - Parity flag - Status flag. */
 #define X86_EFL_PF          RT_BIT(2)
 /** Bit 4 - AF - Auxiliary carry flag - Status flag. */
 #define X86_EFL_AF          RT_BIT(4)
+#define X86_EFL_AF_BIT      4
 /** Bit 6 - ZF - Zero flag - Status flag. */
 #define X86_EFL_ZF          RT_BIT(6)
+#define X86_EFL_ZF_BIT      6
 /** Bit 7 - SF - Signed flag - Status flag. */
 #define X86_EFL_SF          RT_BIT(7)
+#define X86_EFL_SF_BIT      7
 /** Bit 8 - TF - Trap flag - System flag. */
 #define X86_EFL_TF          RT_BIT(8)
 /** Bit 9 - IF - Interrupt flag - System flag. */
@@ -179,6 +183,7 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 #define X86_EFL_DF          RT_BIT(10)
 /** Bit 11 - OF - Overflow flag - Status flag. */
 #define X86_EFL_OF          RT_BIT(11)
+#define X86_EFL_OF_BIT      11
 /** Bit 12-13 - IOPL - I/O prvilege level flag - System flag. */
 #define X86_EFL_IOPL        (RT_BIT(12) | RT_BIT(13))
 /** Bit 14 - NT - Nested task flag - System flag. */
@@ -206,6 +211,8 @@ typedef const X86RFLAGS *PCX86RFLAGS;
 /** Bits restored by popf */
 #define X86_EFL_POPF_BITS       (  X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_TF | X86_EFL_IF \
                                  | X86_EFL_DF | X86_EFL_OF | X86_EFL_IOPL | X86_EFL_NT | X86_EFL_AC | X86_EFL_ID )
+/** The status bits commonly updated by arithmetic instructions. */
+#define X86_EFL_STATUS_BITS     ( X86_EFL_CF | X86_EFL_PF | X86_EFL_AF | X86_EFL_ZF | X86_EFL_SF | X86_EFL_OF )
 /** @} */
 
 
@@ -914,9 +921,15 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** @name Machine Specific Registers
  * @{
  */
-
+/** Machine check address register (P5). */
+#define MSR_P5_MC_ADDR                      UINT32_C(0x00000000)
+/** Machine check type register (P5). */
+#define MSR_P5_MC_TYPE                      UINT32_C(0x00000001)
 /** Time Stamp Counter. */
 #define MSR_IA32_TSC                        0x10
+#define MSR_IA32_CESR                       UINT32_C(0x00000011)
+#define MSR_IA32_CTR0                       UINT32_C(0x00000012)
+#define MSR_IA32_CTR1                       UINT32_C(0x00000013)
 
 #define MSR_IA32_PLATFORM_ID                0x17
 
