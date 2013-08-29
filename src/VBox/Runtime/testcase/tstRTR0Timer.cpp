@@ -527,7 +527,7 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     int rc = RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackSpecific, &State);
                     if (rc == VERR_NOT_SUPPORTED)
                     {
-                        RTR0TestR0Info("specific timer are not supported, skipping\n");
+                        RTR0TestR0Info("one-shot specific timer are not supported, skipping\n");
                         break;
                     }
                     RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
