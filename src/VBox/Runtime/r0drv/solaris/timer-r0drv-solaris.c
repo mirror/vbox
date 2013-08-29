@@ -136,9 +136,25 @@ static void rtTimerSolCallbackWrapper(void *pvArg)
 {
     PRTTIMER pTimer = (PRTTIMER)pvArg;
     AssertPtrReturnVoid(pTimer);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    if (pTimer->fSuspended)
+        return;
 
     if (pTimer->pSingleTimer)
     {
+        /* For specific periodic timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
+           Ignore these shots while we are temporarily rebinding to the right CPU. */
+        if (   pTimer->fSpecificCpu
+            && pTimer->interval != 0
+            && pTimer->iCpu != RTMpCpuId())          /* ASSUMES: index == cpuid */
+        {
+            return;
+        }
+
+        /* Allow RTTimer to be restarted for one-shot timers. */
+        if (pTimer->interval == 0)
+            pTimer->fSuspended = true;
         uint64_t u64Tick = ++pTimer->pSingleTimer->u64Tick;
         pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
     }
@@ -202,12 +218,20 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
         &&  !RTMpIsCpuPossible(RTMpCpuIdFromSetIndex(fFlags & RTTIMER_FLAGS_CPU_MASK)))
         return VERR_CPU_NOT_FOUND;
 
-    if ((fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL && u64NanoInterval == 0)
+    /* One-shot omni timers are not supported by the cyclic system. */
+    if (   (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL
+        && u64NanoInterval == 0)
+    {
         return VERR_NOT_SUPPORTED;
+    }
 
-    /* One-shot timers are not supported by the cyclic system. */
-    if (u64NanoInterval == 0)
+    /* One-shot specific timers are not supported. See rtTimerSolCallbackWrapper(). */
+    if (   (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
+        && (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
+        && u64NanoInterval == 0)
+    {
         return VERR_NOT_SUPPORTED;
+    }
 
     /*
      * Allocate and initialize the timer handle.
@@ -273,13 +297,10 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     if (!pTimer->fSuspended)
         return VERR_TIMER_ACTIVE;
 
-    /* One-shot timers are not supported by the cyclic system. */
-    if (pTimer->interval == 0)
-        return VERR_NOT_SUPPORTED;
-
     pTimer->fSuspended = false;
     if (pTimer->fAllCpu)
     {
+        Assert(pTimer->interval);
         PRTR0OMNITIMERSOL pOmniTimer = RTMemAllocZ(sizeof(RTR0OMNITIMERSOL));
         if (RT_UNLIKELY(!pOmniTimer))
             return VERR_NO_MEMORY;
@@ -337,22 +358,14 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
         pSingleTimer->hFireTime.cyt_when = u64First + RTTimeNanoTS();
         if (pTimer->interval == 0)
-        {
-            /** @todo use gethrtime_max instead of LLONG_MAX? */
-            AssertCompileSize(pSingleTimer->hFireTime.cyt_interval, sizeof(long long));
-            pSingleTimer->hFireTime.cyt_interval = LLONG_MAX - pSingleTimer->hFireTime.cyt_when;
-        }
+            pSingleTimer->hFireTime.cyt_interval = INT64_MAX - pSingleTimer->hFireTime.cyt_when;
         else
             pSingleTimer->hFireTime.cyt_interval = pTimer->interval;
-
-        /* Disable interrupts to prevent timer firing between cyclic_add() and cyclic_bind(). */
-        RTCCUINTREG uEflags = ASMIntDisableFlags();
 
         pTimer->hCyclicId = cyclic_add(&pSingleTimer->hHandler, &pSingleTimer->hFireTime);
         if (iCpu != SOL_TIMER_ANY_CPU)
             cyclic_bind(pTimer->hCyclicId, cpu[iCpu], NULL /* cpupart */);
 
-        ASMSetFlags(uEflags);
         mutex_exit(&cpu_lock);
     }
 
