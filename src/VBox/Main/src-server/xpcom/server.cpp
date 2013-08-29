@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2004-2012 Oracle Corporation
+ * Copyright (C) 2004-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,10 +19,6 @@
 #include <ipcCID.h>
 
 #include <nsIComponentRegistrar.h>
-
-#ifdef XPCOM_GLUE
-# include <nsXPCOMGlue.h>
-#endif
 
 #include <nsEventQueueUtils.h>
 #include <nsGenericFactory.h>

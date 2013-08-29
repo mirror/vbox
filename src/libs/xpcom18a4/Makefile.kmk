@@ -87,7 +87,7 @@ LIBRARIES += \
 	VBox-xpcom-xptcall \
 	VBox-xpcom-proxy \
 	VBoxXPCOMGlue_s \
-	VBoxXPCOMGlue \
+	$(if $(VBOX_WITH_XPCOM_GLUE_WHICH_IS_UNUSED),VBoxXPCOMGlue,) \
 	VBox-xpcom-ipcutils \
 	VBox-xpcom-ipcshared \
 	VBox-xpcom-ipcdlock \
@@ -887,18 +887,20 @@ VBox-xpcom-proxy_SOURCES  = xpcom/proxy/src/nsProxyEvent.cpp \
 #
 # The VBoxXPCOM Glue static libraries.
 #
-# See http://developer.mozilla.org/en/docs/XPCOM_Glue for details about the
-# original XPCOM glue library purpose and usage.
-#
-# We don't really use the glue library in the described way because we don't
-# provide frozen APIs (yet), so all VBox XPCOM client applications are
-# dependent on the given version of both the VBox XPCOM runtime (binary
-# dependency) and VirtualBox component library (COM interface dependency). For
-# this reason, VBox client applications link to the VBox XPCOM shared library
-# directly (instead of linking to the standalone XPCOM glue library that would
-# dynamically search for and load the installed XPCOM runtime). For the same
-# reason, we link all parts of XPCOM into a single shared XPCOM library below
-# (as opposed to the original XPCOM where e.g. NSPR lives in a separate DLL).
+# This isn't the normal XPCOM glue (see the places in XPCOM where XPCOM_GLUE is
+# checked), VirtualBox has its own glue library and this means this isn't used
+# much (one reason is that we don't provide frozen APIs yet). All VBox XPCOM
+# client applications are dependent on the given version of both the VBox XPCOM
+# runtime (binary dependency) and VirtualBox component library (COM interface
+# dependency). For this reason, VBox client applications link to the VBox XPCOM
+# shared library directly (instead of linking to the standalone XPCOM glue
+# library that would dynamically search for and load the installed XPCOM
+# runtime). For the same reason, we link all parts of XPCOM into a single
+# shared XPCOM library below (as opposed to the original XPCOM where e.g. NSPR
+# lives in a separate DLL). Additionally there is VBox specific glue code to
+# make both the client and server side code build with both XPCOM and COM,
+# which should be made part of the SDK eventually, but this is a higher level
+# of abstraction than this XPCOM specific glue code.
 #
 VBoxXPCOMGlue_COMMON_SOURCES = \
 	xpcom/glue/nsCOMPtr.cpp \
@@ -916,19 +918,10 @@ VBoxXPCOMGlue_s_INSTTYPE = none
 VBoxXPCOMGlue_s_DEFS     = _IMPL_NS_COM
 VBoxXPCOMGlue_s_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
 
-# standalone glue library which all third-party client apps (if any) will link with
-# (currently not used anywhere (see above) but still built to make sure
-# the code inside #ifdef XPCOM_GLUE compiles)
+# standalone glue library which all third-party client apps (if any) will
+# link with (currently completely unused and nit built, to be part of the SDK)
 VBoxXPCOMGlue_TEMPLATE = XPCOM
-VBoxXPCOMGlue_DEFS     = XPCOM_GLUE
-if defined(VBOX_WITH_HARDENING) && defined(VBOX_PATH_APP_PRIVATE_ARCH)
- VBoxXPCOMGlue_DEFS    += MOZ_DEFAULT_VBOX_XPCOM_HOME=\"$(VBOX_PATH_APP_PRIVATE_ARCH)\"
-endif
-VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES) \
-                         xpcom/glue/standalone/nsXPCOMGlue.cpp \
-                         xpcom/glue/standalone/nsGREDirServiceProvider.cpp
-VBoxXPCOMGlue_SOURCES += \
-	$(VBox-xpcom-string_1_TARGET)
+VBoxXPCOMGlue_SOURCES  = $(VBoxXPCOMGlue_COMMON_SOURCES)
 #VBoxXPCOMGlue_INST     = lib/ $(INST_SDK)lib/
 
 
