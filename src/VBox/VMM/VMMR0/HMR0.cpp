@@ -88,7 +88,6 @@ static struct
     DECLR0CALLBACKMEMBER(int,  pfnEnterSession,(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu));
     DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback,(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit));
     DECLR0CALLBACKMEMBER(int,  pfnSaveHostState,(PVM pVM, PVMCPU pVCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnLoadGuestState,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int,  pfnRunGuestCode,(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx));
     DECLR0CALLBACKMEMBER(int,  pfnEnableCpu,(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                              bool fEnabledByHost));
@@ -528,7 +527,6 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 g_HvmR0.pfnEnterSession      = VMXR0Enter;
                 g_HvmR0.pfnThreadCtxCallback = VMXR0ThreadCtxCallback;
                 g_HvmR0.pfnSaveHostState     = VMXR0SaveHostState;
-                g_HvmR0.pfnLoadGuestState    = VMXR0LoadGuestState;
                 g_HvmR0.pfnRunGuestCode      = VMXR0RunGuestCode;
                 g_HvmR0.pfnEnableCpu         = VMXR0EnableCpu;
                 g_HvmR0.pfnDisableCpu        = VMXR0DisableCpu;
@@ -593,7 +591,6 @@ static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
         g_HvmR0.pfnEnterSession      = SVMR0Enter;
         g_HvmR0.pfnThreadCtxCallback = SVMR0ThreadCtxCallback;
         g_HvmR0.pfnSaveHostState     = SVMR0SaveHostState;
-        g_HvmR0.pfnLoadGuestState    = SVMR0LoadGuestState;
         g_HvmR0.pfnRunGuestCode      = SVMR0RunGuestCode;
         g_HvmR0.pfnEnableCpu         = SVMR0EnableCpu;
         g_HvmR0.pfnDisableCpu        = SVMR0DisableCpu;
@@ -657,7 +654,6 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     g_HvmR0.pfnEnterSession      = hmR0DummyEnter;
     g_HvmR0.pfnThreadCtxCallback = hmR0DummyThreadCtxCallback;
     g_HvmR0.pfnSaveHostState     = hmR0DummySaveHostState;
-    g_HvmR0.pfnLoadGuestState    = hmR0DummyLoadGuestState;
     g_HvmR0.pfnRunGuestCode      = hmR0DummyRunGuestCode;
     g_HvmR0.pfnEnableCpu         = hmR0DummyEnableCpu;
     g_HvmR0.pfnDisableCpu        = hmR0DummyDisableCpu;
@@ -1458,13 +1454,9 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     AssertMsgRCReturn(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
     /* Load the host as we may be resuming code after a longjmp and quite
-       possibly be scheduled on a different CPU. */
+       possibly now be scheduled on a different CPU. */
     rc = g_HvmR0.pfnSaveHostState(pVM, pVCpu);
     AssertMsgRCReturn(rc, ("pfnSaveHostState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
-
-    /** @todo This is not needed to be done here anymore, can fix/optimize later. */
-    rc = g_HvmR0.pfnLoadGuestState(pVM, pVCpu, pCtx);
-    AssertMsgRCReturn(rc, ("pfnLoadGuestState failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     if (fStartedSet)
