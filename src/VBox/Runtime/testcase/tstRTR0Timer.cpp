@@ -394,8 +394,13 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             /* Create a one-shot timer and take one shot. */
             PRTTIMER pTimer;
             uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
-            RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackU32Counter, &State),
-                                      VINF_SUCCESS);
+            int rc = RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackU32Counter, &State);
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                break;
+            }
+            RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
 
             do /* break loop */
             {
@@ -442,8 +447,13 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             for (uint32_t iTest = 0; iTest < 2; iTest++)
             {
-                RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackRestartOnce, &State),
-                                          VINF_SUCCESS);
+                int rc = RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackRestartOnce, &State);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
+                    RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                    break;
+                }
+                RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
 
                 RT_ZERO(State);
                 State.iActionShot = 0;
@@ -470,8 +480,13 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             uint32_t fFlags = TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0;
             for (uint32_t iTest = 0; iTest < 2; iTest++)
             {
-                RTR0TESTR0_CHECK_RC_BREAK(RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackDestroyOnce, &State),
-                                          VINF_SUCCESS);
+                int rc = RTTimerCreateEx(&pTimer, 0, fFlags, tstRTR0TimerCallbackDestroyOnce, &State);
+                if (rc == VERR_NOT_SUPPORTED)
+                {
+                    RTR0TestR0Info("one-shot timer are not supported, skipping\n");
+                    break;
+                }
+                RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
 
                 RT_ZERO(State);
                 State.rc = VERR_IPE_UNINITIALIZED_STATUS;
