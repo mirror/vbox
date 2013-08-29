@@ -5163,7 +5163,7 @@ static int supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
         }
     }
     if (pGip->u32Mode != SUPGIPMODE_ASYNC_TSC)
-        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0, supdrvGipSyncTimer, pDevExt);
+        rc = RTTimerCreateEx(&pDevExt->pGipTimer, u32Interval, 0 /* fFlags */, supdrvGipSyncTimer, pDevExt);
     if (RT_SUCCESS(rc))
     {
         rc = RTMpNotificationRegister(supdrvGipMpEvent, pDevExt);
