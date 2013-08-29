@@ -170,6 +170,8 @@ void vboxClientUsage(const char *pcszFileName)
  */
 int main(int argc, char *argv[])
 {
+    if (!XInitThreads())
+        return 1;
     /* Initialise our runtime before all else. */
     int rc = RTR3InitExe(argc, &argv, 0);
     if (RT_FAILURE(rc))
