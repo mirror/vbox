@@ -1724,15 +1724,6 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
         return ERROR_GEN_FAILURE;
     }
 
-#ifdef DEBUG_misha
-    {
-        UINT cDcDisplays;
-        DWORD winEr2 = vboxDispIfWddmDcQueryNumDisplays(&cDcDisplays);
-        Assert(cDcDisplays == NumDevices);
-        /* testing */
-        Assert(cDcDisplays == 2);
-    }
-#endif
     DISPLAY_DEVICE *paDisplayDevices = (DISPLAY_DEVICE *)alloca (sizeof (DISPLAY_DEVICE) * NumDevices);
     DEVMODE *paDeviceModes = (DEVMODE *)alloca (sizeof (DEVMODE) * NumDevices);
     DWORD DevNum = 0;
