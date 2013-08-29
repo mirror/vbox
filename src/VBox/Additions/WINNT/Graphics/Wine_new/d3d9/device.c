@@ -3713,6 +3713,11 @@ static const struct wined3d_device_parent_ops d3d9_wined3d_device_parent_ops =
     device_parent_create_swapchain,
 };
 
+#if defined(VBOX) && defined(RT_ARCH_AMD64)
+DECLASM(uint16_t) VBoxAsmFpuFCWGet();
+DECLASM(void) VBoxAsmFpuFCWSet(uint16_t u16FCW);
+#endif
+
 static void setup_fpu(void)
 {
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
@@ -3725,8 +3730,10 @@ static void setup_fpu(void)
     __asm fnstcw cw;
     cw = (cw & ~0xf3f) | 0x3f;
     __asm fldcw cw;
-#elif defined(RT_ARCH_AMD64)
-    /* @todo: impl*/
+#elif defined(VBOX) && defined(RT_ARCH_AMD64)
+    uint16_t cw = VBoxAsmFpuFCWGet();
+    cw = (cw & ~0xf3f) | 0x3f;
+    VBoxAsmFpuFCWSet(cw);
 #else
     FIXME("FPU setup not implemented for this platform.\n");
 #endif
