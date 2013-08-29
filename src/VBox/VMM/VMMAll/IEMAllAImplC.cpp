@@ -755,27 +755,73 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_bsr_u64,(uint64_t *puDst, uint64_t uSrc, uint32
 
 /* Unary operands. */
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u64,(uint64_t  *puDst,  uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_inc_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
-    AssertFailed();
+    uint64_t uDst    = *puDst;
+    uint64_t uResult = uDst + 1;
+    *puDst = uResult;
+
+    /*
+     * Calc EFLAGS.
+     * CF is NOT modified for hysterical raisins (allegedly for carrying and
+     * borrowing in arithmetic loops on intel 8008).
+     */
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_STATUS_BITS & ~X86_EFL_CF);
+    fEfl |= g_afParity[uResult & 0xff];
+    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
+    fEfl |= X86_EFL_CALC_ZF(uResult);
+    fEfl |= X86_EFL_CALC_SF(uResult, 64);
+    fEfl |= (((uDst ^ RT_BIT_64(63)) & uResult) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
+    *pfEFlags = fEfl;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u64,(uint64_t  *puDst,  uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_dec_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
-    AssertFailed();
+    uint64_t uDst    = *puDst;
+    uint64_t uResult = uDst - 1;
+    *puDst = uResult;
+
+    /*
+     * Calc EFLAGS.
+     * CF is NOT modified for hysterical raisins (allegedly for carrying and
+     * borrowing in arithmetic loops on intel 8008).
+     */
+    uint32_t fEfl = *pfEFlags & ~(X86_EFL_STATUS_BITS & ~X86_EFL_CF);
+    fEfl |= g_afParity[uResult & 0xff];
+    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
+    fEfl |= X86_EFL_CALC_ZF(uResult);
+    fEfl |= X86_EFL_CALC_SF(uResult, 64);
+    fEfl |= ((uDst & (uResult ^ RT_BIT_64(63))) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
+    *pfEFlags = fEfl;
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64,(uint64_t  *puDst,  uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_not_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
-    AssertFailed();
+    uint64_t uDst    = *puDst;
+    uint64_t uResult = ~uDst;
+    *puDst = uResult;
+    /* EFLAGS are not modified. */
 }
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64,(uint64_t  *puDst,  uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_neg_u64,(uint64_t  *puDst,  uint32_t *pfEFlags))
 {
-    AssertFailed();
+    uint64_t uDst    = 0;
+    uint64_t uSrc    = *puDst;
+    uint64_t uResult = uDst - uSrc;
+    *puDst = uResult;
+
+    /* Calc EFLAGS. */
+    uint32_t fEfl = *pfEFlags & ~X86_EFL_STATUS_BITS;
+    fEfl |= (uSrc != 0) << X86_EFL_CF_BIT;
+    fEfl |= g_afParity[uResult & 0xff];
+    fEfl |= ((uint32_t)uResult ^ (uint32_t)uDst) & X86_EFL_AF;
+    fEfl |= X86_EFL_CALC_ZF(uResult);
+    fEfl |= X86_EFL_CALC_SF(uResult, 64);
+    fEfl |= ((uSrc & uResult) >> (64 - X86_EFL_OF_BIT)) & X86_EFL_OF;
+    *pfEFlags = fEfl;
 }
 
 
@@ -948,16 +994,16 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puR
 #endif /* RT_ARCH_X86 */
 
 
-IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pEFlags))
+IEM_DECL_IMPL_DEF(void, iemAImpl_arpl,(uint16_t *pu16Dst, uint16_t u16Src, uint32_t *pfEFlags))
 {
     if ((*pu16Dst & X86_SEL_RPL) < (u16Src & X86_SEL_RPL))
     {
         *pu16Dst &= X86_SEL_MASK_OFF_RPL;
         *pu16Dst |= u16Src & X86_SEL_RPL;
 
-        *pEFlags |= X86_EFL_ZF;
+        *pfEFlags |= X86_EFL_ZF;
     }
     else
-        *pEFlags &= ~X86_EFL_ZF;
+        *pfEFlags &= ~X86_EFL_ZF;
 }
 
