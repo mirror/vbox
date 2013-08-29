@@ -2925,7 +2925,6 @@ DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(pSvmTransient->uEflags);                        /* Enable interrupts. */
 
-    VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pMixedCtx);
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
     /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
@@ -2974,6 +2973,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
     HMSVM_ASSERT_PREEMPT_SAFE();
+    VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
 
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
@@ -2998,7 +2998,6 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
          * This also disables flushing of the R0-logger instance (if any).
          */
         VMMRZCallRing3Disable(pVCpu);
-        VMMRZCallRing3RemoveNotification(pVCpu);
         hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
 
         rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
@@ -3015,7 +3014,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                 rc = VERR_SVM_INVALID_GUEST_STATE;
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
             hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
-            return rc;
+            break;
         }
 
         /* Handle the #VMEXIT. */
@@ -3038,7 +3037,9 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     else if (rc == VINF_EM_RESET)
         rc = VINF_EM_TRIPLE_FAULT;
+
     hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
+    VMMRZCallRing3RemoveNotification(pVCpu);
     return rc;
 }
 
