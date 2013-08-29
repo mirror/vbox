@@ -732,6 +732,10 @@ static CComModule _Module;
 extern "C"
 DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
+#ifdef Q_WS_X11
+    if (!XInitThreads())
+        return 1;
+#endif
 #ifdef VBOXSDL_WITH_X11
     /*
      * Lock keys on SDL behave different from normal keys: A KeyPress event is generated
@@ -3042,6 +3046,10 @@ static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const cha
  */
 int main(int argc, char **argv)
 {
+#ifdef Q_WS_X11
+    if (!XInitThreads())
+        return 1;
+#endif
     /*
      * Before we do *anything*, we initialize the runtime.
      */
