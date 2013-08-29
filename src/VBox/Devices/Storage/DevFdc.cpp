@@ -1103,8 +1103,8 @@ static uint32_t fdctrl_read_dir(fdctrl_t *fdctrl)
 
 #ifdef VBOX
     /* The change line signal is reported by the currently selected
-     * drive. If the corresponding motor on bit is not set, the drive 
-     * is *not* selected! 
+     * drive. If the corresponding motor on bit is not set, the drive
+     * is *not* selected!
      */
     if (fdctrl_media_changed(get_cur_drv(fdctrl))
      && (fdctrl->dor & (0x10 << fdctrl->cur_drv)))
@@ -1557,6 +1557,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                  * to write to readonly media either. */
                 fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, FD_SR1_NW,
                                      0x00);
+                len = 0;
                 goto transfer_error;
             }
         }
@@ -1996,7 +1997,7 @@ static void fdctrl_handle_format_track(fdctrl_t *fdctrl, int direction)
     {
         cur_drv->bps = fdctrl->fifo[2] > 7 ? 16384 : 128 << fdctrl->fifo[2];
         cur_drv->last_sect = ns;
-    
+
         fdctrl_start_format(fdctrl);
     }
 }
@@ -2076,7 +2077,7 @@ static void fdctrl_handle_seek(fdctrl_t *fdctrl, int direction)
 {
     fdrive_t *cur_drv;
 
-    FLOPPY_DPRINTF("CMD:%02x SEL:%02x NCN:%02x\n", fdctrl->fifo[0], 
+    FLOPPY_DPRINTF("CMD:%02x SEL:%02x NCN:%02x\n", fdctrl->fifo[0],
                    fdctrl->fifo[1], fdctrl->fifo[2]);
 
     SET_CUR_DRV(fdctrl, fdctrl->fifo[1] & FD_DOR_SELMASK);
