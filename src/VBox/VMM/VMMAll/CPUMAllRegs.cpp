@@ -963,12 +963,12 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case IA32_MTRR_PHYSBASE3: case IA32_MTRR_PHYSMASK3:
         case IA32_MTRR_PHYSBASE4: case IA32_MTRR_PHYSMASK4:
         case IA32_MTRR_PHYSBASE5: case IA32_MTRR_PHYSMASK5:
+        case IA32_MTRR_PHYSBASE6: case IA32_MTRR_PHYSMASK6:
+        case IA32_MTRR_PHYSBASE7: case IA32_MTRR_PHYSMASK7:
             /** @todo implement variable MTRRs. */
             *puValue = 0;
             break;
 #if 0 /** @todo newer CPUs have more, figure since when and do selective GP(). */
-        case IA32_MTRR_PHYSBASE6: case IA32_MTRR_PHYSMASK6:
-        case IA32_MTRR_PHYSBASE7: case IA32_MTRR_PHYSMASK7:
         case IA32_MTRR_PHYSBASE8: case IA32_MTRR_PHYSMASK8:
         case IA32_MTRR_PHYSBASE9: case IA32_MTRR_PHYSMASK9:
             *puValue = 0;
@@ -1290,11 +1290,11 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
         case IA32_MTRR_PHYSBASE3: case IA32_MTRR_PHYSMASK3:
         case IA32_MTRR_PHYSBASE4: case IA32_MTRR_PHYSMASK4:
         case IA32_MTRR_PHYSBASE5: case IA32_MTRR_PHYSMASK5:
+        case IA32_MTRR_PHYSBASE6: case IA32_MTRR_PHYSMASK6:
+        case IA32_MTRR_PHYSBASE7: case IA32_MTRR_PHYSMASK7:
             /** @todo implement variable MTRRs. */
             break;
 #if 0 /** @todo newer CPUs have more, figure since when and do selective GP(). */
-        case IA32_MTRR_PHYSBASE6: case IA32_MTRR_PHYSMASK6:
-        case IA32_MTRR_PHYSBASE7: case IA32_MTRR_PHYSMASK7:
         case IA32_MTRR_PHYSBASE8: case IA32_MTRR_PHYSMASK8:
         case IA32_MTRR_PHYSBASE9: case IA32_MTRR_PHYSMASK9:
             break;
