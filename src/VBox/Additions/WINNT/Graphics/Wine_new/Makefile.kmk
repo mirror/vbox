@@ -318,6 +318,7 @@ VBoxD3D9_SOURCES      := \
 	d3d9/volume.c \
 	vbox/libWineStub/debug.c \
 	d3d9/d3d9xpdm.def
+VBoxD3D9_SOURCES.amd64 = d3d9/vboxport.asm
 VBoxD3D9_LIBS             = \
 	$(PATH_STAGE_LIB)/wined3d$(VBOX_SUFF_LIB)
 VBoxD3D9_DEFS         += VBOX_WINE_WITH_IPRT
