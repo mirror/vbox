@@ -37,7 +37,6 @@ int inet_aton(const char *cp, struct in_addr *ia);
 #endif
 
 #include <VBox/types.h>
-#include <VBox/vmm/dbgf.h>
 
 typedef struct NATState *PNATState;
 struct mbuf;
@@ -93,7 +92,7 @@ void slirp_set_tcp_sndspace(PNATState pData, int kilobytes);
 
 int  slirp_set_binding_address(PNATState, char *addr);
 void slirp_set_mtu(PNATState, int);
-void slirp_info(PNATState pData, PCDBGFINFOHLP pHlp, const char *pszArgs);
+void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs);
 void slirp_set_somaxconn(PNATState pData, int iSoMaxConn);
 
 #if defined(RT_OS_WINDOWS)

@@ -47,6 +47,7 @@
 #endif
 
 #include <VBox/err.h>
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
@@ -1984,11 +1985,12 @@ void slirp_set_mtu(PNATState pData, int mtu)
 /**
  * Info handler.
  */
-void slirp_info(PNATState pData, PCDBGFINFOHLP pHlp, const char *pszArgs)
+void slirp_info(PNATState pData, const void *pvArg, const char *pszArgs)
 {
     struct socket *so, *so_next;
     struct arp_cache_entry *ac;
     struct port_forward_rule *rule;
+    PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvArg;
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "NAT parameters: MTU=%d\n", if_mtu);
