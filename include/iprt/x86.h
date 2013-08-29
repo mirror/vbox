@@ -998,9 +998,6 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Machine Check Global Control Register. */
 #define MSR_IA32_MCG_CTRL                   0x17B
 
-/** Trace/Profile Resource Control (R/W) */
-#define MSR_IA32_DEBUGCTL                   0x1D9
-
 /** Page Attribute Table. */
 #define MSR_IA32_CR_PAT                     0x277
 
@@ -1034,6 +1031,20 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_MISC_ENABLE_XTPR_MSG_DISABLE  RT_BIT(23)
 /** When set to 1, the Execute Disable Bit feature (XD Bit) is disabled (R/W). */
 #define MSR_IA32_MISC_ENABLE_XD_DISABLE        RT_BIT(34)
+
+/** Trace/Profile Resource Control (R/W) */
+#define MSR_IA32_DEBUGCTL                   UINT32_C(0x000001d9)
+/** The number (0..3 or 0..15) of the last branch record register on P4 and
+ * related Xeons. */
+#define MSR_P4_LASTBRANCH_TOS               UINT32_C(0x000001da)
+/** @name Last branch registers for P4 and Xeon, models 0 thru 2.
+ * @{ */
+#define MSR_P4_LASTBRANCH_0                 UINT32_C(0x000001db)
+#define MSR_P4_LASTBRANCH_1                 UINT32_C(0x000001dc)
+#define MSR_P4_LASTBRANCH_2                 UINT32_C(0x000001dd)
+#define MSR_P4_LASTBRANCH_3                 UINT32_C(0x000001de)
+/** @} */
+
 
 #define IA32_MTRR_PHYSBASE0                 0x200
 #define IA32_MTRR_PHYSMASK0                 0x201

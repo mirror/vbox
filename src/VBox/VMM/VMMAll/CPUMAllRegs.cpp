@@ -1133,6 +1133,11 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
          */
         case MSR_P5_MC_ADDR:
         case MSR_P5_MC_TYPE:
+        case MSR_P4_LASTBRANCH_TOS: /** @todo Are these branch regs still here on more recent CPUs? The documentation doesn't mention them for several archs. */
+        case MSR_P4_LASTBRANCH_0:
+        case MSR_P4_LASTBRANCH_1:
+        case MSR_P4_LASTBRANCH_2:
+        case MSR_P4_LASTBRANCH_3:
         case MSR_IA32_PLATFORM_ID:          /* fam/mod >= 6_01 */
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_RAPL_POWER_UNIT:
