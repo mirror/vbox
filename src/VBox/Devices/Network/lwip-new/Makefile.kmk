@@ -112,11 +112,3 @@ LWIPTEST_SOURCES= Network/lwip-new/test/unit/core/test_mem.c \
     Network/lwip-new/test/unit/tcp/test_tcp_oos.c \
     Network/lwip-new/test/unit/udp/test_udp.c
 endif
-
-ifdef VBOX_WITH_INIP
-Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
-endif
-
-ifdef VBOX_WITH_ISCSI
-Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
-endif

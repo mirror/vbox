@@ -333,6 +333,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   VBoxDD_SOURCES        += $(LWIP_SOURCES)
   VBoxDD_SOURCES        += \
         Network/DevINIP.cpp
+  ifdef VBOX_WITH_NEW_LWIP
+    Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
+  endif
  endif
 
  ifdef VBOX_WITH_E1000
@@ -404,6 +407,9 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 
  ifdef VBOX_WITH_ISCSI
   Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
+  ifdef VBOX_WITH_NEW_LWIP
+    Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
+  endif
  endif
 
  ifdef VBOX_WITH_DRV_DISK_INTEGRITY
