@@ -329,9 +329,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
   endif
   VBoxDD_DEFS           += VBOX_WITH_INIP
-  VBoxDD_SOURCES += $(LWIP_SOURCES)
-  VBoxDD_INCS += $(LWIP_INCS)
-  VBoxDD_SOURCES += Network/DevINIP.cpp
+  VBoxDD_INCS           += $(LWIP_INCS)
+  VBoxDD_SOURCES        += $(LWIP_SOURCES)
+  VBoxDD_SOURCES        += \
+        Network/DevINIP.cpp
  endif
 
  ifdef VBOX_WITH_E1000
