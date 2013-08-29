@@ -3853,6 +3853,8 @@ DxgkDdiEscape(
                     break;
                 }
 
+#if 0
+                /* win8.1 does not allow context-based hw-access escapes for some reason */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
                 {
@@ -3867,6 +3869,7 @@ DxgkDdiEscape(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
+#endif
 
                 WARN(("VBOXESC_REINITVIDEOMODESBYMASK should be called instead"));
                 VBoxWddmUpdateVideoModesInfoByMask(pDevExt, NULL);
@@ -3882,6 +3885,8 @@ DxgkDdiEscape(
                     break;
                 }
 
+#if 0
+                /* win8.1 does not allow context-based hw-access escapes for some reason */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
                 {
@@ -3896,6 +3901,7 @@ DxgkDdiEscape(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
+#endif
 
                 if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_REINITVIDEOMODESBYMASK))
                 {
@@ -3921,6 +3927,8 @@ DxgkDdiEscape(
                     break;
                 }
 
+#if 0
+                /* win8.1 does not allow context-based hw-access escapes for some reason */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
                 {
@@ -3935,6 +3943,7 @@ DxgkDdiEscape(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
+#endif
 
                 if (pEscape->PrivateDriverDataSize != sizeof (*pEscapeHdr))
                 {

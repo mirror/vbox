@@ -1303,8 +1303,11 @@ static DWORD vboxDispIfReninitModesWDDM(VBOXDISPIF_OP *pOp, const uint8_t *pScre
 
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
+#if 0
+    /* win8.1 does not allow context-based hw-access escapes for some reason */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
+#endif
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
     EscapeData.Flags.HardwareAccess = 1;
     EscapeData.pPrivateDriverData = &EscData;
@@ -1691,8 +1694,11 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
 
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
+#if 0
+    /* win8.1 does not allow context-based hw-access escapes for some reason */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
+#endif
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
     EscapeData.Flags.HardwareAccess = 1;
     EscapeData.pPrivateDriverData = &EscapeHdr;
