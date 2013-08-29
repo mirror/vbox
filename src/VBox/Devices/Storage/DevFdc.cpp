@@ -1516,7 +1516,8 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
     fdrive_t *cur_drv;
 #ifdef VBOX
     int rc;
-    uint32_t len, start_pos, rel_pos;
+    uint32_t len = 0;
+    uint32_t start_pos, rel_pos;
 #else
     int len, start_pos, rel_pos;
 #endif
@@ -1543,7 +1544,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
             fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, 0x00, 0x00);
         else
             fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM, 0x00, 0x00);
-        len = 0;
+        Assert(len == 0);
         goto transfer_error;
     }
 
@@ -1557,7 +1558,7 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                  * to write to readonly media either. */
                 fdctrl_stop_transfer(fdctrl, FD_SR0_ABNTERM | FD_SR0_SEEK, FD_SR1_NW,
                                      0x00);
-                len = 0;
+                Assert(len == 0);
                 goto transfer_error;
             }
         }
