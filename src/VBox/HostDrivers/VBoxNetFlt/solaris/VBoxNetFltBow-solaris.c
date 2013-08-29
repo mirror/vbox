@@ -259,7 +259,7 @@ LOCAL mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, u
 LOCAL unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pMsg);
 LOCAL int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc);
 LOCAL void vboxNetFltSolarisRecv(void *pvData, mac_resource_handle_t hResource, mblk_t *pMsg, boolean_t fLoopback);
-LOCAL void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
+//LOCAL void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg);
 LOCAL int vboxNetFltSolarisReportInfo(PVBOXNETFLTINS pThis, mac_handle_t hInterface, bool fIsVNIC);
 LOCAL int vboxNetFltSolarisInitVNIC(PVBOXNETFLTINS pThis, PVBOXNETFLTVNIC pVNIC);
 LOCAL int vboxNetFltSolarisInitVNICTemplate(PVBOXNETFLTINS pThis, PVBOXNETFLTVNICTEMPLATE pVNICTemplate);
@@ -592,6 +592,7 @@ LOCAL int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETS
 }
 
 
+#if 0
 /**
  * Simple packet dump, used for internal debugging.
  *
@@ -657,6 +658,7 @@ LOCAL void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
         /* Log((DEVICE_NAME ":%.*Rhxd\n", MBLKL(pMsg), pMsg->b_rptr)); */
     }
 }
+#endif
 
 
 /**
