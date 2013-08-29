@@ -192,6 +192,11 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
         }
     }
 #elif defined(XP_MACOSX)
+# ifdef MOZ_DEFAULT_VBOX_XPCOM_HOME
+    rv = localFile->InitWithNativePath(nsDependentCString(MOZ_DEFAULT_VBOX_XPCOM_HOME));
+    if (NS_SUCCEEDED(rv))
+        *aFile = localFile;
+# else
     // Works even if we're not bundled.
     CFBundleRef appBundle = CFBundleGetMainBundle();
     if (appBundle != nsnull)
@@ -220,6 +225,7 @@ nsDirectoryService::GetCurrentProcessDirectory(nsILocalFile** aFile)
             CFRelease(bundleURL);
         }
     }
+#endif
 
     NS_ASSERTION(*aFile, "nsDirectoryService - Could not determine CurrentProcessDir.\n");
     if (*aFile)
