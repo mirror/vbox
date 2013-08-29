@@ -359,7 +359,10 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
 
         pSingleTimer->hFireTime.cyt_when = u64First + RTTimeNanoTS();
         if (pTimer->interval == 0)
+        {
+            /* cylic_add() comment: "The caller is responsible for assuring that cyt_when + cyt_interval <= INT64_MAX" */
             pSingleTimer->hFireTime.cyt_interval = INT64_MAX - pSingleTimer->hFireTime.cyt_when;
+        }
         else
             pSingleTimer->hFireTime.cyt_interval = pTimer->interval;
 
