@@ -64,6 +64,7 @@
 #define VMX_RESTORE_HOST_SEL_TR               RT_BIT(4)
 #define VMX_RESTORE_HOST_GDTR                 RT_BIT(5)
 #define VMX_RESTORE_HOST_IDTR                 RT_BIT(6)
+#define VMX_RESTORE_HOST_REQUIRED             RT_BIT(7)
 /** @} */
 
 /**
