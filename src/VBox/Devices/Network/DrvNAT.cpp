@@ -24,6 +24,8 @@
 #define __STDC_CONSTANT_MACROS
 #include "slirp/libslirp.h"
 #include "slirp/ctl.h"
+
+#include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/pdmdrv.h>
 #include <VBox/vmm/pdmnetifs.h>
 #include <VBox/vmm/pdmnetinline.h>
