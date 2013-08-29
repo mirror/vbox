@@ -6908,14 +6908,9 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
 #endif
 
     /*
-     * The VMCS state here will not be reliable because we deregister the hook in VMMR0EntryFast()
-     * on the way out. If we had got a preempt/resume callback -after- hmR0VmxLeave() but before
-     * deregistering the hook, the VMCS state will be ACTIVE. Once deregistered we no longer get
-     * notifications and lose track. Following that if we get rescheduled to another host CPU, the
-     * VMCS state says ACTIVE even though it really is not.
-     *
      * Load the VCPU's VMCS as the current (and active) one.
      */
+    Assert(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_CLEAR);
     int rc = VMXActivateVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
     if (RT_FAILURE(rc))
         return rc;
