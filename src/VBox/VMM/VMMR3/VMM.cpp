@@ -535,6 +535,13 @@ VMMR3_INT_DECL(int) VMMR3InitR0(PVM pVM)
         if (RT_SUCCESS(rc))
             rc = VERR_IPE_UNEXPECTED_INFO_STATUS;
     }
+
+    /* Log whether thread-context hooks are used (on Linux this can depend on how the kernel is configured). */
+    if (pVM->aCpus[0].vmm.s.hR0ThreadCtx != NIL_RTTHREADCTX)
+        LogRel(("VMM: Thread-context hooks enabled!\n"));
+    else
+        LogRel(("VMM: Thread-context hooks unavailable."));
+
     return rc;
 }
 
