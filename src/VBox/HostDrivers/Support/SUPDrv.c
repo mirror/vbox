@@ -3418,7 +3418,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                     || !(u64Value & MSR_IA32_FEATURE_CONTROL_LOCK) /* not enabled, but not locked either */
                    )
                 {
-                    VMXCAPABILITY vtCaps;
+                    VMX_CAPABILITY vtCaps;
 
                     *pfCaps |= SUPVTCAPS_VT_X;
 

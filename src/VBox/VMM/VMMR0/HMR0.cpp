@@ -123,11 +123,11 @@ static struct
         {
             uint64_t                u64FeatureCtrl;
             uint64_t                u64BasicInfo;
-            VMXCAPABILITY           vmxPinCtls;
-            VMXCAPABILITY           vmxProcCtls;
-            VMXCAPABILITY           vmxProcCtls2;
-            VMXCAPABILITY           vmxExit;
-            VMXCAPABILITY           vmxEntry;
+            VMX_CAPABILITY          vmxPinCtls;
+            VMX_CAPABILITY          vmxProcCtls;
+            VMX_CAPABILITY          vmxProcCtls2;
+            VMX_CAPABILITY          vmxExit;
+            VMX_CAPABILITY          vmxEntry;
             uint64_t                u64Misc;
             uint64_t                u64Cr0Fixed0;
             uint64_t                u64Cr0Fixed1;
