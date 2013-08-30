@@ -113,6 +113,7 @@ static struct
         uint8_t                     cPreemptTimerShift;
 
         /** Host CR4 value (set by ring-0 VMX init) */
+        /** @todo This isn't used for anything relevant. Remove later? */
         uint64_t                    u64HostCr4;
 
         /** Host EFER value (set by ring-0 VMX init) */
@@ -1248,8 +1249,8 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.fUsePreemptTimer      = g_HvmR0.vmx.fUsePreemptTimer;
     pVM->hm.s.vmx.cPreemptTimerShift    = g_HvmR0.vmx.cPreemptTimerShift;
     pVM->hm.s.vmx.msr.feature_ctrl      = g_HvmR0.vmx.msr.u64FeatureCtrl;
-    pVM->hm.s.vmx.hostCR4               = g_HvmR0.vmx.u64HostCr4;
-    pVM->hm.s.vmx.hostEFER              = g_HvmR0.vmx.u64HostEfer;
+    pVM->hm.s.vmx.u64HostCr4            = g_HvmR0.vmx.u64HostCr4;
+    pVM->hm.s.vmx.u64HostEfer           = g_HvmR0.vmx.u64HostEfer;
     pVM->hm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.u64BasicInfo;
     pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmxPinCtls;
     pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmxProcCtls;

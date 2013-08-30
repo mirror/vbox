@@ -404,7 +404,7 @@ int main()
 
     /* hm - 32-bit gcc won't align uint64_t naturally, so check. */
     CHECK_MEMBER_ALIGNMENT(HM, uMaxAsid, 8);
-    CHECK_MEMBER_ALIGNMENT(HM, vmx.hostCR4, 8);
+    CHECK_MEMBER_ALIGNMENT(HM, vmx.u64HostCr4, 8);
     CHECK_MEMBER_ALIGNMENT(HM, vmx.msr.feature_ctrl, 8);
     CHECK_MEMBER_ALIGNMENT(HM, StatTprPatchSuccess, 8);
     CHECK_MEMBER_ALIGNMENT(HMCPU, StatEntry, 8);
