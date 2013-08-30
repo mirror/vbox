@@ -1369,7 +1369,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
         if (!CPUMIsHyperDebugStateActive(pVCpu))
             CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-        Assert(CPUMIsHyperDebugStateActive(pVCpu));
+        Assert(CPUMIsHyperDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
         /* Update DR6 & DR7. (The other DRx values are handled by CPUM one way or the other.) */
         if (   pVmcb->guest.u64DR6 != X86_DR6_INIT_VAL
@@ -1411,7 +1411,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
             }
             Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-            Assert(CPUMIsGuestDebugStateActive(pVCpu));
+            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
             Log5(("hm: Loaded guest DRx\n"));
         }
         /*
@@ -4169,7 +4169,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
-        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
         return VINF_SUCCESS;

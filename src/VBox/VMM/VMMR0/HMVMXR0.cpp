@@ -3406,7 +3406,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (!CPUMIsHyperDebugStateActive(pVCpu))
             CPUMR0LoadHyperDebugState(pVCpu, true /* include DR6 */);
         Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-        Assert(CPUMIsHyperDebugStateActive(pVCpu));
+        Assert(CPUMIsHyperDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
         /* Update DR7. (The other DRx values are handled by CPUM one way or the other.) */
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)CPUMGetHyperDR7(pVCpu));
@@ -3429,7 +3429,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
             }
             Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-            Assert(CPUMIsGuestDebugStateActive(pVCpu));
+            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
         }
         /*
          * If no debugging enabled, we'll lazy load DR0-3.  Unlike on AMD-V, we
@@ -9875,7 +9875,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         PVM pVM = pVCpu->CTX_SUFF(pVM);
         CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
-        Assert(CPUMIsGuestDebugStateActive(pVCpu));
+        Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
         HM_RESTORE_PREEMPT_IF_NEEDED();
 
