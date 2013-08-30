@@ -17,15 +17,12 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-define def_vbox_nat_network_service_sources
-    $(1)_SOURCES += $2/$3
-endef
-
-define def_vbox_nat_network_service_incs
-    $(1)_INCS += $2/$3
-endef
-
 ifdef VBOX_WITH_LWIP_NAT
+# XXX: This file depends on lwip makefile already included by Devices,
+#      which is included by ancestor makefile before us...
+#if !defined(LWIP_SOURCES) # ???
+#  include ../../Devices/Network/lwip-new/Makefile.kmk
+#endif
 
 ifdef VBOX_WITH_HARDENING
  PROGRAMS += VBoxNetLwipNATHardened
@@ -77,13 +74,8 @@ VBoxNetLwipNAT_SOURCES.win += \
     RTWinPoll.cpp \
     RTWinSocketPair.cpp
 
-#
-# Note: not spaces please in "Devices,$("
-#
-$(foreach file,$(LWIP_SOURCES),$(eval $(call def_vbox_nat_network_service_sources, VBoxNetLwipNAT, ../../Devices,$(file))))
-
-$(foreach incs,$(LWIP_INCS),$(eval $(call def_vbox_nat_network_service_incs, VBoxNetLwipNAT, ../../Devices,$(incs))))
-
+$(eval $(call def_vbox_lwip_public, \
+    VBoxNetLwipNAT, ../../Devices/Network/lwip-new))
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)
