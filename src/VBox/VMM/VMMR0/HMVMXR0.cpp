@@ -7317,6 +7317,13 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
     /*
+     * No longjmps to ring-3 from this point on!!!
+     * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+     * This also disables flushing of the R0-logger instance (if any).
+     */
+    VMMRZCallRing3Disable(pVCpu);
+
+    /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
      * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
      *
@@ -7331,26 +7338,31 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pVmxTransient->uEflags);
+        VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
     else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pVmxTransient->uEflags);
+        VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
     }
 
     /*
-     * No more longjmps or returns to ring-3 (that can continue guest execution) from this point!!!
-     *
      * Event injection might result in triple-faulting the VM (real-on-v86 case), which is why it's
      * done here and not in hmR0VmxPreRunGuestCommitted() which doesn't expect failures.
      */
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
         ASMSetFlags(pVmxTransient->uEflags);
-    return rc;
+        VMMRZCallRing3Enable(pVCpu);
+        return rc;
+    }
+
+    return VINF_SUCCESS;
 }
 
 
@@ -7489,14 +7501,14 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     }
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatInGC, &pVCpu->hm.s.StatExit1, x);
-    TMNotifyEndOfExecution(pVCpu);                              /* Notify TM that the guest is no longer running. */
+    TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
 
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
-    pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;    /* Use VMRESUME instead of VMLAUNCH in the next run. */
-    ASMSetFlags(pVmxTransient->uEflags);                        /* Enable interrupts. */
-    VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
+    pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
+    ASMSetFlags(pVmxTransient->uEflags);                              /* Enable interrupts. */
+    VMMRZCallRing3Enable(pVCpu);                                      /* It is now safe to do longjmps to ring-3!!! */
 
     /* Save the basic VM-exit reason. Refer Intel spec. 24.9.1 "Basic VM-exit Information". */
     uint32_t uExitReason;
@@ -7569,23 +7581,15 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (rc != VINF_SUCCESS)
             break;
 
-        /*
-         * No longjmps to ring-3 from this point on!!!
-         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
-         * This also disables flushing of the R0-logger instance (if any).
-         */
-        VMMRZCallRing3Disable(pVCpu);
         hmR0VmxPreRunGuestCommitted(pVM, pVCpu, pCtx, &VmxTransient);
-
         rc = hmR0VmxRunGuest(pVM, pVCpu, pCtx);
         /* The guest-CPU context is now outdated, 'pCtx' is to be treated as 'pMixedCtx' from this point on!!! */
 
-        /*
-         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
-         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
-         */
+        /* Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state. */
         hmR0VmxPostRunGuest(pVM, pVCpu, pCtx, &VmxTransient, rc);
-        if (RT_UNLIKELY(rc != VINF_SUCCESS))        /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
+
+        /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))
         {
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
             hmR0VmxReportWorldSwitchError(pVM, pVCpu, rc, pCtx, &VmxTransient);
@@ -7649,23 +7653,15 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (rc != VINF_SUCCESS)
             break;
 
-        /*
-         * No longjmps to ring-3 from this point on!!!
-         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
-         * This also disables flushing of the R0-logger instance (if any).
-         */
-        VMMRZCallRing3Disable(pVCpu);
         hmR0VmxPreRunGuestCommitted(pVM, pVCpu, pCtx, &VmxTransient);
-
         rc = hmR0VmxRunGuest(pVM, pVCpu, pCtx);
         /* The guest-CPU context is now outdated, 'pCtx' is to be treated as 'pMixedCtx' from this point on!!! */
 
-        /*
-         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
-         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
-         */
+        /* Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state. */
         hmR0VmxPostRunGuest(pVM, pVCpu, pCtx, &VmxTransient, rc);
-        if (RT_UNLIKELY(rc != VINF_SUCCESS))        /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
+
+        /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
+        if (RT_UNLIKELY(rc != VINF_SUCCESS))
         {
             STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
             hmR0VmxReportWorldSwitchError(pVM, pVCpu, rc, pCtx, &VmxTransient);
