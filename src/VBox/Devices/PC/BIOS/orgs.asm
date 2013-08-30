@@ -1717,26 +1717,11 @@ int08_handler:
 		sti
 		push	eax
 		push	ds
-		xor	ax, ax
+		push	dx
+		mov	ax, 40h
 		mov	ds, ax
 
-		;; time to turn off floppy drive motor(s)?
-		mov	al, ds:[440h]
-		or	al, al
-		jz	int08_floppy_off
-		dec	al
-		mov	ds:[440h], al
-		jnz	int08_floppy_off
-		;; turn motor(s) off
-		push	dx
-		mov	dx, 03F2h
-		in	al, dx
-		and	al, 0CFh
-		out	dx, al
-		pop	dx
-
-int08_floppy_off:
-		mov	eax, ds:[46Ch]	; get ticks dword
+		mov	eax, ds:[6Ch]	; get ticks dword
 		inc	eax
 
 		;; compare eax to one day's worth of ticks (at 18.2 Hz)
@@ -1744,13 +1729,30 @@ int08_floppy_off:
 		jb	int08_store_ticks
 		;; there has been a midnight rollover
 		xor	eax, eax
-		inc	byte ptr ds:[470h]	; increment rollover flag
+		inc	byte ptr ds:[70h]	; increment rollover flag
 
 int08_store_ticks:
-		mov	ds:[46Ch], eax
+		mov	ds:[6Ch], eax
+
+		;; time to turn off floppy drive motor(s)?
+		mov	al, ds:[40h]
+		or	al, al
+		jz	int08_floppy_off
+		dec	al
+		mov	ds:[40h], al
+		jnz	int08_floppy_off
+		;; turn motor(s) off
+		mov	dx, 03F2h
+		in	al, dx
+		and	al, 0CFh
+		out	dx, al
+int08_floppy_off:
+
 		int	1Ch		; call the user timer handler
+
 		cli
 		call	eoi_master_pic
+		pop	dx
 		pop	ds
 		pop	eax
 		.286
