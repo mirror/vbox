@@ -363,11 +363,11 @@ typedef struct HM
         {
             uint64_t                feature_ctrl;
             uint64_t                vmx_basic_info;
-            VMXCAPABILITY           vmx_pin_ctls;
-            VMXCAPABILITY           vmx_proc_ctls;
-            VMXCAPABILITY           vmx_proc_ctls2;
-            VMXCAPABILITY           vmx_exit;
-            VMXCAPABILITY           vmx_entry;
+            VMX_CAPABILITY          vmx_pin_ctls;
+            VMX_CAPABILITY          vmx_proc_ctls;
+            VMX_CAPABILITY          vmx_proc_ctls2;
+            VMX_CAPABILITY          vmx_exit;
+            VMX_CAPABILITY          vmx_entry;
             uint64_t                vmx_misc;
             uint64_t                vmx_cr0_fixed0;
             uint64_t                vmx_cr0_fixed1;
