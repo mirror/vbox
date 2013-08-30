@@ -1323,7 +1323,8 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
 
 
 /**
- * Loads the guest debug registers into the VMCB.
+ * Loads the guest debug registers (DR6, DR7) into the VMCB and programs the
+ * necessary intercepts accordingly.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pVmcb       Pointer to the VMCB.
@@ -1384,7 +1385,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
          *        with the same values. */
         fInterceptDB = true;
         fInterceptMovDRx = true;
-        Log5(("hm: Loaded hyper DRx\n"));
+        Log5(("hmR0SvmLoadGuestDebugRegs: Loaded hyper DRx\n"));
     }
     else
     {
@@ -1412,7 +1413,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
             }
             Assert(!CPUMIsHyperDebugStateActive(pVCpu));
             Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
-            Log5(("hm: Loaded guest DRx\n"));
+            Log5(("hmR0SvmLoadGuestDebugRegs: Loaded guest DRx\n"));
         }
         /*
          * If no debugging enabled, we'll lazy load DR0-3.
