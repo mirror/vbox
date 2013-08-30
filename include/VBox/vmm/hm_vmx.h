@@ -858,7 +858,7 @@ typedef union
         uint32_t        allowed1;
     } n;
     uint64_t            u;
-} VMX_CAPABILITY;
+} VMXCAPABILITY;
 #pragma pack()
 /** @} */
 
