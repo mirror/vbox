@@ -140,12 +140,11 @@ static void rtTimerSolMpCallbackWrapper(RTCPUID idCpu, void *pvUser1, void *pvUs
     Assert(pTimer->pSingleTimer);
     NOREF(pvUser2);
 
-    if (   pTimer->fSuspended
-        && pTimer->interval == 0)
-        return;
+    /* Make sure one-shots do not fire another time. */
+    Assert(   !pTimer->fSuspended
+           || pTimer->interval != 0);
 
     /* For one-shot specific timers, allow RTTimer to restart them. */
-    /** @todo cyclic_reprogram() to CY_INFINITY? */
     if (pTimer->interval == 0)
         pTimer->fSuspended = true;
 
@@ -171,9 +170,9 @@ static void rtTimerSolCallbackWrapper(void *pvArg)
 
     if (pTimer->pSingleTimer)
     {
-        if (   pTimer->fSuspended
-            && pTimer->interval == 0)
-            return;
+        /* Make sure one-shots do not fire another time. */
+        Assert(   !pTimer->fSuspended
+               || pTimer->interval != 0);
 
         /* For specific timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
            Redirect these shots to the right CPU as we are temporarily rebinding to the right CPU. */
@@ -185,7 +184,6 @@ static void rtTimerSolCallbackWrapper(void *pvArg)
         }
 
         /* For one-shot any-cpu timers, allow RTTimer to restart them. */
-        /** @todo cyclic_reprogram() to CY_INFINITY? */
         if (pTimer->interval == 0)
             pTimer->fSuspended = true;
 
@@ -386,8 +384,12 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
         pSingleTimer->hFireTime.cyt_when = u64First + RTTimeNanoTS();
         if (pTimer->interval == 0)
         {
-            /* cylic_add() comment: "The caller is responsible for assuring that cyt_when + cyt_interval <= INT64_MAX" */
-            pSingleTimer->hFireTime.cyt_interval = INT64_MAX - pSingleTimer->hFireTime.cyt_when;
+            /*
+             * cylic_add() comment: "The caller is responsible for assuring that cyt_when + cyt_interval <= INT64_MAX"
+             * but it contradicts itself because cyclic_reprogram() updates only the interval and accepts CY_INFINITY as
+             * a valid special value. See cyclic_fire().
+             */
+            pSingleTimer->hFireTime.cyt_interval = CY_INFINITY;
         }
         else
             pSingleTimer->hFireTime.cyt_interval = pTimer->interval;
