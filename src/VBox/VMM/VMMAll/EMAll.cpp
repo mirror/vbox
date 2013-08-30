@@ -3079,7 +3079,6 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
  */
 static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->uCpuMode != DISCPUMODE_64BIT);    /** @todo check */
     DISQPVPARAMVAL param1;
     NOREF(pvFault);
 
