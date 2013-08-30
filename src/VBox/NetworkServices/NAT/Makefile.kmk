@@ -18,11 +18,10 @@ SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_WITH_LWIP_NAT
-# XXX: This file depends on lwip makefile already included by Devices,
-#      which is included by ancestor makefile before us...
-#if !defined(LWIP_SOURCES) # ???
-#  include ../../Devices/Network/lwip-new/Makefile.kmk
-#endif
+# XXX: do not depend on order
+ifndef LWIP_SOURCES
+  include ../../Devices/Network/lwip-new/Makefile.kmk
+endif
 
 ifdef VBOX_WITH_HARDENING
  PROGRAMS += VBoxNetLwipNATHardened
