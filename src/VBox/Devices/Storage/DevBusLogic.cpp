@@ -51,10 +51,10 @@
 #define BUSLOGIC_MAX_SCATTER_GATHER_LIST_SIZE 128
 
 /** Size of the command buffer. */
-#define BUSLOGIC_COMMAND_SIZE_MAX 64
+#define BUSLOGIC_COMMAND_SIZE_MAX   59
 
 /** Size of the reply buffer. */
-#define BUSLOGIC_REPLY_SIZE_MAX 64
+#define BUSLOGIC_REPLY_SIZE_MAX     64
 
 /** Custom fixed I/O ports for BIOS controller access.
  * Note that these should not be in the ISA range (below 400h) to avoid
@@ -1770,6 +1770,33 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->cbReplyParametersLeft = 0;
             break;
 
+        case BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND:
+            /* The parameter list length is at least 12 bytes; the 12th byte determines
+             * the number of additional CDB bytes that will follow.
+             */
+            if (pBusLogic->iParameter == 12)
+            {
+                /* First pass - set the number of following CDB bytes. */
+                pBusLogic->cbCommandParametersLeft = pBusLogic->aCommandBuffer[11];
+                Log(("Execute SCSI cmd: %u more bytes follow\n", pBusLogic->cbCommandParametersLeft));
+            }
+            else
+            {
+                PESCMD      pCmd;
+
+                /* Second pass - process received data. */
+                Log(("Execute SCSI cmd: received %u bytes\n", pBusLogic->aCommandBuffer[0]));
+
+                pCmd = (PESCMD)pBusLogic->aCommandBuffer;
+                Log(("Addr %08X, cbData %08X, cbCDB=%u\n", pCmd->u32PhysAddrData, pCmd->cbData, pCmd->cbCDB));
+            }
+            // This is currently a dummy - just fails every command.
+            pBusLogic->cbReplyParametersLeft = 4;
+            pBusLogic->aReplyBuffer[0] = pBusLogic->aReplyBuffer[1] = 0;
+            pBusLogic->aReplyBuffer[2] = 0x11;      /* HBA status (timeout). */
+            pBusLogic->aReplyBuffer[3] = 0;         /* Device status. */
+            break;
+
         case BUSLOGICCOMMAND_INQUIRE_HOST_ADAPTER_MODEL_NUMBER:
         {
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
@@ -2279,6 +2306,10 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_SET_ADAPTER_OPTIONS:
                         /* There must be at least one byte following this command. */
                         pBusLogic->cbCommandParametersLeft = 1;
+                        break;
+                    case BUSLOGICCOMMAND_EXECUTE_SCSI_COMMAND:
+                        /* 12 bytes + variable-length CDB. */
+                        pBusLogic->cbCommandParametersLeft = 12;
                         break;
                     case BUSLOGICCOMMAND_EXT_BIOS_INFO:
                     case BUSLOGICCOMMAND_UNLOCK_MAILBOX:
