@@ -77,6 +77,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: changed order of actions in emulated task switch
+          (bug #10532)</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: update check uses https</para>
       </listitem>
 
