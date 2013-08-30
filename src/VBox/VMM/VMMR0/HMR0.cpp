@@ -124,11 +124,11 @@ static struct
         {
             uint64_t                u64FeatureCtrl;
             uint64_t                u64BasicInfo;
-            VMX_CAPABILITY          vmxPinCtls;
-            VMX_CAPABILITY          vmxProcCtls;
-            VMX_CAPABILITY          vmxProcCtls2;
-            VMX_CAPABILITY          vmxExit;
-            VMX_CAPABILITY          vmxEntry;
+            VMX_CAPABILITY          VmxPinCtls;
+            VMX_CAPABILITY          VmxProcCtls;
+            VMX_CAPABILITY          VmxProcCtls2;
+            VMX_CAPABILITY          VmxExit;
+            VMX_CAPABILITY          VmxEntry;
             uint64_t                u64Misc;
             uint64_t                u64Cr0Fixed0;
             uint64_t                u64Cr0Fixed1;
@@ -411,10 +411,10 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Read all relevant MSRs.
                  */
                 g_HvmR0.vmx.msr.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-                g_HvmR0.vmx.msr.vmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-                g_HvmR0.vmx.msr.vmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                g_HvmR0.vmx.msr.vmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-                g_HvmR0.vmx.msr.vmxEntry.u      = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+                g_HvmR0.vmx.msr.VmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+                g_HvmR0.vmx.msr.VmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                g_HvmR0.vmx.msr.VmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+                g_HvmR0.vmx.msr.VmxEntry.u      = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
                 g_HvmR0.vmx.msr.u64Misc         = ASMRdMsr(MSR_IA32_VMX_MISC);
                 g_HvmR0.vmx.msr.u64Cr0Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
                 g_HvmR0.vmx.msr.u64Cr0Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
@@ -426,13 +426,13 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 /* VPID 16 bits ASID. */
                 g_HvmR0.uMaxAsid                = 0x10000; /* exclusive */
 
-                if (g_HvmR0.vmx.msr.vmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                if (g_HvmR0.vmx.msr.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
                 {
-                    g_HvmR0.vmx.msr.vmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                    if (g_HvmR0.vmx.msr.vmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                    g_HvmR0.vmx.msr.VmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                    if (g_HvmR0.vmx.msr.VmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
                         g_HvmR0.vmx.msr.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
-                    if (g_HvmR0.vmx.msr.vmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
+                    if (g_HvmR0.vmx.msr.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
                         g_HvmR0.vmx.msr.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
                 }
 
@@ -533,10 +533,10 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                 g_HvmR0.pfnSetupVM           = VMXR0SetupVM;
 
                 /*
-                 * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
+                 * Check for the VMX-Preemption Timer and adjust for the "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (g_HvmR0.vmx.msr.vmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
+                if (g_HvmR0.vmx.msr.VmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
                 {
                     g_HvmR0.vmx.fUsePreemptTimer   = true;
                     g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.u64Misc);
@@ -1252,11 +1252,11 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.u64HostCr4            = g_HvmR0.vmx.u64HostCr4;
     pVM->hm.s.vmx.u64HostEfer           = g_HvmR0.vmx.u64HostEfer;
     pVM->hm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.u64BasicInfo;
-    pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmxPinCtls;
-    pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmxProcCtls;
-    pVM->hm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.vmxProcCtls2;
-    pVM->hm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.vmxExit;
-    pVM->hm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.vmxEntry;
+    pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.VmxPinCtls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.VmxProcCtls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.VmxProcCtls2;
+    pVM->hm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.VmxExit;
+    pVM->hm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.VmxEntry;
     pVM->hm.s.vmx.msr.vmx_misc          = g_HvmR0.vmx.msr.u64Misc;
     pVM->hm.s.vmx.msr.vmx_cr0_fixed0    = g_HvmR0.vmx.msr.u64Cr0Fixed0;
     pVM->hm.s.vmx.msr.vmx_cr0_fixed1    = g_HvmR0.vmx.msr.u64Cr0Fixed1;
