@@ -1138,8 +1138,10 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_P4_LASTBRANCH_1:
         case MSR_P4_LASTBRANCH_2:
         case MSR_P4_LASTBRANCH_3:
-        case MSR_IA32_PERFEVTSEL0:          /* Netware 6.5 seems to want these. (Bet on AMD as well.) */
+        case MSR_IA32_PERFEVTSEL0:          /* NetWare 6.5 wants the these four. (Bet on AMD as well.) */
         case MSR_IA32_PERFEVTSEL1:
+        case MSR_IA32_PMC0:
+        case MSR_IA32_PMC1:
         case MSR_IA32_PLATFORM_ID:          /* fam/mod >= 6_01 */
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_RAPL_POWER_UNIT:
