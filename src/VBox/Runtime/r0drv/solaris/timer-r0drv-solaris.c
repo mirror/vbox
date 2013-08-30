@@ -387,7 +387,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
             /*
              * cylic_add() comment: "The caller is responsible for assuring that cyt_when + cyt_interval <= INT64_MAX"
              * but it contradicts itself because cyclic_reprogram() updates only the interval and accepts CY_INFINITY as
-             * a valid special value. See cyclic_fire().
+             * a valid, special value. See cyclic_fire().
              */
             pSingleTimer->hFireTime.cyt_interval = CY_INFINITY;
         }
