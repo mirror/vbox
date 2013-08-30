@@ -124,6 +124,37 @@ typedef struct RTTIMER
 
 
 /**
+ * Callback wrapper for specific timers if they happened to have been fired on
+ * the wrong CPU. See rtTimerSolCallbackWrapper().
+ *
+ * @param   idCpu       The CPU this is fired on.
+ * @param   pvUser1     Opaque pointer to the timer.
+ * @param   pvUser2     Not used, NULL.
+ */
+static void rtTimerSolMpCallbackWrapper(RTCPUID idCpu, void *pvUser1, void *pvUser2)
+{
+    PRTTIMER pTimer = (PRTTIMER)pvUser1;
+    AssertPtrReturnVoid(pTimer);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(pTimer->iCpu == RTMpCpuId());    /* ASSUMES: index == cpuid */
+    Assert(pTimer->pSingleTimer);
+    NOREF(pvUser2);
+
+    if (   pTimer->fSuspended
+        && pTimer->interval == 0)
+        return;
+
+    /* For one-shot specific timers, allow RTTimer to restart them. */
+    /** @todo cyclic_reprogram() to CY_INFINITY? */
+    if (pTimer->interval == 0)
+        pTimer->fSuspended = true;
+
+    uint64_t u64Tick = ++pTimer->pSingleTimer->u64Tick;
+    pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
+}
+
+
+/**
  * Callback wrapper for Omni-CPU and single-CPU timers.
  *
  * @param    pvArg              Opaque pointer to the timer.
@@ -138,23 +169,26 @@ static void rtTimerSolCallbackWrapper(void *pvArg)
     AssertPtrReturnVoid(pTimer);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
-    if (pTimer->fSuspended)
-        return;
-
     if (pTimer->pSingleTimer)
     {
-        /* For specific periodic timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
-           Ignore these shots while we are temporarily rebinding to the right CPU. */
+        if (   pTimer->fSuspended
+            && pTimer->interval == 0)
+            return;
+
+        /* For specific timers, we might fire on the wrong CPU between cyclic_add() and cyclic_bind().
+           Redirect these shots to the right CPU as we are temporarily rebinding to the right CPU. */
         if (   pTimer->fSpecificCpu
-            && pTimer->interval != 0
             && pTimer->iCpu != RTMpCpuId())          /* ASSUMES: index == cpuid */
         {
+            RTMpOnSpecific(pTimer->iCpu, rtTimerSolMpCallbackWrapper, pTimer, NULL);
             return;
         }
 
-        /* Allow RTTimer to be restarted for one-shot timers. */
+        /* For one-shot any-cpu timers, allow RTTimer to restart them. */
+        /** @todo cyclic_reprogram() to CY_INFINITY? */
         if (pTimer->interval == 0)
             pTimer->fSuspended = true;
+
         uint64_t u64Tick = ++pTimer->pSingleTimer->u64Tick;
         pTimer->pfnTimer(pTimer, pTimer->pvUser, u64Tick);
     }
@@ -220,14 +254,6 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
 
     /* One-shot omni timers are not supported by the cyclic system. */
     if (   (fFlags & RTTIMER_FLAGS_CPU_ALL) == RTTIMER_FLAGS_CPU_ALL
-        && u64NanoInterval == 0)
-    {
-        return VERR_NOT_SUPPORTED;
-    }
-
-    /* One-shot specific timers are not supported. See rtTimerSolCallbackWrapper(). */
-    if (   (fFlags & RTTIMER_FLAGS_CPU_ALL) != RTTIMER_FLAGS_CPU_ALL
-        && (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
         && u64NanoInterval == 0)
     {
         return VERR_NOT_SUPPORTED;
