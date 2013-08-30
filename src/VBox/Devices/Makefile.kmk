@@ -323,20 +323,25 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  # --- Networking bits. ---
 
  ifdef VBOX_WITH_INIP
-  ifndef VBOX_WITH_NEW_LWIP
-    include $(PATH_SUB_CURRENT)/Network/lwip/Makefile.kmk
-  else
-    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
-  endif
   VBoxDD_DEFS           += VBOX_WITH_INIP
-  VBoxDD_INCS           += $(LWIP_INCS)
-  VBoxDD_SOURCES        += $(LWIP_SOURCES)
   VBoxDD_SOURCES        += \
         Network/DevINIP.cpp
-  ifdef VBOX_WITH_NEW_LWIP
+  ifndef VBOX_WITH_NEW_LWIP
+    include $(PATH_SUB_CURRENT)/Network/lwip/Makefile.kmk
+    VBoxDD_INCS         += $(LWIP_INCS)
+    VBoxDD_SOURCES      += $(LWIP_SOURCES)
+  else
+    # XXX: Ancestor makefile includes us before NAT service, so NAT
+    #      makefile depends on lwip Makefile included here...
+    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
+
     Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
+    $(eval $(call def_vbox_lwip_private, \
+                      VBoxDD, Network/lwip-new))
+    $(eval $(call def_vbox_lwip_flags, \
+                      Network/DevINIP.cpp, Network/lwip-new))
   endif
- endif
+ endif # VBOX_WITH_INIP
 
  ifdef VBOX_WITH_E1000
   VBoxDD_DEFS           += VBOX_WITH_E1000
@@ -406,9 +411,12 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
  ifdef VBOX_WITH_ISCSI
-  Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
   ifdef VBOX_WITH_NEW_LWIP
     Storage/DrvVD.cpp_DEFS += VBOX_WITH_NEW_LWIP
+    $(eval $(call def_vbox_lwip_flags, \
+                      Storage/DrvVD.cpp, Network/lwip-new))
+  else
+    Storage/DrvVD.cpp_INCS = $(LWIP_INCS)
   endif
  endif
 
