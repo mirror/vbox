@@ -561,6 +561,32 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_and_u64_locked,(uint64_t *puDst, uint64_t uSrc,
 }
 
 
+IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
+{
+    uint64_t uDst    = *puDst;
+    uint64_t uResult = uDst;
+    iemAImpl_add_u64(&uResult, *puReg, pfEFlags);
+    *puDst = uResult;
+    *puReg = uDst;
+}
+
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
+{
+    uint64_t uOld = ASMAtomicReadU64(puDst);
+    uint64_t uTmpDst;
+    uint32_t fEflTmp;
+    do
+    {
+        uTmpDst = uOld;
+        fEflTmp = *pfEFlags;
+        iemAImpl_add_u64(&uTmpDst, *puReg, pfEFlags);
+    } while (ASMAtomicCmpXchgExU64(puDst, uTmpDst, uOld, &uOld));
+    *puReg    = uOld;
+    *pfEFlags = fEflTmp;
+}
+
+
 /* Bit operations (same signature as above). */
 
 IEM_DECL_IMPL_DEF(void, iemAImpl_bt_u64,(uint64_t *puDst, uint64_t uSrc, uint32_t *pfEFlags))
@@ -1088,6 +1114,18 @@ IEM_DECL_IMPL_DEF(void, iemAImpl_shrd_u64,(uint64_t *puDst, uint64_t uSrc, uint8
 }
 
 
+/* misc */
+
+IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
+{
+    /* XCHG implies LOCK. */
+    uint64_t uOldMem = *puMem;
+    while (!ASMAtomicCmpXchgExU64(puMem, *puReg, uOldMem, &uOldMem))
+        ASMNopPause();
+    *puReg = uOldMem;
+}
+
+
 /* multiplication and division */
 
 IEM_DECL_IMPL_DEF(int, iemAImpl_mul_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, uint64_t u64Factor, uint32_t *pfEFlags))
@@ -1122,42 +1160,6 @@ IEM_DECL_IMPL_DEF(int, iemAImpl_idiv_u64,(uint64_t *pu64RAX, uint64_t *pu64RDX, 
 {
     AssertFailed();
     return -1;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xchg_u64,(uint64_t *puMem, uint64_t *puReg))
-{
-    /* XCHG implies LOCK. */
-    uint64_t uOldMem = *puMem;
-    while (!ASMAtomicCmpXchgExU64(puMem, *puReg, uOldMem, &uOldMem))
-        ASMNopPause();
-    *puReg = uOldMem;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
-{
-    uint64_t uDst    = *puDst;
-    uint64_t uResult = uDst;
-    iemAImpl_add_u64(&uResult, *puReg, pfEFlags);
-    *puDst = uResult;
-    *puReg = uDst;
-}
-
-
-IEM_DECL_IMPL_DEF(void, iemAImpl_xadd_u64_locked,(uint64_t *puDst, uint64_t *puReg, uint32_t *pfEFlags))
-{
-    uint64_t uOld = ASMAtomicReadU64(puDst);
-    uint64_t uTmpDst;
-    uint32_t fEflTmp;
-    do
-    {
-        uTmpDst = uOld;
-        fEflTmp = *pfEFlags;
-        iemAImpl_add_u64(&uTmpDst, *puReg, pfEFlags);
-    } while (ASMAtomicCmpXchgExU64(puDst, uTmpDst, uOld, &uOld));
-    *puReg    = uOld;
-    *pfEFlags = fEflTmp;
 }
 
 
