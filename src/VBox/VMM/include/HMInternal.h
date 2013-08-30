@@ -403,7 +403,7 @@ typedef struct HM
         R0PTRTYPE(void *)           pvIOBitmap;
 
         /* HWCR MSR (for diagnostics) */
-        uint64_t                    msrHwcr;
+        uint64_t                    u64MsrHwcr;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
