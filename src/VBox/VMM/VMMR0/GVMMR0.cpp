@@ -1073,13 +1073,13 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     PGVMM pGVMM;
     GVMM_GET_VALID_INSTANCE(pGVMM, VERR_GVMM_INSTANCE);
 
-
     /*
      * Validate the VM structure, state and caller.
      */
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertReturn(!((uintptr_t)pVM & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
-    AssertMsgReturn(pVM->enmVMState >= VMSTATE_CREATING && pVM->enmVMState <= VMSTATE_TERMINATED, ("%d\n", pVM->enmVMState), VERR_WRONG_ORDER);
+    AssertMsgReturn(pVM->enmVMState >= VMSTATE_CREATING && pVM->enmVMState <= VMSTATE_TERMINATED, ("%d\n", pVM->enmVMState),
+                    VERR_WRONG_ORDER);
 
     uint32_t hGVM = pVM->hSelf;
     AssertReturn(hGVM != NIL_GVM_HANDLE, VERR_INVALID_HANDLE);
@@ -1089,7 +1089,7 @@ GVMMR0DECL(int) GVMMR0DestroyVM(PVM pVM)
     AssertReturn(pHandle->pVM == pVM, VERR_NOT_OWNER);
 
     RTPROCESS      ProcId = RTProcSelf();
-    RTNATIVETHREAD hSelf = RTThreadNativeSelf();
+    RTNATIVETHREAD hSelf  = RTThreadNativeSelf();
     AssertReturn(   (   pHandle->hEMT0  == hSelf
                      && pHandle->ProcId == ProcId)
                  || pHandle->hEMT0 == NIL_RTNATIVETHREAD, VERR_NOT_OWNER);

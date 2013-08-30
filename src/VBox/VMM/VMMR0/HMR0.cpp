@@ -113,29 +113,29 @@ static struct
         uint8_t                     cPreemptTimerShift;
 
         /** Host CR4 value (set by ring-0 VMX init) */
-        uint64_t                    hostCR4;
+        uint64_t                    u64HostCr4;
 
         /** Host EFER value (set by ring-0 VMX init) */
-        uint64_t                    hostEFER;
+        uint64_t                    u64HostEfer;
 
         /** VMX MSR values */
         struct
         {
-            uint64_t                feature_ctrl;
-            uint64_t                vmx_basic_info;
-            VMX_CAPABILITY          vmx_pin_ctls;
-            VMX_CAPABILITY          vmx_proc_ctls;
-            VMX_CAPABILITY          vmx_proc_ctls2;
-            VMX_CAPABILITY          vmx_exit;
-            VMX_CAPABILITY          vmx_entry;
-            uint64_t                vmx_misc;
-            uint64_t                vmx_cr0_fixed0;
-            uint64_t                vmx_cr0_fixed1;
-            uint64_t                vmx_cr4_fixed0;
-            uint64_t                vmx_cr4_fixed1;
-            uint64_t                vmx_vmcs_enum;
-            uint64_t                vmx_vmfunc;
-            uint64_t                vmx_ept_vpid_caps;
+            uint64_t                u64FeatureCtrl;
+            uint64_t                u64BasicInfo;
+            VMXCAPABILITY           vmxPinCtls;
+            VMXCAPABILITY           vmxProcCtls;
+            VMXCAPABILITY           vmxProcCtls2;
+            VMXCAPABILITY           vmxExit;
+            VMXCAPABILITY           vmxEntry;
+            uint64_t                u64Misc;
+            uint64_t                u64Cr0Fixed0;
+            uint64_t                u64Cr0Fixed1;
+            uint64_t                u64Cr4Fixed0;
+            uint64_t                u64Cr4Fixed1;
+            uint64_t                u64VmcsEnum;
+            uint64_t                u64Vmfunc;
+            uint64_t                u64EptVpidCaps;
         } msr;
         /* Last instruction error */
         uint32_t                    ulLastInstrError;
@@ -157,7 +157,7 @@ static struct
         bool                        fSupported;
     } svm;
     /** Saved error from detection */
-    int32_t         lLastError;
+    int32_t                         lLastError;
 
     struct
     {
@@ -171,7 +171,7 @@ static struct
     /** Indicates whether the host is suspending or not.  We'll refuse a few
      *  actions when the host is being suspended to speed up the suspending and
      *  avoid trouble. */
-    volatile        bool            fSuspended;
+    volatile bool                   fSuspended;
 
     /** Whether we've already initialized all CPUs.
      * @remarks We could check the EnableAllCpusOnce state, but this is
@@ -370,7 +370,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
        )
     {
         /** @todo move this into a separate function. */
-        g_HvmR0.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        g_HvmR0.vmx.msr.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
         /*
          * First try use native kernel API for controlling VT-x.
@@ -401,41 +401,38 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
         if (RT_SUCCESS(g_HvmR0.lLastError))
         {
             /* Reread in case we've changed it. */
-            g_HvmR0.vmx.msr.feature_ctrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+            g_HvmR0.vmx.msr.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
-            if (   (g_HvmR0.vmx.msr.feature_ctrl & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-                ==                                 (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+            if (   (g_HvmR0.vmx.msr.u64FeatureCtrl & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+                ==                                   (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
             {
                 /*
-                 * Read all relevant MSR.
+                 * Read all relevant MSRs.
                  */
-                g_HvmR0.vmx.msr.vmx_basic_info  = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-                g_HvmR0.vmx.msr.vmx_pin_ctls.u  = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-                g_HvmR0.vmx.msr.vmx_proc_ctls.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                g_HvmR0.vmx.msr.vmx_exit.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-                g_HvmR0.vmx.msr.vmx_entry.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
-                g_HvmR0.vmx.msr.vmx_misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
-                g_HvmR0.vmx.msr.vmx_cr0_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
-                g_HvmR0.vmx.msr.vmx_cr0_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
-                g_HvmR0.vmx.msr.vmx_cr4_fixed0  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
-                g_HvmR0.vmx.msr.vmx_cr4_fixed1  = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
-                g_HvmR0.vmx.msr.vmx_vmcs_enum   = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
-                g_HvmR0.vmx.hostCR4             = ASMGetCR4();
-                g_HvmR0.vmx.hostEFER            = ASMRdMsr(MSR_K6_EFER);
+                g_HvmR0.vmx.msr.u64BasicInfo    = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
+                g_HvmR0.vmx.msr.vmxPinCtls.u    = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+                g_HvmR0.vmx.msr.vmxProcCtls.u   = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+                g_HvmR0.vmx.msr.vmxExit.u       = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+                g_HvmR0.vmx.msr.vmxEntry.u      = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+                g_HvmR0.vmx.msr.u64Misc         = ASMRdMsr(MSR_IA32_VMX_MISC);
+                g_HvmR0.vmx.msr.u64Cr0Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+                g_HvmR0.vmx.msr.u64Cr0Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+                g_HvmR0.vmx.msr.u64Cr4Fixed0    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+                g_HvmR0.vmx.msr.u64Cr4Fixed1    = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+                g_HvmR0.vmx.msr.u64VmcsEnum     = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+                g_HvmR0.vmx.u64HostCr4          = ASMGetCR4();
+                g_HvmR0.vmx.u64HostEfer         = ASMRdMsr(MSR_K6_EFER);
                 /* VPID 16 bits ASID. */
                 g_HvmR0.uMaxAsid                = 0x10000; /* exclusive */
 
-                if (g_HvmR0.vmx.msr.vmx_proc_ctls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                if (g_HvmR0.vmx.msr.vmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
                 {
-                    g_HvmR0.vmx.msr.vmx_proc_ctls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                    if (  g_HvmR0.vmx.msr.vmx_proc_ctls2.n.allowed1
-                        & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
-                    {
-                        g_HvmR0.vmx.msr.vmx_ept_vpid_caps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
-                    }
+                    g_HvmR0.vmx.msr.vmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                    if (g_HvmR0.vmx.msr.vmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                        g_HvmR0.vmx.msr.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
-                    if (g_HvmR0.vmx.msr.vmx_proc_ctls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
-                        g_HvmR0.vmx.msr.vmx_vmfunc        = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+                    if (g_HvmR0.vmx.msr.vmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
+                        g_HvmR0.vmx.msr.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
                 }
 
                 if (!g_HvmR0.vmx.fUsingSUPR0EnableVTx)
@@ -456,7 +453,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                     ASMMemZeroPage(pvScatchPage);
 
                     /* Set revision dword at the beginning of the structure. */
-                    *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(g_HvmR0.vmx.msr.vmx_basic_info);
+                    *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(g_HvmR0.vmx.msr.u64BasicInfo);
 
                     /* Make sure we don't get rescheduled to another cpu during this probe. */
                     RTCCUINTREG fFlags = ASMIntDisableFlags();
@@ -464,12 +461,12 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                     /*
                      * Check CR4.VMXE
                      */
-                    g_HvmR0.vmx.hostCR4 = ASMGetCR4();
-                    if (!(g_HvmR0.vmx.hostCR4 & X86_CR4_VMXE))
+                    g_HvmR0.vmx.u64HostCr4 = ASMGetCR4();
+                    if (!(g_HvmR0.vmx.u64HostCr4 & X86_CR4_VMXE))
                     {
                         /* In theory this bit could be cleared behind our back.  Which would cause
                            #UD faults when we try to execute the VMX instructions... */
-                        ASMSetCR4(g_HvmR0.vmx.hostCR4 | X86_CR4_VMXE);
+                        ASMSetCR4(g_HvmR0.vmx.u64HostCr4 | X86_CR4_VMXE);
                     }
 
                     /*
@@ -502,7 +499,7 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                     /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set
                        if it wasn't so before (some software could incorrectly
                        think it's in VMX mode). */
-                    ASMSetCR4(g_HvmR0.vmx.hostCR4);
+                    ASMSetCR4(g_HvmR0.vmx.u64HostCr4);
                     ASMSetFlags(fFlags);
 
                     RTR0MemObjFree(hScatchMemObj, false);
@@ -538,10 +535,10 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
                  * Check for the VMX-Preemption Timer and adjust for the * "VMX-Preemption
                  * Timer Does Not Count Down at the Rate Specified" erratum.
                  */
-                if (g_HvmR0.vmx.msr.vmx_pin_ctls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
+                if (g_HvmR0.vmx.msr.vmxPinCtls.n.allowed1 & VMX_VMCS_CTRL_PIN_EXEC_PREEMPT_TIMER)
                 {
                     g_HvmR0.vmx.fUsePreemptTimer   = true;
-                    g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.vmx_misc);
+                    g_HvmR0.vmx.cPreemptTimerShift = MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(g_HvmR0.vmx.msr.u64Misc);
                     if (hmR0InitIntelIsSubjectToVmxPreemptionTimerErratum())
                         g_HvmR0.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
                 }
@@ -780,7 +777,7 @@ VMMR0_INT_DECL(int) HMR0Term(void)
         {
             HMR0FIRSTRC FirstRc;
             hmR0FirstRcInit(&FirstRc);
-            rc = RTMpOnAll(hmR0DisableCpuCallback, NULL, &FirstRc);
+            rc = RTMpOnAll(hmR0DisableCpuCallback, NULL /* pvUser 1 */, &FirstRc);
             Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             if (RT_SUCCESS(rc))
             {
@@ -841,14 +838,16 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
     {
         /* MSR is not yet locked; we can change it ourselves here. */
         ASMWrMsr(MSR_IA32_FEATURE_CONTROL,
-                 g_HvmR0.vmx.msr.feature_ctrl | MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK);
+                 g_HvmR0.vmx.msr.u64FeatureCtrl | MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK);
         fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
     }
 
     int rc;
-    if (   (fFC & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-        == (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+    if ((fFC & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+        ==     (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+    {
         rc = VINF_SUCCESS;
+    }
     else
         rc = VERR_VMX_MSR_LOCKED_OR_DISABLED;
 
@@ -906,14 +905,14 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  * Enable VT-x or AMD-V on the current CPU
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM (can be 0).
+ * @param   pVM         Pointer to the VM (can be NULL).
  * @param   idCpu       The identifier for the CPU the function is called on.
  */
 static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
     PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu));  /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured);
 
@@ -923,7 +922,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 
     int rc;
     if (g_HvmR0.vmx.fSupported && g_HvmR0.vmx.fUsingSUPR0EnableVTx)
-        rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, NULL, NIL_RTHCPHYS, true);
+        rc = g_HvmR0.pfnEnableCpu(pCpu, pVM, NULL /* pvCpuPage */, NIL_RTHCPHYS, true);
     else
     {
         AssertLogRelMsgReturn(pCpu->hMemObj != NIL_RTR0MEMOBJ, ("hmR0EnableCpu failed idCpu=%u.\n", idCpu), VERR_HM_IPE_1);
@@ -944,7 +943,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
  * is to be called on the target cpus.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
- * @param   pvUser1     The 1st user argument.
+ * @param   pvUser1     Opaque pointer to the VM (can be NULL!).
  * @param   pvUser2     The 2nd user argument.
  */
 static DECLCALLBACK(void) hmR0EnableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
@@ -1105,11 +1104,11 @@ static int hmR0DisableCpu(RTCPUID idCpu)
 
 /**
  * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
- * is to be called on the target cpus.
+ * is to be called on the target CPUs.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
- * @param   pvUser2     The 2nd user argument.
+ * @param   pvUser2     Opaque pointer to the FirstRc.
  */
 static DECLCALLBACK(void) hmR0DisableCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
@@ -1182,7 +1181,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
             if (g_HvmR0.fGlobalInit)
             {
                 /* Turn off VT-x or AMD-V on all CPUs. */
-                rc = RTMpOnAll(hmR0DisableCpuCallback, NULL, &FirstRc);
+                rc = RTMpOnAll(hmR0DisableCpuCallback, NULL /* pvUser 1 */, &FirstRc);
                 Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             }
             /* else nothing to do here for the local init case */
@@ -1205,7 +1204,7 @@ static DECLCALLBACK(void) hmR0PowerCallback(RTPOWEREVENT enmEvent, void *pvUser)
             if (g_HvmR0.fGlobalInit)
             {
                 /* Turn VT-x or AMD-V back on on all CPUs. */
-                rc = RTMpOnAll(hmR0EnableCpuCallback, NULL, &FirstRc /* output ignored */);
+                rc = RTMpOnAll(hmR0EnableCpuCallback, NULL /* pVM */, &FirstRc /* output ignored */);
                 Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
             }
             /* else nothing to do here for the local init case */
@@ -1241,28 +1240,30 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Copy globals to the VM structure.
      */
+    /** @todo r=ramshankar: Why do we do this for MSRs? We never change them in the
+     *        per-VM structures anyway... */
     pVM->hm.s.vmx.fSupported            = g_HvmR0.vmx.fSupported;
     pVM->hm.s.svm.fSupported            = g_HvmR0.svm.fSupported;
 
     pVM->hm.s.vmx.fUsePreemptTimer      = g_HvmR0.vmx.fUsePreemptTimer;
     pVM->hm.s.vmx.cPreemptTimerShift    = g_HvmR0.vmx.cPreemptTimerShift;
-    pVM->hm.s.vmx.msr.feature_ctrl      = g_HvmR0.vmx.msr.feature_ctrl;
-    pVM->hm.s.vmx.hostCR4               = g_HvmR0.vmx.hostCR4;
-    pVM->hm.s.vmx.hostEFER              = g_HvmR0.vmx.hostEFER;
-    pVM->hm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.vmx_basic_info;
-    pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmx_pin_ctls;
-    pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmx_proc_ctls;
-    pVM->hm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.vmx_proc_ctls2;
-    pVM->hm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.vmx_exit;
-    pVM->hm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.vmx_entry;
-    pVM->hm.s.vmx.msr.vmx_misc          = g_HvmR0.vmx.msr.vmx_misc;
-    pVM->hm.s.vmx.msr.vmx_cr0_fixed0    = g_HvmR0.vmx.msr.vmx_cr0_fixed0;
-    pVM->hm.s.vmx.msr.vmx_cr0_fixed1    = g_HvmR0.vmx.msr.vmx_cr0_fixed1;
-    pVM->hm.s.vmx.msr.vmx_cr4_fixed0    = g_HvmR0.vmx.msr.vmx_cr4_fixed0;
-    pVM->hm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.vmx_cr4_fixed1;
-    pVM->hm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.vmx_vmcs_enum;
-    pVM->hm.s.vmx.msr.vmx_vmfunc        = g_HvmR0.vmx.msr.vmx_vmfunc;
-    pVM->hm.s.vmx.msr.vmx_ept_vpid_caps = g_HvmR0.vmx.msr.vmx_ept_vpid_caps;
+    pVM->hm.s.vmx.msr.feature_ctrl      = g_HvmR0.vmx.msr.u64FeatureCtrl;
+    pVM->hm.s.vmx.hostCR4               = g_HvmR0.vmx.u64HostCr4;
+    pVM->hm.s.vmx.hostEFER              = g_HvmR0.vmx.u64HostEfer;
+    pVM->hm.s.vmx.msr.vmx_basic_info    = g_HvmR0.vmx.msr.u64BasicInfo;
+    pVM->hm.s.vmx.msr.vmx_pin_ctls      = g_HvmR0.vmx.msr.vmxPinCtls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls     = g_HvmR0.vmx.msr.vmxProcCtls;
+    pVM->hm.s.vmx.msr.vmx_proc_ctls2    = g_HvmR0.vmx.msr.vmxProcCtls2;
+    pVM->hm.s.vmx.msr.vmx_exit          = g_HvmR0.vmx.msr.vmxExit;
+    pVM->hm.s.vmx.msr.vmx_entry         = g_HvmR0.vmx.msr.vmxEntry;
+    pVM->hm.s.vmx.msr.vmx_misc          = g_HvmR0.vmx.msr.u64Misc;
+    pVM->hm.s.vmx.msr.vmx_cr0_fixed0    = g_HvmR0.vmx.msr.u64Cr0Fixed0;
+    pVM->hm.s.vmx.msr.vmx_cr0_fixed1    = g_HvmR0.vmx.msr.u64Cr0Fixed1;
+    pVM->hm.s.vmx.msr.vmx_cr4_fixed0    = g_HvmR0.vmx.msr.u64Cr4Fixed0;
+    pVM->hm.s.vmx.msr.vmx_cr4_fixed1    = g_HvmR0.vmx.msr.u64Cr4Fixed1;
+    pVM->hm.s.vmx.msr.vmx_vmcs_enum     = g_HvmR0.vmx.msr.u64VmcsEnum;
+    pVM->hm.s.vmx.msr.vmx_vmfunc        = g_HvmR0.vmx.msr.u64Vmfunc;
+    pVM->hm.s.vmx.msr.vmx_ept_vpid_caps = g_HvmR0.vmx.msr.u64EptVpidCaps;
     pVM->hm.s.svm.msrHwcr               = g_HvmR0.svm.msrHwcr;
     pVM->hm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
     pVM->hm.s.svm.u32Features           = g_HvmR0.svm.u32Features;
