@@ -1050,16 +1050,18 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
 
 
 /**
- * Loads the guest control registers (CR0, CR2, CR3, CR4) into the VMCB.
+ * Loads the guest CR0 control register into the guest-state area in the VMCB.
+ * Although the guest CR0 is a separate field in the VMCB we have to consider
+ * the FPU state itself which is shared between the host and the guest.
  *
  * @returns VBox status code.
- * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVM         Pointer to the VMCPU.
  * @param   pVmcb       Pointer to the VMCB.
- * @param   pCtx        Pointer the guest-CPU context.
+ * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /*
      * Guest CR0.
@@ -1120,6 +1122,22 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_CRX_EFER;
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR0;
     }
+}
+
+
+/**
+ * Loads the guest control registers (CR2, CR3, CR4) into the VMCB.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VMCB.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+{
+    PVM pVM = pVCpu->CTX_SUFF(pVM);
 
     /*
      * Guest CR2.
@@ -1323,8 +1341,8 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
 
 
 /**
- * Loads the guest debug registers (DR6, DR7) into the VMCB and programs the
- * necessary intercepts accordingly.
+ * Loads the guest state into the VMCB and programs the necessary intercepts
+ * accordingly.
  *
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pVmcb       Pointer to the VMCB.
@@ -1333,7 +1351,7 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
  * @remarks No-long-jump zone!!!
  * @remarks Requires EFLAGS to be up-to-date in the VMCB!
  */
-DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+DECLINLINE(void) hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
         return;
@@ -1385,7 +1403,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
          *        with the same values. */
         fInterceptDB = true;
         fInterceptMovDRx = true;
-        Log5(("hmR0SvmLoadGuestDebugRegs: Loaded hyper DRx\n"));
+        Log5(("hmR0SvmLoadSharedDebugState: Loaded hyper DRx\n"));
     }
     else
     {
@@ -1413,7 +1431,7 @@ DECLINLINE(void) hmR0SvmLoadGuestDebugRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCT
             }
             Assert(!CPUMIsHyperDebugStateActive(pVCpu));
             Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
-            Log5(("hmR0SvmLoadGuestDebugRegs: Loaded guest DRx\n"));
+            Log5(("hmR0SvmLoadSharedDebugState: Loaded guest DRx\n"));
         }
         /*
          * If no debugging enabled, we'll lazy load DR0-3.
@@ -1684,9 +1702,6 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     pVmcb->guest.u8CPL     = pCtx->ss.Attr.n.u2Dpl;
     pVmcb->guest.u64RAX    = pCtx->rax;
 
-    /* hmR0SvmLoadGuestDebugRegs() must be called -after- updating guest RFLAGS as the RFLAGS may need to be changed. */
-    hmR0SvmLoadGuestDebugRegs(pVCpu, pVmcb, pCtx);
-
     rc = hmR0SvmLoadGuestApicState(pVCpu, pVmcb, pCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0SvmLoadGuestApicState! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -1714,6 +1729,33 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatLoadGuestState, x);
     return rc;
+}
+
+
+/**
+ * Loads the state shared between the host and guest into the
+ * VMCB.
+ *
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ *
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(!VMMRZCallRing3IsEnabled(pVCpu));
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
+        hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
+
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG)
+        hmR0SvmLoadSharedDebugState(pVCpu, pVmcb, pCtx);
+
+    AssertMsg(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_GUEST_SHARED_STATE), ("fContextUseFlags=%#x\n",
+                                                                                     pVCpu->hm.s.fContextUseFlags));
 }
 
 
@@ -1928,8 +1970,6 @@ DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
-    /** @todo This is bad. Deregistering here means we need to VMCLEAR always
-     *        (longjmp/exit-to-r3) in VT-x which is not efficient. */
     if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         VMMR0ThreadCtxHooksDeregister(pVCpu);
 
@@ -2707,6 +2747,37 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
         hmR0SvmEvaluatePendingEvent(pVCpu, pCtx);
 
     /*
+     * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
+     * We avoid changing the corresponding VMCB Clean Bit as we're not changing it to a different value since the previous run.
+     */
+    /** @todo The above assumption could be wrong. It's not documented what
+     *        should be done wrt to the VMCB Clean Bit, but we'll find out the
+     *        hard way. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
+
+#ifdef HMSVM_SYNC_FULL_GUEST_STATE
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+#endif
+
+    /* Load the guest bits that are not shared with the host in any way since we can longjmp or get preempted. */
+    rc = hmR0SvmLoadGuestState(pVM, pVCpu, pCtx);
+    AssertRCReturn(rc, rc);
+    STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
+
+    /*
+     * If we're not intercepting TPR changes in the guest, save the guest TPR before the world-switch
+     * so we can update it on the way back if the guest changed the TPR.
+     */
+    if (pVCpu->hm.s.svm.fSyncVTpr)
+    {
+        if (pVM->hm.s.fTPRPatchingActive)
+            pSvmTransient->u8GuestTpr = pCtx->msrLSTAR;
+        else
+            pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
+    }
+
+    /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
      * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
      *
@@ -2759,42 +2830,16 @@ DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCt
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
-    /*
-     * Re-enable nested paging (automatically disabled on every VM-exit). See AMD spec. 15.25.3 "Enabling Nested Paging".
-     * We avoid changing the corresponding VMCB Clean Bit as we're not changing it to a different value since the previous run.
-     */
-    /** @todo The above assumption could be wrong. It's not documented what
-     *        should be done wrt to the VMCB Clean Bit, but we'll find out the
-     *        hard way. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
-    pVmcb->ctrl.NestedPaging.n.u1NestedPaging = pVM->hm.s.fNestedPaging;
-
-#ifdef HMSVM_SYNC_FULL_GUEST_STATE
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
-#endif
-
-    /* Load the guest state. */
-    int rc = hmR0SvmLoadGuestState(pVM, pVCpu, pCtx);
-    AssertRC(rc);
+    /* Load the state shared between host and guest (FPU, debug). */
+    if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_GUEST_SHARED_STATE)
+        hmR0VmxLoadSharedState(pVM, pVCpu, pCtx);
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;       /* Preemption might set this, nothing to do on AMD-V. */
-    AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags =%#x\n", pVCpu->hm.s.fContextUseFlags));
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatLoadFull);
+    AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags=%#x\n", pVCpu->hm.s.fContextUseFlags));
 
     /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
         pVmcb->ctrl.u64VmcbCleanBits = 0;
-
-    /*
-     * If we're not intercepting TPR changes in the guest, save the guest TPR before the world-switch
-     * so we can update it on the way back if the guest changed the TPR.
-     */
-    if (pVCpu->hm.s.svm.fSyncVTpr)
-    {
-        if (pVM->hm.s.fTPRPatchingActive)
-            pSvmTransient->u8GuestTpr = pCtx->msrLSTAR;
-        else
-            pSvmTransient->u8GuestTpr = pVmcb->ctrl.IntCtrl.n.u8VTPR;
-    }
 
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
@@ -4168,9 +4213,14 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         pVmcb->ctrl.u16InterceptWrDRx = 0;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
+        /* We're playing with the host CPU state here, make sure we don't preempt. */
+        HM_DISABLE_PREEMPT_IF_NEEDED();
+
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
         CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
         Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+
+        HM_RESTORE_PREEMPT_IF_NEEDED();
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
         return VINF_SUCCESS;
@@ -4314,6 +4364,9 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                             && (pCtx->cr4 & X86_CR4_DE))
                         || DBGFBpIsHwIoArmed(pVM)))
         {
+            /* We're playing with the host CPU state here, make sure we don't preempt. */
+            HM_DISABLE_PREEMPT_IF_NEEDED();
+
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
             CPUMR0DebugStateMaybeSaveGuest(pVCpu, false /*fDr6*/);
 
@@ -4330,6 +4383,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
             else if (   rcStrict2 != VINF_SUCCESS
                      && (rcStrict == VINF_SUCCESS || rcStrict2 < rcStrict))
                 rcStrict = rcStrict2;
+
+            HM_RESTORE_PREEMPT_IF_NEEDED();
         }
 
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
@@ -4663,15 +4718,22 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
     Assert(!CPUMIsGuestFPUStateActive(pVCpu));
 #endif
 
+    /* We're playing with the host CPU state here, make sure we don't preempt. */
+    HM_DISABLE_PREEMPT_IF_NEEDED();
+
     /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
     int rc = CPUMR0LoadGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
     if (rc == VINF_SUCCESS)
     {
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
+        HM_RESTORE_PREEMPT_IF_NEEDED();
+
         pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
         return VINF_SUCCESS;
     }
+
+    HM_RESTORE_PREEMPT_IF_NEEDED();
 
     /* Forward #NM to the guest. */
     Assert(rc == VINF_EM_RAW_GUEST_TRAP);
