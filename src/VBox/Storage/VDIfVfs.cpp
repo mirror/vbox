@@ -89,7 +89,12 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
         off = pThis->offCurPos;
     int rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
     if (RT_SUCCESS(rc))
-        pThis->offCurPos = off + (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
+    {
+        size_t cbAdvance = (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
+        pThis->offCurPos = off + cbAdvance;
+        if (pcbRead && !cbAdvance)
+            rc = VINF_EOF;
+    }
     return rc;
 }
 
