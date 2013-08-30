@@ -2777,6 +2777,13 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
     }
 
     /*
+     * No longjmps to ring-3 from this point on!!!
+     * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+     * This also disables flushing of the R0-logger instance (if any).
+     */
+    VMMRZCallRing3Disable(pVCpu);
+
+    /*
      * We disable interrupts so that we don't miss any interrupts that would flag preemption (IPI/timers etc.)
      * when thread-context hooks aren't used and we've been running with preemption disabled for a while.
      *
@@ -2791,19 +2798,17 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
         || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
         ASMSetFlags(pSvmTransient->uEflags);
+        VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
     else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pSvmTransient->uEflags);
+        VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
     }
-
-    /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
-    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
     return VINF_SUCCESS;
 }
@@ -2826,6 +2831,10 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
 
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
@@ -2948,7 +2957,6 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
 
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     ASMSetFlags(pSvmTransient->uEflags);                        /* Enable interrupts. */
-
     VMMRZCallRing3Enable(pVCpu);                                /* It is now safe to do longjmps to ring-3!!! */
 
     /* If VMRUN failed, we can bail out early. This does -not- cover SVM_EXIT_INVALID. */
@@ -3016,21 +3024,12 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (rc != VINF_SUCCESS)
             break;
 
-        /*
-         * No longjmps to ring-3 from this point on!!!
-         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
-         * This also disables flushing of the R0-logger instance (if any).
-         */
-        VMMRZCallRing3Disable(pVCpu);
         hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
-
         rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
 
-        /*
-         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
-         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
-         */
+        /* Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state. */
         hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
+
         if (RT_UNLIKELY(   rc != VINF_SUCCESS                                         /* Check for VMRUN errors. */
                         || SvmTransient.u64ExitCode == (uint64_t)SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
         {
