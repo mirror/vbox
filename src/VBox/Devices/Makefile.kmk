@@ -331,10 +331,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
     VBoxDD_INCS         += $(LWIP_INCS)
     VBoxDD_SOURCES      += $(LWIP_SOURCES)
   else
-    # XXX: Ancestor makefile includes us before NAT service, so NAT
-    #      makefile depends on lwip Makefile included here...
-    include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
-
+    # XXX: do not depend on order
+    ifndef LWIP_SOURCES
+      include $(PATH_SUB_CURRENT)/Network/lwip-new/Makefile.kmk
+    endif
     Network/DevINIP.cpp_DEFS += VBOX_WITH_NEW_LWIP
     $(eval $(call def_vbox_lwip_private, \
                       VBoxDD, Network/lwip-new))
