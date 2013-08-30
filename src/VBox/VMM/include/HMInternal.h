@@ -361,21 +361,21 @@ typedef struct HM
         /** VMX MSR values */
         struct
         {
-            uint64_t                feature_ctrl;
-            uint64_t                vmx_basic_info;
-            VMX_CAPABILITY          vmx_pin_ctls;
-            VMX_CAPABILITY          vmx_proc_ctls;
-            VMX_CAPABILITY          vmx_proc_ctls2;
-            VMX_CAPABILITY          vmx_exit;
-            VMX_CAPABILITY          vmx_entry;
-            uint64_t                vmx_misc;
-            uint64_t                vmx_cr0_fixed0;
-            uint64_t                vmx_cr0_fixed1;
-            uint64_t                vmx_cr4_fixed0;
-            uint64_t                vmx_cr4_fixed1;
-            uint64_t                vmx_vmcs_enum;
-            uint64_t                vmx_vmfunc;
-            uint64_t                vmx_ept_vpid_caps;
+            uint64_t                u64FeatureCtrl;
+            uint64_t                u64BasicInfo;
+            VMX_CAPABILITY          VmxPinCtls;
+            VMX_CAPABILITY          VmxProcCtls;
+            VMX_CAPABILITY          VmxProcCtls2;
+            VMX_CAPABILITY          VmxExit;
+            VMX_CAPABILITY          VmxEntry;
+            uint64_t                u64Misc;
+            uint64_t                u64Cr0Fixed0;
+            uint64_t                u64Cr0Fixed1;
+            uint64_t                u64Cr4Fixed0;
+            uint64_t                u64Cr4Fixed1;
+            uint64_t                u64VmcsEnum;
+            uint64_t                u64Vmfunc;
+            uint64_t                u64EptVpidCaps;
         } msr;
 
         /** Flush types for invept & invvpid; they depend on capabilities. */
