@@ -1736,17 +1736,16 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * Loads the state shared between the host and guest into the
  * VMCB.
  *
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VMCB.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0VmxLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
 
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0)
         hmR0SvmLoadSharedCR0(pVCpu, pVmcb, pCtx);
@@ -2831,13 +2830,13 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     hmR0SvmInjectPendingEvent(pVCpu, pCtx);
 
     /* Load the state shared between host and guest (FPU, debug). */
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_GUEST_SHARED_STATE)
-        hmR0VmxLoadSharedState(pVM, pVCpu, pCtx);
+        hmR0VmxLoadSharedState(pVCpu, pVmcb, pCtx);
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;       /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags=%#x\n", pVCpu->hm.s.fContextUseFlags));
 
     /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
         pVmcb->ctrl.u64VmcbCleanBits = 0;
 
