@@ -162,6 +162,10 @@
 # include <iprt/mem.h>
 # include <stdio.h>
 #endif
+#if defined(IN_RING0) && defined(RT_OS_DARWIN)
+# include <iprt/asm-amd64-x86.h>
+# include <iprt/thread.h>
+#endif
 
 
 /*******************************************************************************
