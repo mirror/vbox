@@ -37,14 +37,23 @@
 #include "netif.h"
 #include "Logging.h"
 
+/**
+ * Obtain the name of the interface used for default routing.
+ *
+ * NOTE: There is a copy in Devices/Network/testcase/tstIntNet-1.cpp.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pszName     The buffer of IFNAMSIZ+1 length where to put the name.
+ */
 static int getDefaultIfaceName(char *pszName)
 {
     FILE *fp = fopen("/proc/net/route", "r");
     char szBuf[1024];
     char szIfName[17];
-    char szAddr[129];
-    char szGateway[129];
-    char szMask[129];
+    uint32_t uAddr;
+    uint32_t uGateway;
+    uint32_t uMask;
     int  iTmp;
     unsigned uFlags;
 
@@ -52,13 +61,13 @@ static int getDefaultIfaceName(char *pszName)
     {
         while (fgets(szBuf, sizeof(szBuf)-1, fp))
         {
-            int n = sscanf(szBuf, "%16s %128s %128s %X %d %d %d %128s %d %d %d\n",
-                           szIfName, szAddr, szGateway, &uFlags, &iTmp, &iTmp, &iTmp,
-                           szMask, &iTmp, &iTmp, &iTmp);
+            int n = sscanf(szBuf, "%16s %x %x %x %d %d %d %x %d %d %d\n",
+                           szIfName, &uAddr, &uGateway, &uFlags, &iTmp, &iTmp, &iTmp,
+                           &uMask, &iTmp, &iTmp, &iTmp);
             if (n < 10 || !(uFlags & RTF_UP))
                 continue;
 
-            if (strcmp(szAddr, "00000000") == 0 && strcmp(szMask, "00000000") == 0)
+            if (uAddr == 0 && uMask == 0)
             {
                 fclose(fp);
                 strncpy(pszName, szIfName, 16);
