@@ -109,7 +109,7 @@ VMMDECL(uint32_t) PDMR3CritSectRwSetSubClass(PPDMCRITSECTRW pThis, uint32_t uSub
 {
     AssertPtrReturn(pThis, RTLOCKVAL_SUB_CLASS_INVALID);
     AssertReturn(pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC, RTLOCKVAL_SUB_CLASS_INVALID);
-#if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
     AssertReturn(!(pThis->s.Core.fFlags & RTCRITSECT_FLAGS_NOP), RTLOCKVAL_SUB_CLASS_INVALID);
 
     RTLockValidatorRecSharedSetSubClass(pThis->s.Core.pValidatorRead, uSubClass);
@@ -227,120 +227,135 @@ static int pdmCritSectRwEnterShared(PPDMCRITSECTRW pThis, int rcBusy, bool fTryO
                 return VERR_SEM_BUSY;
             }
 
-#if defined(IN_RING3)
-            /*
-             * Add ourselves to the queue and wait for the direction to change.
-             */
-            uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
-            c++;
-            Assert(c < RTCSRW_CNT_MASK / 2);
-
-            uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-            cWait++;
-            Assert(cWait <= c);
-            Assert(cWait < RTCSRW_CNT_MASK / 2);
-
-            u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
-            u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-
-            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
-            {
-                for (uint32_t iLoop = 0; ; iLoop++)
-                {
-                    int rc;
-# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                    rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
-                                                               RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
-                    if (RT_SUCCESS(rc))
-# else
-                    RTTHREAD hThreadSelf = RTThreadSelf();
-                    RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
+#if defined(IN_RING3) || defined(IN_RING0)
+# ifdef IN_RING0
+            if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+                && ASMIntAreEnabled())
 # endif
-                    {
-                        do
-                            rc = SUPSemEventMultiWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
-                                                              (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
-                                                              RT_INDEFINITE_WAIT);
-                        while (rc == VERR_INTERRUPTED && pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC);
-                        RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
-                        if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                            return VERR_SEM_DESTROYED;
-                    }
-                    if (RT_FAILURE(rc))
-                    {
-                        /* Decrement the counts and return the error. */
-                        for (;;)
-                        {
-                            u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                            c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT; Assert(c > 0);
-                            c--;
-                            cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT; Assert(cWait > 0);
-                            cWait--;
-                            u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
-                            u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
-                            if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
-                                break;
-                        }
-                        return rc;
-                    }
+            {
+                /*
+                 * Add ourselves to the queue and wait for the direction to change.
+                 */
+                uint64_t c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT;
+                c++;
+                Assert(c < RTCSRW_CNT_MASK / 2);
 
-                    Assert(pThis->s.Core.fNeedReset);
-                    u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                    if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
-                        break;
-                    AssertMsg(iLoop < 1, ("%u\n", iLoop));
-                }
+                uint64_t cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+                cWait++;
+                Assert(cWait <= c);
+                Assert(cWait < RTCSRW_CNT_MASK / 2);
 
-                /* Decrement the wait count and maybe reset the semaphore (if we're last). */
-                for (;;)
+                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
+                u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
+
+                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
                 {
-                    u64OldState = u64State;
-
-                    cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
-                    Assert(cWait > 0);
-                    cWait--;
-                    u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
-                    u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
-
-                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                    for (uint32_t iLoop = 0; ; iLoop++)
                     {
-                        if (cWait == 0)
+                        int rc;
+# ifdef IN_RING3
+#  if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+                        rc = RTLockValidatorRecSharedCheckBlocking(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos, true,
+                                                                   RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_READ, false);
+                        if (RT_SUCCESS(rc))
+#  else
+                        RTTHREAD hThreadSelf = RTThreadSelf();
+                        RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_READ, false);
+#  endif
+# endif
                         {
-                            if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
+                            do
+                                rc = SUPSemEventMultiWaitNoResume(pThis->s.CTX_SUFF(pVM)->pSession,
+                                                                  (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead,
+                                                                  RT_INDEFINITE_WAIT);
+                            while (rc == VERR_INTERRUPTED && pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC);
+# ifdef IN_RING3
+                            RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_READ);
+# endif
+                            if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                                return VERR_SEM_DESTROYED;
+                        }
+                        if (RT_FAILURE(rc))
+                        {
+                            /* Decrement the counts and return the error. */
+                            for (;;)
                             {
-                                int rc = SUPSemEventMultiReset(pThis->s.CTX_SUFF(pVM)->pSession,
-                                                               (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                                AssertRCReturn(rc, rc);
+                                u64OldState = u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                                c = (u64State & RTCSRW_CNT_RD_MASK) >> RTCSRW_CNT_RD_SHIFT; Assert(c > 0);
+                                c--;
+                                cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT; Assert(cWait > 0);
+                                cWait--;
+                                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_WAIT_CNT_RD_MASK);
+                                u64State |= (c << RTCSRW_CNT_RD_SHIFT) | (cWait << RTCSRW_WAIT_CNT_RD_SHIFT);
+                                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                                    break;
                             }
+                            return rc;
                         }
-                        break;
+
+                        Assert(pThis->s.Core.fNeedReset);
+                        u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                        if ((u64State & RTCSRW_DIR_MASK) == (RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT))
+                            break;
+                        AssertMsg(iLoop < 1, ("%u\n", iLoop));
                     }
-                    u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
-                }
+
+                    /* Decrement the wait count and maybe reset the semaphore (if we're last). */
+                    for (;;)
+                    {
+                        u64OldState = u64State;
+
+                        cWait = (u64State & RTCSRW_WAIT_CNT_RD_MASK) >> RTCSRW_WAIT_CNT_RD_SHIFT;
+                        Assert(cWait > 0);
+                        cWait--;
+                        u64State &= ~RTCSRW_WAIT_CNT_RD_MASK;
+                        u64State |= cWait << RTCSRW_WAIT_CNT_RD_SHIFT;
+
+                        if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                        {
+                            if (cWait == 0)
+                            {
+                                if (ASMAtomicXchgBool(&pThis->s.Core.fNeedReset, false))
+                                {
+                                    int rc = SUPSemEventMultiReset(pThis->s.CTX_SUFF(pVM)->pSession,
+                                                                   (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                                    AssertRCReturn(rc, rc);
+                                }
+                            }
+                            break;
+                        }
+                        u64State = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                    }
 
 # if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
-                if (!fNoVal)
-                    RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
+                    if (!fNoVal)
+                        RTLockValidatorRecSharedAddOwner(pThis->s.Core.pValidatorRead, hThreadSelf, pSrcPos);
 # endif
-                break;
+                    break;
+                }
             }
-
-#else
-            /*
-             * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
-             * back to ring-3 and do it there or return rcBusy.
-             */
-            STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
-            if (rcBusy == VINF_SUCCESS)
+#endif /* IN_RING3 || IN_RING3 */
+#ifndef IN_RING3
+# ifdef IN_RING0
+            else
+# endif
             {
-                PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
-                PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
-                /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
-                 *        back to ring-3. Goes for both kind of crit sects. */
-                return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
+                /*
+                 * We cannot call SUPSemEventMultiWaitNoResume in this context. Go
+                 * back to ring-3 and do it there or return rcBusy.
+                 */
+                STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterShared));
+                if (rcBusy == VINF_SUCCESS)
+                {
+                    PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
+                    PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
+                    /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
+                     *        back to ring-3. Goes for both kind of crit sects. */
+                    return VMMRZCallRing3(pVM, pVCpu, VMMCALLRING3_PDM_CRIT_SECT_RW_ENTER_SHARED, MMHyperCCToR3(pVM, pThis));
+                }
+                return rcBusy;
             }
-            return rcBusy;
-#endif
+#endif /* !IN_RING3 */
         }
 
         if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
@@ -557,29 +572,41 @@ static int pdmCritSectRwLeaveSharedWorker(PPDMCRITSECTRW pThis, bool fNoVal)
             }
             else
             {
-#if defined(IN_RING3)
-                /* Reverse the direction and signal the writer threads. */
-                u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_DIR_MASK);
-                u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+#if defined(IN_RING3) || defined(IN_RING0)
+# ifdef IN_RING0
+                if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+                    && ASMIntAreEnabled())
+# endif
                 {
-                    int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
-                    AssertRC(rc);
+                    /* Reverse the direction and signal the writer threads. */
+                    u64State &= ~(RTCSRW_CNT_RD_MASK | RTCSRW_DIR_MASK);
+                    u64State |= RTCSRW_DIR_WRITE << RTCSRW_DIR_SHIFT;
+                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                    {
+                        int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                        AssertRC(rc);
+                        break;
+                    }
+                }
+#endif /* IN_RING3 || IN_RING0 */
+#ifndef IN_RING3
+# ifdef IN_RING0
+                else
+# endif
+                {
+                    /* Queue the exit request (ring-3). */
+                    PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+                    PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+                    uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
+                    LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
+                    AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
+                    pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+                    VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+                    STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+                    STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveShared);
                     break;
                 }
-#else
-                /* Queue the exit request (ring-3). */
-                PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
-                PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
-                uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwShrdLeaves++;
-                LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3 c=%d (%#llx)\n", i, pThis, c, u64State));
-                AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves));
-                pVCpu->pdm.s.apQueuedCritSectRwShrdLeaves[i] = MMHyperCCToR3(pVM, pThis);
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
-                VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-                STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-                STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveShared);
-                break;
 #endif
             }
 
@@ -761,24 +788,32 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
     {
         STAM_REL_COUNTER_INC(&pThis->s.CTX_MID_Z(StatContention,EnterExcl));
 
-#if defined(IN_RING3)
-        if (!fTryOnly)
+#if defined(IN_RING3) || defined(IN_RING0)
+        if (   !fTryOnly
+# ifdef IN_RING0
+            && RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+            && ASMIntAreEnabled()
+# endif
+           )
         {
+
             /*
              * Wait for our turn.
              */
             for (uint32_t iLoop = 0; ; iLoop++)
             {
                 int rc;
-# if defined(PDMCRITSECTRW_STRICT) && defined(IN_RING3)
+# ifdef IN_RING3
+#  ifdef PDMCRITSECTRW_STRICT
                 if (hThreadSelf == NIL_RTTHREAD)
                     hThreadSelf = RTThreadSelfAutoAdopt();
                 rc = RTLockValidatorRecExclCheckBlocking(pThis->s.Core.pValidatorWrite, hThreadSelf, pSrcPos, true,
                                                          RT_INDEFINITE_WAIT, RTTHREADSTATE_RW_WRITE, false);
                 if (RT_SUCCESS(rc))
-# else
+#  else
                 RTTHREAD hThreadSelf = RTThreadSelf();
                 RTThreadBlocking(hThreadSelf, RTTHREADSTATE_RW_WRITE, false);
+#  endif
 # endif
                 {
                     do
@@ -786,7 +821,9 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
                                                      (SUPSEMEVENT)pThis->s.Core.hEvtWrite,
                                                      RT_INDEFINITE_WAIT);
                     while (rc == VERR_INTERRUPTED && pThis->s.Core.u32Magic == RTCRITSECTRW_MAGIC);
+# ifdef IN_RING3
                     RTThreadUnblocked(hThreadSelf, RTTHREADSTATE_RW_WRITE);
+# endif
                     if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
                         return VERR_SEM_DESTROYED;
                 }
@@ -818,7 +855,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
 
         }
         else
-#endif /* IN_RING3 */
+#endif /* IN_RING3 || IN_RING0 */
         {
 #ifdef IN_RING3
             /* TryEnter call - decrement the number of (waiting) writers.  */
@@ -843,6 +880,7 @@ static int pdmCritSectRwEnterExcl(PPDMCRITSECTRW pThis, int rcBusy, bool fTryOnl
 #else
             if (rcBusy == VINF_SUCCESS)
             {
+                Assert(!fTryOnly);
                 PVM     pVM   = pThis->s.CTX_SUFF(pVM);     AssertPtr(pVM);
                 PVMCPU  pVCpu = VMMGetCpu(pVM);             AssertPtr(pVCpu);
                 /** @todo Should actually do this in via VMMR0.cpp instead of going all the way
@@ -1051,70 +1089,82 @@ static int pdmCritSectRwLeaveExclWorker(PPDMCRITSECTRW pThis, bool fNoVal)
         /*
          * Update the state.
          */
-#if defined(IN_RING3)
-        ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
-        STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
-        ASMAtomicWriteHandle(&pThis->s.Core.hNativeWriter, NIL_RTNATIVETHREAD);
-
-        for (;;)
+#if defined(IN_RING3) || defined(IN_RING0)
+# ifdef IN_RING0
+        if (   RTThreadPreemptIsEnabled(NIL_RTTHREAD)
+            && ASMIntAreEnabled())
+# endif
         {
-            uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u64State);
-            uint64_t u64OldState = u64State;
+            ASMAtomicWriteU32(&pThis->s.Core.cWriteRecursions, 0);
+            STAM_PROFILE_ADV_STOP(&pThis->s.StatWriteLocked, swl);
+            ASMAtomicWriteHandle(&pThis->s.Core.hNativeWriter, NIL_RTNATIVETHREAD);
 
-            uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
-            Assert(c > 0);
-            c--;
-
-            if (   c > 0
-                || (u64State & RTCSRW_CNT_RD_MASK) == 0)
+            for (;;)
             {
-                /* Don't change the direction, wake up the next writer if any. */
-                u64State &= ~RTCSRW_CNT_WR_MASK;
-                u64State |= c << RTCSRW_CNT_WR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                uint64_t u64State    = ASMAtomicReadU64(&pThis->s.Core.u64State);
+                uint64_t u64OldState = u64State;
+
+                uint64_t c = (u64State & RTCSRW_CNT_WR_MASK) >> RTCSRW_CNT_WR_SHIFT;
+                Assert(c > 0);
+                c--;
+
+                if (   c > 0
+                    || (u64State & RTCSRW_CNT_RD_MASK) == 0)
                 {
-                    if (c > 0)
+                    /* Don't change the direction, wake up the next writer if any. */
+                    u64State &= ~RTCSRW_CNT_WR_MASK;
+                    u64State |= c << RTCSRW_CNT_WR_SHIFT;
+                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
                     {
-                        int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
-                        AssertRC(rc);
+                        if (c > 0)
+                        {
+                            int rc = SUPSemEventSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENT)pThis->s.Core.hEvtWrite);
+                            AssertRC(rc);
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-            else
-            {
-                /* Reverse the direction and signal the reader threads. */
-                u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
-                u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
-                if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                else
                 {
-                    Assert(!pThis->s.Core.fNeedReset);
-                    ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
-                    int rc = SUPSemEventMultiSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
-                    AssertRC(rc);
-                    break;
+                    /* Reverse the direction and signal the reader threads. */
+                    u64State &= ~(RTCSRW_CNT_WR_MASK | RTCSRW_DIR_MASK);
+                    u64State |= RTCSRW_DIR_READ << RTCSRW_DIR_SHIFT;
+                    if (ASMAtomicCmpXchgU64(&pThis->s.Core.u64State, u64State, u64OldState))
+                    {
+                        Assert(!pThis->s.Core.fNeedReset);
+                        ASMAtomicWriteBool(&pThis->s.Core.fNeedReset, true);
+                        int rc = SUPSemEventMultiSignal(pThis->s.CTX_SUFF(pVM)->pSession, (SUPSEMEVENTMULTI)pThis->s.Core.hEvtRead);
+                        AssertRC(rc);
+                        break;
+                    }
                 }
-            }
 
-            ASMNopPause();
-            if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
-                return VERR_SEM_DESTROYED;
+                ASMNopPause();
+                if (pThis->s.Core.u32Magic != RTCRITSECTRW_MAGIC)
+                    return VERR_SEM_DESTROYED;
+            }
         }
-#else
-        /*
-         * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
-         * so queue the exit request (ring-3).
-         */
-        PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
-        PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
-        uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
-        LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
-        AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
-        pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = MMHyperCCToR3(pVM, pThis);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-        STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
-        STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveExcl);
+#endif /* IN_RING3 || IN_RING0 */
+#ifndef IN_RING3
+# ifdef IN_RING0
+        else
+# endif
+        {
+            /*
+             * We cannot call neither SUPSemEventSignal nor SUPSemEventMultiSignal,
+             * so queue the exit request (ring-3).
+             */
+            PVM         pVM   = pThis->s.CTX_SUFF(pVM);         AssertPtr(pVM);
+            PVMCPU      pVCpu = VMMGetCpu(pVM);                 AssertPtr(pVCpu);
+            uint32_t    i     = pVCpu->pdm.s.cQueuedCritSectRwExclLeaves++;
+            LogFlow(("PDMCritSectRwLeaveShared: [%d]=%p => R3\n", i, pThis));
+            AssertFatal(i < RT_ELEMENTS(pVCpu->pdm.s.apQueuedCritSectLeaves));
+            pVCpu->pdm.s.apQueuedCritSectRwExclLeaves[i] = MMHyperCCToR3(pVM, pThis);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_PDM_CRITSECT);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            STAM_REL_COUNTER_INC(&pVM->pdm.s.StatQueuedCritSectLeaves);
+            STAM_REL_COUNTER_INC(&pThis->s.StatContentionRZLeaveExcl);
+        }
 #endif
     }
     else
