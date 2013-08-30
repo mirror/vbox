@@ -7208,6 +7208,8 @@ static void hmR0VmxLoadSharedState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    HMVMX_ASSERT_PREEMPT_SAFE();
+
     Log5(("LoadFlags=%#RX32\n", pVCpu->hm.s.fContextUseFlags));
 #ifdef HMVMX_SYNC_FULL_GUEST_STATE
     pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
@@ -7302,13 +7304,8 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     }
 #endif /* !IEM_VERIFICATION_MODE_FULL */
 
-    /*
-     * When thread-context hooks are used, load the required guest-state bits here
-     * before we go ahead and disable interrupts. We can handle getting preempted
-     * while loading the guest state.
-     */
-    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-        hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
+    /* Load the guest state bits, we can handle longjmps/getting preempted here. */
+    hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
 
     /*
      * Evaluate events as pending-for-injection into the guest. Toggling of force-flags here is safe as long as
@@ -7344,15 +7341,15 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         return VINF_EM_RAW_INTERRUPT;
     }
 
-    /* Indicate the start of guest execution. No more longjmps or returns to ring-3 from this point!!! */
-    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
-    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
-
     /*
+     * No more longjmps or returns to ring-3 (that can continue guest execution) from this point!!!
+     *
      * Event injection might result in triple-faulting the VM (real-on-v86 case), which is why it's
      * done here and not in hmR0VmxPreRunGuestCommitted() which doesn't expect failures.
      */
     rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        ASMSetFlags(pVmxTransient->uEflags);
     return rc;
 }
 
@@ -7378,6 +7375,9 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+    VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);            /* Indicate the start of guest execution. */
+
     /*
      * Load the host state bits as we may've been preempted (only happens when
      * thread-context hooks are used).
@@ -7391,24 +7391,15 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
 
     /*
-     * When thread-context hooks are -not- used we need to load the required
-     * guest state bits here i.e. when we can no longer be rescheduled.
+     * If we are injecting events to a real-on-v86 mode guest, we may have to update
+     * RIP and some other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
+     * Reload only the necessary state, the assertion will catch if other parts of the code
+     * change.
      */
-    if (!VMMR0ThreadCtxHooksAreRegistered(pVCpu))
-        hmR0VmxLoadGuestStateOptimal(pVM, pVCpu, pMixedCtx);
-    else
+    if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
     {
-        /*
-         * If we are injecting events to a real-on-v86 mode guest, we may have to update
-         * RIP and some other registers, i.e. hmR0VmxInjectPendingEvent()->hmR0VmxInjectEventVmcs().
-         * Reload only the necessary state, the assertion will catch if other parts of the code
-         * change.
-         */
-        if (pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
-        {
-            hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
-            hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
-        }
+        hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
+        hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
     }
 
     /* Load the state shared between host and guest (FPU, debug). */
