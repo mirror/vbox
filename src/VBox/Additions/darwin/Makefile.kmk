@@ -18,10 +18,7 @@
 SUB_DEPTH = ../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-$(VBOX_PATH_ADDITIONS)/VBoxDarwinAdditions-x86.run:
-	touch $@
-
-$(VBOX_PATH_ADDITIONS)/VBoxDarwinAdditions-amd64.run:
-	touch $@
+include $(PATH_SUB_CURRENT)/VBoxClient/Makefile.kmk
+include $(PATH_SUB_CURRENT)/Installer/Makefile.kmk
 
 include $(FILE_KBUILD_SUB_FOOTER)
