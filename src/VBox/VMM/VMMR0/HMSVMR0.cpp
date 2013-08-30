@@ -1135,7 +1135,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
@@ -1235,7 +1235,7 @@ DECLINLINE(int) hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMC
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /* Guest Segment registers: CS, SS, DS, ES, FS, GS. */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SEGMENT_REGS)
@@ -1294,7 +1294,7 @@ DECLINLINE(void) hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUM
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     /* Guest Sysenter MSRs. */
     pVmcb->guest.u64SysEnterCS  = pCtx->SysEnter.cs;
@@ -1351,7 +1351,7 @@ DECLINLINE(void) hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCt
  * @remarks No-long-jump zone!!!
  * @remarks Requires EFLAGS to be up-to-date in the VMCB!
  */
-DECLINLINE(void) hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_DEBUG))
         return;
@@ -1481,7 +1481,7 @@ DECLINLINE(void) hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUM
  * @param   pVmcb   Pointer to the VMCB.
  * @param   pCtx    Pointer to the guest-CPU context.
  */
-DECLINLINE(int) hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     if (!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_SVM_GUEST_APIC_STATE))
         return VINF_SUCCESS;
@@ -1955,7 +1955,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-DECLINLINE(void) hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static void hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -2734,7 +2734,7 @@ static int hmR0SvmCheckForceFlags(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pCtx            Pointer to the guest-CPU context.
  * @param   pSvmTransient   Pointer to the SVM transient structure.
  */
-DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     /* Check force flag actions that might require us to go back to ring-3. */
     int rc = hmR0SvmCheckForceFlags(pVM, pVCpu, pCtx);
@@ -2823,7 +2823,7 @@ DECLINLINE(int) hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRA
  * @remarks Called with preemption disabled.
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(void) hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
+static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
@@ -2924,7 +2924,7 @@ DECLINLINE(int) hmR0SvmRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @remarks No-long-jump zone!!! This function will however re-enable longjmps
  *          unconditionally when it is safe to do so.
  */
-DECLINLINE(void) hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient, int rcVMRun)
+static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient, int rcVMRun)
 {
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
 
