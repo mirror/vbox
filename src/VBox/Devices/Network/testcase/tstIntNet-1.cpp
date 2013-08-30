@@ -595,6 +595,54 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                  g_cOtherPkts, g_cArpPkts, g_cIpv4Pkts, g_cTcpPkts, g_cUdpPkts, g_cDhcpPkts);
 }
 
+#ifdef RT_OS_LINUX
+#include <stdio.h>
+#include <net/if.h>
+#include <net/route.h>
+/**
+ * Obtain the name of the interface used for default routing.
+ *
+ * NOTE: Copied from Main/src-server/linux/NetIf-linux.cpp
+ *
+ * @returns VBox status code.
+ *
+ * @param   pszName     The buffer of IFNAMSIZ+1 length where to put the name.
+ */
+static int getDefaultIfaceName(char *pszName)
+{
+    FILE *fp = fopen("/proc/net/route", "r");
+    char szBuf[1024];
+    char szIfName[17];
+    uint32_t uAddr;
+    uint32_t uGateway;
+    uint32_t uMask;
+    int  iTmp;
+    unsigned uFlags;
+
+    if (fp)
+    {
+        while (fgets(szBuf, sizeof(szBuf)-1, fp))
+        {
+            int n = sscanf(szBuf, "%16s %x %x %x %d %d %d %x %d %d %d\n",
+                           szIfName, &uAddr, &uGateway, &uFlags, &iTmp, &iTmp, &iTmp,
+                           &uMask, &iTmp, &iTmp, &iTmp);
+            if (n < 10 || !(uFlags & RTF_UP))
+                continue;
+
+            if (uAddr == 0 && uMask == 0)
+            {
+                fclose(fp);
+                strncpy(pszName, szIfName, 16);
+                pszName[16] = 0;
+                return VINF_SUCCESS;
+            }
+        }
+        fclose(fp);
+    }
+    return VERR_INTERNAL_ERROR;
+}
+#endif /* RT_OS_LINUX */
+
 
 int main(int argc, char **argv)
 {
@@ -624,7 +672,13 @@ int main(int argc, char **argv)
 #ifdef RT_OS_DARWIN
     const char *pszIf = "en0";
 #elif defined(RT_OS_LINUX)
-    const char *pszIf = "eth0";
+    char        szIf[IFNAMSIZ+1] = "eth0"; /* Reasonable default */
+    /*
+     * Try to update the default interface by consulting the routing table.
+     * If we fail we still have our reasonable default.
+     */
+    getDefaultIfaceName(szIf);
+    const char *pszIf = szIf;
 #elif defined(RT_OS_SOLARIS)
     const char* pszIf = "rge0";
 #else
