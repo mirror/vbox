@@ -146,7 +146,7 @@ static struct
     struct
     {
         /* HWCR MSR (for diagnostics) */
-        uint64_t                    msrHwcr;
+        uint64_t                    u64MsrHwcr;
 
         /** SVM revision. */
         uint32_t                    u32Rev;
@@ -617,7 +617,7 @@ static int hmR0InitAmd(uint32_t u32FeaturesEDX, uint32_t uMaxExtLeaf)
         if (RT_SUCCESS(rc))
         {
             /* Read the HWCR MSR for diagnostics. */
-            g_HvmR0.svm.msrHwcr    = ASMRdMsr(MSR_K8_HWCR);
+            g_HvmR0.svm.u64MsrHwcr = ASMRdMsr(MSR_K8_HWCR);
             g_HvmR0.svm.fSupported = true;
         }
         else
@@ -1265,7 +1265,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     pVM->hm.s.vmx.msr.u64VmcsEnum       = g_HvmR0.vmx.msr.u64VmcsEnum;
     pVM->hm.s.vmx.msr.u64Vmfunc         = g_HvmR0.vmx.msr.u64Vmfunc;
     pVM->hm.s.vmx.msr.u64EptVpidCaps    = g_HvmR0.vmx.msr.u64EptVpidCaps;
-    pVM->hm.s.svm.msrHwcr               = g_HvmR0.svm.msrHwcr;
+    pVM->hm.s.svm.u64MsrHwcr            = g_HvmR0.svm.u64MsrHwcr;
     pVM->hm.s.svm.u32Rev                = g_HvmR0.svm.u32Rev;
     pVM->hm.s.svm.u32Features           = g_HvmR0.svm.u32Features;
     pVM->hm.s.cpuid.u32AMDFeatureECX    = g_HvmR0.cpuid.u32AMDFeatureECX;
