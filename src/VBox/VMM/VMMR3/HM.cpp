@@ -975,7 +975,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     RTGCPHYS    GCPhys = 0;
 
     LogRel(("HM: Using VT-x implementation 2.0!\n"));
-    LogRel(("HM: Host CR4                        = %#RX64\n", pVM->hm.s.vmx.hostCR4));
+    LogRel(("HM: Host CR4                        = %#RX64\n", pVM->hm.s.vmx.u64HostCr4));
     LogRel(("HM: MSR_IA32_FEATURE_CONTROL        = %#RX64\n", pVM->hm.s.vmx.msr.feature_ctrl));
     LogRel(("HM: MSR_IA32_VMX_BASIC_INFO         = %#RX64\n", pVM->hm.s.vmx.msr.vmx_basic_info));
     LogRel(("HM: VMCS id                         = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.msr.vmx_basic_info)));
@@ -1257,7 +1257,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
 #if 0 /** @todo r=bird: This ain't making any sense whatsoever. */
 #if RT_ARCH_X86
         if (   !CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE)
-            || !(pVM->hm.s.vmx.hostEFER & MSR_K6_EFER_NXE))
+            || !(pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE))
             LogRel(("NX is only supported for 64-bit guests!\n"));
 #endif
 #endif
@@ -1266,7 +1266,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
        (we reuse the host EFER in the switcher). */
     /** @todo this needs to be fixed properly!! */
     else if (   CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE)
-             && (pVM->hm.s.vmx.hostEFER & MSR_K6_EFER_NXE))
+             && (pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE))
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
     else
         LogRel(("HM: NX not supported by the host.\n"));
