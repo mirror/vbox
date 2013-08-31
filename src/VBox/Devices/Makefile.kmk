@@ -128,6 +128,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
 	\
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
+ 	Input/PS2M.cpp \
  	Input/UsbKbd.cpp \
  	Input/UsbMouse.cpp \
  	Bus/DevPCI.cpp \
@@ -452,6 +453,13 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  endif
 
 
+ # --- Input bits. ---
+
+ ifdef VBOX_WITH_NEW_PS2M
+  VBoxDD_DEFS           += VBOX_WITH_NEW_PS2M
+ endif
+
+
  # --- Audio bits. ---
 
  ifdef VBOX_WITH_ALSA
@@ -756,6 +764,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Graphics/DevVGA.cpp \
   	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
+ 	Input/PS2M.cpp \
   	PC/DevACPI.cpp \
   	PC/DevPit-i8254.cpp \
   	PC/DevPIC.cpp \
@@ -837,6 +846,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   	Storage/DevLsiLogicSCSI.cpp
   endif
 
+  ifdef VBOX_WITH_NEW_PS2M
+  VBoxDDGC_DEFS         += VBOX_WITH_NEW_PS2M
+  endif
+
   if1of ($(VBOX_LDR_FMT32), pe lx)
   VBoxDDGC_LIBS           = \
   	$(PATH_STAGE_LIB)/VMMRCBuiltin$(VBOX_SUFF_LIB) \
@@ -893,6 +906,7 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
+ 	Input/PS2M.cpp \
  	PC/DevACPI.cpp \
  	PC/DevPit-i8254.cpp \
  	PC/DevPIC.cpp \
@@ -983,6 +997,10 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
  VBoxDDR0_DEFS          += VBOX_WITH_LSILOGIC
  VBoxDDR0_SOURCES       += \
  	Storage/DevLsiLogicSCSI.cpp
+ endif
+
+ ifdef VBOX_WITH_NEW_PS2M
+  VBoxDDR0_DEFS         += VBOX_WITH_NEW_PS2M
  endif
 
  ifdef VBOX_WITH_HGSMI
