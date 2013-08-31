@@ -830,18 +830,16 @@ typedef enum
 #pragma pack(1)
 typedef struct
 {
-    uint32_t    u32IndexMSR;
+    uint32_t    u32Msr;
     uint32_t    u32Reserved;
     uint64_t    u64Value;
-} VMXMSR;
+} VMXAUTOMSR;
 #pragma pack()
 /** Pointer to an MSR load/store element. */
-typedef VMXMSR *PVMXMSR;
+typedef VMXAUTOMSR *PVMXAUTOMSR;
 /** Pointer to a const MSR load/store element. */
-typedef const VMXMSR *PCVMXMSR;
-
+typedef const VMXAUTOMSR *PCVMXAUTOMSR;
 /** @} */
-
 
 /** @name VMX-capability qword
  * @{
