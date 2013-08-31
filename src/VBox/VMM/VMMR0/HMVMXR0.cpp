@@ -2475,9 +2475,9 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 
     int rc = VINF_SUCCESS;
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-    PVMXMSR  pHostMsr           = (PVMXMSR)pVCpu->hm.s.vmx.pvHostMsr;
-    uint32_t cHostMsrs          = 0;
-    uint32_t u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
+    PVMXAUTOMSR  pHostMsr       = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+    uint32_t     cHostMsrs      = 0;
+    uint32_t     u32HostExtFeatures = pVM->hm.s.cpuid.u32AMDFeatureEDX;
 
     if (u32HostExtFeatures & (X86_CPUID_EXT_FEATURE_EDX_NX | X86_CPUID_EXT_FEATURE_EDX_LONG_MODE))
     {
@@ -2505,7 +2505,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 
             if ((u64HostEfer & MSR_K6_EFER_SCE) != (u64GuestEfer & MSR_K6_EFER_SCE))
             {
-                pHostMsr->u32IndexMSR = MSR_K6_EFER;
+                pHostMsr->u32Msr      = MSR_K6_EFER;
                 pHostMsr->u32Reserved = 0;
                 pHostMsr->u64Value    = u64HostEfer;
                 pHostMsr++; cHostMsrs++;
@@ -2513,7 +2513,7 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
         }
 #  endif
 # else  /* HC_ARCH_BITS != 64 */
-        pHostMsr->u32IndexMSR = MSR_K6_EFER;
+        pHostMsr->u32Msr      = MSR_K6_EFER;
         pHostMsr->u32Reserved = 0;
 # if HC_ARCH_BITS == 32 && defined(VBOX_ENABLE_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         if (CPUMIsGuestInLongMode(pVCpu))
@@ -2531,19 +2531,19 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
 # if HC_ARCH_BITS == 64 || defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
-        pHostMsr->u32IndexMSR  = MSR_K6_STAR;
+        pHostMsr->u32Msr       = MSR_K6_STAR;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K6_STAR);              /* legacy syscall eip, cs & ss */
         pHostMsr++; cHostMsrs++;
-        pHostMsr->u32IndexMSR  = MSR_K8_LSTAR;
+        pHostMsr->u32Msr       = MSR_K8_LSTAR;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K8_LSTAR);             /* 64-bit mode syscall rip */
         pHostMsr++; cHostMsrs++;
-        pHostMsr->u32IndexMSR  = MSR_K8_SF_MASK;
+        pHostMsr->u32Msr       = MSR_K8_SF_MASK;
         pHostMsr->u32Reserved  = 0;
         pHostMsr->u64Value     = ASMRdMsr(MSR_K8_SF_MASK);           /* syscall flag mask */
         pHostMsr++; cHostMsrs++;
-        pHostMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
+        pHostMsr->u32Msr      = MSR_K8_KERNEL_GS_BASE;
         pHostMsr->u32Reserved = 0;
         pHostMsr->u64Value    = ASMRdMsr(MSR_K8_KERNEL_GS_BASE);     /* swapgs exchange value */
         pHostMsr++; cHostMsrs++;
@@ -3934,9 +3934,9 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_VMX_GUEST_AUTO_MSRS)
     {
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
-        PVM pVM             = pVCpu->CTX_SUFF(pVM);
-        PVMXMSR  pGuestMsr  = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
-        uint32_t cGuestMsrs = 0;
+        PVM         pVM        = pVCpu->CTX_SUFF(pVM);
+        PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+        uint32_t    cGuestMsrs = 0;
 
         /* See Intel spec. 4.1.4 "Enumeration of Paging Features by CPUID". */
         /** @todo r=ramshankar: Optimize this further to do lazy restoration and only
@@ -3944,19 +3944,19 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         bool fSupportsLongMode = CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LONG_MODE);
         if (fSupportsLongMode)
         {
-            pGuestMsr->u32IndexMSR = MSR_K8_LSTAR;
+            pGuestMsr->u32Msr      = MSR_K8_LSTAR;
             pGuestMsr->u32Reserved = 0;
             pGuestMsr->u64Value    = pMixedCtx->msrLSTAR;           /* 64 bits mode syscall rip */
             pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32IndexMSR = MSR_K6_STAR;
+            pGuestMsr->u32Msr      = MSR_K6_STAR;
             pGuestMsr->u32Reserved = 0;
             pGuestMsr->u64Value    = pMixedCtx->msrSTAR;            /* legacy syscall eip, cs & ss */
             pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32IndexMSR = MSR_K8_SF_MASK;
+            pGuestMsr->u32Msr      = MSR_K8_SF_MASK;
             pGuestMsr->u32Reserved = 0;
             pGuestMsr->u64Value    = pMixedCtx->msrSFMASK;          /* syscall flag mask */
             pGuestMsr++; cGuestMsrs++;
-            pGuestMsr->u32IndexMSR = MSR_K8_KERNEL_GS_BASE;
+            pGuestMsr->u32Msr      = MSR_K8_KERNEL_GS_BASE;
             pGuestMsr->u32Reserved = 0;
             pGuestMsr->u64Value    = pMixedCtx->msrKERNELGSBASE;    /* swapgs exchange value */
             pGuestMsr++; cGuestMsrs++;
@@ -3969,7 +3969,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (   CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP)
             && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP))
         {
-            pGuestMsr->u32IndexMSR = MSR_K8_TSC_AUX;
+            pGuestMsr->u32Msr      = MSR_K8_TSC_AUX;
             pGuestMsr->u32Reserved = 0;
             rc = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &pGuestMsr->u64Value);
             AssertRCReturn(rc, rc);
@@ -5401,9 +5401,9 @@ static int hmR0VmxSaveGuestAutoLoadStoreMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 #ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     for (uint32_t i = 0; i < pVCpu->hm.s.vmx.cGuestMsrs; i++)
     {
-        PVMXMSR pMsr = (PVMXMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+        PVMXAUTOMSR pMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
         pMsr += i;
-        switch (pMsr->u32IndexMSR)
+        switch (pMsr->u32Msr)
         {
             case MSR_K8_LSTAR:          pMixedCtx->msrLSTAR  = pMsr->u64Value;                   break;
             case MSR_K6_STAR:           pMixedCtx->msrSTAR   = pMsr->u64Value;                   break;
