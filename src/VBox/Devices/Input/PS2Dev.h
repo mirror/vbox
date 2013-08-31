@@ -17,10 +17,11 @@
 #ifndef PS2DEV_H
 #define PS2DEV_H
 
-/** The size of the PS2K structure filler.
+/** The size of the PS2K/PS2M structure fillers.
  * @note Must be at least as big as the real struct. Compile time assert
  *       makes sure this is so. */
 #define PS2K_STRUCT_FILLER  512
+#define PS2M_STRUCT_FILLER  512
 
 /* Hide the internal structure. */
 #if !(defined(IN_PS2K) || defined(VBOX_DEVICE_STRUCT_TESTCASE))
@@ -30,6 +31,14 @@ typedef struct PS2K
 } PS2K;
 #endif
 
+#if !(defined(IN_PS2M) || defined(VBOX_DEVICE_STRUCT_TESTCASE))
+typedef struct PS2M
+{
+    uint8_t     abFiller[PS2M_STRUCT_FILLER];
+} PS2M;
+#endif
+
+/* Internal PS/2 Keyboard interface. */
 typedef struct PS2K *PPS2K;
 
 int  PS2KByteToKbd(PPS2K pThis, uint8_t cmd);
@@ -42,9 +51,28 @@ void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
 void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM);
 int  PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
 
+PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
+
+
+/* Internal PS/2 Auxiliary device interface. */
+typedef struct PS2M *PPS2M;
+
+int  PS2MByteToAux(PPS2M pThis, uint8_t cmd);
+int  PS2MByteFromAux(PPS2M pThis, uint8_t *pVal);
+
+int  PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance);
+int  PS2MAttach(PPS2M pThis, PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags);
+void PS2MReset(PPS2M pThis);
+void PS2MRelocate(PPS2M pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
+void PS2MSaveState(PPS2M pThis, PSSMHANDLE pSSM);
+int  PS2MLoadState(PPS2M pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+
+PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns);
+
+
+/* Shared keyboard/aux internal interface. */
 void KBCUpdateInterrupts(void *pKbc);
 
-PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
 
 ///@todo: This should live with the KBC implementation.
 /** AT to PC scancode translator state.  */
