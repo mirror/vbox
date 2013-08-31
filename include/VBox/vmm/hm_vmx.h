@@ -860,6 +860,31 @@ typedef union
 #pragma pack()
 /** @} */
 
+/** @name VMX MSRs.
+ *  @{
+ */
+typedef struct VMXMSRS
+{
+    uint64_t                u64FeatureCtrl;
+    uint64_t                u64BasicInfo;
+    VMX_CAPABILITY          VmxPinCtls;
+    VMX_CAPABILITY          VmxProcCtls;
+    VMX_CAPABILITY          VmxProcCtls2;
+    VMX_CAPABILITY          VmxExit;
+    VMX_CAPABILITY          VmxEntry;
+    uint64_t                u64Misc;
+    uint64_t                u64Cr0Fixed0;
+    uint64_t                u64Cr0Fixed1;
+    uint64_t                u64Cr4Fixed0;
+    uint64_t                u64Cr4Fixed1;
+    uint64_t                u64VmcsEnum;
+    uint64_t                u64Vmfunc;
+    uint64_t                u64EptVpidCaps;
+} VMXMSRS;
+/** Pointer to a VMXMSRS struct. */
+typedef VMXMSRS *PVMXMSRS;
+/** @} */
+
 /** @name VMX EFLAGS reserved bits.
  * @{
  */
