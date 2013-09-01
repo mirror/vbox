@@ -313,7 +313,7 @@ typedef FNVMEXITHANDLER *PFNVMEXITHANDLER;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void               hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
+static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState);
@@ -1008,10 +1008,13 @@ VMMR0DECL(void) VMXR0GlobalTerm()
  *                          @a fEnabledByHost is true).
  * @param   fEnabledByHost  Set if SUPR0EnableVTx() or similar was used to
  *                          enable VT-x on the host.
+ * @param   pvMsrs          Opaque pointer to VMXMSRS struct.
  */
-VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
+VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
+                              void *pvMsrs)
 {
     AssertReturn(pCpu, VERR_INVALID_PARAMETER);
+    AssertReturn(pvMsrs, VERR_INVALID_PARAMETER);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (!fEnabledByHost)
@@ -1022,28 +1025,17 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     }
 
     /*
-     * Flush all EPTP tagged-TLB entries (in case any other hypervisor have been using EPTPs) so that
-     * we can avoid an explicit flush while using new VPIDs. We would still need to flush
-     * each time while reusing a VPID after hitting the MaxASID limit once.
+     * Flush all EPT tagged-TLB entries (in case VirtualBox or any other hypervisor have been using EPTPs) so
+     * we don't retain any stale guest-physical mappings which won't get invalidated when flushing by VPID.
      */
-    if (   pVM
-        && pVM->hm.s.fNestedPaging)
+    PVMXMSRS pMsrs = (PVMXMSRS)pvMsrs;
+    if (pMsrs->u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS)
     {
-        /* We require ALL_CONTEXT flush-type to be available on the CPU. See hmR0VmxSetupTaggedTlb(). */
-        Assert(pVM->hm.s.vmx.Msrs.u64EptVpidCaps & MSR_IA32_VMX_EPT_VPID_CAP_INVEPT_ALL_CONTEXTS);
-        hmR0VmxFlushEpt(pVM, NULL /* pVCpu */, VMX_FLUSH_EPT_ALL_CONTEXTS);
+        hmR0VmxFlushEpt(NULL /* pVCpu */, VMX_FLUSH_EPT_ALL_CONTEXTS);
         pCpu->fFlushAsidBeforeUse = false;
     }
     else
-    {
-        /** @todo This is still not perfect. If on host resume (pVM is NULL or a VM
-         *        without Nested Paging triggered this function) we still have the risk
-         *        of potentially running with stale TLB-entries from other hypervisors
-         *        when later we use a VM with NestedPaging. To fix this properly we will
-         *        have to pass '&g_HvmR0' (see HMR0.cpp) to this function and read
-         *        'u64EptVpidCaps' from it. Sigh. */
         pCpu->fFlushAsidBeforeUse = true;
-    }
 
     /* Ensure each VCPU scheduled on this CPU gets a new VPID on resume. See @bugref{6255}. */
     ++pCpu->cTlbFlushes;
@@ -1125,16 +1117,16 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
  * Flushes the TLB using EPT.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU (can be NULL depending on @a
  *                      enmFlush).
  * @param   enmFlush    Type of flush.
+ *
+ * @remarks Caller is responsible for making sure this function is called only
+ *          when NestedPaging is supported and providing @a enmFlush that is
+ *          supported by the CPU.
  */
-static void hmR0VmxFlushEpt(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
+static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
 {
-    AssertPtr(pVM);
-    Assert(pVM->hm.s.fNestedPaging);
-
     uint64_t descriptor[2];
     if (enmFlush == VMX_FLUSH_EPT_ALL_CONTEXTS)
         descriptor[0] = 0;
@@ -1350,7 +1342,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
          * Flush by EPT when we get rescheduled to a new host CPU to ensure EPT-only tagged mappings are also
          * invalidated. We don't need to flush-by-VPID here as flushing by EPT covers it. See @bugref{6568}.
          */
-        hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlbWorldSwitch);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);  /* Already flushed-by-EPT, skip doing it again below. */
@@ -1366,7 +1358,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
          * but not guest-physical mappings.
          * See Intel spec. 28.3.2 "Creating and Using Cached Translation Information". See @bugref{6568}.
          */
-        hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatFlushTlb);
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
@@ -1388,7 +1380,7 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu)
                 hmR0VmxFlushVpid(pVM, pVCpu, VMX_FLUSH_VPID_INDIV_ADDR, pVCpu->hm.s.TlbShootdown.aPages[i]);
         }
         else
-            hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+            hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
 
         HMVMX_SET_TAGGED_TLB_FLUSHED();
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
@@ -1458,7 +1450,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
 
     if (pVCpu->hm.s.fForceTLBFlush)
     {
-        hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+        hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         pVCpu->hm.s.fForceTLBFlush = false;
     }
     else
@@ -1470,7 +1462,7 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu)
         {
             /* We cannot flush individual entries without VPID support. Flush using EPT. */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
-            hmR0VmxFlushEpt(pVM, pVCpu, pVM->hm.s.vmx.enmFlushEpt);
+            hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         }
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);

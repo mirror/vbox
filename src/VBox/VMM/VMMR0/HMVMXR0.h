@@ -30,7 +30,8 @@ RT_C_DECLS_BEGIN
 
 VMMR0DECL(int)  VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu);
 VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit);
-VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem);
+VMMR0DECL(int)  VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvPageCpu, RTHCPHYS pPageCpuPhys, bool fEnabledBySystem,
+                               void *pvMsrs);
 VMMR0DECL(int)  VMXR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvPageCpu, RTHCPHYS pPageCpuPhys);
 VMMR0DECL(int)  VMXR0GlobalInit(void);
 VMMR0DECL(void) VMXR0GlobalTerm(void);
