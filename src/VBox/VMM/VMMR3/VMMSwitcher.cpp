@@ -133,6 +133,78 @@ static PVMMSWITCHERDEF g_apHmSwitchers[VMMSWITCHER_MAX] =
 };
 
 
+# ifdef VBOX_WITH_64ON32_IDT
+/**
+ * Initializes the 64-bit IDT for 64-bit guest on 32-bit host switchers.
+ *
+ * This is only used as a debugging aid when we cannot find out why something
+ * goes haywire in the intermediate context.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pSwitcher   The switcher descriptor.
+ * @param   pbDst       Where the switcher code was just copied.
+ * @param   HCPhysDst   The host physical address corresponding to @a pbDst.
+ */
+static void vmmR3Switcher32On64IdtInit(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pbDst, RTHCPHYS HCPhysDst)
+{
+    AssertRelease(pSwitcher->offGCCode > 0 && pSwitcher->offGCCode < pSwitcher->cbCode);
+    AssertRelease(pSwitcher->cbCode < _64K);
+    RTSEL uCs64 = SELMGetHyperCS64(pVM);
+
+    PX86DESC64GATE paIdt = (PX86DESC64GATE)(pbDst + pSwitcher->offGCCode);
+    for (uint32_t i = 0 ; i < 256; i++)
+    {
+        AssertRelease(((uint64_t *)&paIdt[i])[0] < pSwitcher->cbCode);
+        AssertRelease(((uint64_t *)&paIdt[i])[1] == 0);
+        uint64_t uHandler = HCPhysDst + paIdt[i].u16OffsetLow;
+        paIdt[i].u16OffsetLow   = (uint16_t)uHandler;
+        paIdt[i].u16Sel         = uCs64;
+        paIdt[i].u3IST          = 0;
+        paIdt[i].u5Reserved     = 0;
+        paIdt[i].u4Type         = AMD64_SEL_TYPE_SYS_INT_GATE;
+        paIdt[i].u1DescType     = 0 /* system */;
+        paIdt[i].u2Dpl          = 3;
+        paIdt[i].u1Present      = 1;
+        paIdt[i].u16OffsetHigh  = (uint16_t)(uHandler >> 16);
+        paIdt[i].u32Reserved    = (uint32_t)(uHandler >> 32);
+    }
+
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        uint64_t uIdtr = HCPhysDst + pSwitcher->offGCCode; AssertRelease(uIdtr < UINT32_MAX);
+        CPUMSetHyperIDTR(&pVM->aCpus[iCpu], uIdtr, 16*256 + iCpu);
+    }
+}
+
+
+/**
+ * Relocates the 64-bit IDT for 64-bit guest on 32-bit host switchers.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pSwitcher   The switcher descriptor.
+ * @param   pbDst       Where the switcher code was just copied.
+ * @param   HCPhysDst   The host physical address corresponding to @a pbDst.
+ */
+static void vmmR3Switcher32On64IdtRelocate(PVM pVM, PVMMSWITCHERDEF pSwitcher, uint8_t *pbDst, RTHCPHYS HCPhysDst)
+{
+    AssertRelease(pSwitcher->offGCCode > 0 && pSwitcher->offGCCode < pSwitcher->cbCode && pSwitcher->cbCode < _64K);
+
+    /* The intermediate context doesn't move, but the CS may. */
+    RTSEL uCs64 = SELMGetHyperCS64(pVM);
+    PX86DESC64GATE paIdt = (PX86DESC64GATE)(pbDst + pSwitcher->offGCCode);
+    for (uint32_t i = 0 ; i < 256; i++)
+        paIdt[i].u16Sel = uCs64;
+
+    /* Just in case... */
+    for (VMCPUID iCpu = 0; iCpu < pVM->cCpus; iCpu++)
+    {
+        uint64_t uIdtr = HCPhysDst + pSwitcher->offGCCode; AssertRelease(uIdtr < UINT32_MAX);
+        CPUMSetHyperIDTR(&pVM->aCpus[iCpu], uIdtr, 16*256 + iCpu);
+    }
+}
+# endif /* VBOX_WITH_64ON32_IDT */
+
+
 /**
  * VMMR3Init worker that initiates the switcher code (aka core code).
  *
@@ -224,14 +296,22 @@ int vmmR3SwitcherInit(PVM pVM)
     if (RT_SUCCESS(rc))
     {
         /*
-         * copy the code.
+         * Copy the code.
          */
         for (unsigned iSwitcher = 0; iSwitcher < VMMSWITCHER_MAX; iSwitcher++)
         {
             PVMMSWITCHERDEF pSwitcher = papSwitchers[iSwitcher];
             if (pSwitcher)
-                memcpy((uint8_t *)pVM->vmm.s.pvCoreCodeR3 + pVM->vmm.s.aoffSwitchers[iSwitcher],
-                       pSwitcher->pvCode, pSwitcher->cbCode);
+            {
+                uint8_t *pbDst = (uint8_t *)pVM->vmm.s.pvCoreCodeR3 + pVM->vmm.s.aoffSwitchers[iSwitcher];
+                memcpy(pbDst, pSwitcher->pvCode, pSwitcher->cbCode);
+# ifdef VBOX_WITH_64ON32_IDT
+                if (   pSwitcher->enmType == VMMSWITCHER_32_TO_AMD64
+                    || pSwitcher->enmType == VMMSWITCHER_PAE_TO_AMD64)
+                    vmmR3Switcher32On64IdtInit(pVM, pSwitcher, pbDst,
+                                               pVM->vmm.s.HCPhysCoreCode + pVM->vmm.s.aoffSwitchers[iSwitcher]);
+# endif
+            }
         }
 
         /*
@@ -298,6 +378,13 @@ void vmmR3SwitcherRelocate(PVM pVM, RTGCINTPTR offDelta)
                                    (uint8_t *)pVM->vmm.s.pvCoreCodeR3 + off,
                                    pVM->vmm.s.pvCoreCodeRC + off,
                                    pVM->vmm.s.HCPhysCoreCode + off);
+# ifdef VBOX_WITH_64ON32_IDT
+            if (   pSwitcher->enmType == VMMSWITCHER_32_TO_AMD64
+                || pSwitcher->enmType == VMMSWITCHER_PAE_TO_AMD64)
+                vmmR3Switcher32On64IdtRelocate(pVM, pSwitcher,
+                                               (uint8_t *)pVM->vmm.s.pvCoreCodeR3 + off,
+                                               pVM->vmm.s.HCPhysCoreCode + off);
+# endif
         }
     }
 
