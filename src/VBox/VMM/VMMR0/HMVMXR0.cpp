@@ -1127,17 +1127,17 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
  */
 static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
 {
-    uint64_t descriptor[2];
+    uint64_t au64Descriptor[2];
     if (enmFlush == VMX_FLUSH_EPT_ALL_CONTEXTS)
-        descriptor[0] = 0;
+        au64Descriptor[0] = 0;
     else
     {
         Assert(pVCpu);
-        descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
+        au64Descriptor[0] = pVCpu->hm.s.vmx.HCPhysEPTP;
     }
-    descriptor[1] = 0;                           /* MBZ. Intel spec. 33.3 "VMX Instructions" */
+    au64Descriptor[1] = 0;                       /* MBZ. Intel spec. 33.3 "VMX Instructions" */
 
-    int rc = VMXR0InvEPT(enmFlush, &descriptor[0]);
+    int rc = VMXR0InvEPT(enmFlush, &au64Descriptor[0]);
     AssertMsg(rc == VINF_SUCCESS, ("VMXR0InvEPT %#x %RGv failed with %Rrc\n", enmFlush, pVCpu ? pVCpu->hm.s.vmx.HCPhysEPTP : 0,
                                    rc));
     if (   RT_SUCCESS(rc)
@@ -1164,22 +1164,22 @@ static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTG
     AssertPtr(pVM);
     Assert(pVM->hm.s.vmx.fVpid);
 
-    uint64_t descriptor[2];
+    uint64_t au64Descriptor[2];
     if (enmFlush == VMX_FLUSH_VPID_ALL_CONTEXTS)
     {
-        descriptor[0] = 0;
-        descriptor[1] = 0;
+        au64Descriptor[0] = 0;
+        au64Descriptor[1] = 0;
     }
     else
     {
         AssertPtr(pVCpu);
         AssertMsg(pVCpu->hm.s.uCurrentAsid != 0, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
         AssertMsg(pVCpu->hm.s.uCurrentAsid <= UINT16_MAX, ("VMXR0InvVPID: invalid ASID %lu\n", pVCpu->hm.s.uCurrentAsid));
-        descriptor[0] = pVCpu->hm.s.uCurrentAsid;
-        descriptor[1] = GCPtr;
+        au64Descriptor[0] = pVCpu->hm.s.uCurrentAsid;
+        au64Descriptor[1] = GCPtr;
     }
 
-    int rc = VMXR0InvVPID(enmFlush, &descriptor[0]); NOREF(rc);
+    int rc = VMXR0InvVPID(enmFlush, &au64Descriptor[0]); NOREF(rc);
     AssertMsg(rc == VINF_SUCCESS,
               ("VMXR0InvVPID %#x %u %RGv failed with %d\n", enmFlush, pVCpu ? pVCpu->hm.s.uCurrentAsid : 0, GCPtr, rc));
     if (   RT_SUCCESS(rc)
