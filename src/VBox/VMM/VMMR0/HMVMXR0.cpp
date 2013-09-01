@@ -4066,7 +4066,20 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     else
     {
         /* Guest is not in long mode, use the 32-bit handler. */
+#if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32)
+        {
+            pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+            /** @todo r=bird: Don't we need to set up the host resume (after
+             *        vmlaunch/vmresume) state here??  I'm forcing a trip to ring-3 now
+             *        in the hope that it will prevent crashing the host.  A better
+             *        fix should be found as the guest may be going back and forth
+             *        between 16/32-bit and long mode frequently at times. */
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+        }
+#else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
+#endif
     }
     Assert(pVCpu->hm.s.vmx.pfnStartVM);
     return VINF_SUCCESS;
@@ -7334,7 +7347,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
-    else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pVmxTransient->uEflags);
         VMMRZCallRing3Enable(pVCpu);
