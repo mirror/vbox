@@ -300,13 +300,16 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
  * @param   pVM             Pointer to the VM (can be NULL after a resume!).
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
+ * @param   pvArg           Unused on AMD-V.
  */
-VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost)
+VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
+                              void *pvArg)
 {
     AssertReturn(!fEnabledByHost, VERR_INVALID_PARAMETER);
     AssertReturn(   HCPhysCpuPage
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
+    NOREF(pvArg);
 
     /*
      * We must turn on AMD-V and setup the host state physical address, as those MSRs are per CPU.
