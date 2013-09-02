@@ -222,6 +222,6 @@ VMMRZDECL(void) VMMRZCallRing3RemoveNotification(PVMCPU pVCpu)
  */
 VMMRZDECL(bool) VMMRZCallRing3IsNotificationSet(PVMCPU pVCpu)
 {
-    return !(pVCpu->vmm.s.pfnCallRing3CallbackR0 == NULL);
+    return pVCpu->vmm.s.pfnCallRing3CallbackR0 != NULL;
 }
 
