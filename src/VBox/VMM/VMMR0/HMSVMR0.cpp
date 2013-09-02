@@ -1960,7 +1960,7 @@ static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-static void hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -1980,24 +1980,25 @@ static void hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
-    AssertRC(rc); NOREF(rc);
 
     HM_RESTORE_PREEMPT_IF_NEEDED();
+    return rc;
 }
 
 
 /**
  * Does the necessary state syncing before doing a longjmp to ring-3.
  *
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jmp zone!!!
  */
-static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
-    hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
+    return hmR0SvmLeaveSession(pVM, pVCpu, pCtx);
 }
 
 
@@ -2012,9 +2013,11 @@ static void hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *                          out-of-date guest-CPU context).
  *
  * @remarks Must never be called with @a enmOperation ==
- *          VMMCALLRING3_VM_R0_ASSERTION.
+ *          VMMCALLRING3_VM_R0_ASSERTION. We can't assert it here because if it
+ *          it -does- get called with VMMCALLRING3_VM_R0_ASSERTION, we'll end up
+ *          with an infinite recursion.
  */
-DECLCALLBACK(void) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
     /* VMMRZCallRing3() already makes sure we never get called as a result of an longjmp due to an assertion, */
     Assert(pVCpu);
@@ -2026,9 +2029,11 @@ DECLCALLBACK(void) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log4(("hmR0SvmCallRing3Callback->hmR0SvmLongJmpToRing3\n"));
-    hmR0SvmLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+    int rc = hmR0SvmLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+    AssertRCReturn(rc, rc);
 
     VMMRZCallRing3Enable(pVCpu);
+    return VINF_SUCCESS;
 }
 
 
