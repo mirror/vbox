@@ -493,23 +493,22 @@
             1.4.</para>
           </footnote>). Cela inclut entre autres&#xA0;:<itemizedlist>
             <listitem>
-              <para>8.04 ("Hardy Heron"),
-              8.10 ("Intrepid Ibex"), 9.04 ("Jaunty Jackalope"), 9.10 ("Karmic
-              Koala"), 10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
+              <para>10.04 ("Lucid Lynx"), 10.10 ("Maverick Meerkat),
               11.04 ("Natty Narwhal"), 11.10 ("Oneiric Oncelot"),
-              12.04 ("Precise Pangolin")</para>
+              12.04 ("Precise Pangolin"), 12.10 ("Quantal Quetzal"),
+              13.04 ("Raring Ringtail")</para>
             </listitem>
 
             <listitem>
-              <para>Debian GNU/Linux 5.0 ("lenny") et 6.0 ("squeeze")</para>
+              <para>Debian GNU/Linux 6.0 ("squeeze") et 7.0 ("wheezy")</para>
             </listitem>
 
             <listitem>
-              <para>Oracle Enterprise Linux 4 et 5, Oracle Linux 6</para>
+              <para>Oracle Enterprise Linux 5, Oracle Linux 6</para>
             </listitem>
 
             <listitem>
-              <para>Redhat Enterprise Linux 4, 5 et 6</para>
+              <para>Redhat Enterprise Linux 5 and 6</para>
             </listitem>
 
             <listitem>
