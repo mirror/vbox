@@ -461,21 +461,22 @@ static int pdmR3UsbFindHub(PVM pVM, uint32_t iUsbVersion, PPDMUSBHUB *ppHub)
  * @param   pUsbDev         The USB device emulation.
  * @param   iInstance       -1 if not called by pdmR3UsbInstantiateDevices().
  * @param   pUuid           The UUID for this device.
- * @param   pInstanceNode   The instance CFGM node. NULL if not called by pdmR3UsbInstantiateDevices().
- * @param   ppConfig        Pointer to the device configuration pointer. This is set to NULL if inserted
+ * @param   ppInstanceNode  Pointer to the device instance pointer. This is set to NULL if inserted
  *                          into the tree or cleaned up.
  *
- *                          In the pdmR3UsbInstantiateDevices() case (pInstanceNode != NULL) this is
- *                          the actual config node and will not be cleaned up.
+ *                          In the pdmR3UsbInstantiateDevices() case (iInstance != -1) this is
+ *                          the actual instance node and will not be cleaned up.
  *
  * @parma   iUsbVersion     The USB version preferred by the device.
  */
 static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int iInstance, PCRTUUID pUuid,
-                                PCFGMNODE pInstanceNode, PCFGMNODE *ppConfig, uint32_t iUsbVersion)
+                                PCFGMNODE *ppInstanceNode, uint32_t iUsbVersion)
 {
-    const bool fAtRuntime = pInstanceNode == NULL;
+    const bool fAtRuntime = iInstance == -1;
     int rc;
-    NOREF(iUsbVersion);
+
+    AssertPtrReturn(ppInstanceNode, VERR_INVALID_POINTER);
+    AssertPtrReturn(*ppInstanceNode, VERR_INVALID_POINTER);
 
     /*
      * If not called by pdmR3UsbInstantiateDevices(), we'll have to fix
@@ -490,8 +491,12 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     }
 
     /* The instance node and number. */
-    if (!pInstanceNode)
+    PCFGMNODE pInstanceToDelete = NULL;
+    PCFGMNODE pInstanceNode = NULL;
+    if (fAtRuntime)
     {
+        /** @todo r=bird: This code is bogus as it ASSUMES that all USB devices are
+         *        capable of infinite number of instances. */
         for (unsigned c = 0; c < _2M; c++)
         {
             iInstance = pUsbDev->iNextInstance++;
@@ -500,31 +505,27 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
                 break;
         }
         AssertRCReturn(rc, rc);
+
+        rc = CFGMR3ReplaceSubTree(pInstanceNode, *ppInstanceNode);
+        AssertRCReturn(rc, rc);
+        *ppInstanceNode = NULL;
+        pInstanceToDelete = pInstanceNode;
     }
     else
     {
         Assert(iInstance >= 0);
         if (iInstance >= (int)pUsbDev->iNextInstance)
             pUsbDev->iNextInstance = iInstance + 1;
+        pInstanceNode = *ppInstanceNode;
     }
 
-    /* The instance config node. */
-    PCFGMNODE pConfigToDelete = NULL;
-    PCFGMNODE pConfig = NULL;
-    if (!ppConfig || !*ppConfig)
+    /* Make sure the instance config node exists. */
+    PCFGMNODE pConfig = CFGMR3GetChild(pInstanceNode, "Config");
+    if (!pConfig)
     {
         rc = CFGMR3InsertNode(pInstanceNode, "Config", &pConfig);
         AssertRCReturn(rc, rc);
     }
-    else if (fAtRuntime)
-    {
-        rc = CFGMR3InsertSubTree(pInstanceNode, "Config", *ppConfig, &pConfig);
-        AssertRCReturn(rc, rc);
-        *ppConfig = NULL;
-        pConfigToDelete = pConfig;
-    }
-    else
-        pConfig = *ppConfig;
     Assert(CFGMR3GetChild(pInstanceNode, "Config") == pConfig);
 
     /* The global device config node. */
@@ -534,7 +535,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
         rc = CFGMR3InsertNode(pDevNode, "GlobalConfig", &pGlobalConfig);
         if (RT_FAILURE(rc))
         {
-            CFGMR3RemoveNode(pConfigToDelete);
+            CFGMR3RemoveNode(pInstanceToDelete);
             AssertRCReturn(rc, rc);
         }
     }
@@ -550,7 +551,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     {
         AssertMsgFailed(("Failed to allocate %d bytes of instance data for USB device '%s'. rc=%Rrc\n",
                          cb, pUsbDev->pReg->szName, rc));
-        CFGMR3RemoveNode(pConfigToDelete);
+        CFGMR3RemoveNode(pInstanceToDelete);
         return rc;
     }
 
@@ -564,7 +565,7 @@ static int pdmR3UsbCreateDevice(PVM pVM, PPDMUSBHUB pHub, PPDMUSB pUsbDev, int i
     pUsbIns->Internal.s.pVM                 = pVM;
     //pUsbIns->Internal.s.pLuns               = NULL;
     pUsbIns->Internal.s.pCfg                = pInstanceNode;
-    pUsbIns->Internal.s.pCfgDelete          = pConfigToDelete;
+    pUsbIns->Internal.s.pCfgDelete          = pInstanceToDelete;
     pUsbIns->Internal.s.pCfgGlobal          = pGlobalConfig;
     pUsbIns->Internal.s.Uuid                = *pUuid;
     //pUsbIns->Internal.s.pHub                = NULL;
@@ -834,12 +835,86 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
         RTUUID Uuid;
         rc = RTUuidCreate(&Uuid);
         AssertRCReturn(rc, rc);
-        rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &Uuid, paUsbDevs[i].pNode, &pConfigNode, iUsbVersion);
+        rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &Uuid, &paUsbDevs[i].pNode, iUsbVersion);
         if (RT_FAILURE(rc))
             return rc;
     } /* for device instances */
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Creates an emulated USB device instance at runtime.
+ *
+ * This will find an appropriate HUB for the USB device
+ * and try instantiate the emulated device.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pszDeviceName   The name of the PDM device to instantiate.
+ * @param   pInstanceNode   The instance CFGM node.
+ * @param   pUuid           Where to store the UUID of the created device.
+ *
+ * @thread EMT
+ */
+VMMR3DECL(int) PDMR3UsbCreateEmulatedDevice(PUVM pUVM, const char *pszDeviceName, PCFGMNODE pInstanceNode, PRTUUID pUuid)
+{
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertPtrReturn(pszDeviceName, VERR_INVALID_POINTER);
+    AssertPtrReturn(pInstanceNode, VERR_INVALID_POINTER);
+
+    /*
+     * Find the device.
+     */
+    PPDMUSB pUsbDev = pdmR3UsbLookup(pVM, pszDeviceName);
+    if (!pUsbDev)
+    {
+        LogRel(("PDMR3UsbCreateEmulatedDevice: The '%s' device wasn't found\n", pszDeviceName));
+        return VERR_PDM_NO_USBPROXY;
+    }
+
+    /*
+     * Every device must support USB 1.x hubs; optionally, high-speed USB 2.0 hubs
+     * might be also supported. This determines where to attach the device.
+     */
+    uint32_t iUsbVersion = VUSB_STDVER_11;
+    if (pUsbDev->pReg->fFlags & PDM_USBREG_HIGHSPEED_CAPABLE)
+        iUsbVersion |= VUSB_STDVER_20;
+
+    /*
+     * Find a suitable hub with free ports.
+     */
+    PPDMUSBHUB pHub;
+    int rc = pdmR3UsbFindHub(pVM, iUsbVersion, &pHub);
+    if (RT_FAILURE(rc))
+    {
+        Log(("pdmR3UsbFindHub: failed %Rrc\n", rc));
+        return rc;
+    }
+
+    /*
+     * This is how we inform the device what speed it's communicating at, and hence
+     * which descriptors it should present to the guest.
+     */
+    iUsbVersion &= pHub->fVersions;
+
+    /*
+     * Create and attach the device.
+     */
+    rc = RTUuidCreate(pUuid);
+    AssertRCReturn(rc, rc);
+
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstanceNode, iUsbVersion);
+    AssertRCReturn(rc, rc);
+
+    return rc;
 }
 
 
@@ -867,7 +942,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
-    VM_ASSERT_EMT(pVM);
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pUuid, VERR_INVALID_POINTER);
     AssertPtrReturn(pszAddress, VERR_INVALID_POINTER);
     AssertReturn(    iUsbVersion == VUSB_STDVER_20
@@ -895,12 +970,14 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     }
 
     /*
-     * Create the CFGM configuration node.
+     * Create the CFGM instance node.
      */
-    PCFGMNODE pConfig = CFGMR3CreateTree(pUVM);
-    AssertReturn(pConfig, VERR_NO_MEMORY);
+    PCFGMNODE pInstance = CFGMR3CreateTree(pUVM);
+    AssertReturn(pInstance, VERR_NO_MEMORY);
     do /* break loop */
     {
+        PCFGMNODE pConfig;
+        rc = CFGMR3InsertNode(pInstance, "Config", &pConfig);                   AssertRCBreak(rc);
         rc = CFGMR3InsertString(pConfig,  "Address", pszAddress);               AssertRCBreak(rc);
         char szUuid[RTUUID_STR_LENGTH];
         rc = RTUuidToStr(pUuid, &szUuid[0], sizeof(szUuid));                    AssertRCBreak(rc);
@@ -913,7 +990,7 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     } while (0); /* break loop */
     if (RT_FAILURE(rc))
     {
-        CFGMR3RemoveNode(pConfig);
+        CFGMR3RemoveNode(pInstance);
         LogRel(("PDMR3UsbCreateProxyDevice: failed to setup CFGM config, rc=%Rrc\n", rc));
         return rc;
     }
@@ -921,9 +998,9 @@ VMMR3DECL(int) PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemote
     /*
      * Finally, try to create it.
      */
-    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, NULL, &pConfig, iUsbVersion);
-    if (RT_FAILURE(rc) && pConfig)
-        CFGMR3RemoveNode(pConfig);
+    rc = pdmR3UsbCreateDevice(pVM, pHub, pUsbDev, -1, pUuid, &pInstance, iUsbVersion);
+    if (RT_FAILURE(rc) && pInstance)
+        CFGMR3RemoveNode(pInstance);
     return rc;
 }
 

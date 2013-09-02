@@ -186,6 +186,7 @@ EXPORTS
     PDMR3ThreadSleep
     PDMR3ThreadSuspend
 
+    PDMR3UsbCreateEmulatedDevice
     PDMR3UsbCreateProxyDevice
     PDMR3UsbDetachDevice
     PDMR3UsbHasHub
