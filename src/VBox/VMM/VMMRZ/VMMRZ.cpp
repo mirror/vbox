@@ -213,3 +213,15 @@ VMMRZDECL(void) VMMRZCallRing3RemoveNotification(PVMCPU pVCpu)
     pVCpu->vmm.s.pfnCallRing3CallbackR0 = NULL;
 }
 
+
+/**
+ * Checks whether there is a ring-0 callback notification active.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @returns true if there the notification is active, false otherwise.
+ */
+VMMRZDECL(bool) VMMRZCallRing3IsNotificationSet(PVMCPU pVCpu)
+{
+    return !(pVCpu->vmm.s.pfnCallRing3CallbackR0 == NULL);
+}
+

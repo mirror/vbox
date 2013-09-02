@@ -300,6 +300,7 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
  * @param   pVM             Pointer to the VM (can be NULL after a resume!).
  * @param   pvCpuPage       Pointer to the global CPU page.
  * @param   HCPhysCpuPage   Physical address of the global CPU page.
+ * @param   fEnabledByHost  Whether the host OS has already initialized AMD-V.
  * @param   pvArg           Unused on AMD-V.
  */
 VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
@@ -310,6 +311,7 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
     NOREF(pvArg);
+    NOREF(fEnabledByHost);
 
     /*
      * We must turn on AMD-V and setup the host state physical address, as those MSRs are per CPU.
@@ -1586,6 +1588,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     NOREF(pCpu);
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
+    Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
     pVCpu->hm.s.fLeaveDone = false;
     return VINF_SUCCESS;
@@ -2090,14 +2093,14 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         pVCpu->hm.s.fClearTrapFlag = false;
     }
 
-    /* On our way back from ring-3 the following needs to be done. */
-    /** @todo This can change with preemption hooks. */
-    if (rcExit == VINF_EM_RAW_INTERRUPT)
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
-    else
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
+    /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
+    if (rcExit != VINF_EM_RAW_INTERRUPT)
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
+
+    /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
+    VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
 }
 
@@ -3065,7 +3068,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VINF_EM_TRIPLE_FAULT;
 
     hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
-    VMMRZCallRing3RemoveNotification(pVCpu);
+    Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
 }
 

@@ -1017,6 +1017,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
     AssertReturn(pvMsrs, VERR_INVALID_PARAMETER);
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    /* Enable VT-x if it's not already enabled by the host. */
     if (!fEnabledByHost)
     {
         int rc = hmR0VmxEnterRootMode(pVM, HCPhysCpuPage, pvCpuPage);
@@ -6176,6 +6177,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
+    HMVMX_ASSERT_CPU_SAFE();
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -6298,13 +6300,14 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
      *        flag is pending without being used. Seen early in bios init when
      *        accessing APIC page in prot mode. */
 
-    /* On our way back from ring-3 the following needs to be done. */
-    if (rcExit == VINF_EM_RAW_INTERRUPT)
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT;
-    else
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST;
+    /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
+    if (rcExit != VINF_EM_RAW_INTERRUPT)
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
+
+    /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
+    VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
 }
 
@@ -6901,6 +6904,7 @@ VMMR0DECL(int) VMXR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
     NOREF(pCpu);
 
     LogFlowFunc(("pVM=%p pVCpu=%p\n", pVM, pVCpu));
+    Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
 #ifdef VBOX_STRICT
     /* Make sure we're in VMX root mode. */
@@ -7744,7 +7748,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = VINF_EM_TRIPLE_FAULT;
 
     hmR0VmxExitToRing3(pVM, pVCpu, pCtx, rc);
-    VMMRZCallRing3RemoveNotification(pVCpu);
+    Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
 }
 
@@ -8587,6 +8591,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
                     {
                         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.pRealModeTSS);
                         Assert(PDMVmmDevHeapIsEnabled(pVCpu->CTX_SUFF(pVM)));
+                        Assert(CPUMIsGuestInRealModeEx(pMixedCtx));
+
                         rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
                         rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
                         AssertRCReturn(rc, rc);
