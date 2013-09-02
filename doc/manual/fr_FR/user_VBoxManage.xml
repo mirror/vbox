@@ -328,7 +328,6 @@ IOAPIC:          on
 PAE:             on
 Time offset:     0 ms
 Hardw. virt.ext: on
-Hardw. virt.ext exclusive: on
 Nested Paging:   on
 VT-x VPID:       off
 State:           powered off (since 2009-10-20T14:52:19.000000000)
@@ -587,16 +586,6 @@ Statistics update:  disabled
             active ou désactive l'utilisation des extensions du matériel de 
             virtualisation (Intel VT-x ou AMD-V) dans le processeur de votre système
             hôte&#xA0;; voir <xref linkend="hwvirt" />.</para>
-          </listitem>
-
-          <listitem>
-            <para><computeroutput>--hwvirtexexcl on|off</computeroutput>&#xA0;:
-            Ceci spécifie si VirtualBox utilisera exclusivement les extensions de
-            virtualisation matérielle (Intel VT-x ou AMD-V) dans le processeur de
-            votre système hôte&#xA0;; voir <xref linkend="hwvirt" />. Si vous
-            souhaitez partager en même temps ces extensions avec d'autres 
-            hyperviseurs, vous devez désactiver ce paramètre. Ceci a des implications
-            négatives en performance.</para>
           </listitem>
 
           <listitem>
@@ -2513,6 +2502,18 @@ Value: 2006.01.01</screen>
         </glossentry>
 
         <glossentry>
+          <glossterm><computeroutput>hwvirtexclusive</computeroutput></glossterm>
+          <para>Ceci spécife si VirtualBox utilisera en exclusivité les
+          extensions de virtualisation matérielle (Intel VT-x ou AMD-V) du
+          processeur du système hôte ; voir <xref linkend="hwvirt" />. Si
+          vous souhaitez partager ces extensions avec d'autres hyperviseurs en
+          fonction en même temps, vous devez désactiver ce paramètre.
+          Cela a des implications négatives en termes de performance.
+          </para>
+        </glossentry>
+
+
+        <glossentry>
           <glossterm><computeroutput>vrdeauthlibrary</computeroutput></glossterm>
 
           <glossdef>
@@ -3296,10 +3297,10 @@ Value: 2006.01.01</screen>
         <listitem>
           <para><emphasis role="bold"><computeroutput>list</computeroutput></emphasis>,
           qui présente plusieurs informations de contrôle de l'invité telles
-          que les sessions ouvertes dans l'invité et les processus de l'invité.</para>
+          que les sessions et les fichiers ouverts dans l'invité et les processus de l'invité.</para>
 
           <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; list
-          &lt;all|sessions|processes&gt; [--verbose]</screen>
+          &lt;all|sessions|processes|files&gt; [--verbose]</screen>
 
           <para>où les paramètres signifient&nbsp;: <glosslist>
             <glossentry>
@@ -3310,11 +3311,11 @@ Value: 2006.01.01</screen>
             </glossentry>
 
             <glossentry>
-              <glossterm><computeroutput>all|sessions|processes</computeroutput></glossterm>
+              <glossterm><computeroutput>all|sessions|processes|files</computeroutput></glossterm>
 
               <glossdef>
                 <para>présenter les sessions dans l'invité, les processus de
-                l'invité ou toutes les informations disponibles.</para>
+                l'invité, les fichiers dans l'invité ou toutes les informations disponibles.</para>
               </glossdef>
             </glossentry>
 
@@ -3624,6 +3625,32 @@ Value: 2006.01.01</screen>
                 </glossdef>
               </glossentry>
             </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>watch</computeroutput></emphasis>,
+          qui affiche un contrôle de l'activité actuelle de l'invité.</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; watch
+          [--verbose]</screen>
+
+          <para>où les paramètres signifient : <glosslist>
+            <glossentry>
+              <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+              <glossdef>
+                <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+              </glossdef>
+            </glossentry>
+
+            <glossentry>
+              <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+              <glossdef>
+                <para>Dit à VBoxManage d'être plus verbeux.</para>
+              </glossdef>
+            </glossentry>
+          </glosslist></para>
         </listitem>
       </itemizedlist></para>
   </sect1>

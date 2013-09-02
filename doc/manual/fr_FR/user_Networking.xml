@@ -409,8 +409,61 @@
     </sect2>
   </sect1>
 
+  <sect1 id="network_nat_service">
+    <title>Network Address Translation Service (expérimental)</title>
+    
+    <para>Le service Network Address Translation (NAT) fonctionne comme un
+    routeur domestique en regroupant les systèmes qui l'utilisent dans un réseau 
+    et en écartant les systèmes extérieurs d'accéder aux systèmes en son sein
+    tout en permettant aux systèmes qu'il contient de communiquer entre eux et
+    avec l'extérieur via TCP et UDP en IPv4 et IPv6.</para>
+
+    <para>Un service NAT est rattaché à un réseau interne. Les machines virtuelles
+    qui doivent l'utiliser devraient être branchées au réseau interne. Le nom du
+    réseau interne se choisit à la création du service NAT et le réseau interne
+    sera créé s'il n'existe pas déjà. Voici un exemple de commande pour créer
+    un réseau NAT :
+    </para>
+    <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e</screen></para>
+    <para>
+    Ici, "nat-int-network" est le nom du réseau interne à utiliser et
+    "192.168.15.0/24" est l'adresse du réseau et l'interface due masque du service NAT.
+    Dans cette configuration statique, par défaut, l'adresse affectée à la passerelle sera
+    192.168.15.1 (adresse suivant celle de l'interface), bien que cela soit sujet
+    à changement. Pour connecter un serveur DHCP au réseau interne, nous
+    modifions l'exemple comme suit :</para>
+    <para><screen>VBoxManage natnetwork add -t nat-int-network -n "192.168.15.0/24" -e -h on</screen></para>
+    <para> ou pour ajouter un serveur DHCP au réseau après l'avoir créé :</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -h on</screen></para>
+    <para>Pour le désactiver à nouveau, utilisez :</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -h off</screen></para>
+    <para>Une limite actuellement du serveur DHCP est qu'il ne fournit pas d'informations
+    nameserver, les szstèmes qui l'utilisent devraient donc être configurés explicitement
+    pour utiliser les bons serveurs de DNS.</para>
+    <para>Pour démarrer le service NAT, utilisez la commande suivante :</para>
+    <para><screen>VBoxManage natnetwork start -t nat-int-network</screen></para>
+    <para>Si un serveur DHCP est connecté au réseau, il démarrera avec le
+    service réseau NAT.</para>
+    <para><screen>VBoxManage natnetwork stop -t nat-int-network</screen> arrête
+    le service réseau NAT ainsi que le serveur DHCP s'il y en a un.</para>
+    <para>Pour effacer le service réseau NAT, utilisez :</para>
+    <para><screen>VBoxManage natnetwork remove -t nat-int-network</screen></para>
+    <para>Cette commande ne supprime pas le serveur DHCP s'il y en a un actif
+    sur le réseau interne.</para>
+    <para>La redirection de Ports est supportée (en utilisant le paramètre "-p"
+    pour 
+ switch for IPv4 et "-P" pour IPv6) :</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -p "ssh:tcp:[]:10022:[192.168.15.15]:22"</screen></para>
+    <para>Ceci ajoute une règle de redirection de pots depuis le 10022 TCP de
+    l'hôte vers le 22 de l'invité ayant l'adresse IP 192.168.15.15.  Pour
+     effacer la règle, utilisez :</para>
+    <para><screen>VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
+    <para>Pour voir la liste des réseaux NAT enregistrés, utilisez :</para>
+    <para><screen>VBoxManage list natnetworks</screen></para>
+  </sect1>
+
   <sect1 id="network_bridged">
-    <title>Réseau Bridged</title>
+    <title>Réseau Bridgé</title>
 
     <para>Avec le réseau bridgé, VirtualBox utilise un pilote de périphérique 
     sur votre système <emphasis>hôte</emphasis> qui filtre les données de votre
