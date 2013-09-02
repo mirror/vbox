@@ -259,8 +259,8 @@ static const STAMR0SAMPLE g_aGMMStats[] =
     { RT_UOFFSETOF(GMMSTATS, VMStats.enmPolicy),                STAMTYPE_U32,   STAMUNIT_NONE,  "/GMM/VM/enmPolicy",                "The current over-commit policy." },
     { RT_UOFFSETOF(GMMSTATS, VMStats.enmPriority),              STAMTYPE_U32,   STAMUNIT_NONE,  "/GMM/VM/enmPriority",              "The VM priority for arbitrating VMs in low and out of memory situation." },
     { RT_UOFFSETOF(GMMSTATS, VMStats.fBallooningEnabled),       STAMTYPE_BOOL,  STAMUNIT_NONE,  "/GMM/VM/fBallooningEnabled",       "Whether ballooning is enabled or not." },
-    { RT_UOFFSETOF(GMMSTATS, VMStats.fBallooningEnabled),       STAMTYPE_BOOL,  STAMUNIT_NONE,  "/GMM/VM/fSharedPagingEnabled",     "Whether shared paging is enabled or not." },
-    { RT_UOFFSETOF(GMMSTATS, VMStats.fBallooningEnabled),       STAMTYPE_BOOL,  STAMUNIT_NONE,  "/GMM/VM/fMayAllocate",             "Whether the VM is allowed to allocate memory or not." },
+    { RT_UOFFSETOF(GMMSTATS, VMStats.fSharedPagingEnabled),     STAMTYPE_BOOL,  STAMUNIT_NONE,  "/GMM/VM/fSharedPagingEnabled",     "Whether shared paging is enabled or not." },
+    { RT_UOFFSETOF(GMMSTATS, VMStats.fMayAllocate),             STAMTYPE_BOOL,  STAMUNIT_NONE,  "/GMM/VM/fMayAllocate",             "Whether the VM is allowed to allocate memory or not." },
 };
 
 
