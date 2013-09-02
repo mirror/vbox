@@ -2975,7 +2975,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
             PVBOXGUESTWAIT  pWait;
             PVBOXGUESTWAIT  pSafe;
 
-            Log(("VBoxGuestCommonISR: acknowledge events succeeded %#RX32\n", fEvents));
+            Log3(("VBoxGuestCommonISR: acknowledge events succeeded %#RX32\n", fEvents));
 
             /*
              * VMMDEV_EVENT_MOUSE_POSITION_CHANGED can only be polled for.
