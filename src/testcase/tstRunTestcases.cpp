@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,25 +77,25 @@ static const char  *g_apszExclude[] =
     "testcase/tstSeamlessX11",
     "testcase/tstVBoxControl",
     "testcase/tstVDCopy",           /* requires parameters <hdd1>, <hdd2> */
-    "./tstRunTestcases",
+    "testcase/tstRunTestcases",
     "./tstAnimate",
-    "./tstAPI",
-    "./tstCollector",               /* takes forever */
-    "./tstHeadless",
-    "./tstHeadless2",
     "./tstMicro",
     "./tstMicroGC",
     "./tstVBoxDbg",
     "./tstVMM-2",
-    "./tstTestServMgr",
     "./tstPDMAsyncCompletion",      /* requires parameters <source>, <dest> */
-    "./tstXptDump",
-    "./tstnsIFileEnumerator",
-    "./tstSimpleTypeLib",
-    "./tstTestAtoms",
-    "./tstXptLink",
-    "./tstXPCOMCGlue",              /* user interaction required */
-    "./tstTestCallTemplates",
+    "testcase/tstHeadless",         /* requires parameter */
+    "testcase/tstAPI",              /* user interaction required */
+    "testcase/tstCollector",        /* takes forever */
+    "testcase/tstnsIFileEnumerator",    /* requires parameter */
+    "testcase/tstSimpleTypeLib",    /* requires parameter */
+    "testcase/tstTestAtoms",        /* requires parameter */
+    "testcase/tstTestCallTemplates",    /* compile-only testcase */
+    "testcase/tstTestServMgr",      /* fails, needs complex service setup */
+    "testcase/tstXptDump",          /* requires parameter */
+    "testcase/tstXptLink",          /* requires parameter */
+    "testcase/tstXPCOMCGlue",       /* user interaction required */
+    "testcase/tstXPCOMCEvent",      /* user interaction required */
 #if 1 // later
     "testcase/tstIntNetR0",
     "./tstVMM",

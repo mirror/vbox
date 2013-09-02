@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,171 +24,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-static void listVMs(IVirtualBox *virtualBox, ISession *session);
-static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id);
-
-/**
- * List the registered VMs.
- *
- * @param   virtualBox ptr to IVirtualBox object
- * @param   session    ptr to ISession object
- */
-static void listVMs(IVirtualBox *virtualBox, ISession *session)
-{
-    nsresult rc;
-    IMachine **machines = NULL;
-    PRUint32 machineCnt = 0;
-    PRUint32 i;
-    unsigned start_id;
-
-    /*
-     * Get the list of all registered VMs.
-     */
-
-    rc = virtualBox->vtbl->GetMachines(virtualBox, &machineCnt, &machines);
-    if (NS_FAILED(rc))
-    {
-        fprintf(stderr, "could not get list of machines, rc=%08x\n",
-            (unsigned)rc);
-        return;
-    }
-
-    if (machineCnt == 0)
-    {
-        printf("\tNo VMs\n");
-        return;
-    }
-
-    printf("VM List:\n\n");
-
-    /*
-     * Iterate through the collection.
-     */
-
-    for (i = 0; i < machineCnt; ++i)
-    {
-        IMachine *machine      = machines[i];
-        PRBool    isAccessible = PR_FALSE;
-
-        printf("\tMachine #%u\n", (unsigned)i);
-
-        if (!machine)
-        {
-            printf("\t(skipped, NULL)\n");
-            continue;
-        }
-
-        machine->vtbl->GetAccessible(machine, &isAccessible);
-
-        if (isAccessible)
-        {
-            PRUnichar *machineNameUtf16;
-            char *machineName;
-
-            machine->vtbl->GetName(machine, &machineNameUtf16);
-            g_pVBoxFuncs->pfnUtf16ToUtf8(machineNameUtf16,&machineName);
-            printf("\tName:        %s\n", machineName);
-
-            g_pVBoxFuncs->pfnUtf8Free(machineName);
-            g_pVBoxFuncs->pfnComUnallocMem(machineNameUtf16);
-        }
-        else
-        {
-            printf("\tName:        <inaccessible>\n");
-        }
-
-
-        {
-            PRUnichar *uuidUtf16 = NULL;
-            char      *uuidUtf8  = NULL;
-
-            machine->vtbl->GetId(machine, &uuidUtf16);
-            g_pVBoxFuncs->pfnUtf16ToUtf8(uuidUtf16, &uuidUtf8);
-            printf("\tUUID:        %s\n", uuidUtf8);
-
-            g_pVBoxFuncs->pfnUtf8Free(uuidUtf8);
-            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
-        }
-
-        if (isAccessible)
-        {
-            {
-                PRUnichar *configFile;
-                char      *configFile1 = calloc((size_t)64, (size_t)1);
-
-                machine->vtbl->GetSettingsFilePath(machine, &configFile);
-                g_pVBoxFuncs->pfnUtf16ToUtf8(configFile, &configFile1);
-                printf("\tConfig file: %s\n", configFile1);
-
-                free(configFile1);
-                g_pVBoxFuncs->pfnComUnallocMem(configFile);
-            }
-
-            {
-                PRUint32 memorySize;
-
-                machine->vtbl->GetMemorySize(machine, &memorySize);
-                printf("\tMemory size: %uMB\n", memorySize);
-            }
-
-            {
-                PRUnichar *typeId;
-                PRUnichar *osNameUtf16;
-                char *osName;
-                IGuestOSType *osType = NULL;
-
-                machine->vtbl->GetOSTypeId(machine, &typeId);
-                virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
-                osType->vtbl->GetDescription(osType, &osNameUtf16);
-                g_pVBoxFuncs->pfnUtf16ToUtf8(osNameUtf16,&osName);
-                printf("\tGuest OS:    %s\n\n", osName);
-
-                osType->vtbl->nsisupports.Release((void *)osType);
-                g_pVBoxFuncs->pfnUtf8Free(osName);
-                g_pVBoxFuncs->pfnComUnallocMem(osNameUtf16);
-                g_pVBoxFuncs->pfnComUnallocMem(typeId);
-            }
-        }
-    }
-
-    /*
-     * Let the user chose a machine to start.
-     */
-
-    printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
-        (unsigned)(machineCnt - 1));
-    fflush(stdout);
-
-    if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
-    {
-        IMachine *machine = machines[start_id];
-
-        if (machine)
-        {
-            PRUnichar *uuidUtf16 = NULL;
-
-            machine->vtbl->GetId(machine, &uuidUtf16);
-            startVM(virtualBox, session, uuidUtf16);
-
-            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
-        }
-    }
-
-    /*
-     * Don't forget to release the objects in the array.
-     */
-
-    for (i = 0; i < machineCnt; ++i)
-    {
-        IMachine *machine = machines[i];
-
-        if (machine)
-        {
-            machine->vtbl->nsisupports.Release((void *)machine);
-        }
-    }
-}
 
 /**
  * Start a VM.
@@ -261,18 +96,179 @@ static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id)
         {
             fprintf(stderr, "Remote session has been successfully opened.\n");
         }
-        progress->vtbl->nsisupports.Release((void *)progress);
+        progress->vtbl->nsisupports.Release((nsISupports *)progress);
     }
 
     /* It's important to always release resources. */
-    machine->vtbl->nsisupports.Release((void *)machine);
+    machine->vtbl->nsisupports.Release((nsISupports *)machine);
+}
+
+/**
+ * List the registered VMs.
+ *
+ * @param   virtualBox ptr to IVirtualBox object
+ * @param   session    ptr to ISession object
+ */
+static void listVMs(IVirtualBox *virtualBox, ISession *session)
+{
+    nsresult rc;
+    IMachine **machines = NULL;
+    PRUint32 machineCnt = 0;
+    PRUint32 i;
+    unsigned start_id;
+
+    /*
+     * Get the list of all registered VMs.
+     */
+
+    rc = virtualBox->vtbl->GetMachines(virtualBox, &machineCnt, &machines);
+    if (NS_FAILED(rc))
+    {
+        fprintf(stderr, "could not get list of machines, rc=%08x\n",
+            (unsigned)rc);
+        return;
+    }
+
+    if (machineCnt == 0)
+    {
+        printf("\tNo VMs\n");
+        return;
+    }
+
+    printf("VM List:\n\n");
+
+    /*
+     * Iterate through the collection.
+     */
+
+    for (i = 0; i < machineCnt; ++i)
+    {
+        IMachine *machine      = machines[i];
+        PRBool    isAccessible = PR_FALSE;
+
+        printf("\tMachine #%u\n", (unsigned)i);
+
+        if (!machine)
+        {
+            printf("\t(skipped, NULL)\n");
+            continue;
+        }
+
+        machine->vtbl->GetAccessible(machine, &isAccessible);
+
+        if (isAccessible)
+        {
+            PRUnichar *machineNameUtf16;
+            char *machineName;
+
+            machine->vtbl->GetName(machine, &machineNameUtf16);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(machineNameUtf16,&machineName);
+            printf("\tName:        %s\n", machineName);
+
+            g_pVBoxFuncs->pfnUtf8Free(machineName);
+            g_pVBoxFuncs->pfnComUnallocMem(machineNameUtf16);
+        }
+        else
+        {
+            printf("\tName:        <inaccessible>\n");
+        }
+
+        {
+            PRUnichar *uuidUtf16 = NULL;
+            char      *uuidUtf8  = NULL;
+
+            machine->vtbl->GetId(machine, &uuidUtf16);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(uuidUtf16, &uuidUtf8);
+            printf("\tUUID:        %s\n", uuidUtf8);
+
+            g_pVBoxFuncs->pfnUtf8Free(uuidUtf8);
+            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
+        }
+
+        if (isAccessible)
+        {
+            {
+                PRUnichar *configFile;
+                char      *configFile1 = calloc((size_t)64, (size_t)1);
+
+                machine->vtbl->GetSettingsFilePath(machine, &configFile);
+                g_pVBoxFuncs->pfnUtf16ToUtf8(configFile, &configFile1);
+                printf("\tConfig file: %s\n", configFile1);
+
+                free(configFile1);
+                g_pVBoxFuncs->pfnComUnallocMem(configFile);
+            }
+
+            {
+                PRUint32 memorySize;
+
+                machine->vtbl->GetMemorySize(machine, &memorySize);
+                printf("\tMemory size: %uMB\n", memorySize);
+            }
+
+            {
+                PRUnichar *typeId;
+                PRUnichar *osNameUtf16;
+                char *osName;
+                IGuestOSType *osType = NULL;
+
+                machine->vtbl->GetOSTypeId(machine, &typeId);
+                virtualBox->vtbl->GetGuestOSType(virtualBox, typeId, &osType);
+                osType->vtbl->GetDescription(osType, &osNameUtf16);
+                g_pVBoxFuncs->pfnUtf16ToUtf8(osNameUtf16,&osName);
+                printf("\tGuest OS:    %s\n\n", osName);
+
+                osType->vtbl->nsisupports.Release((nsISupports *)osType);
+                g_pVBoxFuncs->pfnUtf8Free(osName);
+                g_pVBoxFuncs->pfnComUnallocMem(osNameUtf16);
+                g_pVBoxFuncs->pfnComUnallocMem(typeId);
+            }
+        }
+    }
+
+    /*
+     * Let the user chose a machine to start.
+     */
+
+    printf("Type Machine# to start (0 - %u) or 'quit' to do nothing: ",
+        (unsigned)(machineCnt - 1));
+    fflush(stdout);
+
+    if (scanf("%u", &start_id) == 1 && start_id < machineCnt)
+    {
+        IMachine *machine = machines[start_id];
+
+        if (machine)
+        {
+            PRUnichar *uuidUtf16 = NULL;
+
+            machine->vtbl->GetId(machine, &uuidUtf16);
+            startVM(virtualBox, session, uuidUtf16);
+
+            g_pVBoxFuncs->pfnUtf16Free(uuidUtf16);
+        }
+    }
+
+    /*
+     * Don't forget to release the objects in the array.
+     */
+
+    for (i = 0; i < machineCnt; ++i)
+    {
+        IMachine *machine = machines[i];
+
+        if (machine)
+        {
+            machine->vtbl->nsisupports.Release((nsISupports *)machine);
+        }
+    }
 }
 
 /* Main - Start the ball rolling. */
 
 int main(int argc, char **argv)
 {
-    IVirtualBox *vbox           = NULL;
+    IVirtualBox *vbox            = NULL;
     ISession   *session          = NULL;
     PRUint32    revision         = 0;
     PRUnichar  *versionUtf16     = NULL;

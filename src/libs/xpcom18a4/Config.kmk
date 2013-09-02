@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -169,6 +169,15 @@ TEMPLATE_XPCOMTSTEXE               = XPCOM executable files (testcases)
 TEMPLATE_XPCOMTSTEXE_EXTENDS       = XPCOMEXE
 TEMPLATE_XPCOMTSTEXE_CXXFLAGS      = $(TEMPLATE_XPCOMEXE_CXXFLAGS) -Wno-format
 TEMPLATE_XPCOMTSTEXE_CFLAGS        = $(TEMPLATE_XPCOMEXE_CFLAGS)   -Wno-format
+TEMPLATE_XPCOMTSTEXE_INST          = $(INST_TESTCASE)
+ifdef VBOX_WITH_RUNPATH
+ TEMPLATE_XPCOMTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)' $(TEMPLATE_XPCOMEXE_LDFLAGS)
+else ifdef VBOX_WITH_RELATIVE_RUNPATH
+ TEMPLATE_XPCOMTSTEXE_LDFLAGS = '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/..' $(TEMPLATE_XPCOMEXE_LDFLAGS)
+endif
+if "$(KBUILD_TARGET)" == "win" && defined(VBOX_SIGNING_MODE)
+ TEMPLATE_XPCOMTSTEXE_POST_CMDS =
+endif
 
 
 #
