@@ -6084,6 +6084,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  * Does the necessary state syncing before returning to ring-3 for any reason
  * (longjmp, preemption, voluntary exits to ring-3) from VT-x.
  *
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
@@ -6092,7 +6093,7 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  *
  * @remarks No-long-jmp zone!!!
  */
-static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -6104,7 +6105,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
     {
         int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
         Assert(pVCpu->hm.s.vmx.fUpdatedGuestState == HMVMX_UPDATED_GUEST_ALL);
     }
 
@@ -6154,18 +6155,22 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_ACTIVE)
     {
         int rc = VMXClearVmcs(pVCpu->hm.s.vmx.HCPhysVmcs);
-        AssertRC(rc);
+        AssertRCReturn(rc, rc);
+
         pVCpu->hm.s.vmx.uVmcsState = HMVMX_VMCS_STATE_CLEAR;
         Log4Func(("Cleared Vmcs. HostCpuId=%u\n", idCpu));
     }
     Assert(!(pVCpu->hm.s.vmx.uVmcsState & HMVMX_VMCS_STATE_LAUNCHED));
     NOREF(idCpu);
+
+    return VINF_SUCCESS;
 }
 
 
 /**
  * Leaves the VT-x session.
  *
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
@@ -6174,7 +6179,7 @@ static void hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jmp zone!!!
  */
-DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     HM_DISABLE_PREEMPT_IF_NEEDED();
     HMVMX_ASSERT_CPU_SAFE();
@@ -6185,7 +6190,8 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
        and done this from the VMXR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
-        hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
+        int rc2 = hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
+        AssertRCReturn(rc2, rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
 
@@ -6197,15 +6203,17 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
     /* Leave HM context. This takes care of local init (term). */
     int rc = HMR0LeaveCpu(pVCpu);
-    AssertRC(rc); NOREF(rc);
 
     HM_RESTORE_PREEMPT_IF_NEEDED();
+
+    return rc;
 }
 
 
 /**
  * Does the necessary state syncing before doing a longjmp to ring-3.
  *
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
@@ -6214,9 +6222,9 @@ DECLINLINE(void) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  *
  * @remarks No-long-jmp zone!!!
  */
-DECLINLINE(void) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+DECLINLINE(int) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
+    return hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
 }
 
 
@@ -6228,6 +6236,7 @@ DECLINLINE(void) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
  * to ring-3, this is voluntary and prepares the guest so it may continue
  * executing outside HM (recompiler/IEM).
  *
+ * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
@@ -6236,7 +6245,7 @@ DECLINLINE(void) hmR0VmxLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx
  * @param   rcExit      The reason for exiting to ring-3. Can be
  *                      VINF_VMM_UNKNOWN_RING3_CALL.
  */
-static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcExit)
+static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcExit)
 {
     Assert(pVM);
     Assert(pVCpu);
@@ -6246,7 +6255,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_GUEST_STATE))
     {
         /* We've done what is required in hmR0VmxExitErrInvalidGuestState(). We're not going to continue guest execution... */
-        return;
+        return VINF_SUCCESS;
     }
     else if (RT_UNLIKELY(rcExit == VERR_VMX_INVALID_VMCS_PTR))
     {
@@ -6254,7 +6263,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
         pVCpu->hm.s.vmx.LastError.u32VMCSRevision = *(uint32_t *)pVCpu->hm.s.vmx.pvVmcs;
         pVCpu->hm.s.vmx.LastError.idEnteredCpu    = pVCpu->hm.s.idEnteredCpu;
         /* LastError.idCurrentCpu was updated in hmR0VmxPreRunGuestCommitted(). */
-        return;
+        return VINF_SUCCESS;
     }
 
     /* Please, no longjumps here (any logging shouldn't flush jump back to ring-3). NO LOGGING BEFORE THIS POINT! */
@@ -6269,7 +6278,7 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     }
 
     /* Save guest state and restore host state bits. */
-    hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
+    int rc = hmR0VmxLeaveSession(pVM, pVCpu, pMixedCtx);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     /* Sync recompiler state. */
@@ -6281,8 +6290,8 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
                               | CPUM_CHANGED_TR
                               | CPUM_CHANGED_HIDDEN_SEL_REGS);
     Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_CR0);
-    if (    pVM->hm.s.fNestedPaging
-        &&  CPUMIsGuestPagingEnabledEx(pMixedCtx))
+    if (   pVM->hm.s.fNestedPaging
+        && CPUMIsGuestPagingEnabledEx(pMixedCtx))
     {
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
     }
@@ -6309,6 +6318,8 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
     /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
     VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
+
+    return rc;
 }
 
 
@@ -6316,15 +6327,19 @@ static void hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rc
  * VMMRZCallRing3() callback wrapper which saves the guest state before we
  * longjump to ring-3 and possibly get preempted.
  *
+ * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   enmOperation    The operation causing the ring-3 longjump.
- * @param   pvUser          The user argument (pointer to the possibly
- *                          out-of-date guest-CPU context).
+ * @param   pvUser          Opaque pointer to the guest-CPU context. The data
+ *                          may be out-of-sync. Make sure to update the required
+ *                          fields before using them.
  *
  * @remarks Must never be called with @a enmOperation ==
- *          VMMCALLRING3_VM_R0_ASSERTION.
+ *          VMMCALLRING3_VM_R0_ASSERTION. We can't assert it here because if it
+ *          it -does- get called with VMMCALLRING3_VM_R0_ASSERTION, we'll end up
+ *          with an infinite recursion.
  */
-DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
     /* VMMRZCallRing3() already makes sure we never get called as a result of an longjmp due to an assertion. */
     Assert(pVCpu);
@@ -6336,9 +6351,11 @@ DECLCALLBACK(void) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperat
     Assert(VMMR0IsLogFlushDisabled(pVCpu));
 
     Log4(("hmR0VmxCallRing3Callback->hmR0VmxLongJmpToRing3 pVCpu=%p idCpu=%RU32\n", pVCpu, pVCpu->idCpu));
-    hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+    int rc = hmR0VmxLongJmpToRing3(pVCpu->CTX_SUFF(pVM), pVCpu, (PCPUMCTX)pvUser);
+    AssertRCReturn(rc, rc);
 
     VMMRZCallRing3Enable(pVCpu);
+    return VINF_SUCCESS;
 }
 
 
@@ -7747,7 +7764,12 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     else if (rc == VINF_EM_RESET)
         rc = VINF_EM_TRIPLE_FAULT;
 
-    hmR0VmxExitToRing3(pVM, pVCpu, pCtx, rc);
+    int rc2 = hmR0VmxExitToRing3(pVM, pVCpu, pCtx, rc);
+    if (RT_FAILURE(rc2))
+    {
+        pVCpu->hm.s.u32HMError = rc;
+        rc = rc2;
+    }
     Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
 }

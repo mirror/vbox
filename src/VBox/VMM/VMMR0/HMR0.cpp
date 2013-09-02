@@ -1073,7 +1073,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
         if (idCpu == RTMpCpuId())
         {
             rc = g_HvmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
-            AssertRC(rc);
+            AssertRCReturn(rc, rc);
         }
         else
         {

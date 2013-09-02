@@ -123,11 +123,12 @@ typedef enum VMMCALLRING3
 /**
  * VMMRZCallRing3 notification callback.
  *
+ * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   enmOperation    The operation causing the ring-3 jump.
  * @param   pvUser          The user argument.
  */
-typedef DECLCALLBACK(void) FNVMMR0CALLRING3NOTIFICATION(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
+typedef DECLCALLBACK(int) FNVMMR0CALLRING3NOTIFICATION(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser);
 /** Pointer to a FNRTMPNOTIFICATION(). */
 typedef FNVMMR0CALLRING3NOTIFICATION *PFNVMMR0CALLRING3NOTIFICATION;
 
