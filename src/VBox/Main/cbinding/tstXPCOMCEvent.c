@@ -1,12 +1,15 @@
 /* $Revision$ */
-/** @file tstXPCOMCGlue.c
- * Demonstrator program to illustrate use of C bindings of Main API.
+/** @file tstXPCOMCEvent.c
+ * Demonstrator program to illustrate use of C bindings of Main API,
+ * and in particular how to handle active event listeners (event delivery
+ * through callbacks). The code is derived from tstXPCOMCGlue.c, so keep
+ * the diffs to the original code as small as possible.
  *
  * Linux only at the moment due to shared library magic in the Makefile.
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,13 +30,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/poll.h>
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *queue);
-static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue);
-static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue);
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -61,9 +57,6 @@ int volatile g_refcount = 0;
            (unsigned)(iid)->m3[7]);\
 }\
 
-/**
- * Callback functions
- */
 static const char *GetStateName(PRUint32 machineState)
 {
     switch (machineState)
@@ -74,169 +67,152 @@ static const char *GetStateName(PRUint32 machineState)
         case MachineState_Teleported:          return "Teleported";
         case MachineState_Aborted:             return "Aborted";
         case MachineState_Running:             return "Running";
-        case MachineState_Teleporting:         return "Teleporting";
-        case MachineState_LiveSnapshotting:    return "LiveSnapshotting";
         case MachineState_Paused:              return "Paused";
         case MachineState_Stuck:               return "Stuck";
+        case MachineState_Teleporting:         return "Teleporting";
+        case MachineState_LiveSnapshotting:    return "LiveSnapshotting";
         case MachineState_Starting:            return "Starting";
         case MachineState_Stopping:            return "Stopping";
         case MachineState_Saving:              return "Saving";
         case MachineState_Restoring:           return "Restoring";
         case MachineState_TeleportingPausedVM: return "TeleportingPausedVM";
         case MachineState_TeleportingIn:       return "TeleportingIn";
-        case MachineState_Discarding:          return "Discarding";
+        case MachineState_FaultTolerantSyncing: return "FaultTolerantSyncing";
+        case MachineState_DeletingSnapshotOnline: return "DeletingSnapshotOnline";
+        case MachineState_DeletingSnapshotPaused: return "DeletingSnapshotPaused";
+        case MachineState_RestoringSnapshot:   return "RestoringSnapshot";
+        case MachineState_DeletingSnapshot:    return "DeletingSnapshot";
         case MachineState_SettingUp:           return "SettingUp";
         default:                               return "no idea";
     }
 }
 
-static nsresult OnMousePointerShapeChange(
-    IConsoleCallback *pThis,
-    PRBool visible,
-    PRBool alpha,
-    PRUint32 xHot,
-    PRUint32 yHot,
-    PRUint32 width,
-    PRUint32 height,
-    PRUint8 * shape
-) {
-    printf("OnMousePointerShapeChange\n");
-    return 0;
-}
-
-static nsresult OnMouseCapabilityChange(
-    IConsoleCallback *pThis,
-    PRBool supportsAbsolute,
-    PRBool needsHostCursor
-) {
-    printf("OnMouseCapabilityChange\n");
-    return 0;
-}
-
-static nsresult OnKeyboardLedsChange(
-    IConsoleCallback *pThis,
-    PRBool numLock,
-    PRBool capsLock,
-    PRBool scrollLock
-) {
-    printf("OnMouseCapabilityChange\n");
-    return 0;
-}
-
-static nsresult OnStateChange(
-    IConsoleCallback *pThis,
-    PRUint32 state
-) {
-    printf("OnStateChange: %s\n", GetStateName(state));
-    fflush(stdout);
-    if (   state == MachineState_PoweredOff
-        || state == MachineState_Saved
-        || state == MachineState_Teleported
-        || state == MachineState_Aborted
-       )
-        g_fStop = 1;
-    return 0;
-}
-
-static nsresult OnAdditionsStateChange(IConsoleCallback *pThis )
+/**
+ * Event handler function
+ */
+static nsresult HandleEvent(IEventListener *pThis, IEvent *event)
 {
-    printf("OnAdditionsStateChange\n");
+    enum VBoxEventType evType;
+    nsresult rc;
+
+    if (!event)
+    {
+        printf("event null\n");
+        return 0;
+    }
+
+    evType = VBoxEventType_Invalid;
+    rc = event->vtbl->GetType(event, &evType);
+    if (NS_FAILED(rc))
+    {
+        printf("cannot get event type, rc=%#x\n", rc);
+        return 0;
+    }
+
+    switch (evType)
+    {
+        case VBoxEventType_OnMousePointerShapeChanged:
+            printf("OnMousePointerShapeChanged\n");
+            break;
+
+        case VBoxEventType_OnMouseCapabilityChanged:
+            printf("OnMouseCapabilityChanged\n");
+            break;
+
+        case VBoxEventType_OnKeyboardLedsChanged:
+            printf("OnMouseCapabilityChanged\n");
+            break;
+
+        case VBoxEventType_OnStateChanged:
+        {
+            static const nsID istateChangedEventUUID = ISTATECHANGEDEVENT_IID;
+            IStateChangedEvent *ev = NULL;
+            enum MachineState state;
+            rc = event->vtbl->nsisupports.QueryInterface((nsISupports *)event, &istateChangedEventUUID, (void **)&ev);
+            if (NS_FAILED(rc))
+            {
+                printf("cannot get StateChangedEvent interface, rc=%#x\n", rc);
+                return 0;
+            }
+            if (!ev)
+            {
+                printf("StateChangedEvent reference null\n");
+                return 0;
+            }
+            rc = ev->vtbl->GetState(ev, &state);
+            if (NS_FAILED(rc))
+                printf("warning: cannot get state, rc=%#x\n", rc);
+            ev->vtbl->ievent.nsisupports.Release((nsISupports *)ev);
+            printf("OnStateChanged: %s\n", GetStateName(state));
+
+            fflush(stdout);
+            if (   state == MachineState_PoweredOff
+                || state == MachineState_Saved
+                || state == MachineState_Teleported
+                || state == MachineState_Aborted
+               )
+                g_fStop = 1;
+            break;
+        }
+
+        case VBoxEventType_OnAdditionsStateChanged:
+            printf("OnAdditionsStateChanged\n");
+            break;
+
+        case VBoxEventType_OnNetworkAdapterChanged:
+            printf("OnNetworkAdapterChanged\n");
+            break;
+
+        case VBoxEventType_OnSerialPortChanged:
+            printf("OnSerialPortChanged\n");
+            break;
+
+        case VBoxEventType_OnParallelPortChanged:
+            printf("OnParallelPortChanged\n");
+            break;
+
+        case VBoxEventType_OnStorageControllerChanged:
+            printf("OnStorageControllerChanged\n");
+            break;
+
+        case VBoxEventType_OnMediumChanged:
+            printf("OnMediumChanged\n");
+            break;
+
+        case VBoxEventType_OnVRDEServerChanged:
+            printf("OnVRDEServerChanged\n");
+            break;
+
+        case VBoxEventType_OnUSBControllerChanged:
+            printf("OnUSBControllerChanged\n");
+            break;
+
+        case VBoxEventType_OnUSBDeviceStateChanged:
+            printf("OnUSBDeviceStateChanged\n");
+            break;
+
+        case VBoxEventType_OnSharedFolderChanged:
+            printf("OnSharedFolderChanged\n");
+            break;
+
+        case VBoxEventType_OnRuntimeError:
+            printf("OnRuntimeError\n");
+            break;
+
+        case VBoxEventType_OnCanShowWindow:
+            printf("OnCanShowWindow\n");
+            break;
+
+        case VBoxEventType_OnShowWindow:
+            printf("OnShowWindow\n");
+            break;
+
+        default:
+            printf("unknown event: %d\n", evType);
+    }
+
     return 0;
 }
-
-static nsresult OnNetworkAdapterChange(
-    IConsoleCallback *pThis,
-    INetworkAdapter * networkAdapter
-) {
-    printf("OnNetworkAdapterChange\n");
-    return 0;
-}
-
-static nsresult OnSerialPortChange(
-    IConsoleCallback *pThis,
-    ISerialPort * serialPort
-) {
-    printf("OnSerialPortChange\n");
-    return 0;
-}
-
-static nsresult OnParallelPortChange(
-    IConsoleCallback *pThis,
-    IParallelPort * parallelPort
-) {
-    printf("OnParallelPortChange\n");
-    return 0;
-}
-
-static nsresult OnStorageControllerChange(IConsoleCallback *pThis)
-{
-    printf("OnStorageControllerChange\n");
-    return 0;
-}
-
-static nsresult OnMediumChange(IConsoleCallback *pThis,
-                               IMediumAttachment *mediumAttachment)
-{
-    printf("OnMediumChange\n");
-    return 0;
-}
-
-static nsresult OnVRDPServerChange(IConsoleCallback *pThis )
-{
-    printf("OnVRDPServerChange\n");
-    return 0;
-}
-
-static nsresult OnUSBControllerChange(IConsoleCallback *pThis )
-{
-    printf("OnUSBControllerChange\n");
-    return 0;
-}
-
-static nsresult OnUSBDeviceStateChange(
-    IConsoleCallback *pThis,
-    IUSBDevice * device,
-    PRBool attached,
-    IVirtualBoxErrorInfo * error
-) {
-    printf("OnUSBDeviceStateChange\n");
-    return 0;
-}
-
-static nsresult OnSharedFolderChange(
-    IConsoleCallback *pThis,
-    PRUint32 scope
-) {
-    printf("OnSharedFolderChange\n");
-    return 0;
-}
-
-static nsresult OnRuntimeError(
-    IConsoleCallback *pThis,
-    PRBool fatal,
-    PRUnichar * id,
-    PRUnichar * message
-) {
-    printf("OnRuntimeError\n");
-    return 0;
-}
-
-static nsresult OnCanShowWindow(
-    IConsoleCallback *pThis,
-    PRBool * canShow
-) {
-    printf("OnCanShowWindow\n");
-    return 0;
-}
-
-static nsresult OnShowWindow(
-    IConsoleCallback *pThis,
-    PRUint64 * winId
-) {
-    printf("OnShowWindow\n");
-    return 0;
-}
-
 
 static nsresult AddRef(nsISupports *pThis)
 {
@@ -264,11 +240,11 @@ static nsresult Release(nsISupports *pThis)
 
 static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resultp)
 {
-    static const nsID ivirtualboxCallbackUUID = IVIRTUALBOXCALLBACK_IID;
+    static const nsID ieventListenerUUID = IEVENTLISTENER_IID;
     static const nsID isupportIID = NS_ISUPPORTS_IID;
 
     /* match iid */
-    if (    memcmp(iid, &ivirtualboxCallbackUUID, sizeof(nsID)) == 0
+    if (    memcmp(iid, &ieventListenerUUID, sizeof(nsID)) == 0
         ||  memcmp(iid, &isupportIID, sizeof(nsID)) == 0)
     {
         ++g_refcount;
@@ -277,14 +253,14 @@ static nsresult QueryInterface(nsISupports *pThis, const nsID *iid, void **resul
         return NS_OK;
     }
 
-    /* printf("vboxCallback QueryInterface didn't find a matching interface\n"); */
+    /* printf("event listener QueryInterface didn't find a matching interface\n"); */
     printUUID(iid);
-    printUUID(&ivirtualboxCallbackUUID);
+    printUUID(&ieventListenerUUID);
     return NS_NOINTERFACE;
 }
 
 /**
- * Signal callback.
+ * Signal handler, terminate event listener.
  *
  * @param  iSig     The signal number (ignored).
  */
@@ -296,14 +272,14 @@ static void sigIntHandler(int iSig)
 }
 
 /**
- * Register callback functions for the selected VM.
+ * Register event listener for the selected VM.
  *
  * @param   virtualBox ptr to IVirtualBox object
  * @param   session    ptr to ISession object
  * @param   id         identifies the machine to start
  * @param   queue      handle to the event queue
  */
-static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue)
+static void registerEventListener(IVirtualBox *virtualBox, ISession *session, PRUnichar *machineId, nsIEventQueue *queue)
 {
     IConsole *console = NULL;
     nsresult rc;
@@ -311,91 +287,184 @@ static void registerCallBack(IVirtualBox *virtualBox, ISession *session, PRUnich
     rc = session->vtbl->GetConsole(session, &console);
     if ((NS_SUCCEEDED(rc)) && console)
     {
-        IConsoleCallback *consoleCallback = NULL;
-
-        consoleCallback = calloc(1, sizeof(IConsoleCallback));
-        consoleCallback->vtbl = calloc(1, sizeof(struct IConsoleCallback_vtbl));
-
-        if (consoleCallback && consoleCallback->vtbl)
+        IEventSource *es = NULL;
+        rc = console->vtbl->GetEventSource(console, &es);
+        if (NS_SUCCEEDED(rc) && es)
         {
-            consoleCallback->vtbl->nsisupports.AddRef = &AddRef;
-            consoleCallback->vtbl->nsisupports.Release = &Release;
-            consoleCallback->vtbl->nsisupports.QueryInterface = &QueryInterface;
-            consoleCallback->vtbl->OnMousePointerShapeChange = &OnMousePointerShapeChange;
-            consoleCallback->vtbl->OnMouseCapabilityChange = &OnMouseCapabilityChange;
-            consoleCallback->vtbl->OnKeyboardLedsChange =&OnKeyboardLedsChange;
-            consoleCallback->vtbl->OnStateChange = &OnStateChange;
-            consoleCallback->vtbl->OnAdditionsStateChange = &OnAdditionsStateChange;
-            consoleCallback->vtbl->OnNetworkAdapterChange = &OnNetworkAdapterChange;
-            consoleCallback->vtbl->OnSerialPortChange = &OnSerialPortChange;
-            consoleCallback->vtbl->OnParallelPortChange = &OnParallelPortChange;
-            consoleCallback->vtbl->OnStorageControllerChange = &OnStorageControllerChange;
-            consoleCallback->vtbl->OnMediumChange = &OnMediumChange;
-            consoleCallback->vtbl->OnVRDPServerChange = &OnVRDPServerChange;
-            consoleCallback->vtbl->OnUSBControllerChange = &OnUSBControllerChange;
-            consoleCallback->vtbl->OnUSBDeviceStateChange = &OnUSBDeviceStateChange;
-            consoleCallback->vtbl->OnSharedFolderChange = &OnSharedFolderChange;
-            consoleCallback->vtbl->OnRuntimeError = &OnRuntimeError;
-            consoleCallback->vtbl->OnCanShowWindow = &OnCanShowWindow;
-            consoleCallback->vtbl->OnShowWindow = &OnShowWindow;
-            g_refcount = 1;
+            PRUint32 interestingEvents[] =
+                {
+                    VBoxEventType_OnMousePointerShapeChanged,
+                    VBoxEventType_OnMouseCapabilityChanged,
+                    VBoxEventType_OnKeyboardLedsChanged,
+                    VBoxEventType_OnStateChanged,
+                    VBoxEventType_OnAdditionsStateChanged,
+                    VBoxEventType_OnNetworkAdapterChanged,
+                    VBoxEventType_OnSerialPortChanged,
+                    VBoxEventType_OnParallelPortChanged,
+                    VBoxEventType_OnStorageControllerChanged,
+                    VBoxEventType_OnMediumChanged,
+                    VBoxEventType_OnVRDEServerChanged,
+                    VBoxEventType_OnUSBControllerChanged,
+                    VBoxEventType_OnUSBDeviceStateChanged,
+                    VBoxEventType_OnSharedFolderChanged,
+                    VBoxEventType_OnRuntimeError,
+                    VBoxEventType_OnCanShowWindow,
+                    VBoxEventType_OnShowWindow
+                };
+            IEventListener *consoleListener = NULL;
+            consoleListener = calloc(1, sizeof(IEventListener));
+            consoleListener->vtbl = calloc(1, sizeof(struct IEventListener_vtbl));
 
-            rc = console->vtbl->RegisterCallback(console, consoleCallback);
-            if (NS_SUCCEEDED(rc))
+            if (consoleListener && consoleListener->vtbl)
             {
-                /* crude way to show how it works, but any
-                 * great ideas anyone?
-                 */
-                PRInt32 fd;
-                int ret;
+                consoleListener->vtbl->nsisupports.AddRef = &AddRef;
+                consoleListener->vtbl->nsisupports.Release = &Release;
+                consoleListener->vtbl->nsisupports.QueryInterface = &QueryInterface;
+                consoleListener->vtbl->HandleEvent = &HandleEvent;
+                g_refcount = 1;
 
-                printf("Entering event loop, PowerOff the machine to exit or press Ctrl-C to terminate\n");
-                fflush(stdout);
-                signal(SIGINT, sigIntHandler);
-
-                fd = queue->vtbl->GetEventQueueSelectFD(queue);
-                if (fd >= 0)
+                rc = es->vtbl->RegisterListener(es, consoleListener,
+                                                sizeof(interestingEvents) / sizeof(interestingEvents[0]),
+                                                interestingEvents, 1 /* active */);
+                if (NS_SUCCEEDED(rc))
                 {
-                    while (!g_fStop)
+                    /* crude way to show how it works, but any
+                     * great ideas anyone?
+                     */
+                    PRInt32 fd;
+                    int ret;
+
+                    printf("Entering event loop, PowerOff the machine to exit or press Ctrl-C to terminate\n");
+                    fflush(stdout);
+                    signal(SIGINT, sigIntHandler);
+
+                    fd = queue->vtbl->GetEventQueueSelectFD(queue);
+                    if (fd >= 0)
                     {
-                        struct pollfd pfd;
+                        while (!g_fStop)
+                        {
+                            struct pollfd pfd;
 
-                        pfd.fd = fd;
-                        pfd.events = POLLIN | POLLERR | POLLHUP;
-                        pfd.revents = 0;
+                            pfd.fd = fd;
+                            pfd.events = POLLIN | POLLERR | POLLHUP;
+                            pfd.revents = 0;
 
-                        ret = poll(&pfd, 1, 250);
+                            ret = poll(&pfd, 1, 250);
 
-                        if (ret <= 0)
-                            continue;
+                            if (ret <= 0)
+                                continue;
 
-                        if (pfd.revents & POLLHUP)
-                            g_fStop = 1;
+                            if (pfd.revents & POLLHUP)
+                                g_fStop = 1;
 
-                        queue->vtbl->ProcessPendingEvents(queue);
+                            queue->vtbl->ProcessPendingEvents(queue);
+                        }
                     }
-                }
-                else
-                {
-                    while (!g_fStop)
+                    else
                     {
-                        PLEvent *pEvent = NULL;
-                        rc = queue->vtbl->WaitForEvent(queue, &pEvent);
-                        /*printf("event: %p rc=%x\n", (void *)pEvent, rc);*/
-                        if (NS_SUCCEEDED(rc))
-                            queue->vtbl->HandleEvent(queue, pEvent);
+                        while (!g_fStop)
+                        {
+                            PLEvent *pEvent = NULL;
+                            rc = queue->vtbl->WaitForEvent(queue, &pEvent);
+                            /*printf("event: %p rc=%x\n", (void *)pEvent, rc);*/
+                            if (NS_SUCCEEDED(rc))
+                                queue->vtbl->HandleEvent(queue, pEvent);
+                        }
                     }
+                    signal(SIGINT, SIG_DFL);
                 }
-                signal(SIGINT, SIG_DFL);
+                es->vtbl->UnregisterListener(es, consoleListener);
+                consoleListener->vtbl->nsisupports.Release((nsISupports *)consoleListener);
             }
-            console->vtbl->UnregisterCallback(console, consoleCallback);
-            consoleCallback->vtbl->nsisupports.Release((nsISupports *)consoleCallback);
+            else
+            {
+                printf("Failed while allocating memory for console event listener.\n");
+            }
+            es->vtbl->nsisupports.Release((nsISupports *)es);
+        }
+        console->vtbl->nsisupports.Release((nsISupports *)console);
+    }
+}
+
+/**
+ * Start a VM.
+ *
+ * @param   virtualBox ptr to IVirtualBox object
+ * @param   session    ptr to ISession object
+ * @param   id         identifies the machine to start
+ * @param   queue      handle to the event queue
+ */
+
+static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue)
+{
+    nsresult rc;
+    IMachine  *machine    = NULL;
+    IProgress *progress   = NULL;
+    PRUnichar *env        = NULL;
+    PRUnichar *sessionType;
+
+    rc = virtualBox->vtbl->FindMachine(virtualBox, id, &machine);
+
+    if (NS_FAILED(rc) || !machine)
+    {
+        fprintf(stderr, "Error: Couldn't get the machine handle.\n");
+        return;
+    }
+
+    g_pVBoxFuncs->pfnUtf8ToUtf16("gui", &sessionType);
+
+    rc = machine->vtbl->LaunchVMProcess(machine,
+        session,
+        sessionType,
+        env,
+        &progress
+    );
+
+    g_pVBoxFuncs->pfnUtf16Free(sessionType);
+
+    if (NS_FAILED(rc))
+    {
+        fprintf(stderr, "Error: OpenRemoteSession failed.\n");
+    }
+    else
+    {
+        PRBool completed;
+        PRInt32 resultCode;
+
+        printf("Waiting for the remote session to open...\n");
+        progress->vtbl->WaitForCompletion(progress, -1);
+
+        rc = progress->vtbl->GetCompleted(progress, &completed);
+        if (NS_FAILED(rc))
+        {
+            fprintf (stderr, "Error: GetCompleted status failed.\n");
+        }
+
+        progress->vtbl->GetResultCode(progress, &resultCode);
+        if (NS_FAILED(resultCode))
+        {
+            IVirtualBoxErrorInfo *errorInfo;
+            PRUnichar *textUtf16;
+            char *text;
+
+            progress->vtbl->GetErrorInfo(progress, &errorInfo);
+            errorInfo->vtbl->GetText(errorInfo, &textUtf16);
+            g_pVBoxFuncs->pfnUtf16ToUtf8(textUtf16, &text);
+            printf("Error: %s\n", text);
+
+            g_pVBoxFuncs->pfnComUnallocMem(textUtf16);
+            g_pVBoxFuncs->pfnUtf8Free(text);
         }
         else
         {
-            printf("Failed while allocating memory for console Callback.\n");
+            fprintf(stderr, "Remote session has been successfully opened.\n");
+            registerEventListener(virtualBox, session, id, queue);
         }
+        progress->vtbl->nsisupports.Release((nsISupports *)progress);
     }
+
+    /* It's important to always release resources. */
+    machine->vtbl->nsisupports.Release((nsISupports *)machine);
 }
 
 /**
@@ -514,7 +583,7 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *q
                 g_pVBoxFuncs->pfnUtf16ToUtf8(osNameUtf16,&osName);
                 printf("\tGuest OS:    %s\n\n", osName);
 
-                osType->vtbl->nsisupports.Release((void *)osType);
+                osType->vtbl->nsisupports.Release((nsISupports *)osType);
                 g_pVBoxFuncs->pfnUtf8Free(osName);
                 g_pVBoxFuncs->pfnComUnallocMem(osNameUtf16);
                 g_pVBoxFuncs->pfnComUnallocMem(typeId);
@@ -558,89 +627,6 @@ static void listVMs(IVirtualBox *virtualBox, ISession *session, nsIEventQueue *q
             machine->vtbl->nsisupports.Release((nsISupports *)machine);
         }
     }
-}
-
-/**
- * Start a VM.
- *
- * @param   virtualBox ptr to IVirtualBox object
- * @param   session    ptr to ISession object
- * @param   id         identifies the machine to start
- * @param   queue      handle to the event queue
- */
-
-static void startVM(IVirtualBox *virtualBox, ISession *session, PRUnichar *id, nsIEventQueue *queue)
-{
-    nsresult rc;
-    IMachine  *machine    = NULL;
-    IProgress *progress   = NULL;
-    PRUnichar *env        = NULL;
-    PRUnichar *sessionType;
-
-    rc = virtualBox->vtbl->GetMachine(virtualBox, id, &machine);
-
-    if (NS_FAILED(rc) || !machine)
-    {
-        fprintf(stderr, "Error: Couldn't get the machine handle.\n");
-        return;
-    }
-
-    g_pVBoxFuncs->pfnUtf8ToUtf16("gui", &sessionType);
-
-    rc = virtualBox->vtbl->OpenRemoteSession(
-        virtualBox,
-        session,
-        id,
-        sessionType,
-        env,
-        &progress
-    );
-
-    g_pVBoxFuncs->pfnUtf16Free(sessionType);
-
-    if (NS_FAILED(rc))
-    {
-        fprintf(stderr, "Error: OpenRemoteSession failed.\n");
-    }
-    else
-    {
-        PRBool completed;
-        PRInt32 resultCode;
-
-        printf("Waiting for the remote session to open...\n");
-        progress->vtbl->WaitForCompletion(progress, -1);
-
-        rc = progress->vtbl->GetCompleted(progress, &completed);
-        if (NS_FAILED(rc))
-        {
-            fprintf (stderr, "Error: GetCompleted status failed.\n");
-        }
-
-        progress->vtbl->GetResultCode(progress, &resultCode);
-        if (NS_FAILED(resultCode))
-        {
-            IVirtualBoxErrorInfo *errorInfo;
-            PRUnichar *textUtf16;
-            char *text;
-
-            progress->vtbl->GetErrorInfo(progress, &errorInfo);
-            errorInfo->vtbl->GetText(errorInfo, &textUtf16);
-            g_pVBoxFuncs->pfnUtf16ToUtf8(textUtf16, &text);
-            printf("Error: %s\n", text);
-
-            g_pVBoxFuncs->pfnComUnallocMem(textUtf16);
-            g_pVBoxFuncs->pfnUtf8Free(text);
-        }
-        else
-        {
-            fprintf(stderr, "Remote session has been successfully opened.\n");
-            registerCallBack(virtualBox, session, id, queue);
-        }
-        progress->vtbl->nsisupports.Release((void *)progress);
-    }
-
-    /* It's important to always release resources. */
-    machine->vtbl->nsisupports.Release((void *)machine);
 }
 
 /* Main - Start the ball rolling. */
@@ -742,7 +728,7 @@ int main(int argc, char **argv)
     }
 
     listVMs(vbox, session, queue);
-    session->vtbl->Close(session);
+    session->vtbl->UnlockMachine(session);
 
     printf("----------------------------------------------------\n");
 
