@@ -428,15 +428,8 @@ htg_apic_done:
     ;Skip cr2; assume host os don't stuff things in cr2. (safe)
     mov     eax, cr3
     mov     [edx + CPUMCPU.Host.cr3], eax
-    mov     eax, cr4
-    mov     [edx + CPUMCPU.Host.cr4], eax
-%if 0 ; paranoia
-    test    eax, X86_CR4_VMXE
-    jz      .vmxe_fine
-    mov     eax, VERR_VMX_IN_VMX_ROOT_MODE
-    retf
-.vmxe_fine:
-%endif
+    mov     esi, cr4                      ; esi = cr4, we'll modify it further down.
+    mov     [edx + CPUMCPU.Host.cr4], esi
 
     DEBUG32_S_CHAR('c')
     DEBUG32_S_CHAR(';')
@@ -466,6 +459,14 @@ htg_apic_done:
 %endif
 
     ;;
+    ;; Clean up CR4.  X86_CR4_PGE, X86_CR4_PCE, X86_CR4_PCIDE (not really
+    ;; relevant for 32-bit, but whatever) and X86_CR4_VMXE must be cleared.
+    ;;
+    and     esi, X86_CR4_VME | X86_CR4_PVI | X86_CR4_TSD | X86_CR4_DE | X86_CR4_PSE | X86_CR4_PAE \
+               | X86_CR4_MCE | X86_CR4_OSFSXR | X86_CR4_OSXMMEEXCPT | X86_CR4_SMXE | X86_CR4_OSXSAVE
+    mov     cr4, esi
+
+    ;;
     ;; Load Intermediate memory context.
     ;;
     FIXUP SWITCHER_FIX_INTER_CR3_HC, 1
@@ -474,12 +475,6 @@ htg_apic_done:
     DEBUG32_CHAR('?')
 %ifdef VBOX_WITH_64ON32_CMOS_DEBUG
     DEBUG_CMOS_TRASH_AL 17h
-    jmp     .first_jmp
-    times 65 db 90h
-.first_jmp:
-    times 65 db 90h
-.second_jmp:
-    DEBUG_CMOS_TRASH_AL 18h
 %endif
 
     ;;
