@@ -315,6 +315,7 @@ typedef FNVMEXITHANDLER *PFNVMEXITHANDLER;
 *******************************************************************************/
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
+static void               hmR0VmxClearEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx);
 static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
                                                  uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState);
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
@@ -6474,11 +6475,12 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  * @param   pMixedCtx       Pointer to the guest-CPU context. The data may be
  *                          out-of-sync. Make sure to update the required fields
  *                          before using them.
- *
- * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
+    HMVMX_ASSERT_PREEMPT_SAFE();
+    Assert(VMMRZCallRing3IsEnabled(pVCpu));
+
     /* Get the current interruptibility-state of the guest and then figure out what can be injected. */
     uint32_t uIntrState = hmR0VmxGetGuestIntrState(pVCpu, pMixedCtx);
     bool fBlockMovSS    = !!(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS);
@@ -6514,8 +6516,6 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
                                     pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
         AssertRCReturn(rc, rc);
-
-        pVCpu->hm.s.Event.fPending = false;
 
         /* Update the interruptibility-state as it could have been changed by
            hmR0VmxInjectEventVmcs() (e.g. real-on-v86 guest injecting software interrupts) */
@@ -6732,8 +6732,8 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  *                              This interruptibility-state will be updated if
  *                              necessary. This cannot not be NULL.
  *
- * @remarks No-long-jump zone!!!
  * @remarks Requires CR0!
+ * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
                                   uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState)
@@ -6871,6 +6871,10 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                     *puIntrState &= ~VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
                 }
                 Log4(("Injecting real-mode: u32IntrInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntrInfo, u32ErrCode, cbInstr));
+
+                /* The event has been truly dispatched. Mark it as no longer pending so we don't attempt to 'undo'
+                   it, if we are returning to ring-3 before executing guest code. */
+                pVCpu->hm.s.Event.fPending = false;
             }
             Assert(rc == VINF_SUCCESS || rc == VINF_EM_RESET);
             return rc;
@@ -6907,6 +6911,38 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
     AssertRCReturn(rc, rc);
     return rc;
+}
+
+
+/**
+ * Clears the current event in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu         Pointer to the VMCPU.
+ *
+ * @remarks Use this function only to clear events that have not yet been
+ *          delivered to the guest but are injected in the VMCS!
+ * @remarks No-long-jump zone!!!
+ */
+static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
+{
+    if (!pVCpu->hm.s.Event.fPending)
+        return;
+
+#ifdef VBOX_STRICT
+    uint32_t u32EntryInfo;
+    int rc2 = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
+    AssertRC(rc2);
+    Assert(VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo));
+#endif
+
+    /* Clear the entry-interruption field (including the valid bit). */
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
+    AssertRC(rc);
+
+    /* Clear the pending debug exception field. */
+    rc = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_EXCEPTIONS, 0);
+    AssertRC(rc);
 }
 
 
@@ -7351,6 +7387,17 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
         hmR0VmxEvaluatePendingEvent(pVCpu, pMixedCtx);
 
     /*
+     * Event injection may take locks (currently the PGM lock for real-on-v86 case) and thus needs to be done with
+     * longjmps or interrupts + preemption enabled. Event injection might also result in triple-faulting the VM.
+     */
+    rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+    {
+        Assert(rc == VINF_EM_RESET);
+        return rc;
+    }
+
+    /*
      * No longjmps to ring-3 from this point on!!!
      * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
      * This also disables flushing of the R0-logger instance (if any).
@@ -7371,6 +7418,7 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     if (   VM_FF_IS_PENDING(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
         || VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
     {
+        hmR0VmxClearEventVmcs(pVCpu);
         ASMSetFlags(pVmxTransient->uEflags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
@@ -7378,23 +7426,15 @@ static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRA
     }
     if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
+        hmR0VmxClearEventVmcs(pVCpu);
         ASMSetFlags(pVmxTransient->uEflags);
         VMMRZCallRing3Enable(pVCpu);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatPendingHostIrq);
         return VINF_EM_RAW_INTERRUPT;
     }
 
-    /*
-     * Event injection might result in triple-faulting the VM (real-on-v86 case), which is why it's
-     * done here and not in hmR0VmxPreRunGuestCommitted() which doesn't expect failures.
-     */
-    rc = hmR0VmxInjectPendingEvent(pVCpu, pMixedCtx);
-    if (RT_UNLIKELY(rc != VINF_SUCCESS))
-    {
-        ASMSetFlags(pVmxTransient->uEflags);
-        VMMRZCallRing3Enable(pVCpu);
-        return rc;
-    }
+    /* We've injected any pending events. This is really the point of no return (to ring-3). */
+    pVCpu->hm.s.Event.fPending = false;
 
     return VINF_SUCCESS;
 }
