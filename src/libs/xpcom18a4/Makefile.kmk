@@ -100,12 +100,9 @@ DLLS += \
 
  ifdef VBOX_WITH_TESTCASES
 PROGRAMS += \
-	tstnsIFileEnumerator \
 	tstnsIFileTest \
 	tstTestArray \
-	tstTestAtoms \
 	tstTestAutoLock \
-	tstTestCallTemplates \
 	tstTestCOMPtr \
 	tstTestCOMPtrEq \
 	tstTestCRT \
@@ -114,7 +111,6 @@ PROGRAMS += \
 	tstTestID \
 	tstTestObserverService \
 	tstTestPipes \
-	tstTestServMgr \
 	tstTestThreads \
 	tstTestXPIDLString \
 	tstTestDeque \
@@ -122,10 +118,14 @@ PROGRAMS += \
 	tstTestMinStringAPI \
 	tstTestStrings \
 	tstPrimitiveTest \
-	tstSimpleTypeLib \
-	tstXptDump \
-	tstXptLink
-#   tstTestPermanentAtoms
+#	tstnsIFileEnumerator
+#	tstTestAtoms 
+#	tstTestServMgr
+#	tstTestCallTemplates
+#	tstTestPermanentAtoms
+#	tstSimpleTypeLib
+#	tstXptDump
+#	tstXptLink
  endif # VBOX_WITH_TESTCASES
 PROGRAMS += VBoxXPCOMIPCD
 
