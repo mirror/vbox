@@ -1237,7 +1237,6 @@ typedef struct {
   svn_boolean_t prev_process, process;
   svn_boolean_t prev_process_default, process_default;
   svn_boolean_t prev_process_recursive, process_recursive;
-  svn_boolean_t added_ancestor_dir; /* This dir or its ancestors were added in this changeset */
   svn_boolean_t ignore_everything; /* Ignore operations on this dir/file. */
   svn_boolean_t ignore_everything_rec; /* Recursively ignore operations on subdirs/files. */
 #endif /* VBOX */
@@ -1606,7 +1605,6 @@ add_directory(const char *path,
     if (!SVN_IS_VALID_REVNUM(copyfrom_rev) || SVN_IS_VALID_REVNUM(dst_rev))
     {
       /* Genuinely add a new dir, referring to other revision/name if known. */
-      b->added_ancestor_dir = TRUE;
       SVN_ERR(eb->wrapped_editor->add_directory(path, pb->wrapped_node_baton,
                                                 copyfrom_path,
                                                 dst_rev, pool,
@@ -1672,7 +1670,6 @@ open_directory(const char *path,
   svn_boolean_t dir_present_in_target = FALSE;
 
   DX(fprintf(stderr, "open_directory %s\n", path);)
-  db->added_ancestor_dir = pb->added_ancestor_dir;
   db->ignore_everything_rec = pb->ignore_everything_rec;
   db->ignore_everything = db->ignore_everything_rec;
   if (!db->ignore_everything)
@@ -1683,8 +1680,7 @@ open_directory(const char *path,
      * a change to some file in the directory is in one changeset. */
     SVN_ERR(svn_ra_check_path(eb->from_session_prop, STRIP_LEADING_SLASH(path),
                               eb->current-1, &nodekind, pool));
-    dir_added_this_changeset =    db->added_ancestor_dir
-                               || (nodekind != svn_node_dir);
+    dir_added_this_changeset = (nodekind != svn_node_dir);
     if (!dir_added_this_changeset)
     {
       svn_revnum_t dst_rev;
@@ -1756,7 +1752,6 @@ open_directory(const char *path,
 
         /* Directory appears due to changes to the process settings. */
         eb->changeset_live = TRUE;
-        db->added_ancestor_dir = TRUE;
         SVN_ERR(eb->wrapped_editor->add_directory(path, pb->wrapped_node_baton,
                                                   NULL, SVN_IGNORED_REVNUM, pool,
                                                   &db->wrapped_node_baton));
