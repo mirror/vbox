@@ -4058,7 +4058,13 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
-        pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
+        if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
+        {
+            pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
+            /** @todo this isn't necessary, but I'm still seeing tripple faults. */
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_EXIT_CTLS;
+        }
 #else
         /* 64-bit host or hybrid host. */
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM64;
@@ -4077,6 +4083,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
              *        fix should be found as the guest may be going back and forth
              *        between 16/32-bit and long mode frequently at times. */
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_EXIT_CTLS;
         }
 #else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
@@ -7272,17 +7279,18 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  * This may cause longjmps to ring-3 and may even result in rescheduling to the
  * recompiler. We must be cautious what we do here regarding committing
  * guest-state information into the VMCS assuming we assuredly execute the
- * guest in VT-x. If we fall back to the recompiler after updating the VMCS and
- * clearing the common-state (TRPM/forceflags), we must undo those changes so
- * that the recompiler can (and should) use them when it resumes guest
+ * guest in VT-x mode. If we fall back to the recompiler after updating the VMCS
+ * and clearing the common-state (TRPM/forceflags), we must undo those changes
+ * so that the recompiler can (and should) use them when it resumes guest
  * execution. Otherwise such operations must be done when we can no longer
  * exit to ring-3.
  *
- * @returns VBox status code (informational status codes included).
- * @retval VINF_SUCCESS if we can proceed with running the guest.
- * @retval VINF_EM_RESET if a triple-fault occurs while injecting a double-fault
- *         into the guest.
- * @retval VINF_* scheduling changes, we have to go back to ring-3.
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS if we can proceed with running the guest, interrupts
+ *          have been disabled.
+ * @retval  VINF_EM_RESET if a triple-fault occurs while injecting a
+ *          double-fault into the guest.
+ * @retval  VINF_* scheduling changes, we have to go back to ring-3.
  *
  * @param   pVM             Pointer to the VM.
  * @param   pVCpu           Pointer to the VMCPU.
@@ -7291,7 +7299,8 @@ DECLINLINE(void) hmR0VmxLoadGuestStateOptimal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pM
  *                          before using them.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  *
- * @remarks Called with preemption disabled.
+ * @remarks Called with preemption disabled. In the VINF_SUCCESS return case
+ *          interrupts will be disabled.
  */
 static int hmR0VmxPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
@@ -7500,7 +7509,8 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  * @param   rcVMRun         Return code of VMLAUNCH/VMRESUME.
  *
- * @remarks Called with interrupts disabled.
+ * @remarks Called with interrupts disabled, and returns with interrups enabled!
+ *
  * @remarks No-long-jump zone!!! This function will however re-enable longjmps
  *          unconditionally when it is safe to do so.
  */
@@ -7601,7 +7611,8 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(!HMR0SuspendPending());
         HMVMX_ASSERT_CPU_SAFE();
 
-        /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
+        /* Preparatory work for running guest code, this may force us to return
+           to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
         rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient);
         if (rc != VINF_SUCCESS)
@@ -7611,7 +7622,8 @@ static int hmR0VmxRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = hmR0VmxRunGuest(pVM, pVCpu, pCtx);
         /* The guest-CPU context is now outdated, 'pCtx' is to be treated as 'pMixedCtx' from this point on!!! */
 
-        /* Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state. */
+        /* Restore any residual host-state and save any bits shared between host
+           and guest into the guest-CPU state.  Re-enables interrupts! */
         hmR0VmxPostRunGuest(pVM, pVCpu, pCtx, &VmxTransient, rc);
 
         /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
@@ -7673,7 +7685,8 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         Assert(!HMR0SuspendPending());
         HMVMX_ASSERT_CPU_SAFE();
 
-        /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
+        /* Preparatory work for running guest code, this may force us to return
+           to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
         rc = hmR0VmxPreRunGuest(pVM, pVCpu, pCtx, &VmxTransient);
         if (rc != VINF_SUCCESS)
@@ -7683,7 +7696,8 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         rc = hmR0VmxRunGuest(pVM, pVCpu, pCtx);
         /* The guest-CPU context is now outdated, 'pCtx' is to be treated as 'pMixedCtx' from this point on!!! */
 
-        /* Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state. */
+        /* Restore any residual host-state and save any bits shared between host
+           and guest into the guest-CPU state.  Re-enables interrupts! */
         hmR0VmxPostRunGuest(pVM, pVCpu, pCtx, &VmxTransient, rc);
 
         /* Check for errors with running the VM (VMLAUNCH/VMRESUME). */
