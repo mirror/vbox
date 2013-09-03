@@ -58,7 +58,7 @@ int main (int argc, char **argv)
         RTPrintf ("\nUsage:\n\n"
                   "%s <machine_name> [on|off|pause|resume]\n\n",
                   argv [0]);
-        return -1;
+        return 0;
     }
 
     RTPrintf ("\n");
