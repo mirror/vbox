@@ -708,8 +708,8 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     m_src4.sin_family = AF_INET;
     m_src6.sin6_family = AF_INET6;
 #if HAVE_SA_LEN
-    m_src4.sa_len = sizeof(m_src4);
-    m_src6.sa_len = sizeof(m_src6);
+    m_src4.sin_len = sizeof(m_src4);
+    m_src6.sin6_len = sizeof(m_src6);
 #endif
 
     m_LwipNetIf.name[0] = 'N';
