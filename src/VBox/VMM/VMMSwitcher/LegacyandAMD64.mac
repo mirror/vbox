@@ -158,7 +158,7 @@ BEGINPROC vmmR0ToRawMode
     ; turn off interrupts
     pushf
     cli
-    DEBUG_CMOS_STACK32 10h
+    ;DEBUG_CMOS_STACK32 10h
 
     ;
     ; Call worker.
@@ -430,6 +430,14 @@ htg_apic_done:
     mov     [edx + CPUMCPU.Host.cr3], eax
     mov     eax, cr4
     mov     [edx + CPUMCPU.Host.cr4], eax
+%if 0 ; paranoia
+    test    eax, X86_CR4_VMXE
+    jz      .vmxe_fine
+    mov     eax, VERR_VMX_IN_VMX_ROOT_MODE
+    retf
+.vmxe_fine:
+%endif
+
     DEBUG32_S_CHAR('c')
     DEBUG32_S_CHAR(';')
 
@@ -477,12 +485,14 @@ htg_apic_done:
 ALIGNCODE(16)
 GLOBALNAME IDEnterTarget
     DEBUG32_CHAR('1')
+    DEBUG_CMOS_TRASH_AL 18h
 
     ; 1. Disable paging.
     mov     ebx, cr0
     and     ebx, ~X86_CR0_PG
     mov     cr0, ebx
     DEBUG32_CHAR('2')
+    DEBUG_CMOS_TRASH_AL 19h
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     eax, cr2
@@ -493,12 +503,14 @@ GLOBALNAME IDEnterTarget
     mov     ecx, cr4
     or      ecx, X86_CR4_PAE
     mov     cr4, ecx
+    DEBUG_CMOS_TRASH_AL 1ah
 
     ; 3. Load long mode intermediate CR3.
     FIXUP FIX_INTER_AMD64_CR3, 1
     mov     ecx, 0ffffffffh
     mov     cr3, ecx
     DEBUG32_CHAR('3')
+    DEBUG_CMOS_TRASH_AL 1bh
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     eax, cr2
@@ -515,6 +527,7 @@ GLOBALNAME IDEnterTarget
     wrmsr
     mov     edx, esi
     DEBUG32_CHAR('4')
+    DEBUG_CMOS_TRASH_AL 1ch
 
 %ifdef VBOX_WITH_CRASHDUMP_MAGIC
     mov     eax, cr2
@@ -538,6 +551,7 @@ BITS 64
 ALIGNCODE(16)
 NAME(IDEnter64Mode):
     DEBUG64_CHAR('6')
+    DEBUG_CMOS_TRASH_AL 1dh
     jmp     [NAME(pICEnterTarget) wrt rip]
 
 ; 64-bit jump target
@@ -560,7 +574,7 @@ db 'Switch_marker'
     ;
 ALIGNCODE(16)
 GLOBALNAME ICEnterTarget
-    DEBUG_CMOS_TRASH_AL 1ah
+    ;DEBUG_CMOS_TRASH_AL 1eh
     ; Load CPUM pointer into rdx
     mov     rdx, [NAME(pCpumIC) wrt rip]
     CPUMCPU_FROM_CPUM_WITH_OFFSET edx, ebp
