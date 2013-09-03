@@ -57,13 +57,11 @@ RT_C_DECLS_BEGIN
  *                      more than once!
  *
  * @remark  To avoid making assumptions about the layout of the
- *          VINF_EM_FIRST...VINF_EM_LAST range we're checking
- *          explicitly for each for exach the exceptions.
- *          However, for efficieny we ASSUME that the
- *          VINF_EM_LAST is smaller than most of the relevant
- *          status codes.  We also ASSUME that the
- *          VINF_EM_RESCHEDULE_REM status code is the most
- *          frequent status code we'll enounter in this range.
+ *          VINF_EM_FIRST...VINF_EM_LAST range we're checking explicitly for
+ *          each exact exception. However, for efficiency we ASSUME that the
+ *          VINF_EM_LAST is smaller than most of the relevant status codes. We
+ *          also ASSUME that the VINF_EM_RESCHEDULE_REM status code is the
+ *          most frequent status code we'll enounter in this range.
  *
  * @todo    Will have to add VINF_EM_DBG_HYPER_BREAKPOINT if the
  *          I/O port and MMIO breakpoints should trigger before
