@@ -1077,11 +1077,6 @@ pxtcp_pmgr_connect(struct pollmgr_handler *handler, SOCKET fd, int revents)
     LWIP_ASSERT1(handler == &pxtcp->pmhdl);
     LWIP_ASSERT1(fd == pxtcp->sock);
 
-    if (revents & POLLNVAL) {
-        pxtcp->sock = INVALID_SOCKET;
-        return pxtcp_schedule_reset(pxtcp);
-    }
-
     if (revents & (POLLNVAL | POLLHUP | POLLERR)) {
         if (revents & POLLNVAL) {
             pxtcp->sock = INVALID_SOCKET;
