@@ -292,13 +292,7 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateCreateShader(GLuint hwid, GLenum type)
         return 0;
     }
 
-    /* the id may not necesserily be hwid after save state restoration */
-    while ((pShader = crStateGetShaderObj(stateId)) != NULL)
-    {
-        GLuint newStateId = stateId + 7;
-        crDebug("Shader object %d already exists, generating a new one, %d", stateId, newStateId);
-        stateId = newStateId;
-    }
+    Assert((pShader = crStateGetShaderObj(stateId)) == NULL);
 #endif
 
     pShader = (CRGLSLShader *) crAlloc(sizeof(*pShader));
