@@ -22,9 +22,9 @@ include $(KBUILD_PATH)/subheader.kmk
 #
 # Globals
 #
-VBOX_PATH_DI_SRC := $(PATH_SUB_CURRENT)
-VBOX_DI_OUT_DIR  := $(PATH_TARGET)/additions/Installer
-BLDDIRS += $(VBOX_DI_OUT_DIR)
+VBOX_ADD_PATH_DI_SRC := $(PATH_SUB_CURRENT)
+VBOX_ADD_DI_OUT_DIR  := $(PATH_TARGET)/additions/Installer
+BLDDIRS += $(VBOX_ADD_DI_OUT_DIR)
 
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
@@ -64,7 +64,7 @@ endif
 
 # Where we do the packing (override this in LocalConfig.kmk if building on smbfs).
 ifndef VBOX_PATH_PACK_TMP
- VBOX_PATH_PACK_TMP := $(VBOX_DI_OUT_DIR)
+ VBOX_PATH_PACK_TMP := $(VBOX_ADD_DI_OUT_DIR)
 endif
 
 
@@ -102,8 +102,8 @@ $(VBOX_PATH_DIST)/VBoxDarwinAdditions.dmg: \
 		$(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg \
 		$(VBOX_BRAND_DARWIN_DISKIMAGE_BG) \
 		$(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE) \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/DiskImage/*) \
-		$(VBOX_PATH_DI_SRC)/DiskImage/Uninstall.tool \
+		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/DiskImage/*) \
+		$(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,hdiutil,,,$@)
 	@# Cleanup any previously failed attempts and various trash.
@@ -117,7 +117,7 @@ $(VBOX_PATH_DIST)/VBoxDarwinAdditions.dmg: \
 	@# Remove .dmg packages from old depend builds
 	$(QUIET)$(RM) -f $(wildcard $(VBOX_PATH_DIST)/VBoxDarwinAdditions-*-r*.dmg)
 	@# Populate the image with uninstaller, readme, picture, and .VolumeIcon.icns. (TODO)
-	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
+	$(INSTALL) $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool  $(VBOX_PATH_PACK_TMP)/DiskImage/
 ifeq (1,1)
 	@# Pedantic mode...
 	$(INSTALL) -m 644 $(VBOX_BRAND_DARWIN_DISKIMAGE_DS_STORE)           $(VBOX_PATH_PACK_TMP)/DiskImage/.DS_Store
@@ -139,11 +139,11 @@ endif
 $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsToolsAndServices.pkg \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/* \
-		            $(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/*.lproj/*) \
+		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/* \
+		            $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), $(VBOX_BRAND_$(f)_VIRTUALBOX_WELCOME_RTF)) \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,productbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -169,16 +169,16 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Welcome.rtf \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Welcome.rtf
 	@# Copy the resources.
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Conclusion.rtf
+	$(INSTALL) -m 0644 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Conclusion.rtf $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Conclusion.rtf
 	
 	$(SED) \
 		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
 		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/English.lproj/Localizable.strings \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Localizable.strings
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/Localizable.strings
 	$(INSTALL) -m 0644 $(VBOX_BRAND_DARWIN_INSTALLER_BG)                          $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res/background.tif
 	
 	$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
@@ -202,7 +202,7 @@ $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxGuestAdditions.pkg: \
 	
 	@# Build the package.
 	$(VBOX_PRODUCTBUILD) \
-		--distribution $(VBOX_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/distribution.dist \
+		--distribution $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditions_mpkg/distribution.dist \
 		--package-path $(VBOX_PATH_PACK_TMP)/Packages \
 		--resources $(VBOX_PATH_PACK_TMP)/VBoxDarwinAdditions.dist.res \
 		--identifier org.VirtualBox.mpkg.GuestAdditions \
@@ -221,20 +221,20 @@ VBoxDarwinAdditions.pkg:: $(VBOX_PATH_PACK_TMP)/DiskImage/VBoxDarwinAdditions.pk
 #
 # The VirtualBox Kernel extensions.
 #
-VBOX_DI_KEXTS_UNIVERSAL = VBoxGuest
-VBOX_DI_KEXTS = $(VBOX_DI_KEXTS_UNIVERSAL)
+VBOX_ADD_DI_KEXTS_UNIVERSAL = VBoxGuest
+VBOX_ADD_DI_KEXTS = $(VBOX_ADD_DI_KEXTS_UNIVERSAL)
 
 $(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg: \
-		$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), $(call VBOX_DI_FN_DEP_BOTH,$(kext).kext/Contents/MacOS/$(kext))) \
-		$(foreach kext,$(VBOX_DI_KEXTS), $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/Info.plist) \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/* \
-		            $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/*.lproj/*) \
+		$(foreach kext,$(VBOX_ADD_DI_KEXTS_UNIVERSAL), $(call VBOX_DI_FN_DEP_BOTH,$(kext).kext/Contents/MacOS/$(kext))) \
+		$(foreach kext,$(VBOX_ADD_DI_KEXTS), $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/Info.plist) \
+		$$(wildcard $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/* \
+		            $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/*.lproj/*) \
 		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_DESCRIPTION_PLIST) \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_README_HTML) \
 			$(VBOX_BRAND_$(f)_VBOXKEXTS_INSTALLATIONCHECK_STRINGS)) \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -252,27 +252,27 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxGuestAdditionsKEXTs.pkg: \
 	$(MKDIR) -p -m 1775 $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library
 	$(MKDIR) -p -m 0755 \
 		$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions \
-		$(foreach kext,$(VBOX_DI_KEXTS), \
+		$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
 			$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext \
 			$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents \
 			$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS )
 	@# Copy the common files (Info.plist).
-	$(foreach kext,$(VBOX_DI_KEXTS), \
+	$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/Info.plist $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/)
 	@# Copy the binaries and invoking lipo.
 ifdef VBOX_WITH_COMBINED_PACKAGE
-	$(foreach kext,$(VBOX_DI_KEXTS_UNIVERSAL), \
+	$(foreach kext,$(VBOX_ADD_DI_KEXTS_UNIVERSAL), \
 		$(NLTAB)$(VBOX_DI_LIPO) -create \
 			$(VBOX_PATH_DIST_32)/additions/$(kext).kext/Contents/MacOS/$(kext) \
 			$(VBOX_PATH_DIST_64)/additions/$(kext).kext/Contents/MacOS/$(kext) \
 			-output $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS/$(kext))
 else
-	$(foreach kext,$(VBOX_DI_KEXTS), \
+	$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/additions/$(kext).kext/Contents/MacOS/$(kext) $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext/Contents/MacOS/)
 endif
 	@# Signed the kext bundles.
 ifdef VBOX_SIGNING_MODE
-	$(foreach kext,$(VBOX_DI_KEXTS), \
+	$(foreach kext,$(VBOX_ADD_DI_KEXTS), \
 		$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions/$(kext).kext,) )
 endif
 	@# Set the correct owners.
@@ -280,10 +280,10 @@ endif
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.root/Library/Extensions
 	
 	# Copy package internal files
-	$(INSTALL) $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.desc/PkgBuildComponent.plist
+	$(INSTALL) $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/PkgBuildComponent.plist $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.desc/PkgBuildComponent.plist
 	
 	# Copy installer scripts
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.res
+	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsKEXTs/postflight $(VBOX_PATH_PACK_TMP)/VBoxGuestAdditionsKEXTs.pkg.res
 	
 	@# Build the package.
 	$(VBOX_PKGBUILD) \
@@ -311,10 +311,10 @@ VBOX_DI_VB_GA_BINARIES=VBoxClient VBoxControl VBoxService
 $(VBOX_PATH_PACK_TMP)/Packages/$(VBOX_GA_PKG): \
 		$(foreach f, $(VBOX_DI_VB_GA_BINARIES)\
 			,$(call VBOX_DI_FN_DEP_BOTH,$(f)) ) \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxclient.plist \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
-		$(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \
-		$(VBOX_PATH_DI_SRC)/DiskImage/Uninstall.tool \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxclient.plist \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
+		$(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \
+		$(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool \
 		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
 	$(call MSG_TOOL,pkgbuild,,,$@)
 	@# Cleanup any previously failed attempts.
@@ -353,14 +353,14 @@ else
 		,$(INSTALL) -m 0755 $(VBOX_PATH_DIST)/additions/$(binary)           "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/$(binary)-$(KBUILD_TARGET_ARCH)"$(NLTAB))
 endif
 	# Add Uninstall.tool
-	$(INSTALL) $(VBOX_PATH_DI_SRC)/DiskImage/Uninstall.tool  "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/" \
+	$(INSTALL) $(VBOX_ADD_PATH_DI_SRC)/DiskImage/Uninstall.tool  "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/" \
 	
 	@# Install launchd stuff
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \
+	$(INSTALL) -m 0755 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/VBoxServiceWrapper \
 	                                                                         "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/Application Support/VirtualBox Guest Additions/"
-	$(INSTALL) -m 644 $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxclient.plist \
+	$(INSTALL) -m 644 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxclient.plist \
 	                                                                         "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/LaunchAgents/"
-	$(INSTALL) -m 644 $(VBOX_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
+	$(INSTALL) -m 644 $(VBOX_ADD_PATH_DI_SRC)/VBoxGuestAdditionsToolsAndServices/org.virtualbox.additions.vboxservice.plist \
 	                                                                         "$(VBOX_PATH_PACK_TMP)/$(VBOX_GA_PKG).root/Library/LaunchDaemons/"
 	
 	@# Correct ownership
