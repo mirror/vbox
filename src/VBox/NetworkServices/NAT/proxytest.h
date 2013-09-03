@@ -14,9 +14,13 @@ struct netif;
 struct tcpip_msg;
 struct pbuf;
 struct sockaddr;
+struct sockaddr_in;
+struct sockaddr_in6;
 
 struct proxy_options {
     const char *tftp_root;
+    const struct sockaddr_in *src4;
+    const struct sockaddr_in6 *src6;
 };
 
 void proxy_init(struct netif *, const struct proxy_options *);
