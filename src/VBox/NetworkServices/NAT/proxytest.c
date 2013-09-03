@@ -34,6 +34,7 @@
 
 static SOCKET proxy_create_socket(int, int);
 
+volatile const struct proxy_options *g_proxy_options;
 static sys_thread_t pollmgr_tid;
 
 
@@ -47,7 +48,10 @@ proxy_init(struct netif *proxy_netif, const struct proxy_options *opts)
 {
     int status;
 
+    LWIP_ASSERT1(opts != NULL);
     LWIP_UNUSED_ARG(proxy_netif);
+
+    g_proxy_options = opts;
 
 #if 1
     proxy_rtadvd_start(proxy_netif);
@@ -57,7 +61,7 @@ proxy_init(struct netif *proxy_netif, const struct proxy_options *opts)
     dhcp6ds_init(proxy_netif);
 #endif
 
-    if (opts != NULL && opts->tftp_root != NULL) {
+    if (opts->tftp_root != NULL) {
         tftpd_init(proxy_netif, opts->tftp_root);
     }
 
@@ -224,6 +228,8 @@ proxy_connected_socket(int sdom, int stype,
     struct sockaddr *pdst_sa;
     socklen_t dst_sa_len;
     void *pdst_addr;
+    const struct sockaddr *psrc_sa;
+    socklen_t src_sa_len;
     int status;
     SOCKET s;
 
@@ -277,6 +283,24 @@ proxy_connected_socket(int sdom, int stype,
         return INVALID_SOCKET;
     }
     DPRINTF(("socket %d\n", s));
+
+    /* TODO: needs locking if dynamic modifyvm is allowed */
+    if (sdom == PF_INET6) {
+        psrc_sa = (const struct sockaddr *)g_proxy_options->src6;
+        src_sa_len = sizeof(struct sockaddr_in6);
+    }
+    else {
+        psrc_sa = (const struct sockaddr *)g_proxy_options->src4;
+        src_sa_len = sizeof(struct sockaddr_in);
+    }
+    if (psrc_sa != NULL) {
+        status = bind(s, psrc_sa, src_sa_len);
+        if (status == SOCKET_ERROR) {
+            DPRINTF(("socket %d: bind: %s\n", s, strerror(errno)));
+            closesocket(s);
+            return INVALID_SOCKET;
+        }
+    }
 
     status = connect(s, pdst_sa, dst_sa_len);
     if (status == SOCKET_ERROR && errno != EINPROGRESS) {

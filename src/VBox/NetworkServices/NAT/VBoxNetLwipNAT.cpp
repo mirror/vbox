@@ -136,6 +136,9 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     
    private:
     struct proxy_options m_ProxyOptions;
+    struct sockaddr_in m_src4;
+    struct sockaddr_in6 m_src6;
+
     uint16_t m_u16Mtu;
     netif m_LwipNetIf;
     /* Queues */
@@ -698,6 +701,16 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     LogFlowFuncEnter();
 
     m_ProxyOptions.tftp_root = NULL;
+    m_ProxyOptions.src4 = NULL;
+    m_ProxyOptions.src6 = NULL;
+    memset(&m_src4, 0, sizeof(m_src4));
+    memset(&m_src6, 0, sizeof(m_src6));
+    m_src4.sin_family = AF_INET;
+    m_src6.sin6_family = AF_INET6;
+#if HAVE_SA_LEN
+    m_src4.sa_len = sizeof(m_src4);
+    m_src6.sa_len = sizeof(m_src6);
+#endif
 
     m_LwipNetIf.name[0] = 'N';
     m_LwipNetIf.name[1] = 'T';
