@@ -82,43 +82,23 @@ class UIMedium
 {
 public:
 
-    /**
-     * Creates a null medium descriptor which is not associated with any medium.
-     * The state field is set to KMediumState_NotCreated.
-     */
-    UIMedium()
-        : m_type(UIMediumType_Invalid)
-        , m_state(KMediumState_NotCreated)
-        , m_pParent(0) { refresh(); }
+    /* Default (NULL) constructor:
+     * Creates NULL uimedium which is not associated with any medium. */
+    UIMedium();
 
-    /**
-     * Creates a media descriptor associated with the given medium.
-     *
-     * The state field remain KMediumState_NotCreated until #blockAndQueryState()
-     * is called. All precomposed strings are filled up by implicitly calling
-     * #refresh(), see the #refresh() details for more info.
-     *
-     * One of the hardDisk, dvdImage, or floppyImage members is assigned from
-     * medium according to type. @a pParent must be always NULL for non-hard
-     * disk media.
-     */
-    UIMedium(const CMedium &medium, UIMediumType type, UIMedium *pParent = 0)
-        : m_medium(medium)
-        , m_type(type)
-        , m_state(KMediumState_NotCreated)
-        , m_pParent(pParent) { refresh(); }
+    /* Lazy wrapping constructor:
+     * Creates a uimedium associated with the given medium. */
+    UIMedium(const CMedium &medium, UIMediumType type, UIMedium *pParent = 0);
 
-    /**
-     * Similar to the other non-null constructor but sets the media state to
-     * @a state. Suitable when the media state is known such as right after
-     * creation.
-     */
-    UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
-        : m_medium(medium)
-        , m_type(type)
-        , m_state(state)
-        , m_pParent(0) { refresh(); }
+    /* Wrapping constructor with known medium state:
+     * Similar to previous one but sets the uimedium state to passed one.
+     * Suitable when the medium-state is known such as right after medium creation. */
+    UIMedium(const CMedium &medium, UIMediumType type, KMediumState state);
 
+    /* Copy-constructor: */
+    UIMedium(const UIMedium &other);
+
+    /* API: Operator=: */
     UIMedium& operator=(const UIMedium &other);
 
     void blockAndQueryState();
