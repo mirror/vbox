@@ -3412,6 +3412,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 bool fMsrLocked;
                 bool fSmxVmxAllowed;
                 bool fVmxAllowed;
+                bool fAllowed;
 
                 /*
                  * We require the lock bit and the appropriate VMXON bit to be set otherwise VMXON will generate a #GP
@@ -3423,8 +3424,8 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                 fMsrLocked     = !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
                 fSmxVmxAllowed = fMsrLocked && !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
                 fVmxAllowed    = fMsrLocked && !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-                if (   (fInSmxMode && fSmxVmxAllowed)
-                    || fVmxAllowed)
+                fAllowed       = fInSmxMode ? fSmxVmxAllowed : fVmxAllowed;
+                if (fAllowed)
                 {
                     VMX_CAPABILITY vtCaps;
 
