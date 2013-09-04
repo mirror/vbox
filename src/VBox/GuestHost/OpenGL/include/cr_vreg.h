@@ -224,6 +224,8 @@ DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const VBOXVR_COMPOSITOR_ENTRY *pE
 #define CRBLT_F_INVERT_SRC_YCOORDS      0x00000002
 #define CRBLT_F_INVERT_DST_YCOORDS      0x00000004
 #define CRBLT_F_INVERT_YCOORDS          (CRBLT_F_INVERT_SRC_YCOORDS | CRBLT_F_INVERT_DST_YCOORDS)
+/* the blit operation with discard the source alpha channel values and set the destination alpha values to 1.0 */
+#define CRBLT_F_NOALPHA                 0x00000010
 
 #define CRBLT_FTYPE_XOR                 CRBLT_F_INVERT_YCOORDS
 #define CRBLT_FTYPE_OR                  CRBLT_F_LINEAR

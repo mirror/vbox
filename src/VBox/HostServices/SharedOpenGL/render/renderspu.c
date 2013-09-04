@@ -792,7 +792,7 @@ PCR_BLITTER renderspuVBoxPresentBlitterGet( WindowInfo *window )
                 return NULL;
             }
 
-            rc = CrBltInit(pBlitter, &pDefaultCtxInfo->BltInfo, true, true, render_spu.blitterDispatch);
+            rc = CrBltInit(pBlitter, &pDefaultCtxInfo->BltInfo, true, true, NULL, render_spu.blitterDispatch);
 
             /* we can release it either way, since it will be retained when used as a shared context */
             renderspuDefaultSharedContextRelease(pDefaultCtxInfo);

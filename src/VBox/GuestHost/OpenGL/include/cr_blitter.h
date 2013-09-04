@@ -28,6 +28,32 @@
 #endif
 
 RT_C_DECLS_BEGIN
+/* GLSL Cache */
+typedef struct CR_GLSL_CACHE
+{
+    float glVersion;
+    GLuint uNoAlpha2DProg;
+    GLuint uNoAlpha2DRectProg;
+    SPUDispatchTable *pDispatch;
+} CR_GLSL_CACHE;
+
+DECLINLINE(void) CrGlslInit(CR_GLSL_CACHE *pCache, SPUDispatchTable *pDispatch)
+{
+    memset(pCache, 0, sizeof (*pCache));
+    pCache->glVersion = 0.0;
+    pCache->pDispatch = pDispatch;
+}
+
+/* clients should set proper context before calling these funcs */
+VBOXBLITTERDECL(bool) CrGlslIsSupported(CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(int) CrGlslProgGenAllNoAlpha(CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(int) CrGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget);
+VBOXBLITTERDECL(int) CrGlslProgUseGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget);
+VBOXBLITTERDECL(int) CrGlslProgUseNoAlpha(const CR_GLSL_CACHE *pCache, GLenum enmTexTarget);
+VBOXBLITTERDECL(void) CrGlslProgClear(const CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(void) CrGlslCleanup(CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(void) CrGlslTerm(CR_GLSL_CACHE *pCache);
 
 /* BLITTER */
 typedef struct CR_BLITTER_BUFFER
@@ -46,7 +72,8 @@ typedef union CR_BLITTER_FLAGS
         uint32_t CurrentMuralChanged : 1;
         uint32_t LastWasFBODraw      : 1;
         uint32_t ForceDrawBlit       : 1;
-        uint32_t Reserved            : 26;
+        uint32_t ShadersGloal        : 1;
+        uint32_t Reserved            : 25;
     };
     uint32_t Value;
 } CR_BLITTER_FLAGS, *PCR_BLITTER_FLAGS;
@@ -97,6 +124,8 @@ typedef struct CR_BLITTER
     const CR_BLITTER_WINDOW *pRestoreMural;
     int32_t i32MakeCurrentUserData;
     SPUDispatchTable *pDispatch;
+    const CR_GLSL_CACHE *pGlslCache;
+    CR_GLSL_CACHE LocalGlslCache;
 } CR_BLITTER, *PCR_BLITTER;
 
 DECLINLINE(GLboolean) CrBltIsInitialized(PCR_BLITTER pBlitter)
@@ -104,9 +133,11 @@ DECLINLINE(GLboolean) CrBltIsInitialized(PCR_BLITTER pBlitter)
     return !!pBlitter->pDispatch;
 }
 
-VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, SPUDispatchTable *pDispatch);
+VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, const CR_GLSL_CACHE *pShaders, SPUDispatchTable *pDispatch);
 
 VBOXBLITTERDECL(void) CrBltTerm(PCR_BLITTER pBlitter);
+
+VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural);
 
 DECLINLINE(GLboolean) CrBltSupportsTexTex(PCR_BLITTER pBlitter)
 {
