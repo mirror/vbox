@@ -844,15 +844,12 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 
         /* Verify. */
         fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-        fMsrLocked     = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
-        fSmxVmxAllowed = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-        fVmxAllowed    = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
-
-        if (   (fInSmxMode && fSmxVmxAllowed)
-            || fVmxAllowed)
-        {
+        fMsrLocked          = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
+        fSmxVmxAllowed      = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+        fVmxAllowed         = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
+        bool const fAllowed = fInSmxMode ? fSmxVmxAllowed : fVmxAllowed;
+        if (fAllowed)
             rc = VINF_SUCCESS;
-        }
         else
             rc = VERR_VMX_MSR_LOCKING_FAILED;
     }
