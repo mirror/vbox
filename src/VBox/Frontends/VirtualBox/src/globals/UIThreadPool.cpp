@@ -257,7 +257,7 @@ void UIThreadWorker::setBusy(bool fBusy)
 
 void UIThreadWorker::run()
 {
-    printf("UIThreadWorker #%d: Started...\n", m_iIndex);
+//    printf("UIThreadWorker #%d: Started...\n", m_iIndex);
 
     /* Initialize COM: */
     COMBase::InitializeCOM(false);
@@ -278,7 +278,7 @@ void UIThreadWorker::run()
     /* Notify listener: */
     emit sigFinished(this);
 
-    printf("UIThreadWorker #%d: Finished!\n", m_iIndex);
+//    printf("UIThreadWorker #%d: Finished!\n", m_iIndex);
 }
 
 
