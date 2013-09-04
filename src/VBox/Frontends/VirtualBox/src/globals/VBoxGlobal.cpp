@@ -1746,7 +1746,7 @@ void VBoxGlobal::createMedium(const UIMedium &uimedium)
 
     it = m_mediums.insert (it, uimedium);
 
-    emit sigMediumCreated(*it);
+    emit sigMediumCreated((*it).id());
 }
 
 void VBoxGlobal::updateMedium(const UIMedium &uimedium)
@@ -1761,7 +1761,7 @@ void VBoxGlobal::updateMedium(const UIMedium &uimedium)
     if (&*it != &uimedium)
         *it = uimedium;
 
-    emit sigMediumUpdated(*it);
+    emit sigMediumUpdated((*it).id());
 }
 
 void VBoxGlobal::deleteMedium(const QString &strMediumID)
@@ -1795,7 +1795,7 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
     if (pParent != NULL)
     {
         pParent->refresh();
-        emit sigMediumUpdated(*pParent);
+        emit sigMediumUpdated(pParent->id());
     }
 }
 
@@ -4017,7 +4017,7 @@ bool VBoxGlobal::event(QEvent *pEvent)
             *(pMediumEnumeratedEvent->m_iterator) = pMediumEnumeratedEvent->m_medium;
 
             /* Notify listeners about newly enumerated medium: */
-            emit sigMediumEnumerated(*pMediumEnumeratedEvent->m_iterator);
+            emit sigMediumEnumerated((*pMediumEnumeratedEvent->m_iterator).id());
 
             /* Accept event: */
             return true;

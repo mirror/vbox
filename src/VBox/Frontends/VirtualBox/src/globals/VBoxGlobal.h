@@ -372,13 +372,13 @@ public:
 signals:
 
     /* Notifiers: Medium-processing stuff: */
-    void sigMediumCreated(const UIMedium &medium);
-    void sigMediumUpdated(const UIMedium &medium);
+    void sigMediumCreated(const QString &strMediumID);
+    void sigMediumUpdated(const QString &strMediumID);
     void sigMediumDeleted(const QString &strMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */
     void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(const UIMedium &medium);
+    void sigMediumEnumerated(const QString &strMediumID);
     void sigMediumEnumerationFinished();
 
 public slots:

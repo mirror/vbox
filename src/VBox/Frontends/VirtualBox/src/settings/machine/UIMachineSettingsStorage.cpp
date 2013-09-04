@@ -1830,10 +1830,10 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbUsageValue->setFullSizeSelection (true);
 
     /* Setup connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const UIMedium&)),
-            this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const UIMedium&)),
-            this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
+            this, SLOT(sltHandleMediumUpdated(const QString&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const QString&)),
+            this, SLOT(sltHandleMediumUpdated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
             this, SLOT(sltHandleMediumDeleted(const QString&)));
     connect (mAddCtrAction, SIGNAL (triggered (bool)), this, SLOT (addController()));
@@ -2270,19 +2270,22 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
     UISettingsPageMachine::showEvent (aEvent);
 }
 
-void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &medium)
+void UIMachineSettingsStorage::sltHandleMediumUpdated(const QString &strMediumID)
 {
+    /* Search for corresponding medium: */
+    UIMedium medium = vboxGlobal().medium(strMediumID);
+
     QModelIndex rootIndex = mStorageModel->root();
-    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    for (int i = 0; i < mStorageModel->rowCount(rootIndex); ++i)
     {
-        QModelIndex ctrIndex = rootIndex.child (i, 0);
-        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        QModelIndex ctrIndex = rootIndex.child(i, 0);
+        for (int j = 0; j < mStorageModel->rowCount(ctrIndex); ++j)
         {
-            QModelIndex attIndex = ctrIndex.child (j, 0);
-            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+            QModelIndex attIndex = ctrIndex.child(j, 0);
+            QString attMediumId = mStorageModel->data(attIndex, StorageModel::R_AttMediumId).toString();
             if (attMediumId == medium.id())
             {
-                mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
+                mStorageModel->setData(attIndex, attMediumId, StorageModel::R_AttMediumId);
 
                 /* Revalidate: */
                 revalidate();
@@ -2294,16 +2297,16 @@ void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &medium)
 void UIMachineSettingsStorage::sltHandleMediumDeleted(const QString &strMediumID)
 {
     QModelIndex rootIndex = mStorageModel->root();
-    for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
+    for (int i = 0; i < mStorageModel->rowCount(rootIndex); ++i)
     {
-        QModelIndex ctrIndex = rootIndex.child (i, 0);
-        for (int j = 0; j < mStorageModel->rowCount (ctrIndex); ++ j)
+        QModelIndex ctrIndex = rootIndex.child(i, 0);
+        for (int j = 0; j < mStorageModel->rowCount(ctrIndex); ++j)
         {
-            QModelIndex attIndex = ctrIndex.child (j, 0);
-            QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
+            QModelIndex attIndex = ctrIndex.child(j, 0);
+            QString attMediumId = mStorageModel->data(attIndex, StorageModel::R_AttMediumId).toString();
             if (attMediumId == strMediumID)
             {
-                mStorageModel->setData (attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
+                mStorageModel->setData(attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
 
                 /* Revalidate: */
                 revalidate();

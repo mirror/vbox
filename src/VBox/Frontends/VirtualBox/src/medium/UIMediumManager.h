@@ -63,13 +63,13 @@ public slots:
 private slots:
 
     /* Handlers: Medium-processing stuff: */
-    void sltHandleMediumCreated(const UIMedium &medium);
-    void sltHandleMediumUpdated(const UIMedium &medium);
+    void sltHandleMediumCreated(const QString &strMediumID);
+    void sltHandleMediumUpdated(const QString &strMediumID);
     void sltHandleMediumDeleted(const QString &strMediumID);
 
     /* Handlers: Medium-enumeration stuff: */
     void sltHandleMediumEnumerationStart();
-    void sltHandleMediumEnumerated(const UIMedium &medium);
+    void sltHandleMediumEnumerated(const QString &strMediumID);
     void sltHandleMediumEnumerationFinish();
 
     /* Handlers: Medium-modification stuff: */

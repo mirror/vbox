@@ -271,8 +271,11 @@ void UIMediumManager::refreshAll()
     vboxGlobal().startMediumEnumeration();
 }
 
-void UIMediumManager::sltHandleMediumCreated(const UIMedium &medium)
+void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
 {
+    /* Search for corresponding medium: */
+    UIMedium medium = vboxGlobal().medium(strMediumID);
+
     /* Ignore non-interesting mediums: */
     if ((medium.isNull()) || (medium.isHostDrive()))
         return;
@@ -336,8 +339,11 @@ void UIMediumManager::sltHandleMediumCreated(const UIMedium &medium)
         sltHandleCurrentItemChanged(pMediumItem);
 }
 
-void UIMediumManager::sltHandleMediumUpdated(const UIMedium &medium)
+void UIMediumManager::sltHandleMediumUpdated(const QString &strMediumID)
 {
+    /* Search for corresponding medium: */
+    UIMedium medium = vboxGlobal().medium(strMediumID);
+
     /* Ignore non-interesting mediums: */
     if ((medium.isNull()) || (medium.isHostDrive()))
         return;
@@ -419,7 +425,7 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     prepareToRefresh(mediums.size());
     VBoxMediaList::const_iterator it;
     for (it = mediums.begin(); it != mediums.end(); ++it)
-        sltHandleMediumCreated(*it);
+        sltHandleMediumCreated((*it).id());
 
     /* Select the first item to be the current one
      * if the previous saved item was not selected yet. */
@@ -437,10 +443,10 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     sltHandleCurrentTabChanged();
 }
 
-void UIMediumManager::sltHandleMediumEnumerated(const UIMedium &medium)
+void UIMediumManager::sltHandleMediumEnumerated(const QString &strMediumID)
 {
     /* Handle medium-update: */
-    sltHandleMediumUpdated(medium);
+    sltHandleMediumUpdated(strMediumID);
 
     /* Advance progress-bar: */
     m_pProgressBar->setValue(m_pProgressBar->value() + 1);
@@ -857,18 +863,18 @@ void UIMediumManager::prepareThis()
     Assert(!m_vbox.isNull());
 
     /* Configure medium-processing connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const UIMedium&)),
-            this, SLOT(sltHandleMediumCreated(const UIMedium&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const UIMedium&)),
-            this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const QString&)),
+            this, SLOT(sltHandleMediumCreated(const QString&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const QString&)),
+            this, SLOT(sltHandleMediumUpdated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
             this, SLOT(sltHandleMediumDeleted(const QString&)));
 
     /* Configure medium-enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
             this, SLOT(sltHandleMediumEnumerationStart()));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const UIMedium&)),
-            this, SLOT(sltHandleMediumEnumerated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const QString&)),
+            this, SLOT(sltHandleMediumEnumerated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()),
             this, SLOT(sltHandleMediumEnumerationFinish()));
 
@@ -1158,7 +1164,7 @@ void UIMediumManager::populateTreeWidgets()
         /* Add every medium we have into trees: */
         for (it = mediums.begin(); it != mediums.end(); ++it)
         {
-            sltHandleMediumCreated(*it);
+            sltHandleMediumCreated((*it).id());
             /* But advance progress-bar only for created mediums: */
             if ((*it).state() != KMediumState_NotCreated)
                 m_pProgressBar->setValue(m_pProgressBar->value() + 1);
