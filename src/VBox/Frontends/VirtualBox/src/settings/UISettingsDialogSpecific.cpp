@@ -552,7 +552,7 @@ UISettingsDialogMachine::UISettingsDialogMachine(QWidget *pParent, const QString
 #endif /* Q_WS_MAC */
 
     /* Allow to reset first-run flag just when medium enumeration was finished: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList &)), this, SLOT(sltAllowResetFirstRunFlag()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltAllowResetFirstRunFlag()));
 
     /* Get corresponding machine (required to determine dialog type and page availability): */
     m_machine = vboxGlobal().virtualBox().FindMachine(m_strMachineId);

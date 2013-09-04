@@ -681,8 +681,9 @@ protected:
 
 private slots:
 
-    void sltHandleMediumUpdated(const UIMedium &aMedium);
-    void sltHandleMediumRemoved(UIMediumType aType, const QString &aMediumId);
+    /* Handlers: Medium-processing stuff: */
+    void sltHandleMediumUpdated(const UIMedium &medium);
+    void sltHandleMediumDeleted(const QString &strMediumID);
 
     void addController();
     void addIDEController();

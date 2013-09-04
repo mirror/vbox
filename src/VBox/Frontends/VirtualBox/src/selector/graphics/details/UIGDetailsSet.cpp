@@ -346,7 +346,7 @@ void UIGDetailsSet::prepareConnections()
 
     /* Meidum-enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList &)), this, SLOT(sltUpdateAppearance()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
 }
 
 int UIGDetailsSet::minimumWidthHint() const
