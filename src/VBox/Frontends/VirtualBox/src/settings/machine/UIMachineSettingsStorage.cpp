@@ -1961,8 +1961,7 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     storageAttachmentData.m_fAttachmentNonRotational = attachment.GetNonRotational();
                     CMedium cmedium = attachment.GetMedium();
-                    UIMedium uimedium;
-                    vboxGlobal().medium(cmedium, uimedium);
+                    UIMedium uimedium = cmedium.isNull() ? UIMedium() : vboxGlobal().medium(cmedium.GetId());
                     storageAttachmentData.m_strAttachmentMediumId = uimedium.id();
                 }
 

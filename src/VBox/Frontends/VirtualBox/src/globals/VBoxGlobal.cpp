@@ -963,14 +963,15 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
 QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /*= true*/)
 {
     /* Search for corresponding UI medium: */
-    UIMedium uimedium;
-    if (!medium(cmedium, uimedium))
+    UIMedium uimedium = cmedium.isNull() ? UIMedium() : medium(cmedium.GetId());
+    if (!cmedium.isNull() && uimedium.isNull())
     {
-        /* UI medium may be new and not in medium list, request enumeration: */
+        /* UI medium may be new and not in medium-list, request enumeration: */
         startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
-        if (!medium(cmedium, uimedium))
+        uimedium = medium(cmedium.GetId());
+        if (uimedium.isNull())
         {
             /* Medium might be deleted already, return null string: */
             return QString();
@@ -1799,28 +1800,6 @@ void VBoxGlobal::deleteMedium(const QString &strMediumID)
     }
 }
 
-bool VBoxGlobal::medium(const CMedium &cmedium, UIMedium &uimedium) const
-{
-    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++it)
-    {
-        if (((*it).medium().isNull() && cmedium.isNull()) ||
-            (!(*it).medium().isNull() && !cmedium.isNull() && (*it).medium().GetId() == cmedium.GetId()))
-        {
-            uimedium = (*it);
-            return true;
-        }
-    }
-    return false;
-}
-
-UIMedium VBoxGlobal::medium(const QString &strMediumID) const
-{
-    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++it)
-        if ((*it).id() == strMediumID)
-            return *it;
-    return UIMedium();
-}
-
 /* Open some external medium using file open dialog
  * and temporary cache (enumerate) it in GUI inner mediums cache: */
 QString VBoxGlobal::openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent,
@@ -1937,10 +1916,10 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     if (vbox.isOk())
     {
         /* Prepare vbox medium wrapper: */
-        UIMedium uimedium;
+        UIMedium uimedium = medium(cmedium.GetId());
 
         /* First of all we should test if that medium already opened: */
-        if (!vboxGlobal().medium(cmedium, uimedium))
+        if (uimedium.isNull())
         {
             /* And create new otherwise: */
             uimedium = UIMedium(cmedium, mediumType, KMediumState_Created);
@@ -2035,7 +2014,7 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /*= true*/)
     AssertReturnVoid(mValid);
 
     /* Make sure enumeration is not already started: */
-    if (m_pMediumEnumerationThread)
+    if (isMediumEnumerationInProgress())
         return;
 
     /* Ignore the request during VBoxGlobal cleanup: */
@@ -2111,6 +2090,14 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /*= true*/)
     emit sigMediumEnumerationStarted();
 
     m_pMediumEnumerationThread->start();
+}
+
+UIMedium VBoxGlobal::medium(const QString &strMediumID) const
+{
+    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++it)
+        if ((*it).id() == strMediumID)
+            return *it;
+    return UIMedium();
 }
 
 /**
@@ -2189,10 +2176,9 @@ void VBoxGlobal::retranslateUi()
     mErrorIcon = UIIconPool::defaultIcon(UIIconPool::MessageBoxCriticalIcon).pixmap (16, 16);
     Assert (!mErrorIcon.isNull());
 
-    /* refresh media properties since they contain some translations too  */
-    for (VBoxMediaList::iterator it = m_mediums.begin();
-         it != m_mediums.end(); ++ it)
-        it->refresh();
+    /* Re-enumerate uimedium since they contain some translations too: */
+    if (mValid)
+        startMediumEnumeration();
 
 #ifdef Q_WS_X11
     /* As X11 do not have functionality for providing human readable key names,
