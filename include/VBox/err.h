@@ -1904,8 +1904,8 @@
 #define VERR_VMX_IN_VMX_ROOT_MODE                   (-4011)
 /** Somebody cleared X86_CR4_VMXE in the CR4 register. */
 #define VERR_VMX_X86_CR4_VMXE_CLEARED               (-4012)
-/** VT-x features locked or unavailable in MSR. */
-#define VERR_VMX_MSR_LOCKED_OR_DISABLED             (-4013)
+/** Failed to enable and lock VT-x features. */
+#define VERR_VMX_MSR_LOCKING_FAILED                 (-4013)
 /** Unable to switch due to invalid guest state. */
 #define VERR_VMX_INVALID_GUEST_STATE                (-4014)
 /** Unexpected VM exit code. */
@@ -1932,6 +1932,10 @@
 #define VERR_HMVMX_IPE_4                            (-4026)
 /** Internal VMX processing error no 1. */
 #define VERR_HMVMX_IPE_5                            (-4027)
+/** VT-x features for SMX operation disabled by the BIOS. */
+#define VERR_VMX_MSR_SMX_VMXON_DISABLED             (-4028)
+/** VT-x features disabled by the BIOS. */
+#define VERR_VMX_MSR_VMXON_DISABLED                 (-4029)
 /** @} */
 
 

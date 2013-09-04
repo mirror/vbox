@@ -949,6 +949,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** CPU Feature control. */
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
+#define MSR_IA32_FEATURE_CONTROL_SMX_VMXON  RT_BIT(1)
 #define MSR_IA32_FEATURE_CONTROL_VMXON      RT_BIT(2)
 
 /** BIOS update trigger (microcode update). */
@@ -1179,7 +1180,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_K8_SF_MASK                      UINT32_C(0xc0000084)
 /** K8 FS.base - The 64-bit base FS register. */
 #define MSR_K8_FS_BASE                      UINT32_C(0xc0000100)
-/** K8 GS.base - The 64-bit base GS register. */      
+/** K8 GS.base - The 64-bit base GS register. */
 #define MSR_K8_GS_BASE                      UINT32_C(0xc0000101)
 /** K8 KernelGSbase - Used with SWAPGS. */
 #define MSR_K8_KERNEL_GS_BASE               UINT32_C(0xc0000102)
