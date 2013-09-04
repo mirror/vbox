@@ -2000,49 +2000,49 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
             <para>Don't show the <emphasis>General</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Input</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Input</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Update</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Update</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Language</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Language</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Display</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Display</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Network</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Network</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Extensions</computeroutput></glossterm>
           <glossdef>
             <para>Don't show the <emphasis>Extensions</emphasis> settings pane.</para>
           </glossdef>
         </glossentry>
-      
+
         <glossentry>
           <glossterm><computeroutput>Proxy</computeroutput></glossterm>
           <glossdef>
@@ -2057,7 +2057,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
       <screen>VBoxManage setextradata global GUI/RestrictedGlobalSettingsPages</screen>
 
     </sect2>
-      
 
     <sect2>
       <title>Configure VM window menu entries</title>
@@ -2213,7 +2212,45 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
 
       <screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators</screen>
 
-  </sect2>
+    </sect2>
+
+    <sect2>
+      <title>Configure VM window visual modes</title>
+
+      <para>You can disable (i.e. black-list) certain VM visual modes:</para>
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedVisualStates OPTION[,OPTION...]</screen>
+
+      <para>where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>Fullscreen</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow to switch the VM into fullscreen mode.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Seamless</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow to switch the VM into seamless mode.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Scale</computeroutput></glossterm>
+          <glossdef>
+            <para>Don't allow to switch the VM into scale mode.</para>
+          </glossdef>
+        </glossentry>
+      
+      </glosslist>
+
+      <para>This is a per-VM setting. Any combination of the above is allowed. To restore
+        the default behavior, use</para>
+
+      <screen>VBoxManage setextradata "VM name" GUI/RestrictedVisualStates</screen>
+
+      </sect2>
 
       <sect2>
         <title>Host Key customization</title>
@@ -2357,6 +2394,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
         </para>
 
       </sect2>
+
       <sect2>
         <title>Action when terminating the VM</title>
 
