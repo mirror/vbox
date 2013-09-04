@@ -51,13 +51,13 @@ public:
 
 protected slots:
 
-    /* Handler: Medium-enumeration stuff: */
-    void sltHandleMediumEnumerationStart();
-
     /* Handlers: Medium-processing stuff: */
     void sltHandleMediumCreated(const UIMedium &medium);
     void sltHandleMediumUpdated(const UIMedium &medium);
     void sltHandleMediumDeleted(const QString &strMediumID);
+
+    /* Handler: Medium-enumeration stuff: */
+    void sltHandleMediumEnumerationStart();
 
     void processActivated (int aIndex);
 //    void processIndexChanged (int aIndex);

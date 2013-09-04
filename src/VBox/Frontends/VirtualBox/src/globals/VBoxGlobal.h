@@ -241,26 +241,22 @@ public:
 
     void reloadProxySettings();
 
+    /* API: Medium-processing stuff: */
+    void createMedium(const UIMedium &medium);
+    void updateMedium(const UIMedium &medium);
+    void deleteMedium(const QString &strMediumID);
+    bool medium(const CMedium &cmedium, UIMedium &uimedium) const;
+    UIMedium medium(const QString &strMediumID) const;
+
     /* API: Medium-enumeration stuff: */
     void startMediumEnumeration(bool fForceStart = true);
     bool agressiveCaching() const { return mAgressiveCaching; }
     bool isMediaEnumerationStarted() const { return !!m_pMediumEnumerationThread; }
     const VBoxMediaList &currentMediaList() const { return m_mediums; }
 
-    /* API: Medium-processing stuff: */
-    void createMedium(const UIMedium &medium);
-    void updateMedium(const UIMedium &medium);
-    void deleteMedium(const QString &strMediumID);
-
-    bool medium(const CMedium &cmedium, UIMedium &uimedium) const;
-    UIMedium medium(const QString &strMediumID) const;
-
     QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
     QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
-
-    /* Returns the number of current running Fe/Qt4 main windows. */
-    int mainWindowCount();
 
     /* various helpers */
 
@@ -375,15 +371,15 @@ public:
 
 signals:
 
-    /* Notifiers: Medium-enumeration stuff: */
-    void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(const UIMedium &medium);
-    void sigMediumEnumerationFinished();
-
     /* Notifiers: Medium-processing stuff: */
     void sigMediumCreated(const UIMedium &medium);
     void sigMediumUpdated(const UIMedium &medium);
     void sigMediumDeleted(const QString &strMediumID);
+
+    /* Notifiers: Medium-enumeration stuff: */
+    void sigMediumEnumerationStarted();
+    void sigMediumEnumerated(const UIMedium &medium);
+    void sigMediumEnumerationFinished();
 
 public slots:
 
