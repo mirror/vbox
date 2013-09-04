@@ -20,8 +20,9 @@
 #define __UIMedium_h__
 
 /* Qt includes: */
-#include <QPixmap>
+#include <QMap>
 #include <QLinkedList>
+#include <QPixmap>
 
 /* GUI includes: */
 #include "UIMediumDefs.h"
@@ -199,6 +200,11 @@ public:
     bool isHostDrive() const { return m_fHostDrive; }
 
     /**
+     * Returns a vector of IDs of all machines this medium is attached to.
+     */
+    const QList <QString> &machineIds() const { return m_machineIds; }
+
+    /**
      * Returns @c true if this medium is attached to the given machine in the current state.
      */
     bool isAttachedInCurStateTo(const QString &strMachineId) const { return m_curStateMachineIds.indexOf(strMachineId) >= 0; }
@@ -233,6 +239,9 @@ public:
     /** Returns @c true if this media descriptor is a null object. */
     bool isNull() const { return m_medium.isNull(); }
 
+    /* Static API: Null medium ID: */
+    static QString nullID();
+
 private:
 
     void checkNoDiffs(bool fNoDiffs);
@@ -266,6 +275,7 @@ private:
     bool m_fUsedInSnapshots              : 1;
     bool m_fHostDrive                    : 1;
 
+    QList<QString> m_machineIds;
     QList<QString> m_curStateMachineIds;
 
     UIMedium *m_pParent;
@@ -275,7 +285,9 @@ private:
     static QString m_sstrTable;
     static QString m_sstrRow;
 };
+Q_DECLARE_METATYPE(UIMedium);
 
 typedef QLinkedList<UIMedium> VBoxMediaList;
+typedef QMap<QString, UIMedium> UIMediumMap;
 
 #endif /* __UIMedium_h__ */

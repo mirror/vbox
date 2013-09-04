@@ -68,6 +68,7 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_fUsedInSnapshots = other.isUsedInSnapshots();
     m_fHostDrive = other.isHostDrive();
 
+    m_machineIds = other.machineIds();
     m_curStateMachineIds = other.curStateMachineIds();
 
     m_pParent = other.parent();
@@ -217,8 +218,8 @@ void UIMedium::refresh()
     if (!m_medium.isNull())
     {
         m_curStateMachineIds.clear();
-        QVector <QString> machineIds = m_medium.GetMachineIds();
-        if (machineIds.size() > 0)
+        m_machineIds = m_medium.GetMachineIds().toList();
+        if (m_machineIds.size() > 0)
         {
             /* We assume this flag is 'true' if at least one machine present: */
             m_fAttachedToHiddenMachinesOnly = true;
@@ -227,9 +228,9 @@ void UIMedium::refresh()
 
             CVirtualBox vbox = vboxGlobal().virtualBox();
 
-            for (QVector <QString>::ConstIterator it = machineIds.begin(); it != machineIds.end(); ++it)
+            foreach (const QString &strMachineID, m_machineIds)
             {
-                CMachine machine = vbox.FindMachine(*it);
+                CMachine machine = vbox.FindMachine(strMachineID);
 
                 /* UIMedium object can wrap newly created CMedium object which belongs to
                  * not yet registered machine, like while creating VM clone.
@@ -250,10 +251,10 @@ void UIMedium::refresh()
                 QString strName = machine.GetName();
                 QString strSnapshots;
 
-                QVector <QString> snapIds = m_medium.GetSnapshotIds(*it);
+                QVector <QString> snapIds = m_medium.GetSnapshotIds(strMachineID);
                 for (QVector <QString>::ConstIterator jt = snapIds.begin(); jt != snapIds.end(); ++jt)
                 {
-                    if (*jt == *it)
+                    if (*jt == strMachineID)
                     {
                         /* The medium is attached to the machine in the current
                          * state, we don't distinguish this for now by always
@@ -512,6 +513,12 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
         QString("%1 (%2)").arg(VBoxGlobal::locationForHTML(pRoot->m_strName), strDetails);
 
     return strDetails;
+}
+
+/* static */
+QString UIMedium::nullID()
+{
+    return QUuid().toString().remove('{').remove('}');
 }
 
 /**
