@@ -450,9 +450,9 @@ public:
      * first call or when all existing threads are busy.
      * @param s Socket from soap_accept() which has work to do.
      */
-    uint32_t add(int s)
+    size_t add(SOCKET s)
     {
-        uint32_t cItems;
+        size_t cItems;
         util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
 
         // if no threads have yet been created, or if all threads are busy,
@@ -492,7 +492,7 @@ public:
      * @param cThreads out: total no. of SOAP threads running
      * @return
      */
-    int get(size_t &cIdleThreads, size_t &cThreads)
+    SOCKET get(size_t &cIdleThreads, size_t &cThreads)
     {
         while (1)
         {
@@ -502,7 +502,7 @@ public:
             util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
             if (m_llSocketsQ.size())
             {
-                int socket = m_llSocketsQ.front();
+                SOCKET socket = m_llSocketsQ.front();
                 m_llSocketsQ.pop_front();
                 cIdleThreads = --m_cIdleThreads;
                 cThreads = m_llAllThreads.size();
@@ -542,7 +542,7 @@ public:
 
     // A std::list abused as a queue; this contains the actual jobs to do,
     // each int being a socket from soap_accept()
-    std::list<int>          m_llSocketsQ;
+    std::list<SOCKET>       m_llSocketsQ;
 };
 
 /**
@@ -731,7 +731,7 @@ struct CRYPTO_dynlock_value
 
 static unsigned long CRYPTO_id_function()
 {
-    return RTThreadNativeSelf();
+    return (unsigned long)RTThreadNativeSelf();
 }
 
 static void CRYPTO_locking_function(int mode, int n, const char * /*file*/, int /*line*/)
@@ -855,7 +855,7 @@ void doQueuesLoop()
     soap.bind_flags |= SO_REUSEADDR;
             // avoid EADDRINUSE on bind()
 
-    int m, s; // master and slave sockets
+    SOCKET m, s; // master and slave sockets
     m = soap_bind(&soap,
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
