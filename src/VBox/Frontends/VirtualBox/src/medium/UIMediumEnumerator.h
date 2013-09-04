@@ -38,13 +38,13 @@ class UIMediumEnumerator : public QObject
 signals:
 
     /* Notifiers: Medium-operations stuff: */
-    void sigMediumCreated(QString strMediumID);
-    void sigMediumUpdated(QString strMediumID);
-    void sigMediumDeleted(QString strMediumID);
+    void sigMediumCreated(const QString &strMediumID);
+    void sigMediumUpdated(const QString &strMediumID);
+    void sigMediumDeleted(const QString &strMediumID);
 
     /* Notifiers: Medium-enumeration stuff: */
     void sigMediumEnumerationStarted();
-    void sigMediumEnumerated(QString strMediumID);
+    void sigMediumEnumerated(const QString &strMediumID);
     void sigMediumEnumerationFinished();
 
 public:
