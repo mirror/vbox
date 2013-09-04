@@ -53,7 +53,7 @@ VMMR3DECL(int)      IEMR3Init(PVM pVM)
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cInstructions,             STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "Instructions interpreted",          "/IEM/CPU%u/cInstructions", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cPotentialExits,           STAMTYPE_U32,       STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                        "Potential exists",                  "/IEM/CPU%u/cPotentialExits", idCpu);
+                        "Potential exits",                   "/IEM/CPU%u/cPotentialExits", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetAspectNotImplemented,  STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                         "VERR_IEM_ASPECT_NOT_IMPLEMENTED",   "/IEM/CPU%u/cRetAspectNotImplemented", idCpu);
         STAMR3RegisterF(pVM, &pVCpu->iem.s.cRetInstrNotImplemented,   STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
