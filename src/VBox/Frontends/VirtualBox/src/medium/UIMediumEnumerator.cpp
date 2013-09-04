@@ -17,6 +17,9 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QSet>
+
 /* GUI includes: */
 #include "UIMediumEnumerator.h"
 #include "UIThreadPool.h"
