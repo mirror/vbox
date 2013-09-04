@@ -209,7 +209,7 @@ bool UIWizardNewVM::createVM()
             /* Boot virtual hard drive: */
             if (!strId.isNull())
             {
-                UIMedium vmedium = vboxGlobal().findMedium(strId);
+                UIMedium vmedium = vboxGlobal().medium(strId);
                 CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
                 machine.AttachDevice(strHDName, 0, 0, KDeviceType_HardDisk, medium);
                 if (!machine.isOk())

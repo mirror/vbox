@@ -132,7 +132,7 @@ void UIWizardFirstRunPageBasic::initializePage()
 bool UIWizardFirstRunPageBasic::isComplete() const
 {
     /* Make sure valid medium chosen: */
-    return !vboxGlobal().findMedium(id()).isNull();
+    return !vboxGlobal().medium(id()).isNull();
 }
 
 bool UIWizardFirstRunPageBasic::validatePage()

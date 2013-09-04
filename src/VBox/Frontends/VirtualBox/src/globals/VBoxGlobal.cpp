@@ -960,17 +960,17 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
     return false;
 }
 
-QString VBoxGlobal::details(const CMedium &medium, bool fPredictDiff, bool fUseHtml /*= true*/)
+QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /*= true*/)
 {
     /* Search for corresponding UI medium: */
     UIMedium uimedium;
-    if (!findMedium(medium, uimedium))
+    if (!medium(cmedium, uimedium))
     {
         /* UI medium may be new and not in medium list, request enumeration: */
         startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
-        if (!findMedium(medium, uimedium))
+        if (!medium(cmedium, uimedium))
         {
             /* Medium might be deleted already, return null string: */
             return QString();
@@ -1974,34 +1974,24 @@ void VBoxGlobal::removeMedium (UIMediumType aType, const QString &aId)
     }
 }
 
-/**
- *  Searches for a VBoxMedum object representing the given COM medium object.
- *
- *  @return true if found and false otherwise.
- */
-bool VBoxGlobal::findMedium (const CMedium &aObj, UIMedium &aMedium) const
+bool VBoxGlobal::medium(const CMedium &cmedium, UIMedium &uimedium) const
 {
-    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++ it)
+    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++it)
     {
-        if (((*it).medium().isNull() && aObj.isNull()) ||
-            (!(*it).medium().isNull() && !aObj.isNull() && (*it).medium().GetId() == aObj.GetId()))
+        if (((*it).medium().isNull() && cmedium.isNull()) ||
+            (!(*it).medium().isNull() && !cmedium.isNull() && (*it).medium().GetId() == cmedium.GetId()))
         {
-            aMedium = (*it);
+            uimedium = (*it);
             return true;
         }
     }
     return false;
 }
 
-/**
- *  Searches for a VBoxMedum object with the given medium id attribute.
- *
- *  @return VBoxMedum if found which is invalid otherwise.
- */
-UIMedium VBoxGlobal::findMedium (const QString &aMediumId) const
+UIMedium VBoxGlobal::medium(const QString &strMediumID) const
 {
-    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++ it)
-        if ((*it).id() == aMediumId)
+    for (VBoxMediaList::ConstIterator it = m_mediums.begin(); it != m_mediums.end(); ++it)
+        if ((*it).id() == strMediumID)
             return *it;
     return UIMedium();
 }
@@ -2117,23 +2107,23 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     vbox.SetExtraData(strRecentListKey, recentMediumList.join(";"));
 
     /* Open corresponding medium: */
-    CMedium comMedium = vbox.OpenMedium(strMediumLocation, mediumTypeToGlobal(mediumType), KAccessMode_ReadWrite, false);
+    CMedium cmedium = vbox.OpenMedium(strMediumLocation, mediumTypeToGlobal(mediumType), KAccessMode_ReadWrite, false);
 
     if (vbox.isOk())
     {
         /* Prepare vbox medium wrapper: */
-        UIMedium vboxMedium;
+        UIMedium uimedium;
 
         /* First of all we should test if that medium already opened: */
-        if (!vboxGlobal().findMedium(comMedium, vboxMedium))
+        if (!vboxGlobal().medium(cmedium, uimedium))
         {
             /* And create new otherwise: */
-            vboxMedium = UIMedium(CMedium(comMedium), mediumType, KMediumState_Created);
-            vboxGlobal().addMedium(vboxMedium);
+            uimedium = UIMedium(cmedium, mediumType, KMediumState_Created);
+            vboxGlobal().addMedium(uimedium);
         }
 
-        /* Return vboxMedium id: */
-        return vboxMedium.id();
+        /* Return uimedium id: */
+        return uimedium.id();
     }
     else
         msgCenter().cannotOpenMedium(vbox, mediumType, strMediumLocation, pParent);
@@ -4976,3 +4966,4 @@ bool VBoxGlobal::launchMachine(CMachine &machine, bool fHeadless /* = false */)
     /* True finally: */
     return true;
 }
+

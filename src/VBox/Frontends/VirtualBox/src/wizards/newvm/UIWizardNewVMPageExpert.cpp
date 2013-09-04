@@ -250,7 +250,7 @@ bool UIWizardNewVMPageExpert::isComplete() const
      * 'virtualDisk' field feats the rules: */
     return UIWizardPage::isComplete() &&
            (m_pRamSlider->value() >= qMax(1, (int)m_pRamSlider->minRAM()) && m_pRamSlider->value() <= (int)m_pRamSlider->maxRAM()) &&
-           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !vboxGlobal().findMedium(m_pDiskSelector->id()).isNull());
+           (m_pDiskSkip->isChecked() || !m_pDiskPresent->isChecked() || !vboxGlobal().medium(m_pDiskSelector->id()).isNull());
 }
 
 bool UIWizardNewVMPageExpert::validatePage()

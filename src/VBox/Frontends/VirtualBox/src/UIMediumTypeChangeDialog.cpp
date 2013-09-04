@@ -43,7 +43,7 @@ UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QStri
 #endif /* Q_WS_MAC */
 
     /* Search for corresponding medium: */
-    m_medium = vboxGlobal().findMedium(strMediumId).medium();
+    m_medium = vboxGlobal().medium(strMediumId).medium();
     m_oldMediumType = m_medium.GetType();
     m_newMediumType = m_oldMediumType;
 

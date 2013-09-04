@@ -235,7 +235,7 @@ bool UIWizardNewVMPageBasic3::isComplete() const
     /* Make sure 'virtualDisk' field feats the rules: */
     return m_pDiskSkip->isChecked() ||
            !m_pDiskPresent->isChecked() ||
-           !vboxGlobal().findMedium(m_pDiskSelector->id()).isNull();
+           !vboxGlobal().medium(m_pDiskSelector->id()).isNull();
 }
 
 bool UIWizardNewVMPageBasic3::validatePage()
