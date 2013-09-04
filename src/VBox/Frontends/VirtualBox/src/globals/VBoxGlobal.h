@@ -245,18 +245,16 @@ public:
     void createMedium(const UIMedium &medium);
     void updateMedium(const UIMedium &medium);
     void deleteMedium(const QString &strMediumID);
-    bool medium(const CMedium &cmedium, UIMedium &uimedium) const;
-    UIMedium medium(const QString &strMediumID) const;
+    QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
+                                         const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
+    QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
 
     /* API: Medium-enumeration stuff: */
     void startMediumEnumeration(bool fForceStart = true);
     bool agressiveCaching() const { return mAgressiveCaching; }
-    bool isMediaEnumerationStarted() const { return !!m_pMediumEnumerationThread; }
+    bool isMediumEnumerationInProgress() const { return !!m_pMediumEnumerationThread; }
+    UIMedium medium(const QString &strMediumID) const;
     const VBoxMediaList &currentMediaList() const { return m_mediums; }
-
-    QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
-                                         const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);
-    QString openMedium(UIMediumType mediumType, QString strMediumLocation, QWidget *pParent = 0);
 
     /* various helpers */
 

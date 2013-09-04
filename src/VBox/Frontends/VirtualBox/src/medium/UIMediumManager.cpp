@@ -331,7 +331,7 @@ void UIMediumManager::sltHandleMediumCreated(const QString &strMediumID)
 
     /* If the media enumeration process is not started we have to select the
      * newly added item as the current one for the case of new image was added or created */
-    if (!vboxGlobal().isMediaEnumerationStarted())
+    if (!vboxGlobal().isMediumEnumerationInProgress())
         setCurrentItem(treeWidget(medium.type()), pMediumItem);
 
     /* Update stuff if that was current-item added: */
@@ -679,7 +679,7 @@ void UIMediumManager::sltHandleCurrentItemChanged(QTreeWidgetItem *pItem,
     }
 
     /* Update action availability: */
-    bool fNotInEnumeration = !vboxGlobal().isMediaEnumerationStarted();
+    bool fNotInEnumeration = !vboxGlobal().isMediumEnumerationInProgress();
     bool fActionEnabledCopy    = currentTreeWidgetType() == UIMediumType_HardDisk &&
                                  fNotInEnumeration && pMediumItem && checkMediumFor(pMediumItem, Action_Copy);
     bool fActionEnabledModify  = currentTreeWidgetType() == UIMediumType_HardDisk &&
@@ -1149,7 +1149,7 @@ void UIMediumManager::prepareMacWindowMenu()
 void UIMediumManager::populateTreeWidgets()
 {
     /* If refresh was requested and enumeration was not yet started: */
-    if (m_fRefresh && !vboxGlobal().isMediaEnumerationStarted())
+    if (m_fRefresh && !vboxGlobal().isMediumEnumerationInProgress())
     {
         /* Just start medium-enumeration: */
         vboxGlobal().startMediumEnumeration();
@@ -1171,7 +1171,7 @@ void UIMediumManager::populateTreeWidgets()
         }
         /* Finally, emulate enumeration finish,
          * if enumeration already finished or wasn't started: */
-        if (!vboxGlobal().isMediaEnumerationStarted())
+        if (!vboxGlobal().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }
 
