@@ -48,7 +48,7 @@ void UIWizardCloneVDPage1::onHandleOpenSourceDiskClick()
 
 CMedium UIWizardCloneVDPage1::sourceVirtualDisk() const
 {
-    return vboxGlobal().findMedium(m_pSourceDiskSelector->id()).medium();
+    return vboxGlobal().medium(m_pSourceDiskSelector->id()).medium();
 }
 
 void UIWizardCloneVDPage1::setSourceVirtualDisk(const CMedium &sourceVirtualDisk)

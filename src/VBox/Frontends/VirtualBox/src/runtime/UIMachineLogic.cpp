@@ -1598,7 +1598,7 @@ void UIMachineLogic::sltMountStorageMedium()
 
     bool fMount = !newId.isEmpty();
 
-    UIMedium vmedium = vboxGlobal().findMedium(newId);
+    UIMedium vmedium = vboxGlobal().medium(newId);
     CMedium medium = vmedium.medium();              // @todo r=dj can this be cached somewhere?
 
     /* Remount medium to the predefined port/device: */
@@ -1609,7 +1609,7 @@ void UIMachineLogic::sltMountStorageMedium()
     else
     {
         /* Ask for force remounting: */
-        if (msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? newId : currentId),
+        if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(fMount ? newId : currentId),
                                             fMount, true /* retry? */, activeMachineWindow()))
         {
             /* Force remount medium to the predefined port/device: */
@@ -1617,7 +1617,7 @@ void UIMachineLogic::sltMountStorageMedium()
             if (machine.isOk())
                 fWasMounted = true;
             else
-                msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? newId : currentId),
+                msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(fMount ? newId : currentId),
                                                 fMount, false /* retry? */, activeMachineWindow());
         }
     }
@@ -1657,7 +1657,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         bool fMount = strNewId != strCurrentId;
 
         /* Prepare target medium: */
-        const UIMedium &vboxMedium = fMount ? vboxGlobal().findMedium(strNewId) : UIMedium();
+        const UIMedium &vboxMedium = fMount ? vboxGlobal().medium(strNewId) : UIMedium();
         const CMedium &comMedium = fMount ? vboxMedium.medium() : CMedium();
 
         /* 'Mounted' flag: */
@@ -1670,7 +1670,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
         else
         {
             /* Ask for force remounting: */
-            if (msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId),
+            if (msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(fMount ? strNewId : strCurrentId),
                                                 fMount, true /* retry? */, activeMachineWindow()))
             {
                 /* Force remount medium to the predefined port/device: */
@@ -1678,7 +1678,7 @@ void UIMachineLogic::sltMountRecentStorageMedium()
                 if (machine.isOk())
                     fWasMounted = true;
                 else
-                    msgCenter().cannotRemountMedium(machine, vboxGlobal().findMedium(fMount ? strNewId : strCurrentId),
+                    msgCenter().cannotRemountMedium(machine, vboxGlobal().medium(fMount ? strNewId : strCurrentId),
                                                     fMount, false /* retry? */, activeMachineWindow());
             }
         }

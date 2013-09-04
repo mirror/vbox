@@ -251,8 +251,8 @@ public:
     void updateMedium (const UIMedium &);
     void removeMedium (UIMediumType, const QString &);
 
-    bool findMedium (const CMedium &, UIMedium &) const;
-    UIMedium findMedium (const QString &aMediumId) const;
+    bool medium(const CMedium &cmedium, UIMedium &uimedium) const;
+    UIMedium medium(const QString &strMediumID) const;
 
     QString openMediumWithFileOpenDialog(UIMediumType mediumType, QWidget *pParent = 0,
                                          const QString &strDefaultFolder = QString(), bool fUseLastFolder = true);

@@ -652,7 +652,7 @@ void AttachmentItem::setAttDevice (KDeviceType aAttDeviceType)
 void AttachmentItem::setAttMediumId (const QString &aAttMediumId)
 {
     AssertMsg(!aAttMediumId.isEmpty(), ("Medium ID value can't be null/empty!\n"));
-    mAttMediumId = vboxGlobal().findMedium(aAttMediumId).id();
+    mAttMediumId = vboxGlobal().medium(aAttMediumId).id();
     cache();
 }
 
@@ -703,7 +703,7 @@ QString AttachmentItem::attUsage() const
 
 void AttachmentItem::cache()
 {
-    UIMedium medium = vboxGlobal().findMedium (mAttMediumId);
+    UIMedium medium = vboxGlobal().medium(mAttMediumId);
 
     /* Cache medium information */
     mAttName = medium.name (true);
@@ -1960,10 +1960,10 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
                     storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     storageAttachmentData.m_fAttachmentNonRotational = attachment.GetNonRotational();
-                    CMedium comMedium(attachment.GetMedium());
-                    UIMedium vboxMedium;
-                    vboxGlobal().findMedium(comMedium, vboxMedium);
-                    storageAttachmentData.m_strAttachmentMediumId = vboxMedium.id();
+                    CMedium cmedium = attachment.GetMedium();
+                    UIMedium uimedium;
+                    vboxGlobal().medium(cmedium, uimedium);
+                    storageAttachmentData.m_strAttachmentMediumId = uimedium.id();
                 }
 
                 /* Cache storage attachment data: */
@@ -2147,13 +2147,13 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
             QString key (mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString());
             QString value (QString ("%1 (%2)").arg (ctrName, gpConverter->toString (attSlot)));
             /* Check for emptiness: */
-            if (vboxGlobal().findMedium (key).isNull() && attDevice == KDeviceType_HardDisk)
+            if (vboxGlobal().medium(key).isNull() && attDevice == KDeviceType_HardDisk)
             {
                 message.second << tr("No hard disk is selected for <i>%1</i>.").arg (value);
                 fPass = false;
             }
             /* Check for coincidence: */
-            if (!vboxGlobal().findMedium (key).isNull() && config.contains (key))
+            if (!vboxGlobal().medium(key).isNull() && config.contains (key))
             {
                 message.second << tr("<i>%1</i> is using a disk that is already attached to <i>%2</i>.")
                                      .arg (value).arg (config [key]);
@@ -3079,7 +3079,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         {
             int iAnswer = msgCenter().confirmOpticalAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Choice1)
-                strMediumId = vboxGlobal().findMedium(strMediumId).id();
+                strMediumId = vboxGlobal().medium(strMediumId).id();
             else if (iAnswer == AlertButton_Choice2)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_DVD, this, strMachineFolder);
             break;
@@ -3088,7 +3088,7 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType deviceType)
         {
             int iAnswer = msgCenter().confirmFloppyAttachmentCreation(strControllerName, this);
             if (iAnswer == AlertButton_Choice1)
-                strMediumId = vboxGlobal().findMedium(strMediumId).id();
+                strMediumId = vboxGlobal().medium(strMediumId).id();
             else if (iAnswer == AlertButton_Choice2)
                 strMediumId = vboxGlobal().openMediumWithFileOpenDialog(UIMediumType_Floppy, this, strMachineFolder);
             break;
@@ -3494,7 +3494,7 @@ bool UIMachineSettingsStorage::createStorageAttachment(const UICacheSettingsMach
         bool fAttachmentTempEject = attachmentData.m_fAttachmentTempEject;
         bool fAttachmentNonRotational = attachmentData.m_fAttachmentNonRotational;
         /* Get GUI medium object: */
-        UIMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+        UIMedium vboxMedium = vboxGlobal().medium(strAttachmentMediumId);
         /* Get COM medium object: */
         CMedium comMedium = vboxMedium.medium();
 
@@ -3578,7 +3578,7 @@ bool UIMachineSettingsStorage::updateStorageAttachment(const UICacheSettingsMach
         if (fSuccess && !attachment.isNull())
         {
             /* Get GUI medium object: */
-            UIMedium vboxMedium = vboxGlobal().findMedium(strAttachmentMediumId);
+            UIMedium vboxMedium = vboxGlobal().medium(strAttachmentMediumId);
             /* Get COM medium object: */
             CMedium comMedium = vboxMedium.medium();
             /* Remount storage attachment: */
