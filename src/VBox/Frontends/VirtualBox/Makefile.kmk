@@ -286,6 +286,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/net/UIDownloaderAdditions.h \
 	src/net/UIDownloaderExtensionPack.h \
 	src/net/UIDownloaderUserManual.h \
+	src/medium/UIMediumEnumerator.h \
 	src/medium/UIMediumManager.h \
 	src/runtime/UIActionPoolRuntime.h \
 	src/runtime/UIConsoleEventHandler.h \
@@ -440,6 +441,7 @@ VirtualBox_QT_MOCSRCS = \
 	src/globals/UIActionPool.cpp \
 	src/globals/UIExtraDataEventHandler.cpp \
 	src/globals/UIThreadPool.cpp \
+	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/net/UINetworkReply.cpp \
 	src/net/UIUpdateManager.cpp \
@@ -521,6 +523,7 @@ VirtualBox_SOURCES = \
 	src/globals/VBoxGlobal.cpp \
 	src/medium/UIMediumDefs.cpp \
 	src/medium/UIMedium.cpp \
+	src/medium/UIMediumEnumerator.cpp \
 	src/medium/UIMediumManager.cpp \
 	src/net/UINetworkManager.cpp \
 	src/net/UINetworkManagerDialog.cpp \
