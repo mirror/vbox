@@ -388,6 +388,9 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
             /* Reread in case we've changed it. */
             g_HvmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
+            /** @todo r=ramshankar: This should be fixed for when the host is in SMX mode.
+             *        Probably don't need to recheck it here. It's done in
+             *        hmR0InitIntelCpu(). */
             if (   (g_HvmR0.vmx.Msrs.u64FeatureCtrl & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
                 ==                                    (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
             {
