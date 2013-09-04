@@ -27,8 +27,8 @@
 /* GUI includes: */
 #include "UIMedium.h"
 #include "VBoxGlobal.h"
-#include "UIMessageCenter.h"
 #include "UIConverter.h"
+#include "UIMessageCenter.h"
 
 /* COM includes: */
 #include "CMachine.h"
@@ -38,6 +38,40 @@
 
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");
 QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
+
+UIMedium::UIMedium()
+    : m_type(UIMediumType_Invalid)
+    , m_state(KMediumState_NotCreated)
+    , m_pParent(0)
+{
+    refresh();
+//    printf("UIMedium: New NULL medium created.\n");
+}
+
+UIMedium::UIMedium(const CMedium &medium, UIMediumType type, UIMedium *pParent /*= 0*/)
+    : m_medium(medium)
+    , m_type(type)
+    , m_state(KMediumState_NotCreated)
+    , m_pParent(pParent)
+{
+    refresh();
+//    printf("UIMedium: New medium with ID={%s} created.\n", id().toAscii().constData());
+}
+
+UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
+    : m_medium(medium)
+    , m_type(type)
+    , m_state(state)
+    , m_pParent(0)
+{
+    refresh();
+//    printf("UIMedium: New medium with ID={%s} created (with known state).\n", id().toAscii().constData());
+}
+
+UIMedium::UIMedium(const UIMedium &other)
+{
+    *this = other;
+}
 
 UIMedium& UIMedium::operator=(const UIMedium &other)
 {
@@ -131,8 +165,9 @@ void UIMedium::refresh()
     m_fUsedInSnapshots = false;
     m_fHostDrive = false;
 
-    /* Detect basic parameters */
-    m_strId = m_medium.isNull() ? QUuid().toString().remove ('{').remove ('}') : m_medium.GetId();
+    /* Detect basic parameters... */
+
+    m_strId = m_medium.isNull() ? nullID() : m_medium.GetId();
 
     m_fHostDrive = m_medium.isNull() ? false : m_medium.GetHostDrive();
 
@@ -251,19 +286,18 @@ void UIMedium::refresh()
                 QString strName = machine.GetName();
                 QString strSnapshots;
 
-                QVector <QString> snapIds = m_medium.GetSnapshotIds(strMachineID);
-                for (QVector <QString>::ConstIterator jt = snapIds.begin(); jt != snapIds.end(); ++jt)
+                foreach (const QString &strSnapshotID, m_medium.GetSnapshotIds(strMachineID))
                 {
-                    if (*jt == strMachineID)
+                    if (strSnapshotID == strMachineID)
                     {
                         /* The medium is attached to the machine in the current
                          * state, we don't distinguish this for now by always
                          * giving the VM name in front of snapshot names. */
-                        m_curStateMachineIds.push_back(*jt);
+                        m_curStateMachineIds.push_back(strSnapshotID);
                         continue;
                     }
 
-                    CSnapshot snapshot = machine.FindSnapshot(*jt);
+                    CSnapshot snapshot = machine.FindSnapshot(strSnapshotID);
                     if (!snapshot.isNull()) // can be NULL while takeSnaphot is in progress
                     {
                         if (!strSnapshots.isNull())
