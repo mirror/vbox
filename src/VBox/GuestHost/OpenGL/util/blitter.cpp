@@ -27,7 +27,6 @@
 #include <iprt/types.h>
 #include <iprt/mem.h>
 
-
 /* @param pCtxBase      - contains the blitter context info. Its value is treated differently depending on the fCreateNewCtx value
  * @param fCreateNewCtx - if true  - the pCtxBase must NOT be NULL. its visualBits is used as a visual bits info for the new context,
  *                                   its id field is used to specified the shared context id to be used for blitter context.
@@ -46,7 +45,7 @@
  * @param fForceDrawBlt - if true  - forces the blitter to always use glDrawXxx-based blits even if GL_EXT_framebuffer_blit.
  *                                   This is needed because BlitFramebufferEXT is known to be often buggy, and glDrawXxx-based blits appear to be more reliable
  */
-int CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, SPUDispatchTable *pDispatch)
+VBOXBLITTERDECL(int) CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCreateNewCtx, bool fForceDrawBlt, const CR_GLSL_CACHE *pShaders, SPUDispatchTable *pDispatch)
 {
     if (pCtxBase && pCtxBase->Base.id < 0)
     {
@@ -79,6 +78,42 @@ int CrBltInit(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pCtxBase, bool fCr
         }
         pBlitter->Flags.CtxCreated = 1;
     }
+
+    if (pShaders)
+    {
+        pBlitter->pGlslCache = pShaders;
+        pBlitter->Flags.ShadersGloal = 1;
+    }
+    else
+    {
+        CrGlslInit(&pBlitter->LocalGlslCache, pDispatch);
+        pBlitter->pGlslCache = &pBlitter->LocalGlslCache;
+    }
+
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT *pRestoreCtxInfo, const CR_BLITTER_WINDOW *pRestoreMural)
+{
+    if (CrBltIsEntered(pBlitter))
+    {
+        crWarning("CrBltBlitTexTex: blitter is entered");
+        return VERR_INVALID_STATE;
+    }
+
+    if (pBlitter->Flags.ShadersGloal || !CrGlslNeedsCleanup(&pBlitter->LocalGlslCache))
+        return VINF_SUCCESS;
+
+    int rc = CrBltEnter(pBlitter, pRestoreCtxInfo, pRestoreMural);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrBltEnter failed, rc %d");
+        return rc;
+    }
+
+    CrGlslCleanup(&pBlitter->LocalGlslCache);
+
+    CrBltLeave(pBlitter);
 
     return VINF_SUCCESS;
 }
@@ -595,7 +630,30 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, co
 
     crBltCheckSetupViewport(pBlitter, pDstSize, enmDstBuff == GL_DRAW_FRAMEBUFFER);
 
-    pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
+    if (!(fFlags & CRBLT_F_NOALPHA))
+        pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
+    else
+    {
+        int rc = pBlitter->Flags.ShadersGloal ?
+                CrGlslProgUseNoAlpha(pBlitter->pGlslCache, pSrc->target)
+                :
+                CrGlslProgUseGenNoAlpha(&pBlitter->LocalGlslCache, pSrc->target);
+
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("Failed to use no-alpha program rc!, falling back to default blit", rc);
+            pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
+            return;
+        }
+
+        /* since we use shaders, we need to use draw commands rather than framebuffer blits.
+         * force using draw-based blitting */
+        crBltBlitTexBufImplDraw2D(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
+
+        Assert(pBlitter->Flags.ShadersGloal || &pBlitter->LocalGlslCache == pBlitter->pGlslCache);
+
+        CrGlslProgClear(pBlitter->pGlslCache);
+    }
 }
 
 void CrBltCheckUpdateViewport(PCR_BLITTER pBlitter)
@@ -759,3 +817,302 @@ VBOXBLITTERDECL(void) CrBltImgFree(PCR_BLITTER pBlitter, CR_BLITTER_IMG *pDst)
     }
 }
 
+
+VBOXBLITTERDECL(bool) CrGlslIsSupported(CR_GLSL_CACHE *pCache)
+{
+    if (pCache->glVersion == 0.)
+    {
+        const char * pszStr = (const char*)pCache->pDispatch->GetString(GL_VERSION);
+        pCache->glVersion = crStrToFloat(pszStr);
+        if (pCache->glVersion == 0.)
+        {
+            crWarning("pCache->glVersion is null!");
+        }
+    }
+
+    if (pCache->glVersion >= 2.0)
+        return true;
+
+    /* @todo: we could also check for GL_ARB_shader_objects and GL_ARB_fragment_shader,
+     * but seems like chromium does not support properly gl*Object versions of shader functions used with those extensions */
+    return false;
+}
+
+#define CR_GLSL_STR_V_120 "#version 120\n"
+#define CR_GLSL_STR_EXT_TR "#extension GL_ARB_texture_rectangle : enable\n"
+#define CR_GLSL_STR_TEX2D "texture2D"
+#define CR_GLSL_STR_TEX2DRECT "texture2DRect"
+
+#define CR_GLSL_PATTERN_FS_NOALPHA(_ver, _ext, _tex) \
+        _ver \
+        _ext \
+        "void main()\n" \
+        "{\n" \
+            "vec2 srcCoord = vec2(gl_TexCoord[0]);\n" \
+            "gl_FragData[0].xyz = (" _tex "(0, srcCoord).xyz);\n" \
+            "gl_FragData[0].w = 1.0;\n" \
+        "}\n"
+
+static const char* crGlslGetFsStringNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    if (!CrGlslIsSupported(pCache))
+    {
+        crWarning("CrGlslIsSupported is false");
+        return NULL;
+    }
+
+    if (pCache->glVersion >= 2.1)
+    {
+        if (enmTexTarget == GL_TEXTURE_2D)
+            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, "", CR_GLSL_STR_TEX2D);
+        else if (enmTexTarget == GL_TEXTURE_RECTANGLE_ARB)
+            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, CR_GLSL_STR_EXT_TR, CR_GLSL_STR_TEX2DRECT);
+
+        crWarning("invalid enmTexTarget %#x", enmTexTarget);
+        return NULL;
+    }
+    else if (pCache->glVersion >= 2.0)
+    {
+        if (enmTexTarget == GL_TEXTURE_2D)
+            return CR_GLSL_PATTERN_FS_NOALPHA("", "", CR_GLSL_STR_TEX2D);
+        else if (enmTexTarget == GL_TEXTURE_RECTANGLE_ARB)
+            return CR_GLSL_PATTERN_FS_NOALPHA("", CR_GLSL_STR_EXT_TR, CR_GLSL_STR_TEX2DRECT);
+
+        crWarning("invalid enmTexTarget %#x", enmTexTarget);
+        return NULL;
+    }
+
+    crError("crGlslGetFsStringNoAlpha: we should not be here!");
+    return NULL;
+}
+
+static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLuint *puiProgram)
+{
+    *puiProgram = 0;
+
+    const char*pStrFsShader = crGlslGetFsStringNoAlpha(pCache, enmTexTarget);
+    if (!pStrFsShader)
+    {
+        crWarning("crGlslGetFsStringNoAlpha failed");
+        return VERR_NOT_SUPPORTED;
+    }
+
+    int rc = VINF_SUCCESS;
+    GLchar * pBuf = NULL;
+    GLuint uiProgram = 0;
+    GLuint uiShader = pCache->pDispatch->CreateShader(GL_FRAGMENT_SHADER);
+    if (!uiShader)
+    {
+        crWarning("CreateShader failed");
+        return VERR_NOT_SUPPORTED;
+    }
+
+    pCache->pDispatch->ShaderSource(uiShader, 1, &pStrFsShader, NULL);
+
+    pCache->pDispatch->CompileShader(uiShader);
+
+    GLint compiled = 0;
+    pCache->pDispatch->GetShaderiv(uiShader, GL_COMPILE_STATUS, &compiled);
+
+#ifdef DEBUG_misha
+    if(!compiled)
+#endif
+    {
+        if (!pBuf)
+            pBuf = (GLchar *)RTMemAlloc(16300);
+        pCache->pDispatch->GetShaderInfoLog(uiShader, 16300, NULL, pBuf);
+#ifdef DEBUG_misha
+        if (compiled)
+            crDebug("compile success:\n-------------------\n%d\n--------\n", pBuf);
+        else
+#endif
+        {
+            crWarning("compile FAILURE:\n-------------------\n%d\n--------\n", pBuf);
+            rc = VERR_NOT_SUPPORTED;
+            goto end;
+        }
+    }
+
+    Assert(compiled);
+
+    uiProgram = pCache->pDispatch->CreateProgram();
+    if (!uiProgram)
+    {
+        rc = VERR_NOT_SUPPORTED;
+        goto end;
+    }
+
+    pCache->pDispatch->AttachShader(uiProgram, uiShader);
+
+    pCache->pDispatch->LinkProgram(uiProgram);
+
+    GLint linked;
+    pCache->pDispatch->GetProgramiv(uiProgram, GL_LINK_STATUS, &linked);
+#ifdef DEBUG_misha
+    if(!linked)
+#endif
+    {
+        if (!pBuf)
+            pBuf = (GLchar *)RTMemAlloc(16300);
+        pCache->pDispatch->GetProgramInfoLog(uiProgram, 16300, NULL, pBuf);
+#ifdef DEBUG_misha
+        if (linked)
+            crDebug("link success:\n-------------------\n%d\n--------\n", pBuf);
+        else
+#endif
+        {
+            crWarning("link FAILURE:\n-------------------\n%d\n--------\n", pBuf);
+            rc = VERR_NOT_SUPPORTED;
+            goto end;
+        }
+    }
+
+    Assert(linked);
+
+    *puiProgram = uiProgram;
+
+    /* avoid end finalizer from cleaning it */
+    uiProgram = 0;
+
+    end:
+    if (uiShader)
+        pCache->pDispatch->DeleteShader(uiShader);
+    if (uiProgram)
+        pCache->pDispatch->DeleteProgram(uiProgram);
+    if (pBuf)
+        RTMemFree(pBuf);
+    return rc;
+}
+
+DECLINLINE(GLuint) crGlslProgGetNoAlpha(const CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    switch (enmTexTarget)
+    {
+        case GL_TEXTURE_2D:
+            return  pCache->uNoAlpha2DProg;
+        case GL_TEXTURE_RECTANGLE_ARB:
+            return pCache->uNoAlpha2DRectProg;
+        default:
+            crWarning("invalid tex enmTexTarget %#x", enmTexTarget);
+            return 0;
+    }
+}
+
+DECLINLINE(GLuint*) crGlslProgGetNoAlphaPtr(CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    switch (enmTexTarget)
+    {
+        case GL_TEXTURE_2D:
+            return  &pCache->uNoAlpha2DProg;
+        case GL_TEXTURE_RECTANGLE_ARB:
+            return &pCache->uNoAlpha2DRectProg;
+        default:
+            crWarning("invalid tex enmTexTarget %#x", enmTexTarget);
+            return NULL;
+    }
+}
+
+VBOXBLITTERDECL(int) CrGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    GLuint*puiProgram = crGlslProgGetNoAlphaPtr(pCache, enmTexTarget);
+    if (!puiProgram)
+        return VERR_INVALID_PARAMETER;
+
+    if (*puiProgram)
+        return VINF_SUCCESS;
+
+    return crGlslProgGenNoAlpha(pCache, enmTexTarget, puiProgram);
+}
+
+VBOXBLITTERDECL(int) CrGlslProgGenAllNoAlpha(CR_GLSL_CACHE *pCache)
+{
+    int rc = CrGlslProgGenNoAlpha(pCache, GL_TEXTURE_2D);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrGlslProgGenNoAlpha GL_TEXTURE_2D failed rc %d", rc);
+        return rc;
+    }
+
+    rc = CrGlslProgGenNoAlpha(pCache, GL_TEXTURE_RECTANGLE_ARB);
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("CrGlslProgGenNoAlpha GL_TEXTURE_RECTANGLE failed rc %d", rc);
+        return rc;
+    }
+
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(void) CrGlslProgClear(const CR_GLSL_CACHE *pCache)
+{
+    pCache->pDispatch->UseProgram(0);
+}
+
+VBOXBLITTERDECL(int) CrGlslProgUseNoAlpha(const CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    GLuint uiProg = crGlslProgGetNoAlpha(pCache, enmTexTarget);
+    if (!uiProg)
+    {
+        crWarning("request to use inexistent program!");
+        return VERR_INVALID_STATE;
+    }
+
+    Assert(uiProg);
+
+    pCache->pDispatch->UseProgram(uiProg);
+
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(int) CrGlslProgUseGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget)
+{
+    GLuint uiProg = crGlslProgGetNoAlpha(pCache, enmTexTarget);
+    if (!uiProg)
+    {
+        int rc = CrGlslProgGenNoAlpha(pCache, enmTexTarget);
+        if (!RT_SUCCESS(rc))
+        {
+            crWarning("CrGlslProgGenNoAlpha failed, rc %d", rc);
+            return rc;
+        }
+
+        uiProg = crGlslProgGetNoAlpha(pCache, enmTexTarget);
+        CRASSERT(uiProg);
+    }
+
+    Assert(uiProg);
+
+    pCache->pDispatch->UseProgram(uiProg);
+
+    return VINF_SUCCESS;
+}
+
+VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(CR_GLSL_CACHE *pCache)
+{
+    return pCache->uNoAlpha2DProg || pCache->uNoAlpha2DRectProg;
+}
+
+VBOXBLITTERDECL(void) CrGlslCleanup(CR_GLSL_CACHE *pCache)
+{
+    if (pCache->uNoAlpha2DProg)
+    {
+        pCache->pDispatch->DeleteProgram(pCache->uNoAlpha2DProg);
+        pCache->uNoAlpha2DProg = 0;
+    }
+
+    if (pCache->uNoAlpha2DRectProg)
+    {
+        pCache->pDispatch->DeleteProgram(pCache->uNoAlpha2DRectProg);
+        pCache->uNoAlpha2DRectProg = 0;
+    }
+}
+
+VBOXBLITTERDECL(void) CrGlslTerm(CR_GLSL_CACHE *pCache)
+{
+    CRASSERT(!CrGlslNeedsCleanup(pCache));
+
+    CrGlslCleanup(pCache);
+
+    /* sanity */
+    memset(pCache, 0, sizeof (*pCache));
+}
