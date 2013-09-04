@@ -204,32 +204,37 @@
       <listitem>
         <para>Shared Clipboard/X11: support for BMP-format images, contributed
            by François Revol</para>
-       </listitem>
+      </listitem>
 
-       <listitem>
-         <para>Windows hosts: don't cause massive DPC latency (only on certain
-           hosts; still needs improving; bug #6242)</para>
-       </listitem>
+      <listitem>
+        <para>Windows hosts: don't cause massive DPC latency (only on certain
+          hosts; still needs improving; bug #6242)</para>
+      </listitem>
 
-       <listitem>
-         <para>Windows hosts: consider symlinks when retrieving volume information
-           (bug #11962)</para>
-       </listitem>
+      <listitem>
+        <para>Windows hosts: consider symlinks when retrieving volume information
+          (bug #11962)</para>
+      </listitem>
 
-       <listitem>
-         <para>Windows Additions: fixed misbehavior with guest display
-           power management (WDDM driver only; bug #11170)</para>
-       </listitem>
+      <listitem>
+        <para>Windows hosts: fixed an issue with USB2 devices being inaccessible
+          when plugged into USB 3.0 ports</para>
+      </listitem>
 
-       <listitem>
-         <para>Linux Additions: fixed udev detection in the init script
-           with Linux 3.x kernels</para>
-       </listitem>
+      <listitem>
+        <para>Windows Additions: fixed misbehavior with guest display
+          power management (WDDM driver only; bug #11170)</para>
+      </listitem>
 
-       <listitem>
-         <para>Windows guests: ability to track guest user idle times through
-           the newly introduced event IGuestUserStateChangedEvent</para>
-       </listitem>
+      <listitem>
+        <para>Linux Additions: fixed udev detection in the init script
+          with Linux 3.x kernels</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows guests: ability to track guest user idle times through
+          the newly introduced event <emphasis>IGuestUserStateChangedEvent</emphasis></para>
+      </listitem>
 
     </itemizedlist>
 
