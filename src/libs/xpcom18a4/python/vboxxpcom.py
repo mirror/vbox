@@ -14,38 +14,49 @@ import xpcom
 import sys
 import platform
 
-# this code overcomes somewhat unlucky feature of Python, where it searches
+#
+# This code overcomes somewhat unlucky feature of Python, where it searches
 # for binaries in the same place as platfom independent modules, while
 # rest of Python bindings expect _xpcom to be inside xpcom module
+#
 
-candidates = ['VBoxPython' + str(sys.version_info[0]) + '_' + str(sys.version_info[1]), 
-              'VBoxPython' + str(sys.version_info[0]), 
-              'VBoxPython']
+_asVBoxPythons = [
+    'VBoxPython' + str(sys.version_info[0]) + '_' + str(sys.version_info[1]),
+    'VBoxPython' + str(sys.version_info[0]),
+    'VBoxPython'
+];
+
+# On platforms where we ship both 32-bit and 64-bit API bindings, we have to
+# look for the right set if we're a 32-bit process.
+if platform.system() in [ 'SunOS', ] and sys.maxsize <= 2**32:
+    _asNew = [ sCandidate + '_x86' for sCandidate in _asVBoxPythons ];
+    _asNew.extend(_asVBoxPythons);
+    _asVBoxPythons = _asNew;
+    del _asNew;
+
+# On Darwin (aka Mac OS X) we know exactly where things are in a normal
+# VirtualBox installation.
+## @todo Edit this at build time to the actual VBox location set in the make files.
+## @todo We know the location for most hardened builds, not just darwin!
 if platform.system() == 'Darwin':
-    # On Darwin (aka Mac OS X) we know exactly where things are in a normal 
-    # VirtualBox installation. Also, there are two versions of python there
-    # (2.3.x and 2.5.x) depending on whether the os is striped or spotty, so
-    # we have to choose the right module to load.
-    # 
-    # XXX: This needs to be adjusted for OSE builds. A more general solution would 
-    #      be to to sed the file during install and inject the VBOX_PATH_APP_PRIVATE_ARCH
-    #      and VBOX_PATH_SHARED_LIBS when these are set.
     sys.path.append('/Applications/VirtualBox.app/Contents/MacOS')
 
-cglue = None
-for m in candidates:
-   try:
-      cglue =  __import__(m)
-      break
-   except:
-      pass
+_oVBoxPythonMod = None
+for m in _asVBoxPythons:
+    try:
+        _oVBoxPythonMod =  __import__(m)
+        break
+    except Exception, x:
+        print 'm=%s x=%s' % (m, x);
+    #except:
+    #    pass
 
 if platform.system() == 'Darwin':
     sys.path.remove('/Applications/VirtualBox.app/Contents/MacOS')
 
-if cglue == None:
-    raise Exception, "Cannot find VBoxPython module"
+if _oVBoxPythonMod == None:
+    raise Exception('Cannot find VBoxPython module (tried: %s)' % (', '.join(_asVBoxPythons),));
 
-sys.modules['xpcom._xpcom'] = cglue
-xpcom._xpcom = cglue
+sys.modules['xpcom._xpcom'] = _oVBoxPythonMod;
+xpcom._xpcom = _oVBoxPythonMod;
 

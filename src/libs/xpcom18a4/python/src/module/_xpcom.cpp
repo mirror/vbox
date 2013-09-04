@@ -74,24 +74,44 @@ extern PYXPCOM_EXPORT void PyXPCOM_InterpreterState_Ensure();
 #endif
 
 #ifdef VBOX_PYXPCOM
+# include <iprt/cdefs.h>
+# ifndef MODULE_NAME_SUFFIX
+#  define MANGLE_MODULE_NAME(a_szName)  a_szName
+#  define MANGLE_MODULE_INIT(a_Name)    a_Name
+# else
+#  define MANGLE_MODULE_NAME(a_szName)  a_szName RT_XSTR(MODULE_NAME_SUFFIX)
+#  define MANGLE_MODULE_INIT(a_Name)    RT_CONCAT(a_Name, MODULE_NAME_SUFFIX)
+# endif
 # ifdef VBOX_PYXPCOM_VERSIONED
 #  if   PY_VERSION_HEX >= 0x02080000
-#   define MODULE_NAME "VBoxPython2_8"
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_8")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_8)
+
 #  elif PY_VERSION_HEX >= 0x02070000
-#   define MODULE_NAME "VBoxPython2_7"
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_7")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_7)
+
 #  elif PY_VERSION_HEX >= 0x02060000
-#   define MODULE_NAME "VBoxPython2_6"
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_6")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_6)
+
 #  elif PY_VERSION_HEX >= 0x02050000
-#   define MODULE_NAME "VBoxPython2_5"
+#   define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython2_5")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_5)
+
 #  elif PY_VERSION_HEX >= 0x02040000
-#   define MODULE_NAME "VBoxPython2_4"
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_4")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_4)
+
 #  elif PY_VERSION_HEX >= 0x02030000
-#   define MODULE_NAME "VBoxPython2_3"
+#   define MODULE_NAME    MANGLE_MODULE_NAME("VBoxPython2_3")
+#   define initVBoxPython MANGLE_MODULE_INIT(initVBoxPython2_3)
 #  else
 #   error "Fix module versioning."
 #  endif
 # else
-#  define MODULE_NAME "VBoxPython"
+#  define MODULE_NAME 	  MANGLE_MODULE_NAME("VBoxPython")
+#  define initVBoxPython  MANGLE_MODULE_INIT(initVBoxPython)
 # endif
 #else
 #define MODULE_NAME "_xpcom"
@@ -776,25 +796,7 @@ using namespace com;
 
 extern "C" NS_EXPORT
 void
-# ifdef VBOX_PYXPCOM_VERSIONED
-#  if   PY_VERSION_HEX >= 0x02080000
-initVBoxPython2_8() {
-#  elif PY_VERSION_HEX >= 0x02070000
-initVBoxPython2_7() {
-#  elif PY_VERSION_HEX >= 0x02060000
-initVBoxPython2_6() {
-#  elif PY_VERSION_HEX >= 0x02050000
-initVBoxPython2_5() {
-#  elif PY_VERSION_HEX >= 0x02040000
-initVBoxPython2_4() {
-#  elif PY_VERSION_HEX >= 0x02030000
-initVBoxPython2_3() {
-#  else
-#   error "Fix module versioning."
-#  endif
-# else
-initVBoxPython() {
-# endif
+initVBoxPython() { /* NOTE! This name is redefined at the top of the file! */
   static bool s_vboxInited = false;
   if (!s_vboxInited) {
     int rc = 0;

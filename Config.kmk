@@ -508,6 +508,10 @@ VBOX_WITH_INSTALLER = 1
 VBOX_WITH_VBOXDRV = 1
 # The main api.
 VBOX_WITH_MAIN = 1
+# Whether to also ship 32-bit main API on 64-bit systems.
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.amd64)
+ VBOX_WITH_32_ON_64_MAIN_API = 1
+endif
 # The recompiler.
 VBOX_WITH_REM = 1
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
@@ -1604,42 +1608,50 @@ endif
 ifeq ($(KBUILD_TARGET),darwin)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.dylib
  LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.dylib
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dylib
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dylib
  LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.dylib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dylib
+ VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dylib
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dylib
 endif
 if1of ($(KBUILD_TARGET), freebsd haiku linux netbsd openbsd solaris)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.so
  LIB_RUNTIME_EF  = $(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.so
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.so
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.so
  LIB_VMMGC       = $(PATH_STAGE_BIN)/VMMGC.gc
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREM.so
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.so
+ VBOX_LIB_XPCOM_X86   = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.so
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.so
 endif
 ifeq ($(KBUILD_TARGET),os2)
  LIB_RUNTIME     = $(PATH_STAGE_BIN)/VBoxRT.dll
  LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.a
+ VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_BIN)/VBoxRT-x86.dll
  LIB_KPROFILE    = $(PATH_STAGE_BIN)/kPrf2.dll
  LIB_VMM         = $(PATH_STAGE_BIN)/VBoxVMM.dll
  LIB_VMMGC       = $(PATH_STAGE_LIB)/VMMRCImp.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
  LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXCOM.dll
+ VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.dll
  LIB_DDU         = $(PATH_STAGE_BIN)/VBoxDDU.dll
  VBOX_OBJ_SYS0   = $(PATH_OBJ)/RuntimeR0/os2/sys0.obj
 endif
 ifeq ($(KBUILD_TARGET),win)
  LIB_RUNTIME     = $(PATH_STAGE_LIB)/VBoxRT.lib
  LIB_RUNTIME_EF  = #$(PATH_STAGE_LIB)/RuntimeEFCPP.lib
+ VBOX_LIB_RUNTIME_X86   = $(PATH_STAGE_LIB)/VBoxRT-x86.lib
  LIB_KPROFILE    = $(PATH_STAGE_LIB)/kPrf2.lib
  LIB_VMM         = $(PATH_STAGE_LIB)/VBoxVMM.lib
  LIB_VMMGC       = $(PATH_OBJ)/VMMRC/VMMGC.lib
  LIB_REM         = $(PATH_STAGE_LIB)/VBoxREMImp.lib
- LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.dll
+ LIB_XPCOM       = $(PATH_STAGE_BIN)/VBoxXPCOM.lib
+ VBOX_LIB_XPCOM_X86     = $(PATH_STAGE_BIN)/VBoxXPCOM-x86.lib
  LIB_DDU         = $(PATH_STAGE_LIB)/VBoxDDU.lib
 endif
 if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), win.amd64 linux.amd64)
@@ -2691,9 +2703,11 @@ SDK_VBOX_ZLIB         = .
 if1of ($(KBUILD_TARGET), os2 solaris win)
  SDK_VBOX_ZLIB_INCS  ?= $(PATH_ROOT)/src/libs/zlib-1.2.6
  SDK_VBOX_ZLIB_LIBS  ?= $(PATH_STAGE_LIB)/VBox-zlib$(VBOX_SUFF_LIB)
+ SDK_VBOX_ZLIB_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-zlib-x86$(VBOX_SUFF_LIB)
 else
  SDK_VBOX_ZLIB_INCS  ?=
  SDK_VBOX_ZLIB_LIBS  ?= z
+ SDK_VBOX_ZLIB_LIBS.x86 ?= z
  SDK_VBOX_ZLIB_DEFS.linux ?= _LARGEFILE64_SOURCE
 endif
 
@@ -2710,6 +2724,14 @@ SDK_VBOX_OPENSSL_ORDERDEPS ?= $(crypto-headers_1_TARGET)
 SDK_VBOX_OPENSSL_LIBS ?= \
 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB) \
 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB)
+
+SDK_VBOX_OPENSSL-x86      = Only for VBoxRT and/or statically linked programs.
+SDK_VBOX_OPENSSL-x86_VBOX_DEFAULT_INCS := $(PATH_OUT)/obj/crypto-headers/include
+SDK_VBOX_OPENSSL-x86_INCS ?= $(SDK_VBOX_OPENSSL_VBOX_DEFAULT_INCS)
+SDK_VBOX_OPENSSL-x86_ORDERDEPS ?= $(crypto-headers_1_TARGET)
+SDK_VBOX_OPENSSL-x86_LIBS ?= \
+	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB)
 
 SDK_VBOX_OPENSSL2      = What you should be using.
 SDK_VBOX_OPENSSL2_EXTENDS = VBOX_OPENSSL
@@ -2737,6 +2759,11 @@ SDK_VBOX_LIBCURL       = .
 SDK_VBOX_LIBCURL_INCS ?= $(PATH_ROOT)/src/libs/curl-7.27.0/include
 SDK_VBOX_LIBCURL_LIBS ?= $(PATH_STAGE_LIB)/VBox-libcurl$(VBOX_SUFF_LIB)
 SDK_VBOX_LIBCURL_DEFS ?= BUILDING_LIBCURL
+
+SDK_VBOX_LIBCURL-x86           = .
+SDK_VBOX_LIBCURL-x86_INCS     ?= $(PATH_ROOT)/src/libs/curl-7.27.0/include
+SDK_VBOX_LIBCURL-x86_LIBS.x86 ?= $(PATH_STAGE_LIB)/VBox-libcurl-x86$(VBOX_SUFF_LIB)
+SDK_VBOX_LIBCURL-x86_DEFS     ?= BUILDING_LIBCURL
 endif
 
 SDK_VBOX_VPX       = .
@@ -3602,6 +3629,14 @@ else
  TEMPLATE_VBoxR3Dll_CXXFLAGS          += $(VBOX_GCC_WERR)
 endif
 
+# x86 edition of the above template for use on AMD64 targets.
+TEMPLATE_VBoxR3Dll-x86                = 32-bit VBox ring-3 SO/DLLs, no warnings
+TEMPLATE_VBoxR3Dll-x86_EXTENDS        = VBoxR3Dll
+TEMPLATE_VBoxR3Dll-x86_BLD_TRG_ARCH   = x86
+TEMPLATE_VBoxR3Dll-x86_DEFS           = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxR3Dll_DEFS)) \
+	HC_ARCH_BITS=32 ARCH_BITS=32
+
+
 #
 # Template for building performance critical stuff with warnings-as-errors.
 #
@@ -3625,6 +3660,14 @@ else
  TEMPLATE_VBoxR3DllNoPic_CXXFLAGS          = $(TEMPLATE_VBOXR3_CXXFLAGS) $(VBOX_GCC_WERR)
 endif
 
+# x86 edition of the above template for use on AMD64 targets.
+TEMPLATE_VBoxR3DllNoPic-x86                = 32-bit VBox ring-3 SO/DLLs without PIC, without warnings.
+TEMPLATE_VBoxR3DllNoPic-x86_EXTENDS        = VBoxR3DllNoPic
+TEMPLATE_VBoxR3DllNoPic-x86_BLD_TRG_ARCH   = x86
+TEMPLATE_VBoxR3DllNoPic-x86_DEFS           = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxR3DllNoPic_DEFS)) \
+	HC_ARCH_BITS=32 ARCH_BITS=32
+
+
 #
 # Template for building performance critical stuff without warnings-as-errors.
 #
@@ -3636,8 +3679,8 @@ if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), linux.x86 freebsd.x86)
  TEMPLATE_VBoxR3DllWarnNoPic_CXXFLAGS      = $(TEMPLATE_VBOXR3EXE_CXXFLAGS)
  TEMPLATE_VBoxR3DllWarnNoPic_LDFLAGS       = $(TEMPLATE_VBOXR3EXE_LDFLAGS)
 else ifeq ($(KBUILD_TARGET),win)
- TEMPLATE_VBoxR3DllNoPic_CFLAGS.release    = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
- TEMPLATE_VBoxR3DllNoPic_CXXFLAGS.release  = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllWarnNoPic_CFLAGS.release   = $(TEMPLATE_VBOXR3_CFLAGS.release) -GS-
+ TEMPLATE_VBoxR3DllWarnNoPic_CXXFLAGS.release = $(TEMPLATE_VBOXR3_CXXFLAGS.release) -GS-
 endif
 
 #
@@ -3848,7 +3891,9 @@ endif
 # Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
 # (Same transformation as for VBOXR3NPEXE.)
 #
-TEMPLATE_VBOXR3NP= VBox Ring 3 Non-pedantic
+# @deprecated Use VBoxR3DllNonPedantic!
+#
+TEMPLATE_VBOXR3NP = VBox Ring 3 Non-pedantic
 TEMPLATE_VBOXR3NP_EXTENDS = VBOXR3
 ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_TOOL                  = $(VBOX_GCC_TOOL)
@@ -3856,6 +3901,28 @@ ifneq ($(KBUILD_TARGET),win) # (only gcc)
  TEMPLATE_VBOXR3NP_CFLAGS                = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) \
 	-Wno-sign-compare -Werror-implicit-function-declaration
 endif
+
+
+#
+# Template for building bad C/C++ style R3 shared libraries / Dlls (no -pedantic).
+# (Same transformation as for VBoxR3ExeNonPedantic.)
+#
+TEMPLATE_VBoxR3DllNonPedantic               = VBox ring-3 Non-pedantic, with warnings.
+TEMPLATE_VBoxR3DllNonPedantic_EXTENDS       = VBOXR3
+ifneq ($(KBUILD_TARGET),win) # (only gcc)
+ TEMPLATE_VBoxR3DllNonPedantic_TOOL         = $(VBOX_GCC_TOOL)
+ TEMPLATE_VBoxR3DllNonPedantic_CXXFLAGS     = $(filter-out -pedantic -Wshadow,$(TEMPLATE_VBOXR3_CXXFLAGS)) -Wno-sign-compare
+ TEMPLATE_VBoxR3DllNonPedantic_CFLAGS       = $(filter-out -pedantic -Wshadow -Wmissing-prototypes -Wstrict-prototypes -Wmissing-declarations,$(TEMPLATE_VBOXR3_CFLAGS)) \
+	-Wno-sign-compare -Werror-implicit-function-declaration
+endif
+
+# x86 edition of the above template for use on AMD64 targets.
+TEMPLATE_VBoxR3DllNonPedantic-x86           = 32-bit VBox ring-3 SO/DLLs, no warnings
+TEMPLATE_VBoxR3DllNonPedantic-x86_EXTENDS   = VBoxR3DllNonPedantic
+TEMPLATE_VBoxR3DllNonPedantic-x86_BLD_TRG_ARCH = x86
+TEMPLATE_VBoxR3DllNonPedantic-x86_DEFS      = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxR3Dll_DEFS)) \
+	HC_ARCH_BITS=32 ARCH_BITS=32
+
 
 
 #
@@ -4133,14 +4200,32 @@ TEMPLATE_VBOXMAINCOMP_LDFLAGS.darwin = $(filter-out -bind_at_load,$(TEMPLATE_VBO
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)
 
+TEMPLATE_VBoxMainComp-x86  = 32-bit VBox Main Component (shared library)
+TEMPLATE_VBoxMainComp-x86_EXTENDS = VBOXMAINCOMP
+TEMPLATE_VBoxMainComp-x86_BLD_TRG_ARCH = x86
+TEMPLATE_VBoxMainComp-x86_DEFS = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBOXMAINCOMP_DEFS)) HC_ARCH_BIT=32 ARCH_BITS=32 \
+	VBOX_IN_32_ON_64_MAIN_API
+TEMPLATE_VBoxMainComp-x86_LIBS = \
+	$(subst $(PATH_STAGE_LIB)/VBoxCOM$(VBOX_SUFF_LIB),$(PATH_STAGE_LIB)/VBoxCOM-x86$(VBOX_SUFF_LIB),\
+	$(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86),\
+	$(subst $(LIB_XPCOM),$(VBOX_LIB_XPCOM_X86),\
+	$(TEMPLATE_VBOXMAINCOMP_LIBS))))
+
+
 #
 # Template for building the Main static libraries.
 #
 # This differs from VBOXMAINDLL only that it zeroes out the _LIBS definition.
 #
-TEMPLATE_VBOXMAINLIB  = VBox Main Component (static library)
-TEMPLATE_VBOXMAINLIB_EXTENDS = VBOXMAINDLL
-TEMPLATE_VBOXMAINLIB_LIBS =
+TEMPLATE_VBoxMainLib  = VBox Main Component (static library)
+TEMPLATE_VBoxMainLib_EXTENDS = VBOXMAINDLL
+TEMPLATE_VBoxMainLib_LIBS =
+
+TEMPLATE_VBoxMainLib-x86  = 32-bit VBox Main Component (static library)
+TEMPLATE_VBoxMainLib-x86_EXTENDS = VBoxMainLib
+TEMPLATE_VBoxMainLib-x86_BLD_TRG_ARCH = x86
+TEMPLATE_VBoxMainLib-x86_DEFS = $(filter-out HC_ARCH_BITS%,$(TEMPLATE_VBoxMainLib_DEFS)) HC_ARCH_BIT=32 ARCH_BITS=32 \
+	VBOX_IN_32_ON_64_MAIN_API
 
 #
 # Main unit testing, for compiling API implementation files into a testcase.

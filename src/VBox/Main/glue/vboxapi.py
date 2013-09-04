@@ -36,10 +36,14 @@ VBoxSdkDir = os.environ.get("VBOX_SDK_PATH", None)
 if VBoxBinDir is None:
     # Will be set by the installer
     VBoxBinDir = "%VBOX_INSTALL_PATH%"
+else:
+    VBoxBinDir = os.path.abspath(VBoxBinDir);
 
 if VBoxSdkDir is None:
     # Will be set by the installer
     VBoxSdkDir = "%VBOX_SDK_PATH%"
+else:
+    VBoxBinDir = os.path.abspath(VBoxSdkDir);
 
 os.environ["VBOX_PROGRAM_PATH"] = VBoxBinDir
 os.environ["VBOX_SDK_PATH"] = VBoxSdkDir

@@ -14,7 +14,7 @@ hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
 import os,sys
 
-versions = ["2.3", "2.4", "2.5", "2.6", "2.7", "2.8"]
+versions = ["2.3", "2.4", "2.5", "2.6", "2.7",]
 prefixes = ["/usr", "/usr/local", "/opt", "/opt/local"]
 known = {}
 
@@ -43,6 +43,7 @@ def print_vars(vers, known, sep, bitness_magic):
     print "VBOX_PYTHON%s_INC=%s%s" %(vers, known[0], sep)
     if bitness_magic > 0:
         print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[2], sep)
+        print "VBOX_PYTHON%s_LIB_X86=%s%s" %(vers, known[1], sep)
     else:
         print "VBOX_PYTHON%s_LIB=%s%s" %(vers, known[1], sep)
 

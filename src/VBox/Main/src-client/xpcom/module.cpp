@@ -59,9 +59,15 @@
 
 // XPCOM glue code unfolding
 
+NS_DECL_CLASSINFO(VirtualBoxClient)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxClient, IVirtualBoxClient)
+NS_DECL_CLASSINFO(Session)
+NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
+
+#ifndef VBOX_COM_INPROC_API_CLIENT
 NS_DECL_CLASSINFO(Guest)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Guest, IGuest)
-#ifdef VBOX_WITH_GUEST_CONTROL
+ #ifdef VBOX_WITH_GUEST_CONTROL
 NS_DECL_CLASSINFO(GuestDirectory)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(GuestDirectory, IGuestDirectory, IDirectory)
 NS_DECL_CLASSINFO(GuestFile)
@@ -72,7 +78,7 @@ NS_DECL_CLASSINFO(GuestProcess)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(GuestProcess, IGuestProcess, IProcess)
 NS_DECL_CLASSINFO(GuestSession)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(GuestSession, IGuestSession)
-#endif
+ #endif
 NS_DECL_CLASSINFO(Keyboard)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Keyboard, IKeyboard)
 NS_DECL_CLASSINFO(Mouse)
@@ -91,7 +97,7 @@ NS_DECL_CLASSINFO(SharedFolder)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(SharedFolder, ISharedFolder)
 NS_DECL_CLASSINFO(VRDEServerInfo)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VRDEServerInfo, IVRDEServerInfo)
-#ifdef VBOX_WITH_EXTPACK
+ #ifdef VBOX_WITH_EXTPACK
 // deliberately omit ExtPackFile as it's unusable in the client context
 // NS_DECL_CLASSINFO(ExtPackFile)
 // NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPackFile, IExtPackFile, IExtPackBase)
@@ -99,17 +105,14 @@ NS_DECL_CLASSINFO(ExtPack)
 NS_IMPL_THREADSAFE_ISUPPORTS2_CI(ExtPack, IExtPack, IExtPackBase)
 NS_DECL_CLASSINFO(ExtPackManager)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ExtPackManager, IExtPackManager)
-#endif
+ #endif
 NS_DECL_CLASSINFO(AdditionsFacility)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(AdditionsFacility, IAdditionsFacility)
 
-NS_DECL_CLASSINFO(Session)
-NS_IMPL_THREADSAFE_ISUPPORTS2_CI(Session, ISession, IInternalSessionControl)
 NS_DECL_CLASSINFO(Console)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(Console, IConsole)
 
-NS_DECL_CLASSINFO(VirtualBoxClient)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxClient, IVirtualBoxClient)
+#endif /* VBOX_COM_INPROC_API_CLIENT */
 
 /**
  *  Singleton class factory that holds a reference to the created instance
