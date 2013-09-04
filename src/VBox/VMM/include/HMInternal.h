@@ -825,6 +825,9 @@ typedef struct HMCPU
     STAMCOUNTER             StatExitApicAccess;
     STAMCOUNTER             StatPendingHostIrq;
 
+    STAMCOUNTER             StatPreemptPreempting;
+    STAMCOUNTER             StatPreemptSaveHostState;
+
     STAMCOUNTER             StatFlushPage;
     STAMCOUNTER             StatFlushPageManual;
     STAMCOUNTER             StatFlushPhysPageManual;
