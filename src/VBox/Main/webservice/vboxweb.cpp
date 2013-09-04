@@ -450,7 +450,7 @@ public:
      * first call or when all existing threads are busy.
      * @param s Socket from soap_accept() which has work to do.
      */
-    size_t add(SOCKET s)
+    size_t add(SOAP_SOCKET s)
     {
         size_t cItems;
         util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
@@ -492,7 +492,7 @@ public:
      * @param cThreads out: total no. of SOAP threads running
      * @return
      */
-    SOCKET get(size_t &cIdleThreads, size_t &cThreads)
+    SOAP_SOCKET get(size_t &cIdleThreads, size_t &cThreads)
     {
         while (1)
         {
@@ -502,7 +502,7 @@ public:
             util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
             if (m_llSocketsQ.size())
             {
-                SOCKET socket = m_llSocketsQ.front();
+                SOAP_SOCKET socket = m_llSocketsQ.front();
                 m_llSocketsQ.pop_front();
                 cIdleThreads = --m_cIdleThreads;
                 cThreads = m_llAllThreads.size();
@@ -542,7 +542,7 @@ public:
 
     // A std::list abused as a queue; this contains the actual jobs to do,
     // each int being a socket from soap_accept()
-    std::list<SOCKET>       m_llSocketsQ;
+    std::list<SOAP_SOCKET>  m_llSocketsQ;
 };
 
 /**
@@ -855,7 +855,7 @@ void doQueuesLoop()
     soap.bind_flags |= SO_REUSEADDR;
             // avoid EADDRINUSE on bind()
 
-    SOCKET m, s; // master and slave sockets
+    SOAP_SOCKET m, s; // master and slave sockets
     m = soap_bind(&soap,
                   g_pcszBindToHost ? g_pcszBindToHost : "localhost",    // safe default host
                   g_uBindToPort,    // port
