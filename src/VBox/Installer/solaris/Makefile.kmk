@@ -266,8 +266,16 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so
+ifdef VBOX_WITH_32_ON_64_MAIN_API
+ SOLARIS_STRIP_BINS += \
+	VBoxRT-x86.so \
+	VBoxXPCOM-x86.so \
+	components/VBoxClient-x86.so \
+	components/VBoxSVCM-x86.so \
+	components/VBoxXPCOMIPCC-x86.so
+endif
 ifdef VBOX_WITH_HARDENING
-SOLARIS_STRIP_BINS += \
+ SOLARIS_STRIP_BINS += \
 	VBoxNetDHCP.so \
 	VBoxNetNAT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL.so,) \
@@ -530,6 +538,10 @@ include $(FILE_KBUILD_SUB_FOOTER)
 #
 # -=-=-=-=-=-=-=- Main package -=-=-=-=-=-=-=-
 #
+# !!WARNING!!  The current packing may NOT produce the expected rules in
+# !!WARNING!!  incremental build!  Removed and renamed components may
+# !!WARNING!!  appear in the package!  Always do clean builds for customers.
+#
 
 ## @todo r=bird: makepackage.sh packing a directory tree, right? So, there is no guarantee that it's not
 #                containing any obsolete files the way packing is performed here. Consider recursively
@@ -614,7 +626,12 @@ else
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
  ifdef VBOX_WITH_PYTHON
 	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64),)
+  ifdef VBOX_WITH_32_ON_64_MAIN_API
+	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(filter     %_x86.so,$(wildcard $(SOLARIS_OUT_BIN)/VBoxPython*.so)) $(SOLARIS_VBOXINST_DIR)/
+	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(filter-out %_x86.so,$(wildcard $(SOLARIS_OUT_BIN)/VBoxPython*.so)) $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64)/
+  else
 	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(wildcard $(SOLARIS_OUT_BIN)/VBoxPython*.so)                   $(SOLARIS_VBOXINST_DIR)/$(if $(SOL64_PKG),$(VBOX_SOL_PYTHON_DIR_64)/,)
+  endif
  endif
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(if $(VBOX_WITH_QT4_SUN),$(INSTALL) -m 0755 $(VBOX_PATH_QT4)/bin/qtconfig           $(SOLARIS_VBOXINST_DIR_ISA)/VBoxQtconfig,),)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_VBOXINST_DIR)/VBoxISAExec

@@ -107,6 +107,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
  endif # VBOX_WITH_ADDITIONS
  LIBRARIES.win.x86 += RuntimeR3VccTricks
  DLLS += VBoxRT
+ ifdef VBOX_WITH_32_ON_64_MAIN_API
+  DLLS += VBoxRT-x86
+ endif
 endif
 
 
@@ -1306,7 +1309,11 @@ ifdef VBOX_WITH_LIBCURL
 endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.$(KBUILD_TARGET).x86   := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).x86)
+VBoxRT_SOURCES.$(KBUILD_TARGET).amd64 := $(RuntimeR3_SOURCES.$(KBUILD_TARGET).amd64)
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) := $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
+VBoxRT_SOURCES.x86   := $(RuntimeR3_SOURCES.x86)
+VBoxRT_SOURCES.amd64 := $(RuntimeR3_SOURCES.amd64)
 VBoxRT_SOURCES.win            += \
 	r3/win/dllmain-win.cpp \
 	r3/win/fileaio-win.cpp \
@@ -1404,6 +1411,70 @@ VBoxRT:: VBoxRTDummy
  endif # building VBoxRT
 endif # linux
 
+
+#
+# VBoxRT-x86 - 32-bit version of VBoxRT
+#
+VBoxRT-x86_EXTENDS = VBoxRT
+VBoxRT-x86_TEMPLATE = VBoxR3Dll-x86
+VBoxRT-x86_SDKS  = VBOX_LIBXML2 VBOX_BOOST
+ifdef VBOX_WITH_LIBCURL
+ VBoxRT-x86_SDKS += VBOX_LIBCURL-x86
+endif
+VBoxRT-x86_SDKS  += VBOX_OPENSSL-x86
+
+VBoxRT-x86_LIBS = \
+	$(PATH_STAGE_LIB)/VBox-liblzf-x86$(VBOX_SUFF_LIB)
+if1of ($(KBUILD_TARGET_ARCH), amd64 x86)
+VBoxRT-x86_LIBS += \
+	$(PATH_STAGE_LIB)/SUPR3-x86$(VBOX_SUFF_LIB)
+endif
+ifdef IPRT_WITH_KSTUFF
+ VBoxRT-x86_LIBS                  += \
+	$(PATH_STAGE_LIB)/VBox-kStuff-x86$(VBOX_SUFF_LIB)
+endif
+ifndef SDK_VBOX_LIBXML2_LIBS
+ VBoxRT-x86_LIBS                 += \
+	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
+endif
+VBoxRT-x86_LIBS                  += \
+	$(SDK_VBOX_ZLIB_LIBS.x86)
+ifndef SDK_VBOX_OPENSSL_LIBS
+ VBoxRT-x86_LIBS                 += \
+	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \
+	$(PATH_STAGE_LIB)/VBox-libssl-x86$(VBOX_SUFF_LIB)
+endif
+ifdef IPRT_WITH_LZO
+ VBoxRT-x86_LIBS                  += lzo2
+endif
+VBoxRT-x86_LIBS.linux              = \
+	crypt
+VBoxRT-x86_LIBS.darwin             = \
+	iconv
+VBoxRT-x86_LIBS.freebsd            = \
+	iconv \
+	rt
+VBoxRT-x86_LIBS.haiku              = \
+	iconv
+VBoxRT-x86_LIBS.solaris            = \
+	kstat \
+	contract
+ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
+ # SMBIOS not available on Solaris SPARC.
+ VBoxRT-x86_LIBS.solaris += smbios
+endif
+VBoxRT-x86_LIBS.win                = \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/vccomsup.lib \
+	$(PATH_SDK_$(VBOX_WINDDK)_LIB.x86)/wbemuuid.lib
+
+VBoxRT-x86_SOURCES.win = $(filter-out %.def,$(VBoxRT_SOURCES.win),) $(VBoxRT-x86_0_OUTDIR)/VBoxRT.def
+if1of ($(DLLS), VBoxRT-x86)
+$$(VBoxRT-x86_0_OUTDIR)/VBoxRT.def: \
+		$(PATH_SUB_CURRENT)/r3/win/VBoxRT-win32.def \
+		$(PATH_SUB_CURRENT)/r3/win/$(if $(VBOX_OSE),VBoxRT-openssl-ose.def,VBoxRT-openssl.def)
+	$(RM) -f -- $@
+	$(REDIRECT) -wto $@ -- $(CAT_EXT) $^
+endif
 
 #
 # VBoxRTImp - Import library/hack.
@@ -2182,7 +2253,7 @@ define def_errmsgwin_deps
  $(lib)_common/err/errmsgxpcom.cpp_INCS = $(IPRT_OUT_DIR)
  $(lib)_common/err/errmsgxpcom.cpp_DEPS = $(IPRT_OUT_DIR)/errmsgvboxcomdata.h
 endef
-$(foreach lib,RuntimeR3 RuntimeBldProg VBoxRT,$(eval $(def_errmsgwin_deps)))
+$(foreach lib,RuntimeR3 RuntimeBldProg VBoxRT VBoxRT-x86,$(eval $(def_errmsgwin_deps)))
 
 
 #

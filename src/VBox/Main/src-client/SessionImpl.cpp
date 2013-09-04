@@ -164,16 +164,21 @@ STDMETHODIMP Session::COMGETTER(Machine)(IMachine **aMachine)
     CHECK_OPEN();
 
     HRESULT rc;
+#ifndef VBOX_COM_INPROC_API_CLIENT
     if (mConsole)
        rc = mConsole->machine().queryInterfaceTo(aMachine);
     else
+#endif
        rc = mRemoteMachine.queryInterfaceTo(aMachine);
     if (FAILED(rc))
     {
         /** @todo VBox 3.3: replace E_FAIL with rc here. */
+#ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
             setError(E_FAIL, tr("Failed to query the session machine (%Rhrc)"), rc);
-        else if (FAILED_DEAD_INTERFACE(rc))
+        else
+#endif
+        if (FAILED_DEAD_INTERFACE(rc))
             setError(E_FAIL, tr("Peer process crashed"));
         else
             setError(E_FAIL, tr("Failed to query the remote session machine (%Rhrc)"), rc);
@@ -194,17 +199,22 @@ STDMETHODIMP Session::COMGETTER(Console)(IConsole **aConsole)
     CHECK_OPEN();
 
     HRESULT rc;
+#ifndef VBOX_COM_INPROC_API_CLIENT
     if (mConsole)
         rc = mConsole.queryInterfaceTo(aConsole);
     else
+#endif
         rc = mRemoteConsole.queryInterfaceTo(aConsole);
 
     if (FAILED(rc))
     {
         /** @todo VBox 3.3: replace E_FAIL with rc here. */
+#ifndef VBOX_COM_INPROC_API_CLIENT
         if (mConsole)
             setError(E_FAIL, tr("Failed to query the console (%Rhrc)"), rc);
-        else if (FAILED_DEAD_INTERFACE(rc))
+        else
+#endif
+        if (FAILED_DEAD_INTERFACE(rc))
             setError(E_FAIL, tr("Peer process crashed"));
         else
             setError(E_FAIL, tr("Failed to query the remote console (%Rhrc)"), rc);
@@ -261,6 +271,7 @@ STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
 
     AssertReturn(mState != SessionState_Unlocked, VBOX_E_INVALID_VM_STATE);
 
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertMsgReturn(mType == SessionType_WriteLock && !!mConsole,
                     ("This is not a direct session!\n"),
                     VBOX_E_INVALID_OBJECT_STATE);
@@ -275,6 +286,10 @@ STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
     LogFlowThisFuncLeave();
 
     return S_OK;
+
+#else  /* VBOX_COM_INPROC_API_CLIENT */
+    return VBOX_E_INVALID_OBJECT_STATE;
+#endif /* VBOX_COM_INPROC_API_CLIENT */
 }
 
 STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
@@ -312,11 +327,13 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
     mControl = aMachine;
     AssertReturn(!!mControl, E_FAIL);
 
+#ifndef VBOX_COM_INPROC_API_CLIENT
     rc = mConsole.createObject();
     AssertComRCReturn(rc, rc);
 
     rc = mConsole->init(aMachine, mControl, aLockType);
     AssertComRCReturn(rc, rc);
+#endif
 
     Utf8Str strTokenId(aTokenId);
     Assert(!strTokenId.isEmpty());
@@ -352,11 +369,13 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
     {
         /* some cleanup */
         mControl.setNull();
+#ifndef VBOX_COM_INPROC_API_CLIENT
         if (!mConsole.isNull())
         {
             mConsole->uninit();
             mConsole.setNull();
         }
+#endif
     }
 
     LogFlowThisFunc(("rc=%08X\n", rc));
@@ -464,9 +483,13 @@ STDMETHODIMP Session::UpdateMachineState(MachineState_T aMachineState)
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
 
     AssertReturn(!mControl.isNull(), E_FAIL);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(!mConsole.isNull(), E_FAIL);
 
     return mConsole->updateMachineState(aMachineState);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::Uninitialize()
@@ -528,9 +551,13 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BO
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onNetworkAdapterChange(networkAdapter, changeAdapter);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
@@ -543,9 +570,13 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onSerialPortChange(serialPort);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
@@ -558,9 +589,13 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onParallelPortChange(parallelPort);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnStorageControllerChange()
@@ -573,9 +608,13 @@ STDMETHODIMP Session::OnStorageControllerChange()
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onStorageControllerChange();
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL aForce)
@@ -588,9 +627,13 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onMediumChange(aMediumAttachment, aForce);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
@@ -603,9 +646,13 @@ STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onCPUChange(aCPU, aRemove);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnCPUExecutionCapChange(ULONG aExecutionCap)
@@ -618,9 +665,13 @@ STDMETHODIMP Session::OnCPUExecutionCapChange(ULONG aExecutionCap)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onCPUExecutionCapChange(aExecutionCap);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnVRDEServerChange(BOOL aRestart)
@@ -633,9 +684,13 @@ STDMETHODIMP Session::OnVRDEServerChange(BOOL aRestart)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onVRDEServerChange(aRestart);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnVideoCaptureChange()
@@ -648,9 +703,13 @@ STDMETHODIMP Session::OnVideoCaptureChange()
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onVideoCaptureChange();
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnUSBControllerChange()
@@ -663,9 +722,13 @@ STDMETHODIMP Session::OnUSBControllerChange()
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onUSBControllerChange();
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnSharedFolderChange(BOOL aGlobal)
@@ -678,9 +741,13 @@ STDMETHODIMP Session::OnSharedFolderChange(BOOL aGlobal)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onSharedFolderChange(aGlobal);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnClipboardModeChange(ClipboardMode_T aClipboardMode)
@@ -693,9 +760,13 @@ STDMETHODIMP Session::OnClipboardModeChange(ClipboardMode_T aClipboardMode)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onClipboardModeChange(aClipboardMode);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode)
@@ -707,9 +778,13 @@ STDMETHODIMP Session::OnDragAndDropModeChange(DragAndDropMode_T aDragAndDropMode
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onDragAndDropModeChange(aDragAndDropMode);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
@@ -724,9 +799,13 @@ STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onUSBDeviceAttach(aDevice, aError, aMaskedIfs);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnUSBDeviceDetach(IN_BSTR aId,
@@ -740,9 +819,13 @@ STDMETHODIMP Session::OnUSBDeviceDetach(IN_BSTR aId,
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onUSBDeviceDetach(aId, aError);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
@@ -753,7 +836,9 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
+#endif
 
     if (mState != SessionState_Locked)
     {
@@ -766,7 +851,11 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, LONG64 *aWinId)
         return aCheck ? S_OK : E_FAIL;
     }
 
+#ifndef VBOX_COM_INPROC_API_CLIENT
     return mConsole->onShowWindow(aCheck, aCanShow, aWinId);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
@@ -779,9 +868,13 @@ STDMETHODIMP Session::OnBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onBandwidthGroupChange(aBandwidthGroup);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::OnStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent)
@@ -794,15 +887,19 @@ STDMETHODIMP Session::OnStorageDeviceChange(IMediumAttachment *aMediumAttachment
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->onStorageDeviceChange(aMediumAttachment, aRemove, aSilent);
+#else
+    return S_OK;
+#endif
 }
 
 STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
                                           BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
-#ifdef VBOX_WITH_GUEST_PROPS
+#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_COM_INPROC_API_CLIENT)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
@@ -845,7 +942,7 @@ STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
                                                ComSafeArrayOut(LONG64, aTimestamps),
                                                ComSafeArrayOut(BSTR, aFlags))
 {
-#ifdef VBOX_WITH_GUEST_PROPS
+#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_COM_INPROC_API_CLIENT)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
@@ -895,6 +992,7 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
         return setError(VBOX_E_INVALID_VM_STATE,
                         tr("Machine is not locked by session (session state: %s)."),
                         Global::stringifySessionState(mState));
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
     CheckComArgNotNull(aMediumAttachment);
@@ -905,6 +1003,9 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                        aMergeForward, aParentForTarget,
                                        ComSafeArrayInArg(aChildrenToReparent),
                                        aProgress);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Session::EnableVMMStatistics(BOOL aEnable)
@@ -915,11 +1016,15 @@ STDMETHODIMP Session::EnableVMMStatistics(BOOL aEnable)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     mConsole->enableVMMStatistics(aEnable);
 
     return S_OK;
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Session::PauseWithReason(Reason_T aReason)
@@ -930,9 +1035,13 @@ STDMETHODIMP Session::PauseWithReason(Reason_T aReason)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->pause(aReason);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Session::ResumeWithReason(Reason_T aReason)
@@ -943,9 +1052,13 @@ STDMETHODIMP Session::ResumeWithReason(Reason_T aReason)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->resume(aReason);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 STDMETHODIMP Session::SaveStateWithReason(Reason_T aReason, IProgress **aProgress)
@@ -956,9 +1069,13 @@ STDMETHODIMP Session::SaveStateWithReason(Reason_T aReason, IProgress **aProgres
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Locked, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
+#ifndef VBOX_COM_INPROC_API_CLIENT
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
 
     return mConsole->saveState(aReason, aProgress);
+#else
+    return E_NOTIMPL;
+#endif
 }
 
 // private methods
@@ -1014,16 +1131,20 @@ HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
 
     if (mType == SessionType_WriteLock)
     {
+#ifndef VBOX_COM_INPROC_API_CLIENT
         if (!mConsole.isNull())
         {
             mConsole->uninit();
             mConsole.setNull();
         }
+#endif
     }
     else
     {
         mRemoteMachine.setNull();
+#ifndef VBOX_COM_INPROC_API_CLIENT
         mRemoteConsole.setNull();
+#endif
     }
 
     ComPtr<IProgress> progress;

@@ -25,6 +25,7 @@ endif
 #
 VBOX_PATH_XPCOM_SRC := $(PATH_ROOT)/src/libs/xpcom18a4
 
+
 #
 # Template for building the XPCOM libraries (shared).
 #
@@ -258,6 +259,28 @@ TEMPLATE_XPCOMOSX107_CFLAGS.darwin      = $(filter-out $(VBOX_DARWIN_DEF_SDK_CFL
 TEMPLATE_XPCOMOSX107_LDFLAGS.darwin     = $(filter-out $(VBOX_DARWIN_DEF_SDK_LDFLAGS),$(TEMPLATE_XPCOM_LDFLAGS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_LDFLAGS)
 TEMPLATE_XPCOMOSX107_DEFS.darwin        = $(filter-out $(VBOX_DARWIN_DEF_SDK_DEFS),$(TEMPLATE_XPCOM_DEFS.darwin)) $(VBOX_DARWIN_DEF_SDK_10_7_DEFS)
 TEMPLATE_XPCOMOSX107_INCS.darwin        = $(VBOX_PATH_MACOSX_SDK_10_7)/Developer/Headers/FlatCarbon
+
+
+#
+# Creates a x86 target for an XPCOM target if so desired.
+# The target is specified as the first argument: $(evalcall VBOX_XPCOM_X86,target).
+#
+ifdef VBOX_WITH_32_ON_64_MAIN_API
+ define VBOX_XPCOM_X86
+  $(1)-x86_TEMPLATE := $(strip $($(1)_TEMPLATE))-x86
+  $(1)-x86_EXTENDS  := $(1)
+ endef
+else
+ define VBOX_XPCOM_X86
+ endef
+endif
+
+# Corresponding 32-bit template(s).
+TEMPLATE_XPCOM-x86                  = 32-bit XPCOM libraries (shared)
+TEMPLATE_XPCOM-x86_EXTENDS          = XPCOM
+TEMPLATE_XPCOM-x86_BLD_TRG_ARCH     = x86
+TEMPLATE_XPCOM-x86_DEFS             = $(TEMPLATE_XPCOM_DEFS) VBOX_IN_32_ON_64_MAIN_API
+TEMPLATE_XPCOM-x86_LIBS             = $(subst $(LIB_RUNTIME),$(VBOX_LIB_RUNTIME_X86),$(TEMPLATE_XPCOM_LIBS))
 
 
 #

@@ -674,6 +674,7 @@ nsNativeComponentLoader::AutoRegisterComponent(PRInt32 when,
 
     *registered = PR_FALSE;
 
+#ifndef VBOX
     /* this should be a pref or registry entry, or something */
     static const char *ValidDllExtensions[] = {
         ".dll",     /* Windows */
@@ -748,6 +749,53 @@ nsNativeComponentLoader::AutoRegisterComponent(PRInt32 when,
     if (validExtension == PR_FALSE)
         // Skip invalid extensions
         return NS_OK;
+
+#else /* VBOX */
+    /* VBox: Only one valid suffix exist, so dispense with the the list. */
+# ifdef RT_OS_DARWIN
+#  ifdef VBOX_IN_32_ON_64_MAIN_API
+    static const char s_szSuff[]        = "-x86.dylib";
+#  else
+    static const char s_szSuff[]        = ".dylib";
+    static const char s_szSuffInvalid[] = "-x86.dylib";
+#  endif
+# elif defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
+#  ifdef VBOX_IN_32_ON_64_MAIN_API
+    static const char s_szSuff[]        = "-x86.dll";
+#else
+    static const char s_szSuff[]        = ".dll";
+    static const char s_szSuffInvalid[] = "-x86.dll";
+#  endif
+# else
+#  ifdef VBOX_IN_32_ON_64_MAIN_API
+    static const char s_szSuff[]        = "-x86.so";
+#else
+    static const char s_szSuff[]        = ".so";
+    static const char s_szSuffInvalid[] = "-x86.so";
+#  endif
+# endif
+
+    nsCAutoString strLeafName;
+    rv = component->GetNativeLeafName(strLeafName);
+    if (NS_FAILED(rv))
+        return rv;
+    size_t cchLeafName = strLeafName.Length();
+    if (   cchLeafName <= sizeof(s_szSuff)
+        || PL_strcasecmp(strLeafName.get() + cchLeafName - sizeof(s_szSuff) + 1, s_szSuff))
+    {
+        PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("Skipping '%s'...", strLeafName.get()));
+        return NS_OK; /* skip */
+    }
+# ifndef VBOX_IN_32_ON_64_MAIN_API
+    if (   cchLeafName >= sizeof(s_szSuffInvalid)
+        && !PL_strcasecmp(strLeafName.get() + cchLeafName - sizeof(s_szSuffInvalid) + 1, s_szSuffInvalid))
+    {
+        PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("Skipping '%s' (#2)...", strLeafName.get()));
+        return NS_OK; /* skip */
+    }
+# endif
+    PR_LOG(nsComponentManagerLog, PR_LOG_DEBUG, ("... '%s'", strLeafName.get()));
+#endif /* VBOX */
 
     nsXPIDLCString persistentDescriptor;
     // what I want to do here is QI for a Component Registration Manager.  Since this

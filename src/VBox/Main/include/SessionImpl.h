@@ -1,5 +1,4 @@
 /** @file
- *
  * VBox Client Session COM Class definition
  */
 
@@ -121,7 +120,9 @@ private:
 
     ComPtr<IInternalMachineControl> mControl;
 
+#ifndef VBOX_COM_INPROC_API_CLIENT
     ComObjPtr<Console> mConsole;
+#endif
 
     ComPtr<IMachine> mRemoteMachine;
     ComPtr<IConsole> mRemoteConsole;
@@ -133,5 +134,5 @@ private:
     ClientTokenHolder *mClientTokenHolder;
 };
 
-#endif // ____H_SESSIONIMPL
+#endif // !____H_SESSIONIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

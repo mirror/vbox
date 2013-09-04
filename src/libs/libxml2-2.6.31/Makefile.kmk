@@ -79,5 +79,12 @@ VBox-libxml2_SOURCES        = \
 # VBox-libxml2_LDFLAGS.win    = /VERSION:$(LIBXML_MAJOR_VERSION).$(LIBXML_MINOR_VERSION)
 # VBox-libxml2_SDKS.win      += WINPSDK
 
+ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
+ LIBRARIES += VBox-libxml2-x86
+ VBox-libxml2-x86_TEMPLATE = VBoxR3DllNonPedantic-x86
+ VBox-libxml2-x86_EXTENDS = VBox-libxml2
+endif
+
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

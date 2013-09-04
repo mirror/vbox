@@ -46,5 +46,11 @@ VBox-zlib-static_TEMPLATE = VBOXR3STATIC
 VBox-zlib-static_DEFS = $(VBox-zlib_DEFS)
 VBox-zlib-static_SOURCES = $(VBox-zlib_SOURCES)
 
+ifdef VBOX_WITH_32_ON_64_MAIN_API # 32-bit edition.
+ LIBRARIES += VBox-zlib-x86
+ VBox-zlib-x86_TEMPLATE = VBoxR3Dll-x86
+ VBox-zlib-x86_EXTENDS = VBox-zlib
+endif
+
 include $(FILE_KBUILD_SUB_FOOTER)
 

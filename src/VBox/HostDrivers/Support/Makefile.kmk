@@ -31,6 +31,9 @@ include $(KBUILD_PATH)/subheader.kmk
 # Targets
 #
 LIBRARIES += SUPR3 SUPR3Static SUPR3HardenedStatic
+ifdef VBOX_WITH_32_ON_64_MAIN_API
+ LIBRARIES += SUPR3-x86
+endif
 ifndef VBOX_ONLY_DOCS
  if1of ($(VBOX_LDR_FMT), pe lx)
   LIBRARIES += SUPR0
@@ -84,6 +87,10 @@ SUPR3_SOURCES       = \
 	SUPR3HardenedIPRT.cpp \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
+
+SUPR3-x86_TEMPLATE = VBoxR3Dll-x86
+SUPR3-x86_EXTENDS  = SUPR3
+
 
 #
 # Static version of SUPR3.
