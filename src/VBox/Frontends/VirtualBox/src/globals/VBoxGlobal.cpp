@@ -1841,17 +1841,11 @@ void VBoxGlobal::reloadProxySettings()
     }
 }
 
-/**
- * Adds a new medium to the current media list and emits the #mediumAdded()
- * signal.
- *
- * @sa #currentMediaList()
- */
-void VBoxGlobal::addMedium (const UIMedium &aMedium)
+void VBoxGlobal::createMedium(const UIMedium &uimedium)
 {
     VBoxMediaList::iterator it = m_mediums.begin();
 
-    if (aMedium.type() == UIMediumType_HardDisk)
+    if (uimedium.type() == UIMediumType_HardDisk)
     {
         VBoxMediaList::iterator itParent = m_mediums.end();
 
@@ -1863,26 +1857,26 @@ void VBoxGlobal::addMedium (const UIMedium &aMedium)
             if ((*it).type() != UIMediumType_HardDisk)
                 break;
 
-            if (aMedium.parent() != NULL && itParent == m_mediums.end())
+            if (uimedium.parent() != NULL && itParent == m_mediums.end())
             {
-                if (&*it == aMedium.parent())
+                if (&*it == uimedium.parent())
                     itParent = it;
             }
             else
             {
                 /* break if met a parent's sibling (will insert before it) */
-                if (aMedium.parent() != NULL &&
+                if (uimedium.parent() != NULL &&
                     (*it).parent() == (*itParent).parent())
                     break;
 
-                /* compare to aMedium's siblings */
-                if ((*it).parent() == aMedium.parent() &&
-                    (*it).name().localeAwareCompare (aMedium.name()) > 0)
+                /* compare to uimedium's siblings */
+                if ((*it).parent() == uimedium.parent() &&
+                    (*it).name().localeAwareCompare (uimedium.name()) > 0)
                     break;
             }
         }
 
-        AssertReturnVoid (aMedium.parent() == NULL || itParent != m_mediums.end());
+        AssertReturnVoid (uimedium.parent() == NULL || itParent != m_mediums.end());
     }
     else
     {
@@ -1896,81 +1890,69 @@ void VBoxGlobal::addMedium (const UIMedium &aMedium)
                 continue;
 
             /* skip DVD when inserting Floppy */
-            if (aMedium.type() == UIMediumType_Floppy &&
+            if (uimedium.type() == UIMediumType_Floppy &&
                 (*it).type() == UIMediumType_DVD)
                 continue;
 
-            if ((*it).name().localeAwareCompare (aMedium.name()) > 0 ||
-                (aMedium.type() == UIMediumType_DVD &&
+            if ((*it).name().localeAwareCompare (uimedium.name()) > 0 ||
+                (uimedium.type() == UIMediumType_DVD &&
                  (*it).type() == UIMediumType_Floppy))
                 break;
         }
     }
 
-    it = m_mediums.insert (it, aMedium);
+    it = m_mediums.insert (it, uimedium);
 
-    emit mediumAdded (*it);
+    emit sigMediumCreated(*it);
 }
 
-/**
- * Updates the medium in the current media list and emits the #mediumUpdated()
- * signal.
- *
- * @sa #currentMediaList()
- */
-void VBoxGlobal::updateMedium (const UIMedium &aMedium)
+void VBoxGlobal::updateMedium(const UIMedium &uimedium)
 {
     VBoxMediaList::Iterator it;
     for (it = m_mediums.begin(); it != m_mediums.end(); ++ it)
-        if ((*it).id() == aMedium.id())
+        if ((*it).id() == uimedium.id())
             break;
 
     AssertReturnVoid (it != m_mediums.end());
 
-    if (&*it != &aMedium)
-        *it = aMedium;
+    if (&*it != &uimedium)
+        *it = uimedium;
 
-    emit mediumUpdated (*it);
+    emit sigMediumUpdated(*it);
 }
 
-/**
- * Removes the medium from the current media list and emits the #mediumRemoved()
- * signal.
- *
- * @sa #currentMediaList()
- */
-void VBoxGlobal::removeMedium (UIMediumType aType, const QString &aId)
+void VBoxGlobal::deleteMedium(const QString &strMediumID)
 {
     VBoxMediaList::Iterator it;
-    for (it = m_mediums.begin(); it != m_mediums.end(); ++ it)
-        if ((*it).id() == aId)
+    for (it = m_mediums.begin(); it != m_mediums.end(); ++it)
+        if ((*it).id() == strMediumID)
             break;
 
-    AssertReturnVoid (it != m_mediums.end());
+    AssertReturnVoid(it != m_mediums.end());
 
 #if DEBUG
     /* sanity: must be no children */
     {
         VBoxMediaList::Iterator jt = it;
-        ++ jt;
-        AssertReturnVoid (jt == m_mediums.end() || (*jt).parent() != &*it);
+        ++jt;
+        AssertReturnVoid(jt == m_mediums.end() || (*jt).parent() != &*it);
     }
-#endif
+#endif /* DEBUG */
 
     UIMedium *pParent = (*it).parent();
 
     /* remove the medium from the list to keep it in sync with the server "for
      * free" when the medium is deleted from one of our UIs */
-    m_mediums.erase (it);
+    m_mediums.erase(it);
 
-    emit mediumRemoved (aType, aId);
+    emit sigMediumDeleted(strMediumID);
 
     /* also emit the parent update signal because some attributes like
      * isReadOnly() may have been changed after child removal */
     if (pParent != NULL)
     {
         pParent->refresh();
-        emit mediumUpdated (*pParent);
+        emit sigMediumUpdated(*pParent);
     }
 }
 
@@ -2119,7 +2101,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
         {
             /* And create new otherwise: */
             uimedium = UIMedium(cmedium, mediumType, KMediumState_Created);
-            vboxGlobal().addMedium(uimedium);
+            vboxGlobal().createMedium(uimedium);
         }
 
         /* Return uimedium id: */
@@ -4048,7 +4030,7 @@ bool VBoxGlobal::event(QEvent *pEvent)
             m_pMediumEnumerationThread = 0;
 
             /* Notify listeners about enumeration finished: */
-            emit sigMediumEnumerationFinished(m_mediums);
+            emit sigMediumEnumerationFinished();
 
             /* Accept event: */
             return true;

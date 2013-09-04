@@ -1402,7 +1402,7 @@ void UISelectorWindow::prepareWidgets()
 void UISelectorWindow::prepareConnections()
 {
     /* Medium enumeration connections: */
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList &)), this, SLOT(sltHandleMediumEnumerationFinish()));
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltHandleMediumEnumerationFinish()));
 
     /* Menu-bar connections: */
     connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(sltShowSelectorContextMenu(const QPoint&)));

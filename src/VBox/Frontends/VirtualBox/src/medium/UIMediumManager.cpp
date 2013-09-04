@@ -271,7 +271,7 @@ void UIMediumManager::refreshAll()
     vboxGlobal().startMediumEnumeration();
 }
 
-void UIMediumManager::sltHandleMediumAdded(const UIMedium &medium)
+void UIMediumManager::sltHandleMediumCreated(const UIMedium &medium)
 {
     /* Ignore non-interesting mediums: */
     if ((medium.isNull()) || (medium.isHostDrive()))
@@ -369,11 +369,20 @@ void UIMediumManager::sltHandleMediumUpdated(const UIMedium &medium)
         sltHandleCurrentItemChanged(pMediumItem);
 }
 
-void UIMediumManager::sltHandleMediumRemoved(UIMediumType type, const QString &strId)
+void UIMediumManager::sltHandleMediumDeleted(const QString &strMediumID)
 {
     /* Get tree/item: */
-    QTreeWidget *pTree = treeWidget(type);
-    UIMediumItem *pMediumItem = toMediumItem(searchItem(pTree, strId));
+    QList<UIMediumType> types;
+    types << UIMediumType_HardDisk << UIMediumType_DVD << UIMediumType_Floppy;
+    QTreeWidget *pTree = 0;
+    UIMediumItem *pMediumItem = 0;
+    foreach (UIMediumType type, types)
+    {
+        pTree = treeWidget(type);
+        pMediumItem = searchItem(pTree, strMediumID);
+        if (pMediumItem)
+            break;
+    }
     if (!pMediumItem)
         return;
 
@@ -410,7 +419,7 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     prepareToRefresh(mediums.size());
     VBoxMediaList::const_iterator it;
     for (it = mediums.begin(); it != mediums.end(); ++it)
-        sltHandleMediumAdded(*it);
+        sltHandleMediumCreated(*it);
 
     /* Select the first item to be the current one
      * if the previous saved item was not selected yet. */
@@ -494,8 +503,8 @@ void UIMediumManager::sltRemoveMedium()
     AssertMsgReturnVoid(pMediumItem, ("Current item must not be null"));
 
     /* Remember ID/type as they may get lost after the closure/deletion: */
-    QString strId = pMediumItem->id();
-    AssertReturnVoid(!strId.isNull());
+    QString strMediumID = pMediumItem->id();
+    AssertReturnVoid(!strMediumID.isNull());
     UIMediumType type = pMediumItem->type();
 
     /* Confirm medium removal: */
@@ -580,7 +589,7 @@ void UIMediumManager::sltRemoveMedium()
 
     /* Verify result: */
     if (result.isOk())
-        vboxGlobal().removeMedium(type, strId);
+        vboxGlobal().deleteMedium(strMediumID);
     else
         msgCenter().cannotCloseMedium(pMediumItem->medium(), result, this);
 }
@@ -624,8 +633,6 @@ void UIMediumManager::sltReleaseMedium()
         if (!releaseMediumFrom(pMediumItem->medium(), strMachineId))
             break;
 
-    /* Update medium-item: */
-    pMediumItem->refreshAll();
     /* Inform others about medium changes: */
     vboxGlobal().updateMedium(pMediumItem->medium());
 }
@@ -850,19 +857,19 @@ void UIMediumManager::prepareThis()
     Assert(!m_vbox.isNull());
 
     /* Configure medium-processing connections: */
-    connect(&vboxGlobal(), SIGNAL(mediumAdded(const UIMedium&)),
-            this, SLOT(sltHandleMediumAdded(const UIMedium&)));
-    connect(&vboxGlobal(), SIGNAL(mediumUpdated(const UIMedium&)),
+    connect(&vboxGlobal(), SIGNAL(sigMediumCreated(const UIMedium&)),
+            this, SLOT(sltHandleMediumCreated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const UIMedium&)),
             this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
-    connect(&vboxGlobal(), SIGNAL(mediumRemoved(UIMediumType, const QString&)),
-            this, SLOT(sltHandleMediumRemoved(UIMediumType, const QString&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
+            this, SLOT(sltHandleMediumDeleted(const QString&)));
 
     /* Configure medium-enumeration connections: */
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationStarted()),
             this, SLOT(sltHandleMediumEnumerationStart()));
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const UIMedium&)),
             this, SLOT(sltHandleMediumEnumerated(const UIMedium&)));
-    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished(const VBoxMediaList&)),
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()),
             this, SLOT(sltHandleMediumEnumerationFinish()));
 
     /* Configure Main event connections: */
@@ -1151,7 +1158,7 @@ void UIMediumManager::populateTreeWidgets()
         /* Add every medium we have into trees: */
         for (it = mediums.begin(); it != mediums.end(); ++it)
         {
-            sltHandleMediumAdded(*it);
+            sltHandleMediumCreated(*it);
             /* But advance progress-bar only for created mediums: */
             if ((*it).state() != KMediumState_NotCreated)
                 m_pProgressBar->setValue(m_pProgressBar->value() + 1);

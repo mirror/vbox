@@ -1829,13 +1829,13 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     mLbLocationValue->setFullSizeSelection (true);
     mLbUsageValue->setFullSizeSelection (true);
 
-    /* Setup connections */
-    connect (&vboxGlobal(), SIGNAL (sigMediumEnumerated (const UIMedium &)),
-             this, SLOT (sltHandleMediumUpdated (const UIMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumUpdated (const UIMedium &)),
-             this, SLOT (sltHandleMediumUpdated (const UIMedium &)));
-    connect (&vboxGlobal(), SIGNAL (mediumRemoved (UIMediumType, const QString &)),
-             this, SLOT (sltHandleMediumRemoved (UIMediumType, const QString &)));
+    /* Setup connections: */
+    connect(&vboxGlobal(), SIGNAL(sigMediumEnumerated(const UIMedium&)),
+            this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumUpdated(const UIMedium&)),
+            this, SLOT(sltHandleMediumUpdated(const UIMedium&)));
+    connect(&vboxGlobal(), SIGNAL(sigMediumDeleted(const QString&)),
+            this, SLOT(sltHandleMediumDeleted(const QString&)));
     connect (mAddCtrAction, SIGNAL (triggered (bool)), this, SLOT (addController()));
     connect (mAddIDECtrAction, SIGNAL (triggered (bool)), this, SLOT (addIDEController()));
     connect (mAddSATACtrAction, SIGNAL (triggered (bool)), this, SLOT (addSATAController()));
@@ -2270,7 +2270,7 @@ void UIMachineSettingsStorage::showEvent (QShowEvent *aEvent)
     UISettingsPageMachine::showEvent (aEvent);
 }
 
-void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &aMedium)
+void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &medium)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
@@ -2280,7 +2280,7 @@ void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &aMedium)
         {
             QModelIndex attIndex = ctrIndex.child (j, 0);
             QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
-            if (attMediumId == aMedium.id())
+            if (attMediumId == medium.id())
             {
                 mStorageModel->setData (attIndex, attMediumId, StorageModel::R_AttMediumId);
 
@@ -2291,7 +2291,7 @@ void UIMachineSettingsStorage::sltHandleMediumUpdated(const UIMedium &aMedium)
     }
 }
 
-void UIMachineSettingsStorage::sltHandleMediumRemoved(UIMediumType /* aType */, const QString &aMediumId)
+void UIMachineSettingsStorage::sltHandleMediumDeleted(const QString &strMediumID)
 {
     QModelIndex rootIndex = mStorageModel->root();
     for (int i = 0; i < mStorageModel->rowCount (rootIndex); ++ i)
@@ -2301,7 +2301,7 @@ void UIMachineSettingsStorage::sltHandleMediumRemoved(UIMediumType /* aType */, 
         {
             QModelIndex attIndex = ctrIndex.child (j, 0);
             QString attMediumId = mStorageModel->data (attIndex, StorageModel::R_AttMediumId).toString();
-            if (attMediumId == aMediumId)
+            if (attMediumId == strMediumID)
             {
                 mStorageModel->setData (attIndex, UIMedium().id(), StorageModel::R_AttMediumId);
 

@@ -247,9 +247,10 @@ public:
     bool isMediaEnumerationStarted() const { return !!m_pMediumEnumerationThread; }
     const VBoxMediaList &currentMediaList() const { return m_mediums; }
 
-    void addMedium (const UIMedium &);
-    void updateMedium (const UIMedium &);
-    void removeMedium (UIMediumType, const QString &);
+    /* API: Medium-processing stuff: */
+    void createMedium(const UIMedium &medium);
+    void updateMedium(const UIMedium &medium);
+    void deleteMedium(const QString &strMediumID);
 
     bool medium(const CMedium &cmedium, UIMedium &uimedium) const;
     UIMedium medium(const QString &strMediumID) const;
@@ -377,16 +378,12 @@ signals:
     /* Notifiers: Medium-enumeration stuff: */
     void sigMediumEnumerationStarted();
     void sigMediumEnumerated(const UIMedium &medium);
-    void sigMediumEnumerationFinished(const VBoxMediaList &mediums);
+    void sigMediumEnumerationFinished();
 
-    /** Emitted when a new media is added using #addMedia(). */
-    void mediumAdded (const UIMedium &);
-
-    /** Emitted when the media is updated using #updateMedia(). */
-    void mediumUpdated (const UIMedium &);
-
-    /** Emitted when the media is removed using #removeMedia(). */
-    void mediumRemoved (UIMediumType, const QString &);
+    /* Notifiers: Medium-processing stuff: */
+    void sigMediumCreated(const UIMedium &medium);
+    void sigMediumUpdated(const UIMedium &medium);
+    void sigMediumDeleted(const QString &strMediumID);
 
 public slots:
 
