@@ -798,8 +798,8 @@ VMMR0_INT_DECL(int) HMR0Term(void)
 
 
 /**
- * Worker function used by hmR0PowerCallback  and HMR0Init to initalize
- * VT-x on a CPU.
+ * Worker function used by hmR0PowerCallback() and HMR0Init() to initalize VT-x
+ * on a CPU.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     Pointer to the first RC structure.
@@ -811,30 +811,51 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
     NOREF(pvUser2);
 
-    /*
-     * Both the LOCK and VMXON bit must be set; otherwise VMXON will generate a #GP.
-     * Once the lock bit is set, this MSR can no longer be modified.
-     */
     uint64_t fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-    if (   !(fFC    & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-        || (   (fFC & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-            == MSR_IA32_FEATURE_CONTROL_VMXON ) /* Some BIOSes forget to set the locked bit. */
-       )
-    {
-        /* MSR is not yet locked; we can change it ourselves here. */
-        ASMWrMsr(MSR_IA32_FEATURE_CONTROL,
-                 g_HvmR0.vmx.Msrs.u64FeatureCtrl | MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK);
-        fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-    }
+    bool const fInSmxMode       = !!(ASMGetCR4() & X86_CR4_SMXE);
+    bool       fMsrLocked       = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
+    bool       fSmxVmxAllowed   = !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+    bool       fVmxAllowed      = !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
 
-    int rc;
-    if ((fFC & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-        ==     (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+    /* Check if the LOCK bit is set but excludes the required VMXON bit. */
+    int rc = VERR_HM_IPE_1;
+    if (fMsrLocked)
     {
-        rc = VINF_SUCCESS;
+        if (fInSmxMode && !fSmxVmxAllowed)
+            rc = VERR_VMX_MSR_SMX_VMXON_DISABLED;
+        else if (!fVmxAllowed)
+            rc = VERR_VMX_MSR_VMXON_DISABLED;
+        else
+            rc = VINF_SUCCESS;
     }
     else
-        rc = VERR_VMX_MSR_LOCKED_OR_DISABLED;
+    {
+        /*
+         * MSR is not yet locked; we can change it ourselves here.
+         * Once the lock bit is set, this MSR can no longer be modified.
+         */
+        fFC |= MSR_IA32_FEATURE_CONTROL_LOCK;
+        if (fInSmxMode)
+            fFC |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
+        else
+            fFC |= MSR_IA32_FEATURE_CONTROL_VMXON;
+
+        ASMWrMsr(MSR_IA32_FEATURE_CONTROL, fFC);
+
+        /* Verify. */
+        fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        fMsrLocked     = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
+        fSmxVmxAllowed = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+        fVmxAllowed    = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
+
+        if (   (fInSmxMode && fSmxVmxAllowed)
+            || fVmxAllowed)
+        {
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = VERR_VMX_MSR_LOCKING_FAILED;
+    }
 
     hmR0FirstRcSetStatus(pFirstRc, rc);
 }
@@ -928,8 +949,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 
 
 /**
- * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
- * is to be called on the target cpus.
+ * Worker function passed to RTMpOnAll() that is to be called on all CPUs.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     Opaque pointer to the VM (can be NULL!).
