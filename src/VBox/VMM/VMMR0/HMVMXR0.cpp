@@ -8610,7 +8610,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
          * Dispatch the NMI to the host. See Intel spec. 27.5.5 "Updating Non-Register State".
          */
         VMXDispatchHostNmi();
-        STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmi);
+        STAM_REL_COUNTER_INC(&pVCpu->hm.s.StatExitHostNmiInGC);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitXcptNmi, y3);
         return VINF_SUCCESS;
     }
