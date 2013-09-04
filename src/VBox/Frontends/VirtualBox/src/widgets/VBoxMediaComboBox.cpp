@@ -172,28 +172,23 @@ void VBoxMediaComboBox::sltHandleMediumCreated(const QString &strMediumID)
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
-    if (medium.isNull() || medium.type() == mType)
-    {
-        if (!mShowDiffs && medium.type() == UIMediumType_HardDisk)
-        {
-            if (medium.parent() != NULL)
-            {
-                /* In !mShowDiffs mode, we ignore all diffs except ones that are
-                 * directly attached to the related VM in the current state */
-                if (!medium.isAttachedInCurStateTo (mMachineId))
-                    return;
-            }
-        }
+    /* Add only 1. NULL medium and 2. mediums of required type: */
+    if (!medium.isNull() && medium.type() != mType)
+        return;
 
-        appendItem(medium);
+    /* In !mShowDiffs mode, we ignore all diffs: */
+    if (!mShowDiffs && medium.type() == UIMediumType_HardDisk && medium.parent())
+        return;
 
-        /* Activate the required item if there is any: */
-        if (medium.id() == mLastId)
-            setCurrentItem(medium.id());
-        /* Select last added item if there is no item selected: */
-        else if (currentText().isEmpty())
-            QComboBox::setCurrentIndex(count() - 1);
-    }
+    /* Append medium into combo-box: */
+    appendItem(medium);
+
+    /* Activate the required item if any: */
+    if (medium.id() == mLastId)
+        setCurrentItem(medium.id());
+    /* Select last added item if there is no item selected: */
+    else if (currentText().isEmpty())
+        QComboBox::setCurrentIndex(count() - 1);
 }
 
 void VBoxMediaComboBox::sltHandleMediumUpdated(const QString &strMediumID)
@@ -201,26 +196,31 @@ void VBoxMediaComboBox::sltHandleMediumUpdated(const QString &strMediumID)
     /* Search for corresponding medium: */
     UIMedium medium = vboxGlobal().medium(strMediumID);
 
-    if (medium.isNull() || medium.type() == mType)
-    {
-        int index;
-        if (!findMediaIndex(medium.id(), index))
-            return;
+    /* Add only 1. NULL medium and 2. mediums of required type: */
+    if (!medium.isNull() && medium.type() != mType)
+        return;
 
-        replaceItem(index, medium);
+    /* Search for corresponding item index: */
+    int index;
+    if (!findMediaIndex(medium.id(), index))
+        return;
 
-        /* Emit the signal to ensure the parent dialog handles the change of
-         * the selected item's data: */
-        emit activated(currentIndex());
-    }
+    /* Replace medium in combo-box: */
+    replaceItem(index, medium);
+
+    /* Emit the signal to ensure the parent dialog handles the change of
+     * the selected item's data: */
+    emit activated(currentIndex());
 }
 
 void VBoxMediaComboBox::sltHandleMediumDeleted(const QString &strMediumID)
 {
+    /* Search for corresponding item index: */
     int index;
     if (!findMediaIndex(strMediumID, index))
         return;
 
+    /* Replace medium from combo-box: */
     removeItem(index);
     mMedia.erase(mMedia.begin() + index);
 
