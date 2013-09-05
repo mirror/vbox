@@ -29,14 +29,15 @@
 #endif /* Q_WS_MAC */
 
 /* GUI includes: */
-#include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
+#include "UIConverter.h"
+#include "UIMessageCenter.h"
 #include "UISelectorWindow.h"
 #include "UIProgressDialog.h"
 #include "UINetworkManager.h"
 #include "UINetworkManagerDialog.h"
-#include "UIConverter.h"
 #include "UIModalWindowManager.h"
+#include "UIMedium.h"
 #ifdef VBOX_OSE
 # include "UIDownloaderUserManual.h"
 #endif /* VBOX_OSE */

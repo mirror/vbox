@@ -25,7 +25,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIMedium.h"
 #include "UINetworkDefs.h"
 
 /* Forward declarations: */
