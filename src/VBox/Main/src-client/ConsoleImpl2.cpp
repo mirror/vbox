@@ -2938,7 +2938,7 @@ int Console::configCfgmOverlay(PCFGMNODE pRoot, IVirtualBox *pVirtualBox, IMachi
                 hrc = pMachine->GetExtraData(Bstr(strKey).raw(),
                                              bstrExtraDataValue.asOutParam());
             if (FAILED(hrc))
-                LogRel(("Warning: Cannot get extra data key %s, rc = %Rrc\n", strKey.c_str(), hrc));
+                LogRel(("Warning: Cannot get extra data key %s, rc = %Rhrc\n", strKey.c_str(), hrc));
 
             /*
              * The key will be in the format "Node1/Node2/Value" or simply "Value".
@@ -5097,7 +5097,7 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
                                                       ComSafeArrayAsOutParam(valuesOut),
                                                       ComSafeArrayAsOutParam(timestampsOut),
                                                       ComSafeArrayAsOutParam(flagsOut));
-        AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%Rrc\n", hrc), VERR_GENERAL_FAILURE);
+        AssertMsgReturn(SUCCEEDED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE);
         size_t cProps = namesOut.size();
         size_t cAlloc = cProps + 1;
         if (   valuesOut.size() != cProps
