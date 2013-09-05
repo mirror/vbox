@@ -1438,7 +1438,7 @@ ifndef SDK_VBOX_LIBXML2_LIBS
 	$(PATH_STAGE_LIB)/VBox-libxml2-x86$(VBOX_SUFF_LIB)
 endif
 VBoxRT-x86_LIBS                  += \
-	$(SDK_VBOX_ZLIB_LIBS.x86)
+	$(SDK_VBOX_ZLIB_LIBS-x86)
 ifndef SDK_VBOX_OPENSSL_LIBS
  VBoxRT-x86_LIBS                 += \
 	$(PATH_STAGE_LIB)/VBox-libcrypto-x86$(VBOX_SUFF_LIB) \
