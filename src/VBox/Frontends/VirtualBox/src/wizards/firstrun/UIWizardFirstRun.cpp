@@ -22,6 +22,7 @@
 #include "UIWizardFirstRunPageBasic.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "CStorageController.h"

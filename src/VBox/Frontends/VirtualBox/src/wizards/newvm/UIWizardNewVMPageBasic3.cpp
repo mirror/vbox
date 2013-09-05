@@ -32,6 +32,7 @@
 #include "QIToolButton.h"
 #include "UIWizardNewVD.h"
 #include "QIRichTextLabel.h"
+#include "UIMedium.h"
 
 UIWizardNewVMPage3::UIWizardNewVMPage3()
 {

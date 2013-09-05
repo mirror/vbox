@@ -27,6 +27,7 @@
 #include "UIMachineDefs.h"
 #include "UIConverter.h"
 #include "UIAnimationFramework.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "CConsole.h"

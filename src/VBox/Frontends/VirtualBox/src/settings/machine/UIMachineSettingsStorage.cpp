@@ -36,6 +36,7 @@
 #include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
 #include "UIConverter.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "CStorageController.h"

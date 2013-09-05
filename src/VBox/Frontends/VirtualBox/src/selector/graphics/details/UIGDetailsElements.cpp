@@ -44,6 +44,7 @@
 #include "CUSBDeviceFilters.h"
 #include "CUSBDeviceFilter.h"
 #include "CSharedFolder.h"
+#include "CMedium.h"
 
 /* Constructor: */
 UIGDetailsUpdateThread::UIGDetailsUpdateThread(const CMachine &machine)

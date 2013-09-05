@@ -70,6 +70,7 @@
 #include "UISession.h"
 #include "UIConverter.h"
 #include "UIMediumEnumerator.h"
+#include "UIMedium.h"
 
 #ifdef Q_WS_X11
 # include "UIHostComboEditor.h"

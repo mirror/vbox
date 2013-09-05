@@ -30,6 +30,7 @@
 #include "QILabel.h"
 #include "QIDialogButtonBox.h"
 #include "UIConverter.h"
+#include "UIMedium.h"
 
 /* Constructor: */
 UIMediumTypeChangeDialog::UIMediumTypeChangeDialog(QWidget *pParent, const QString &strMediumId)

@@ -30,6 +30,7 @@
 #include "VBoxMediaComboBox.h"
 #include "QIToolButton.h"
 #include "QIRichTextLabel.h"
+#include "UIMedium.h"
 
 UIWizardFirstRunPage::UIWizardFirstRunPage(bool fBootHardDiskWasSet)
     : m_fBootHardDiskWasSet(fBootHardDiskWasSet)

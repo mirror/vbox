@@ -18,13 +18,14 @@
  */
 
 /* GUI includes: */
+#include "VBoxGlobal.h"
 #include "UIWizardNewVM.h"
 #include "UIWizardNewVMPageBasic1.h"
 #include "UIWizardNewVMPageBasic2.h"
 #include "UIWizardNewVMPageBasic3.h"
 #include "UIWizardNewVMPageExpert.h"
-#include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "CAudioAdapter.h"

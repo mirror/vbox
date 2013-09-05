@@ -21,13 +21,14 @@
 #include <QVariant>
 
 /* GUI includes: */
+#include "VBoxGlobal.h"
 #include "UIWizardNewVD.h"
 #include "UIWizardNewVDPageBasic1.h"
 #include "UIWizardNewVDPageBasic2.h"
 #include "UIWizardNewVDPageBasic3.h"
 #include "UIWizardNewVDPageExpert.h"
-#include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "CMediumFormat.h"
