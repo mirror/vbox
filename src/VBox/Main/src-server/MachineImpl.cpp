@@ -3600,7 +3600,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         if (FAILED(rc))
             // the failure may occur w/o any error info (from RPC), so provide one
             return setError(VBOX_E_VM_ERROR,
-                            tr("Failed to get a console object from the direct session (%Rrc)"), rc);
+                            tr("Failed to get a console object from the direct session (%Rhrc)"), rc);
 
         ComAssertRet(!pConsoleW.isNull(), E_FAIL);
 
@@ -3612,7 +3612,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
         if (FAILED(rc))
             // the failure may occur w/o any error info (from RPC), so provide one
             return setError(VBOX_E_VM_ERROR,
-                            tr("Failed to assign the machine to the session (%Rrc)"), rc);
+                            tr("Failed to assign the machine to the session (%Rhrc)"), rc);
         alock.acquire();
 
         // need to revalidate the state after acquiring the lock again
@@ -3713,7 +3713,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
             /* The failure may occur w/o any error info (from RPC), so provide one */
             if (FAILED(rc))
                 setError(VBOX_E_VM_ERROR,
-                         tr("Failed to assign the machine to the session (%Rrc)"), rc);
+                         tr("Failed to assign the machine to the session (%Rhrc)"), rc);
 
             if (    SUCCEEDED(rc)
                  && fLaunchingVMProcess
@@ -3746,7 +3746,7 @@ STDMETHODIMP Machine::LockMachine(ISession *aSession,
                     /* The failure may occur w/o any error info (from RPC), so provide one */
                     if (FAILED(rc))
                         setError(VBOX_E_VM_ERROR,
-                                 tr("Failed to assign the machine to the remote session (%Rrc)"), rc);
+                                 tr("Failed to assign the machine to the remote session (%Rhrc)"), rc);
                 }
 
                 if (FAILED(rc))
@@ -8118,7 +8118,7 @@ HRESULT Machine::launchVMProcess(IInternalSessionControl *aControl,
         mData->mSession.mState = SessionState_Unlocked;
         /* The failure may occur w/o any error info (from RPC), so provide one */
         return setError(VBOX_E_VM_ERROR,
-                        tr("Failed to assign the machine to the session (%Rrc)"), rc);
+                        tr("Failed to assign the machine to the session (%Rhrc)"), rc);
     }
 
     /* attach launch data to the machine */
@@ -8258,7 +8258,7 @@ bool Machine::checkForSpawnFailure()
         else
             rc = setError(E_FAIL,
                           tr("The virtual machine '%s' has terminated unexpectedly during startup (%Rrc)"),
-                          getName().c_str(), rc);
+                          getName().c_str(), vrc);
     }
 
     if (FAILED(rc))

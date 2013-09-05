@@ -1358,7 +1358,7 @@ STDMETHODIMP EventSource::CreateListener(IEventListener ** aListener)
     ComObjPtr<PassiveEventListener> listener;
 
     HRESULT rc = listener.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create wrapper object (%Rhrc)", rc),
                     E_FAIL);
     listener.queryInterfaceTo(aListener);
     return S_OK;
@@ -1376,7 +1376,7 @@ STDMETHODIMP EventSource::CreateAggregator(ComSafeArrayIn(IEventSource*, aSubord
     ComObjPtr<EventSourceAggregator> agg;
 
     HRESULT rc = agg.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create aggregator (%Rrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create aggregator (%Rhrc)", rc),
                     E_FAIL);
 
     rc = agg->init(ComSafeArrayInArg(aSubordinates));
@@ -1396,10 +1396,10 @@ HRESULT  EventSourceAggregator::init(ComSafeArrayIn(IEventSource*, aSourcesIn))
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     rc = mSource.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create source (%Rrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create source (%Rhrc)", rc),
                     E_FAIL);
     rc = mSource->init((IEventSource*)this);
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not init source (%Rrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not init source (%Rhrc)", rc),
                     E_FAIL);
 
     com::SafeIfaceArray<IEventSource> aSources(ComSafeArrayInArg (aSourcesIn));
@@ -1536,7 +1536,7 @@ HRESULT EventSourceAggregator::createProxyListener(IEventListener * aListener,
     ComObjPtr<ProxyEventListener> proxy;
 
     HRESULT rc = proxy.createObject();
-    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create proxy (%Rrc)", rc),
+    ComAssertMsgRet(SUCCEEDED(rc), ("Could not create proxy (%Rhrc)", rc),
                     E_FAIL);
 
     rc = proxy->init(mSource);
