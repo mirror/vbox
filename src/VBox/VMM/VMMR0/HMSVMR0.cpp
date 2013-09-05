@@ -3077,6 +3077,7 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     else if (rc == VINF_EM_RESET)
         rc = VINF_EM_TRIPLE_FAULT;
 
+    /* Prepare to return to ring-3. This will remove longjmp notifications. */
     hmR0SvmExitToRing3(pVM, pVCpu, pCtx, rc);
     Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
@@ -3240,7 +3241,6 @@ DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
                 case SVM_EXIT_EXCEPTION_11:            /* X86_XCPT_AC */
                 case SVM_EXIT_EXCEPTION_12:            /* X86_XCPT_MC */
                 case SVM_EXIT_EXCEPTION_13:            /* X86_XCPT_XF */
-
                 case SVM_EXIT_EXCEPTION_F:             /* Reserved */
                 case SVM_EXIT_EXCEPTION_14: case SVM_EXIT_EXCEPTION_15: case SVM_EXIT_EXCEPTION_16:
                 case SVM_EXIT_EXCEPTION_17: case SVM_EXIT_EXCEPTION_18: case SVM_EXIT_EXCEPTION_19:
@@ -3598,6 +3598,7 @@ static int hmR0SvmEmulateMovTpr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * Determines if an exception is a contributory exception. Contributory
