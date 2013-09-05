@@ -31,9 +31,11 @@
 
 RT_C_DECLS_BEGIN
 
+#ifdef RT_OS_WINDOWS
 DECLEXPORT(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, CR_BLITTER_IMG *pImg, const char*pszEntryDesc);
 
 DECLEXPORT(void) crDmpDumpStrDbgPrint(struct CR_DUMPER * pDumper, const char*pszStr);
+#endif
 
 struct CR_DUMPER;
 
@@ -53,6 +55,11 @@ typedef struct CR_DUMPER
 #define crDmpStr(_pDumper, _pDesc) do { \
             (_pDumper)->pfnDumpStr((_pDumper), (_pDesc)); \
         } while (0)
+
+#ifndef RT_OS_WINDOWS
+# define vsprintf_s vsnprintf
+# define sprintf_s snprintf
+#endif
 
 DECLINLINE(void) crDmpStrV(CR_DUMPER *pDumper, const char *pszStr, va_list pArgList)
 {
@@ -104,11 +111,13 @@ typedef struct CR_HTML_DUMPER
 
 DECLEXPORT(int) crDmpHtmlInit(struct CR_HTML_DUMPER * pDumper, const char *pszDir, const char *pszFile);
 
+#ifdef RT_OS_WINDOWS
 DECLINLINE(void) crDmpDbgPrintInit(CR_DBGPRINT_DUMPER *pDumper)
 {
     pDumper->Base.pfnDumpImg = crDmpDumpImgDmlBreak;
     pDumper->Base.pfnDumpStr = crDmpDumpStrDbgPrint;
 }
+#endif
 
 typedef struct CR_RECORDER
 {
