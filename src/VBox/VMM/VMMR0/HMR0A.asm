@@ -312,13 +312,13 @@ BEGINPROC VMXRestoreHostState
     test        edi, VMX_RESTORE_HOST_SEL_DS
     jz          .test_es
     mov         ax, [rsi + VMXRESTOREHOST.uHostSelDS]
-    mov         ds, ax
+    mov         ds, eax
 
 .test_es:
     test        edi, VMX_RESTORE_HOST_SEL_ES
     jz          .test_tr
     mov         ax, [rsi + VMXRESTOREHOST.uHostSelES]
-    mov         es, ax
+    mov         es, eax
 
 .test_tr:
     test        edi, VMX_RESTORE_HOST_SEL_TR
@@ -349,17 +349,17 @@ BEGINPROC VMXRestoreHostState
     test        edi, VMX_RESTORE_HOST_SEL_FS
     jz          .test_gs
     mov         ax, word [rsi + VMXRESTOREHOST.uHostSelFS]
-    mov         fs, ax
+    mov         fs, eax
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostFSBase]         ; uHostFSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostFSBase + 4h]    ; uHostFSBase - Hi
     mov         ecx, MSR_K8_FS_BASE
     wrmsr
 
+.test_gs:
     test        edi, VMX_RESTORE_HOST_SEL_GS
     jz          .restore_flags
-.test_gs:
     mov         ax, word [rsi + VMXRESTOREHOST.uHostSelGS]
-    mov         gs, ax
+    mov         gs, eax
     mov         eax, dword [rsi + VMXRESTOREHOST.uHostGSBase]         ; uHostGSBase - Lo
     mov         edx, dword [rsi + VMXRESTOREHOST.uHostGSBase + 4h]    ; uHostGSBase - Hi
     mov         ecx, MSR_K8_GS_BASE
