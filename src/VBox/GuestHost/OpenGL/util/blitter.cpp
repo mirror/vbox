@@ -155,6 +155,8 @@ int CrBltMuralSetCurrent(PCR_BLITTER pBlitter, const CR_BLITTER_WINDOW *pMural)
         return VERR_INVALID_STATE;
     }
 
+    crWarning("changing mural for entered blitter, is is somewhat expected?");
+
     pBlitter->pDispatch->Flush();
 
     pBlitter->pDispatch->MakeCurrent(pMural->Base.id, pBlitter->i32MakeCurrentUserData, pBlitter->CtxInfo.Base.id);

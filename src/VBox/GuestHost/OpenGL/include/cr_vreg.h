@@ -46,6 +46,22 @@ DECLINLINE(int) VBoxRectCmp(const RTRECT * pRect1, const RTRECT * pRect2)
     return memcmp(pRect1, pRect2, sizeof (*pRect1));
 }
 
+#ifndef IN_RING0
+DECLINLINE(void) VBoxRectStretch(PRTRECT pRect, float xStretch, float yStretch)
+{
+    pRect->xLeft = pRect->xLeft * xStretch;
+    pRect->yTop = pRect->yTop * yStretch;
+    pRect->xRight = pRect->xRight * xStretch;
+    pRect->yBottom = pRect->yBottom * yStretch;
+}
+
+DECLINLINE(void) VBoxRectStretched(const RTRECT *pRect, float xStretch, float yStretch, PRTRECT pResult)
+{
+    *pResult = *pRect;
+    VBoxRectStretch(pResult, xStretch, yStretch);
+}
+#endif
+
 DECLINLINE(void) VBoxRectIntersect(PRTRECT pRect1, const RTRECT * pRect2)
 {
     Assert(pRect1);
@@ -228,7 +244,7 @@ DECLINLINE(bool) VBoxVrCompositorEntryIsInList(const VBOXVR_COMPOSITOR_ENTRY *pE
 #define CRBLT_F_NOALPHA                 0x00000010
 
 #define CRBLT_FTYPE_XOR                 CRBLT_F_INVERT_YCOORDS
-#define CRBLT_FTYPE_OR                  CRBLT_F_LINEAR
+#define CRBLT_FTYPE_OR                  (CRBLT_F_LINEAR | CRBLT_F_NOALPHA)
 #define CRBLT_FOP_COMBINE(_f1, _f2)     ((((_f1) ^ (_f2)) & CRBLT_FTYPE_XOR) | (((_f1) | (_f2)) & CRBLT_FTYPE_OR))
 
 #define CRBLT_FLAGS_FROM_FILTER(_f) ( ((_f) & GL_LINEAR) ? CRBLT_F_LINEAR : 0)
@@ -419,6 +435,14 @@ VBOXVREGDECL(int) CrVrScrCompositorIntersectList(PVBOXVR_SCR_COMPOSITOR pComposi
 VBOXVREGDECL(int) CrVrScrCompositorIntersectedList(PVBOXVR_SCR_COMPOSITOR pCompositor, const VBOXVR_LIST *pVr, PVBOXVR_SCR_COMPOSITOR pDstCompositor, PFNVBOXVR_SCR_COMPOSITOR_ENTRY_FOR pfnEntryFor, void* pvEntryFor, bool *pfChanged);
 #ifndef IN_RING0
 VBOXVREGDECL(void) CrVrScrCompositorSetStretching(PVBOXVR_SCR_COMPOSITOR pCompositor, float StretchX, float StretchY);
+DECLINLINE(void) CrVrScrCompositorGetStretching(PVBOXVR_SCR_COMPOSITOR pCompositor, float *pStretchX, float *pStretchY)
+{
+    if (pStretchX)
+        *pStretchX = pCompositor->StretchX;
+
+    if (pStretchY)
+        *pStretchY = pCompositor->StretchY;
+}
 #endif
 /* regions are valid until the next CrVrScrCompositor call */
 VBOXVREGDECL(int) CrVrScrCompositorRegionsGet(PVBOXVR_SCR_COMPOSITOR pCompositor, uint32_t *pcRegions, const RTRECT **ppaSrcRegions, const RTRECT **ppaDstRegions, const RTRECT **ppaDstUnstretchedRects);
