@@ -1960,9 +1960,8 @@ void UIMachineSettingsStorage::loadToCacheFrom(QVariant &data)
                     storageAttachmentData.m_fAttachmentPassthrough = attachment.GetPassthrough();
                     storageAttachmentData.m_fAttachmentTempEject = attachment.GetTemporaryEject();
                     storageAttachmentData.m_fAttachmentNonRotational = attachment.GetNonRotational();
-                    CMedium cmedium = attachment.GetMedium();
-                    UIMedium uimedium = cmedium.isNull() ? UIMedium() : vboxGlobal().medium(cmedium.GetId());
-                    storageAttachmentData.m_strAttachmentMediumId = uimedium.id();
+                    const CMedium cmedium = attachment.GetMedium();
+                    storageAttachmentData.m_strAttachmentMediumId = cmedium.isNull() ? UIMedium::nullID() : cmedium.GetId();
                 }
 
                 /* Cache storage attachment data: */
@@ -3191,11 +3190,9 @@ void UIMachineSettingsStorage::addChooseExistingMediumAction(QMenu *pOpenMediumM
 
 void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
 {
-    const VBoxMediaList &mediums = vboxGlobal().currentMediaList();
-    VBoxMediaList::const_iterator it;
-    for (it = mediums.begin(); it != mediums.end(); ++it)
+    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
     {
-        const UIMedium &medium = *it;
+        const UIMedium medium = vboxGlobal().medium(strMediumID);
         if (medium.isHostDrive() && m_pMediumIdHolder->type() == medium.type())
         {
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());

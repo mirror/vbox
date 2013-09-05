@@ -37,7 +37,6 @@
 #include "UIToolBar.h"
 #include "QILabel.h"
 #include "UIIconPool.h"
-#include "UIVirtualBoxEventHandler.h"
 #include "UIMediumTypeChangeDialog.h"
 
 /* COM includes: */
@@ -420,12 +419,28 @@ void UIMediumManager::sltHandleMediumEnumerationStart()
     mTabWidget->setTabIcon(CDTab, m_iconCD);
     mTabWidget->setTabIcon(FDTab, m_iconFD);
 
-    /* Load current mediums: */
-    const VBoxMediaList &mediums = vboxGlobal().currentMediaList();
-    prepareToRefresh(mediums.size());
-    VBoxMediaList::const_iterator it;
-    for (it = mediums.begin(); it != mediums.end(); ++it)
-        sltHandleMediumCreated((*it).id());
+    /* Load mediums: */
+    QList<QString> mediumIDs = vboxGlobal().mediumIDs();
+    QList<QString> loadedMediumIDs;
+    prepareToRefresh(mediumIDs.size());
+    while (!mediumIDs.isEmpty())
+    {
+        /* Get first available medium: */
+        QString strMediumID = mediumIDs.first();
+        UIMedium medium = vboxGlobal().medium(strMediumID);
+        /* Make sure medium parent (if any) is already in list: */
+        while (medium.parentID() != UIMedium::nullID() &&
+               !loadedMediumIDs.contains(medium.parentID()))
+        {
+            medium = medium.parent();
+            strMediumID = medium.id();
+        }
+        /* Insert resulting medium into tree: */
+        int iItemIndex = mediumIDs.indexOf(strMediumID);
+        AssertReturnVoid(iItemIndex != -1);
+        loadedMediumIDs.append(mediumIDs.takeAt(iItemIndex));
+        sltHandleMediumCreated(strMediumID);
+    }
 
     /* Select the first item to be the current one
      * if the previous saved item was not selected yet. */
@@ -877,11 +892,6 @@ void UIMediumManager::prepareThis()
             this, SLOT(sltHandleMediumEnumerated(const QString&)));
     connect(&vboxGlobal(), SIGNAL(sigMediumEnumerationFinished()),
             this, SLOT(sltHandleMediumEnumerationFinish()));
-
-    /* Configure Main event connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QString)), this, SLOT(refreshAll()));
-    connect(gVBoxEvents, SIGNAL(sigMachineRegistered(QString, bool)), this, SLOT(refreshAll()));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QString, QString)), this, SLOT(refreshAll()));
 }
 
 void UIMediumManager::prepareActions()
@@ -1158,15 +1168,28 @@ void UIMediumManager::populateTreeWidgets()
     else
     {
         /* Emulate (possible partial) medium-enumeration: */
-        const VBoxMediaList &mediums = vboxGlobal().currentMediaList();
-        prepareToRefresh(mediums.size());
-        VBoxMediaList::const_iterator it;
-        /* Add every medium we have into trees: */
-        for (it = mediums.begin(); it != mediums.end(); ++it)
+        QList<QString> mediumIDs = vboxGlobal().mediumIDs();
+        QList<QString> loadedMediumIDs;
+        prepareToRefresh(mediumIDs.size());
+        while (!mediumIDs.isEmpty())
         {
-            sltHandleMediumCreated((*it).id());
-            /* But advance progress-bar only for created mediums: */
-            if ((*it).state() != KMediumState_NotCreated)
+            /* Get first available medium: */
+            QString strMediumID = mediumIDs.first();
+            UIMedium medium = vboxGlobal().medium(strMediumID);
+            /* Make sure medium parent (if any) is already in list: */
+            while (medium.parentID() != UIMedium::nullID() &&
+                   !loadedMediumIDs.contains(medium.parentID()))
+            {
+                medium = medium.parent();
+                strMediumID = medium.id();
+            }
+            /* Insert resulting medium into tree: */
+            int iItemIndex = mediumIDs.indexOf(strMediumID);
+            AssertReturnVoid(iItemIndex != -1);
+            loadedMediumIDs.append(mediumIDs.takeAt(iItemIndex));
+            sltHandleMediumCreated(strMediumID);
+            /* Advance progress-bar only for created mediums: */
+            if (medium.state() != KMediumState_NotCreated)
                 m_pProgressBar->setValue(m_pProgressBar->value() + 1);
         }
         /* Finally, emulate enumeration finish,
@@ -1639,12 +1662,12 @@ bool UIMediumManager::checkMediumFor(UIMediumItem *pItem, Action action)
         case Action_Copy:
         {
             /* False for children: */
-            return !pItem->medium().parent();
+            return pItem->medium().parentID() == UIMedium::nullID();
         }
         case Action_Modify:
         {
             /* False for children: */
-            return !pItem->medium().parent();
+            return pItem->medium().parentID() == UIMedium::nullID();
         }
         case Action_Remove:
         {
@@ -1729,19 +1752,19 @@ QString UIMediumManager::formatPaneText(const QString &strText, bool fCompact /*
 }
 
 /* static */
-bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
+bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(UIMedium medium)
 {
     /* Iterate till the root: */
-    const UIMedium *pMedium = &medium;
     do
     {
-        /* Ignore medium if its hidden or attached to hidden machines only: */
-        if (pMedium->isHidden())
+        /* Ignore medium if its hidden
+         * or attached to hidden machines only: */
+        if (medium.isHidden())
             return true;
         /* Move iterator to parent: */
-        pMedium = pMedium->parent();
+        medium = medium.parent();
     }
-    while (pMedium);
+    while (!medium.isNull());
     /* False by default: */
     return false;
 }

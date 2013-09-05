@@ -190,14 +190,18 @@ void UISelectorWindow::sltHandleMediumEnumerationFinish()
         return;
 
     /* Look for at least one inaccessible medium: */
-    const VBoxMediaList &list = vboxGlobal().currentMediaList();
-    VBoxMediaList::const_iterator it;
-    for (it = list.begin(); it != list.end(); ++it)
-        if ((*it).state() == KMediumState_Inaccessible)
+    bool fIsThereAnyInaccessibleMedium = false;
+    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+    {
+        if (vboxGlobal().medium(strMediumID).state() == KMediumState_Inaccessible)
+        {
+            fIsThereAnyInaccessibleMedium = true;
             break;
+        }
+    }
 
     /* Warn the user about inaccessible medium: */
-    if (it != list.end() && !msgCenter().warnAboutInaccessibleMedia())
+    if (fIsThereAnyInaccessibleMedium && !msgCenter().warnAboutInaccessibleMedia())
     {
         /* Open the MM window (without refresh): */
         UIMediumManager::showModeless(this, false /* refresh? */);

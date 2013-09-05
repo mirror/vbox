@@ -21,7 +21,6 @@
 
 /* Qt includes: */
 #include <QMap>
-#include <QLinkedList>
 #include <QPixmap>
 
 /* GUI includes: */
@@ -88,7 +87,7 @@ public:
 
     /* Lazy wrapping constructor:
      * Creates a uimedium associated with the given medium. */
-    UIMedium(const CMedium &medium, UIMediumType type, UIMedium *pParent = 0);
+    UIMedium(const CMedium &medium, UIMediumType type);
 
     /* Wrapping constructor with known medium state:
      * Similar to previous one but sets the uimedium state to passed one.
@@ -195,12 +194,11 @@ public:
      */
     const QList <QString> &curStateMachineIds() const { return m_curStateMachineIds; }
 
-    /**
-     * Returns a parent medium. For non-hard disk media, this is always NULL.
-     */
-    UIMedium* parent() const { return m_pParent; }
-
-    UIMedium& root() const;
+    /* API: Parent/Root stuff: */
+    QString parentID() const { return m_strParentID; }
+    QString rootID() const { return m_strRootID; }
+    UIMedium parent() const;
+    UIMedium root() const;
 
     QString toolTip(bool fNoDiffs = false, bool fCheckRO = false, bool fNullAllowed = false) const;
     QPixmap icon(bool fNoDiffs = false, bool fCheckRO = false) const;
@@ -258,16 +256,17 @@ private:
     QList<QString> m_machineIds;
     QList<QString> m_curStateMachineIds;
 
-    UIMedium *m_pParent;
+    QString m_strParentID;
+    QString m_strRootID;
 
     NoDiffsCache m_noDiffs;
 
+    static QString m_sstrNullID;
     static QString m_sstrTable;
     static QString m_sstrRow;
 };
 Q_DECLARE_METATYPE(UIMedium);
 
-typedef QLinkedList<UIMedium> VBoxMediaList;
 typedef QMap<QString, UIMedium> UIMediumMap;
 
 #endif /* __UIMedium_h__ */

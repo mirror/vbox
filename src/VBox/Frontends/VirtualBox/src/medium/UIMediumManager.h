@@ -151,7 +151,7 @@ private:
     static QString formatPaneText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
     /* Static helper: Enumeration stuff: */
-    static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
+    static bool isMediumAttachedToHiddenMachinesOnly(UIMedium medium);
 
     /* Variable: Singleton instance: */
     static UIMediumManager *m_spInstance;

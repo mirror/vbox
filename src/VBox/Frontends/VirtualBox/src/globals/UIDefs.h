@@ -70,8 +70,6 @@ namespace UIDefs
           ResizeEventType = QEvent::User + 101
         , SetRegionEventType
         , ModifierKeyChangeEventType
-        , MediumEnumeratedEventType
-        , MediumsEnumeratedEventType
 #ifdef Q_WS_WIN
         , ShellExecuteEventType
 #endif /* Q_WS_WIN */
