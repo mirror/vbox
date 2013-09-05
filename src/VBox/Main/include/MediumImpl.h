@@ -131,10 +131,8 @@ public:
     STDMETHOD(RefreshState)(MediumState_T *aState);
     STDMETHOD(GetSnapshotIds)(IN_BSTR aMachineId,
                               ComSafeArrayOut(BSTR, aSnapshotIds));
-    STDMETHOD(LockRead)(MediumState_T *aState);
-    STDMETHOD(UnlockRead)(MediumState_T *aState);
-    STDMETHOD(LockWrite)(MediumState_T *aState);
-    STDMETHOD(UnlockWrite)(MediumState_T *aState);
+    STDMETHOD(LockRead)(IToken **aToken);
+    STDMETHOD(LockWrite)(IToken **aToken);
     STDMETHOD(Close)();
     STDMETHOD(GetProperty)(IN_BSTR aName, BSTR *aValue);
     STDMETHOD(SetProperty)(IN_BSTR aName, IN_BSTR aValue);
@@ -225,6 +223,8 @@ public:
     Utf8Str getPreferredDiffFormat();
 
     HRESULT close(AutoCaller &autoCaller);
+    HRESULT unlockRead(MediumState_T *aState);
+    HRESULT unlockWrite(MediumState_T *aState);
     HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
     HRESULT markForDeletion();
     HRESULT unmarkForDeletion();
@@ -240,19 +240,19 @@ public:
                            bool fLockMedia,
                            bool &fMergeForward,
                            ComObjPtr<Medium> &pParentForTarget,
-                           MediaList &aChildrenToReparent,
+                           MediumLockList * &aChildrenToReparent,
                            MediumLockList * &aMediumLockList);
     HRESULT mergeTo(const ComObjPtr<Medium> &pTarget,
                     bool fMergeForward,
                     const ComObjPtr<Medium> &pParentForTarget,
-                    const MediaList &aChildrenToReparent,
+                    MediumLockList *aChildrenToReparent,
                     MediumLockList *aMediumLockList,
                     ComObjPtr<Progress> *aProgress,
                     bool aWait);
-    void cancelMergeTo(const MediaList &aChildrenToReparent,
+    void cancelMergeTo(MediumLockList *aChildrenToReparent,
                        MediumLockList *aMediumLockList);
 
-    HRESULT fixParentUuidOfChildren(const MediaList &childrenToReparent);
+    HRESULT fixParentUuidOfChildren(MediumLockList *pChildrenToReparent);
 
     HRESULT exportFile(const char *aFilename,
                        const ComObjPtr<MediumFormat> &aFormat,

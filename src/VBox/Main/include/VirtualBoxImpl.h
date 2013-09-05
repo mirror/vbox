@@ -310,6 +310,7 @@ public:
 
     AutostartDb* getAutostartDb() const;
 
+    RWLockHandle& getMachinesListLockHandle();
     RWLockHandle& getMediaTreeLockHandle();
 
     int  encryptSetting(const Utf8Str &aPlaintext, Utf8Str *aCiphertext);

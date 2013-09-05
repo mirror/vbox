@@ -122,25 +122,31 @@ int main(int argc, char *argv[])
     if (!RTTestSubErrorCount(hTest))
     {
         RTTestSub(hTest, "Write locks");
+	ComPtr<IToken> pToken1, pToken2;
 
         MediumState_T mediumState = MediumState_NotCreated;
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
         if (mediumState != MediumState_Created)
             RTTestFailed(hTest, "wrong medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->LockWrite(&mediumState), "write lock");
+        TEST_COM_SUCCESS(hTest, pMedium->LockWrite(pToken1.asOutParam()), "write lock");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock write state");
         if (mediumState != MediumState_LockedWrite)
             RTTestFailed(hTest, "wrong lock write medium state %d", mediumState);
 
-        TEST_COM_FAILURE(hTest, pMedium->LockWrite(&mediumState), "nested write lock succeeded");
+        TEST_COM_FAILURE(hTest, pMedium->LockWrite(pToken2.asOutParam()), "nested write lock succeeded");
+	if (!pToken2.isNull())
+            RTTestFailed(hTest, "pToken2 is not null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after nested lock write state");
         if (mediumState != MediumState_LockedWrite)
             RTTestFailed(hTest, "wrong after nested lock write medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockWrite(&mediumState), "write unlock");
+	if (!pToken1.isNull())
+            TEST_COM_SUCCESS(hTest, pToken1->Abandon(), "write unlock");
+	else
+            RTTestFailed(hTest, "pToken1 is null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock write state");
         if (mediumState != MediumState_Created)
@@ -150,31 +156,38 @@ int main(int argc, char *argv[])
     if (!RTTestSubErrorCount(hTest))
     {
         RTTestSub(hTest, "Read locks");
+	ComPtr<IToken> pToken1, pToken2;
 
         MediumState_T mediumState = MediumState_NotCreated;
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
         if (mediumState != MediumState_Created)
             RTTestFailed(hTest, "wrong medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->LockRead(&mediumState), "read lock");
+        TEST_COM_SUCCESS(hTest, pMedium->LockRead(pToken1.asOutParam()), "read lock");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock read state");
         if (mediumState != MediumState_LockedRead)
             RTTestFailed(hTest, "wrong lock read medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->LockRead(&mediumState), "nested read lock failed");
+        TEST_COM_SUCCESS(hTest, pMedium->LockRead(pToken2.asOutParam()), "nested read lock failed");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after nested lock read state");
         if (mediumState != MediumState_LockedRead)
             RTTestFailed(hTest, "wrong after nested lock read medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockRead(&mediumState), "read nested unlock");
+	if (!pToken2.isNull())
+            TEST_COM_SUCCESS(hTest, pToken2->Abandon(), "read nested unlock");
+	else
+            RTTestFailed(hTest, "pToken2 is null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after nested lock read state");
         if (mediumState != MediumState_LockedRead)
             RTTestFailed(hTest, "wrong after nested lock read medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockRead(&mediumState), "read unlock");
+	if (!pToken1.isNull())
+            TEST_COM_SUCCESS(hTest, pToken1->Abandon(), "read nested unlock");
+	else
+            RTTestFailed(hTest, "pToken1 is null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock read state");
         if (mediumState != MediumState_Created)
@@ -184,25 +197,31 @@ int main(int argc, char *argv[])
     if (!RTTestSubErrorCount(hTest))
     {
         RTTestSub(hTest, "Mixing write and read locks");
+	ComPtr<IToken> pToken1, pToken2;
 
         MediumState_T mediumState = MediumState_NotCreated;
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
         if (mediumState != MediumState_Created)
             RTTestFailed(hTest, "wrong medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->LockWrite(&mediumState), "write lock");
+        TEST_COM_SUCCESS(hTest, pMedium->LockWrite(pToken1.asOutParam()), "write lock");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock write state");
         if (mediumState != MediumState_LockedWrite)
             RTTestFailed(hTest, "wrong lock write medium state %d", mediumState);
 
-        TEST_COM_FAILURE(hTest, pMedium->LockRead(&mediumState), "write+read lock succeeded");
+        TEST_COM_FAILURE(hTest, pMedium->LockRead(pToken2.asOutParam()), "write+read lock succeeded");
+	if (!pToken2.isNull())
+            RTTestFailed(hTest, "pToken2 is not null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after nested lock write state");
         if (mediumState != MediumState_LockedWrite)
             RTTestFailed(hTest, "wrong after nested lock write medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockWrite(&mediumState), "write unlock");
+	if (!pToken1.isNull())
+            TEST_COM_SUCCESS(hTest, pToken1->Abandon(), "write unlock");
+	else
+            RTTestFailed(hTest, "pToken1 is null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock write state");
         if (mediumState != MediumState_Created)
@@ -212,81 +231,31 @@ int main(int argc, char *argv[])
     if (!RTTestSubErrorCount(hTest))
     {
         RTTestSub(hTest, "Mixing read and write locks");
+	ComPtr<IToken> pToken1, pToken2;
 
         MediumState_T mediumState = MediumState_NotCreated;
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
         if (mediumState != MediumState_Created)
             RTTestFailed(hTest, "wrong medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->LockRead(&mediumState), "read lock");
+        TEST_COM_SUCCESS(hTest, pMedium->LockRead(pToken1.asOutParam()), "read lock");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock read state");
         if (mediumState != MediumState_LockedRead)
             RTTestFailed(hTest, "wrong lock read medium state %d", mediumState);
 
-        TEST_COM_FAILURE(hTest, pMedium->LockWrite(&mediumState), "read+write lock succeeded");
+        TEST_COM_FAILURE(hTest, pMedium->LockWrite(pToken2.asOutParam()), "read+write lock succeeded");
+	if (!pToken2.isNull())
+            RTTestFailed(hTest, "pToken2 is not null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after nested lock read state");
         if (mediumState != MediumState_LockedRead)
             RTTestFailed(hTest, "wrong after nested lock read medium state %d", mediumState);
 
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockRead(&mediumState), "read unlock");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock read state");
-        if (mediumState != MediumState_Created)
-            RTTestFailed(hTest, "wrong unlock read medium state %d", mediumState);
-    }
-
-    if (!RTTestSubErrorCount(hTest))
-    {
-        RTTestSub(hTest, "Write locks, read unlocks");
-
-        MediumState_T mediumState = MediumState_NotCreated;
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
-        if (mediumState != MediumState_Created)
-            RTTestFailed(hTest, "wrong medium state %d", mediumState);
-
-        TEST_COM_SUCCESS(hTest, pMedium->LockWrite(&mediumState), "write lock");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock write state");
-        if (mediumState != MediumState_LockedWrite)
-            RTTestFailed(hTest, "wrong lock write medium state %d", mediumState);
-
-        TEST_COM_FAILURE(hTest, pMedium->UnlockRead(&mediumState), "read unlocking a write lock succeeded");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after read unlock write state");
-        if (mediumState != MediumState_LockedWrite)
-            RTTestFailed(hTest, "wrong after read lock write medium state %d", mediumState);
-
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockWrite(&mediumState), "write unlock");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock write state");
-        if (mediumState != MediumState_Created)
-            RTTestFailed(hTest, "wrong unlock write medium state %d", mediumState);
-    }
-
-    if (!RTTestSubErrorCount(hTest))
-    {
-        RTTestSub(hTest, "Read locks, write unlocks");
-
-        MediumState_T mediumState = MediumState_NotCreated;
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting state");
-        if (mediumState != MediumState_Created)
-            RTTestFailed(hTest, "wrong medium state %d", mediumState);
-
-        TEST_COM_SUCCESS(hTest, pMedium->LockRead(&mediumState), "read lock");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting lock read state");
-        if (mediumState != MediumState_LockedRead)
-            RTTestFailed(hTest, "wrong lock write medium state %d", mediumState);
-
-        TEST_COM_FAILURE(hTest, pMedium->UnlockWrite(&mediumState), "write unlocking a read lock succeeded");
-
-        TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting after write unlock read state");
-        if (mediumState != MediumState_LockedRead)
-            RTTestFailed(hTest, "wrong after write lock read medium state %d", mediumState);
-
-        TEST_COM_SUCCESS(hTest, pMedium->UnlockRead(&mediumState), "read unlock");
+	if (!pToken1.isNull())
+            TEST_COM_SUCCESS(hTest, pToken1->Abandon(), "read unlock");
+	else
+            RTTestFailed(hTest, "pToken1 is null");
 
         TEST_COM_SUCCESS(hTest, pMedium->COMGETTER(State)(&mediumState), "getting unlock read state");
         if (mediumState != MediumState_Created)

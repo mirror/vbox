@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -89,11 +89,18 @@ public:
     bool GetLockRequest() const;
 
     /**
+     * Check if this medium object has been locked by this MediumLock.
+     */
+    bool IsLocked() const;
+
+    /**
      * Acquire a medium lock.
      *
      * @return COM status code
+     * @param aIgnoreLockedMedia    If set ignore all media which is already
+     *                              locked in an incompatible way.
      */
-    HRESULT Lock();
+    HRESULT Lock(bool aIgnoreLockedMedia = false);
 
     /**
      * Release a medium lock.
@@ -104,6 +111,7 @@ public:
 
 private:
     ComObjPtr<Medium> mMedium;
+    ComPtr<IToken> mToken;
     AutoCaller mMediumCaller;
     bool mLockWrite;
     bool mIsLocked;
@@ -207,8 +215,14 @@ public:
      * Acquire all medium locks "atomically", i.e. all or nothing.
      *
      * @return COM status code
+     * @param aSkipOverLockedMedia  If set ignore all media which is already
+     *                              locked for reading or writing. For callers
+     *                              which need to know which medium objects
+     *                              have been locked by this lock list you
+     *                              can iterate over the list and check the
+     *                              MediumLock state.
      */
-    HRESULT Lock();
+    HRESULT Lock(bool aSkipOverLockedMedia = false);
 
     /**
      * Release all medium locks.

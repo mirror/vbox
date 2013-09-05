@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -74,7 +74,12 @@ bool MediumLock::GetLockRequest() const
     return mLockWrite;
 }
 
-HRESULT MediumLock::Lock()
+bool MediumLock::IsLocked() const
+{
+    return mIsLocked;
+}
+
+HRESULT MediumLock::Lock(bool aIgnoreLockedMedia)
 {
     if (mIsLocked)
         return S_OK;
@@ -101,9 +106,20 @@ HRESULT MediumLock::Lock()
             break;
         default:
             if (mLockWrite)
-                rc = mMedium->LockWrite(NULL);
+            {
+                if (aIgnoreLockedMedia && (   state == MediumState_LockedRead
+                                           || state == MediumState_LockedWrite))
+                    return S_OK;
+                else
+                    rc = mMedium->LockWrite(mToken.asOutParam());
+            }
             else
-                rc = mMedium->LockRead(NULL);
+            {
+                if (aIgnoreLockedMedia && state == MediumState_LockedWrite)
+                    return S_OK;
+                else
+                    rc = mMedium->LockRead(mToken.asOutParam());
+            }
     }
     if (SUCCEEDED(rc))
     {
@@ -120,12 +136,10 @@ HRESULT MediumLock::Lock()
 HRESULT MediumLock::Unlock()
 {
     HRESULT rc = S_OK;
-    if (mIsLocked && !mLockSkipped)
+    if (mIsLocked && !mLockSkipped && mToken)
     {
-        if (mLockWrite)
-            rc = mMedium->UnlockWrite(NULL);
-        else
-            rc = mMedium->UnlockRead(NULL);
+        mToken->Abandon();
+        mToken.setNull();
     }
     mMediumCaller.attach(NULL);
     mLockSkipped = false;
@@ -201,7 +215,7 @@ MediumLockList::Base::iterator MediumLockList::GetEnd()
     return mMediumLocks.end();
 }
 
-HRESULT MediumLockList::Lock()
+HRESULT MediumLockList::Lock(bool fSkipOverLockedMedia /* = false */)
 {
     if (mIsLocked)
         return S_OK;
@@ -210,7 +224,7 @@ HRESULT MediumLockList::Lock()
          it != mMediumLocks.end();
          it++)
     {
-        rc = it->Lock();
+        rc = it->Lock(fSkipOverLockedMedia);
         if (FAILED(rc))
         {
             for (MediumLockList::Base::iterator it2 = mMediumLocks.begin();

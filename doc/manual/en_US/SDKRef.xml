@@ -3530,6 +3530,19 @@ AuthResult AUTHCALL AuthEntry(
 
       <itemizedlist>
         <listitem>
+          <para>The explicit medium locking methods 
+            <xref linkend="IMedium__lockRead" xreflabel="IMedium::lockRead()" />
+            and <xref linkend="IMedium__lockWrite" xreflabel="IMedium::lockWrite()" />
+            have been redesigned. They return a lock token object reference
+            now, and calling the <xref linkend="IToken__abandon"
+              xreflabel="IToken::abandon()" /> method (or letting the reference
+            count to this object drop to 0) will unlock it. This eliminates
+            the rather common problem that an API client crash left behind
+            locks, and also improves the safety (API clients can't release
+            locks they didn't obtain).</para>
+        </listitem>
+
+        <listitem>
           <para><computeroutput>IMachine::delete</computeroutput>
           has been renamed to <xref linkend="IMachine__deleteConfig"
           xreflabel="IMachine::deleteConfig()" />, to improve API client

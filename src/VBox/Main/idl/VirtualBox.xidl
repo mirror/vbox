@@ -3699,26 +3699,8 @@
     <method name="finishOnlineMergeMedium">
       <desc>
         Gets called by <link to="IInternalSessionControl::onlineMergeMedium"/>.
+        All necessary state information is available at the called object.
       </desc>
-      <param name="mediumAttachment" type="IMediumAttachment" dir="in">
-        <desc>The medium attachment which needs to be cleaned up.</desc>
-      </param>
-      <param name="source" type="IMedium" dir="in">
-        <desc>Merge source medium.</desc>
-      </param>
-      <param name="target" type="IMedium" dir="in">
-        <desc>Merge target medium.</desc>
-      </param>
-      <param name="mergeForward" type="boolean" dir="in">
-        <desc>Merge direction.</desc>
-      </param>
-      <param name="parentForTarget" type="IMedium" dir="in">
-        <desc>For forward merges: new parent for target medium.</desc>
-      </param>
-      <param name="childrenToReparent" type="IMedium" safearray="yes" dir="in">
-        <desc>For backward merges: list of media which need their parent UUID
-        updated.</desc>
-      </param>
     </method>
 
     <method name="restoreSnapshot">
@@ -13611,10 +13593,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         A medium is also locked for reading when it is the source of a
         write operation such as <link to="#cloneTo"/> or <link to="#mergeTo"/>.
 
-        The medium locked for reading must be unlocked using the <link
-        to="#unlockRead"/> method. Calls to <link to="#lockRead"/>
-        can be nested and must be followed by the same number of paired
-        <link to="#unlockRead"/> calls.
+        The medium locked for reading must be unlocked by abandoning the
+        returned token object, see <link to="IToken"/>. Calls to
+        <link to="#lockRead"/> can be nested and the lock is actually released
+        when all callers have abandoned the token.
 
         This method sets the medium state (see <link to="#state"/>) to
         "LockedRead" on success. The medium's previous state must be
@@ -13634,30 +13616,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="state" type="MediumState" dir="return">
+      <param name="token" type="IToken" dir="return">
         <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="unlockRead">
-      <desc>
-        Cancels the read lock previously set by <link to="#lockRead"/>.
-
-        For both success and failure, this method returns the current state
-        of the medium <i>after</i> the operation.
-
-        See <link to="#lockRead"/> for more details.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Medium not locked for reading.
-        </result>
-
-      </desc>
-      <param name="state" type="MediumState" dir="return">
-        <desc>
-          State of the medium after the operation.
+          Token object, when this is released (reference count reaches 0) then
+          the lock count is decreased. The lock is released when the lock count
+          reaches 0.
         </desc>
       </param>
     </method>
@@ -13688,8 +13651,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         A medium is also locked for writing when it is the target of a
         write operation such as <link to="#cloneTo"/> or <link to="#mergeTo"/>.
 
-        The medium locked for writing must be unlocked using the <link
-        to="#unlockWrite"/> method. Write locks <i>cannot</i> be nested.
+        The medium locked for writing must be unlocked by abandoning the
+        returned token object, see <link to="IToken"/>. Write locks
+        <i>cannot</i> be nested.
 
         This method sets the medium state (see <link to="#state"/>) to
         "LockedWrite" on success. The medium's previous state must be
@@ -13700,39 +13664,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         the VirtualBox API, not a physical file-system lock of the underlying
         storage unit.
 
-        For both, success and failure, this method returns the current
-        state of the medium <i>before</i> the operation.
-
         <result name="VBOX_E_INVALID_OBJECT_STATE">
           Invalid medium state (e.g. not created, locked, inaccessible,
           creating, deleting).
         </result>
 
       </desc>
-      <param name="state" type="MediumState" dir="return">
+      <param name="token" type="IToken" dir="return">
         <desc>
-          State of the medium after the operation.
-        </desc>
-      </param>
-    </method>
-
-    <method name="unlockWrite">
-      <desc>
-        Cancels the write lock previously set by <link to="#lockWrite"/>.
-
-        For both success and failure, this method returns the current
-        state of the medium <i>after</i> the operation.
-
-        See <link to="#lockWrite"/> for more details.
-
-        <result name="VBOX_E_INVALID_OBJECT_STATE">
-          Medium not locked for writing.
-        </result>
-
-      </desc>
-      <param name="state" type="MediumState" dir="return">
-        <desc>
-          State of the medium after the operation.
+          Token object, when this is released (reference count reaches 0) then
+          the lock is released.
         </desc>
       </param>
     </method>
@@ -14493,6 +14434,46 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
 
   <!--
+  // IToken
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface
+    name="IToken" extends="$unknown"
+    uuid="3b1c4797-e289-4d4c-b74c-50c9b86a36f8"
+    wsmap="managed"
+    >
+    <desc>
+      The IToken interface represents a token passed to an API client, which
+      triggers cleanup actions when it is explicitly released by calling the
+      <link to="#abandon"/> method (preferred, as it is accurately defined
+      when the release happens), or when the object reference count drops
+      to 0. The latter way is implicitly used when an API client crashes,
+      however the discovery that there was a crash can take rather long,
+      depending on the platform (COM needs 6 minutes). So better don't rely
+      on the crash behavior too much.
+    </desc>
+
+    <method name="abandon" wrap-hint-server="passcaller">
+      <desc>Releases this token. Cannot be undone in any way, and makes the
+        token object unusable (even the <link to="#dummy"/> method will return
+        an error), ready for releasing. It is a more defined way than just
+        letting the reference count drop to 0, because the latter (depending
+        on the platform) can trigger asynchronous cleanup activity.
+      </desc>
+    </method>
+
+    <method name="dummy">
+      <desc>Purely a NOOP. Useful when using proxy type API bindings (e.g. the
+        webservice) which manage objects on behalf of the actual client, using
+        an object reference expiration time based garbage collector.
+      </desc>
+    </method>
+
+  </interface>
+
+
+  <!--
   // IKeyboard
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -14508,8 +14489,8 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Use this interface to send keystrokes or the Ctrl-Alt-Del sequence
       to the virtual machine.
-
     </desc>
+
     <method name="putScancode">
       <desc>Sends a scancode to the keyboard.
 
@@ -17938,22 +17919,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="targetIdx" type="unsigned long" dir="in">
         <desc>The index of the target image in the chain.
         Redundant, but drastically reduces IPC.</desc>
-      </param>
-      <param name="source" type="IMedium" dir="in">
-        <desc>Merge source medium.</desc>
-      </param>
-      <param name="target" type="IMedium" dir="in">
-        <desc>Merge target medium.</desc>
-      </param>
-      <param name="mergeForward" type="boolean" dir="in">
-        <desc>Merge direction.</desc>
-      </param>
-      <param name="parentForTarget" type="IMedium" dir="in">
-        <desc>For forward merges: new parent for target medium.</desc>
-      </param>
-      <param name="childrenToReparent" type="IMedium" safearray="yes" dir="in">
-        <desc>For backward merges: list of media which need their parent UUID
-        updated.</desc>
       </param>
       <param name="progress" type="IProgress" dir="in">
         <desc>

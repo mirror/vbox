@@ -979,10 +979,6 @@ STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
 
 STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                         ULONG aSourceIdx, ULONG aTargetIdx,
-                                        IMedium *aSource, IMedium *aTarget,
-                                        BOOL aMergeForward,
-                                        IMedium *aParentForTarget,
-                                        ComSafeArrayIn(IMedium *, aChildrenToReparent),
                                         IProgress *aProgress)
 {
     AutoCaller autoCaller(this);
@@ -996,12 +992,9 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
     AssertReturn(mType == SessionType_WriteLock, VBOX_E_INVALID_OBJECT_STATE);
     AssertReturn(mConsole, VBOX_E_INVALID_OBJECT_STATE);
     CheckComArgNotNull(aMediumAttachment);
-    CheckComArgSafeArrayNotNull(aChildrenToReparent);
 
-    return mConsole->onlineMergeMedium(aMediumAttachment, aSourceIdx,
-                                       aTargetIdx, aSource, aTarget,
-                                       aMergeForward, aParentForTarget,
-                                       ComSafeArrayInArg(aChildrenToReparent),
+    return mConsole->onlineMergeMedium(aMediumAttachment,
+                                       aSourceIdx, aTargetIdx,
                                        aProgress);
 #else
     return E_NOTIMPL;

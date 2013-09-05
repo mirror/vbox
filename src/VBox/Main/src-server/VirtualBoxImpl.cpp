@@ -4731,6 +4731,18 @@ const Utf8Str& VirtualBox::settingsFilePath()
 }
 
 /**
+ * Returns the lock handle which protects the machines list. As opposed
+ * to version 3.1 and earlier, these lists are no longer protected by the
+ * VirtualBox lock, but by this more specialized lock. Mind the locking
+ * order: always request this lock after the VirtualBox object lock but
+ * before the locks of any machine object. See AutoLock.h.
+ */
+RWLockHandle& VirtualBox::getMachinesListLockHandle()
+{
+    return m->lockMachines;
+}
+
+/**
  * Returns the lock handle which protects the media trees (hard disks,
  * DVDs, floppies). As opposed to version 3.1 and earlier, these lists
  * are no longer protected by the VirtualBox lock, but by this more

@@ -2103,7 +2103,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Implementation for IInternalMachineControl::deleteSnapshot().
+ * Implementation for IInternalMachineControl::DeleteSnapshot().
  *
  * Gets called from Console::DeleteSnapshot(), and that's basically the
  * only thing Console does initially. Deleting a snapshot happens entirely on
@@ -2293,18 +2293,20 @@ struct MediumDeleteRec
                     const ComObjPtr<MediumAttachment> &aOnlineMediumAttachment,
                     bool fMergeForward,
                     const ComObjPtr<Medium> &aParentForTarget,
-                    const MediaList &aChildrenToReparent,
+                    MediumLockList *aChildrenToReparent,
                     bool fNeedsOnlineMerge,
-                    MediumLockList *aMediumLockList)
+                    MediumLockList *aMediumLockList,
+                    const ComPtr<IToken> &aHDLockToken)
         : mpHD(aHd),
           mpSource(aSource),
           mpTarget(aTarget),
           mpOnlineMediumAttachment(aOnlineMediumAttachment),
           mfMergeForward(fMergeForward),
           mpParentForTarget(aParentForTarget),
-          mChildrenToReparent(aChildrenToReparent),
+          mpChildrenToReparent(aChildrenToReparent),
           mfNeedsOnlineMerge(fNeedsOnlineMerge),
-          mpMediumLockList(aMediumLockList)
+          mpMediumLockList(aMediumLockList),
+          mpHDLockToken(aHDLockToken)
     {}
 
     MediumDeleteRec(const ComObjPtr<Medium> &aHd,
@@ -2313,9 +2315,10 @@ struct MediumDeleteRec
                     const ComObjPtr<MediumAttachment> &aOnlineMediumAttachment,
                     bool fMergeForward,
                     const ComObjPtr<Medium> &aParentForTarget,
-                    const MediaList &aChildrenToReparent,
+                    MediumLockList *aChildrenToReparent,
                     bool fNeedsOnlineMerge,
                     MediumLockList *aMediumLockList,
+                    const ComPtr<IToken> &aHDLockToken,
                     const Guid &aMachineId,
                     const Guid &aSnapshotId)
         : mpHD(aHd),
@@ -2324,9 +2327,10 @@ struct MediumDeleteRec
           mpOnlineMediumAttachment(aOnlineMediumAttachment),
           mfMergeForward(fMergeForward),
           mpParentForTarget(aParentForTarget),
-          mChildrenToReparent(aChildrenToReparent),
+          mpChildrenToReparent(aChildrenToReparent),
           mfNeedsOnlineMerge(fNeedsOnlineMerge),
           mpMediumLockList(aMediumLockList),
+          mpHDLockToken(aHDLockToken),
           mMachineId(aMachineId),
           mSnapshotId(aSnapshotId)
     {}
@@ -2337,9 +2341,11 @@ struct MediumDeleteRec
     ComObjPtr<MediumAttachment> mpOnlineMediumAttachment;
     bool mfMergeForward;
     ComObjPtr<Medium> mpParentForTarget;
-    MediaList mChildrenToReparent;
+    MediumLockList *mpChildrenToReparent;
     bool mfNeedsOnlineMerge;
     MediumLockList *mpMediumLockList;
+    /** optional lock token, used only in case mpHD is not merged/deleted */
+    ComPtr<IToken> mpHDLockToken;
     /* these are for reattaching the hard disk in case of a failure: */
     Guid mMachineId;
     Guid mSnapshotId;
@@ -2449,11 +2455,12 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             ComObjPtr<Medium> pSource;
             bool fMergeForward = false;
             ComObjPtr<Medium> pParentForTarget;
-            MediaList childrenToReparent;
+            MediumLockList *pChildrenToReparent = NULL;
             bool fNeedsOnlineMerge = false;
             bool fOnlineMergePossible = aTask.m_fDeleteOnline;
             MediumLockList *pMediumLockList = NULL;
             MediumLockList *pVMMALockList = NULL;
+            ComPtr<IToken> pHDLockToken;
             ComObjPtr<MediumAttachment> pOnlineMediumAttachment;
             if (fOnlineMergePossible)
             {
@@ -2486,9 +2493,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                              fOnlineMergePossible,
                                              pVMMALockList, pSource, pTarget,
                                              fMergeForward, pParentForTarget,
-                                             childrenToReparent,
+                                             pChildrenToReparent,
                                              fNeedsOnlineMerge,
-                                             pMediumLockList);
+                                             pMediumLockList,
+                                             pHDLockToken);
             treeLock.acquire();
             if (FAILED(rc))
                 throw rc;
@@ -2544,9 +2552,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                    pOnlineMediumAttachment,
                                                    fMergeForward,
                                                    pParentForTarget,
-                                                   childrenToReparent,
+                                                   pChildrenToReparent,
                                                    fNeedsOnlineMerge,
                                                    pMediumLockList,
+                                                   pHDLockToken,
                                                    replaceMachineId,
                                                    replaceSnapshotId));
             }
@@ -2555,9 +2564,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                                                    pOnlineMediumAttachment,
                                                    fMergeForward,
                                                    pParentForTarget,
-                                                   childrenToReparent,
+                                                   pChildrenToReparent,
                                                    fNeedsOnlineMerge,
-                                                   pMediumLockList));
+                                                   pMediumLockList,
+                                                   pHDLockToken));
         }
 
         {
@@ -2755,16 +2765,22 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                 bool fNeedsSave = false;
                 if (it->mfNeedsOnlineMerge)
                 {
+                    // Put the medium merge information (MediumDeleteRec) where
+                    // SessionMachine::FinishOnlineMergeMedium can get at it.
+                    // This callback will arrive while onlineMergeMedium is
+                    // still executing, and there can't be two tasks.
+                    mConsoleTaskData.mDeleteSnapshotInfo = (void *)&(*it);
                     // online medium merge, in the direction decided earlier
                     rc = onlineMergeMedium(it->mpOnlineMediumAttachment,
                                            it->mpSource,
                                            it->mpTarget,
                                            it->mfMergeForward,
                                            it->mpParentForTarget,
-                                           it->mChildrenToReparent,
+                                           it->mpChildrenToReparent,
                                            it->mpMediumLockList,
                                            aTask.pProgress,
                                            &fNeedsSave);
+                    mConsoleTaskData.mDeleteSnapshotInfo = NULL;
                 }
                 else
                 {
@@ -2772,7 +2788,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     rc = it->mpSource->mergeTo(it->mpTarget,
                                                it->mfMergeForward,
                                                it->mpParentForTarget,
-                                               it->mChildrenToReparent,
+                                               it->mpChildrenToReparent,
                                                it->mpMediumLockList,
                                                &aTask.pProgress,
                                                true /* aWait */);
@@ -2911,10 +2927,10 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
              ++it)
         {
             cancelDeleteSnapshotMedium(it->mpHD, it->mpSource,
-                                       it->mChildrenToReparent,
+                                       it->mpChildrenToReparent,
                                        it->mfNeedsOnlineMerge,
-                                       it->mpMediumLockList, it->mMachineId,
-                                       it->mSnapshotId);
+                                       it->mpMediumLockList, it->mpHDLockToken,
+                                       it->mMachineId, it->mSnapshotId);
         }
     }
 
@@ -2965,14 +2981,16 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
  * @param aTarget       Target hard disk for merge (out).
  * @param aMergeForward Merge direction decision (out).
  * @param aParentForTarget New parent if target needs to be reparented (out).
- * @param aChildrenToReparent Children which have to be reparented to the
- *                      target (out).
+ * @param aChildrenToReparent MediumLockList with children which have to be
+ *                      reparented to the target (out).
  * @param fNeedsOnlineMerge Whether this merge needs to be done online (out).
  *                      If this is set to @a true then the @a aVMMALockList
  *                      parameter has been modified and is returned as
  *                      @a aMediumLockList.
  * @param aMediumLockList Where to store the created medium lock list (may
  *                      return NULL if no real merge is necessary).
+ * @param aHDLockToken  Where to store the write lock token for aHD, in case
+ *                      it is not merged or deleted (out).
  *
  * @note Caller must hold media tree lock for writing. This locks this object
  *       and every medium object on the merge chain for writing.
@@ -2986,9 +3004,10 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
                                                     ComObjPtr<Medium> &aTarget,
                                                     bool &aMergeForward,
                                                     ComObjPtr<Medium> &aParentForTarget,
-                                                    MediaList &aChildrenToReparent,
+                                                    MediumLockList * &aChildrenToReparent,
                                                     bool &fNeedsOnlineMerge,
-                                                    MediumLockList * &aMediumLockList)
+                                                    MediumLockList * &aMediumLockList,
+                                                    ComPtr<IToken> &aHDLockToken)
 {
     Assert(!mParent->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
     Assert(!fOnlineMergePossible || VALID_PTR(aVMMALockList));
@@ -3001,6 +3020,7 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
                  && type != MediumType_Shareable
                  && type != MediumType_Readonly, E_FAIL);
 
+    aChildrenToReparent = NULL;
     aMediumLockList = NULL;
     fNeedsOnlineMerge = false;
 
@@ -3017,7 +3037,7 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
             /* lock only, to prevent any usage until the snapshot deletion
              * is completed */
             alock.release();
-            return aHD->LockWrite(NULL);
+            return aHD->LockWrite(aHDLockToken.asOutParam());
         }
 
         /* the differencing hard disk w/o children will be deleted, protect it
@@ -3048,7 +3068,7 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
              * deletion, so lock only, to prevent any usage */
             childLock.release();
             alock.release();
-            return aHD->LockWrite(NULL);
+            return aHD->LockWrite(aHDLockToken.asOutParam());
         }
 
         aSource = pChild;
@@ -3145,39 +3165,37 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
             if (fOnlineMergePossible)
             {
                 /* we will lock the children of the source for reparenting */
-                for (MediaList::const_iterator it = aChildrenToReparent.begin();
-                     it != aChildrenToReparent.end();
-                     ++it)
+                if (aChildrenToReparent && !aChildrenToReparent->IsEmpty())
                 {
-                    ComObjPtr<Medium> pMedium = *it;
-                    AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
-                    if (pMedium->getState() == MediumState_Created)
+                    /* Cannot just call aChildrenToReparent->Lock(), as one of
+                     * the children is the one under which the current state of
+                     * the VM is located, and this means it is already locked
+                     * (for reading). Note that no special unlocking is needed,
+                     * because cancelMergeTo will unlock everything locked in
+                     * its context (using the unlock on destruction), and both
+                     * cancelDeleteSnapshotMedium (in case something fails) and
+                     * FinishOnlineMergeMedium re-define the read/write lock
+                     * state of everything which the VM need, search for the
+                     * UpdateLock method calls. */
+                    childLock.release();
+                    alock.release();
+                    rc = aChildrenToReparent->Lock(true /* fSkipOverLockedMedia */);
+                    alock.acquire();
+                    childLock.acquire();
+                    MediumLockList::Base::iterator childrenToReparentBegin = aChildrenToReparent->GetBegin();
+                    MediumLockList::Base::iterator childrenToReparentEnd = aChildrenToReparent->GetEnd();
+                    for (MediumLockList::Base::iterator it = childrenToReparentBegin;
+                         it != childrenToReparentEnd;
+                         ++it)
                     {
-                        mediumLock.release();
-                        childLock.release();
-                        alock.release();
-                        rc = pMedium->LockWrite(NULL);
-                        alock.acquire();
-                        childLock.acquire();
-                        mediumLock.acquire();
-                        if (FAILED(rc))
-                            throw rc;
-                    }
-                    else
-                    {
-                        mediumLock.release();
-                        childLock.release();
-                        alock.release();
-                        rc = aVMMALockList->Update(pMedium, true);
-                        alock.acquire();
-                        childLock.acquire();
-                        mediumLock.acquire();
-                        if (FAILED(rc))
+                        ComObjPtr<Medium> pMedium = it->GetMedium();
+                        AutoReadLock mediumLock(pMedium COMMA_LOCKVAL_SRC_POS);
+                        if (!it->IsLocked())
                         {
                             mediumLock.release();
                             childLock.release();
                             alock.release();
-                            rc = pMedium->LockWrite(NULL);
+                            rc = aVMMALockList->Update(pMedium, true);
                             alock.acquire();
                             childLock.acquire();
                             mediumLock.acquire();
@@ -3264,6 +3282,7 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
  * @param aChildrenToReparent Children to unlock.
  * @param fNeedsOnlineMerge Whether this merge needs to be done online.
  * @param aMediumLockList Medium locks to cancel.
+ * @param aHDLockToken  Optional write lock token for aHD.
  * @param aMachineId    Machine id to attach the medium to.
  * @param aSnapshotId   Snapshot id to attach the medium to.
  *
@@ -3271,9 +3290,10 @@ HRESULT SessionMachine::prepareDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD
  */
 void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
                                                 const ComObjPtr<Medium> &aSource,
-                                                const MediaList &aChildrenToReparent,
+                                                MediumLockList *aChildrenToReparent,
                                                 bool fNeedsOnlineMerge,
                                                 MediumLockList *aMediumLockList,
+                                                const ComPtr<IToken> &aHDLockToken,
                                                 const Guid &aMachineId,
                                                 const Guid &aSnapshotId)
 {
@@ -3285,8 +3305,12 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
 
         if (aHD->getParent().isNull())
         {
-            HRESULT rc = aHD->UnlockWrite(NULL);
-            AssertComRC(rc);
+            Assert(!aHDLockToken.isNull());
+            if (!aHDLockToken.isNull())
+            {
+                HRESULT rc = aHDLockToken->Abandon();
+                AssertComRC(rc);
+            }
         }
         else
         {
@@ -3353,8 +3377,8 @@ void SessionMachine::cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
  * @param aTarget       Target hard disk for merge.
  * @param aMergeForward Merge direction.
  * @param aParentForTarget New parent if target needs to be reparented.
- * @param aChildrenToReparent Children which have to be reparented to the
- *                      target.
+ * @param aChildrenToReparent Medium lock list with children which have to be
+ *                      reparented to the target.
  * @param aMediumLockList Where to store the created medium lock list (may
  *                      return NULL if no real merge is necessary).
  * @param aProgress     Progress indicator.
@@ -3365,7 +3389,7 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
                                           const ComObjPtr<Medium> &aTarget,
                                           bool fMergeForward,
                                           const ComObjPtr<Medium> &aParentForTarget,
-                                          const MediaList &aChildrenToReparent,
+                                          MediumLockList *aChildrenToReparent,
                                           MediumLockList *aMediumLockList,
                                           ComObjPtr<Progress> &aProgress,
                                           bool *pfNeedsMachineSaveSettings)
@@ -3414,12 +3438,6 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
         ComAssertThrow(   uSourceIdx != (unsigned)-1
                        && uTargetIdx != (unsigned)-1, E_FAIL);
 
-        // For forward merges, tell the VM what images need to have their
-        // parent UUID updated. This cannot be done in VBoxSVC, as opening
-        // the required parent images is not safe while the VM is running.
-        // For backward merges this will be simply an array of size 0.
-        com::SafeIfaceArray<IMedium> childrenToReparent(aChildrenToReparent);
-
         ComPtr<IInternalSessionControl> directControl;
         {
             AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -3435,9 +3453,6 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
         // updating the medium attachment, chain linking and state.
         rc = directControl->OnlineMergeMedium(aMediumAttachment,
                                               uSourceIdx, uTargetIdx,
-                                              aSource, aTarget,
-                                              fMergeForward, aParentForTarget,
-                                              ComSafeArrayAsInParam(childrenToReparent),
                                               aProgress);
         if (FAILED(rc))
             throw rc;
@@ -3453,7 +3468,7 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
 }
 
 /**
- * Implementation for IInternalMachineControl::finishOnlineMergeMedium().
+ * Implementation for IInternalMachineControl::FinishOnlineMergeMedium().
  *
  * Gets called after the successful completion of an online merge from
  * Console::onlineMergeMedium(), which gets invoked indirectly above in
@@ -3462,17 +3477,11 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
  * This updates the medium information and medium state so that the VM
  * can continue with the updated state of the medium chain.
  */
-STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumAttachment,
-                                                     IMedium *aSource,
-                                                     IMedium *aTarget,
-                                                     BOOL aMergeForward,
-                                                     IMedium *aParentForTarget,
-                                                     ComSafeArrayIn(IMedium *, aChildrenToReparent))
+STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
 {
     HRESULT rc = S_OK;
-    ComObjPtr<Medium> pSource(static_cast<Medium *>(aSource));
-    ComObjPtr<Medium> pTarget(static_cast<Medium *>(aTarget));
-    ComObjPtr<Medium> pParentForTarget(static_cast<Medium *>(aParentForTarget));
+    MediumDeleteRec *pDeleteRec = (MediumDeleteRec *)mConsoleTaskData.mDeleteSnapshotInfo;
+    AssertReturn(pDeleteRec, E_FAIL);
     bool fSourceHasChildren = false;
 
     // all hard disks but the target were successfully deleted by
@@ -3485,36 +3494,35 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
     // we delete the last reference to the no longer existing medium object.
     ComObjPtr<Medium> targetChild;
 
-    if (aMergeForward)
+    if (pDeleteRec->mfMergeForward)
     {
         // first, unregister the target since it may become a base
         // hard disk which needs re-registration
-        rc = mParent->unregisterMedium(pTarget);
+        rc = mParent->unregisterMedium(pDeleteRec->mpTarget);
         AssertComRC(rc);
 
         // then, reparent it and disconnect the deleted branch at
         // both ends (chain->parent() is source's parent)
-        pTarget->deparent();
-        pTarget->setParent(pParentForTarget);
-        if (pParentForTarget)
-            pSource->deparent();
+        pDeleteRec->mpTarget->deparent();
+        pDeleteRec->mpTarget->setParent(pDeleteRec->mpParentForTarget);
+        if (pDeleteRec->mpParentForTarget)
+            pDeleteRec->mpSource->deparent();
 
         // then, register again
-        rc = mParent->registerMedium(pTarget, &pTarget, DeviceType_HardDisk);
+        rc = mParent->registerMedium(pDeleteRec->mpTarget, &pDeleteRec->mpTarget, DeviceType_HardDisk);
         AssertComRC(rc);
     }
     else
     {
-        Assert(pTarget->getChildren().size() == 1);
-        targetChild = pTarget->getChildren().front();
+        Assert(pDeleteRec->mpTarget->getChildren().size() == 1);
+        targetChild = pDeleteRec->mpTarget->getChildren().front();
 
         // disconnect the deleted branch at the elder end
         targetChild->deparent();
 
         // Update parent UUIDs of the source's children, reparent them and
         // disconnect the deleted branch at the younger end
-        com::SafeIfaceArray<IMedium> childrenToReparent(ComSafeArrayInArg(aChildrenToReparent));
-        if (childrenToReparent.size() > 0)
+        if (pDeleteRec->mpChildrenToReparent && !pDeleteRec->mpChildrenToReparent->IsEmpty())
         {
             fSourceHasChildren = true;
             // Fix the parent UUID of the images which needs to be moved to
@@ -3522,35 +3530,35 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
             // but only for reading since the VM is paused. If anything fails
             // we must continue. The worst possible result is that the images
             // need manual fixing via VBoxManage to adjust the parent UUID.
-            MediaList toReparent;
-            for (size_t i = 0; i < childrenToReparent.size(); i++)
-            {
-                Medium *pMedium = static_cast<Medium *>(childrenToReparent[i]);
-                toReparent.push_back(pMedium);
-            }
             treeLock.release();
-            pTarget->fixParentUuidOfChildren(toReparent);
+            pDeleteRec->mpTarget->fixParentUuidOfChildren(pDeleteRec->mpChildrenToReparent);
+            // The childen are still write locked, unlock them now and don't
+            // rely on the destructor doing it very late.
+            pDeleteRec->mpChildrenToReparent->Unlock();
             treeLock.acquire();
 
             // obey {parent,child} lock order
-            AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
+            AutoWriteLock sourceLock(pDeleteRec->mpSource COMMA_LOCKVAL_SRC_POS);
 
-            for (size_t i = 0; i < childrenToReparent.size(); i++)
+            MediumLockList::Base::iterator childrenBegin = pDeleteRec->mpChildrenToReparent->GetBegin();
+            MediumLockList::Base::iterator childrenEnd = pDeleteRec->mpChildrenToReparent->GetEnd();
+            for (MediumLockList::Base::iterator it = childrenBegin;
+                 it != childrenEnd;
+                 ++it)
             {
-                Medium *pMedium = static_cast<Medium *>(childrenToReparent[i]);
+                Medium *pMedium = it->GetMedium();
                 AutoWriteLock childLock(pMedium COMMA_LOCKVAL_SRC_POS);
 
                 pMedium->deparent();  // removes pMedium from source
-                pMedium->setParent(pTarget);
+                pMedium->setParent(pDeleteRec->mpTarget);
             }
         }
     }
 
     /* unregister and uninitialize all hard disks removed by the merge */
     MediumLockList *pMediumLockList = NULL;
-    MediumAttachment *pMediumAttachment = static_cast<MediumAttachment *>(aMediumAttachment);
-    rc = mData->mSession.mLockedMedia.Get(pMediumAttachment, pMediumLockList);
-    const ComObjPtr<Medium> &pLast = aMergeForward ? pTarget : pSource;
+    rc = mData->mSession.mLockedMedia.Get(pDeleteRec->mpOnlineMediumAttachment, pMediumLockList);
+    const ComObjPtr<Medium> &pLast = pDeleteRec->mfMergeForward ? pDeleteRec->mpTarget : pDeleteRec->mpSource;
     AssertReturn(SUCCEEDED(rc) && pMediumLockList, E_FAIL);
     MediumLockList::Base::iterator lockListBegin =
         pMediumLockList->GetBegin();
@@ -3566,7 +3574,7 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
         const ComObjPtr<Medium> pMedium = mediumLock.GetMedium();
 
         /* The target and all images not merged (readonly) are skipped */
-        if (   pMedium == pTarget
+        if (   pMedium == pDeleteRec->mpTarget
             || pMedium->getState() == MediumState_LockedRead)
         {
             ++it;
@@ -3588,10 +3596,10 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
              * caller may still hold an AutoCaller instance for it
              * and therefore we cannot uninit() it (it's therefore
              * the caller's responsibility) */
-            if (pMedium == aSource)
+            if (pMedium == pDeleteRec->mpSource)
             {
-                Assert(pSource->getChildren().size() == 0);
-                Assert(pSource->getFirstMachineBackrefId() == NULL);
+                Assert(pDeleteRec->mpSource->getChildren().size() == 0);
+                Assert(pDeleteRec->mpSource->getFirstMachineBackrefId() == NULL);
             }
 
             /* Delete the medium lock list entry, which also releases the
@@ -3627,10 +3635,10 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium(IMediumAttachment *aMediumA
      * source has no children) then update the medium associated with the
      * attachment, as the previously associated one (source) is now deleted.
      * Without the immediate update the VM could not continue running. */
-    if (!aMergeForward && !fSourceHasChildren)
+    if (!pDeleteRec->mfMergeForward && !fSourceHasChildren)
     {
-        AutoWriteLock attLock(pMediumAttachment COMMA_LOCKVAL_SRC_POS);
-        pMediumAttachment->updateMedium(pTarget);
+        AutoWriteLock attLock(pDeleteRec->mpOnlineMediumAttachment COMMA_LOCKVAL_SRC_POS);
+        pDeleteRec->mpOnlineMediumAttachment->updateMedium(pDeleteRec->mpTarget);
     }
 
     return S_OK;
