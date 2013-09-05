@@ -418,7 +418,7 @@ get_keys.sort()
 max_keyvalues = 0
 
 print """
-struct nv_struct { GLenum pname; unsigned int num_values;
+static struct nv_struct { GLenum pname; unsigned int num_values;
 #ifdef VBOX_WITH_CRDUMPER 
 const char* pszName;
 #endif
