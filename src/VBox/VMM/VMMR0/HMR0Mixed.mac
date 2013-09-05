@@ -79,9 +79,9 @@
     sub     xSP, xCB * 2
     sgdt    [xSP]
     mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
+    and     eax, X86_SEL_MASK_OFF_RPL               ; Mask away TI and RPL bits leaving only the descriptor offset.
     add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [ss:xAX + 4], ~0200h              ; Clear busy flag (2nd type2 bit).
+    and     dword [ss:xAX + 4], ~RT_BIT(9)          ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
     ltr     bx
     add     xSP, xCB * 2
  %endif
@@ -342,9 +342,9 @@ ENDPROC MY_NAME(VMXR0StartVM32)
     sub     xSP, xCB * 2
     sgdt    [xSP]
     mov     xAX, xBX
-    and     al, 0F8h                                ; Mask away TI and RPL bits, get descriptor offset.
-    add     xAX, [xSP + 2]                          ; eax <- GDTR.address + descriptor offset.
-    and     dword [xAX + 4], ~0200h                 ; Clear busy flag (2nd type2 bit).
+    and     eax, X86_SEL_MASK_OFF_RPL           ; Mask away TI and RPL bits leaving only the descriptor offset.
+    add     xAX, [xSP + 2]                      ; eax <- GDTR.address + descriptor offset.
+    and     dword [xAX + 4], ~RT_BIT(9)         ; Clear the busy flag in TSS desc (bits 0-7=base, bit 9=busy bit).
     ltr     bx
     add     xSP, xCB * 2
  %endif
