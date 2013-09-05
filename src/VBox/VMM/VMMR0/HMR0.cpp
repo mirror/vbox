@@ -800,13 +800,14 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 {
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     NOREF(pvUser2);
 
-    uint64_t fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-    bool const fInSmxMode       = !!(ASMGetCR4() & X86_CR4_SMXE);
-    bool       fMsrLocked       = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
-    bool       fSmxVmxAllowed   = !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-    bool       fVmxAllowed      = !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
+    uint64_t   fFC            = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+    bool const fInSmxMode     = !!(ASMGetCR4() & X86_CR4_SMXE);
+    bool       fMsrLocked     = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
+    bool       fSmxVmxAllowed = !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+    bool       fVmxAllowed    = !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
 
     /* Check if the LOCK bit is set but excludes the required VMXON bit. */
     int rc = VERR_HM_IPE_1;
@@ -834,7 +835,7 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
         ASMWrMsr(MSR_IA32_FEATURE_CONTROL, fFC);
 
         /* Verify. */
-        fFC = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+        fFC                 = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
         fMsrLocked          = !!(fFC & MSR_IA32_FEATURE_CONTROL_LOCK);
         fSmxVmxAllowed      = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
         fVmxAllowed         = fMsrLocked && !!(fFC & MSR_IA32_FEATURE_CONTROL_VMXON);
