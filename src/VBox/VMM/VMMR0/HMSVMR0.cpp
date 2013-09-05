@@ -56,7 +56,6 @@
  *  switch to a "static DECLCALLBACK(int)". */
 #define HMSVM_EXIT_DECL                 static int
 
-
 /** @name Segment attribute conversion between CPU and AMD-V VMCB format.
  *
  * The CPU format of the segment attribute is described in X86DESCATTRBITS
@@ -69,7 +68,6 @@
 #define HMSVM_CPU_2_VMCB_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0xf000) >> 4) )
 #define HMSVM_VMCB_2_CPU_SEG_ATTR(a)       ( ((a) & 0xff) | (((a) & 0x0f00) << 4) )
 /** @} */
-
 
 /** @name Macros for loading, storing segment registers to/from the VMCB.
  *  @{ */
@@ -95,7 +93,6 @@
         pMixedCtx->reg.Attr.u    = HMSVM_VMCB_2_CPU_SEG_ATTR(pVmcb->guest.REG.u16Attr); \
     } while (0)
 /** @} */
-
 
 /** Macro for checking and returning from the using function for
  * \#VMEXIT intercepts that maybe caused during delivering of another
@@ -136,7 +133,6 @@
  */
 #define HMSVM_CONTRIBUTORY_XCPT_MASK  (  RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_TS) \
                                        | RT_BIT(X86_XCPT_DE))
-
 
 /** @name VMCB Clean Bits.
  *
@@ -219,7 +215,6 @@ AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode,       sizeof(uint64_t));
 AssertCompileMemberAlignment(SVMTRANSIENT, fRestoreTscAuxMsr, sizeof(uint64_t));
 /** @}  */
 
-
 /**
  * MSRPM (MSR permission bitmap) read permissions (for guest RDMSR).
  */
@@ -242,6 +237,15 @@ typedef enum SVMMSREXITWRITE
     SVMMSREXIT_PASSTHRU_WRITE
 } SVMMSREXITWRITE;
 
+/**
+ * SVM VM-exit handler.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pMixedCtx       Pointer to the guest-CPU context.
+ * @param   pSvmTransient   Pointer to the SVM-transient structure.
+ */
+typedef int FNSVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -250,36 +254,39 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
 static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu);
 static void hmR0SvmLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 
-HMSVM_EXIT_DECL hmR0SvmExitIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitWbinvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitInvd(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitCpuid(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitRdtsc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitRdtscp(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitRdpmc(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitInvlpg(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitHlt(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitMonitor(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitShutdown(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitReadCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitWriteCRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitWriteDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitNestedPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitVIntr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitVmmCall(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitXcptPF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitXcptMF(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
-HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTransient);
+/** @name VM-exit handlers.
+ * @{
+ */
+static FNSVMEXITHANDLER hmR0SvmExitIntr;
+static FNSVMEXITHANDLER hmR0SvmExitWbinvd;
+static FNSVMEXITHANDLER hmR0SvmExitInvd;
+static FNSVMEXITHANDLER hmR0SvmExitCpuid;
+static FNSVMEXITHANDLER hmR0SvmExitRdtsc;
+static FNSVMEXITHANDLER hmR0SvmExitRdtscp;
+static FNSVMEXITHANDLER hmR0SvmExitRdpmc;
+static FNSVMEXITHANDLER hmR0SvmExitInvlpg;
+static FNSVMEXITHANDLER hmR0SvmExitHlt;
+static FNSVMEXITHANDLER hmR0SvmExitMonitor;
+static FNSVMEXITHANDLER hmR0SvmExitMwait;
+static FNSVMEXITHANDLER hmR0SvmExitShutdown;
+static FNSVMEXITHANDLER hmR0SvmExitReadCRx;
+static FNSVMEXITHANDLER hmR0SvmExitWriteCRx;
+static FNSVMEXITHANDLER hmR0SvmExitSetPendingXcptUD;
+static FNSVMEXITHANDLER hmR0SvmExitMsr;
+static FNSVMEXITHANDLER hmR0SvmExitReadDRx;
+static FNSVMEXITHANDLER hmR0SvmExitWriteDRx;
+static FNSVMEXITHANDLER hmR0SvmExitIOInstr;
+static FNSVMEXITHANDLER hmR0SvmExitNestedPF;
+static FNSVMEXITHANDLER hmR0SvmExitVIntr;
+static FNSVMEXITHANDLER hmR0SvmExitTaskSwitch;
+static FNSVMEXITHANDLER hmR0SvmExitVmmCall;
+static FNSVMEXITHANDLER hmR0SvmExitXcptPF;
+static FNSVMEXITHANDLER hmR0SvmExitXcptNM;
+static FNSVMEXITHANDLER hmR0SvmExitXcptMF;
+static FNSVMEXITHANDLER hmR0SvmExitXcptDB;
+/** @} */
 
 DECLINLINE(int) hmR0SvmHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMTRANSIENT pSvmTransient);
-
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -1084,8 +1091,8 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
          */
         if (!pVM->hm.s.fNestedPaging)
         {
-            u64GuestCR0 |= X86_CR0_PG;  /* When Nested Paging is not available, use shadow page tables. */
-            u64GuestCR0 |= X86_CR0_WP;  /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
+            u64GuestCR0 |= X86_CR0_PG;     /* When Nested Paging is not available, use shadow page tables. */
+            u64GuestCR0 |= X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF VM-exit. */
         }
 
         /*
@@ -1496,8 +1503,8 @@ static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx
     int rc = PDMApicGetTPR(pVCpu, &u8Tpr, &fPendingIntr, NULL /* pu8PendingIrq */);
     AssertRCReturn(rc, rc);
 
-    /** Assume that we need to trap all TPR accesses and thus need not check on
-     *  every #VMEXIT if we should update the TPR. */
+    /* Assume that we need to trap all TPR accesses and thus need not check on
+       every #VMEXIT if we should update the TPR. */
     Assert(pVmcb->ctrl.IntCtrl.n.u1VIrqMasking);
     pVCpu->hm.s.svm.fSyncVTpr = false;
 
@@ -1614,7 +1621,9 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
 
             PVM         pVM  = pVCpu->CTX_SUFF(pVM);
             PCPUMCTX    pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-            VMMRZCallRing3Disable(pVCpu);                        /* No longjmps (log-flush, locks) in this fragile context. */
+
+            /* No longjmps (log-flush, locks) in this fragile context. */
+            VMMRZCallRing3Disable(pVCpu);
 
             if (!pVCpu->hm.s.fLeaveDone)
             {
@@ -1622,10 +1631,12 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
                 pVCpu->hm.s.fLeaveDone = true;
             }
 
-            int rc = HMR0LeaveCpu(pVCpu);                         /* Leave HM context, takes care of local init (term). */
+            /* Leave HM context, takes care of local init (term). */
+            int rc = HMR0LeaveCpu(pVCpu);
             AssertRC(rc); NOREF(rc);
 
-            VMMRZCallRing3Enable(pVCpu);                         /* Restore longjmp state. */
+            /* Restore longjmp state. */
+            VMMRZCallRing3Enable(pVCpu);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatPreemptPreempting);
             break;
         }
@@ -1636,7 +1647,8 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
             VMCPU_ASSERT_EMT(pVCpu);
 
-            VMMRZCallRing3Disable(pVCpu);                        /* No longjmps (log-flush, locks) in this fragile context. */
+            /* No longjmps (log-flush, locks) in this fragile context. */
+            VMMRZCallRing3Disable(pVCpu);
 
             /*
              * Initialize the bare minimum state required for HM. This takes care of
@@ -1647,7 +1659,9 @@ VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             Assert(pVCpu->hm.s.fContextUseFlags & (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
             pVCpu->hm.s.fLeaveDone = false;
-            VMMRZCallRing3Enable(pVCpu);                        /* Restore longjmp state. */
+
+            /* Restore longjmp state. */
+            VMMRZCallRing3Enable(pVCpu);
             break;
         }
 

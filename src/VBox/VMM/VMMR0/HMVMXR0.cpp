@@ -292,7 +292,7 @@ typedef enum VMXMSREXITWRITE
 } VMXMSREXITWRITE;
 
 /**
- * VM-exit handler.
+ * VMX VM-exit handler.
  *
  * @returns VBox status code.
  * @param   pVCpu           Pointer to the VMCPU.
@@ -302,11 +302,11 @@ typedef enum VMXMSREXITWRITE
  * @param   pVmxTransient   Pointer to the VMX-transient structure.
  */
 #ifndef HMVMX_USE_FUNCTION_TABLE
-typedef int FNVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef int FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 #else
-typedef DECLCALLBACK(int) FNVMEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
+typedef DECLCALLBACK(int) FNVMXEXITHANDLER(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
 /** Pointer to VM-exit handler. */
-typedef FNVMEXITHANDLER *PFNVMEXITHANDLER;
+typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 #endif
 
 
@@ -331,50 +331,50 @@ DECLINLINE(int)           hmR0VmxHandleExit(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PV
 /** @name VM-exit handlers.
  * @{
  */
-static FNVMEXITHANDLER hmR0VmxExitXcptOrNmi;
-static FNVMEXITHANDLER hmR0VmxExitExtInt;
-static FNVMEXITHANDLER hmR0VmxExitTripleFault;
-static FNVMEXITHANDLER hmR0VmxExitInitSignal;
-static FNVMEXITHANDLER hmR0VmxExitSipi;
-static FNVMEXITHANDLER hmR0VmxExitIoSmi;
-static FNVMEXITHANDLER hmR0VmxExitSmi;
-static FNVMEXITHANDLER hmR0VmxExitIntWindow;
-static FNVMEXITHANDLER hmR0VmxExitNmiWindow;
-static FNVMEXITHANDLER hmR0VmxExitTaskSwitch;
-static FNVMEXITHANDLER hmR0VmxExitCpuid;
-static FNVMEXITHANDLER hmR0VmxExitGetsec;
-static FNVMEXITHANDLER hmR0VmxExitHlt;
-static FNVMEXITHANDLER hmR0VmxExitInvd;
-static FNVMEXITHANDLER hmR0VmxExitInvlpg;
-static FNVMEXITHANDLER hmR0VmxExitRdpmc;
-static FNVMEXITHANDLER hmR0VmxExitRdtsc;
-static FNVMEXITHANDLER hmR0VmxExitRsm;
-static FNVMEXITHANDLER hmR0VmxExitSetPendingXcptUD;
-static FNVMEXITHANDLER hmR0VmxExitMovCRx;
-static FNVMEXITHANDLER hmR0VmxExitMovDRx;
-static FNVMEXITHANDLER hmR0VmxExitIoInstr;
-static FNVMEXITHANDLER hmR0VmxExitRdmsr;
-static FNVMEXITHANDLER hmR0VmxExitWrmsr;
-static FNVMEXITHANDLER hmR0VmxExitErrInvalidGuestState;
-static FNVMEXITHANDLER hmR0VmxExitErrMsrLoad;
-static FNVMEXITHANDLER hmR0VmxExitErrUndefined;
-static FNVMEXITHANDLER hmR0VmxExitMwait;
-static FNVMEXITHANDLER hmR0VmxExitMtf;
-static FNVMEXITHANDLER hmR0VmxExitMonitor;
-static FNVMEXITHANDLER hmR0VmxExitPause;
-static FNVMEXITHANDLER hmR0VmxExitErrMachineCheck;
-static FNVMEXITHANDLER hmR0VmxExitTprBelowThreshold;
-static FNVMEXITHANDLER hmR0VmxExitApicAccess;
-static FNVMEXITHANDLER hmR0VmxExitXdtrAccess;
-static FNVMEXITHANDLER hmR0VmxExitXdtrAccess;
-static FNVMEXITHANDLER hmR0VmxExitEptViolation;
-static FNVMEXITHANDLER hmR0VmxExitEptMisconfig;
-static FNVMEXITHANDLER hmR0VmxExitRdtscp;
-static FNVMEXITHANDLER hmR0VmxExitPreemptTimer;
-static FNVMEXITHANDLER hmR0VmxExitWbinvd;
-static FNVMEXITHANDLER hmR0VmxExitXsetbv;
-static FNVMEXITHANDLER hmR0VmxExitRdrand;
-static FNVMEXITHANDLER hmR0VmxExitInvpcid;
+static FNVMXEXITHANDLER hmR0VmxExitXcptOrNmi;
+static FNVMXEXITHANDLER hmR0VmxExitExtInt;
+static FNVMXEXITHANDLER hmR0VmxExitTripleFault;
+static FNVMXEXITHANDLER hmR0VmxExitInitSignal;
+static FNVMXEXITHANDLER hmR0VmxExitSipi;
+static FNVMXEXITHANDLER hmR0VmxExitIoSmi;
+static FNVMXEXITHANDLER hmR0VmxExitSmi;
+static FNVMXEXITHANDLER hmR0VmxExitIntWindow;
+static FNVMXEXITHANDLER hmR0VmxExitNmiWindow;
+static FNVMXEXITHANDLER hmR0VmxExitTaskSwitch;
+static FNVMXEXITHANDLER hmR0VmxExitCpuid;
+static FNVMXEXITHANDLER hmR0VmxExitGetsec;
+static FNVMXEXITHANDLER hmR0VmxExitHlt;
+static FNVMXEXITHANDLER hmR0VmxExitInvd;
+static FNVMXEXITHANDLER hmR0VmxExitInvlpg;
+static FNVMXEXITHANDLER hmR0VmxExitRdpmc;
+static FNVMXEXITHANDLER hmR0VmxExitRdtsc;
+static FNVMXEXITHANDLER hmR0VmxExitRsm;
+static FNVMXEXITHANDLER hmR0VmxExitSetPendingXcptUD;
+static FNVMXEXITHANDLER hmR0VmxExitMovCRx;
+static FNVMXEXITHANDLER hmR0VmxExitMovDRx;
+static FNVMXEXITHANDLER hmR0VmxExitIoInstr;
+static FNVMXEXITHANDLER hmR0VmxExitRdmsr;
+static FNVMXEXITHANDLER hmR0VmxExitWrmsr;
+static FNVMXEXITHANDLER hmR0VmxExitErrInvalidGuestState;
+static FNVMXEXITHANDLER hmR0VmxExitErrMsrLoad;
+static FNVMXEXITHANDLER hmR0VmxExitErrUndefined;
+static FNVMXEXITHANDLER hmR0VmxExitMwait;
+static FNVMXEXITHANDLER hmR0VmxExitMtf;
+static FNVMXEXITHANDLER hmR0VmxExitMonitor;
+static FNVMXEXITHANDLER hmR0VmxExitPause;
+static FNVMXEXITHANDLER hmR0VmxExitErrMachineCheck;
+static FNVMXEXITHANDLER hmR0VmxExitTprBelowThreshold;
+static FNVMXEXITHANDLER hmR0VmxExitApicAccess;
+static FNVMXEXITHANDLER hmR0VmxExitXdtrAccess;
+static FNVMXEXITHANDLER hmR0VmxExitXdtrAccess;
+static FNVMXEXITHANDLER hmR0VmxExitEptViolation;
+static FNVMXEXITHANDLER hmR0VmxExitEptMisconfig;
+static FNVMXEXITHANDLER hmR0VmxExitRdtscp;
+static FNVMXEXITHANDLER hmR0VmxExitPreemptTimer;
+static FNVMXEXITHANDLER hmR0VmxExitWbinvd;
+static FNVMXEXITHANDLER hmR0VmxExitXsetbv;
+static FNVMXEXITHANDLER hmR0VmxExitRdrand;
+static FNVMXEXITHANDLER hmR0VmxExitInvpcid;
 /** @} */
 
 static int          hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient);
@@ -394,7 +394,7 @@ static uint32_t     hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 /**
  * VMX_EXIT dispatch table.
  */
-static const PFNVMEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
+static const PFNVMXEXITHANDLER g_apfnVMExitHandlers[VMX_EXIT_MAX + 1] =
 {
  /* 00  VMX_EXIT_XCPT_OR_NMI             */  hmR0VmxExitXcptOrNmi,
  /* 01  VMX_EXIT_EXT_INT                 */  hmR0VmxExitExtInt,
