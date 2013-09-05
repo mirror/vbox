@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -167,6 +167,7 @@ protected:
                                               VBOXEXTPACKMODKIND enmKind, char *pszFound, size_t cbFound, bool *pfNative);
     static DECLCALLBACK(int)    hlpGetFilePath(PCVBOXEXTPACKHLP pHlp, const char *pszFilename, char *pszPath, size_t cbPath);
     static DECLCALLBACK(VBOXEXTPACKCTX) hlpGetContext(PCVBOXEXTPACKHLP pHlp);
+    static DECLCALLBACK(int)    hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole, const char *pszServiceLibrary, const char *pszServiceName);
     static DECLCALLBACK(int)    hlpReservedN(PCVBOXEXTPACKHLP pHlp);
     /** @}  */
 

@@ -220,6 +220,7 @@ public:
     HRESULT onUSBDeviceDetach(IN_BSTR aId, IVirtualBoxErrorInfo *aError);
     HRESULT onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);
+
     HRESULT getGuestProperty(IN_BSTR aKey, BSTR *aValue, LONG64 *aTimestamp, BSTR *aFlags);
     HRESULT setGuestProperty(IN_BSTR aKey, IN_BSTR aValue, IN_BSTR aFlags);
     HRESULT enumerateGuestProperties(IN_BSTR aPatterns,
@@ -230,6 +231,7 @@ public:
     HRESULT onlineMergeMedium(IMediumAttachment *aMediumAttachment,
                               ULONG aSourceIdx, ULONG aTargetIdx,
                               IProgress *aProgress);
+    int hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName);
     VMMDev *getVMMDev() { return m_pVMMDev; }
     AudioSniffer *getAudioSniffer() { return mAudioSniffer; }
 #ifdef VBOX_WITH_EXTPACK
