@@ -862,16 +862,18 @@ netif_create_ip6_linklocal_address(struct netif * netif, u8_t from_mac_48bit)
         (netif->hwaddr[5]));
   }
   else {
+    u8_t *id;
+
     /* Use hwaddr directly as interface ID. */
     netif->ip6_addr[0].addr[2] = 0;
     netif->ip6_addr[0].addr[3] = 0;
 
-    addr_index = 3;
-    for (i = 0; i < 8; i++) {
-      if (i == 4) {
-        addr_index--;
-      }
-      netif->ip6_addr[0].addr[addr_index] |= ((u32_t)(netif->hwaddr[netif->hwaddr_len - i - 1])) << (8 * (i & 0x03));
+    LWIP_ASSERT("bad netif->hwaddr_len",
+                0 < netif->hwaddr_len && netif->hwaddr_len <= 8);
+    id = (uint8_t *)&netif->ip6_addr[0].addr[2];
+    id += 8 - netif->hwaddr_len;
+    for (i = 0; i < netif->hwaddr_len; ++i) {
+      id[i] = netif->hwaddr[i];
     }
   }
 
