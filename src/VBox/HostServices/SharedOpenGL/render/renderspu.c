@@ -297,8 +297,7 @@ renderspuDestroyContext( GLint ctx )
 
     if (render_spu.defaultSharedContext == context)
     {
-        renderspuContextRelease(render_spu.defaultSharedContext);
-        render_spu.defaultSharedContext = NULL;
+        renderspuSetDefaultSharedContext(NULL);
     }
 
     curCtx = GET_CONTEXT_VAL();
@@ -316,20 +315,33 @@ renderspuDestroyContext( GLint ctx )
     renderspuContextMarkDeletedAndRelease(context);
 }
 
-
-void RENDER_APIENTRY
-renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
+WindowInfo* renderspuGetDummyWindow(GLint visBits)
 {
-    WindowInfo *window;
-    ContextInfo *context;
+    WindowInfo *window = (WindowInfo *) crHashtableSearch(render_spu.dummyWindowTable, visBits);
+    if (!window)
+    {
+        window = (WindowInfo *)crAlloc(sizeof (*window));
+        if (!window)
+        {
+            crWarning("crAlloc failed");
+            return NULL;
+        }
 
-    /*
-    crDebug("%s win=%d native=0x%x ctx=%d", __FUNCTION__, crWindow, (int) nativeWindow, ctx);
-    */
+        if (!renderspuWindowInit(window, NULL, visBits, -1))
+        {
+            crWarning("renderspuWindowInit failed");
+            crFree(window);
+            return NULL;
+        }
 
-    window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, crWindow);
-    context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
+        crHashtableAdd(render_spu.dummyWindowTable, visBits, window);
+    }
 
+    return window;
+}
+
+void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, ContextInfo *context)
+{
     if (window && context)
     {
 #ifdef CHROMIUM_THREADSAFE
@@ -340,12 +352,12 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
         context->currentWindow = window;
         if (!window)
         {
-            crDebug("Render SPU: MakeCurrent invalid window id: %d", crWindow);
+            crDebug("Render SPU: MakeCurrent invalid window id: %d", window->BltInfo.Base.id);
             return;
         }
         if (!context)
         {
-            crDebug("Render SPU: MakeCurrent invalid context id: %d", ctx);
+            crDebug("Render SPU: MakeCurrent invalid context id: %d", context->BltInfo.Base.id);
             return;
         }
 
@@ -366,7 +378,7 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
                 context->haveWindowPosARB = GL_FALSE;
             context->everCurrent = GL_TRUE;
         }
-        if (crWindow == CR_RENDER_DEFAULT_WINDOW_ID && window->mapPending &&
+        if (window->BltInfo.Base.id == CR_RENDER_DEFAULT_WINDOW_ID && window->mapPending &&
                 !render_spu.render_to_app_window && !render_spu.render_to_crut_window) {
             /* Window[CR_RENDER_DEFAULT_CONTEXT_ID] is special, it's the default window and normally hidden.
              * If the mapPending flag is set, then we should now make the window
@@ -377,7 +389,7 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
         }
         window->everCurrent = GL_TRUE;
     }
-    else if (!crWindow && !ctx)
+    else if (!window && !context)
     {
         renderspu_SystemMakeCurrent( NULL, 0, NULL );
 #ifdef CHROMIUM_THREADSAFE
@@ -388,11 +400,52 @@ renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
     }
     else
     {
-        crError("renderspuMakeCurrent invalid ids: crWindow(%d), ctx(%d)", crWindow, ctx);
+        crError("renderspuMakeCurrent invalid ids: crWindow(%d), ctx(%d)",
+                window ? window->BltInfo.Base.id : 0,
+                context ? context->BltInfo.Base.id : 0);
     }
 }
 
-GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
+void RENDER_APIENTRY
+renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx)
+{
+    WindowInfo *window = NULL;
+    ContextInfo *context = NULL;
+
+    /*
+    crDebug("%s win=%d native=0x%x ctx=%d", __FUNCTION__, crWindow, (int) nativeWindow, ctx);
+    */
+
+    if (crWindow)
+    {
+        window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, crWindow);
+        if (!window)
+        {
+            crWarning("invalid window %d specified", crWindow);
+            return;
+        }
+    }
+
+    if (ctx)
+    {
+        context = (ContextInfo *) crHashtableSearch(render_spu.contextTable, ctx);
+        if (!context)
+        {
+            crWarning("invalid context %d specified", ctx);
+            return;
+        }
+    }
+
+    if (!context != !window)
+    {
+        crWarning("either window %d or context %d are zero", crWindow, ctx);
+        return;
+    }
+
+    renderspuPerformMakeCurrent(window, nativeWindow, context);
+}
+
+GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id )
 {
     crMemset(window, 0, sizeof (*window));
     RTCritSectInit(&window->CompositorLock);
@@ -448,11 +501,39 @@ GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean
 /*
  * Window functions
  */
+GLboolean renderspuWindowInit(WindowInfo *pWindow, const char *dpyName, GLint visBits, GLint id)
+{
+    VisualInfo *visual;
+
+    crMemset(pWindow, 0, sizeof (*pWindow));
+
+    if (!dpyName || crStrlen(render_spu.display_string) > 0)
+        dpyName = render_spu.display_string;
+
+    visual = renderspuFindVisual( dpyName, visBits );
+    if (!visual)
+    {
+        crWarning( "Render SPU: Couldn't create a window, renderspuFindVisual returned NULL" );
+        return GL_FALSE;
+    }
+
+    /*
+    crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
+    */
+    /* Have GLX/WGL/AGL create the window */
+    if (!renderspuWindowInitWithVisual( pWindow, visual, 0, id ))
+    {
+        crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
+        return GL_FALSE;
+    }
+
+    return GL_TRUE;
+}
 
 GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
 {
     WindowInfo *window;
-    VisualInfo *visual;
+
     GLboolean showIt;
 
     if (id <= 0)
@@ -473,17 +554,6 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
         }
     }
 
-
-    if (!dpyName || crStrlen(render_spu.display_string) > 0)
-        dpyName = render_spu.display_string;
-
-    visual = renderspuFindVisual( dpyName, visBits );
-    if (!visual)
-    {
-        crWarning( "Render SPU: Couldn't create a window, renderspuFindVisual returned NULL" );
-        return -1;
-    }
-
     /* Allocate WindowInfo */
     window = (WindowInfo *) crCalloc(sizeof(WindowInfo));
     if (!window)
@@ -492,21 +562,14 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
         return -1;
     }
     
-    crHashtableAdd(render_spu.windowTable, id, window);
-
-    showIt = 0;
-
-    /*
-    crDebug("Render SPU: Creating window (visBits=0x%x, id=%d)", visBits, window->BltInfo.Base.id);
-    */
-    /* Have GLX/WGL/AGL create the window */
-    if (!renderspuWindowInit( window, visual, showIt, id ))
+    if (!renderspuWindowInit(window, dpyName, visBits, id))
     {
+        crWarning("renderspuWindowInit failed");
         crFree(window);
-        crWarning( "Render SPU: Couldn't create a window, renderspu_SystemCreateWindow failed" );
         return -1;
     }
-    
+
+    crHashtableAdd(render_spu.windowTable, id, window);
     return window->BltInfo.Base.id;
 }
 
@@ -1259,7 +1322,19 @@ static void RENDER_APIENTRY renderspuSemaphoreVCR( GLuint name )
 /*
  * Misc functions
  */
+void renderspuSetDefaultSharedContext(ContextInfo *pCtx)
+{
+    if (pCtx == render_spu.defaultSharedContext)
+        return;
 
+    renderspu_SystemDefaultSharedContextChanged(render_spu.defaultSharedContext, pCtx);
+
+    if (render_spu.defaultSharedContext)
+        renderspuContextRelease(render_spu.defaultSharedContext);
+
+    renderspuContextRetain(pCtx);
+    render_spu.defaultSharedContext = pCtx;
+}
 
 
 static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint value)
@@ -1268,22 +1343,16 @@ static void RENDER_APIENTRY renderspuChromiumParameteriCR(GLenum target, GLint v
     switch (target)
     {
         case GL_HH_SET_DEFAULT_SHARED_CTX:
-            if (render_spu.defaultSharedContext)
-            {
-                renderspuContextRelease(render_spu.defaultSharedContext);
-                render_spu.defaultSharedContext = NULL;
-            }
-
+        {
+            ContextInfo * pCtx = NULL;
             if (value)
-            {
-                render_spu.defaultSharedContext = (ContextInfo *) crHashtableSearch(render_spu.contextTable, value);
-                if (render_spu.defaultSharedContext)
-                    renderspuContextRetain(render_spu.defaultSharedContext);
-                else
-                    crWarning("invalid default shared context id %d", value);
-            }
+                pCtx = (ContextInfo *)crHashtableSearch(render_spu.contextTable, value);
+            else
+                crWarning("invalid default shared context id %d", value);
 
+            renderspuSetDefaultSharedContext(pCtx);
             break;
+        }
         default:
 //            crWarning("Unhandled target in renderspuChromiumParameteriCR()");
             break;

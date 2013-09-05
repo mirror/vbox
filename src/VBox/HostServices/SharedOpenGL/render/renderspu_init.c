@@ -141,6 +141,7 @@ renderSPUInit( int id, SPU *child, SPU *self,
     GLint defaultWin, defaultCtx;
     WindowInfo *windowInfo;
     const char * pcpwSetting;
+    int rc;
 
     (void) child;
     (void) context_id;
@@ -194,6 +195,8 @@ renderSPUInit( int id, SPU *child, SPU *self,
     render_spu.contextTable = crAllocHashtableEx(1, INT32_MAX);
     render_spu.windowTable = crAllocHashtableEx(1, INT32_MAX);
 
+    render_spu.dummyWindowTable = crAllocHashtable();
+
     pcpwSetting = crGetenv("CR_RENDER_ENABLE_SINGLE_PRESENT_CONTEXT");
     if (pcpwSetting)
     {
@@ -216,17 +219,12 @@ renderSPUInit( int id, SPU *child, SPU *self,
 
     CRASSERT(render_spu.default_visual & CR_RGB_BIT);
     
-#ifdef GLX
+    rc = renderspu_SystemInit();
+    if (!RT_SUCCESS(rc))
     {
-        int rc = renderspu_SystemInit();
-        if (!RT_SUCCESS(rc))
-        {
-            crError("renderspu_SystemInit failed rc %d", rc);
-            return NULL;
-        }
+        crError("renderspu_SystemInit failed rc %d", rc);
+        return NULL;
     }
-#endif
-
 #ifdef USE_OSMESA
     if (render_spu.use_osmesa) {
         if (!crLoadOSMesa(&render_spu.OSMesaCreateContext,
@@ -443,18 +441,18 @@ static int renderSPUCleanup(void)
     else
     {
         crHashtableWalk(render_spu.windowTable, renderspuBlitterCleanupCB, NULL);
+
+        crHashtableWalk(render_spu.dummyWindowTable, renderspuBlitterCleanupCB, NULL);
     }
 
-    if (render_spu.defaultSharedContext)
-    {
-        renderspuContextRelease(render_spu.defaultSharedContext);
-        render_spu.defaultSharedContext = NULL;
-    }
+    renderspuSetDefaultSharedContext(NULL);
 
     crFreeHashtable(render_spu.contextTable, DeleteContextCallback);
     render_spu.contextTable = NULL;
     crFreeHashtable(render_spu.windowTable, DeleteWindowCallback);
     render_spu.windowTable = NULL;
+    crFreeHashtable(render_spu.dummyWindowTable, DeleteWindowCallback);
+    render_spu.dummyWindowTable = NULL;
     crFreeHashtable(render_spu.barrierHash, crFree);
     render_spu.barrierHash = NULL;
 

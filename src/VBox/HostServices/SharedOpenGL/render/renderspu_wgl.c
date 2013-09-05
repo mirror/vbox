@@ -1677,3 +1677,18 @@ void renderspu_SystemReparentWindow(WindowInfo *window)
 {
     SetParent(window->hWnd, (HWND)render_spu_parent_window_id);
 }
+
+int renderspu_SystemInit()
+{
+    return VINF_SUCCESS;
+}
+
+int renderspu_SystemTerm()
+{
+    return VINF_SUCCESS;
+}
+
+void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext)
+{
+
+}

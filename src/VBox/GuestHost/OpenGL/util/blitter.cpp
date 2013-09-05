@@ -840,16 +840,17 @@ VBOXBLITTERDECL(bool) CrGlslIsSupported(CR_GLSL_CACHE *pCache)
 
 #define CR_GLSL_STR_V_120 "#version 120\n"
 #define CR_GLSL_STR_EXT_TR "#extension GL_ARB_texture_rectangle : enable\n"
-#define CR_GLSL_STR_TEX2D "texture2D"
-#define CR_GLSL_STR_TEX2DRECT "texture2DRect"
+#define CR_GLSL_STR_2D "2D"
+#define CR_GLSL_STR_2DRECT "2DRect"
 
 #define CR_GLSL_PATTERN_FS_NOALPHA(_ver, _ext, _tex) \
         _ver \
         _ext \
+        "uniform sampler" _tex " sampler0;\n" \
         "void main()\n" \
         "{\n" \
             "vec2 srcCoord = vec2(gl_TexCoord[0]);\n" \
-            "gl_FragData[0].xyz = (" _tex "(0, srcCoord).xyz);\n" \
+            "gl_FragData[0].xyz = (texture" _tex "(sampler0, srcCoord).xyz);\n" \
             "gl_FragData[0].w = 1.0;\n" \
         "}\n"
 
@@ -864,9 +865,9 @@ static const char* crGlslGetFsStringNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTex
     if (pCache->glVersion >= 2.1)
     {
         if (enmTexTarget == GL_TEXTURE_2D)
-            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, "", CR_GLSL_STR_TEX2D);
+            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, "", CR_GLSL_STR_2D);
         else if (enmTexTarget == GL_TEXTURE_RECTANGLE_ARB)
-            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, CR_GLSL_STR_EXT_TR, CR_GLSL_STR_TEX2DRECT);
+            return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, CR_GLSL_STR_EXT_TR, CR_GLSL_STR_2DRECT);
 
         crWarning("invalid enmTexTarget %#x", enmTexTarget);
         return NULL;
@@ -874,9 +875,9 @@ static const char* crGlslGetFsStringNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTex
     else if (pCache->glVersion >= 2.0)
     {
         if (enmTexTarget == GL_TEXTURE_2D)
-            return CR_GLSL_PATTERN_FS_NOALPHA("", "", CR_GLSL_STR_TEX2D);
+            return CR_GLSL_PATTERN_FS_NOALPHA("", "", CR_GLSL_STR_2D);
         else if (enmTexTarget == GL_TEXTURE_RECTANGLE_ARB)
-            return CR_GLSL_PATTERN_FS_NOALPHA("", CR_GLSL_STR_EXT_TR, CR_GLSL_STR_TEX2DRECT);
+            return CR_GLSL_PATTERN_FS_NOALPHA("", CR_GLSL_STR_EXT_TR, CR_GLSL_STR_2DRECT);
 
         crWarning("invalid enmTexTarget %#x", enmTexTarget);
         return NULL;
@@ -900,6 +901,7 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
     int rc = VINF_SUCCESS;
     GLchar * pBuf = NULL;
     GLuint uiProgram = 0;
+    GLint iUniform = -1;
     GLuint uiShader = pCache->pDispatch->CreateShader(GL_FRAGMENT_SHADER);
     if (!uiShader)
     {
@@ -923,11 +925,12 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
         pCache->pDispatch->GetShaderInfoLog(uiShader, 16300, NULL, pBuf);
 #ifdef DEBUG_misha
         if (compiled)
-            crDebug("compile success:\n-------------------\n%d\n--------\n", pBuf);
+            crDebug("compile success:\n-------------------\n%s\n--------\n", pBuf);
         else
 #endif
         {
-            crWarning("compile FAILURE:\n-------------------\n%d\n--------\n", pBuf);
+            Assert(0);
+            crWarning("compile FAILURE:\n-------------------\n%s\n--------\n", pBuf);
             rc = VERR_NOT_SUPPORTED;
             goto end;
         }
@@ -957,17 +960,28 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
         pCache->pDispatch->GetProgramInfoLog(uiProgram, 16300, NULL, pBuf);
 #ifdef DEBUG_misha
         if (linked)
-            crDebug("link success:\n-------------------\n%d\n--------\n", pBuf);
+            crDebug("link success:\n-------------------\n%s\n--------\n", pBuf);
         else
 #endif
         {
-            crWarning("link FAILURE:\n-------------------\n%d\n--------\n", pBuf);
+            Assert(0);
+            crWarning("link FAILURE:\n-------------------\n%s\n--------\n", pBuf);
             rc = VERR_NOT_SUPPORTED;
             goto end;
         }
     }
 
     Assert(linked);
+
+    iUniform = pCache->pDispatch->GetUniformLocation(uiProgram, "sampler0");
+    if (iUniform == -1)
+    {
+        crWarning("GetUniformLocation failed for sampler0");
+    }
+    else
+    {
+        pCache->pDispatch->Uniform1i(iUniform, 0);
+    }
 
     *puiProgram = uiProgram;
 
@@ -1087,7 +1101,7 @@ VBOXBLITTERDECL(int) CrGlslProgUseGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTe
     return VINF_SUCCESS;
 }
 
-VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(CR_GLSL_CACHE *pCache)
+VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(const CR_GLSL_CACHE *pCache)
 {
     return pCache->uNoAlpha2DProg || pCache->uNoAlpha2DRectProg;
 }

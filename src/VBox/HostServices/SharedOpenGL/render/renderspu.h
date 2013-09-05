@@ -258,6 +258,8 @@ typedef struct {
     CRHashTable *windowTable;
     CRHashTable *contextTable;
 
+    CRHashTable *dummyWindowTable;
+
     ContextInfo *defaultSharedContext;
 
 #ifndef CHROMIUM_THREADSAFE
@@ -307,7 +309,9 @@ typedef struct {
 #endif
 
 #ifdef RT_OS_DARWIN
-# ifndef VBOX_WITH_COCOA_QT
+# ifdef VBOX_WITH_COCOA_QT
+    CR_GLSL_CACHE GlobalShaders;
+# else
     RgnHandle hRootVisibleRegion;
     RTSEMFASTMUTEX syncMutex;
     EventHandlerUPP hParentEventHandler;
@@ -363,7 +367,7 @@ extern CRtsd _RenderTSD;
 #define GET_CONTEXT(T)  ContextInfo *T = GET_CONTEXT_VAL()
 
 
-
+extern void renderspuSetDefaultSharedContext(ContextInfo *pCtx);
 extern void renderspuSetVBoxConfiguration( RenderSPU *spu );
 extern void renderspuMakeVisString( GLbitfield visAttribs, char *s );
 extern VisualInfo *renderspuFindVisual(const char *displayName, GLbitfield visAttribs );
@@ -378,11 +382,9 @@ extern void renderspu_SystemGetWindowGeometry( WindowInfo *window, GLint *x, GLi
 extern void renderspu_SystemGetMaxWindowSize( WindowInfo *window, GLint *w, GLint *h );
 extern void renderspu_SystemWindowPosition( WindowInfo *window, GLint x, GLint y );
 extern void renderspu_SystemWindowVisibleRegion(WindowInfo *window, GLint cRects, const GLint* pRects);
-
-#ifdef GLX
 extern int renderspu_SystemInit();
 extern int renderspu_SystemTerm();
-#endif
+extern void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext);
 extern void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt );
 extern void renderspu_SystemMakeCurrent( WindowInfo *window, GLint windowInfor, ContextInfo *context );
 extern void renderspu_SystemSwapBuffers( WindowInfo *window, GLint flags );
@@ -404,7 +406,10 @@ extern int renderspuVBoxPresentBlitterEnter( PCR_BLITTER pBlitter, int32_t i32Ma
 extern PCR_BLITTER renderspuVBoxPresentBlitterGetAndEnter( WindowInfo *window, int32_t i32MakeCurrentUserData );
 extern PCR_BLITTER renderspuVBoxPresentBlitterEnsureCreated( WindowInfo *window, int32_t i32MakeCurrentUserData );
 extern void renderspuWindowTerm( WindowInfo *window );
-extern GLboolean renderspuWindowInit( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id );
+extern WindowInfo* renderspuGetDummyWindow(GLint visBits);
+extern void renderspuPerformMakeCurrent(WindowInfo *window, GLint nativeWindow, ContextInfo *context);
+extern GLboolean renderspuWindowInit(WindowInfo *pWindow, const char *dpyName, GLint visBits, GLint id);
+extern GLboolean renderspuWindowInitWithVisual( WindowInfo *window, VisualInfo *visual, GLboolean showIt, GLint id );
 extern GLboolean renderspuInitVisual(VisualInfo *pVisInfo, const char *displayName, GLbitfield visAttribs);
 extern void renderspuVBoxCompositorBlit ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter);
 extern void renderspuVBoxCompositorBlitStretched ( struct VBOXVR_SCR_COMPOSITOR * pCompositor, PCR_BLITTER pBlitter, GLfloat scaleX, GLfloat scaleY);

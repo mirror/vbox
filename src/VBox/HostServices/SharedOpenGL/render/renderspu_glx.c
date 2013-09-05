@@ -447,7 +447,7 @@ static int renderspuWinCmdInit()
             GLboolean bRc = renderspuInitVisual(&render_spu.WinCmdVisual, dpyName, render_spu.default_visual);
             if (bRc)
             {
-                bRc = renderspuWindowInit(&render_spu.WinCmdWindow, &render_spu.WinCmdVisual, GL_FALSE, CR_RENDER_WINCMD_ID);
+                bRc = renderspuWindowInitWithVisual(&render_spu.WinCmdWindow, &render_spu.WinCmdVisual, GL_FALSE, CR_RENDER_WINCMD_ID);
                 if (bRc)
                 {
                     XSelectInput(render_spu.WinCmdVisual.dpy, render_spu.WinCmdWindow.window, StructureNotifyMask);
@@ -457,7 +457,7 @@ static int renderspuWinCmdInit()
                 }
                 else
                 {
-                    crError("renderspuWindowInit failed");
+                    crError("renderspuWindowInitWithVisual failed");
                 }
                 /* there is no visual destroy impl currently
                  * @todo: implement */
@@ -2076,4 +2076,9 @@ void renderspu_SystemReparentWindow(WindowInfo *window)
 
     XReparentWindow(window->visual->dpy, window->window, parent, window->x, window->y);
     XSync(window->visual->dpy, False);
+}
+
+void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext)
+{
+
 }

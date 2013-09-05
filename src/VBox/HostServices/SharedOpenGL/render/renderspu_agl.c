@@ -886,3 +886,17 @@ renderspu_SystemVBoxCreateWindow(VisualInfo *visual, GLboolean showIt,
     return GL_TRUE;
 }
 
+int renderspu_SystemInit()
+{
+    return VINF_SUCCESS;
+}
+
+int renderspu_SystemTerm()
+{
+    return VINF_SUCCESS;
+}
+
+void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext)
+{
+
+}
