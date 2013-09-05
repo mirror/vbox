@@ -288,6 +288,7 @@ STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
     return S_OK;
 
 #else  /* VBOX_COM_INPROC_API_CLIENT */
+    AssertFailed();
     return VBOX_E_INVALID_OBJECT_STATE;
 #endif /* VBOX_COM_INPROC_API_CLIENT */
 }
@@ -321,18 +322,19 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
         return S_OK;
     }
 
-    HRESULT rc = E_FAIL;
-
     /* query IInternalMachineControl interface */
     mControl = aMachine;
     AssertReturn(!!mControl, E_FAIL);
 
 #ifndef VBOX_COM_INPROC_API_CLIENT
-    rc = mConsole.createObject();
+    HRESULT rc = mConsole.createObject();
     AssertComRCReturn(rc, rc);
 
     rc = mConsole->init(aMachine, mControl, aLockType);
     AssertComRCReturn(rc, rc);
+#else
+    HRESULT rc = S_OK;
+    mRemoteMachine = aMachine;
 #endif
 
     Utf8Str strTokenId(aTokenId);
@@ -899,7 +901,8 @@ STDMETHODIMP Session::OnStorageDeviceChange(IMediumAttachment *aMediumAttachment
 STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
                                           BOOL aIsSetter, BSTR *aRetValue, LONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
-#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_COM_INPROC_API_CLIENT)
+#ifdef VBOX_WITH_GUEST_PROPS
+# ifndef VBOX_COM_INPROC_API_CLIENT
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
@@ -931,9 +934,17 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
         return mConsole->getGuestProperty(aName, aRetValue, aRetTimestamp, aRetFlags);
     else
         return mConsole->setGuestProperty(aName, aValue, aFlags);
-#else /* VBOX_WITH_GUEST_PROPS not defined */
+
+# else  /* VBOX_COM_INPROC_API_CLIENT */
+    /** @todo This is nonsense, non-VM API users shouldn't need to deal with this
+     *        method call, VBoxSVC should be clever enough to see that the
+     *        session doesn't have a console! */
+    return E_ACCESSDENIED;
+# endif /* VBOX_COM_INPROC_API_CLIENT */
+
+#else  /* VBOX_WITH_GUEST_PROPS */
     ReturnComNotImplemented();
-#endif /* VBOX_WITH_GUEST_PROPS not defined */
+#endif /* VBOX_WITH_GUEST_PROPS */
 }
 
 STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
@@ -997,6 +1008,7 @@ STDMETHODIMP Session::OnlineMergeMedium(IMediumAttachment *aMediumAttachment,
                                        aSourceIdx, aTargetIdx,
                                        aProgress);
 #else
+    AssertFailed();
     return E_NOTIMPL;
 #endif
 }
@@ -1016,6 +1028,7 @@ STDMETHODIMP Session::EnableVMMStatistics(BOOL aEnable)
 
     return S_OK;
 #else
+    AssertFailed();
     return E_NOTIMPL;
 #endif
 }
@@ -1033,6 +1046,7 @@ STDMETHODIMP Session::PauseWithReason(Reason_T aReason)
 
     return mConsole->pause(aReason);
 #else
+    AssertFailed();
     return E_NOTIMPL;
 #endif
 }
@@ -1050,6 +1064,7 @@ STDMETHODIMP Session::ResumeWithReason(Reason_T aReason)
 
     return mConsole->resume(aReason);
 #else
+    AssertFailed();
     return E_NOTIMPL;
 #endif
 }
@@ -1067,6 +1082,7 @@ STDMETHODIMP Session::SaveStateWithReason(Reason_T aReason, IProgress **aProgres
 
     return mConsole->saveState(aReason, aProgress);
 #else
+    AssertFailed();
     return E_NOTIMPL;
 #endif
 }
@@ -1130,14 +1146,14 @@ HRESULT Session::unlockMachine(bool aFinalRelease, bool aFromServer)
             mConsole->uninit();
             mConsole.setNull();
         }
+#else
+        mRemoteMachine.setNull();
 #endif
     }
     else
     {
         mRemoteMachine.setNull();
-#ifndef VBOX_COM_INPROC_API_CLIENT
         mRemoteConsole.setNull();
-#endif
     }
 
     ComPtr<IProgress> progress;
