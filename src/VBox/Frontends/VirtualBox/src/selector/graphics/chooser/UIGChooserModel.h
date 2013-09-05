@@ -218,7 +218,6 @@ private:
     void prepareContextMenu();
     void prepareHandlers();
     void prepareConnections();
-    void prepareReleaseLogging();
     void loadLastSelectedItem();
 
     /* Helpers: Cleanup stuff: */
