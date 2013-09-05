@@ -186,7 +186,7 @@ static void hmR0FirstRcInit(PHMR0FIRSTRC pFirstRc)
  * @param   pFirstRc            The first return code structure.
  * @param   rc                  The status code.
  */
-static void     hmR0FirstRcSetStatus(PHMR0FIRSTRC pFirstRc, int rc)
+static void hmR0FirstRcSetStatus(PHMR0FIRSTRC pFirstRc, int rc)
 {
     if (   RT_FAILURE(rc)
         && ASMAtomicCmpXchgS32(&pFirstRc->rc, rc, VINF_SUCCESS))
@@ -385,123 +385,111 @@ static int hmR0InitIntel(uint32_t u32FeaturesECX, uint32_t u32FeaturesEDX)
         }
         if (RT_SUCCESS(g_HvmR0.lLastError))
         {
-            /* Reread in case we've changed it. */
+            /* Reread in case it was changed by hmR0InitIntelCpu(). */
             g_HvmR0.vmx.Msrs.u64FeatureCtrl = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
 
-            /** @todo r=ramshankar: This should be fixed for when the host is in SMX mode.
-             *        Probably don't need to recheck it here. It's done in
-             *        hmR0InitIntelCpu(). */
-            if (   (g_HvmR0.vmx.Msrs.u64FeatureCtrl & (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
-                ==                                    (MSR_IA32_FEATURE_CONTROL_VMXON | MSR_IA32_FEATURE_CONTROL_LOCK))
+            /*
+             * Read all relevant registers and MSRs.
+             */
+            g_HvmR0.vmx.u64HostCr4          = ASMGetCR4();
+            g_HvmR0.vmx.u64HostEfer         = ASMRdMsr(MSR_K6_EFER);
+            g_HvmR0.vmx.Msrs.u64BasicInfo   = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
+            g_HvmR0.vmx.Msrs.VmxPinCtls.u   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            g_HvmR0.vmx.Msrs.VmxProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            g_HvmR0.vmx.Msrs.VmxExit.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            g_HvmR0.vmx.Msrs.VmxEntry.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            g_HvmR0.vmx.Msrs.u64Misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
+            g_HvmR0.vmx.Msrs.u64Cr0Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+            g_HvmR0.vmx.Msrs.u64Cr0Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+            g_HvmR0.vmx.Msrs.u64Cr4Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+            g_HvmR0.vmx.Msrs.u64Cr4Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+            g_HvmR0.vmx.Msrs.u64VmcsEnum    = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+            /* VPID 16 bits ASID. */
+            g_HvmR0.uMaxAsid                = 0x10000; /* exclusive */
+
+            if (g_HvmR0.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+            {
+                g_HvmR0.vmx.Msrs.VmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                if (g_HvmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
+                    g_HvmR0.vmx.Msrs.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
+
+                if (g_HvmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
+                    g_HvmR0.vmx.Msrs.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+            }
+
+            if (!g_HvmR0.vmx.fUsingSUPR0EnableVTx)
             {
                 /*
-                 * Read all relevant registers and MSRs.
+                 * Enter root mode
                  */
-                g_HvmR0.vmx.u64HostCr4          = ASMGetCR4();
-                g_HvmR0.vmx.u64HostEfer         = ASMRdMsr(MSR_K6_EFER);
-                g_HvmR0.vmx.Msrs.u64BasicInfo   = ASMRdMsr(MSR_IA32_VMX_BASIC_INFO);
-                g_HvmR0.vmx.Msrs.VmxPinCtls.u   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-                g_HvmR0.vmx.Msrs.VmxProcCtls.u  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-                g_HvmR0.vmx.Msrs.VmxExit.u      = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-                g_HvmR0.vmx.Msrs.VmxEntry.u     = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
-                g_HvmR0.vmx.Msrs.u64Misc        = ASMRdMsr(MSR_IA32_VMX_MISC);
-                g_HvmR0.vmx.Msrs.u64Cr0Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
-                g_HvmR0.vmx.Msrs.u64Cr0Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
-                g_HvmR0.vmx.Msrs.u64Cr4Fixed0   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
-                g_HvmR0.vmx.Msrs.u64Cr4Fixed1   = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
-                g_HvmR0.vmx.Msrs.u64VmcsEnum    = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
-                /* VPID 16 bits ASID. */
-                g_HvmR0.uMaxAsid                = 0x10000; /* exclusive */
-
-                if (g_HvmR0.vmx.Msrs.VmxProcCtls.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC_USE_SECONDARY_EXEC_CTRL)
+                RTR0MEMOBJ hScatchMemObj;
+                rc = RTR0MemObjAllocCont(&hScatchMemObj, PAGE_SIZE, false /* fExecutable */);
+                if (RT_FAILURE(rc))
                 {
-                    g_HvmR0.vmx.Msrs.VmxProcCtls2.u = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
-                    if (g_HvmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & (VMX_VMCS_CTRL_PROC_EXEC2_EPT | VMX_VMCS_CTRL_PROC_EXEC2_VPID))
-                        g_HvmR0.vmx.Msrs.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
-
-                    if (g_HvmR0.vmx.Msrs.VmxProcCtls2.n.allowed1 & VMX_VMCS_CTRL_PROC_EXEC2_VMFUNC)
-                        g_HvmR0.vmx.Msrs.u64Vmfunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+                    LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,PAGE_SIZE,true) -> %Rrc\n", rc));
+                    return rc;
                 }
 
-                if (!g_HvmR0.vmx.fUsingSUPR0EnableVTx)
+                void      *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
+                RTHCPHYS   HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
+                ASMMemZeroPage(pvScatchPage);
+
+                /* Set revision dword at the beginning of the structure. */
+                *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(g_HvmR0.vmx.Msrs.u64BasicInfo);
+
+                /* Make sure we don't get rescheduled to another cpu during this probe. */
+                RTCCUINTREG fFlags = ASMIntDisableFlags();
+
+                /*
+                 * Check CR4.VMXE
+                 */
+                g_HvmR0.vmx.u64HostCr4 = ASMGetCR4();
+                if (!(g_HvmR0.vmx.u64HostCr4 & X86_CR4_VMXE))
+                {
+                    /* In theory this bit could be cleared behind our back.  Which would cause
+                       #UD faults when we try to execute the VMX instructions... */
+                    ASMSetCR4(g_HvmR0.vmx.u64HostCr4 | X86_CR4_VMXE);
+                }
+
+                /*
+                 * The only way of checking if we're in VMX root mode or not is to try and enter it.
+                 * There is no instruction or control bit that tells us if we're in VMX root mode.
+                 * Therefore, try and enter VMX root mode here.
+                 */
+                rc = VMXEnable(HCPhysScratchPage);
+                if (RT_SUCCESS(rc))
+                {
+                    g_HvmR0.vmx.fSupported = true;
+                    VMXDisable();
+                }
+                else
                 {
                     /*
-                     * Enter root mode
+                     * KVM leaves the CPU in VMX root mode. Not only is  this not allowed,
+                     * it will crash the host when we enter raw mode, because:
+                     *
+                     *   (a) clearing X86_CR4_VMXE in CR4 causes a #GP (we no longer modify
+                     *       this bit), and
+                     *   (b) turning off paging causes a #GP  (unavoidable when switching
+                     *       from long to 32 bits mode or 32 bits to PAE).
+                     *
+                     * They should fix their code, but until they do we simply refuse to run.
                      */
-                    RTR0MEMOBJ hScatchMemObj;
-                    rc = RTR0MemObjAllocCont(&hScatchMemObj, PAGE_SIZE, false /* fExecutable */);
-                    if (RT_FAILURE(rc))
-                    {
-                        LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,PAGE_SIZE,true) -> %Rrc\n", rc));
-                        return rc;
-                    }
-
-                    void      *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
-                    RTHCPHYS   HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
-                    ASMMemZeroPage(pvScatchPage);
-
-                    /* Set revision dword at the beginning of the structure. */
-                    *(uint32_t *)pvScatchPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(g_HvmR0.vmx.Msrs.u64BasicInfo);
-
-                    /* Make sure we don't get rescheduled to another cpu during this probe. */
-                    RTCCUINTREG fFlags = ASMIntDisableFlags();
-
-                    /*
-                     * Check CR4.VMXE
-                     */
-                    g_HvmR0.vmx.u64HostCr4 = ASMGetCR4();
-                    if (!(g_HvmR0.vmx.u64HostCr4 & X86_CR4_VMXE))
-                    {
-                        /* In theory this bit could be cleared behind our back.  Which would cause
-                           #UD faults when we try to execute the VMX instructions... */
-                        ASMSetCR4(g_HvmR0.vmx.u64HostCr4 | X86_CR4_VMXE);
-                    }
-
-                    /*
-                     * The only way of checking if we're in VMX root mode or not is to try and enter it.
-                     * There is no instruction or control bit that tells us if we're in VMX root mode.
-                     * Therefore, try and enter VMX root mode here.
-                     */
-                    rc = VMXEnable(HCPhysScratchPage);
-                    if (RT_SUCCESS(rc))
-                    {
-                        g_HvmR0.vmx.fSupported = true;
-                        VMXDisable();
-                    }
-                    else
-                    {
-                        /*
-                         * KVM leaves the CPU in VMX root mode. Not only is  this not allowed,
-                         * it will crash the host when we enter raw mode, because:
-                         *
-                         *   (a) clearing X86_CR4_VMXE in CR4 causes a #GP (we no longer modify
-                         *       this bit), and
-                         *   (b) turning off paging causes a #GP  (unavoidable when switching
-                         *       from long to 32 bits mode or 32 bits to PAE).
-                         *
-                         * They should fix their code, but until they do we simply refuse to run.
-                         */
-                        g_HvmR0.lLastError = VERR_VMX_IN_VMX_ROOT_MODE;
-                    }
-
-                    /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set
-                       if it wasn't so before (some software could incorrectly
-                       think it's in VMX mode). */
-                    ASMSetCR4(g_HvmR0.vmx.u64HostCr4);
-                    ASMSetFlags(fFlags);
-
-                    RTR0MemObjFree(hScatchMemObj, false);
+                    g_HvmR0.lLastError = VERR_VMX_IN_VMX_ROOT_MODE;
+                    Assert(g_HvmR0.vmx.fSupported == false);
                 }
-            }
-            else
-            {
-                AssertFailed(); /* can't hit this case anymore */
-                g_HvmR0.lLastError = VERR_VMX_ILLEGAL_FEATURE_CONTROL_MSR;
+
+                /* Restore CR4 again; don't leave the X86_CR4_VMXE flag set
+                   if it wasn't so before (some software could incorrectly
+                   think it's in VMX mode). */
+                ASMSetCR4(g_HvmR0.vmx.u64HostCr4);
+                ASMSetFlags(fFlags);
+
+                RTR0MemObjFree(hScatchMemObj, false);
             }
 
             if (g_HvmR0.vmx.fSupported)
             {
-                /* Call the global VT-x initialization routine. */
                 rc = VMXR0GlobalInit();
                 if (RT_FAILURE(rc))
                     g_HvmR0.lLastError = rc;
