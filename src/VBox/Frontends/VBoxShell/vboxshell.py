@@ -3536,28 +3536,32 @@ def main(argv):
             asLocations.append(sScriptDir);
 
 
-        vpp = os.environ.get("VBOX_PROGRAM_PATH")
-        if vpp is None:
+        sPath = os.environ.get("VBOX_PROGRAM_PATH")
+        if sPath is None:
             for sCurLoc in asLocations:
-                print "checking '%s'..." % (sCurLoc,)
-
                 if   os.path.isfile(os.path.join(sCurLoc, "VirtualBox")) \
                   or os.path.isfile(os.path.join(sCurLoc, "VirtualBox.exe")):
                     print "Autodetected VBOX_PROGRAM_PATH as", sCurLoc
                     os.environ["VBOX_PROGRAM_PATH"] = sCurLoc
-                    sys.path.append(os.path.join(sCurLoc, "sdk", "installer"))
+                    sPath = sCurLoc
+                    break;
+        if sPath:
+            sys.path.append(os.path.join(sPath, "sdk", "installer"))
 
-        vsp = os.environ.get("VBOX_SDK_PATH")
-        if vsp is None:
+        sPath = os.environ.get("VBOX_SDK_PATH")
+        if sPath is None:
             for sCurLoc in asLocations:
                 if os.path.isfile(os.path.join(sCurLoc, "sdk", "bindings", "VirtualBox.xidl")):
                     print "Autodetected VBOX_SDK_PATH as", sCurLoc
                     os.environ["VBOX_SDK_PATH"] = sCurLoc
-                    sTmp = os.path.join(sCurLoc, 'sdk', 'bindings', 'xpcom', 'python');
-                    if os.path.isdir(sTmp):
-                        sys.path.append(sTmp);
-                    del sTmp;
-        del vsp, vpp, asLocations;
+                    sPath = sCurLoc;
+                    break;
+        if sPath:
+            sTmp = os.path.join(sCurLoc, 'sdk', 'bindings', 'xpcom', 'python');
+            if os.path.isdir(sTmp):
+                sys.path.append(sTmp);
+            del sTmp;
+        del sPath, asLocations;
 
 
     #
