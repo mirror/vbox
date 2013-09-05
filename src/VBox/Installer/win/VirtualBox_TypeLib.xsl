@@ -26,6 +26,8 @@
 
 <xsl:strip-space elements="*"/>
 
+<xsl:param name="a_sTarget">all</xsl:param>
+
 
 <!--
 //  templates
@@ -45,6 +47,7 @@
  *
  *  Source    : src/VBox/Main/idl/VirtualBox.xidl
  *  Generator : src/VBox/Installer/VirtualBox_TypeLib.xsl
+ *  Arguments : a_sTarget=<xsl:value-of select="$a_sTarget"/>
  */
   </xsl:comment>
   <xsl:apply-templates/>
@@ -66,7 +69,14 @@
       <AppId>
         <xsl:attribute name="Id"><xsl:value-of select="@appUuid"/></xsl:attribute>
         <xsl:attribute name="Description"><xsl:value-of select="@name"/> Application</xsl:attribute>
-        <xsl:apply-templates select="module/class"/>
+        <xsl:choose>
+          <xsl:when test="$a_sTarget = 'VBoxClient-x86'">
+            <xsl:apply-templates select="module[@name='VBoxC']/class"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:apply-templates select="module/class"/>
+          </xsl:otherwise>
+        </xsl:choose>
       </AppId>
     </TypeLib>
   </Include>

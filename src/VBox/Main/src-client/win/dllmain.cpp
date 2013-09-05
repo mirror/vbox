@@ -31,6 +31,10 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 CComModule _Module;
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -39,10 +43,43 @@ BEGIN_OBJECT_MAP(ObjectMap)
 END_OBJECT_MAP()
 
 
+/** @def WITH_MANUAL_CLEANUP
+ * Manually clean up the registry. */
+#if defined(DEBUG) && !defined(VBOX_IN_32_ON_64_MAIN_API)
+//# define WITH_MANUAL_CLEANUP
+#endif
+
+
+#ifndef WITH_MANUAL_CLEANUP
+/** Type library GUIDs to clean up manually. */
+static const char * const g_apszTypelibGuids[] =
+{
+    "{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}",
+    "{d7569351-1750-46f0-936e-bd127d5bc264}",
+};
+
+/** Same as above but with a "Typelib\\" prefix. */
+static const char * const g_apszTypelibGuidKeys[] =
+{
+    "TypeLib\\{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}",
+    "TypeLib\\{d7569351-1750-46f0-936e-bd127d5bc264}",
+};
+
+/** Type library version to clean up manually. */
+static const char * const g_apszTypelibVersions[] =
+{
+    "1.0",
+    "1.3",
+};
+#endif
+
+
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
+#ifndef WITH_MANUAL_CLEANUP
 static void removeOldMess(void);
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -88,7 +125,6 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
 STDAPI DllRegisterServer(void)
 {
     // registers object, typelib and all interfaces in typelib
-    removeOldMess();
     return _Module.RegisterServer(TRUE);
 }
 
@@ -97,14 +133,120 @@ STDAPI DllRegisterServer(void)
 
 STDAPI DllUnregisterServer(void)
 {
-    return _Module.UnregisterServer(TRUE);
+    HRESULT hrc = _Module.UnregisterServer(TRUE);
+#ifndef WITH_MANUAL_CLEANUP
+    removeOldMess();
+#endif
+    return hrc;
+}
+
+#ifndef WITH_MANUAL_CLEANUP
+
+/**
+ * Checks if the typelib GUID is one of the ones we wish to clean up.
+ *
+ * @returns true if it should be cleaned up, false if not.
+ * @param   pszTypelibGuid  The typelib GUID as bracketed string.
+ */
+static bool isTypelibGuidToRemove(const char *pszTypelibGuid)
+{
+    unsigned i = RT_ELEMENTS(g_apszTypelibGuids);
+    while (i-- > 0)
+        if (!stricmp(g_apszTypelibGuids[i], pszTypelibGuid))
+            return true;
+    return false;
 }
 
 
+/**
+ * Checks if the typelib version is one of the ones we wish to clean up.
+ *
+ * @returns true if it should be cleaned up, false if not.
+ * @param   pszTypelibVer   The typelib version as string.
+ */
+static bool isTypelibVersionToRemove(const char *pszTypelibVer)
+{
+    unsigned i = RT_ELEMENTS(g_apszTypelibVersions);
+    while (i-- > 0)
+        if (!strcmp(g_apszTypelibVersions[i], pszTypelibVer))
+            return true;
+    return false;
+}
+
 
 /**
- * Hack to clean out the interfaces belonging to the old typelib on development
+ * Hack to clean out the class IDs belonging to obsolete typelibs on development
  * boxes and such likes.
+ */
+static void removeOldClassIDs(HKEY hkeyClassesRoot)
+{
+    HKEY hkeyClsId;
+    LONG rc = RegOpenKeyExA(hkeyClassesRoot, "CLSID", NULL, DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE,
+                            &hkeyClsId);
+    if (rc == ERROR_SUCCESS)
+    {
+        for (DWORD idxKey = 0;; idxKey++)
+        {
+            char szCurNm[128 + 128];
+            DWORD cbCurNm = 128;
+            rc = RegEnumKeyExA(hkeyClsId, idxKey, szCurNm, &cbCurNm, NULL, NULL, NULL, NULL);
+            if (rc == ERROR_NO_MORE_ITEMS)
+                break;
+
+            /*
+             * Get the typelib GUID and program ID with the class ID.
+             */
+            AssertBreak(rc == ERROR_SUCCESS);
+            strcpy(&szCurNm[cbCurNm], "\\TypeLib");
+            HKEY hkeyIfTypelib;
+            rc = RegOpenKeyExA(hkeyClsId, szCurNm, NULL, KEY_QUERY_VALUE, &hkeyIfTypelib);
+            if (rc != ERROR_SUCCESS)
+                continue;
+
+            char szTypelibGuid[128];
+            DWORD cbValue = sizeof(szTypelibGuid) - 1;
+            rc = RegQueryValueExA(hkeyIfTypelib, NULL, NULL, NULL, (PBYTE)&szTypelibGuid[0], &cbValue);
+            if (rc != ERROR_SUCCESS)
+                cbValue = 0;
+            szTypelibGuid[cbValue] = '\0';
+            RegCloseKey(hkeyIfTypelib);
+            if (!isTypelibGuidToRemove(szTypelibGuid))
+                continue;
+
+            /* ProgId */
+            strcpy(&szCurNm[cbCurNm], "\\ProgId");
+            HKEY hkeyIfProgId;
+            rc = RegOpenKeyExA(hkeyClsId, szCurNm, NULL, KEY_QUERY_VALUE, &hkeyIfProgId);
+            if (rc != ERROR_SUCCESS)
+                continue;
+
+            char szProgId[64];
+            cbValue = sizeof(szProgId) - 1;
+            rc = RegQueryValueExA(hkeyClsId, NULL, NULL, NULL, (PBYTE)&szProgId[0], &cbValue);
+            if (rc != ERROR_SUCCESS)
+                cbValue = 0;
+            szProgId[cbValue] = '\0';
+            RegCloseKey(hkeyClsId);
+            if (strnicmp(szProgId, RT_STR_TUPLE("VirtualBox.")))
+                continue;
+
+            /*
+             * Ok, it's an orphaned VirtualBox interface. Delete it.
+             */
+            szCurNm[cbCurNm] = '\0';
+            RTAssertMsg2("Should delete HCR/CLSID/%s\n", szCurNm);
+            //rc = SHDeleteKeyA(hkeyClsId, szCurNm);
+            Assert(rc == ERROR_SUCCESS);
+        }
+
+        RegCloseKey(hkeyClsId);
+    }
+}
+
+
+/**
+ * Hack to clean out the interfaces belonging to obsolete typelibs on
+ * development boxes and such likes.
  */
 static void removeOldInterfaces(HKEY hkeyClassesRoot)
 {
@@ -137,7 +279,7 @@ static void removeOldInterfaces(HKEY hkeyClassesRoot)
             if (rc != ERROR_SUCCESS)
                 cbValue = 0;
             szTypelibGuid[cbValue] = '\0';
-            if (strcmp(szTypelibGuid, "{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}"))
+            if (!isTypelibGuidToRemove(szTypelibGuid))
             {
                 RegCloseKey(hkeyIfTypelib);
                 continue;
@@ -152,7 +294,7 @@ static void removeOldInterfaces(HKEY hkeyClassesRoot)
 
             RegCloseKey(hkeyIfTypelib);
 
-            if (strcmp(szTypelibVer, "1.3"))
+            if (!isTypelibVersionToRemove(szTypelibVer))
                 continue;
 
 
@@ -171,58 +313,66 @@ static void removeOldInterfaces(HKEY hkeyClassesRoot)
 
 
 /**
- * Hack to clean out the old typelib on development boxes and such.
+ * Hack to clean obsolete typelibs on development boxes and such.
  */
 static void removeOldTypelib(HKEY hkeyClassesRoot)
 {
     /*
      * Open it and verify the identity.
      */
-    HKEY hkeyOldTyplib;
-    LONG rc = RegOpenKeyExA(hkeyClassesRoot, "TypeLib\\{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}", NULL,
-                            DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hkeyOldTyplib);
-    if (rc == ERROR_SUCCESS)
+    unsigned i = RT_ELEMENTS(g_apszTypelibGuidKeys);
+    while (i-- > 0)
     {
-        HKEY hkeyVer1Dot3;
-        rc = RegOpenKeyExA(hkeyOldTyplib, "1.3", NULL, KEY_READ, &hkeyVer1Dot3);
+        HKEY hkeyTyplib;
+        LONG rc = RegOpenKeyExA(hkeyClassesRoot, g_apszTypelibGuidKeys[i], NULL,
+                                DELETE | KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE, &hkeyTyplib);
         if (rc == ERROR_SUCCESS)
         {
-            char szValue[128];
-            DWORD cbValue = sizeof(szValue) - 1;
-            rc = RegQueryValueExA(hkeyVer1Dot3, NULL, NULL, NULL, (PBYTE)&szValue[0], &cbValue);
-            if (rc == ERROR_SUCCESS)
+            unsigned iVer = RT_ELEMENTS(g_apszTypelibVersions);
+            while (iVer-- > 0)
             {
-                szValue[cbValue] = '\0';
-                if (!strcmp(szValue, "VirtualBox Type Library"))
+                HKEY hkeyVer;
+                rc = RegOpenKeyExA(hkeyTyplib, g_apszTypelibVersions[iVer], NULL, KEY_READ, &hkeyVer);
+                if (rc == ERROR_SUCCESS)
                 {
-                    RegCloseKey(hkeyVer1Dot3);
-                    hkeyVer1Dot3 = NULL;
+                    char szValue[128];
+                    DWORD cbValue = sizeof(szValue) - 1;
+                    rc = RegQueryValueExA(hkeyVer, NULL, NULL, NULL, (PBYTE)&szValue[0], &cbValue);
+                    if (rc == ERROR_SUCCESS)
+                    {
+                        szValue[cbValue] = '\0';
+                        if (!strcmp(szValue, "VirtualBox Type Library"))
+                        {
+                            RegCloseKey(hkeyVer);
+                            hkeyVer = NULL;
 
-                    /*
-                     * Delete the type library.
-                     */
-                    //RTAssertMsg2("Should delete HCR/TypeLib/{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}/1.3\n");
-                    rc = SHDeleteKeyA(hkeyOldTyplib, "1.3");
-                    Assert(rc == ERROR_SUCCESS);
+                            /*
+                             * Delete the type library.
+                             */
+                            //RTAssertMsg2("Should delete HCR\\%s\\%s\n", g_apszTypelibGuidKeys[i], g_apszTypelibVersions[iVer]);
+                            rc = SHDeleteKeyA(hkeyTyplib, g_apszTypelibVersions[iVer]);
+                            Assert(rc == ERROR_SUCCESS);
+                        }
+                    }
+
+                    if (hkeyVer != NULL)
+                        RegCloseKey(hkeyVer);
                 }
             }
+            RegCloseKey(hkeyTyplib);
 
-            if (hkeyVer1Dot3 != NULL)
-                RegCloseKey(hkeyVer1Dot3);
+            /*
+             * The typelib key should be empty now, so we can try remove it (non-recursively).
+             */
+            rc = RegDeleteKeyA(hkeyClassesRoot, g_apszTypelibGuidKeys[i]);
+            Assert(rc == ERROR_SUCCESS);
         }
-        RegCloseKey(hkeyOldTyplib);
-
-        /*
-         * The typelib key should be empty now, so we can try remove it (non-recursively).
-         */
-        rc = RegDeleteKeyA(hkeyClassesRoot, "TypeLib\\{46137EEC-703B-4FE5-AFD4-7C9BBBBA0259}");
-        Assert(rc == ERROR_SUCCESS);
     }
 }
 
 
 /**
- * Hack to clean out the old typelib on development boxes and such.
+ * Hack to clean out obsolete typelibs on development boxes and such.
  */
 static void removeOldMess(void)
 {
@@ -231,6 +381,7 @@ static void removeOldMess(void)
      */
     removeOldTypelib(HKEY_CLASSES_ROOT);
     removeOldInterfaces(HKEY_CLASSES_ROOT);
+    removeOldClassIDs(HKEY_CLASSES_ROOT);
 
     /*
      * Wow64 if present.
@@ -242,8 +393,11 @@ static void removeOldMess(void)
     {
         removeOldTypelib(hkeyWow64);
         removeOldInterfaces(hkeyWow64);
+        removeOldClassIDs(hkeyWow64);
 
         RegCloseKey(hkeyWow64);
     }
 }
+
+#endif /* WITH_MANUAL_CLEANUP */
 

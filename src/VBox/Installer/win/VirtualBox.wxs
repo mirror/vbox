@@ -334,6 +334,16 @@
                         </Component>
                     </Directory>
 
+<?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+                    <!-- The 32-bit client COM component (see also cp_MainCom below). -->
+                    <Component Id="cp_MainCOM_x86" Guid="B600824E-4A25-2EB3-4B44-3D8CB7F9B92D" Win64="no">
+                        <File Id="VBoxClient_x86" Name="VBoxClient-x86.dll"
+                            Source="$(env.PATH_OUT)\bin\VBoxClient-x86.dll" KeyPath="yes">
+                        </File>
+                        <?include $(env.PATH_TARGET)\VirtualBox_TypeLib_x86.wxi ?>
+                    </Component>
+<?endif?>
+
                     <!-- COM components have a separate entry mainly because of the KeyPath attribute (that hints the
                          TypeLib element where to take the TLB resource from) may appear only once per Component. -->
                     <Component Id="cp_MainCOM" Guid="CD4A3C6C-C2D5-428D-90A1-B6DA3D0777D6" Win64="$(var.Property_Win64)">
@@ -695,6 +705,9 @@
             <ComponentRef Id="cp_Docs" />
 <?endif?>
             <ComponentRef Id="cp_NLS" />
+<?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
+            <ComponentRef Id="cp_MainCOM_x86" />
+<?endif?>
             <ComponentRef Id="cp_MainCOM" />
             <ComponentRef Id="cp_MainBinaries" />
 <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
