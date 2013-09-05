@@ -24,7 +24,11 @@
 #include "COMDefs.h"
 #include "UIThreadPool.h"
 
+/* Other VBox defines: */
+#define LOG_GROUP LOG_GROUP_GUI
+
 /* Other VBox includes: */
+#include <VBox/log.h>
 #include <VBox/sup.h>
 
 /* Worker-thread prototype.
@@ -257,7 +261,7 @@ void UIThreadWorker::setBusy(bool fBusy)
 
 void UIThreadWorker::run()
 {
-//    printf("UIThreadWorker #%d: Started...\n", m_iIndex);
+//    LogRelFlow(("UIThreadWorker #%d: Started...\n", m_iIndex));
 
     /* Initialize COM: */
     COMBase::InitializeCOM(false);
@@ -266,10 +270,10 @@ void UIThreadWorker::run()
     while (UITask *pTask = m_pPool->dequeueTask(this))
     {
         /* Process task: */
-//        printf("UIThreadWorker #%d: Task acquired...\n", m_iIndex);
+//        LogRelFlow(("UIThreadWorker #%d: Task acquired...\n", m_iIndex));
         if (!m_pPool->isTerminating())
             pTask->start();
-//        printf("UIThreadWorker #%d: Task processed!\n", m_iIndex);
+//        LogRelFlow(("UIThreadWorker #%d: Task processed!\n", m_iIndex));
     }
 
     /* Cleanup COM: */
@@ -278,7 +282,7 @@ void UIThreadWorker::run()
     /* Notify listener: */
     emit sigFinished(this);
 
-//    printf("UIThreadWorker #%d: Finished!\n", m_iIndex);
+//    LogRelFlow(("UIThreadWorker #%d: Finished!\n", m_iIndex));
 }
 
 
