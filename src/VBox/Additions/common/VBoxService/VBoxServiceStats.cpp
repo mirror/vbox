@@ -453,30 +453,30 @@ static void VBoxServiceVMStatsReport(void)
          */
         uint64_t u64Total = 0, u64Free = 0, u64Buffers = 0, u64Cached = 0, u64PagedTotal = 0;
         int rc = -1;
-        kstat_t *pStatPages = kstat_lookup(pStatKern, "unix", 0 /* instance */, "system_pages");
+        kstat_t *pStatPages = kstat_lookup(pStatKern, (char *)"unix", 0 /* instance */, (char *)"system_pages");
         if (pStatPages)
         {
             rc = kstat_read(pStatKern, pStatPages, NULL /* optional-copy-buf */);
             if (rc != -1)
             {
                 kstat_named_t *pStat = NULL;
-                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, "pagestotal");
+                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, (char *)"pagestotal");
                 if (pStat)
                     u64Total = pStat->value.ul;
 
-                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, "freemem");
+                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, (char *)"freemem");
                 if (pStat)
                     u64Free = pStat->value.ul;
             }
         }
 
-        kstat_t *pStatZFS = kstat_lookup(pStatKern, "zfs", 0 /* instance */, "arcstats");
+        kstat_t *pStatZFS = kstat_lookup(pStatKern, (char *)"zfs", 0 /* instance */, (char *)"arcstats");
         if (pStatZFS)
         {
             rc = kstat_read(pStatKern, pStatZFS, NULL /* optional-copy-buf */);
             if (rc != -1)
             {
-                kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(pStatZFS, "size");
+                kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(pStatZFS, (char *)"size");
                 if (pStat)
                     u64Cached = pStat->value.ul;
             }
@@ -486,14 +486,14 @@ static void VBoxServiceVMStatsReport(void)
          * The vminfo are accumulative counters updated every "N" ticks. Let's get the
          * number of stat updates so far and use that to divide the swap counter.
          */
-        kstat_t *pStatInfo = kstat_lookup(pStatKern, "unix", 0 /* instance */, "sysinfo");
+        kstat_t *pStatInfo = kstat_lookup(pStatKern, (char *)"unix", 0 /* instance */, (char *)"sysinfo");
         if (pStatInfo)
         {
             sysinfo_t SysInfo;
             rc = kstat_read(pStatKern, pStatInfo, &SysInfo);
             if (rc != -1)
             {
-                kstat_t *pStatVMInfo = kstat_lookup(pStatKern, "unix", 0 /* instance */, "vminfo");
+                kstat_t *pStatVMInfo = kstat_lookup(pStatKern, (char *)"unix", 0 /* instance */, (char *)"vminfo");
                 if (pStatVMInfo)
                 {
                     vminfo_t VMInfo;
@@ -716,3 +716,4 @@ VBOXSERVICE g_VMStatistics =
     VBoxServiceVMStatsStop,
     VBoxServiceVMStatsTerm
 };
+
