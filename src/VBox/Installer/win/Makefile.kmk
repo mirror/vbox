@@ -418,6 +418,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 			$(VBOX_WIN_INST_OUT_DIR)/Shortcuts_StartMenu.wxi \
 			$(PATH_SUB_CURRENT)/UserInterface.wxi \
 			$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi \
+			$(if $(VBOX_WITH_32_ON_64_MAIN_API),$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi,) \
 			$(VBOX_WIN_INST_OUT_DIR)/VBoxKey.wxi \
 			$(VBOX_WIN_INST_OUT_DIR)/VBoxGuiNLS.wxi \
 			$(VBOX_MSI_DEPENDENCIES) \
@@ -446,6 +447,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_$(lang).wixobj: \
 		-E 'VBOX_VERSION_MINOR_INST=$(VBOX_VERSION_MINOR)' \
 		-E 'VBOX_SIGNING_MODE=$(strip $(if $(VBOX_SIGNING_MODE),$(VBOX_SIGNING_MODE),none))' \
 		-E 'VBOX_GUI_USE_QGL=$(if $(VBOX_GUI_USE_QGL),yes,no)' \
+		-E 'VBOX_WITH_32_ON_64_MAIN_API=$(if $(VBOX_WITH_32_ON_64_MAIN_API),yes,no)' \
 		-E 'VBOX_WITH_ADDITIONS_PACKING=$(if $(VBOX_WITH_ADDITIONS_PACKING),yes,no)' \
 		-E 'VBOX_WITH_COMBINED_PACKAGE=$(if $(VBOX_WITH_COMBINED_PACKAGE),yes,no)' \
 		-E 'VBOX_WITH_CROGL=$(if $(VBOX_WITH_CROGL),yes,no)' \
@@ -499,6 +501,15 @@ $(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib.wxi: \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
 	$(VBOX_XSLTPROC) -o $@ $< $(VBOX_XIDL_FILE)
+
+$(VBOX_WIN_INST_OUT_DIR)/VirtualBox_TypeLib_x86.wxi: \
+		$(PATH_SUB_CURRENT)/VirtualBox_TypeLib.xsl \
+		$(VBOX_XIDL_FILE) \
+		| $$(dir $$@)
+	$(VBOX_XSLTPROC) --stringparam "a_sTarget" "VBoxClient-x86"  -o $@.tmp $< $(VBOX_XIDL_FILE)
+	$(SED) -e 's/VBoxC/VBoxClient_x86/g' --output $@ $@.tmp
+	$(RM) -f $@.tmp
+
 
 #
 # Construct the list of GUI translations.

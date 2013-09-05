@@ -6,7 +6,7 @@ REM (both inproc and out-of-process)
 REM
 
 REM
-REM Copyright (C) 2006-2011 Oracle Corporation
+REM Copyright (C) 2006-2013 Oracle Corporation
 REM
 REM This file is part of VirtualBox Open Source Edition (OSE), as
 REM available from http://www.virtualbox.org. This file is free software;
@@ -94,13 +94,31 @@ cd "%_SCRIPT_CURDIR%"
 REM
 REM Do the registrations.
 REM
-:register
+if "%ProgramW6432%x" == "x" goto register_x86
+goto register_amd64
+
+:register_x86
 @echo on
-%_VBOX_DIR%VBoxSVC.exe /ReregServer
+%_VBOX_DIR%VBoxSVC.exe /UnregServer
 regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
+@if "%1" == "-u" goto end
+%_VBOX_DIR%VBoxSVC.exe /RegServer
 regsvr32 /s    %_VBOX_DIR%VBoxC.dll
+@echo off
+goto end
+
+REM Unregister both first, then register them. The order matters here.
+:register_amd64
+@echo on
+%_VBOX_DIR%VBoxSVC.exe /UnregServer
+%windir%\syswow64\regsvr32 /s /u %_VBOX_DIR%VBoxClient-x86.dll
+%windir%\system32\regsvr32 /s /u %_VBOX_DIR%VBoxC.dll
+@if "%1" == "-u" goto end
+%_VBOX_DIR%VBoxSVC.exe /RegServer
+%windir%\system32\regsvr32 /s    %_VBOX_DIR%VBoxC.dll
+%windir%\syswow64\regsvr32 /s    %_VBOX_DIR%VBoxClient-x86.dll
 @echo off
 
 :end
-endlocal
+@endlocal
 
