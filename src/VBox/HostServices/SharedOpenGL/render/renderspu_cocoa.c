@@ -186,3 +186,106 @@ void renderspu_SystemWindowVisibleRegion(WindowInfo *pWinInfo, GLint cRects, con
 void renderspu_SystemWindowApplyVisibleRegion(WindowInfo *pWinInfo)
 {
 }
+
+int renderspu_SystemInit()
+{
+    return VINF_SUCCESS;
+}
+
+int renderspu_SystemTerm()
+{
+    CrGlslTerm(&render_spu.GlobalShaders);
+    return VINF_SUCCESS;
+}
+
+typedef struct CR_RENDER_CTX_INFO
+{
+    ContextInfo * pContext;
+    WindowInfo * pWindow;
+} CR_RENDER_CTX_INFO;
+
+void renderspuCtxInfoInitCurrent(CR_RENDER_CTX_INFO *pInfo)
+{
+    GET_CONTEXT(pCurCtx);
+    pInfo->pContext = pCurCtx;
+    pInfo->pWindow = pCurCtx->currentWindow;
+}
+
+void renderspuCtxInfoRestoreCurrent(CR_RENDER_CTX_INFO *pInfo)
+{
+    GET_CONTEXT(pCurCtx);
+    if (pCurCtx == pInfo->pContext && (!pCurCtx || pCurCtx->currentWindow == pInfo->pWindow))
+        return;
+    renderspuPerformMakeCurrent(pInfo->pWindow, 0, pInfo->pContext);
+}
+
+GLboolean renderspuCtxSetCurrentWithAnyWindow(ContextInfo * pContext, CR_RENDER_CTX_INFO *pInfo)
+{
+    WindowInfo * window;
+    renderspuCtxInfoInitCurrent(pInfo);
+
+    if (pInfo->pContext == pContext)
+        return GL_TRUE;
+
+    window = pContext->currentWindow;
+    if (!window)
+    {
+        window = renderspuGetDummyWindow(pContext->BltInfo.Base.visualBits);
+        if (!window)
+        {
+            crWarning("renderspuGetDummyWindow failed");
+            return GL_FALSE;
+        }
+    }
+
+    Assert(window);
+
+    renderspuPerformMakeCurrent(window, 0, pContext);
+    return GL_TRUE;
+}
+
+void renderspu_SystemDefaultSharedContextChanged(ContextInfo *fromContext, ContextInfo *toContext)
+{
+    CRASSERT(fromContext != toContext);
+
+    if (!CrGlslIsInited(&render_spu.GlobalShaders))
+    {
+        CrGlslInit(&render_spu.GlobalShaders, render_spu.blitterDispatch);
+    }
+
+    if (fromContext)
+    {
+        if (CrGlslNeedsCleanup(&render_spu.GlobalShaders))
+        {
+            CR_RENDER_CTX_INFO Info;
+            if (renderspuCtxSetCurrentWithAnyWindow(fromContext, &Info))
+            {
+                CrGlslCleanup(&render_spu.GlobalShaders);
+                renderspuCtxInfoRestoreCurrent(&Info);
+            }
+            else
+                crWarning("renderspuCtxSetCurrentWithAnyWindow failed!");
+        }
+    }
+    else
+    {
+        CRASSERT(!CrGlslNeedsCleanup(&render_spu.GlobalShaders));
+    }
+
+    CRASSERT(!CrGlslNeedsCleanup(&render_spu.GlobalShaders));
+
+    if (toContext)
+    {
+        CR_RENDER_CTX_INFO Info;
+        if (renderspuCtxSetCurrentWithAnyWindow(toContext, &Info))
+        {
+            int rc = CrGlslProgGenAllNoAlpha(&render_spu.GlobalShaders);
+            if (!RT_SUCCESS(rc))
+                crWarning("CrGlslProgGenAllNoAlpha failed, rc %d", rc);
+
+            renderspuCtxInfoRestoreCurrent(&Info);
+        }
+        else
+            crWarning("renderspuCtxSetCurrentWithAnyWindow failed!");
+    }
+}

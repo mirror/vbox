@@ -44,6 +44,11 @@ DECLINLINE(void) CrGlslInit(CR_GLSL_CACHE *pCache, SPUDispatchTable *pDispatch)
     pCache->pDispatch = pDispatch;
 }
 
+DECLINLINE(bool) CrGlslIsInited(const CR_GLSL_CACHE *pCache)
+{
+    return !!pCache->pDispatch;
+}
+
 /* clients should set proper context before calling these funcs */
 VBOXBLITTERDECL(bool) CrGlslIsSupported(CR_GLSL_CACHE *pCache);
 VBOXBLITTERDECL(int) CrGlslProgGenAllNoAlpha(CR_GLSL_CACHE *pCache);
@@ -51,7 +56,7 @@ VBOXBLITTERDECL(int) CrGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTa
 VBOXBLITTERDECL(int) CrGlslProgUseGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget);
 VBOXBLITTERDECL(int) CrGlslProgUseNoAlpha(const CR_GLSL_CACHE *pCache, GLenum enmTexTarget);
 VBOXBLITTERDECL(void) CrGlslProgClear(const CR_GLSL_CACHE *pCache);
-VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(CR_GLSL_CACHE *pCache);
+VBOXBLITTERDECL(bool) CrGlslNeedsCleanup(const CR_GLSL_CACHE *pCache);
 VBOXBLITTERDECL(void) CrGlslCleanup(CR_GLSL_CACHE *pCache);
 VBOXBLITTERDECL(void) CrGlslTerm(CR_GLSL_CACHE *pCache);
 

@@ -1088,7 +1088,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                 m_pBlitter = RTMemAlloc(sizeof (*m_pBlitter));
                 if (m_pBlitter)
                 {
-                    int rc = CrBltInit(m_pBlitter, NULL, false, false, NULL, render_spu.blitterDispatch);
+                    int rc = CrBltInit(m_pBlitter, NULL, false, false, &render_spu.GlobalShaders, render_spu.blitterDispatch);
                     if (RT_SUCCESS(rc))
                     {
                         DEBUG_MSG(("blitter created successfully for view 0x%p\n", (void*)self));
@@ -1327,7 +1327,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                         pSrcRect = &SrcRect;
                     }
                     
-                    CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags);
+                    CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags | CRBLT_F_NOALPHA);
                 }
                 CrBltLeave(m_pBlitter);
             }
@@ -1451,7 +1451,7 @@ static void vboxCtxLeave(PVBOX_CR_RENDER_CTX_INFO pCtxInfo)
                                 pSrcRect = &SrcRect;
                             }
                     
-                            CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags);
+                            CrBltBlitTexMural(m_pBlitter, true, &pEntry->Tex, pSrcRect, pDstRect, 1, fFlags | CRBLT_F_NOALPHA);
                         }
                         CrBltLeave(m_pBlitter);
                     }
