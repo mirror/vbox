@@ -51,6 +51,7 @@ class CMachine;
 class CMedium;
 class CUSBDevice;
 class QSpinBox;
+class UIMediumEnumerator;
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////
@@ -252,9 +253,9 @@ public:
     /* API: Medium-enumeration stuff: */
     void startMediumEnumeration(bool fForceStart = true);
     bool agressiveCaching() const { return mAgressiveCaching; }
-    bool isMediumEnumerationInProgress() const { return !!m_pMediumEnumerationThread; }
+    bool isMediumEnumerationInProgress() const;
     UIMedium medium(const QString &strMediumID) const;
-    const VBoxMediaList &currentMediaList() const { return m_mediums; }
+    QList<QString> mediumIDs() const;
 
     /* various helpers */
 
@@ -394,7 +395,6 @@ protected slots:
 
 protected:
 
-    bool event(QEvent *pEvent);
     bool eventFilter (QObject *, QEvent *);
 
 private:
@@ -425,8 +425,8 @@ private:
     /** Whether to show error message boxes for VM start errors. */
     bool mShowStartVMErrors;
 
-    QThread *m_pMediumEnumerationThread;
-    VBoxMediaList m_mediums;
+    /* Variable: Medium-enumeration stuff: */
+    UIMediumEnumerator *m_pMediumEnumerator;
 
     RenderMode vm_render_mode;
     const char * vm_render_mode_str;

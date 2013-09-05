@@ -36,23 +36,22 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+QString UIMedium::m_sstrNullID = QUuid().toString().remove('{').remove('}');
 QString UIMedium::m_sstrTable = QString("<table>%1</table>");
 QString UIMedium::m_sstrRow = QString("<tr><td>%1</td></tr>");
 
 UIMedium::UIMedium()
     : m_type(UIMediumType_Invalid)
     , m_state(KMediumState_NotCreated)
-    , m_pParent(0)
 {
     refresh();
 //    printf("UIMedium: New NULL medium created.\n");
 }
 
-UIMedium::UIMedium(const CMedium &medium, UIMediumType type, UIMedium *pParent /*= 0*/)
+UIMedium::UIMedium(const CMedium &medium, UIMediumType type)
     : m_medium(medium)
     , m_type(type)
     , m_state(KMediumState_NotCreated)
-    , m_pParent(pParent)
 {
     refresh();
 //    printf("UIMedium: New medium with ID={%s} created.\n", id().toAscii().constData());
@@ -62,7 +61,6 @@ UIMedium::UIMedium(const CMedium &medium, UIMediumType type, KMediumState state)
     : m_medium(medium)
     , m_type(type)
     , m_state(state)
-    , m_pParent(0)
 {
     refresh();
 //    printf("UIMedium: New medium with ID={%s} created (with known state).\n", id().toAscii().constData());
@@ -105,7 +103,8 @@ UIMedium& UIMedium::operator=(const UIMedium &other)
     m_machineIds = other.machineIds();
     m_curStateMachineIds = other.curStateMachineIds();
 
-    m_pParent = other.parent();
+    m_strParentID = other.parentID();
+    m_strRootID = other.rootID();
 
     m_noDiffs = other.cache();
 
@@ -193,6 +192,9 @@ void UIMedium::refresh()
             m_fHidden = true;
     }
 
+    /* Initialize parent/root IDs: */
+    m_strParentID = nullID();
+    m_strRootID = m_strId;
     if (m_type == UIMediumType_HardDisk)
     {
         m_strHardDiskFormat = m_medium.GetFormat();
@@ -206,25 +208,14 @@ void UIMedium::refresh()
         m_strStorageDetails = gpConverter->toString((KMediumVariant)mediumVariant);
         m_fReadOnly = m_medium.GetReadOnly();
 
-        /* Adjust the parent if its possible: */
+        /* Adjust parent/root IDs: */
         CMedium parentMedium = m_medium.GetParent();
-        Assert(!parentMedium.isNull() || m_pParent == NULL);
-
-        if (!parentMedium.isNull() && (m_pParent == NULL || m_pParent->m_medium != parentMedium))
+        if (!parentMedium.isNull())
+            m_strParentID = parentMedium.GetId();
+        while (!parentMedium.isNull())
         {
-            /* Search for the parent (might be there): */
-            const VBoxMediaList &list = vboxGlobal().currentMediaList();
-            for (VBoxMediaList::const_iterator it = list.begin(); it != list.end(); ++it)
-            {
-                if ((*it).m_type != UIMediumType_HardDisk)
-                    break;
-
-                if ((*it).m_medium == parentMedium)
-                {
-                    m_pParent = unconst(&*it);
-                    break;
-                }
-            }
+            m_strRootID = parentMedium.GetId();
+            parentMedium = parentMedium.GetParent();
         }
     }
     else
@@ -370,17 +361,16 @@ void UIMedium::refresh()
     m_noDiffs.isSet = false;
 }
 
-/**
- * Returns a root medium of this medium. For non-hard disk media, this is always
- * this medium itself.
- */
-UIMedium &UIMedium::root() const
+UIMedium UIMedium::parent() const
 {
-    UIMedium *pRoot = unconst(this);
-    while (pRoot->m_pParent != NULL)
-        pRoot = pRoot->m_pParent;
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strParentID);
+}
 
-    return *pRoot;
+UIMedium UIMedium::root() const
+{
+    /* Redirect call to VBoxGlobal: */
+    return vboxGlobal().medium(m_strRootID);
 }
 
 /**
@@ -499,29 +489,28 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 
     QString strDetails, strText;
 
-    UIMedium *pRoot = unconst(this);
+    /* Note: root accessible only if medium enumerated: */
+    UIMedium rootMedium = root();
     KMediumState eState = m_state;
 
     if (m_type == UIMediumType_HardDisk)
     {
         if (fNoDiffs)
         {
-            pRoot = &this->root();
-
-            bool isDiff = (!fPredictDiff && m_pParent != NULL) || (fPredictDiff && m_fReadOnly);
+            bool isDiff = (!fPredictDiff && parentID() != nullID()) || (fPredictDiff && m_fReadOnly);
 
             strDetails = isDiff && fUseHTML ?
-                QString("<i>%1</i>, ").arg(pRoot->m_strHardDiskType) :
-                QString("%1, ").arg(pRoot->m_strHardDiskType);
+                QString("<i>%1</i>, ").arg(rootMedium.m_strHardDiskType) :
+                QString("%1, ").arg(rootMedium.m_strHardDiskType);
 
             eState = this->state(true /* fNoDiffs */);
 
-            if (pRoot->m_state == KMediumState_NotCreated)
+            if (rootMedium.m_state == KMediumState_NotCreated)
                 eState = KMediumState_NotCreated;
         }
         else
         {
-            strDetails = QString("%1, ").arg(pRoot->m_strHardDiskType);
+            strDetails = QString("%1, ").arg(rootMedium.m_strHardDiskType);
         }
     }
 
@@ -538,13 +527,13 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
             strDetails += fUseHTML ? QString("<b>%1</b>").arg(strText) : strText;
             break;
         default:
-            strDetails += m_type == UIMediumType_HardDisk ? pRoot->m_strLogicalSize : pRoot->m_strSize;
+            strDetails += m_type == UIMediumType_HardDisk ? rootMedium.m_strLogicalSize : rootMedium.m_strSize;
             break;
     }
 
     strDetails = fUseHTML ?
-        QString("%1 (<nobr>%2</nobr>)").arg(VBoxGlobal::locationForHTML(pRoot->m_strName), strDetails) :
-        QString("%1 (%2)").arg(VBoxGlobal::locationForHTML(pRoot->m_strName), strDetails);
+        QString("%1 (<nobr>%2</nobr>)").arg(VBoxGlobal::locationForHTML(rootMedium.m_strName), strDetails) :
+        QString("%1 (%2)").arg(VBoxGlobal::locationForHTML(rootMedium.m_strName), strDetails);
 
     return strDetails;
 }
@@ -552,7 +541,7 @@ QString UIMedium::details(bool fNoDiffs /* = false */,
 /* static */
 QString UIMedium::nullID()
 {
-    return QUuid().toString().remove('{').remove('}');
+    return m_sstrNullID;
 }
 
 /**
@@ -568,11 +557,11 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
     m_noDiffs.toolTip = QString();
 
     m_noDiffs.state = m_state;
-    for (UIMedium *cur = m_pParent; cur != NULL; cur = cur->m_pParent)
+    for (UIMedium parentMedium = parent(); !parentMedium.isNull(); parentMedium = parentMedium.parent())
     {
-        if (cur->m_state == KMediumState_Inaccessible)
+        if (parentMedium.m_state == KMediumState_Inaccessible)
         {
-            m_noDiffs.state = cur->m_state;
+            m_noDiffs.state = parentMedium.m_state;
 
             if (m_noDiffs.toolTip.isNull())
                 m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the media in this hard disk chain "
@@ -580,15 +569,15 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
                                                                  "Manager in <b>Show Differencing Hard Disks</b> "
                                                                  "mode to inspect these media.", "medium"));
 
-            if (!cur->m_result.isOk())
+            if (!parentMedium.m_result.isOk())
             {
-                m_noDiffs.result = cur->m_result;
+                m_noDiffs.result = parentMedium.m_result;
                 break;
             }
         }
     }
 
-    if (m_pParent != NULL && !m_fReadOnly)
+    if (parentID() != nullID() && !m_fReadOnly)
     {
         m_noDiffs.toolTip = root().tip() +
                             m_sstrRow.arg("<hr>") +

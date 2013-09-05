@@ -99,7 +99,7 @@ void UIMediumEnumerator::createMedium(const UIMedium &medium)
 {
     /* Get medium ID: */
     QString strMediumID = medium.id();
-//    printf("UIMediumEnumerator: Medium with ID={%s} created.\n", strMediumID.toAscii().constData());
+    LogRel(("UIMediumEnumerator: Medium with ID={%s} created.\n", strMediumID.toAscii().constData()));
 
     /* Make sure medium doesn't exists already: */
     AssertReturnVoid(!m_mediums.contains(strMediumID));
@@ -115,7 +115,7 @@ void UIMediumEnumerator::updateMedium(const UIMedium &medium)
 {
     /* Get medium ID: */
     QString strMediumID = medium.id();
-//    printf("UIMediumEnumerator: Medium with ID={%s} updated.\n", strMediumID.toAscii().constData());
+    LogRel(("UIMediumEnumerator: Medium with ID={%s} updated.\n", strMediumID.toAscii().constData()));
 
     /* Make sure medium still exists: */
     AssertReturnVoid(m_mediums.contains(strMediumID));
@@ -129,7 +129,7 @@ void UIMediumEnumerator::updateMedium(const UIMedium &medium)
 
 void UIMediumEnumerator::deleteMedium(const QString &strMediumID)
 {
-//    printf("UIMediumEnumerator: Medium with ID={%s} removed.\n", strMediumID.toAscii().constData());
+    LogRel(("UIMediumEnumerator: Medium with ID={%s} removed.\n", strMediumID.toAscii().constData()));
 
     /* Make sure medium still exists: */
     AssertReturnVoid(m_mediums.contains(strMediumID));
@@ -158,7 +158,7 @@ void UIMediumEnumerator::enumerateMediums()
     m_mediums = mediums;
 
     /* Notify listener: */
-//    printf("UIMediumEnumerator: Medium-enumeration started...\n");
+    LogRel(("UIMediumEnumerator: Medium-enumeration started...\n"));
     m_fMediumEnumerationInProgress = true;
     emit sigMediumEnumerationStarted();
 
@@ -170,7 +170,7 @@ void UIMediumEnumerator::enumerateMediums()
 
 void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
 {
-//    printf("Machine event received, ID = %s\n", strMachineID.toAscii().constData());
+    LogRel(("Machine event received, ID = %s\n", strMachineID.toAscii().constData()));
 
     /* Compose a map of previous usage: */
     QStringList oldUsage;
@@ -181,7 +181,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
         if (machineIDs.contains(strMachineID))
             oldUsage << strMediumID;
     }
-//    printf("Old usage: %s\n", oldUsage.join(", ").toAscii().constData());
+    LogRel(("Old usage: %s\n", oldUsage.join(", ").toAscii().constData()));
 
     /* Compose a map of current usage: */
     QStringList newUsage;
@@ -200,7 +200,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
             newUsage << strMediumID;
         }
     }
-//    printf("New usage: %s\n", newUsage.join(", ").toAscii().constData());
+    LogRel(("New usage: %s\n", newUsage.join(", ").toAscii().constData()));
 
     /* Manipulations over the sets: */
     QSet<QString> oldSet = oldUsage.toSet();
@@ -209,8 +209,8 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
     QSet<QString> includedSet = newSet - oldSet;
     QStringList excludedList = excludedSet.toList();
     QStringList includedList = includedSet.toList();
-//    printf("Excluded items of machine usage: %s\n", excludedList.join(", ").toAscii().constData());
-//    printf("Included items of machine usage: %s\n", includedList.join(", ").toAscii().constData());
+    LogRel(("Excluded items of machine usage: %s\n", excludedList.join(", ").toAscii().constData()));
+    LogRel(("Included items of machine usage: %s\n", includedList.join(", ").toAscii().constData()));
 
     /* For each of excluded items: */
     foreach (const QString &strExcludedMediumID, excludedList)
@@ -243,7 +243,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
         createMediumEnumerationTask(m_mediums[strIncludedMediumID]);
     }
 
-//    printf("Machine event processed, ID = %s\n", strMachineID.toAscii().constData());
+    LogRel(("Machine event processed, ID = %s\n", strMachineID.toAscii().constData()));
 }
 
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
@@ -255,7 +255,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     /* Get medium: */
     UIMedium medium = pTask->data().value<UIMedium>();
     QString strMediumID = medium.id();
-//    printf("UIMediumEnumerator: Medium with ID={%s} enumerated.\n", strMediumID.toAscii().constData());
+    LogRel(("UIMediumEnumerator: Medium with ID={%s} enumerated.\n", strMediumID.toAscii().constData()));
 
     /* Delete task: */
     delete m_tasks.takeAt(iIndexOfTask);
@@ -274,7 +274,7 @@ void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
     if (m_tasks.isEmpty())
     {
         /* Notify listener: */
-//        printf("UIMediumEnumerator: Medium-enumeration finished!\n");
+        LogRel(("UIMediumEnumerator: Medium-enumeration finished!\n"));
         m_fMediumEnumerationInProgress = false;
         emit sigMediumEnumerationFinished();
     }

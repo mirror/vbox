@@ -66,9 +66,8 @@ void VBoxMediaComboBox::refresh()
     /* Clearing lists */
     clear(), mMedia.clear();
 
-    VBoxMediaList list (vboxGlobal().currentMediaList());
-    foreach (UIMedium medium, list)
-        sltHandleMediumCreated(medium.id());
+    foreach (const QString &strMediumID, vboxGlobal().mediumIDs())
+        sltHandleMediumCreated(strMediumID);
 
     /* If at least one real medium present, process null medium */
     if (count() > 1 && (!mShowNullItem || mType == UIMediumType_HardDisk))
@@ -177,7 +176,7 @@ void VBoxMediaComboBox::sltHandleMediumCreated(const QString &strMediumID)
         return;
 
     /* In !mShowDiffs mode, we ignore all diffs: */
-    if (!mShowDiffs && medium.type() == UIMediumType_HardDisk && medium.parent())
+    if (!mShowDiffs && medium.type() == UIMediumType_HardDisk && medium.parentID() != UIMedium::nullID())
         return;
 
     /* Append medium into combo-box: */
@@ -226,10 +225,7 @@ void VBoxMediaComboBox::sltHandleMediumDeleted(const QString &strMediumID)
 
     /* If no real medium left, add the NULL medium: */
     if (count() == 0)
-    {
-        UIMedium nullMedium;
-        sltHandleMediumCreated(nullMedium.id());
-    }
+        sltHandleMediumCreated(UIMedium::nullID());
 
     /* Emit the signal to ensure the parent dialog handles the change of
      * the selected item: */
