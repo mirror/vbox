@@ -206,7 +206,7 @@ def progressBar(ctx, progress, wait=1000):
 def printErr(_ctx, e):
     oVBoxMgr = _ctx['global'];
     if oVBoxMgr.errIsOurXcptKind(e):
-        print colored('%s: %s' % (oVBoxMgr.errToString(e), oVBoxMgr.errGetMessage(e)), 'red');
+        print colored('%s: %s' % (oVBoxMgr.xcptToString(e), oVBoxMgr.xcptGetMessage(e)), 'red');
     else:
         print colored(str(e), 'red')
 
@@ -844,8 +844,7 @@ class XPathNodeVM(XPathNode):
     #    return subexp=='vm'
     def enum(self):
         return [XPathNodeHolderNIC(self, self.obj),
-                XPathNodeValue(self, self.obj.BIOSSettings,  'bios'),
-                XPathNodeValue(self, self.obj.USBController, 'usb')]
+                XPathNodeValue(self, self.obj.BIOSSettings,  'bios'), ]
 
 class XPathNodeHolderNIC(XPathNodeHolder):
     def __init__(self, parent, mach):
@@ -991,8 +990,6 @@ def infoCmd(ctx, args):
     print "  HPET [HPETEnabled]: %s" % (asState(mach.HPETEnabled))
     if mach.audioAdapter.enabled:
         print "  Audio [via audioAdapter]: chip %s; host driver %s" % (asEnumElem(ctx, "AudioControllerType", mach.audioAdapter.audioController), asEnumElem(ctx, "AudioDriverType",  mach.audioAdapter.audioDriver))
-    if mach.USBController.enabled:
-        print "  USB [via USBController]: high speed %s" % (asState(mach.USBController.enabledEHCI))
     print "  CPU hotplugging [CPUHotPlugEnabled]: %s" % (asState(mach.CPUHotPlugEnabled))
 
     print "  Keyboard [keyboardHIDType]: %s (%s)" % (asEnumElem(ctx, "KeyboardHIDType", mach.keyboardHIDType), mach.keyboardHIDType)
@@ -1003,6 +1000,13 @@ def infoCmd(ctx, args):
         print "  VRDE server [VRDEServer.enabled]: %s" % (asState(mach.VRDEServer.enabled))
     except:
         pass
+
+    print
+    print colCat(ctx, "  USB Controllers:")
+    for oUsbCtrl in ctx['global'].getArray(mach, 'USBControllers'):
+        print "    '%s': type %s  standard: %#x" \
+            % (oUsbCtrl.name, asEnumElem(ctx, "USBControllerType", oUsbCtrl.type), oUsbCtrl.USBStandard);
+
     print
     print colCat(ctx, "  I/O subsystem info:")
     print "   Cache enabled [IOCacheEnabled]: %s" % (asState(mach.IOCacheEnabled))
@@ -1011,7 +1015,7 @@ def infoCmd(ctx, args):
     controllers = ctx['global'].getArray(mach, 'storageControllers')
     if controllers:
         print
-        print colCat(ctx, "  Controllers:")
+        print colCat(ctx, "  Storage Controllers:")
     for controller in controllers:
         print "    '%s': bus %s type %s" % (controller.name, asEnumElem(ctx, "StorageBus", controller.bus), asEnumElem(ctx, "StorageControllerType", controller.controllerType))
 
@@ -3523,23 +3527,38 @@ def main(argv):
             params[key] = value
 
     if options.autopath:
-        cwd = os.getcwd()
+        asLocations = [ os.getcwd(), ];
+        try:    sScriptDir = os.path.dirname(os.path.abspath(__file__));
+        except: pass; # In case __file__ isn't there.
+        else:
+            if platform.system() in [ 'SunOS', ]:
+                asLocations.append(os.path.join(sScriptDir, 'amd64'));
+            asLocations.append(sScriptDir);
+
+
         vpp = os.environ.get("VBOX_PROGRAM_PATH")
-        if    vpp is None \
-          and (   os.path.isfile(os.path.join(cwd, "VirtualBox")) \
-               or os.path.isfile(os.path.join(cwd, "VirtualBox.exe")) ):
-            vpp = cwd
-            print "Autodetected VBOX_PROGRAM_PATH as", vpp
-            os.environ["VBOX_PROGRAM_PATH"] = vpp
-            sys.path.append(os.path.join(vpp, "sdk", "installer"))
+        if vpp is None:
+            for sCurLoc in asLocations:
+                print "checking '%s'..." % (sCurLoc,)
+
+                if   os.path.isfile(os.path.join(sCurLoc, "VirtualBox")) \
+                  or os.path.isfile(os.path.join(sCurLoc, "VirtualBox.exe")):
+                    print "Autodetected VBOX_PROGRAM_PATH as", sCurLoc
+                    os.environ["VBOX_PROGRAM_PATH"] = sCurLoc
+                    sys.path.append(os.path.join(sCurLoc, "sdk", "installer"))
+
         vsp = os.environ.get("VBOX_SDK_PATH")
-        if vsp is None and os.path.isfile(os.path.join(cwd, "sdk", "bindings", "VirtualBox.xidl")) :
-            vsp = os.path.join(cwd, "sdk")
-        if vsp is None and vpp is not None and os.path.isfile(os.path.join(vpp, "sdk", "bindings", "VirtualBox.xidl")) :
-            vsp = os.path.join(vpp, "sdk")
-        if vsp is not None :
-            print "Autodetected VBOX_SDK_PATH as", vsp
-            os.environ["VBOX_SDK_PATH"] = vsp
+        if vsp is None:
+            for sCurLoc in asLocations:
+                if os.path.isfile(os.path.join(sCurLoc, "sdk", "bindings", "VirtualBox.xidl")):
+                    print "Autodetected VBOX_SDK_PATH as", sCurLoc
+                    os.environ["VBOX_SDK_PATH"] = sCurLoc
+                    sTmp = os.path.join(sCurLoc, 'sdk', 'bindings', 'xpcom', 'python');
+                    if os.path.isdir(sTmp):
+                        sys.path.append(sTmp);
+                    del sTmp;
+        del vsp, vpp, asLocations;
+
 
     #
     # Set up the shell interpreter context and
