@@ -509,7 +509,7 @@ VBOX_WITH_VBOXDRV = 1
 # The main api.
 VBOX_WITH_MAIN = 1
 # Whether to also ship 32-bit main API on 64-bit systems.
-if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.amd64)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), solaris.amd64 win.amd64)
  VBOX_WITH_32_ON_64_MAIN_API = 1
 endif
 # The recompiler.
