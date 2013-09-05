@@ -26,6 +26,7 @@
 #include "VBoxGlobal.h"
 #include "UISession.h"
 #include "UIMachine.h"
+#include "UIMedium.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -69,6 +70,7 @@
 #include "CUSBController.h"
 #include "CUSBDeviceFilters.h"
 #include "CSnapshot.h"
+#include "CMedium.h"
 
 UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     : QObject(pMachine)

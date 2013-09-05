@@ -28,6 +28,7 @@
 #include "QIRichTextLabel.h"
 #include "VBoxMediaComboBox.h"
 #include "QIToolButton.h"
+#include "UIMedium.h"
 
 UIWizardCloneVDPage1::UIWizardCloneVDPage1()
 {

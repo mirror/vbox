@@ -17,11 +17,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "VBoxMediaComboBox.h"
-
+/* Qt includes: */
 #include <QFileInfo>
 #include <QDir>
 #include <QAbstractItemView>
+
+/* GUI includes: */
+#include "VBoxMediaComboBox.h"
+#include "UIMedium.h"
 
 VBoxMediaComboBox::VBoxMediaComboBox (QWidget *aParent)
     : QComboBox (aParent)

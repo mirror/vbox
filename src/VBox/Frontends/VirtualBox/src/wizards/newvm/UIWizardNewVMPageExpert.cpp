@@ -36,6 +36,7 @@
 #include "VBoxGuestRAMSlider.h"
 #include "VBoxMediaComboBox.h"
 #include "QIToolButton.h"
+#include "UIMedium.h"
 
 UIWizardNewVMPageExpert::UIWizardNewVMPageExpert(const QString &strGroup)
     : UIWizardNewVMPage1(strGroup)

@@ -32,8 +32,8 @@
 
 /* GUI includes: */
 #include "UIDefs.h"
+#include "UIMediumDefs.h"
 #include "VBoxGlobalSettings.h"
-#include "UIMedium.h"
 
 /* COM includes: */
 #include "VBox/com/Guid.h"
@@ -52,6 +52,7 @@ class CMedium;
 class CUSBDevice;
 class QSpinBox;
 class UIMediumEnumerator;
+class UIMedium;
 
 // VBoxGlobal class
 ////////////////////////////////////////////////////////////////////////////////

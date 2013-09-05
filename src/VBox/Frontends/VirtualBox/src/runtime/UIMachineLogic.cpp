@@ -53,6 +53,7 @@
 #include "UIVMLogViewer.h"
 #include "UIConverter.h"
 #include "UIModalWindowManager.h"
+#include "UIMedium.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "UIExtraDataEventHandler.h"
