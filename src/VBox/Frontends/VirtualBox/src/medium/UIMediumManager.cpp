@@ -38,6 +38,7 @@
 #include "QILabel.h"
 #include "UIIconPool.h"
 #include "UIMediumTypeChangeDialog.h"
+#include "UIMedium.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -1752,19 +1753,20 @@ QString UIMediumManager::formatPaneText(const QString &strText, bool fCompact /*
 }
 
 /* static */
-bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(UIMedium medium)
+bool UIMediumManager::isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium)
 {
     /* Iterate till the root: */
+    UIMedium mediumIterator = medium;
     do
     {
         /* Ignore medium if its hidden
          * or attached to hidden machines only: */
-        if (medium.isHidden())
+        if (mediumIterator.isHidden())
             return true;
         /* Move iterator to parent: */
-        medium = medium.parent();
+        mediumIterator = mediumIterator.parent();
     }
-    while (!medium.isNull());
+    while (!mediumIterator.isNull());
     /* False by default: */
     return false;
 }

@@ -45,6 +45,7 @@
 #include "UIVMDesktop.h"
 #include "UIVirtualBoxEventHandler.h"
 #include "UIMediumManager.h"
+#include "UIMedium.h"
 #include "UIMessageCenter.h"
 #include "UISelectorWindow.h"
 #include "UISettingsDialogSpecific.h"

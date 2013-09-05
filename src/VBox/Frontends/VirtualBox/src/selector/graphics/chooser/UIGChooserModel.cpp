@@ -43,8 +43,9 @@
 #include "UIVirtualBoxEventHandler.h"
 
 /* COM includes: */
-#include "CMachine.h"
 #include "CVirtualBox.h"
+#include "CMachine.h"
+#include "CMedium.h"
 
 /* Type defs: */
 typedef QSet<QString> UIStringSet;

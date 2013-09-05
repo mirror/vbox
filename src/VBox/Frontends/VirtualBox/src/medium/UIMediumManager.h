@@ -23,7 +23,7 @@
 #include "UIMediumManager.gen.h"
 #include "QIWithRetranslateUI.h"
 #include "QIMainDialog.h"
-#include "UIMedium.h"
+#include "UIMediumDefs.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -34,6 +34,7 @@
 class UIToolBar;
 class UIMediumItem;
 class UIEnumerationProgressBar;
+class UIMedium;
 
 /* Medium Manager Dialog: */
 class UIMediumManager : public QIWithRetranslateUI2<QIMainDialog>, public Ui::UIMediumManager
@@ -151,7 +152,7 @@ private:
     static QString formatPaneText(const QString &strText, bool fCompact = true, const QString &strElipsis = "middle");
 
     /* Static helper: Enumeration stuff: */
-    static bool isMediumAttachedToHiddenMachinesOnly(UIMedium medium);
+    static bool isMediumAttachedToHiddenMachinesOnly(const UIMedium &medium);
 
     /* Variable: Singleton instance: */
     static UIMediumManager *m_spInstance;
