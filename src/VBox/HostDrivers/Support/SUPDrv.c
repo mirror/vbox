@@ -3370,7 +3370,8 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  *
  * @returns VBox status code.
  * @retval  VERR_VMX_NO_VMX
- * @retval  VERR_VMX_MSR_LOCKED_OR_DISABLED
+ * @retval  VERR_VMX_MSR_SMX_VMXON_DISABLED
+ * @retval  VERR_VMX_MSR_VMXON_DISABLED
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
@@ -3389,6 +3390,9 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
 
     *pfCaps = 0;
 
+    /** @todo r=ramshankar: Although we're only reading CPUIDs/MSRs here which
+     *        should be identical on all CPUs on the system, it's probably
+     *        cleaner to prevent migration nonetheless? */
     if (ASMHasCpuId())
     {
         uint32_t fFeaturesECX, fFeaturesEDX, uDummy;
@@ -3399,7 +3403,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
         ASMCpuId(1, &uDummy, &uDummy, &fFeaturesECX, &fFeaturesEDX);
 
         if (   ASMIsValidStdRange(uMaxId)
-            && (   ASMIsIntelCpuEx(    uVendorEBX, uVendorECX, uVendorEDX)
+            && (   ASMIsIntelCpuEx(     uVendorEBX, uVendorECX, uVendorEDX)
                 || ASMIsViaCentaurCpuEx(uVendorEBX, uVendorECX, uVendorEDX) )
            )
         {
