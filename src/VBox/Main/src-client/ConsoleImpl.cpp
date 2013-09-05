@@ -5749,6 +5749,23 @@ HRESULT Console::onlineMergeMedium(IMediumAttachment *aMediumAttachment,
 
 
 /**
+ * Load an HGCM service.
+ *
+ * Main purpose of this method is to allow extension packs to load HGCM
+ * service modules, which they can't, because the HGCM functionality lives
+ * in module VBoxC (and ConsoleImpl.cpp is part of it and thus can call it).
+ * Extension modules must not link directly against VBoxC, (XP)COM is
+ * handling this.
+ */
+int Console::hgcmLoadService(const char *pszServiceLibrary, const char *pszServiceName)
+{
+    /* Everyone seems to delegate all HGCM calls to VMMDev, so stick to this
+     * convention. Adds one level of indirection for no obvious reason. */
+    AssertPtrReturn(m_pVMMDev, VERR_INVALID_STATE);
+    return m_pVMMDev->hgcmLoadService(pszServiceLibrary, pszServiceName);
+}
+
+/**
  * Merely passes the call to Guest::enableVMMStatistics().
  */
 void Console::enableVMMStatistics(BOOL aEnable)

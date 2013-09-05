@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2010 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -149,6 +149,9 @@ typedef struct VBOXEXTPACKHLP
      */
     DECLR3CALLBACKMEMBER(VBOXEXTPACKCTX, pfnGetContext,(PCVBOXEXTPACKHLP pHlp));
 
+    DECLR3CALLBACKMEMBER(int, pfnLoadHGCMService,(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                                                  const char *pszServiceLibrary, const char *pszServiceName));
+
     DECLR3CALLBACKMEMBER(int, pfnReserved1,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved2,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved3,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
@@ -157,13 +160,12 @@ typedef struct VBOXEXTPACKHLP
     DECLR3CALLBACKMEMBER(int, pfnReserved6,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved7,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
     DECLR3CALLBACKMEMBER(int, pfnReserved8,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
-    DECLR3CALLBACKMEMBER(int, pfnReserved9,(PCVBOXEXTPACKHLP pHlp)); /**< Reserved for minor structure revisions. */
 
     /** End of structure marker (VBOXEXTPACKHLP_VERSION). */
     uint32_t                    u32EndMarker;
 } VBOXEXTPACKHLP;
 /** Current version of the VBOXEXTPACKHLP structure.  */
-#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(0, 1)
+#define VBOXEXTPACKHLP_VERSION          RT_MAKE_U32(1, 1)
 
 
 /** Pointer to the extension pack callback table. */

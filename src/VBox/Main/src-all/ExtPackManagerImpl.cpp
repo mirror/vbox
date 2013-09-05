@@ -44,9 +44,10 @@
 #include "AutoCaller.h"
 #include "Global.h"
 #include "ProgressImpl.h"
-#include "SystemPropertiesImpl.h"
-#if !defined(VBOX_COM_INPROC)
-#include "VirtualBoxImpl.h"
+#if defined(VBOX_COM_INPROC)
+# include "ConsoleImpl.h"
+#else
+# include "VirtualBoxImpl.h"
 #endif
 
 
@@ -757,6 +758,7 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
         /* pfnFindModule        = */ ExtPack::hlpFindModule,
         /* pfnGetFilePath       = */ ExtPack::hlpGetFilePath,
         /* pfnGetContext        = */ ExtPack::hlpGetContext,
+        /* pfnLoadHGCMService   = */ ExtPack::hlpLoadHGCMService,
         /* pfnReserved1         = */ ExtPack::hlpReservedN,
         /* pfnReserved2         = */ ExtPack::hlpReservedN,
         /* pfnReserved3         = */ ExtPack::hlpReservedN,
@@ -765,7 +767,6 @@ HRESULT ExtPack::initWithDir(VBOXEXTPACKCTX a_enmContext, const char *a_pszName,
         /* pfnReserved6         = */ ExtPack::hlpReservedN,
         /* pfnReserved7         = */ ExtPack::hlpReservedN,
         /* pfnReserved8         = */ ExtPack::hlpReservedN,
-        /* pfnReserved9         = */ ExtPack::hlpReservedN,
         /* u32EndMarker         = */ VBOXEXTPACKHLP_VERSION
     };
 
@@ -1577,6 +1578,31 @@ ExtPack::hlpGetContext(PCVBOXEXTPACKHLP pHlp)
     AssertPtrReturn(pThis, VBOXEXTPACKCTX_INVALID);
 
     return pThis->m->enmContext;
+}
+
+/*static*/ DECLCALLBACK(int)
+ExtPack::hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *pConsole,
+                            const char *pszServiceLibrary, const char *pszServiceName)
+{
+#ifdef VBOX_COM_INPROC
+    /*
+     * Validate the input and get our bearings.
+     */
+    AssertPtrReturn(pszServiceLibrary, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszServiceName, VERR_INVALID_POINTER);
+
+    AssertPtrReturn(pHlp, VERR_INVALID_POINTER);
+    AssertReturn(pHlp->u32Version == VBOXEXTPACKHLP_VERSION, VERR_INVALID_POINTER);
+    ExtPack::Data *m = RT_FROM_CPP_MEMBER(pHlp, Data, Hlp);
+    AssertPtrReturn(m, VERR_INVALID_POINTER);
+    ExtPack *pThis = m->pThis;
+    AssertPtrReturn(pThis, VERR_INVALID_POINTER);
+    AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
+
+    Console *pCon = (Console *)pConsole;
+    return pCon->hgcmLoadService(pszServiceLibrary, pszServiceName);
+#endif
+    return VERR_INVALID_STATE;
 }
 
 /*static*/ DECLCALLBACK(int)
