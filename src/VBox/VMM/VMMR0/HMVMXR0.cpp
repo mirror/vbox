@@ -6800,7 +6800,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RIP);
 
             /* Check if the interrupt handler is present in the IVT (real-mode IDT). IDT limit is (4N - 1). */
-            const size_t cbIdtEntry = 4;
+            const size_t cbIdtEntry = sizeof(X86IDTR16);
             if (uVector * cbIdtEntry + (cbIdtEntry - 1) > pMixedCtx->idtr.cbIdt)
             {
                 /* If we are trying to inject a #DF with no valid IDT entry, return a triple-fault. */
@@ -6829,11 +6829,9 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 uGuestIp = pMixedCtx->ip + (uint16_t)cbInstr;
 
             /* Get the code segment selector and offset from the IDT entry for the interrupt handler. */
-            uint16_t offIdtEntry    = 0;
-            RTSEL    selIdtEntry    = 0;
+            X86IDTR16 IdtEntry;
             RTGCPHYS GCPhysIdtEntry = (RTGCPHYS)pMixedCtx->idtr.pIdt + uVector * cbIdtEntry;
-            rc  = PGMPhysSimpleReadGCPhys(pVM, &offIdtEntry, GCPhysIdtEntry,     sizeof(offIdtEntry));
-            rc |= PGMPhysSimpleReadGCPhys(pVM, &selIdtEntry, GCPhysIdtEntry + 2, sizeof(selIdtEntry));
+            rc = PGMPhysSimpleReadGCPhys(pVM, &IdtEntry, GCPhysIdtEntry, cbIdtEntry);
             AssertRCReturn(rc, rc);
 
             /* Construct the stack frame for the interrupt/exception handler. */
@@ -6846,9 +6844,9 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             if (rc == VINF_SUCCESS)
             {
                 pMixedCtx->eflags.u32 &= ~(X86_EFL_IF | X86_EFL_TF | X86_EFL_RF | X86_EFL_AC);
-                pMixedCtx->rip         = offIdtEntry;
-                pMixedCtx->cs.Sel      = selIdtEntry;
-                pMixedCtx->cs.u64Base  = selIdtEntry << cbIdtEntry;
+                pMixedCtx->rip         = IdtEntry.offSel;
+                pMixedCtx->cs.Sel      = IdtEntry.uSel;
+                pMixedCtx->cs.u64Base  = IdtEntry.uSel << cbIdtEntry;
                 if (   uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
                     && uVector   == X86_XCPT_PF)
                 {
