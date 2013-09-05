@@ -4062,7 +4062,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
         {
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
-            /** @todo this isn't necessary, but I'm still seeing tripple faults. */
+            /** @todo this isn't necessary, but I'm still seeing triple faults. */
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
             pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_EXIT_CTLS;
         }
