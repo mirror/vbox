@@ -16,6 +16,7 @@
  */
 
 #include "MediumImpl.h"
+#include "TokenImpl.h"
 #include "ProgressImpl.h"
 #include "SystemPropertiesImpl.h"
 #include "VirtualBoxImpl.h"
@@ -514,7 +515,7 @@ public:
               Medium *aTarget,
               bool fMergeForward,
               Medium *aParentForTarget,
-              const MediaList &aChildrenToReparent,
+              MediumLockList *aChildrenToReparent,
               Progress *aProgress,
               MediumLockList *aMediumLockList,
               bool fKeepMediumLockList = false)
@@ -522,55 +523,29 @@ public:
           mTarget(aTarget),
           mfMergeForward(fMergeForward),
           mParentForTarget(aParentForTarget),
-          mChildrenToReparent(aChildrenToReparent),
+          mpChildrenToReparent(aChildrenToReparent),
           mpMediumLockList(aMediumLockList),
           mTargetCaller(aTarget),
           mParentForTargetCaller(aParentForTarget),
-          mfChildrenCaller(false),
           mfKeepMediumLockList(fKeepMediumLockList)
     {
         AssertReturnVoidStmt(aMediumLockList != NULL, mRC = E_FAIL);
-        for (MediaList::const_iterator it = mChildrenToReparent.begin();
-             it != mChildrenToReparent.end();
-             ++it)
-        {
-            HRESULT rc2 = (*it)->addCaller();
-            if (FAILED(rc2))
-            {
-                mRC = E_FAIL;
-                for (MediaList::const_iterator it2 = mChildrenToReparent.begin();
-                     it2 != it;
-                     --it2)
-                {
-                    (*it2)->releaseCaller();
-                }
-                return;
-            }
-        }
-        mfChildrenCaller = true;
     }
 
     ~MergeTask()
     {
         if (!mfKeepMediumLockList && mpMediumLockList)
             delete mpMediumLockList;
-        if (mfChildrenCaller)
-        {
-            for (MediaList::const_iterator it = mChildrenToReparent.begin();
-                 it != mChildrenToReparent.end();
-                 ++it)
-            {
-                (*it)->releaseCaller();
-            }
-        }
+        if (mpChildrenToReparent)
+            delete mpChildrenToReparent;
     }
 
     const ComObjPtr<Medium> mTarget;
     bool mfMergeForward;
-    /* When mChildrenToReparent is empty then mParentForTarget is non-null.
-     * In other words: they are used in different cases. */
+    /* When mpChildrenToReparent is null then mParentForTarget is non-null and
+     * vice versa. In other words: they are used in different cases. */
     const ComObjPtr<Medium> mParentForTarget;
-    MediaList mChildrenToReparent;
+    MediumLockList *mpChildrenToReparent;
     MediumLockList *mpMediumLockList;
 
 private:
@@ -578,7 +553,6 @@ private:
 
     AutoCaller mTargetCaller;
     AutoCaller mParentForTargetCaller;
-    bool mfChildrenCaller;
     bool mfKeepMediumLockList;
 };
 
@@ -2122,12 +2096,10 @@ STDMETHODIMP Medium::GetSnapshotIds(IN_BSTR aMachineId,
     return S_OK;
 }
 
-/**
- * @note @a aState may be NULL if the state value is not needed (only for
- *       in-process calls).
- */
-STDMETHODIMP Medium::LockRead(MediumState_T *aState)
+STDMETHODIMP Medium::LockRead(IToken **aToken)
 {
+    CheckComArgNotNull(aToken);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -2151,10 +2123,6 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
         }
     }
 
-    /* return the current state before */
-    if (aState)
-        *aState = m->state;
-
     HRESULT rc = S_OK;
 
     switch (m->state)
@@ -2174,6 +2142,19 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
             LogFlowThisFunc(("Okay - prev state=%d readers=%d\n", m->state, m->readers));
             m->state = MediumState_LockedRead;
 
+            ComObjPtr<MediumLockToken> pToken;
+            rc = pToken.createObject();
+            if (SUCCEEDED(rc))
+                rc = pToken->init(this, false /* fWrite */);
+            if (FAILED(rc))
+            {
+                --m->readers;
+                if (m->readers == 0)
+                    m->state = m->preLockState;
+                return rc;
+            }
+
+            pToken.queryInterfaceTo(aToken);
             break;
         }
         default:
@@ -2191,7 +2172,7 @@ STDMETHODIMP Medium::LockRead(MediumState_T *aState)
  * @note @a aState may be NULL if the state value is not needed (only for
  *       in-process calls).
  */
-STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
+HRESULT Medium::unlockRead(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2238,12 +2219,10 @@ STDMETHODIMP Medium::UnlockRead(MediumState_T *aState)
     return rc;
 }
 
-/**
- * @note @a aState may be NULL if the state value is not needed (only for
- *       in-process calls).
- */
-STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
+STDMETHODIMP Medium::LockWrite(IToken **aToken)
 {
+    CheckComArgNotNull(aToken);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -2267,10 +2246,6 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
         }
     }
 
-    /* return the current state before */
-    if (aState)
-        *aState = m->state;
-
     HRESULT rc = S_OK;
 
     switch (m->state)
@@ -2282,6 +2257,18 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
 
             LogFlowThisFunc(("Okay - prev state=%d locationFull=%s\n", m->state, getLocationFull().c_str()));
             m->state = MediumState_LockedWrite;
+
+            ComObjPtr<MediumLockToken> pToken;
+            rc = pToken.createObject();
+            if (SUCCEEDED(rc))
+                rc = pToken->init(this, true /* fWrite */);
+            if (FAILED(rc))
+            {
+                m->state = m->preLockState;
+                return rc;
+            }
+
+            pToken.queryInterfaceTo(aToken);
             break;
         }
         default:
@@ -2299,7 +2286,7 @@ STDMETHODIMP Medium::LockWrite(MediumState_T *aState)
  * @note @a aState may be NULL if the state value is not needed (only for
  *       in-process calls).
  */
-STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
+HRESULT Medium::unlockWrite(MediumState_T *aState)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2537,7 +2524,7 @@ STDMETHODIMP Medium::CreateBaseStorage(LONG64 aLogicalSize,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
     Medium::Task *pTask = NULL;
 
     try
@@ -2693,7 +2680,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
 
     alock.release();
 
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
 
     ULONG mediumVariantFlags = 0;
 
@@ -2727,21 +2714,21 @@ STDMETHODIMP Medium::MergeTo(IMedium *aTarget, IProgress **aProgress)
 
     bool fMergeForward = false;
     ComObjPtr<Medium> pParentForTarget;
-    MediaList childrenToReparent;
+    MediumLockList *pChildrenToReparent = NULL;
     MediumLockList *pMediumLockList = NULL;
 
     HRESULT rc = S_OK;
 
     rc = prepareMergeTo(pTarget, NULL, NULL, true, fMergeForward,
-                        pParentForTarget, childrenToReparent, pMediumLockList);
+                        pParentForTarget, pChildrenToReparent, pMediumLockList);
     if (FAILED(rc)) return rc;
 
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
 
-    rc = mergeTo(pTarget, fMergeForward, pParentForTarget, childrenToReparent,
+    rc = mergeTo(pTarget, fMergeForward, pParentForTarget, pChildrenToReparent,
                  pMediumLockList, &pProgress, false /* aWait */);
     if (FAILED(rc))
-        cancelMergeTo(childrenToReparent, pMediumLockList);
+        cancelMergeTo(pChildrenToReparent, pMediumLockList);
     else
         pProgress.queryInterfaceTo(aProgress);
 
@@ -2914,7 +2901,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
     Medium::Task *pTask = NULL;
 
     try
@@ -2987,7 +2974,7 @@ STDMETHODIMP Medium::Resize(LONG64 aLogicalSize, IProgress **aProgress)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
     Medium::Task *pTask = NULL;
 
     try
@@ -3060,7 +3047,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     HRESULT rc = S_OK;
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
     Medium::Task *pTask = NULL;
 
     try
@@ -4664,8 +4651,9 @@ HRESULT Medium::queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
  *                      later you must call #cancelMergeTo().
  * @param fMergeForward Resulting merge direction (out).
  * @param pParentForTarget New parent for target medium after merge (out).
- * @param aChildrenToReparent List of children of the source which will have
- *                      to be reparented to the target after merge (out).
+ * @param aChildrenToReparent Medium lock list containing all children of the
+ *                      source which will have to be reparented to the target
+ *                      after merge (out).
  * @param aMediumLockList Medium locking information (out).
  *
  * @note Locks medium tree for reading. Locks this object, aTarget and all
@@ -4677,7 +4665,7 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
                                bool fLockMedia,
                                bool &fMergeForward,
                                ComObjPtr<Medium> &pParentForTarget,
-                               MediaList &aChildrenToReparent,
+                               MediumLockList * &aChildrenToReparent,
                                MediumLockList * &aMediumLockList)
 {
     AssertReturn(pTarget != NULL, E_FAIL);
@@ -4692,7 +4680,8 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
     HRESULT rc = S_OK;
     fMergeForward = false;
     pParentForTarget.setNull();
-    aChildrenToReparent.clear();
+    Assert(aChildrenToReparent == NULL);
+    aChildrenToReparent = NULL;
     Assert(aMediumLockList == NULL);
     aMediumLockList = NULL;
 
@@ -4875,19 +4864,21 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
         else
         {
             /* we will need to reparent children of the source */
+            aChildrenToReparent = new MediumLockList();
             for (MediaList::const_iterator it = getChildren().begin();
                  it != getChildren().end();
                  ++it)
             {
                 pMedium = *it;
-                if (fLockMedia)
-                {
-                    rc = pMedium->LockWrite(NULL);
-                    if (FAILED(rc))
-                        throw rc;
-                }
-
-                aChildrenToReparent.push_back(pMedium);
+                aChildrenToReparent->Append(pMedium, true /* fLockWrite */);
+            }
+            if (fLockMedia && aChildrenToReparent)
+            {
+                treeLock.release();
+                rc = aChildrenToReparent->Lock();
+                treeLock.acquire();
+                if (FAILED(rc))
+                    throw rc;
             }
         }
         for (pLast = pLastIntermediate;
@@ -4946,8 +4937,16 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
 
     if (FAILED(rc))
     {
-        delete aMediumLockList;
-        aMediumLockList = NULL;
+        if (aMediumLockList)
+        {
+            delete aMediumLockList;
+            aMediumLockList = NULL;
+        }
+        if (aChildrenToReparent)
+        {
+            delete aChildrenToReparent;
+            aChildrenToReparent = NULL;
+        }
     }
 
     return rc;
@@ -5032,9 +5031,9 @@ HRESULT Medium::prepareMergeTo(const ComObjPtr<Medium> &pTarget,
 HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
                         bool fMergeForward,
                         const ComObjPtr<Medium> &pParentForTarget,
-                        const MediaList &aChildrenToReparent,
+                        MediumLockList *aChildrenToReparent,
                         MediumLockList *aMediumLockList,
-                        ComObjPtr <Progress> *aProgress,
+                        ComObjPtr<Progress> *aProgress,
                         bool aWait)
 {
     AssertReturn(pTarget != NULL, E_FAIL);
@@ -5049,7 +5048,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
     AssertComRCReturnRC(targetCaller.rc());
 
     HRESULT rc = S_OK;
-    ComObjPtr <Progress> pProgress;
+    ComObjPtr<Progress> pProgress;
     Medium::Task *pTask = NULL;
 
     try
@@ -5121,7 +5120,7 @@ HRESULT Medium::mergeTo(const ComObjPtr<Medium> &pTarget,
  *
  * @note Locks the media from the chain for writing.
  */
-void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
+void Medium::cancelMergeTo(MediumLockList *aChildrenToReparent,
                            MediumLockList *aMediumLockList)
 {
     AutoCaller autoCaller(this);
@@ -5153,23 +5152,17 @@ void Medium::cancelMergeTo(const MediaList &aChildrenToReparent,
     /* the destructor will do the work */
     delete aMediumLockList;
 
-    /* unlock the children which had to be reparented */
-    for (MediaList::const_iterator it = aChildrenToReparent.begin();
-         it != aChildrenToReparent.end();
-         ++it)
-    {
-        const ComObjPtr<Medium> &pMedium = *it;
-
-        AutoWriteLock alock(pMedium COMMA_LOCKVAL_SRC_POS);
-        pMedium->UnlockWrite(NULL);
-    }
+    /* unlock the children which had to be reparented, the destructor will do
+     * the work */
+    if (aChildrenToReparent)
+        delete aChildrenToReparent;
 }
 
 /**
  * Fix the parent UUID of all children to point to this medium as their
  * parent.
  */
-HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
+HRESULT Medium::fixParentUuidOfChildren(MediumLockList *pChildrenToReparent)
 {
     Assert(!isWriteLockOnCurrentThread());
     Assert(!m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
@@ -5210,16 +5203,19 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                     throw vrc;
             }
 
-            for (MediaList::const_iterator it = childrenToReparent.begin();
-                 it != childrenToReparent.end();
+            MediumLockList::Base::iterator childrenBegin = pChildrenToReparent->GetBegin();
+            MediumLockList::Base::iterator childrenEnd = pChildrenToReparent->GetEnd();
+            for (MediumLockList::Base::iterator it = childrenBegin;
+                 it != childrenEnd;
                  ++it)
             {
+                Medium *pMedium = it->GetMedium();
                 /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
                 vrc = VDOpen(hdd,
-                             (*it)->m->strFormat.c_str(),
-                             (*it)->m->strLocationFull.c_str(),
+                             pMedium->m->strFormat.c_str(),
+                             pMedium->m->strLocationFull.c_str(),
                              VD_OPEN_FLAGS_INFO | m->uOpenFlagsDef,
-                             (*it)->m->vdImageIfaces);
+                             pMedium->m->vdImageIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
 
@@ -5230,8 +5226,6 @@ HRESULT Medium::fixParentUuidOfChildren(const MediaList &childrenToReparent)
                 vrc = VDClose(hdd, false /* fDelete */);
                 if (RT_FAILURE(vrc))
                     throw vrc;
-
-                (*it)->UnlockWrite(NULL);
             }
         }
         catch (HRESULT aRC) { rc = aRC; }
@@ -5647,10 +5641,11 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
     /* Lock the medium, which makes the behavior much more consistent */
     alock.release();
+    ComPtr<IToken> pToken;
     if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
-        rc = LockRead(NULL);
+        rc = LockRead(pToken.asOutParam());
     else
-        rc = LockWrite(NULL);
+        rc = LockWrite(pToken.asOutParam());
     if (FAILED(rc)) return rc;
     alock.acquire();
 
@@ -5988,13 +5983,9 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
     else
         m->preLockState = MediumState_Inaccessible;
 
-    HRESULT rc2;
-    if (uOpenFlags & (VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_SHAREABLE))
-        rc2 = UnlockRead(NULL);
-    else
-        rc2 = UnlockWrite(NULL);
-    if (SUCCEEDED(rc) && FAILED(rc2))
-        rc = rc2;
+    pToken->Abandon();
+    pToken.setNull();
+    
     if (FAILED(rc)) return rc;
 
     /* If this is a base image which incorrectly has a parent UUID set,
@@ -6005,7 +5996,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
      * the diff. Not acceptable. */
     if (fRepairImageZeroParentUuid)
     {
-        rc = LockWrite(NULL);
+        rc = LockWrite(pToken.asOutParam());
         if (FAILED(rc)) return rc;
 
         alock.release();
@@ -6043,9 +6034,8 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
             rc = aRC;
         }
 
-        rc = UnlockWrite(NULL);
-        if (SUCCEEDED(rc) && FAILED(rc2))
-            rc = rc2;
+        pToken->Abandon();
+        pToken.setNull();
         if (FAILED(rc)) return rc;
     }
 
@@ -7213,18 +7203,21 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                 /* we need to update UUIDs of all source's children
                  * which cannot be part of the container at once so
                  * add each one in there individually */
-                if (task.mChildrenToReparent.size() > 0)
+                if (task.mpChildrenToReparent)
                 {
-                    for (MediaList::const_iterator it = task.mChildrenToReparent.begin();
-                         it != task.mChildrenToReparent.end();
+                    MediumLockList::Base::iterator childrenBegin = task.mpChildrenToReparent->GetBegin();
+                    MediumLockList::Base::iterator childrenEnd = task.mpChildrenToReparent->GetEnd();
+                    for (MediumLockList::Base::iterator it = childrenBegin;
+                         it != childrenEnd;
                          ++it)
                     {
+                        Medium *pMedium = it->GetMedium();
                         /* VD_OPEN_FLAGS_INFO since UUID is wrong yet */
                         vrc = VDOpen(hdd,
-                                     (*it)->m->strFormat.c_str(),
-                                     (*it)->m->strLocationFull.c_str(),
+                                     pMedium->m->strFormat.c_str(),
+                                     pMedium->m->strLocationFull.c_str(),
                                      VD_OPEN_FLAGS_INFO | m->uOpenFlagsDef,
-                                     (*it)->m->vdImageIfaces);
+                                     pMedium->m->vdImageIfaces);
                         if (RT_FAILURE(vrc))
                             throw vrc;
 
@@ -7236,8 +7229,6 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
                         vrc = VDClose(hdd, false /* fDelete */);
                         if (RT_FAILURE(vrc))
                             throw vrc;
-
-                        (*it)->UnlockWrite(NULL);
                     }
                 }
             }
@@ -7300,16 +7291,18 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
 
             /* reparent source's children and disconnect the deleted
              * branch at the younger end */
-            if (task.mChildrenToReparent.size() > 0)
+            if (task.mpChildrenToReparent)
             {
                 /* obey {parent,child} lock order */
                 AutoWriteLock sourceLock(this COMMA_LOCKVAL_SRC_POS);
 
-                for (MediaList::const_iterator it = task.mChildrenToReparent.begin();
-                     it != task.mChildrenToReparent.end();
-                     it++)
+                MediumLockList::Base::iterator childrenBegin = task.mpChildrenToReparent->GetBegin();
+                MediumLockList::Base::iterator childrenEnd = task.mpChildrenToReparent->GetEnd();
+                for (MediumLockList::Base::iterator it = childrenBegin;
+                     it != childrenEnd;
+                     ++it)
                 {
-                    Medium *pMedium = *it;
+                    Medium *pMedium = it->GetMedium();
                     AutoWriteLock childLock(pMedium COMMA_LOCKVAL_SRC_POS);
 
                     pMedium->deparent();  // removes pMedium from source
@@ -7395,10 +7388,7 @@ HRESULT Medium::taskMergeHandler(Medium::MergeTask &task)
          * in the mergeTo() docs. The latter also implies that we
          * don't own the merge chain, so release it in this case. */
         if (task.isAsync())
-        {
-            Assert(task.mChildrenToReparent.size() == 0);
-            cancelMergeTo(task.mChildrenToReparent, task.mpMediumLockList);
-        }
+            cancelMergeTo(task.mpChildrenToReparent, task.mpMediumLockList);
     }
 
     return mrc;

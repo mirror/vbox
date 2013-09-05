@@ -362,6 +362,7 @@ VBoxSVC_SOURCES = \
 	src-server/SnapshotImpl.cpp \
 	src-server/StorageControllerImpl.cpp \
 	src-server/SystemPropertiesImpl.cpp \
+	src-server/TokenImpl.cpp \
 	src-server/USBControllerImpl.cpp \
 	src-server/USBDeviceFiltersImpl.cpp \
 	src-server/VFSExplorerImpl.cpp \

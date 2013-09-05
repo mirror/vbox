@@ -102,9 +102,6 @@ public:
                                         ComSafeArrayOut(BSTR, aFlags));
     STDMETHOD(OnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
                                  ULONG aSourceIdx, ULONG aTargetIdx,
-                                 IMedium *aSource, IMedium *aTarget,
-                                 BOOL aMergeForward, IMedium *aParentForTarget,
-                                 ComSafeArrayIn(IMedium *, aChildrenToReparent),
                                  IProgress *aProgress);
     STDMETHOD(EnableVMMStatistics)(BOOL aEnable);
     STDMETHOD(PauseWithReason)(Reason_T aReason);

@@ -1069,11 +1069,7 @@ public:
     STDMETHOD(DeleteSnapshot)(IConsole *aInitiator, IN_BSTR aStartId,
                               IN_BSTR aEndID, BOOL fDeleteAllChildren,
                               MachineState_T *aMachineState, IProgress **aProgress);
-    STDMETHOD(FinishOnlineMergeMedium)(IMediumAttachment *aMediumAttachment,
-                                       IMedium *aSource, IMedium *aTarget,
-                                       BOOL fMergeForward,
-                                       IMedium *pParentForTarget,
-                                       ComSafeArrayIn(IMedium *, aChildrenToReparent));
+    STDMETHOD(FinishOnlineMergeMedium)();
     STDMETHOD(RestoreSnapshot)(IConsole *aInitiator,
                                ISnapshot *aSnapshot,
                                MachineState_T *aMachineState,
@@ -1142,7 +1138,7 @@ private:
     struct ConsoleTaskData
     {
         ConsoleTaskData()
-            : mLastState(MachineState_Null)
+            : mLastState(MachineState_Null), mDeleteSnapshotInfo(NULL)
         { }
 
         MachineState_T mLastState;
@@ -1150,6 +1146,9 @@ private:
 
         // used when taking snapshot
         ComObjPtr<Snapshot> mSnapshot;
+
+        // used when deleting online snapshot
+        void *mDeleteSnapshotInfo;
 
         // used when saving state (either as part of a snapshot or separate)
         Utf8Str strStateFilePath;
@@ -1184,14 +1183,16 @@ private:
                                         ComObjPtr<Medium> &aTarget,
                                         bool &fMergeForward,
                                         ComObjPtr<Medium> &pParentForTarget,
-                                        MediaList &aChildrenToReparent,
+                                        MediumLockList * &aChildrenToReparent,
                                         bool &fNeedOnlineMerge,
-                                        MediumLockList * &aMediumLockList);
+                                        MediumLockList * &aMediumLockList,
+                                        ComPtr<IToken> &aHDLockToken);
     void cancelDeleteSnapshotMedium(const ComObjPtr<Medium> &aHD,
                                     const ComObjPtr<Medium> &aSource,
-                                    const MediaList &aChildrenToReparent,
+                                    MediumLockList *aChildrenToReparent,
                                     bool fNeedsOnlineMerge,
                                     MediumLockList *aMediumLockList,
+                                    const ComPtr<IToken> &aHDLockToken,
                                     const Guid &aMediumId,
                                     const Guid &aSnapshotId);
     HRESULT onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMediumAttachment,
@@ -1199,7 +1200,7 @@ private:
                               const ComObjPtr<Medium> &aTarget,
                               bool fMergeForward,
                               const ComObjPtr<Medium> &pParentForTarget,
-                              const MediaList &aChildrenToReparent,
+                              MediumLockList *aChildrenToReparent,
                               MediumLockList *aMediumLockList,
                               ComObjPtr<Progress> &aProgress,
                               bool *pfNeedsMachineSaveSettings);
