@@ -554,6 +554,7 @@ typedef struct HMCPU
         uint32_t                    u32ExitCtls;
         /** Current VMX_VMCS32_CTRL_ENTRY. */
         uint32_t                    u32EntryCtls;
+
         /** Physical address of the virtual APIC page for TPR caching. */
         RTHCPHYS                    HCPhysVirtApic;
         /** R0 memory object for the virtual APIC page for TPR caching. */
@@ -609,20 +610,21 @@ typedef struct HMCPU
         uint64_t                    u64MsrApicBase;
         /** Last use TSC offset value. (cached) */
         uint64_t                    u64TSCOffset;
+
         /** VMCS cache. */
         VMCSCACHE                   VMCSCache;
 
         /** Real-mode emulation state. */
         struct
         {
-            X86DESCATTR                 AttrCS;
-            X86DESCATTR                 AttrDS;
-            X86DESCATTR                 AttrES;
-            X86DESCATTR                 AttrFS;
-            X86DESCATTR                 AttrGS;
-            X86DESCATTR                 AttrSS;
-            X86EFLAGS                   Eflags;
-            uint32_t                    fRealOnV86Active;
+            X86DESCATTR             AttrCS;
+            X86DESCATTR             AttrDS;
+            X86DESCATTR             AttrES;
+            X86DESCATTR             AttrFS;
+            X86DESCATTR             AttrGS;
+            X86DESCATTR             AttrSS;
+            X86EFLAGS               Eflags;
+            uint32_t                fRealOnV86Active;
         } RealMode;
 
         struct

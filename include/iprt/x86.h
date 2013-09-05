@@ -3268,6 +3268,19 @@ typedef const X86XCPT *PCX86XCPT;
 
 #pragma pack(1)
 /**
+ * 16-bit IDTR.
+ */
+typedef struct X86IDTR16
+{
+    /** Offset. */
+    uint16_t    offSel;
+    /** Selector. */
+    uint16_t    uSel;
+} X86IDTR16, *PX86IDTR16;
+#pragma pack()
+
+#pragma pack(1)
+/**
  * 32-bit IDTR/GDTR.
  */
 typedef struct X86XDTR32
