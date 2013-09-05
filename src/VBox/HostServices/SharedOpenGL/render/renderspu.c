@@ -1332,7 +1332,8 @@ void renderspuSetDefaultSharedContext(ContextInfo *pCtx)
     if (render_spu.defaultSharedContext)
         renderspuContextRelease(render_spu.defaultSharedContext);
 
-    renderspuContextRetain(pCtx);
+    if (pCtx)
+        renderspuContextRetain(pCtx);
     render_spu.defaultSharedContext = pCtx;
 }
 
