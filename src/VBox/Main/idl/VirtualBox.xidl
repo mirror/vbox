@@ -3380,7 +3380,7 @@
 
   <interface
     name="IInternalMachineControl" extends="$unknown"
-    uuid="aca30121-e06b-4ace-bc22-d18506a8ba2b"
+    uuid="2d9ce4b7-0ab2-4931-ac4a-e45aa66465ef"
     internal="yes"
     wsmap="suppress"
     >
@@ -12988,7 +12988,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="86fd6208-4c8c-40c2-a4e3-f6b47ac6ef07"
+    uuid="8df5fc17-503a-4171-85bc-039b6f24d86b"
     wsmap="managed"
     >
     <desc>
@@ -17438,7 +17438,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="3eeeb8e7-374f-4e0a-a5fd-f548742da8d4"
+    uuid="41506410-03d3-4b0c-9b27-e8e5149ce775"
     internal="yes"
     wsmap="suppress"
     >
