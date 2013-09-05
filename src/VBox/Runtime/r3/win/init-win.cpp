@@ -220,9 +220,8 @@ DECLHIDDEN(int) rtR3InitNativeObtrusiveWorker(void)
             rc = VERR_INTERNAL_ERROR_3;
     }
 
-#if ARCH_BITS == 32
-    if (g_enmWinVer > kRTWinOSType_VISTA) /* Observed GUI issues on 32-bit Vista. */
-#endif
+    /** @bugref 6861: Observed GUI issues on Vista (32-bit and 64-bit). */
+    if (g_enmWinVer > kRTWinOSType_VISTA)
     {
         typedef BOOL(WINAPI *PFNSETDEFAULTDLLDIRECTORIES)(DWORD);
         PFNSETDEFAULTDLLDIRECTORIES pfnSetDefDllDirs;
