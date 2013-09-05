@@ -1434,7 +1434,7 @@ struct SessionMachine::DeleteSnapshotTask
  *
  * When the console is done, it calls SessionMachine::EndTakingSnapshot().
  *
- *  @note Locks mParent + this object for writing.
+ * @note Locks mParent + this object for writing.
  *
  * @param aInitiator in: The console on which Console::TakeSnapshot was called.
  * @param aName  in: The name for the new snapshot.
@@ -3398,6 +3398,9 @@ HRESULT SessionMachine::onlineMergeMedium(const ComObjPtr<MediumAttachment> &aMe
     AssertReturn(aTarget != NULL, E_FAIL);
     AssertReturn(aSource != aTarget, E_FAIL);
     AssertReturn(aMediumLockList != NULL, E_FAIL);
+    NOREF(fMergeForward);
+    NOREF(aParentForTarget);
+    NOREF(aChildrenToReparent);
 
     HRESULT rc = S_OK;
 
@@ -3643,3 +3646,4 @@ STDMETHODIMP SessionMachine::FinishOnlineMergeMedium()
 
     return S_OK;
 }
+

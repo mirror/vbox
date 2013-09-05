@@ -1541,6 +1541,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
     }
     RTSpinlockReleaseNoInts(pDevExt->EventSpinlock);
     Assert(rc == 0);
+    NOREF(rc);
 
 #ifdef VBOXGUEST_USE_DEFERRED_WAKE_UP
     VBoxGuestWaitDoWakeUps(pDevExt);
@@ -3072,6 +3073,7 @@ bool VBoxGuestCommonISR(PVBOXGUESTDEVEXT pDevExt)
 
     ASMAtomicDecU32(&pDevExt->cISR);
     Assert(rc == 0);
+    NOREF(rc);
     return fOurIrq;
 }
 
