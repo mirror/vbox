@@ -483,14 +483,46 @@ class PlatformMSCOM(PlatformBase):
         # XPCOM or COM and do different things.
         ## @todo
 
-
-        win32com.client.gencache.EnsureDispatch('VirtualBox.Session')
-        win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox')
+        #
+        # Make sure the gencache is correct (we don't quite follow the COM
+        # versioning rules).
+        #
+        self.flushGenPyCache(win32com.client.gencache);
+        win32com.client.gencache.EnsureDispatch('VirtualBox.Session');
+        win32com.client.gencache.EnsureDispatch('VirtualBox.VirtualBox');
 
         self.oIntCv = threading.Condition()
         self.fInterrupted = False;
 
         _ = dParams;
+
+    def flushGenPyCache(self, oGenCache):
+        """
+        Flushes VBox related files in the win32com gen_py cache.
+
+        This is necessary since we don't follow the typelib versioning rules
+        that everyeone else seems to subscribe to.
+        """
+        #
+        # The EnsureModule method have broken validation code, it doesn't take
+        # typelib module directories into account.  So we brute force them here.
+        # (It's possible the directory approach is from some older pywin
+        # version or the result of runnig makepy or gencache manually, but we
+        # need to cover it as well.)
+        #
+        sName    = oGenCache.GetGeneratedFileName(self.VBOX_TLB_GUID, self.VBOX_TLB_LCID,
+                                                  self.VBOX_TLB_MAJOR, self.VBOX_TLB_MINOR);
+        sGenPath = oGenCache.GetGeneratePath();
+        if len(sName) > 36 and len(sGenPath) > 5:
+            sTypelibPath = os.path.join(sGenPath, sName);
+            if os.path.isdir(sTypelibPath):
+                import shutil;
+                shutil.rmtree(sTypelibPath, ignore_errors = True);
+
+        #
+        # Ensure that our typelib is valid.
+        #
+        return oGenCache.EnsureModule(self.VBOX_TLB_GUID, self.VBOX_TLB_LCID, self.VBOX_TLB_MAJOR, self.VBOX_TLB_MINOR);
 
     def getSessionObject(self, oIVBox):
         _ = oIVBox
