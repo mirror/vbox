@@ -1221,7 +1221,8 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     /* set the window pointer data at the last step to ensure our WM_PAINT callback does not do anything until we are fully initialized */
     {
         LONG_PTR oldVal = SetWindowLongPtr(window->hWnd, GWLP_USERDATA, (LONG_PTR)window);
-        Assert(!oldVal && GetLastError() == NO_ERROR);
+        DWORD winEr = GetLastError();
+        Assert(!oldVal && winEr == NO_ERROR);
     }
 
     return GL_TRUE;
@@ -1310,7 +1311,6 @@ void renderspu_SystemDestroyContext( ContextInfo *context )
 
 static GLboolean renderspuChkActivateSharedContext(ContextInfo *sharedContext)
 {
-    GLint crWindow;
     WindowInfo *window;
 
     if (sharedContext->hRC)
@@ -1321,18 +1321,10 @@ static GLboolean renderspuChkActivateSharedContext(ContextInfo *sharedContext)
     if (sharedContext->shared)
         renderspuChkActivateSharedContext(sharedContext->shared);
 
-    crWindow = renderspuWindowCreate(sharedContext->visual->displayName, sharedContext->visual->visAttribs);
-    if (!crWindow)
-    {
-        crError("renderspuChkActivateSharedContext: renderspuWindowCreate failed!");
-        return GL_FALSE;
-    }
-
-    window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, crWindow);
+    window = renderspuGetDummyWindow(sharedContext->visual->visAttribs);
     if (!window)
     {
-        crError("renderspuChkActivateSharedContext: crHashtableSearch failed!");
-        renderspuWindowDestroy(crWindow);
+        crError("renderspuChkActivateSharedContext: renderspuGetDummyWindow failed!");
         return GL_FALSE;
     }
 
@@ -1344,7 +1336,6 @@ static GLboolean renderspuChkActivateSharedContext(ContextInfo *sharedContext)
     if (!sharedContext->hRC)
     {
         crError( "Render SPU: (renderspuChkActivateSharedContext) Couldn't create the context for the window (error 0x%x)", GetLastError() );
-        renderspuWindowDestroy(crWindow);
         return GL_FALSE;
     }
 
@@ -1367,7 +1358,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
             /*@todo Chromium has no correct code to remove window ids and associated info from 
              * various tables. This is hack which just hides the root case.
              */
-//            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
+            crWarning("Recreating window in renderspu_SystemMakeCurrent\n");
             renderspu_SystemDestroyWindow( window );
             renderspu_SystemVBoxCreateWindow( context->visual, window->visible, window );
         }
