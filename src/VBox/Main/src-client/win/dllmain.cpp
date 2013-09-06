@@ -239,7 +239,7 @@ static void removeOldClassIDs(HKEY hkeyClassesRoot)
             Assert(rc == ERROR_SUCCESS);
         }
 
-        RegCloseKey(hkeyClsId);
+        RegCloseKey(hkeyClassesRoot);
     }
 }
 
