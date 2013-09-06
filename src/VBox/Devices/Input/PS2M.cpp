@@ -522,6 +522,23 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
     LogFlowFunc(("cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 //LogRel(("aux: cmd=0x%02X, active cmd=0x%02X\n", cmd, pThis->u8CurrCmd));
 
+    if (pThis->enmMode == AUX_MODE_RESET)
+    {
+        /* In reset mode, do not respond at all. */
+        return VINF_SUCCESS;
+    }
+    else if (pThis->enmMode == AUX_MODE_WRAP)
+    {
+        /* In wrap mode, bounce most data right back.*/
+        if (cmd == ACMD_RESET || cmd == ACMD_RESET_WRAP)
+            ;   /* Handle as regular commands. */
+        else
+        {
+            ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, cmd);
+            return VINF_SUCCESS;
+        }
+    }
+
     switch (cmd)
     {
         case ACMD_SET_SCALE_11:
