@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Darwin specific DNS information fetching. 
+ * Darwin specific DNS information fetching.
  */
 
 /*
