@@ -22,6 +22,7 @@
 #include <netinet/in.h>
 #else
 # include <Winsock2.h>
+# include <Ws2ipdef.h>
 #endif
 
 #include <iprt/cdefs.h>

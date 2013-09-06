@@ -29,6 +29,9 @@
 
 #ifndef RT_OS_WINDOWS
 # include <netinet/in.h>
+#else
+/* from  <ws2ipdef.h> */
+# define INET6_ADDRSTRLEN 65
 #endif
 
 #define IPv6

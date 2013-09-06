@@ -23,11 +23,6 @@
 
 RT_C_DECLS_BEGIN
 
-#ifndef INET6_ADDRSTRLEN
-  /* from netinet6/in6.h */
-# define INET6_ADDRSTRLEN 46
-#endif
-
 #define PF_NAMELEN 64
 /*
  * TBD: Here is shared implementation of parsing port-forward string 
