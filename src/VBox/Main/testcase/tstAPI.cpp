@@ -1212,6 +1212,25 @@ int main(int argc, char *argv[])
     } while (0);
 #endif
 
+#if 0
+    // DNS & Co.
+    ///////////////////////////////////////////////////////////////////////////
+    do
+    {
+        ComPtr<IHost> host;
+        CHECK_ERROR_BREAK(virtualBox, COMGETTER(Host)(host.asOutParam()));
+
+        {
+            Bstr domainName;
+            CHECK_ERROR_BREAK(host,COMGETTER(DomainName)(domainName.asOutParam()));
+            RTPrintf("Domain name: %ls\n", domainName.raw());
+        }
+    }
+    while (FALSE);
+    RTPrintf("\n");
+#endif
+
+
 #if 0 && defined(VBOX_WITH_RESOURCE_USAGE_API)
     do {
         // Get collector
