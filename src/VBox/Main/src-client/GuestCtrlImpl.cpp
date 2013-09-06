@@ -96,9 +96,7 @@ DECLCALLBACK(int) Guest::notifyCtrlDispatcher(void    *pvExtension,
 
     uint32_t uContextID;
     int rc = pSvcCb->mpaParms[0].getUInt32(&uContextID);
-    AssertMsgRC(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb));
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertMsgRCReturn(rc, ("Unable to extract callback context ID, pvData=%p\n", pSvcCb), rc);
 #ifdef DEBUG
     LogFlowFunc(("CID=%RU32, uSession=%RU32, uObject=%RU32, uCount=%RU32\n",
                  uContextID,
