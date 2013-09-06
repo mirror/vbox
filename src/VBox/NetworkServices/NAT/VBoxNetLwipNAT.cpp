@@ -969,8 +969,8 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     err = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (err)
     {
-	fprintf(stderr, "wsastartup: failed (%d)\n", err);
-	return 1;
+        fprintf(stderr, "wsastartup: failed (%d)\n", err);
+        return 1;
     }
 #endif
 
