@@ -144,6 +144,11 @@
       </listitem>
 
       <listitem>
+        <para>Main: extension pack framework can now support loading HGCM
+          modules, contributed by Jeff Westphal</para>
+      </listitem>
+
+      <listitem>
         <para>VBoxManage: list more information about hard disk/DVD/floppy
           media, and support the <computeroutput>--long</computeroutput>
           option to show really all available details</para>
