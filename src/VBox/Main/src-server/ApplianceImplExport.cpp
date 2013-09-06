@@ -2152,10 +2152,10 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                         }
 
                         void *pvTmpBuf = 0;
-                        uint64_t cbTmpSize = _1M;
+                        size_t cbTmpSize = _1M;
                         size_t cbAllWritten = 0;
                         uint64_t cbFile = 0;
-                        uint64_t cbSize = 0;
+                        size_t cbSize = 0;
 
                         vrc = RTFileGetSize(pFile, &cbFile);
 
