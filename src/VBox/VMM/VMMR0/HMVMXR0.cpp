@@ -4064,7 +4064,6 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
             /** @todo this isn't necessary, but I'm still seeing triple faults. */
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_EXIT_CTLS;
         }
 #else
         /* 64-bit host or hybrid host. */
@@ -4084,7 +4083,6 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
              *        fix should be found as the guest may be going back and forth
              *        between 16/32-bit and long mode frequently at times. */
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_VMX_EXIT_CTLS;
         }
 #else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
