@@ -78,16 +78,14 @@ if !defined(VBOX_WITH_GUEST_KMS_DRIVER)
 else
  vboxvideo_drm_INCS           += ../../../Runtime/r0drv/linux
  vboxvideo_drm_SOURCES         = \
+   ../../common/VBoxVideo/HGSMIBase.cpp \
    ../../common/VBoxVideo/Modesetting.cpp \
- 	vboxvideo_crtc.c \
- 	vboxvideo_dac.c \
- 	vboxvideo_device.c \
- 	vboxvideo_display.c \
- 	vboxvideo_drv.c \
- 	vboxvideo_fbdev.c \
- 	vboxvideo_framebuffer.c \
- 	vboxvideo_kms.c \
- 	vboxvideo_vga.c
+   ../../common/VBoxVideo/VBVABase.cpp \
+ 	vbox_drv.c \
+ 	vbox_fb.c \
+ 	vbox_main.c \
+ 	vbox_mode.c \
+ 	vbox_ttm.c
 endif
 
 include $(FILE_KBUILD_SUB_FOOTER)

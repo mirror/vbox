@@ -20,9 +20,8 @@ include $(obj)/Makefile.include.header
 
 MOD_NAME   = vboxvideo
 
-MOD_OBJS   = Modesetting.o vboxvideo_crtc.o vboxvideo_dac.o vboxvideo_device.o \
-             vboxvideo_display.o vboxvideo_drv.o vboxvideo_fbdev.o \
-             vboxvideo_framebuffer.o vboxvideo_kms.o vboxvideo_vga.o
+MOD_OBJS   = HGSMIBase.o Modesetting.o VBVABase.o vbox_drv.o vbox_fb.o \
+             vbox_main.o vbox_mode.o vbox_ttm.o 
 
 ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxvideo),)
  MANGLING := $(KBUILD_EXTMOD)/vboxvideo/include/VBox/VBoxGuestMangling.h
