@@ -921,7 +921,7 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
     GLint compiled = 0;
     pCache->pDispatch->GetShaderiv(uiShader, GL_COMPILE_STATUS, &compiled);
 
-#ifdef DEBUG_misha
+#ifndef DEBUG_misha
     if(!compiled)
 #endif
     {
@@ -955,7 +955,7 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
 
     GLint linked;
     pCache->pDispatch->GetProgramiv(uiProgram, GL_LINK_STATUS, &linked);
-#ifdef DEBUG_misha
+#ifndef DEBUG_misha
     if(!linked)
 #endif
     {
