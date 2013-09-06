@@ -226,35 +226,6 @@ struct Host::Data
     HostDnsService          *pHostDnsService;
 };
 
-#ifndef RT_OS_WINDOWS
-static char g_aszResolvConf[RTPATH_MAX];
-
-static inline char *getResolvConfPath()
-{
-    if (!g_aszResolvConf[0]) return g_aszResolvConf;
-# ifdef RT_OS_OS2
-    /*
-     * This was in an old Slirp code:
-     * IBM's "Technical Document # - 16070238", clearly says \MPTN\ETC\RESOLV2 
-     * no redolv.conf (remark to code in old Slirp code)
-     */
-    if (RTEnvExists("ETC"))
-    {
-        RTStrmPrintf(g_aszResolvConf, MAX_PATH, "%/RESOLV2", RTEnvGet("ETC"));
-        int rc = RTFileExists(g_aszResolvConf);
-        if (RT_SUCCESS(rc))
-            return g_aszResolvConf;
-    }
-
-    RT_ZERO(g_aszResolvConf);
-    RTStrmPrintf(g_aszResolvConf, sizeof(g_aszResolvConf), "%/RESOLV2", _PATH_ETC);
-# else
-    RTStrCopy(g_aszResolvConf, sizeof(g_aszResolvConf), "/etc/resolv.conf");
-# endif    
-    return g_aszResolvConf;
-}
-#endif
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Constructor / destructor
