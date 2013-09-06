@@ -476,12 +476,20 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 break;
 
                 case DeviceType_DVD:
-                    pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
-                                       strTargetVmdkName,   // disk ID
-                                       strTargetVmdkName,   // OVF value
-                                       strLocation, // vbox value
-                                       (uint32_t)(llSize / _1M),// ulSize
-                                       strExtra);
+                {
+                    /* get info about whether medium is a real drive/device or not */
+                    BOOL fHostDrive = false;
+                    rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
+
+                    /* Only virtual CD-ROM is exported, the real device/drive isn't exported */
+                    if(!fHostDrive)
+                        pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
+                                           strTargetVmdkName,   // disk ID
+                                           strTargetVmdkName,   // OVF value
+                                           strLocation, // vbox value
+                                           (uint32_t)(llSize / _1M),// ulSize
+                                           strExtra);
+                }
                 break;
 
                 case DeviceType_Floppy:
