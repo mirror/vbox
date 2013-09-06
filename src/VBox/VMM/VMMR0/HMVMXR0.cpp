@@ -4059,12 +4059,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
-        if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
-        {
-            pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
-            /** @todo this isn't necessary, but I'm still seeing triple faults. */
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
-        }
+        pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
 #else
         /* 64-bit host or hybrid host. */
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM64;
