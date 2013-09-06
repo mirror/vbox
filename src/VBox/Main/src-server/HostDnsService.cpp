@@ -1,4 +1,4 @@
-/* $Id$
+/* $Id$ */
 /** @file
  * Base class fo Host DNS & Co services.
  */
