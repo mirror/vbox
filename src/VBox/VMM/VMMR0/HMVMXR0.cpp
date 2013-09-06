@@ -4059,7 +4059,11 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
         /* 32-bit host. We need to switch to 64-bit before running the 64-bit guest. */
-        pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
+        if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0SwitcherStartVM64)
+        {
+            pVCpu->hm.s.vmx.pfnStartVM = VMXR0SwitcherStartVM64;
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS;
+        }
 #else
         /* 64-bit host or hybrid host. */
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM64;
@@ -4072,12 +4076,7 @@ static int hmR0VmxSetupVMRunHandler(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         if (pVCpu->hm.s.vmx.pfnStartVM != VMXR0StartVM32)
         {
             pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
-            /** @todo r=bird: Don't we need to set up the host resume (after
-             *        vmlaunch/vmresume) state here??  I'm forcing a trip to ring-3 now
-             *        in the hope that it will prevent crashing the host.  A better
-             *        fix should be found as the guest may be going back and forth
-             *        between 16/32-bit and long mode frequently at times. */
-            VMCPU_FF_SET(pVCpu, VMCPU_FF_TO_R3);
+            pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_HOST_CONTEXT | HM_CHANGED_VMX_EXIT_CTLS | HM_CHANGED_VMX_ENTRY_CTLS;
         }
 #else
         pVCpu->hm.s.vmx.pfnStartVM = VMXR0StartVM32;
@@ -7170,9 +7169,13 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
      * Ideally, assert that the cross-dependent bits are up to date at the point of using it.
      */
-    int rc = hmR0VmxLoadGuestEntryCtls(pVCpu, pMixedCtx);
+    int rc = hmR0VmxSetupVMRunHandler(pVCpu, pMixedCtx);
+    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
+
+    rc = hmR0VmxLoadGuestEntryCtls(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestEntryCtls! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
+    /* This needs to be done after pfnStartVM is set as it may require exit guest controls changes. */
     rc = hmR0VmxLoadGuestExitCtls(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupExitCtls failed! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
@@ -7198,9 +7201,6 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     rc = hmR0VmxLoadGuestRipRspRflags(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestRipRspRflags! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
-
-    rc = hmR0VmxSetupVMRunHandler(pVCpu, pMixedCtx);
-    AssertLogRelMsgRCReturn(rc, ("hmR0VmxSetupVMRunHandler! rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
     /* Clear any unused and reserved bits. */
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_CR2;
@@ -7471,6 +7471,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT)
     {
+        /* This ASSUMES that pfnStartVM has been set up already. */
         Assert(VMMR0ThreadCtxHooksAreRegistered(pVCpu));
         int rc = hmR0VmxSaveHostState(pVM, pVCpu);
         AssertRC(rc);
