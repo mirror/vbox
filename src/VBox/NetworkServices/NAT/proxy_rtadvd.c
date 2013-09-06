@@ -320,10 +320,22 @@ proxy_rtadvd_fill_payload(struct netif *proxy_netif, int is_default)
     ra_hdr->flags |= ND6_RA_FLAG_MANAGED_ADDR_CONFIG;
 #endif
     /*
+     * XXX: TODO: Disable "O" flag for now to match disabled stateless
+     * server.  We don't yet get IPv6 nameserver addresses from
+     * HostDnsService, so we have nothing to say, don't tell guests to
+     * come asking.
+     */
+#if 0
+    /*
      * "O" flag.  Tell guests to use DHCP6 for DNS and the like.  This
      * is served by simple stateless server (RFC 3736).
+     *
+     * XXX: "STATEFUL" in the flag name was probably a bug in RFC2461.
+     * It's present in the text, but not in the router configuration
+     * variable name.  It's dropped in the text in RFC4861.
      */
     ra_hdr->flags |= ND6_RA_FLAG_OTHER_STATEFUL_CONFIG;
+#endif
 
     if (is_default) {
         ra_hdr->router_lifetime = PP_HTONS(1200); /* seconds */

@@ -57,7 +57,12 @@ proxy_init(struct netif *proxy_netif, const struct proxy_options *opts)
     proxy_rtadvd_start(proxy_netif);
 #endif
 
-#if 1
+    /*
+     * XXX: We use stateless DHCPv6 only to report IPv6 address(es) of
+     * nameserver(s).  Since we don't yet support IPv6 addresses in
+     * HostDnsService, there's no point in running DHCPv6.
+     */
+#if 0
     dhcp6ds_init(proxy_netif);
 #endif
 

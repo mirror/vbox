@@ -56,6 +56,10 @@ dhcp6ds_init(struct netif *proxy_netif)
 
     pxaddr = netif_ip6_addr(proxy_netif, 0); /* link local */
 
+    /*
+     * XXX: TODO: This is a leftover from testing with IPv6 mapped
+     * loopback with a special IPv6->IPv4 mapping hack in pxudp.c
+     */
     /* advertise ourself as DNS resolver - will be proxied to host */
     pxaddr_nonlocal = NULL;
     for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; ++i) {
@@ -116,6 +120,10 @@ dhcp6ds_init(struct netif *proxy_netif)
 
     DNSSRV_SET(0, DHCP6_OPTION_DNS_SERVERS);
     DNSSRV_SET(2, 16);          /* one IPv6 address */
+    /*
+     * XXX: TODO: This is a leftover from testing with IPv6 mapped
+     * loopback with a special IPv6->IPv4 mapping hack in pxudp.c
+     */
     memcpy(&dhcp6ds_dns[4], pxaddr_nonlocal, sizeof(ip6_addr_t));
 
 #undef SERVERID_SET
