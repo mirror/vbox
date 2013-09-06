@@ -26,7 +26,6 @@
 #endif
 
 #include <iprt/cdefs.h>
-#define IPv6
 #include <iprt/cidr.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
