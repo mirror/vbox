@@ -2124,51 +2124,89 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                 else
                 {
                     //copy/clone CD/DVD image
-                    /* Read the ISO file into a memory buffer */
+                    /* Read the ISO file and add one to OVA/OVF package */
                     {
-                        void *pvTmpBuf = 0;
-                        size_t cbSize = 0;
+                        void *pvStorage;
+                        RTFILE pFile = NULL;
+                        void *pvUser = pStorage;
 
-                        if (RTFileExists(strSrcFilePath.c_str()))
-                        {
-                            // open ISO file and read one into memory buffer
-                            RTFILE pFile = NULL;
-                            vrc = RTFileOpen(&pFile, strSrcFilePath.c_str(), RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
-                            if (RT_SUCCESS(vrc) && pFile != NULL)
-                            {
-                                uint64_t cbFile = 0;
-
-                                vrc = RTFileGetSize(pFile, &cbFile);
-
-                                if (RT_SUCCESS(vrc))
-                                   pvTmpBuf = RTMemAllocZ(cbFile);
-                                else
-                                    throw setError(VBOX_E_FILE_ERROR,
-                                            tr("Could not get size of the ISO file '%s' "),
-                                            RTPathFilename(strSrcFilePath.c_str()));
-
-                                vrc = RTFileRead(pFile, pvTmpBuf, cbFile, &cbSize);
-
-                                if (RT_FAILURE(vrc))
-                                {
-                                    if (pvTmpBuf)
-                                        RTMemFree(pvTmpBuf);
-                                    throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not read the ISO file '%s' (%Rrc)"),
-                                           RTPathFilename(strSrcFilePath.c_str()), vrc);
-                                }
-                            }
-
-                            RTFileClose(pFile);
-                        }
-
-                        /* Write the ISO file to disk. */
-                        vrc = ShaWriteBuf(strTargetFilePath.c_str(), pvTmpBuf, cbSize, pIfIo, pStorage);
-                        RTMemFree(pvTmpBuf);
+                        vrc = pIfIo->pfnOpen(pvUser, strTargetFilePath.c_str(),
+                                             RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE, 
+                                             0,
+                                             &pvStorage);
                         if (RT_FAILURE(vrc))
                             throw setError(VBOX_E_FILE_ERROR,
-                                           tr("Could not create ISO file '%s' (%Rrc)"),
+                                           tr("Could not create or open file '%s' (%Rrc)"),
                                            strTargetFilePath.c_str(), vrc);
+
+                        vrc = RTFileOpen(&pFile,
+                                         strSrcFilePath.c_str(),
+                                         RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_NONE);
+
+                        if (RT_FAILURE(vrc) || pFile == NULL)
+                        {
+                            pIfIo->pfnClose(pvUser, pvStorage);
+                            throw setError(VBOX_E_FILE_ERROR,
+                                           tr("Could not create or open file '%s' (%Rrc)"),
+                                           strSrcFilePath.c_str(), vrc);
+                        }
+
+                        void *pvTmpBuf = 0;
+                        uint64_t cbTmpSize = _1M;
+                        size_t cbAllWritten = 0;
+                        uint64_t cbFile = 0;
+                        uint64_t cbSize = 0;
+
+                        vrc = RTFileGetSize(pFile, &cbFile);
+
+                        do
+                        {
+                            pvTmpBuf = RTMemAlloc(cbTmpSize);
+                            if (!pvTmpBuf)
+                            {
+                                vrc = VERR_NO_MEMORY;
+                                break;
+                            }
+
+                            for (;;)
+                            {
+                                // copy raw data into the buffer pvTmpBuf
+                                vrc = RTFileRead(pFile, pvTmpBuf, cbTmpSize, &cbSize);
+
+                                if (RT_FAILURE(vrc) || cbSize == 0)
+                                    break;
+
+                                size_t cbToWrite = cbSize;
+                                size_t cbWritten = 0;
+
+                                vrc = pIfIo->pfnWriteSync(pvUser,
+                                                         pvStorage,
+                                                         cbAllWritten,
+                                                         pvTmpBuf,
+                                                         cbToWrite,&cbWritten);
+
+                                if (RT_FAILURE(vrc))
+                                    break;
+
+                                cbAllWritten += cbWritten;
+                            }
+                        } while (0);
+
+                        pIfIo->pfnClose(pvUser, pvStorage);
+                        RTFileClose(pFile);
+
+                        if (pvTmpBuf)
+                            RTMemFree(pvTmpBuf);
+
+                        if (RT_FAILURE(vrc))
+                        {
+                            if (vrc == VERR_EOF)
+                                vrc = VINF_SUCCESS;
+                            else
+                                throw setError(VBOX_E_FILE_ERROR,
+                                               tr("Error during copy CD/DVD image '%s' (%Rrc)"),
+                                               strSrcFilePath.c_str(), vrc);
+                        }
                     }
                 }
             }
