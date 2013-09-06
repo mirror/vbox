@@ -973,6 +973,11 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Get FSB clock status (Intel-specific). */
 #define MSR_IA32_FSB_CLOCK_STS              0xCD
 
+/** C0 Maximum Frequency Clock Count */
+#define MSR_IA32_MPERF                      0xE7
+/** C0 Actual Frequency Clock Count */
+#define MSR_IA32_APERF                      0xE8
+
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
 

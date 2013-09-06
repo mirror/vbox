@@ -1143,6 +1143,8 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_IA32_PMC0:
         case MSR_IA32_PMC1:
         case MSR_IA32_PLATFORM_ID:          /* fam/mod >= 6_01 */
+        case MSR_IA32_MPERF:                /* intel_pstate depends on this but does a validation test */
+        case MSR_IA32_APERF:                /* intel_pstate depends on this but does a validation test */
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_RAPL_POWER_UNIT:
         case MSR_BBL_CR_CTL3:               /* ca. core arch? */
