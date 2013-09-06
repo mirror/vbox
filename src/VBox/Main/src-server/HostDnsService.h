@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Host DNS listener. 
+ * Host DNS listener.
  */
 
 /*
