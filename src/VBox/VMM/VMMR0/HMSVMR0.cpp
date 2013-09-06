@@ -4011,7 +4011,7 @@ HMSVM_EXIT_DECL hmR0SvmExitMwait(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvm
         hmR0SvmUpdateRip(pVCpu, pCtx, 3);
 
         if (   rc == VINF_EM_HALT
-            && EMShouldContinueAfterHalt(pVCpu, pCtx))
+            && EMMonitorWaitShouldContinue(pVCpu, pCtx))
         {
             rc = VINF_SUCCESS;
         }

@@ -218,25 +218,42 @@ VMM_INT_DECL(int) EMMonitorWaitPerform(PVMCPU pVCpu, uint64_t rax, uint64_t rcx)
 
 
 /**
- * Determine if we should continue after encountering a hlt or mwait
- * instruction.
+ * Determine if we should continue after encountering a mwait instruction.
  *
  * Clears MWAIT flags if returning @c true.
  *
- * @returns boolean
+ * @returns true if we should continue, false if we should halt.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pCtx            Current CPU context.
  */
-VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
+VMM_INT_DECL(bool) EMMonitorWaitShouldContinue(PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     if (   pCtx->eflags.Bits.u1IF
         || (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
             ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) )
     {
-        pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
-        return !!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
+        if (VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)))
+        {
+            pVCpu->em.s.MWait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+            return true;
+        }
     }
 
+    return false;
+}
+
+
+/**
+ * Determine if we should continue after encountering a hlt instruction.
+ *
+ * @returns true if we should continue, false if we should halt.
+ * @param   pVCpu           Pointer to the VMCPU.
+ * @param   pCtx            Current CPU context.
+ */
+VMM_INT_DECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (pCtx->eflags.Bits.u1IF)
+        return !!VMCPU_FF_IS_PENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC));
     return false;
 }
 

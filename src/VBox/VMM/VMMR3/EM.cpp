@@ -2513,10 +2513,16 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_HALTED:
                 {
                     STAM_REL_PROFILE_START(&pVCpu->em.s.StatHalted, y);
+                    /* If HM (or someone else) store a pending interrupt in
+                       TRPM, it must be dispatched ASAP without any halting.
+                       Anything pending in TRPM has been accepted and the CPU
+                       should already be the right state to receive it. */
+                    if (TRPMHasTrap(pVCpu))
+                        rc = VINF_EM_RESCHEDULE;
                     /* MWAIT has a special extension where it's woken up when
                        an interrupt is pending even when IF=0. */
-                    if (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
-                        ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+                    else if (   (pVCpu->em.s.MWait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
+                             ==                            (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0))
                     {
                         rc = VMR3WaitHalted(pVM, pVCpu, false /*fIgnoreInterrupts*/);
                         if (   rc == VINF_SUCCESS
@@ -2526,8 +2532,6 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                             rc = VINF_EM_RESCHEDULE;
                         }
                     }
-                    else if (TRPMHasTrap(pVCpu))
-                        rc = VINF_EM_RESCHEDULE;
                     else
                         rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
 

@@ -8952,7 +8952,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMwait(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
         AssertRCReturn(rc3, rc3);
 
         if (   rc == VINF_EM_HALT
-            && EMShouldContinueAfterHalt(pVCpu, pMixedCtx))
+            && EMMonitorWaitShouldContinue(pVCpu, pMixedCtx))
         {
             rc = VINF_SUCCESS;
         }
