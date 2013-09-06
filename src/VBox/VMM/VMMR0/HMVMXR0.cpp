@@ -3703,7 +3703,7 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
  *                      out-of-sync. Make sure to update the required fields
  *                      before using them.
  *
- * @remarks ASSUMES CR0 is up to date (strict builds validation).
+ * @remarks ASSUMES pMixedCtx->cr0 is up to date (strict builds validation).
  * @remarks No-long-jump zone!!!
  */
 static int hmR0VmxLoadGuestSegmentRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
@@ -7186,7 +7186,7 @@ static int hmR0VmxLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     rc = hmR0VmxLoadGuestCR3AndCR4(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestCR3AndCR4: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
-    /* Assumes CR0 is up-to-date (strict builds require CR0 for segment register validation checks). */
+    /* Assumes pMixedCtx->cr0 is up-to-date (strict builds require CR0 for segment register validation checks). */
     rc = hmR0VmxLoadGuestSegmentRegs(pVCpu, pMixedCtx);
     AssertLogRelMsgRCReturn(rc, ("hmR0VmxLoadGuestSegmentRegs: rc=%Rrc (pVM=%p pVCpu=%p)\n", rc, pVM, pVCpu), rc);
 
