@@ -2223,29 +2223,31 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
 {
     int rc = VERR_INTERNAL_ERROR_5;
-    RTSEL uSelDS   = 0;
-    RTSEL uSelES   = 0;
-    RTSEL uSelFS   = 0;
-    RTSEL uSelGS   = 0;
-    RTSEL uSelTR   = 0;
 
     /*
      * Host DS, ES, FS and GS segment registers.
      */
 #if HC_ARCH_BITS == 64
-    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
-    uSelDS   = ASMGetDS();
-    uSelES   = ASMGetES();
-    uSelFS   = ASMGetFS();
-    uSelGS   = ASMGetGS();
+    RTSEL uSelDS = ASMGetDS();
+    RTSEL uSelES = ASMGetES();
+    RTSEL uSelFS = ASMGetFS();
+    RTSEL uSelGS = ASMGetGS();
+#else
+    RTSEL uSelDS = 0;
+    RTSEL uSelES = 0;
+    RTSEL uSelFS = 0;
+    RTSEL uSelGS = 0;
 #endif
+
+    /* Recalculate which host-state bits need to be manually restored. */
+    pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
 
     /*
      * Host CS and SS segment registers.
      */
+#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     RTSEL uSelCS;
     RTSEL uSelSS;
-#ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     if (HMVMX_IS_64BIT_HOST_MODE())
     {
         uSelCS = (RTSEL)(uintptr_t)&SUPR0Abs64bitKernelCS;
@@ -2258,14 +2260,14 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
         uSelSS = (RTSEL)(uintptr_t)&SUPR0AbsKernelSS;
     }
 #else
-    uSelCS = ASMGetCS();
-    uSelSS = ASMGetSS();
+    RTSEL uSelCS = ASMGetCS();
+    RTSEL uSelSS = ASMGetSS();
 #endif
 
     /*
      * Host TR segment register.
      */
-    uSelTR = ASMGetTR();
+    RTSEL uSelTR = ASMGetTR();
 
 #if HC_ARCH_BITS == 64
     /*
@@ -6126,6 +6128,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Assert(!CPUMIsGuestDebugStateActive(pVCpu));
     Assert(!CPUMIsHyperDebugStateActive(pVCpu));
 
+#if HC_ARCH_BITS == 64
     /* Restore host-state bits that VT-x only restores partially. */
     if (   (pVCpu->hm.s.vmx.fRestoreHostFlags & VMX_RESTORE_HOST_REQUIRED)
         && (pVCpu->hm.s.vmx.fRestoreHostFlags & ~VMX_RESTORE_HOST_REQUIRED))
@@ -6134,6 +6137,7 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         VMXRestoreHostState(pVCpu->hm.s.vmx.fRestoreHostFlags, &pVCpu->hm.s.vmx.RestoreHost);
         pVCpu->hm.s.vmx.fRestoreHostFlags = 0;
     }
+#endif
 
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatEntry);
     STAM_PROFILE_ADV_SET_STOPPED(&pVCpu->hm.s.StatLoadGuestState);
