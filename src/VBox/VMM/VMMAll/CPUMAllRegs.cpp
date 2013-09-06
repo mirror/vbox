@@ -871,22 +871,15 @@ VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 
 
 /**
- * Query an MSR.
+ * Worker for CPUMQueryGuestMsr().
  *
- * The caller is responsible for checking privilege if the call is the result
- * of a RDMSR instruction. We'll do the rest.
- *
- * @retval  VINF_SUCCESS on success.
- * @retval  VERR_CPUM_RAISE_GP_0 on failure (invalid MSR), the caller is
- *          expected to take the appropriate actions. @a *puValue is set to 0.
- * @param   pVCpu               Pointer to the VMCPU.
- * @param   idMsr               The MSR.
- * @param   puValue             Where to return the value.
- *
- * @remarks This will always return the right values, even when we're in the
- *          recompiler.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_CPUM_RAISE_GP_0
+ * @param   pVCpu               The cross context CPU structure.
+ * @param   idMsr               The MSR to read.
+ * @param   puValue             Where to store the return value.
  */
-VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
+static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 {
     /*
      * If we don't indicate MSR support in the CPUID feature bits, indicate
@@ -1148,6 +1141,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_RAPL_POWER_UNIT:
         case MSR_BBL_CR_CTL3:               /* ca. core arch? */
+        case MSR_PKG_CST_CONFIG_CONTROL:   /* Nahalem, Sandy Bridge */
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
             {
@@ -1170,6 +1164,9 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
                                                    1, /* bit 8  - L2 Enabled (R/W). */
                                                    0, /* bit 23 - L2 Not Present (RO). */
                                                    0);
+                    break;
+                case MSR_PKG_CST_CONFIG_CONTROL:
+                    *puValue = pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl;
                     break;
             }
             break;
@@ -1230,6 +1227,30 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
 
 
 /**
+ * Query an MSR.
+ *
+ * The caller is responsible for checking privilege if the call is the result
+ * of a RDMSR instruction. We'll do the rest.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_CPUM_RAISE_GP_0 on failure (invalid MSR), the caller is
+ *          expected to take the appropriate actions. @a *puValue is set to 0.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   idMsr               The MSR.
+ * @param   puValue             Where to return the value.
+ *
+ * @remarks This will always return the right values, even when we're in the
+ *          recompiler.
+ */
+VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
+{
+    int rc = cpumQueryGuestMsrInt(pVCpu, idMsr, puValue);
+    LogFlow(("CPUMQueryGuestMsr: %#x -> %llx rc=%d\n", idMsr, *puValue, rc));
+    return rc;
+}
+
+
+/**
  * Sets the MSR.
  *
  * The caller is responsible for checking privilege if the call is the result
@@ -1249,6 +1270,8 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
  */
 VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 {
+    LogFlow(("CPUSetGuestMsr: %#x <- %#llx\n", idMsr, uValue));
+
     /*
      * If we don't indicate MSR support in the CPUID feature bits, indicate
      * that a #GP(0) should be raised.
@@ -1456,10 +1479,33 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
         /*case MSR_IA32_MCG_CTRL:    - indicated as not present in CAP */
         /*case MSR_IA32_MC0_CTL:     - read-only? */
         /*case MSR_IA32_MC0_STATUS:  - read-only? */
+        case MSR_PKG_CST_CONFIG_CONTROL:
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
             {
                 Log(("CPUM: MSR %#x is Intel, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
                 return VERR_CPUM_RAISE_GP_0;
+            }
+
+            switch (idMsr)
+            {
+                case MSR_PKG_CST_CONFIG_CONTROL:
+                {
+                    if (pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl & RT_BIT_64(15))
+                    {
+                        Log(("MSR_PKG_CST_CONFIG_CONTROL: Write protected -> #GP\n"));
+                        return VERR_CPUM_RAISE_GP_0;
+                    }
+                    static uint64_t s_fMask = UINT64_C(0x01f08407); /** @todo Only Nehalem has 24; Only Sandy has 27 and 28. */
+                    static uint64_t s_fGpInvalid = UINT64_C(0xffffffff00ff0000); /** @todo figure out exactly what's off limits. */
+                    if ((uValue & s_fGpInvalid) || (uValue & 7) >= 5)
+                    {
+                        Log(("MSR_PKG_CST_CONFIG_CONTROL: Invalid value %#llx -> #GP\n", uValue));
+                        return VERR_CPUM_RAISE_GP_0;
+                    }
+                    pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl = uValue & s_fMask;
+                    break;
+                }
+
             }
             /* ignored */
             break;

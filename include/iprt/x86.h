@@ -973,6 +973,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Get FSB clock status (Intel-specific). */
 #define MSR_IA32_FSB_CLOCK_STS              0xCD
 
+/** C-State configuration control. Intel specific: Nehalem, Sandy Bridge. */
+#define MSR_PKG_CST_CONFIG_CONTROL          UINT32_C(0x000000e2)
+
 /** C0 Maximum Frequency Clock Count */
 #define MSR_IA32_MPERF                      0xE7
 /** C0 Actual Frequency Clock Count */

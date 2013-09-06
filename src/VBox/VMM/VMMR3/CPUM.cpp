@@ -1571,6 +1571,11 @@ VMMR3DECL(void) CPUMR3ResetCpu(PVMCPU pVCpu)
     CPUMSetGuestMsr(pVCpu, MSR_IA32_TSC, 0);
 #endif
 
+
+    /* C-state control. Guesses. */
+    pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl = 1 /*C1*/ | RT_BIT_32(25) | RT_BIT_32(26) | RT_BIT_32(27) | RT_BIT_32(28);
+
+
     /*
      * Get the APIC base MSR from the APIC device. For historical reasons (saved state), the APIC base
      * continues to reside in the APIC device and we cache it here in the VCPU for all further accesses.
