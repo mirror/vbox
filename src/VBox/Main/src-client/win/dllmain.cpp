@@ -50,7 +50,7 @@ END_OBJECT_MAP()
 #endif
 
 
-#ifndef WITH_MANUAL_CLEANUP
+#ifdef WITH_MANUAL_CLEANUP
 /** Type library GUIDs to clean up manually. */
 static const char * const g_apszTypelibGuids[] =
 {
@@ -77,7 +77,7 @@ static const char * const g_apszTypelibVersions[] =
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-#ifndef WITH_MANUAL_CLEANUP
+#ifdef WITH_MANUAL_CLEANUP
 static void removeOldMess(void);
 #endif
 
@@ -134,13 +134,13 @@ STDAPI DllRegisterServer(void)
 STDAPI DllUnregisterServer(void)
 {
     HRESULT hrc = _Module.UnregisterServer(TRUE);
-#ifndef WITH_MANUAL_CLEANUP
+#ifdef WITH_MANUAL_CLEANUP
     removeOldMess();
 #endif
     return hrc;
 }
 
-#ifndef WITH_MANUAL_CLEANUP
+#ifdef WITH_MANUAL_CLEANUP
 
 /**
  * Checks if the typelib GUID is one of the ones we wish to clean up.
