@@ -26,7 +26,6 @@
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
 
-#define IPv6 /* RTNETADDRU */
 #include <iprt/net.h>
 #include <iprt/initterm.h>
 #include <iprt/alloca.h>
