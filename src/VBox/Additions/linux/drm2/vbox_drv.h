@@ -2,7 +2,7 @@
  *
  * VirtualBox Additions Linux kernel video driver
  */
-
+q
 /*
  * Copyright (C) 2013 Oracle Corporation
  *
@@ -19,6 +19,7 @@
  * ast_drv.h
  * with the following copyright and permission notice:
  *
+ * Copyright 2012 Red Hat Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
@@ -122,6 +123,7 @@ struct vbox_encoder {
 struct vbox_framebuffer {
 	struct drm_framebuffer base;
 	struct drm_gem_object *obj;
+	uint64_t offBase;
 };
 
 struct vbox_fbdev {
