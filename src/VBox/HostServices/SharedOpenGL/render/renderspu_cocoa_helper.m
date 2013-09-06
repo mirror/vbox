@@ -1424,7 +1424,7 @@ DECLINLINE(void) vboxNSRectToRectStretched(const NSRect *pR, RTRECT *pRect, floa
     Assert(WinInfo.width = m_RootRect.size.width);
     Assert(WinInfo.height = m_RootRect.size.height);
 
-    CrBltMuralSetCurrent(m_pBlitter, NULL);
+    /*CrBltMuralSetCurrent(m_pBlitter, NULL);*/
     
     CrBltMuralSetCurrent(m_pBlitter, &WinInfo);
     CrBltCheckUpdateViewport(m_pBlitter);

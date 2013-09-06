@@ -36,6 +36,30 @@ DECLEXPORT(int)     crIsDigit( char c );
 DECLEXPORT(void)    crBytesToString( char *string, int nstring, void *data, int ndata );
 DECLEXPORT(void)    crWordsToString( char *string, int nstring, void *data, int ndata );
 
+#define CR_GLVERSION_OFFSET_MAJOR (24)
+#define CR_GLVERSION_OFFSET_MINOR (16)
+#define CR_GLVERSION_OFFSET_BUILD (0)
+
+#define CR_GLVERSION_MAX_MAJOR (0x7f)
+#define CR_GLVERSION_MAX_MINOR (0xff)
+#define CR_GLVERSION_MAX_BUILD (0xffff)
+
+#define CR_GLVERSION_MASK_MAJOR (CR_GLVERSION_MAX_MAJOR << CR_GLVERSION_OFFSET_MAJOR)
+#define CR_GLVERSION_MASK_MINOR (CR_GLVERSION_MAX_MINOR << CR_GLVERSION_OFFSET_MINOR)
+#define CR_GLVERSION_MASK_BUILD (CR_GLVERSION_MAX_BUILD << CR_GLVERSION_OFFSET_BUILD)
+
+#define CR_GLVERSION_COMPOSE_EL(_val, _type) (((_val) << CR_GLVERSION_OFFSET_##_type) & CR_GLVERSION_MASK_##_type)
+
+#define CR_GLVERSION_COMPOSE(_maj, _min, _build) (CR_GLVERSION_COMPOSE_EL((_maj), MAJOR) \
+        + CR_GLVERSION_COMPOSE_EL((_min), MINOR) \
+        + CR_GLVERSION_COMPOSE_EL((_build), BUILD))
+
+#define CR_GLVERSION_GET_EL(_val, _type) (((_val) & CR_GLVERSION_MASK_##_type) >> CR_GLVERSION_OFFSET_##_type)
+#define CR_GLVERSION_GET_MAJOR(_val) CR_GLVERSION_GET_EL((_val), MAJOR)
+#define CR_GLVERSION_GET_MINOR(_val) CR_GLVERSION_GET_EL((_val), MINOR)
+#define CR_GLVERSION_GET_BUILD(_val) CR_GLVERSION_GET_EL((_val), BUILD)
+
+DECLEXPORT(int) crStrParseGlVersion(const char * ver);
 RT_C_DECLS_END
 
 #endif /* CR_STRING_H */

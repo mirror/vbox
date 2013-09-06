@@ -31,7 +31,7 @@ RT_C_DECLS_BEGIN
 /* GLSL Cache */
 typedef struct CR_GLSL_CACHE
 {
-    float glVersion;
+    int iGlVersion;
     GLuint uNoAlpha2DProg;
     GLuint uNoAlpha2DRectProg;
     SPUDispatchTable *pDispatch;
@@ -40,7 +40,6 @@ typedef struct CR_GLSL_CACHE
 DECLINLINE(void) CrGlslInit(CR_GLSL_CACHE *pCache, SPUDispatchTable *pDispatch)
 {
     memset(pCache, 0, sizeof (*pCache));
-    pCache->glVersion = 0.0;
     pCache->pDispatch = pDispatch;
 }
 
