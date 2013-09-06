@@ -534,8 +534,6 @@ GLint renderspuWindowCreateEx( const char *dpyName, GLint visBits, GLint id )
 {
     WindowInfo *window;
 
-    GLboolean showIt;
-
     if (id <= 0)
     {
         id = (GLint)crHashtableAllocKeys(render_spu.windowTable, 1);
@@ -587,14 +585,24 @@ static void renderspuCheckCurrentCtxWindowCB(unsigned long key, void *data1, voi
 
     if (pCtx->currentWindow==pWindow)
     {
-        renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, pCtx->BltInfo.Base.id);
-        pCtx->currentWindow=0;
+        WindowInfo* pDummy = renderspuGetDummyWindow(pCtx->BltInfo.Base.visualBits);
+        if (pDummy)
+        {
+            renderspuPerformMakeCurrent(pDummy, 0, pCtx);
+        }
+        else
+        {
+            crWarning("failed to get dummy window");
+            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, pCtx->BltInfo.Base.id);
+        }
     }
 }
 
 void renderspuWindowTerm( WindowInfo *window )
 {
     GET_CONTEXT(pOldCtx);
+    WindowInfo * pOldWindow = pOldCtx ? pOldCtx->currentWindow : NULL;
+    CRASSERT(!pOldCtx == !pOldWindow);
     /* ensure no concurrent draws can take place */
     renderspuVBoxCompositorSet(window, NULL);
     renderspuVBoxPresentBlitterCleanup(window);
@@ -605,10 +613,17 @@ void renderspuWindowTerm( WindowInfo *window )
     /* restore current context */
     {
         GET_CONTEXT(pNewCtx);
-        if (pNewCtx!=pOldCtx)
+        WindowInfo * pNewWindow = pNewCtx ? pNewCtx->currentWindow : NULL;
+        CRASSERT(!pNewCtx == !pNewWindow);
+
+        if (pOldWindow == window)
+            renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
+        else if (pNewCtx != pOldCtx || pOldWindow != pNewWindow)
         {
-            renderspuMakeCurrent(pOldCtx&&pOldCtx->currentWindow ? pOldCtx->currentWindow->BltInfo.Base.id:CR_RENDER_DEFAULT_WINDOW_ID, 0,
-                                     pOldCtx ? pOldCtx->BltInfo.Base.id:CR_RENDER_DEFAULT_CONTEXT_ID);
+            if (pOldCtx)
+                renderspuPerformMakeCurrent(pOldWindow, 0, pOldCtx);
+            else
+                renderspuMakeCurrent(CR_RENDER_DEFAULT_WINDOW_ID, 0, CR_RENDER_DEFAULT_CONTEXT_ID);
         }
     }
 }
@@ -1710,6 +1725,13 @@ renderspuGetString(GLenum pname)
         return NULL;
 }
 
+static void renderspuReparentWindowCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *pWindow = (WindowInfo *)data1;
+
+    renderspu_SystemReparentWindow(pWindow);
+}
+
 DECLEXPORT(void) renderspuReparentWindow(GLint window)
 {
     WindowInfo *pWindow;
@@ -1724,6 +1746,12 @@ DECLEXPORT(void) renderspuReparentWindow(GLint window)
     }
 
     renderspu_SystemReparentWindow(pWindow);
+
+    /* special case: reparent all internal windows as well */
+    if (window == CR_RENDER_DEFAULT_WINDOW_ID)
+    {
+        crHashtableWalk(render_spu.dummyWindowTable, renderspuReparentWindowCB, NULL);
+    }
 }
 
 #define FILLIN( NAME, FUNC ) \
