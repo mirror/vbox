@@ -377,21 +377,28 @@ VBoxSVC_SOURCES = \
 
 VBoxSVC_SOURCES.darwin = \
 	src-server/darwin/iokit.cpp \
-	src-server/darwin/HostPowerDarwin.cpp
+	src-server/darwin/HostPowerDarwin.cpp \
+	src-server/darwin/HostDnsServiceDarwin.cpp
 
 VBoxSVC_SOURCES.win = \
 	src-server/win/svcmain.cpp \
 	src-server/win/svchlp.cpp \
 	src-server/win/HostPowerWin.cpp \
 	src-server/win/VBoxSVC.rc \
-	src-server/win/VBoxComEvents.cpp
+	src-server/win/VBoxComEvents.cpp \
+	src-server/win/HostDnsServiceWin.cpp
 
 VBoxSVC_SOURCES.linux = \
-	src-server/linux/HostHardwareLinux.cpp
+	src-server/linux/HostHardwareLinux.cpp \
+	src-server/HostDnsServiceResolvConf.cpp
 
 VBoxSVC_SOURCES.solaris = \
 	src-server/linux/vbox-libhal.cpp \
-	src-server/solaris/DynLoadLibSolaris.cpp
+	src-server/solaris/DynLoadLibSolaris.cpp \
+	src-server/HostDnsServiceResolvConf.cpp
+
+VBoxSVC_SOURCES.os2 = \
+	src-server/HostDnsServiceResolvConf.cpp
 
 VBoxSVC_SOURCES.freebsd = \
 	src-server/freebsd/HostHardwareFreeBSD.cpp
