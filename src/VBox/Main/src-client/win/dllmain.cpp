@@ -222,11 +222,11 @@ static void removeOldClassIDs(HKEY hkeyClassesRoot)
 
             char szProgId[64];
             cbValue = sizeof(szProgId) - 1;
-            rc = RegQueryValueExA(hkeyClsId, NULL, NULL, NULL, (PBYTE)&szProgId[0], &cbValue);
+            rc = RegQueryValueExA(hkeyIfProgId, NULL, NULL, NULL, (PBYTE)&szProgId[0], &cbValue);
             if (rc != ERROR_SUCCESS)
                 cbValue = 0;
             szProgId[cbValue] = '\0';
-            RegCloseKey(hkeyClsId);
+            RegCloseKey(hkeyIfProgId);
             if (strnicmp(szProgId, RT_STR_TUPLE("VirtualBox.")))
                 continue;
 
@@ -239,7 +239,7 @@ static void removeOldClassIDs(HKEY hkeyClassesRoot)
             Assert(rc == ERROR_SUCCESS);
         }
 
-        RegCloseKey(hkeyClassesRoot);
+        RegCloseKey(hkeyClsId);
     }
 }
 
