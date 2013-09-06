@@ -107,7 +107,7 @@ VBOXBLITTERDECL(int) CrBltCleanup(PCR_BLITTER pBlitter, const CR_BLITTER_CONTEXT
     int rc = CrBltEnter(pBlitter, pRestoreCtxInfo, pRestoreMural);
     if (!RT_SUCCESS(rc))
     {
-        crWarning("CrBltEnter failed, rc %d");
+        crWarning("CrBltEnter failed, rc %d", rc);
         return rc;
     }
 
@@ -643,7 +643,7 @@ static void crBltBlitTexBuf(PCR_BLITTER pBlitter, const VBOXVR_TEXTURE *pSrc, co
 
         if (!RT_SUCCESS(rc))
         {
-            crWarning("Failed to use no-alpha program rc!, falling back to default blit", rc);
+            crWarning("Failed to use no-alpha program rc %d!, falling back to default blit", rc);
             pBlitter->pfnBlt(pBlitter, pSrc, paSrcRects, pDstSize, paDstRects, cRects, fFlags);
             return;
         }
