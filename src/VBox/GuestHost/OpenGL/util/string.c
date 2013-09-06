@@ -6,6 +6,7 @@
 
 #include "cr_mem.h"
 #include "cr_string.h"
+#include "cr_error.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -407,4 +408,126 @@ char *crStrIntersect( const char *s1, const char *s2 )
 int crIsDigit(char c)
 {
   return c >= '0' && c <= '9';
+}
+
+
+static int crStrParseGlSubver(const char * ver, const char ** pNext, bool bSpacePrefixAllowed)
+{
+    const char * initVer = ver;
+    int val = 0;
+
+    for(;;++ver)
+    {
+        if(*ver >= '0' && *ver <= '9')
+        {
+            if(!val)
+            {
+                if(*ver == '0')
+                    continue;
+            }
+            else
+            {
+                val *= 10;
+            }
+            val += *ver - '0';
+        }
+        else if(*ver == '.')
+        {
+            *pNext = ver+1;
+            break;
+        }
+        else if(*ver == '\0')
+        {
+            *pNext = NULL;
+            break;
+        }
+        else if(*ver == ' ' || *ver == '\t' ||  *ver == 0x0d || *ver == 0x0a)
+        {
+            if(bSpacePrefixAllowed)
+            {
+                if(!val)
+                {
+                    continue;
+                }
+            }
+
+            /* treat this as the end of version string */
+            *pNext = NULL;
+            break;
+        }
+        else
+        {
+            crWarning("error parsing version %s", initVer);
+            val = -1;
+            break;
+        }
+    }
+
+    return val;
+}
+
+int crStrParseGlVersion(const char * ver)
+{
+    const char * initVer = ver;
+    int tmp;
+    int iVer = crStrParseGlSubver(ver, &ver, true);
+    if(iVer <= 0)
+    {
+        crWarning("parsing major version returned %d, '%s'", iVer, initVer);
+        return iVer;
+    }
+
+    if (iVer > CR_GLVERSION_MAX_MAJOR)
+    {
+        crWarning("major version %d is bigger than the max supported %#x, this is somewhat not expected, failing", iVer, CR_GLVERSION_MAX_MAJOR);
+        return -1;
+    }
+
+    iVer <<= CR_GLVERSION_OFFSET_MAJOR;
+    if(!ver)
+    {
+        crDebug("no minor version supplied");
+        goto done;
+    }
+
+    tmp = crStrParseGlSubver(ver, &ver, false);
+    if (tmp < 0)
+    {
+        crWarning("parsing minor version failed, '%s'", initVer);
+        return -1;
+    }
+
+    if (tmp > CR_GLVERSION_MAX_MINOR)
+    {
+        crWarning("minor version %d is bigger than the max supported %#x, this is somewhat not expected, failing", iVer, CR_GLVERSION_MAX_MAJOR);
+        return -1;
+    }
+
+    iVer |= tmp << CR_GLVERSION_OFFSET_MINOR;
+
+    if (!ver)
+    {
+        crDebug("no build version supplied");
+        goto done;
+    }
+
+    tmp = crStrParseGlSubver(ver, &ver, false);
+    if (tmp < 0)
+    {
+        crWarning("parsing build version failed, '%s', using 0", initVer);
+        tmp = 0;
+    }
+
+    if (tmp > CR_GLVERSION_MAX_BUILD)
+    {
+        crWarning("build version %d is bigger than the max supported, using max supported val %#x", tmp, CR_GLVERSION_MAX_BUILD);
+        tmp = CR_GLVERSION_MAX_MAJOR;
+    }
+
+    iVer |= tmp << CR_GLVERSION_OFFSET_BUILD;
+
+done:
+    crDebug("returning version %#x for string '%s'", iVer, initVer);
+
+    return iVer;
 }

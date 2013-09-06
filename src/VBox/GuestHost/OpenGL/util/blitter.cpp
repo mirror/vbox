@@ -822,18 +822,21 @@ VBOXBLITTERDECL(void) CrBltImgFree(PCR_BLITTER pBlitter, CR_BLITTER_IMG *pDst)
 
 VBOXBLITTERDECL(bool) CrGlslIsSupported(CR_GLSL_CACHE *pCache)
 {
-    if (pCache->glVersion == 0.)
+    if (pCache->iGlVersion == 0)
     {
         const char * pszStr = (const char*)pCache->pDispatch->GetString(GL_VERSION);
-        pCache->glVersion = crStrToFloat(pszStr);
-        if (pCache->glVersion == 0.)
+        pCache->iGlVersion = crStrParseGlVersion(pszStr);
+        if (pCache->iGlVersion <= 0)
         {
-            crWarning("pCache->glVersion is null!");
+            crWarning("crStrParseGlVersion returned %d", pCache->iGlVersion);
+            pCache->iGlVersion = -1;
         }
     }
 
-    if (pCache->glVersion >= 2.0)
+    if (pCache->iGlVersion >= CR_GLVERSION_COMPOSE(2, 0, 0))
         return true;
+
+    crWarning("GLSL unsuported, gl version %d", pCache->iGlVersion);
 
     /* @todo: we could also check for GL_ARB_shader_objects and GL_ARB_fragment_shader,
      * but seems like chromium does not support properly gl*Object versions of shader functions used with those extensions */
@@ -864,7 +867,7 @@ static const char* crGlslGetFsStringNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTex
         return NULL;
     }
 
-    if (pCache->glVersion >= 2.1)
+    if (pCache->iGlVersion >= CR_GLVERSION_COMPOSE(2, 1, 0))
     {
         if (enmTexTarget == GL_TEXTURE_2D)
             return CR_GLSL_PATTERN_FS_NOALPHA(CR_GLSL_STR_V_120, "", CR_GLSL_STR_2D);
@@ -874,7 +877,7 @@ static const char* crGlslGetFsStringNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTex
         crWarning("invalid enmTexTarget %#x", enmTexTarget);
         return NULL;
     }
-    else if (pCache->glVersion >= 2.0)
+    else if (pCache->iGlVersion >= CR_GLVERSION_COMPOSE(2, 0, 0))
     {
         if (enmTexTarget == GL_TEXTURE_2D)
             return CR_GLSL_PATTERN_FS_NOALPHA("", "", CR_GLSL_STR_2D);
@@ -931,7 +934,6 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
         else
 #endif
         {
-            Assert(0);
             crWarning("compile FAILURE:\n-------------------\n%s\n--------\n", pBuf);
             rc = VERR_NOT_SUPPORTED;
             goto end;
@@ -966,7 +968,6 @@ static int crGlslProgGenNoAlpha(CR_GLSL_CACHE *pCache, GLenum enmTexTarget, GLui
         else
 #endif
         {
-            Assert(0);
             crWarning("link FAILURE:\n-------------------\n%s\n--------\n", pBuf);
             rc = VERR_NOT_SUPPORTED;
             goto end;
