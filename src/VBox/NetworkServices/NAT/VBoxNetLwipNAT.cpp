@@ -858,7 +858,7 @@ int VBoxNetLwipNAT::init()
     hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
     if (SUCCEEDED(hrc))
     {
-        int rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
+        rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
         if (RT_SUCCESS(rc))
         {
             RT_ZERO(m_src4);
