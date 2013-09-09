@@ -2292,6 +2292,45 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
     <screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators</screen>
   </sect2>
 
+    <sect2>
+      <title>Configurer les modes visuels de la fenêtre</title>
+
+      <para>Vous pouvez désactiver (c'est-à-dire blacklister) certains modes visuels de la VM :</para>
+      <screen>VBoxManage setextradata "nom VM" GUI/RestrictedVisualStates OPTION[,OPTION...]</screen>
+
+      <para>où <computeroutput>OPTION</computeroutput> est un des mots-clés
+        suivants :</para><glosslist>
+        <glossentry>
+          <glossterm><computeroutput>Fullscreen</computeroutput></glossterm>
+          <glossdef>
+            <para>Ne pas autoriser le passage de la VM en mode plein-écran.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Seamless</computeroutput></glossterm>
+          <glossdef>
+            <para>Ne pas autoriser le passage de la VM en mode transparent.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
+          <glossterm><computeroutput>Scale</computeroutput></glossterm>
+          <glossdef>
+            <para>Ne pas autoriser le passage de la VM en mode échelonné.</para>
+          </glossdef>
+        </glossentry>
+      
+      </glosslist>
+
+      <para>C'est un paramètre individuel à chaque VM. Vous pouvez combiner
+      n'importe comment ce qui précède. Pour restaurer le comportement par défaut,
+      utilisez</para>
+
+      <screen>VBoxManage setextradata "nom VM" GUI/RestrictedVisualStates</screen>
+
+      </sect2>
+
 
       <sect2>
         <title>Personnalisation de la touche hôte</title>
