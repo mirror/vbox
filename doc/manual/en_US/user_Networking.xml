@@ -452,8 +452,8 @@
     the port 22 on the guest with IP address 192.168.15.15.  To delete the rule,
     use:</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
-    <para>It's possible to bind NAT service to specified interface: <screen>
-VBoxManage setextradata global "NAT/win-nat-test-0/SourceIp4" 192.168.1.185</screen></para>
+    <para>It's possible to bind NAT service to specified interface:</para>
+    <screen>VBoxManage setextradata global "NAT/win-nat-test-0/SourceIp4" 192.168.1.185</screen>
     <para>To see the list of registered NAT networks, use:</para>
     <para><screen>VBoxManage list natnetworks</screen></para>
   </sect1>
