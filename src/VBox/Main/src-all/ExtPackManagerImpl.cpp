@@ -1601,6 +1601,8 @@ ExtPack::hlpLoadHGCMService(PCVBOXEXTPACKHLP pHlp, VBOXEXTPACK_IF_CS(IConsole) *
 
     Console *pCon = (Console *)pConsole;
     return pCon->hgcmLoadService(pszServiceLibrary, pszServiceName);
+#else
+    NOREF(pHlp); NOREF(pConsole); NOREF(pszServiceLibrary); NOREF(pszServiceName);
 #endif
     return VERR_INVALID_STATE;
 }
