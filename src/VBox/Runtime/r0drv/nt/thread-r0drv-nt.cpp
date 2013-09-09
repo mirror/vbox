@@ -106,6 +106,7 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
     /*
      * Read the globals and check if they are useful.
      */
+/** @todo Should we check KPRCB.InterruptRequest and KPRCB.DpcInterruptRequested (older kernels).  */
     uint32_t const offQuantumEnd     = g_offrtNtPbQuantumEnd;
     uint32_t const cbQuantumEnd      = g_cbrtNtPbQuantumEnd;
     uint32_t const offDpcQueueDepth  = g_offrtNtPbDpcQueueDepth;
