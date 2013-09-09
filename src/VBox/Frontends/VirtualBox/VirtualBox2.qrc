@@ -215,5 +215,6 @@
         <file alias="sound_warning_16px.png">images/sound_warning_16px.png</file>
         <file alias="usb_warning_16px.png">images/usb_warning_16px.png</file>
         <file alias="vrdp_warning_16px.png">images/vrdp_warning_16px.png</file>
+        <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>
     </qresource>
 </RCC>
