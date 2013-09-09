@@ -540,8 +540,8 @@
       </listitem>
 
       <listitem>
-        <para>Les hôtes <emphasis role="bold">Solaris</emphasis> (32 bits et
-        64 bits) sont supportés avec les restrictions listées au <xref
+        <para>Les hôtes <emphasis role="bold">Solaris</emphasis> (64 bits seulement)
+        sont supportés avec les restrictions listées au <xref
         linkend="KnownIssues" />&#xA0;:<itemizedlist>
             <listitem>
               <para>Solaris 11 y compris Solaris 11 Express</para>
