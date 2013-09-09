@@ -392,29 +392,32 @@ int VBoxNetDhcp::init()
         if (   SUCCEEDED(hrc) 
             && (count_strs = strs.size()))
         {
-            char aszAddr[17];
-            RTNETADDRIPV4 ip4addr;
-            char *pszTerm;
-            uint32_t u32Off;
-            const char *pszLo2Off = com::Utf8Str(strs[i]).c_str();
-        
-            RT_ZERO(aszAddr);
-                
-            pszTerm = RTStrStr(pszLo2Off, ";");
-
-            if (   pszTerm
-                && (pszTerm - pszLo2Off) >= 17)
+            for (i = 0; i < count_strs; ++i)
             {
+                char aszAddr[17];
+                RTNETADDRIPV4 ip4addr;
+                char *pszTerm;
+                uint32_t u32Off;
+                const char *pszLo2Off = com::Utf8Str(strs[i]).c_str();
+        
+                RT_ZERO(aszAddr);
                 
-                memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
-                int rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
-                if (RT_SUCCESS(rc))
-                {
+                pszTerm = RTStrStr(pszLo2Off, ";");
 
-                    u32Off = RTStrToUInt32(pszTerm + 1);
-                    if (u32Off != 0)
-                        MapIp4Addr2Off.insert(
-                          std::map<RTNETADDRIPV4,uint32_t>::value_type(ip4addr, u32Off));
+                if (   pszTerm
+                       && (pszTerm - pszLo2Off) >= 17)
+                {
+                
+                    memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
+                    int rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
+                    if (RT_SUCCESS(rc))
+                    {
+
+                        u32Off = RTStrToUInt32(pszTerm + 1);
+                        if (u32Off != 0)
+                            MapIp4Addr2Off.insert(
+                              std::map<RTNETADDRIPV4,uint32_t>::value_type(ip4addr, u32Off));
+                    }
                 }
             }
         }
