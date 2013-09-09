@@ -102,6 +102,7 @@ protected slots:
     virtual void sltMachineStateChanged();
     virtual void sltAdditionsStateChanged();
     virtual void sltMouseCapabilityChanged();
+    virtual void sltKeyboardLedsChanged();
     virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsAttached, const CVirtualBoxErrorInfo &error);
     virtual void sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage);
 #ifdef RT_OS_DARWIN
