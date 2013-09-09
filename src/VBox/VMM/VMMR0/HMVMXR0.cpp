@@ -6086,15 +6086,16 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  * (longjmp, preemption, voluntary exits to ring-3) from VT-x.
  *
  * @returns VBox status code.
- * @param   pVM         Pointer to the VM.
- * @param   pVCpu       Pointer to the VMCPU.
- * @param   pMixedCtx   Pointer to the guest-CPU context. The data may be
- *                      out-of-sync. Make sure to update the required fields
- *                      before using them.
+ * @param   pVM                 Pointer to the VM.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   pMixedCtx           Pointer to the guest-CPU context. The data may
+ *                              be out-of-sync. Make sure to update the required
+ *                              fields before using them.
+ * @param   fSaveGuestState     Whether to save the guest state or not.
  *
  * @remarks No-long-jmp zone!!!
  */
-static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
+static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGuestState)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -6103,7 +6104,8 @@ static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     Log4Func(("HostCpuId=%u\n", idCpu));
 
     /* Save the guest state if necessary. */
-    if (pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
+    if (   fSaveGuestState
+        && pVCpu->hm.s.vmx.fUpdatedGuestState != HMVMX_UPDATED_GUEST_ALL)
     {
         int rc = hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
@@ -6193,7 +6195,7 @@ DECLINLINE(int) hmR0VmxLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx)
        and done this from the VMXR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
-        int rc2 = hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
+        int rc2 = hmR0VmxLeave(pVM, pVCpu, pMixedCtx, true /* fSaveGuestState */);
         AssertRCReturn(rc2, rc2);
         pVCpu->hm.s.fLeaveDone = true;
     }
@@ -7010,10 +7012,14 @@ VMMR0DECL(void) VMXR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, 
             VMMRZCallRing3Disable(pVCpu);
             Log4Func(("Preempting: HostCpuId=%u\n", RTMpCpuId()));
 
-            /* Save the guest-state, restore host-state (FPU, debug etc.). */
+            /*
+             * Restore host-state (FPU, debug etc.)
+             */
             if (!pVCpu->hm.s.fLeaveDone)
             {
-                hmR0VmxLeave(pVM, pVCpu, pMixedCtx);
+                /* Do -not- save guest-state here as we might already be in the middle of saving it (esp. bad if we are
+                   holding the PGM lock while saving the guest state (see hmR0VmxSaveGuestControlRegs()). */
+                hmR0VmxLeave(pVM, pVCpu, pMixedCtx, false /* fSaveGuestState */);
                 pVCpu->hm.s.fLeaveDone = true;
             }
 
