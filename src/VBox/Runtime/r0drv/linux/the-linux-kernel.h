@@ -125,7 +125,7 @@
 #include <asm/div64.h>
 
 /* For thread-context hooks. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 23) && defined(CONFIG_PREEMPT_NOTIFIERS)
+#if defined(CONFIG_PREEMPT_NOTIFIERS)
 # include <linux/preempt.h>
 #endif
 
