@@ -914,7 +914,7 @@ int NATNetwork::findFirstAvailableOffset(uint32_t *poff)
 
     uint32_t off;
     settings::NATLoopbackOffsetList::iterator it;
-    for (off = 1; off < (network.u & ~netmask.u); ++off)
+    for (off = 1; off < ~netmask.u; ++off)
     {
 
         if (off == m->offGateway)
