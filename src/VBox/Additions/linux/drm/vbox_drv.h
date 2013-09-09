@@ -82,6 +82,7 @@ struct vbox_private {
 
 	void __iomem *vram;
     HGSMIGUESTCOMMANDCONTEXT Ctx;
+    struct VBVABUFFERCONTEXT *paVBVACtx;
     bool fAnyX;
     unsigned cCrtcs;
 	bool vga2_clone;
