@@ -999,4 +999,3 @@ int NATNetwork::recalculateIpv4AddressAssignments()
     LogFlowFunc(("getaway:%RTnaipv4, netmask:%RTnaipv4\n", gateway, netmask));
     return VINF_SUCCESS;
 }
-
