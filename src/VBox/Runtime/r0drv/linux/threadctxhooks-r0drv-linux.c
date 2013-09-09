@@ -39,10 +39,10 @@
 #include "internal/thread.h"
 
 /*
- * Linux kernel 2.6.23 introduced thread-context hooks but RedHat kernel 2.6.18 has it backported.
- * Checking the define alone without depending on a version ought to be sufficient.
+ * Linux kernel 2.6.23 introduced thread-context hooks but RedHat 2.6.18 kernels
+ * got it backported.
  */
-#if defined(CONFIG_PREEMPT_NOTIFIERS)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 18) && defined(CONFIG_PREEMPT_NOTIFIERS)
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
