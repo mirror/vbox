@@ -433,9 +433,8 @@
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -h on</screen></para>
     <para>To disable it again, use:</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -h off</screen></para>
-    <para>A current limitation of the DHCP server is that it does not provide
-    nameserver information, so systems using it should be explicitly configured
-    to use the right DNS servers.</para>
+    <para>DHCP server provides list of registered nameservers, but doesn't map 
+    servers from 127/8 network.</para>
     <para>To start the NAT service, use the following command:</para>
     <para><screen>VBoxManage natnetwork start -t nat-int-network</screen></para>
     <para>If the network has a DHCP server attached then it will start together
@@ -453,6 +452,8 @@
     the port 22 on the guest with IP address 192.168.15.15.  To delete the rule,
     use:</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
+    <para>It's possible to bind NAT service to specified interface: <screen>
+VBoxManage setextradata global "NAT/win-nat-test-0/SourceIp4" 192.168.1.185</screen></para>
     <para>To see the list of registered NAT networks, use:</para>
     <para><screen>VBoxManage list natnetworks</screen></para>
   </sect1>
