@@ -25,24 +25,39 @@
 
 
 /**
- * Check if "dst" is an IPv4 address from the network that netif is
- * on, and that it's an address that proxy remaps to host's loopback.
+ * Check if "dst" is an IPv4 address that proxy remaps to host's
+ * loopback.
  */
 static int
-proxy_ip4_is_mapped_loopback(struct netif *netif, ip_addr_t *dst)
+proxy_ip4_is_mapped_loopback(struct netif *netif, const ip_addr_t *dst, ip_addr_t *lo)
 {
-    /* XXX: TODO: check netif is a proxying netif! */
+    ip_addr_t net;
+    u32_t off;
+    const struct ip4_lomap *lomap;
+    size_t i;
 
     LWIP_ASSERT1(dst != NULL);
 
-    if (ip4_addr1(dst) == ip4_addr1(&netif->ip_addr)
-        && ip4_addr2(dst) == ip4_addr2(&netif->ip_addr)
-        && ip4_addr3(dst) == ip4_addr3(&netif->ip_addr)
-        && ip4_addr4(dst) == ip4_addr4(&netif->ip_addr) + 1)
-    {
-        return 1;
+    if (g_proxy_options->lomap_desc == NULL) {
+        return 0;
     }
 
+    if (!ip_addr_netcmp(dst, &netif->ip_addr, &netif->netmask)) {
+        return 0;
+    }
+
+    /* XXX: TODO: check netif is a proxying netif! */
+
+    off = ntohl(ip4_addr_get_u32(dst) & ~ip4_addr_get_u32(&netif->netmask));
+    lomap = g_proxy_options->lomap_desc->lomap;
+    for (i = 0; i < g_proxy_options->lomap_desc->num_lomap; ++i) {
+        if (off == lomap[i].off) {
+            if (lo != NULL) {
+                ip_addr_copy(*lo, lomap[i].loaddr);
+            }
+            return 1;
+        }
+    }
     return 0;
 }
 
@@ -55,7 +70,7 @@ proxy_ip4_is_mapped_loopback(struct netif *netif, ip_addr_t *dst)
 int
 pxremap_proxy_arp(struct netif *netif, ip_addr_t *dst)
 {
-    return proxy_ip4_is_mapped_loopback(netif, dst);
+    return proxy_ip4_is_mapped_loopback(netif, dst, NULL);
 }
 #endif /* ARP_PROXY */
 
@@ -67,7 +82,7 @@ pxremap_proxy_arp(struct netif *netif, ip_addr_t *dst)
 int
 pxremap_ip4_divert(struct netif *netif, ip_addr_t *dst)
 {
-    return proxy_ip4_is_mapped_loopback(netif, dst);
+    return proxy_ip4_is_mapped_loopback(netif, dst, NULL);
 }
 
 
@@ -88,20 +103,8 @@ pxremap_outbound_ip4(ip_addr_t *dst, ip_addr_t *src)
 
     for (netif = netif_list; netif != NULL; netif = netif->next) {
         if (netif_is_up(netif) /* && this is a proxy netif */) {
-            if (ip4_addr1(src) == ip4_addr1(&netif->ip_addr)
-                && ip4_addr2(src) == ip4_addr2(&netif->ip_addr)
-                && ip4_addr3(src) == ip4_addr3(&netif->ip_addr))
-            {
-                if (ip4_addr4(src) == ip4_addr4(&netif->ip_addr) + 1) {
-                    ip_addr_set_loopback(dst);          /* 127.0.0.1 */
-                    return PXREMAP_MAPPED;
-                }
-#if 0 /* XXX: not yet; make this table driven... */
-                else if (ip4_addr4(src) == ip4_addr4(&netif->ip_addr) + 2) {
-                    IP4_ADDR(dst, 127, 0, 1, 1);        /* 127.0.1.1 */
-                    return PXREMAP_MAPPED;
-                }
-#endif
+            if (proxy_ip4_is_mapped_loopback(netif, src, dst)) {
+                return PXREMAP_MAPPED;
             }
         }
     }
@@ -123,30 +126,41 @@ pxremap_outbound_ip4(ip_addr_t *dst, ip_addr_t *src)
 int
 pxremap_inbound_ip4(ip_addr_t *dst, ip_addr_t *src)
 {
+    struct netif *netif;
+    const struct ip4_lomap *lomap;
+    unsigned int i;
+
     if (ip4_addr1(src) != IP_LOOPBACKNET) {
         ip_addr_set(dst, src);
         return PXREMAP_ASIS;
     }
 
-    if (ip4_addr2(src) == 0 && ip4_addr3(src) == 0 && ip4_addr4(src) == 1) {
-        struct netif *netif;
+    if (g_proxy_options->lomap_desc == NULL) {
+        return PXREMAP_FAILED;
+    }
 
 #if 0 /* ?TODO: with multiple interfaces we need to consider fwspec::dst */
-        netif = ip_route(target);
-        if (netif == NULL) {
-            return PXREMAP_FAILED;
-        }
+    netif = ip_route(target);
+    if (netif == NULL) {
+        return PXREMAP_FAILED;
+    }
 #else
-        netif = netif_list;
-        LWIP_ASSERT1(netif != NULL);
-        LWIP_ASSERT1(netif->next == NULL);
+    netif = netif_list;
+    LWIP_ASSERT1(netif != NULL);
+    LWIP_ASSERT1(netif->next == NULL);
 #endif
-        IP4_ADDR(dst,
-                 ip4_addr1(&netif->ip_addr),
-                 ip4_addr2(&netif->ip_addr),
-                 ip4_addr3(&netif->ip_addr),
-                 ip4_addr4(&netif->ip_addr) + 1);
-        return PXREMAP_MAPPED;
+
+    lomap = g_proxy_options->lomap_desc->lomap;
+    for (i = 0; i < g_proxy_options->lomap_desc->num_lomap; ++i) {
+        if (ip_addr_cmp(src, &lomap[i].loaddr)) {
+            ip_addr_t net;
+
+            ip_addr_get_network(&net, &netif->ip_addr, &netif->netmask);
+            ip4_addr_set_u32(dst,
+                             htonl(ntohl(ip4_addr_get_u32(&net))
+                                   + lomap[i].off));
+            return PXREMAP_MAPPED;
+        }
     }
 
     return PXREMAP_FAILED;
