@@ -972,8 +972,11 @@ int NATNetwork::recalculateIpv4AddressAssignments()
         dhcpserver.u += m->offDhcp;
 
         /* XXX: adding more services should change the math here */
-        RTNETADDRIPV4 dhcplowerip;
-        dhcplowerip.u = RT_H2N_U32(dhcpserver.u + 1);
+        RTNETADDRIPV4 dhcplowerip = network;
+        uint32_t offDhcpLowerIp;
+        findFirstAvailableOffset(&offDhcpLowerIp);
+        dhcplowerip.u = RT_H2N_U32(dhcplowerip.u + offDhcpLowerIp);
+
         RTNETADDRIPV4 dhcpupperip;
         dhcpupperip.u = RT_H2N_U32((network.u | ~netmask.u) - 1);
 
