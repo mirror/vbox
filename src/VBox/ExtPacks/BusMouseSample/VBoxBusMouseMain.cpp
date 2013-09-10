@@ -72,11 +72,53 @@ static PCVBOXEXTPACKHLP g_pHlp;
 //  */
 // static DECLCALLBACK(int)  vboxSkeletonExtPack_VMCreated(PCVBOXEXTPACKREG pThis, VBOXEXTPACK_IF_CS(IVirtualBox) *pVirtualBox, IMachine *pMachine);
 //
-// /**
-//  * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM}
-//  */
-// static DECLCALLBACK(int)  vboxSkeletonExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM);
-//
+
+/**
+ * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM 
+ */
+static DECLCALLBACK(int)  vboxBusMouseExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM)
+{
+    /*
+     * Find the bus mouse module and tell PDM to load it.
+     * ASSUME /PDM/Devices exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseR3", NULL, VBOXEXTPACKMODKIND_R3, szPath, sizeof(szPath), NULL);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    PCFGMNODE pCfgRoot = CFGMR3GetRoot(pVM);
+    AssertReturn(pCfgRoot, VERR_INTERNAL_ERROR_3);
+
+    PCFGMNODE pCfgDevices = CFGMR3GetChild(pCfgRoot, "PDM/Devices");
+    AssertReturn(pCfgDevices, VERR_INTERNAL_ERROR_3);
+
+    PCFGMNODE pCfgMine;
+    rc = CFGMR3InsertNode(pCfgDevices, "VBoxBusMouse", &pCfgMine);
+    AssertRCReturn(rc, rc);
+    rc = CFGMR3InsertString(pCfgMine, "Path", szPath);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Tell PDM where to find the R0 and RC modules for the bus mouse device.
+     */
+#ifdef VBOX_WITH_RAW_MODE
+    rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseRC", NULL, VBOXEXTPACKMODKIND_RC, szPath, sizeof(szPath), NULL);
+    AssertRCReturn(rc, rc);
+    RTPathStripFilename(szPath);
+    rc = CFGMR3InsertString(pCfgMine, "RCSearchPath", szPath);
+    AssertRCReturn(rc, rc);
+#endif
+
+    rc = g_pHlp->pfnFindModule(g_pHlp, "VBoxBusMouseR0", NULL, VBOXEXTPACKMODKIND_R0, szPath, sizeof(szPath), NULL);
+    AssertRCReturn(rc, rc);
+    RTPathStripFilename(szPath);
+    rc = CFGMR3InsertString(pCfgMine, "R0SearchPath", szPath);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
 // /**
 //  * @interface_method_impl{VBOXEXTPACKREG,pfnVMPowerOn}
 //  */
@@ -91,7 +133,7 @@ static PCVBOXEXTPACKHLP g_pHlp;
 // static DECLCALLBACK(void) vboxSkeletonExtPack_QueryObject(PCVBOXEXTPACKREG pThis, PCRTUUID pObjectId);
 
 
-static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
+static const VBOXEXTPACKREG g_vboxBusMouseExtPackReg =
 {
     VBOXEXTPACKREG_VERSION,
     /* .pfnInstalled =      */  NULL,
@@ -100,7 +142,7 @@ static const VBOXEXTPACKREG g_vboxSkeletonExtPackReg =
     /* .pfnConsoleReady =   */  NULL,
     /* .pfnUnload =         */  NULL,
     /* .pfnVMCreated =      */  NULL,
-    /* .pfnVMConfigureVMM = */  NULL,
+    /* .pfnVMConfigureVMM = */  vboxBusMouseExtPack_VMConfigureVMM,
     /* .pfnVMPowerOn =      */  NULL,
     /* .pfnVMPowerOff =     */  NULL,
     /* .pfnQueryObject =    */  NULL,
@@ -130,7 +172,7 @@ extern "C" DECLEXPORT(int) VBoxExtPackRegister(PCVBOXEXTPACKHLP pHlp, PCVBOXEXTP
      * We're good, save input and return the registration structure.
      */
     g_pHlp = pHlp;
-    *ppReg = &g_vboxSkeletonExtPackReg;
+    *ppReg = &g_vboxBusMouseExtPackReg;
 
     return VINF_SUCCESS;
 }
