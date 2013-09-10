@@ -2624,14 +2624,14 @@ DECLINLINE(int) hmR0VmxLoadGuestEntryCtls(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(!(val & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST));
 
         /*
-         * The following should not be set (since we're not in SMM mode):
+         * The following should -not- be set (since we're not in SMM mode):
          * - VMX_VMCS_CTRL_ENTRY_ENTRY_SMM
          * - VMX_VMCS_CTRL_ENTRY_DEACTIVATE_DUALMON
          */
 
         /** @todo VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PERF_MSR,
          *        VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_PAT_MSR,
-         *  VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR */
+         *        VMX_VMCS_CTRL_ENTRY_LOAD_GUEST_EFER_MSR */
 
         if ((val & zap) != val)
         {
@@ -3688,7 +3688,7 @@ static int hmR0VmxWriteSegmentReg(PVMCPU pVCpu, uint32_t idxSel, uint32_t idxLim
     AssertMsg((u32Access & X86DESCATTR_UNUSABLE) || (u32Access & X86_SEL_TYPE_ACCESSED),
               ("Access bit not set for usable segment. idx=%#x sel=%#x attr %#x\n", idxBase, pSelReg, pSelReg->Attr.u));
 
-    rc = VMXWriteVmcs32(idxAccess, u32Access);           /* 32-bit guest segment access-rights field. */
+    rc = VMXWriteVmcs32(idxAccess, u32Access);              /* 32-bit guest segment access-rights field. */
     AssertRCReturn(rc, rc);
     return rc;
 }
@@ -3996,7 +3996,7 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      */
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_CS_MSR)
     {
-        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS,   pMixedCtx->SysEnter.cs);    AssertRCReturn(rc, rc);
+        rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_SYSENTER_CS, pMixedCtx->SysEnter.cs);      AssertRCReturn(rc, rc);
         pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_GUEST_SYSENTER_CS_MSR;
     }
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_SYSENTER_EIP_MSR)
@@ -9922,8 +9922,13 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
 
-    /* We should -not- get this VM-exit if the guest is debugging. */
+    /* We should -not- get this VM-exit if the guest's debug registers are active. See CPUMR0LoadGuestDebugState(). */
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (   !CPUMIsGuestInLongModeEx(pMixedCtx)      /* EFER is always up-to-date. */
+        && CPUMIsGuestDebugStateActive(pVCpu))
+#else
     if (CPUMIsGuestDebugStateActive(pVCpu))
+#endif
     {
         AssertMsgFailed(("Unexpected MOV DRx exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
         return VERR_VMX_UNEXPECTED_EXIT_CODE;
