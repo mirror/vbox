@@ -31,6 +31,7 @@
 #include <iprt/timer.h>
 
 #include <iprt/asm.h>
+#include <iprt/asm-amd64-x86.h>
 #include <iprt/cpuset.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
@@ -105,6 +106,53 @@ typedef struct TSTRTR0TIMEROMNI1
     uint32_t            u32Padding;
 } TSTRTR0TIMEROMNI1;
 typedef TSTRTR0TIMEROMNI1 *PTSTRTR0TIMEROMNI1;
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/**
+ * Latency data.
+ */
+static struct TSTRTR0TIMEROMNILATENCY
+{
+    /** The number of samples.  */
+    volatile uint32_t   cSamples;
+    uint32_t            auPadding[3];
+    struct
+    {
+        uint64_t        uTsc;
+        uint64_t        uNanoTs;
+    } aSamples[4096];
+} g_aOmniLatency[16];
+
+
+/**
+ * Callback for the omni timer latency test, adds a sample to g_aOmniLatency.
+ *
+ * @param   pTimer      The timer.
+ * @param   iTick       The current tick.
+ * @param   pvUser      The user argument.
+ */
+static DECLCALLBACK(void) tstRTR0TimerCallbackLatencyOmni(PRTTIMER pTimer, void *pvUser, uint64_t iTick)
+{
+    RTCPUID             idCpu    = RTMpCpuId();
+    uint32_t            iCpu     = RTMpCpuIdToSetIndex(idCpu);
+    NOREF(pTimer); NOREF(pvUser); NOREF(iTick);
+
+    RTR0TESTR0_CHECK_MSG(iCpu < RT_ELEMENTS(g_aOmniLatency), ("iCpu=%d idCpu=%u\n", iCpu, idCpu));
+    if (iCpu < RT_ELEMENTS(g_aOmniLatency))
+    {
+        uint32_t iSample = g_aOmniLatency[iCpu].cSamples;
+        if (iSample < RT_ELEMENTS(g_aOmniLatency[iCpu].aSamples))
+        {
+            g_aOmniLatency[iCpu].aSamples[iSample].uTsc    = ASMReadTSC();
+            g_aOmniLatency[iCpu].aSamples[iSample].uNanoTs = RTTimeSystemNanoTS();
+            g_aOmniLatency[iCpu].cSamples = iSample + 1;
+        }
+    }
+}
+
 
 
 /**
@@ -806,6 +854,72 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             RTMemFree(paStates);
             break;
         }
+
+        case TSTRTR0TIMER_LATENCY_OMNI:
+        case TSTRTR0TIMER_LATENCY_OMNI_HIRES:
+        {
+            /*
+             * Create a periodic timer running at max host frequency, but no more than 1000 Hz.
+             */
+            PRTTIMER        pTimer;
+            uint32_t        fFlags = (TSTRTR0TIMER_IS_HIRES(uOperation) ? RTTIMER_FLAGS_HIGH_RES : 0)
+                                   | RTTIMER_FLAGS_CPU_ALL;
+            uint32_t        cNsInterval = cNsSysHz;
+            while (cNsInterval < UINT32_C(1000000))
+                cNsInterval *= 2;
+            int rc = RTTimerCreateEx(&pTimer, cNsInterval, fFlags, tstRTR0TimerCallbackLatencyOmni, NULL);
+            if (rc == VERR_NOT_SUPPORTED)
+            {
+                RTR0TESTR0_SKIP_BREAK();
+            }
+            RTR0TESTR0_CHECK_RC_BREAK(rc, VINF_SUCCESS);
+
+            /*
+             * Reset the state and run the test for 4 seconds.
+             */
+            RT_ZERO(g_aOmniLatency);
+
+            RTCPUSET OnlineSet;
+            uint64_t uStartNsTS = RTTimeSystemNanoTS();
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerStart(pTimer, 0), VINF_SUCCESS);
+            RTMpGetOnlineSet(&OnlineSet);
+
+            for (uint32_t i = 0; i < 5000 && RTTimeSystemNanoTS() - uStartNsTS <= UINT64_C(4000000000); i++)
+                RTThreadSleep(2);
+
+            RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
+            uint64_t    cNsElapsedX = RTTimeNanoTS() - uStartNsTS;
+
+            /*
+             * Process the result.
+             */
+            int32_t     cNsDiv = cNsInterval / 4; /* 25% */
+            uint32_t    cTotal = 0;
+            uint32_t    cLow   = 0;
+            uint32_t    cHigh  = 0;
+            for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+            {
+                uint32_t cSamples = g_aOmniLatency[iCpu].cSamples;
+                if (cSamples > 1)
+                {
+                    cTotal += cSamples - 1;
+                    for (uint32_t iSample = 1; iSample < cSamples; iSample++)
+                    {
+                        int64_t cNsDelta = g_aOmniLatency[iCpu].aSamples[iSample - 1].uNanoTs
+                                         - g_aOmniLatency[iCpu].aSamples[iSample].uNanoTs;
+                        if (cNsDelta < 0 && cNsDelta < -cNsDiv)
+                            cLow++;
+                        else if (cNsDelta > 0 && cNsDelta > cNsDiv)
+                            cHigh++;
+                    }
+                }
+            }
+
+            RTR0TestR0Info("25%: %u; -25%: %u; total: %u", cHigh, cLow, cTotal);
+            RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
+            break;
+        }
+
     }
 
     RTR0TESTR0_SRV_REQ_EPILOG(pReqHdr);
