@@ -33,9 +33,9 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_KBD
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/version.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
-
 
 /** @page pg_busmouse DevBusMouse - Microsoft Bus Mouse Emulation
  *
@@ -874,6 +874,23 @@ const PDMDEVREG g_DeviceBusMouse =
     /* u32VersionEnd */
     PDM_DEVREG_VERSION
 };
+
+#ifdef VBOX_IN_EXTPACK_R3
+/**
+ * @callback_method_impl{FNPDMVBOXDEVICESREGISTER}
+ */
+extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t u32Version)
+{
+    AssertLogRelMsgReturn(u32Version >= VBOX_VERSION,
+                          ("u32Version=%#x VBOX_VERSION=%#x\n", u32Version, VBOX_VERSION),
+                          VERR_EXTPACK_VBOX_VERSION_MISMATCH);
+    AssertLogRelMsgReturn(pCallbacks->u32Version == PDM_DEVREG_CB_VERSION,
+                          ("pCallbacks->u32Version=%#x PDM_DEVREG_CB_VERSION=%#x\n", pCallbacks->u32Version, PDM_DEVREG_CB_VERSION),
+                          VERR_VERSION_MISMATCH);
+
+    return pCallbacks->pfnRegister(pCallbacks, &g_DeviceBusMouse);
+}
+#endif /* VBOX_IN_EXTPACK_R3 */
 
 # endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
