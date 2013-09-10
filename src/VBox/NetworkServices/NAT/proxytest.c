@@ -37,7 +37,8 @@ static SOCKET proxy_create_socket(int, int);
 volatile const struct proxy_options *g_proxy_options;
 static sys_thread_t pollmgr_tid;
 
-
+/* XXX: for mapping loopbacks to addresses in our network (ip4) */
+struct netif *g_proxy_netif;
 /*
  * Called on the lwip thread (aka tcpip thread) from tcpip_init() via
  * its "tcpip_init_done" callback.  Raw API is ok to use here
@@ -52,6 +53,7 @@ proxy_init(struct netif *proxy_netif, const struct proxy_options *opts)
     LWIP_UNUSED_ARG(proxy_netif);
 
     g_proxy_options = opts;
+    g_proxy_netif = proxy_netif;
 
 #if 1
     proxy_rtadvd_start(proxy_netif);

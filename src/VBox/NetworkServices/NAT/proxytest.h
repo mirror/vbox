@@ -17,11 +17,27 @@ struct sockaddr;
 struct sockaddr_in;
 struct sockaddr_in6;
 
+struct ip4_lomap
+{
+    ip_addr_t loaddr;
+    uint32_t off;
+};
+
+struct ip4_lomap_desc
+{
+    const struct ip4_lomap *lomap;
+    unsigned int num_lomap;
+};
+
 struct proxy_options {
     const char *tftp_root;
     const struct sockaddr_in *src4;
     const struct sockaddr_in6 *src6;
+    const struct ip4_lomap_desc *lomap_desc;
 };
+
+extern volatile const struct proxy_options *g_proxy_options;
+extern struct netif *g_proxy_netif;
 
 void proxy_init(struct netif *, const struct proxy_options *);
 SOCKET proxy_connected_socket(int, int, ipX_addr_t *, u16_t);
