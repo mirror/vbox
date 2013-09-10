@@ -2584,7 +2584,7 @@ static DECLCALLBACK(int) ahciR3PortQueryDeviceLocation(PPDMIBLOCKPORT pInterface
     return VINF_SUCCESS;
 }
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
 
 /**
  * Dump info about the FIS
@@ -2699,7 +2699,8 @@ static void ahciDumpCmdHdrInfo(PAHCIPort pAhciPort, CmdHdr *pCmdHdr)
     ahciLog(("%s: Command FIS length %u DW\n", __FUNCTION__, (pCmdHdr->u32DescInf & AHCI_CMDHDR_CFL_MASK)));
     ahciLog(("%s: *** End command header info dump. ***\n", __FUNCTION__));
 }
-#endif /* DEBUG */
+
+#endif /* LOG_ENABLED */
 
 /**
  * Post the first D2H FIS from the device into guest memory.
@@ -4236,7 +4237,7 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_UNIT_ATTENTION, SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED); /* media changed */
                     break;
                 }
-                else if (!pAhciPort->pDrvMount->pfnIsMounted(pAhciPort->pDrvMount))
+                if (!pAhciPort->pDrvMount->pfnIsMounted(pAhciPort->pDrvMount))
                 {
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT);
                     break;
@@ -4257,11 +4258,11 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                      * guests that insist on reading from places outside the
                      * valid area this often generates too many release log
                      * entries otherwise. */
-                    static uint64_t uLastLogTS = 0;
-                    if (RTTimeMilliTS() >= uLastLogTS + 1000)
+                    static uint64_t s_uLastLogTS = 0;
+                    if (RTTimeMilliTS() >= s_uLastLogTS + 1000)
                     {
                         LogRel(("AHCI ATAPI: LUN#%d: CD-ROM block number %Ld invalid (READ)\n", pAhciPort->iLUN, (uint64_t)iATAPILBA + cSectors));
-                        uLastLogTS = RTTimeMilliTS();
+                        s_uLastLogTS = RTTimeMilliTS();
                     }
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
                     break;
@@ -4298,11 +4299,11 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                      * guests that insist on reading from places outside the
                      * valid area this often generates too many release log
                      * entries otherwise. */
-                    static uint64_t uLastLogTS = 0;
-                    if (RTTimeMilliTS() >= uLastLogTS + 1000)
+                    static uint64_t s_uLastLogTS = 0;
+                    if (RTTimeMilliTS() >= s_uLastLogTS + 1000)
                     {
                         LogRel(("AHCI ATA: LUN#%d: CD-ROM block number %Ld invalid (READ CD)\n", pAhciPort->iLUN, (uint64_t)iATAPILBA + cSectors));
-                        uLastLogTS = RTTimeMilliTS();
+                        s_uLastLogTS = RTTimeMilliTS();
                     }
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
                     break;
@@ -4351,11 +4352,11 @@ static AHCITXDIR atapiParseCmdVirtualATAPI(PAHCIPort pAhciPort, PAHCIREQ pAhciRe
                      * guests that insist on seeking to places outside the
                      * valid area this often generates too many release log
                      * entries otherwise. */
-                    static uint64_t uLastLogTS = 0;
-                    if (RTTimeMilliTS() >= uLastLogTS + 1000)
+                    static uint64_t s_uLastLogTS = 0;
+                    if (RTTimeMilliTS() >= s_uLastLogTS + 1000)
                     {
                         LogRel(("AHCI ATAPI: LUN#%d: CD-ROM block number %Ld invalid (SEEK)\n", pAhciPort->iLUN, (uint64_t)iATAPILBA));
-                        uLastLogTS = RTTimeMilliTS();
+                        s_uLastLogTS = RTTimeMilliTS();
                     }
                     atapiCmdErrorSimple(pAhciPort, pAhciReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR);
                     break;
@@ -4822,11 +4823,7 @@ static AHCITXDIR atapiParseCmd(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     const uint8_t *pbPacket;
 
     pbPacket = pAhciReq->aATAPICmd;
-#ifdef DEBUG
     Log(("%s: LUN#%d CMD=%#04x \"%s\"\n", __FUNCTION__, pAhciPort->iLUN, pbPacket[0], SCSICmdText(pbPacket[0])));
-#else /* !DEBUG */
-    Log(("%s: LUN#%d CMD=%#04x\n", __FUNCTION__, pAhciPort->iLUN, pbPacket[0]));
-#endif /* !DEBUG */
     Log2(("%s: limit=%#x packet: %.*Rhxs\n", __FUNCTION__, pAhciReq->cmdFis[AHCI_CMDFIS_CYLL] | (pAhciReq->cmdFis[AHCI_CMDFIS_CYLH] << 8), ATAPI_PACKET_SIZE, pbPacket));
 
     if (pAhciPort->fATAPIPassthrough)
@@ -6169,7 +6166,7 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
              pAhciReq->GCPhysCmdHdrAddr, sizeof(CmdHdr)));
     PDMDevHlpPhysRead(pAhciPort->CTX_SUFF(pDevIns), pAhciReq->GCPhysCmdHdrAddr, &pAhciReq->cmdHdr, sizeof(CmdHdr));
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     /* Print some infos about the command header. */
     ahciDumpCmdHdrInfo(pAhciPort, &pAhciReq->cmdHdr);
 #endif
@@ -6207,7 +6204,7 @@ static void ahciPortTaskGetCommandFis(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     pAhciReq->GCPhysPrdtl = AHCI_RTGCPHYS_FROM_U32(pAhciReq->cmdHdr.u32CmdTblAddrUp, pAhciReq->cmdHdr.u32CmdTblAddr) + AHCI_CMDHDR_PRDT_OFFSET;
     pAhciReq->cPrdtlEntries = AHCI_CMDHDR_PRDTL_ENTRIES(pAhciReq->cmdHdr.u32DescInf);
 
-#ifdef DEBUG
+#ifdef LOG_ENABLED
     /* Print some infos about the FIS. */
     ahciDumpFisInfo(pAhciPort, &pAhciReq->cmdFis[0]);
 
