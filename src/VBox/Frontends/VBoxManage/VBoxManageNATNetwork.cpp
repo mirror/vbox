@@ -389,14 +389,14 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
             /* addLocalMapping (hostid, offset) */
             if (!vLoopback2Add.empty())
             {
-                /* we're expecting stings 127.0.0.1;5 */
+                /* we're expecting stings 127.0.0.1=5 */
                 LOOPBACK2DELETEADDITERATOR it;
                 for (it = vLoopback2Add.begin();
                      it != vLoopback2Add.end();
                      ++it)
                 {
                     std::string address, strOffset;
-                    int pos = it->find(';');
+                    int pos = it->find('=');
                     LONG lOffset = 0;
                     Bstr bstrAddress;
 

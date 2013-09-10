@@ -1431,7 +1431,7 @@
       </desc>
     </attribute>
     <attribute name="localMappings" type="wstring" readonly="yes" safearray="yes">
-      <desc>Array of mappings (address,offset),e.g. ("127.0.1.1;4") maps 127.0.1.1 to networkid + 4. 
+      <desc>Array of mappings (address,offset),e.g. ("127.0.1.1=4") maps 127.0.1.1 to networkid + 4. 
       </desc>
     </attribute>
     
