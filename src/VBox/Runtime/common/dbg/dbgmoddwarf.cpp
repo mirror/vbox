@@ -463,6 +463,9 @@ typedef struct RTDBGMODDWARF
     /** The list of compilation units (RTDWARFDIE).   */
     RTLISTANCHOR            CompileUnitList;
 
+    /** Set if we have to use link addresses because the module does not have
+     *  fixups (mach_kernel). */
+    bool                    fUseLinkAddress;
     /** This is set to -1 if we're doing everything in one pass.
      * Otherwise it's 1 or 2:
      *      - In pass 1, we collect segment info.
@@ -1503,8 +1506,9 @@ static int rtDbgModDwarfLinkAddressToSegOffset(PRTDBGMODDWARF pThis, RTSEL uSegm
         }
     }
 
+    if (pThis->fUseLinkAddress)
+        return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
     return pThis->pImgMod->pImgVt->pfnRvaToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
-    //return pThis->pImgMod->pImgVt->pfnLinkAddressToSegOffset(pThis->pImgMod, LinkAddress, piSeg, poffSeg);
 }
 
 
@@ -4697,6 +4701,10 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
     pThis->pDbgInfoMod = pMod;
     pThis->pImgMod     = pMod;
     RTListInit(&pThis->CompileUnitList);
+    /** @todo better fUseLinkAddress heuristics! */
+    if (   (pMod->pszDbgFile && strstr(pMod->pszDbgFile, "mach_kernel"))
+        || (pMod->pszImgFile && strstr(pMod->pszImgFile, "mach_kernel")) )
+        pThis->fUseLinkAddress = true;
 
 #ifdef RTDBGMODDWARF_WITH_MEM_CACHE
     AssertCompile(RT_ELEMENTS(pThis->aDieAllocators) == 2);
