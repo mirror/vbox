@@ -893,11 +893,12 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
             /*
              * Process the result.
              */
-            int32_t     cNsDiv = cNsInterval / 4; /* 25% */
-            uint32_t    cTotal = 0;
-            uint32_t    cLow   = 0;
-            uint32_t    cHigh  = 0;
-            for (uint32_t iCpu = 0; iCpu < RTCPUSET_MAX_CPUS; iCpu++)
+            int32_t     cNsLow  = cNsInterval / 4 * 3; /* 75% */
+            int32_t     cNsHigh = cNsInterval / 4 * 5; /* 125% */
+            uint32_t    cTotal  = 0;
+            uint32_t    cLow    = 0;
+            uint32_t    cHigh   = 0;
+            for (uint32_t iCpu = 0; iCpu < RT_ELEMENTS(g_aOmniLatency); iCpu++)
             {
                 uint32_t cSamples = g_aOmniLatency[iCpu].cSamples;
                 if (cSamples > 1)
@@ -907,15 +908,14 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                     {
                         int64_t cNsDelta = g_aOmniLatency[iCpu].aSamples[iSample - 1].uNanoTs
                                          - g_aOmniLatency[iCpu].aSamples[iSample].uNanoTs;
-                        if (cNsDelta < 0 && cNsDelta < -cNsDiv)
+                        if (cNsDelta < cNsLow)
                             cLow++;
-                        else if (cNsDelta > 0 && cNsDelta > cNsDiv)
+                        else if (cNsDelta > cNsHigh)
                             cHigh++;
                     }
                 }
             }
-
-            RTR0TestR0Info("25%: %u; -25%: %u; total: %u", cHigh, cLow, cTotal);
+            RTR0TestR0Info("125%%: %u; 75%%: %u; total: %u", cHigh, cLow, cTotal);
             RTR0TESTR0_CHECK_RC(RTTimerDestroy(pTimer), VINF_SUCCESS);
             break;
         }
