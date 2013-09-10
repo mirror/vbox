@@ -405,7 +405,7 @@ int VBoxNetDhcp::init()
                 pszTerm = RTStrStr(pszLo2Off, ";");
 
                 if (   pszTerm
-                       && (pszTerm - pszLo2Off) >= 17)
+                       && (pszTerm - pszLo2Off) < 16)
                 {
                 
                     memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
