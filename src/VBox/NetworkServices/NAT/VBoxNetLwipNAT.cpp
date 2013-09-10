@@ -914,7 +914,7 @@ int VBoxNetLwipNAT::init()
         
                 RT_ZERO(aszAddr);
                 
-                pszTerm = RTStrStr(pszLo2Off, ";");
+                pszTerm = RTStrStr(pszLo2Off, "=");
 
                 if (   !pszTerm
                     || (pszTerm - pszLo2Off) >= 17)

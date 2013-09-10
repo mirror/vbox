@@ -520,7 +520,7 @@ STDMETHODIMP NATNetwork::COMGETTER(LocalMappings)(ComSafeArrayOut(BSTR, aLocalMa
     for (it = m->llNATLoopbackOffsetList.begin();
          it != m->llNATLoopbackOffsetList.end(); ++it, ++i)
       {
-          BstrFmt bstr("%s;%d",
+          BstrFmt bstr("%s=%d",
                        (*it).strLoopbackHostAddress.c_str(),
                        (*it).u32Offset);
         bstr.detachTo(&sf[i]);
