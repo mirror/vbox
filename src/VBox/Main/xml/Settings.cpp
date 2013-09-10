@@ -3243,7 +3243,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("EmulatedUSB"))
         {
-            const xml::ElementNode *pelmCardReader, *pelmWebcam;
+            const xml::ElementNode *pelmCardReader;
 
             if ((pelmCardReader = pelmHwChild->findChildElement("CardReader")))
             {

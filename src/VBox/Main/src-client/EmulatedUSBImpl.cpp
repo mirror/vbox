@@ -223,7 +223,7 @@ void EmulatedUSB::FinalRelease()
  */
 HRESULT EmulatedUSB::init(ComObjPtr<Console> pConsole)
 {
-    LogFlowThisFunc(("pConsole=%p\n", pConsole));
+    LogFlowThisFunc(("\n"));
 
     ComAssertRet(!pConsole.isNull(), E_INVALIDARG);
 
@@ -253,9 +253,11 @@ void EmulatedUSB::uninit()
     WebcamsMap::iterator it = m.webcams.begin();
     while (it != m.webcams.end())
     {
+        WebcamsMap::iterator itNext = ++it;
         EUSBWEBCAM *p = it->second;
-        it = m.webcams.erase(it);
+        m.webcams.erase(it);
         p->Release();
+        it = itNext;
     }
     alock.release();
 
