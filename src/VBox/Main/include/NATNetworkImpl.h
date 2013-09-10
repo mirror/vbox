@@ -40,6 +40,14 @@ namespace settings
 # define NATSR_EXECUTABLE_NAME "VBoxNetNAT"
 #endif
 
+enum ADDRESSLOOKUPTYPE
+{
+    ADDR_GATEWAY,
+    ADDR_DHCP,
+    ADDR_DHCPLOWERIP,
+    ADDR_ANY
+};
+
 class NATNetworkServiceRunner: public NetworkServiceRunner
 {
 public:
@@ -127,7 +135,7 @@ public:
 
 private:
     int recalculateIpv4AddressAssignments();
-    int findFirstAvailableOffset(uint32_t *);
+    int findFirstAvailableOffset(ADDRESSLOOKUPTYPE, uint32_t *);
 
     typedef std::map<Utf8Str, settings::NATRule> NATRuleMap;
     typedef NATRuleMap::const_iterator constNATRuleMapIterator;

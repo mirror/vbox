@@ -903,7 +903,7 @@ void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRu
 }
 
 
-int NATNetwork::findFirstAvailableOffset(uint32_t *poff)
+int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *poff)
 {
     RTNETADDRIPV4 network, netmask;
 
@@ -917,12 +917,6 @@ int NATNetwork::findFirstAvailableOffset(uint32_t *poff)
     for (off = 1; off < ~netmask.u; ++off)
     {
 
-        if (off == m->offGateway)
-            continue;
-
-        if (off == m->offDhcp)
-            continue;
-        
         bool skip = false;
         for (it = m->llNATLoopbackOffsetList.begin();
              it != m->llNATLoopbackOffsetList.end();
@@ -936,6 +930,25 @@ int NATNetwork::findFirstAvailableOffset(uint32_t *poff)
 
         }
         
+        if (skip)
+            continue;
+
+        if (off == m->offGateway)
+        {
+            if (addrType == ADDR_GATEWAY)
+                break;
+            else
+                continue;
+        }
+
+        if (off == m->offDhcp)
+        {
+            if (addrType == ADDR_DHCP)
+                break;
+            else
+                continue;
+        }
+
         if (!skip)
             break;
     }
@@ -954,9 +967,9 @@ int NATNetwork::recalculateIpv4AddressAssignments()
                              &netmask);
     AssertRCReturn(rc, rc);
 
-    findFirstAvailableOffset(&m->offGateway);
+    findFirstAvailableOffset(ADDR_GATEWAY, &m->offGateway);
     if (m->fNeedDhcpServer)
-        findFirstAvailableOffset(&m->offDhcp);
+        findFirstAvailableOffset(ADDR_DHCP, &m->offDhcp);
 
     /* I don't remember the reason CIDR calculated on the host. */
     RTNETADDRIPV4 gateway = network;
@@ -974,7 +987,7 @@ int NATNetwork::recalculateIpv4AddressAssignments()
         /* XXX: adding more services should change the math here */
         RTNETADDRIPV4 dhcplowerip = network;
         uint32_t offDhcpLowerIp;
-        findFirstAvailableOffset(&offDhcpLowerIp);
+        findFirstAvailableOffset(ADDR_DHCPLOWERIP, &offDhcpLowerIp);
         dhcplowerip.u = RT_H2N_U32(dhcplowerip.u + offDhcpLowerIp);
 
         RTNETADDRIPV4 dhcpupperip;
