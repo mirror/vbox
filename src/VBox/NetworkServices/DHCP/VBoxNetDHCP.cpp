@@ -369,7 +369,7 @@ int VBoxNetDhcp::init()
     ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
     AssertPtrReturn(confManager, VERR_INTERNAL_ERROR);
 
-    /**
+    /*
      * if we have nat netework of the same name
      * this is good chance that we are assigned to this network.
      */
@@ -409,14 +409,12 @@ int VBoxNetDhcp::init()
                 pszTerm = RTStrStr(pszLo2Off, "=");
 
                 if (   pszTerm
-                       && (pszTerm - pszLo2Off) <= INET_ADDRSTRLEN)
+                    && (pszTerm - pszLo2Off) <= INET_ADDRSTRLEN)
                 {
-
                     memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
                     int rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
                     if (RT_SUCCESS(rc))
                     {
-
                         u32Off = RTStrToUInt32(pszTerm + 1);
                         if (u32Off != 0)
                             MapIp4Addr2Off.insert(
