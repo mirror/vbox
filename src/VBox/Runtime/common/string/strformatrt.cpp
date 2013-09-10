@@ -1098,7 +1098,7 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         REG_OUT_BIT(cr4, X86_CR4_SMXE, "SMXE");
                         REG_OUT_BIT(cr4, X86_CR4_PCIDE, "PCIDE");
                         REG_OUT_BIT(cr4, X86_CR4_OSXSAVE, "OSXSAVE");
-                        REG_OUT_BIT(cr4, X86_CR4_SMEP, "SMPE");
+                        REG_OUT_BIT(cr4, X86_CR4_SMEP, "SMEP");
                         REG_OUT_CLOSE(cr4);
                     }
                     else
