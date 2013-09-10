@@ -356,9 +356,6 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--faulttolerancesyncinterval <msec>]\n"
                      "                            [--faulttolerancepassword <password>]\n"
 #endif
-#ifdef VBOX_WITH_USB_VIDEO
-                     "                            [--usbwebcam on|off]\n"
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
                      "                            [--usbcardreader on|off]\n"
 #endif
@@ -482,6 +479,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            plugcpu <id> |\n"
                      "                            unplugcpu <id> |\n"
                      "                            cpuexecutioncap <1-100>\n"
+                     "                            webcam attach [path [settings]] | detach [path] | list]\n"
                      "\n", SEP);
     }
 

@@ -4121,7 +4121,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="b6057c6f-2176-4820-a8d6-cb6687ed1583"
+    uuid="59b33148-7f87-4224-82a7-d141ef49fc0d"
     wsmap="managed"
     >
     <desc>
@@ -4511,7 +4511,6 @@
       <desc>VirtualBox Remote Desktop Extension (VRDE) server object.</desc>
     </attribute>
 
-    <attribute name="emulatedUSBWebcameraEnabled" type="boolean" default="false"/>
     <attribute name="emulatedUSBCardReaderEnabled" type="boolean" default="false"/>
 
     <attribute name="mediumAttachments" type="IMediumAttachment" readonly="yes" safearray="yes">
@@ -7127,6 +7126,41 @@
 
   </interface>
 
+  <interface
+    name="IEmulatedUSB" extends="$unknown"
+    uuid="38cc4dfd-8bb2-4d40-aebe-699eead8c2dd"
+    wsmap="managed"
+    >
+    <desc>
+      Manages emulated USB devices.
+    </desc>
+
+    <method name="webcamAttach">
+      <desc>
+        Attaches the emulated USB webcam to the VM, which will use a host video capture device.
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>The host path of the capture device to use.</desc>
+      </param>
+      <param name="settings" type="wstring" dir="in">
+        <desc>Optional settings.</desc>
+      </param>
+    </method>
+
+    <method name="webcamDetach">
+      <desc>
+        Detaches the emulated USB webcam from the VM
+      </desc>
+      <param name="path" type="wstring" dir="in">
+        <desc>The host path of the capture device to detach.</desc>
+      </param>
+    </method>
+
+    <attribute name="webcams" type="wstring" safearray="yes" readonly="yes">
+      <desc>Lists attached virtual webcams.</desc>
+    </attribute>
+  </interface>
+
   <!--
   // IConsole
   /////////////////////////////////////////////////////////////////////////
@@ -7242,7 +7276,7 @@
 
   <interface
     name="IConsole" extends="$unknown"
-    uuid="db7ab4ca-2a3f-4183-9243-c1208da92392"
+    uuid="8ab7c520-2442-4b66-8d74-4ff1e195d2b6"
     wsmap="managed"
     >
     <desc>
@@ -7379,6 +7413,12 @@
         whether it should only be allowed access to the VRDE clipboard. This
         setting may not affect existing guest clipboard connections which
         are already connected to the host clipboard.
+      </desc>
+    </attribute>
+
+    <attribute name="emulatedUSB" type="IEmulatedUSB" readonly="yes">
+      <desc>
+        Interface that manages emulated USB devices.
       </desc>
     </attribute>
 

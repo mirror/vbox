@@ -1913,7 +1913,6 @@ Hardware::Hardware()
           pointingHIDType(PointingHIDType_PS2Mouse),
           keyboardHIDType(KeyboardHIDType_PS2Keyboard),
           chipsetType(ChipsetType_PIIX3),
-          fEmulatedUSBWebcam(false),
           fEmulatedUSBCardReader(false),
           clipboardMode(ClipboardMode_Disabled),
           dragAndDropMode(DragAndDropMode_Disabled),
@@ -1987,7 +1986,6 @@ bool Hardware::operator==(const Hardware& h) const
                   && (pointingHIDType           == h.pointingHIDType)
                   && (keyboardHIDType           == h.keyboardHIDType)
                   && (chipsetType               == h.chipsetType)
-                  && (fEmulatedUSBWebcam        == h.fEmulatedUSBWebcam)
                   && (fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader)
                   && (vrdeSettings              == h.vrdeSettings)
                   && (biosSettings              == h.biosSettings)
@@ -3250,11 +3248,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmCardReader = pelmHwChild->findChildElement("CardReader")))
             {
                 pelmCardReader->getAttributeValue("enabled", hw.fEmulatedUSBCardReader);
-            }
-
-            if ((pelmWebcam = pelmHwChild->findChildElement("Webcam")))
-            {
-                pelmWebcam->getAttributeValue("enabled", hw.fEmulatedUSBWebcam);
             }
         }
         else if (pelmHwChild->nameEquals("Frontend"))
@@ -4659,12 +4652,6 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
         xml::ElementNode *pelmCardReader = pelmEmulatedUSB->createChild("CardReader");
         pelmCardReader->setAttribute("enabled", hw.fEmulatedUSBCardReader);
-
-        if (m->sv >= SettingsVersion_v1_13)
-        {
-            xml::ElementNode *pelmWebcam = pelmEmulatedUSB->createChild("Webcam");
-            pelmWebcam->setAttribute("enabled", hw.fEmulatedUSBWebcam);
-        }
     }
 
     if (   m->sv >= SettingsVersion_v1_14
@@ -5403,13 +5390,6 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
                 break;
             }
         }
-    }
-
-    if (m->sv < SettingsVersion_v1_13)
-    {
-        /* 4.2: Emulated USB Webcam. */
-        if (hardwareMachine.fEmulatedUSBWebcam)
-            m->sv = SettingsVersion_v1_13;
     }
 
     if (m->sv < SettingsVersion_v1_12)

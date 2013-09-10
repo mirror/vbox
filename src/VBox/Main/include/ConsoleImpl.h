@@ -32,11 +32,10 @@ class OUSBDevice;
 class RemoteUSBDevice;
 class SharedFolder;
 class VRDEServerInfo;
+class EmulatedUSB;
 class AudioSniffer;
 class Nvram;
-#ifdef VBOX_WITH_USB_VIDEO
 class EmWebcam;
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;
 #endif
@@ -146,6 +145,7 @@ public:
     STDMETHOD(COMGETTER(AttachedPCIDevices))(ComSafeArrayOut(IPCIDeviceAttachment *, aAttachments));
     STDMETHOD(COMGETTER(UseHostClipboard))(BOOL *aUseHostClipboard);
     STDMETHOD(COMSETTER(UseHostClipboard))(BOOL aUseHostClipboard);
+    STDMETHOD(COMGETTER(EmulatedUSB))(IEmulatedUSB **aEmulatedUSB);
 
     // IConsole methods
     STDMETHOD(PowerUp)(IProgress **aProgress);
@@ -241,9 +241,7 @@ public:
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader *getUsbCardReader() { return mUsbCardReader; }
 #endif
-#ifdef VBOX_WITH_USB_VIDEO
     EmWebcam *getEmWebcam() { return mEmWebcam; }
-#endif
 
     int VRDPClientLogon(uint32_t u32ClientId, const char *pszUser, const char *pszPassword, const char *pszDomain);
     void VRDPClientStatusChange(uint32_t u32ClientId, const char *pszStatus);
@@ -761,6 +759,7 @@ private:
 #ifdef VBOX_WITH_EXTPACK
     const ComObjPtr<ExtPackManager> mptrExtPackManager;
 #endif
+    const ComObjPtr<EmulatedUSB> mEmulatedUSB;
 
     USBDeviceList mUSBDevices;
     RemoteUSBDeviceList mRemoteUSBDevices;
@@ -807,9 +806,7 @@ private:
     VMMDev * m_pVMMDev;
     AudioSniffer * const mAudioSniffer;
     Nvram   * const mNvram;
-#ifdef VBOX_WITH_USB_VIDEO
     EmWebcam * const mEmWebcam;
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const mUsbCardReader;
 #endif

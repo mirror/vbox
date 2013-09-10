@@ -273,6 +273,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_DISPLAY,
     /** Main group, IDragAndDropModeChangedEvent. */
     LOG_GROUP_MAIN_DRAGANDDROPMODECHANGEDEVENT,
+    /** Main group, IEmulatedUSB. */
+    LOG_GROUP_MAIN_EMULATEDUSB,
     /** Main group, IEvent. */
     LOG_GROUP_MAIN_EVENT,
     /** Main group, IEventListener. */
@@ -789,6 +791,7 @@ typedef enum LOGGROUP
     "MAIN_DIRECTORY", \
     "MAIN_DISPLAY", \
     "MAIN_DRAGANDDROPMODECHANGEDEVENT", \
+    "MAIN_EMULATEDUSB",   \
     "MAIN_EVENT",   \
     "MAIN_EVENTLISTENER", \
     "MAIN_EVENTSOURCE", \

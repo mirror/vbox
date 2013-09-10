@@ -57,9 +57,7 @@
 #include "SharedFolderImpl.h"
 #include "AudioSnifferInterface.h"
 #include "Nvram.h"
-#ifdef VBOX_WITH_USB_VIDEO
-# include "UsbWebcamInterface.h"
-#endif
+#include "UsbWebcamInterface.h"
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
 #endif
@@ -70,6 +68,7 @@
 # include "ExtPackManagerImpl.h"
 #endif
 #include "BusAssignmentManager.h"
+#include "EmulatedUSBImpl.h"
 
 #include "VBoxEvents.h"
 #include "AutoCaller.h"
@@ -385,9 +384,7 @@ Console::Console()
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
     , mNvram(NULL)
-#ifdef VBOX_WITH_USB_VIDEO
     , mEmWebcam(NULL)
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
 #endif
@@ -505,6 +502,10 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         rc = mVRDEServerInfo->init(this);
         AssertComRCReturnRC(rc);
 
+        unconst(mEmulatedUSB).createObject();
+        rc = mEmulatedUSB->init(this);
+        AssertComRCReturnRC(rc);
+
         /* Grab global and machine shared folder lists */
 
         rc = fetchSharedFolders(true /* aGlobal */);
@@ -555,10 +556,8 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
             AssertReturn(mNvram, E_FAIL);
         }
 
-#ifdef VBOX_WITH_USB_VIDEO
         unconst(mEmWebcam) = new EmWebcam(this);
         AssertReturn(mEmWebcam, E_FAIL);
-#endif
 #ifdef VBOX_WITH_USB_CARDREADER
         unconst(mUsbCardReader) = new UsbCardReader(this);
         AssertReturn(mUsbCardReader, E_FAIL);
@@ -656,13 +655,11 @@ void Console::uninit()
         unconst(mNvram) = NULL;
     }
 
-#ifdef VBOX_WITH_USB_VIDEO
     if (mEmWebcam)
     {
         delete mEmWebcam;
         unconst(mEmWebcam) = NULL;
     }
-#endif
 
 #ifdef VBOX_WITH_USB_CARDREADER
     if (mUsbCardReader)
@@ -702,6 +699,12 @@ void Console::uninit()
     {
         mVRDEServerInfo->uninit();
         unconst(mVRDEServerInfo).setNull();
+    }
+
+    if (mEmulatedUSB)
+    {
+        mEmulatedUSB->uninit();
+        unconst(mEmulatedUSB).setNull();
     }
 
     if (mDebugger)
@@ -1991,6 +1994,19 @@ STDMETHODIMP Console::COMGETTER(VRDEServerInfo)(IVRDEServerInfo **aVRDEServerInf
 
     /* mVRDEServerInfo is constant during life time, no need to lock */
     mVRDEServerInfo.queryInterfaceTo(aVRDEServerInfo);
+
+    return S_OK;
+}
+
+STDMETHODIMP Console::COMGETTER(EmulatedUSB)(IEmulatedUSB **aEmulatedUSB)
+{
+    CheckComArgOutPointerValid(aEmulatedUSB);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* mEmulatedUSB is constant during life time, no need to lock */
+    mEmulatedUSB.queryInterfaceTo(aEmulatedUSB);
 
     return S_OK;
 }
