@@ -1660,20 +1660,25 @@ static uint8_t efiGetHalfByte(char ch)
 }
 
 
-static int efiParseDeviceString(PDEVEFI  pThis, char *pszDeviceProps)
+/**
+ * Converts a hex string into a binary data blob located at
+ * pThis->pbDeviceProps, size returned as pThis->cbDeviceProps.
+ *
+ * @returns VERR_NO_MEMORY or VINF_SUCCESS.
+ * @param   pThis           The EFI instance data.
+ * @param   pszDeviceProps  The device property hex string to decode.
+ */
+static int efiParseDeviceString(PDEVEFI pThis, const char *pszDeviceProps)
 {
-    int         rc = 0;
-    uint32_t    iStr, iHex, u32OutLen;
-    uint8_t     u8Value = 0;                    /* (shut up gcc) */
-    bool        fUpper = true;
-
-    u32OutLen = (uint32_t)RTStrNLen(pszDeviceProps, RTSTR_MAX) / 2 + 1;
-
-    pThis->pbDeviceProps = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, u32OutLen);
+    uint32_t const cbOut = (uint32_t)RTStrNLen(pszDeviceProps, RTSTR_MAX) / 2 + 1;
+    pThis->pbDeviceProps = (uint8_t *)PDMDevHlpMMHeapAlloc(pThis->pDevIns, cbOut);
     if (!pThis->pbDeviceProps)
         return VERR_NO_MEMORY;
 
-    for (iStr=0, iHex = 0; pszDeviceProps[iStr]; iStr++)
+    uint32_t    iHex    = 0;
+    bool        fUpper  = true;
+    uint8_t     u8Value = 0;                    /* (shut up gcc) */
+    for (uint32_t iStr = 0; pszDeviceProps[iStr]; iStr++)
     {
         uint8_t u8Hb = efiGetHalfByte(pszDeviceProps[iStr]);
         if (u8Hb > 0xf)
@@ -1684,14 +1689,14 @@ static int efiParseDeviceString(PDEVEFI  pThis, char *pszDeviceProps)
         else
             pThis->pbDeviceProps[iHex++] = u8Hb | u8Value;
 
-        Assert(iHex < u32OutLen);
+        Assert(iHex < cbOut);
         fUpper = !fUpper;
     }
 
     Assert(iHex == 0 || fUpper);
     pThis->cbDeviceProps = iHex;
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
