@@ -1758,14 +1758,26 @@ VMMDECL(int) IOMMMIOHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
  */
 VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVM pVM, PVMCPU pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
 {
+    /*
+     * We don't have a range here, so look it up before calling the common function.
+     */
     int rc2 = IOM_LOCK_SHARED(pVM); NOREF(rc2);
 #ifndef IN_RING3
     if (rc2 == VERR_SEM_BUSY)
         return VINF_IOM_R3_MMIO_READ_WRITE;
 #endif
-    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault,
-                                           iomMmioGetRange(pVM, pVCpu, GCPhysFault));
+    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhysFault);
+    if (RT_UNLIKELY(!pRange))
+    {
+        IOM_UNLOCK_SHARED(pVM);
+        return VERR_IOM_MMIO_RANGE_NOT_FOUND;
+    }
+    iomMmioRetainRange(pRange);
     IOM_UNLOCK_SHARED(pVM);
+
+    VBOXSTRICTRC rcStrict = iomMMIOHandler(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pRange);
+
+    iomMmioReleaseRange(pVM, pRange);
     return VBOXSTRICTRC_VAL(rcStrict);
 }
 
