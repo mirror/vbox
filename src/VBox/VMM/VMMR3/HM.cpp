@@ -1296,7 +1296,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         LogRel(("HM: Nested paging enabled!\n"));
         if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+            LogRel(("HM:   EPT flush type               = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
             LogRel(("HM:   EPT flush type               = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
