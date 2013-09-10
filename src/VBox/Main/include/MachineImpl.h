@@ -305,7 +305,6 @@ public:
         KeyboardHIDType_T   mKeyboardHIDType;
         PointingHIDType_T   mPointingHIDType;
         ChipsetType_T       mChipsetType;
-        BOOL                mEmulatedUSBWebcamEnabled;
         BOOL                mEmulatedUSBCardReaderEnabled;
 
         BOOL                mIOCacheEnabled;
@@ -418,8 +417,6 @@ public:
     STDMETHOD(COMSETTER(CPUExecutionCap))(ULONG aExecutionCap);
     STDMETHOD(COMGETTER(EmulatedUSBCardReaderEnabled))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(EmulatedUSBCardReaderEnabled))(BOOL aEnabled);
-    STDMETHOD(COMGETTER(EmulatedUSBWebcameraEnabled))(BOOL *aEnabled);
-    STDMETHOD(COMSETTER(EmulatedUSBWebcameraEnabled))(BOOL aEnabled);
     STDMETHOD(COMGETTER(HPETEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(HPETEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);

@@ -2381,21 +2381,6 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
 #endif
 
-#ifdef VBOX_WITH_USB_VIDEO
-            BOOL aEmulatedUSBWebcamEnabled = FALSE;
-            hrc = pMachine->COMGETTER(EmulatedUSBWebcameraEnabled)(&aEmulatedUSBWebcamEnabled);    H();
-            if (aEmulatedUSBWebcamEnabled)
-            {
-                InsertConfigNode(pUsbDevices, "Webcam", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver", "EmWebcam");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mEmWebcam);
-            }
-#endif
-
 #ifdef VBOX_WITH_USB_CARDREADER
             BOOL aEmulatedUSBCardReaderEnabled = FALSE;
             hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();

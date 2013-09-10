@@ -143,10 +143,6 @@ public:
                             uint32_t cBits);
 
     void SendAudioInputEnd(void *pvUserCtx);
-#ifdef VBOX_WITH_USB_VIDEO
-    int GetVideoFrameDimensions(uint16_t *pu16Heigh, uint16_t *pu16Width);
-    int SendVideoSreamOn(bool fFetch);
-#endif
 
     int SCardRequest(void *pvUser, uint32_t u32Function, const void *pvData, uint32_t cbData);
 
