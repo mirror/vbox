@@ -56,51 +56,59 @@ int main(int argc, char **argv)
     if (rcExit != RTEXITCODE_SUCCESS)
         return rcExit;
 
-# if 1
-    /*
-     * Standard timers.
-     */
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC,       "Basic one shot");
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC,       "Basic periodic");
-    if (RTTestErrorCount(g_hTest) == 0)
+    if (argc == 2 && !strcmp(argv[1], "latency"))
     {
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_LATENCY_OMNI, "Latency omni timer");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_LATENCY_OMNI_HIRES, "Latency omni hires timer");
+    }
+    else
+    {
+# if 1
+        /*
+         * Standard timers.
+         */
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC,       "Basic one shot");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC,       "Basic periodic");
+        if (RTTestErrorCount(g_hTest) == 0)
+        {
 #  if 1
 #   ifndef RT_OS_SOLARIS        /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART, "Restart one shot from callback");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY, "Destroy one shot from callback");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART, "Restart one shot from callback");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY, "Destroy one shot from callback");
 #   endif
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS, "Create-start-stop-destroy loops");
-        for (uint32_t i = 0; i <= 7; i++)
-            RTR3TestR0SimpleTestWithArg(TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL, i, "Change interval from callback, variation %u", i);
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS, "Create-start-stop-destroy loops");
+            for (uint32_t i = 0; i <= 7; i++)
+                RTR3TestR0SimpleTestWithArg(TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL, i, "Change interval from callback, variation %u", i);
 #  endif
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_SPECIFIC, "One shot cpu specific");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_SPECIFIC, "Periodic cpu specific");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_OMNI, "Periodic omni timer");
-    }
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_SPECIFIC, "One shot cpu specific");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_SPECIFIC, "Periodic cpu specific");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_OMNI, "Periodic omni timer");
+        }
 # endif
 
 # if 1
-    /*
-     * High resolution timers.
-     */
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES, "Basic hires one shot");
-    RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC_HIRES, "Basic hires periodic");
-    if (RTTestErrorCount(g_hTest) == 0)
-    {
+        /*
+         * High resolution timers.
+         */
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_BASIC_HIRES, "Basic hires one shot");
+        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_BASIC_HIRES, "Basic hires periodic");
+        if (RTTestErrorCount(g_hTest) == 0)
+        {
 #  if 1
 #   ifndef RT_OS_SOLARIS        /* Solaris cannot call back into cyclic subsystem from a cyclic callback. */
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES, "Destroy hires one shot from callback");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_RESTART_HIRES, "Restart hires one shot from callback");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_DESTROY_HIRES, "Destroy hires one shot from callback");
 #   endif
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES, "Create-start-stop-destroy loops, hires");
-        for (uint32_t i = 0; i <= 7; i++)
-            RTR3TestR0SimpleTestWithArg(TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL, i, "Change interval from callback, hires, variation %u", i);
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_CSSD_LOOPS_HIRES, "Create-start-stop-destroy loops, hires");
+            for (uint32_t i = 0; i <= 7; i++)
+                RTR3TestR0SimpleTestWithArg(TSTRTR0TIMER_PERIODIC_CHANGE_INTERVAL, i, "Change interval from callback, hires, variation %u", i);
 #  endif
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_SPECIFIC_HIRES, "One shot hires cpu specific");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_SPECIFIC_HIRES, "Periodic hires cpu specific");
-        RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_OMNI, "Periodic omni hires timer");
-    }
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_ONE_SHOT_SPECIFIC_HIRES, "One shot hires cpu specific");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_SPECIFIC_HIRES, "Periodic hires cpu specific");
+            RTR3TestR0SimpleTest(TSTRTR0TIMER_PERIODIC_OMNI, "Periodic omni hires timer");
+        }
 # endif
+    }
 
     /*
      * Done.
