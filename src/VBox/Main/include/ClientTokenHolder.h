@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox API client token holder (in the client process)
+ * VirtualBox API client session token holder (in the client process)
  */
 
 /*
@@ -34,6 +34,8 @@
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 # define CTHSEMARG -1
 # define CTHSEMTYPE int
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+/* the token object based implementation needs no semaphores */
 #else
 # error "Port me!"
 #endif
@@ -45,12 +47,21 @@
 class Session::ClientTokenHolder
 {
 public:
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     /**
      * Constructor which creates a usable instance
      *
      * @param strTokenId    String with identifier of the token
      */
     ClientTokenHolder(const Utf8Str &strTokenId);
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+    /**
+     * Constructor which creates a usable instance
+     *
+     * @param aToken        Reference to token object
+     */
+    ClientTokenHolder(IToken *aToken);
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
 
     /**
      * Default destructor. Cleans everything up.
@@ -68,9 +79,17 @@ private:
      */
     ClientTokenHolder();
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     Utf8Str mClientTokenId;
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+    ComPtr<IToken> mToken;
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+#ifdef CTHSEMTYPE
     CTHSEMTYPE mSem;
+#endif
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     RTTHREAD mThread;
+#endif
 #ifdef RT_OS_WINDOWS
     CTHTHREADSEMTYPE mThreadSem;
 #endif

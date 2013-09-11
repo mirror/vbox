@@ -293,8 +293,13 @@ STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
 #endif /* VBOX_COM_INPROC_API_CLIENT */
 }
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
                                     IN_BSTR aTokenId)
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
+                                    IToken *aToken)
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aMachine=%p\n", aMachine));
@@ -337,12 +342,20 @@ STDMETHODIMP Session::AssignMachine(IMachine *aMachine, LockType_T aLockType,
     mRemoteMachine = aMachine;
 #endif
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     Utf8Str strTokenId(aTokenId);
     Assert(!strTokenId.isEmpty());
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+    AssertPtr(aToken);
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
     /* create the machine client token */
     try
     {
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
         mClientTokenHolder = new ClientTokenHolder(strTokenId);
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+        mClientTokenHolder = new ClientTokenHolder(aToken);
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
         if (!mClientTokenHolder->isReady())
         {
             delete mClientTokenHolder;

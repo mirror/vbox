@@ -1,6 +1,6 @@
 /** @file
  *
- * VirtualBox API client token holder (in the client process)
+ * VirtualBox API client session token holder (in the client process)
  */
 
 /*
@@ -100,16 +100,33 @@ Session::ClientTokenHolder::~ClientTokenHolder()
         mSem = -1;
     }
 
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+
+    if (!mToken.isNull())
+    {
+        mToken->Abandon();
+        mToken.setNull();
+    }
+
 #else
 # error "Port me!"
 #endif
 }
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 Session::ClientTokenHolder::ClientTokenHolder(const Utf8Str &strTokenId) :
     mClientTokenId(strTokenId)
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+Session::ClientTokenHolder::ClientTokenHolder(IToken *aToken) :
+    mToken(aToken)
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
 {
+#ifdef CTHSEMTYPE
     mSem = CTHSEMARG;
+#endif
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
     mThread = NIL_RTTHREAD;
+#endif
 
 #if defined(RT_OS_WINDOWS)
     mThreadSem = CTHTHREADSEMARG;
@@ -199,6 +216,10 @@ Session::ClientTokenHolder::ClientTokenHolder(const Utf8Str &strTokenId) :
                         ("Cannot grab semaphore, errno=%d", errno));
     mSem = s;
 
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+
+    /* nothing to do */
+
 #else
 # error "Port me!"
 #endif
@@ -206,7 +227,11 @@ Session::ClientTokenHolder::ClientTokenHolder(const Utf8Str &strTokenId) :
 
 bool Session::ClientTokenHolder::isReady()
 {
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     return mSem != CTHSEMARG;
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+    return !mToken.isNull();
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
 }
 
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)

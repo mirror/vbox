@@ -1,6 +1,6 @@
 /** @file
  *
- * VirtualBox API client crash token handling
+ * VirtualBox API client session crash token handling
  */
 
 /*
@@ -57,16 +57,26 @@ Machine::ClientToken::~ClientToken()
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
     mClientTokenId = "0";
 # endif /* VBOX_WITH_NEW_SYS_V_KEYGEN */
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+    /* release the token, uses reference counting */
+    if (mClientToken)
+    {
+        if (!mClientTokenPassed)
+            mClientToken->Release();
+        mClientToken = NULL;
+    }
 #else
 # error "Port me!"
 #endif
     mClientToken = CTTOKENARG;
 }
 
-Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine) :
+Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
+                                  SessionMachine *pSessionMachine) :
     mMachine(pMachine)
 {
 #if defined(RT_OS_WINDOWS)
+    NOREF(pSessionMachine);
     Bstr tokenId = pMachine->mData->m_strConfigFileFull;
     for (size_t i = 0; i < tokenId.length(); i++)
         if (tokenId.raw()[i] == '\\')
@@ -77,6 +87,7 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine) :
               ("Cannot create token '%s', err=%d",
                mClientTokenId.c_str(), ::GetLastError()));
 #elif defined(RT_OS_OS2)
+    NOREF(pSessionMachine);
     Utf8Str ipcSem = Utf8StrFmt("\\SEM32\\VBOX\\VM\\{%RTuuid}",
                                 pMachine->mData->mUuid.raw());
     mClientTokenId = ipcSem;
@@ -85,6 +96,7 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine) :
               ("Cannot create token '%s', arc=%ld",
                ipcSem.c_str(), arc));
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+    NOREF(pSessionMachine);
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
 #  if defined(RT_OS_FREEBSD) && (HC_ARCH_BITS == 64)
     /** @todo Check that this still works correctly. */
@@ -157,6 +169,30 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine) :
         mClientToken = CTTOKENARG;
         AssertMsgFailedReturnVoid(("Cannot init token, errno=%d", errnoSave));
     }
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+    ComObjPtr<MachineToken> pToken;
+    HRESULT rc = pToken.createObject();
+    if (SUCCEEDED(rc))
+    {
+        rc = pToken->init(pSessionMachine);
+        if (SUCCEEDED(rc))
+        {
+            mClientToken = pToken;
+            if (mClientToken)
+            {
+                rc = mClientToken->AddRef();
+                if (FAILED(rc))
+                    mClientToken = NULL;
+            }
+        }
+    }
+    pToken.setNull();
+    mClientTokenPassed = false;
+    /* mClientTokenId isn't really used */
+    mClientTokenId = pMachine->mData->m_strConfigFileFull;
+    AssertMsg(mClientToken,
+              ("Cannot create token '%s', rc=%Rhrc",
+               mClientTokenId.c_str(), rc));
 #else
 # error "Port me!"
 #endif
@@ -174,9 +210,13 @@ void Machine::ClientToken::getId(Utf8Str &strId)
 
 CTTOKENTYPE Machine::ClientToken::getToken()
 {
+#ifdef VBOX_WITH_GENERIC_SESSION_WATCHER
+    mClientTokenPassed = true;
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
     return mClientToken;
 }
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
 bool Machine::ClientToken::release()
 {
     bool terminated = false;
@@ -201,10 +241,22 @@ bool Machine::ClientToken::release()
         /* the semaphore is signaled, meaning the session is terminated */
         terminated = true;
     }
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+    /** @todo r=klaus never tested, this code is not reached */
+    AssertMsg(mClientToken, ("token must be created"));
+    /* release the token, uses reference counting */
+    if (mClientToken)
+    {
+        if (!mClientTokenPassed)
+            mClientToken->Release();
+        mClientToken = NULL;
+    }
+    terminated = true;
 #else
 # error "Port me!"
 #endif
     return terminated;
 }
+#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

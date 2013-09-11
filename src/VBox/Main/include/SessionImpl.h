@@ -71,7 +71,11 @@ public:
     // IInternalSessionControl methods
     STDMETHOD(GetPID)(ULONG *aPid);
     STDMETHOD(GetRemoteConsole)(IConsole **aConsole);
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IN_BSTR aTokenId);
+#else /* VBOX_WITH_GENERIC_SESSION_WATCHER */
+    STDMETHOD(AssignMachine)(IMachine *aMachine, LockType_T aLockType, IToken *aToken);
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
     STDMETHOD(AssignRemoteMachine)(IMachine *aMachine, IConsole *aConsole);
     STDMETHOD(UpdateMachineState)(MachineState_T aMachineState);
     STDMETHOD(Uninitialize)();

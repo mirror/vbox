@@ -17478,7 +17478,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IInternalSessionControl" extends="$unknown"
-    uuid="41506410-03d3-4b0c-9b27-e8e5149ce775"
+    uuid="2d2124a7-0f62-4907-ae21-eee5a559bdde"
     internal="yes"
     wsmap="suppress"
     >
@@ -17540,7 +17540,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="machine" type="IMachine" dir="in"/>
       <param name="lockType" type="LockType" dir="in"/>
-      <param name="tokenId" type="wstring" dir="in"/>
+      <param name="token" type="IToken" dir="in"/>
     </method>
 </if>
 

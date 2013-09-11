@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox API client token abstraction
+ * VirtualBox API client session token abstraction
  */
 
 /*
@@ -24,6 +24,9 @@
 #include <VBox/com/AutoLock.h>
 
 #include "MachineImpl.h"
+#ifdef VBOX_WITH_GENERIC_SESSION_WATCHER
+# include "TokenImpl.h"
+#endif /* VBOX_WITH_GENERIC_SESSION_WATCHER */
 
 #if defined(RT_OS_WINDOWS)
 # define CTTOKENARG NULL
@@ -34,6 +37,9 @@
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 # define CTTOKENARG -1
 # define CTTOKENTYPE int
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+# define CTTOKENARG NULL
+# define CTTOKENTYPE MachineToken *
 #else
 # error "Port me!"
 #endif
@@ -48,9 +54,10 @@ public:
     /**
      * Constructor which creates a usable instance
      *
-     * @param pMachine  Reference to Machine object
+     * @param pMachine          Reference to Machine object
+     * @param pSessionMachine   Reference to corresponding SessionMachine object
      */
-    ClientToken(const ComObjPtr<Machine> &pMachine);
+    ClientToken(const ComObjPtr<Machine> &pMachine, SessionMachine *pSessionMachine);
 
     /**
      * Default destructor. Cleans everything up.
@@ -73,10 +80,12 @@ public:
      */
     CTTOKENTYPE getToken();
 
+#ifndef VBOX_WITH_GENERIC_SESSION_WATCHER
     /**
      * Release token now. Returns information if the client has terminated.
      */
     bool release();
+#endif /* !VBOX_WITH_GENERIC_SESSION_WATCHER */
 
 private:
     /**
@@ -87,6 +96,9 @@ private:
     Machine *mMachine;
     CTTOKENTYPE mClientToken;
     Utf8Str mClientTokenId;
+#ifdef VBOX_WITH_GENERIC_SESSION_WATCHER
+    bool mClientTokenPassed;
+#endif
 };
 
 #endif /* !____H_CLIENTTOKEN */

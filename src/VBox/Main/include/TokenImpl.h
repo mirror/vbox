@@ -39,7 +39,7 @@ public:
 
     // public initializer/uninitializer for internal purposes only
     HRESULT init(const ComObjPtr<SessionMachine> &pSessionMachine);
-    void uninit();
+    void uninit(bool fAbandon);
 
 private:
 
