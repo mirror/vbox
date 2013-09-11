@@ -799,7 +799,7 @@ VMMR0_INT_DECL(int) HMR0Term(void)
 static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     NOREF(pvUser2);
 
@@ -861,7 +861,8 @@ static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *p
 static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     NOREF(pvUser2);
 
     /* Check if SVM is disabled. */
@@ -907,7 +908,7 @@ static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
     PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu));  /** @todo fix idCpu == index assumption (rainy day) */
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured);
 
@@ -1061,15 +1062,18 @@ VMMR0_INT_DECL(int) HMR0EnableAllCpus(PVM pVM)
  *
  * @returns VBox status code.
  * @param   idCpu       The identifier for the CPU the function is called on.
+ *
+ * @remarks Must be called with preemption disabled.
  */
 static int hmR0DisableCpu(RTCPUID idCpu)
 {
     PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
     Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /// @todo fix idCpu == index assumption (rainy day)
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured || pCpu->hMemObj != NIL_RTR0MEMOBJ);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (pCpu->hMemObj == NIL_RTR0MEMOBJ)
         return pCpu->fConfigured ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
@@ -1079,16 +1083,9 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     {
         void    *pvCpuPage     = RTR0MemObjAddress(pCpu->hMemObj);
         RTHCPHYS HCPhysCpuPage = RTR0MemObjGetPagePhysAddr(pCpu->hMemObj, 0);
-        if (idCpu == RTMpCpuId())
-        {
-            rc = g_HvmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
-            AssertRCReturn(rc, rc);
-        }
-        else
-        {
-            pCpu->fIgnoreAMDVInUseError = true;
-            rc = VINF_SUCCESS;
-        }
+
+        rc = g_HvmR0.pfnDisableCpu(pCpu, pvCpuPage, HCPhysCpuPage);
+        AssertRCReturn(rc, rc);
 
         pCpu->fConfigured = false;
     }
@@ -1101,8 +1098,8 @@ static int hmR0DisableCpu(RTCPUID idCpu)
 
 
 /**
- * Worker function passed to RTMpOnAll, RTMpOnOthers and RTMpOnSpecific that
- * is to be called on the target CPUs.
+ * Worker function passed to RTMpOnAll() that is to be called on the target
+ * CPUs.
  *
  * @param   idCpu       The identifier for the CPU the function is called on.
  * @param   pvUser1     The 1st user argument.
@@ -1516,20 +1513,25 @@ VMMR0_INT_DECL(void) HMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUs
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  *
- * @remarks Called with preemption disabled and after first having called
- *          HMR0Enter.
+ * @remarks Can be called with preemption enabled if thread-context hooks are
+ *          used!!!
  */
 VMMR0_INT_DECL(int) HMR0RunGuestCode(PVM pVM, PVMCPU pVCpu)
 {
 #ifdef VBOX_STRICT
-    PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
-    Assert(pCpu->fConfigured);
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
+    /* With thread-context hooks we would be running this code with preemption enabled. */
+    if (!RTThreadPreemptIsEnabled(NIL_RTTHREAD))
+    {
+        PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[RTMpCpuId()];
+        Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
+        Assert(pCpu->fConfigured);
+        AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
+    }
 #endif
 
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
     AssertReturn(!VMMR0ThreadCtxHooksAreRegistered(pVCpu), VERR_HM_IPE_4);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     PGMRZDynMapStartAutoSet(pVCpu);
 #endif
 
@@ -1621,6 +1623,7 @@ VMMR0_INT_DECL(bool) HMR0SuspendPending(void)
  */
 VMMR0DECL(PHMGLOBALCPUINFO) HMR0GetCurrentCpu(void)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     RTCPUID idCpu = RTMpCpuId();
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     return &g_HvmR0.aCpuInfo[idCpu];
