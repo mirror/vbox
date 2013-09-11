@@ -6911,7 +6911,8 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
 
 /**
- * Clears the current event in the VMCS.
+ * Clears the interrupt-window exiting control in the VMCS and if necessary
+ * clears the current event in the VMCS as well.
  *
  * @returns VBox status code.
  * @param   pVCpu         Pointer to the VMCPU.
@@ -6922,18 +6923,28 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
  */
 static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
 {
+    int rc;
+
+    /* Clear interrupt-window exiting control. */
+    if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
+    {
+        pVCpu->hm.s.vmx.u32ProcCtls &= ~VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT;
+        rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, pVCpu->hm.s.vmx.u32ProcCtls);
+        AssertRC(rc);
+    }
+
     if (!pVCpu->hm.s.Event.fPending)
         return;
 
 #ifdef VBOX_STRICT
     uint32_t u32EntryInfo;
-    int rc2 = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
-    AssertRC(rc2);
+    rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
+    AssertRC(rc);
     Assert(VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo));
 #endif
 
     /* Clear the entry-interruption field (including the valid bit). */
-    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
     AssertRC(rc);
 
     /* Clear the pending debug exception field. */
