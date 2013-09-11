@@ -273,6 +273,7 @@ fwudp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     struct fwudp_dgram *dgram;
     struct pbuf *p;
     ssize_t nread;
+    int status;
     err_t error;
 
     fwudp = (struct fwudp *)handler->data;
@@ -308,7 +309,11 @@ fwudp_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     dgram = &fwudp->inbuf.buf[beg];
 
 
-    fwany_ipX_addr_set_src(&dgram->src_addr, (struct sockaddr *)&ss);
+    status = fwany_ipX_addr_set_src(&dgram->src_addr, (struct sockaddr *)&ss);
+    if (status == PXREMAP_FAILED) {
+        return POLLIN;
+    }
+
     if (ss.ss_family == AF_INET) {
         const struct sockaddr_in *peer4 = (const struct sockaddr_in *)&ss;
         dgram->src_port = htons(peer4->sin_port);
