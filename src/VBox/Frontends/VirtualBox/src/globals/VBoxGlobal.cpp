@@ -1815,6 +1815,10 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /*= true*/)
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(mValid);
 
+    /* Make sure medium-enumerator is already created: */
+    if (!m_pMediumEnumerator)
+        return;
+
     /* Make sure enumeration is not already started: */
     if (isMediumEnumerationInProgress())
         return;
