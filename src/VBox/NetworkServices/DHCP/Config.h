@@ -229,7 +229,8 @@ class ConfigEntity: public BaseConfigEntity
                  int matchingLevel = 0):
       BaseConfigEntity(criteria, matchingLevel),
       m_name(name),
-      m_parentCfg(cfg)
+      m_parentCfg(cfg),
+      m_u32ExpirationPeriod(0)
     {
         unconst(m_parentCfg)->add(this);
     }
