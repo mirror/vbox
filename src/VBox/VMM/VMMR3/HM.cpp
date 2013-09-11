@@ -2501,7 +2501,6 @@ VMMR3DECL(bool) HMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             }
             else
             {
-                PGMMODE enmGuestMode = PGMGetGuestMode(pVCpu);
                 /* Verify the requirements for executing code in protected
                    mode. VT-x can't handle the CPU state right after a switch
                    from real to protected mode. (all sorts of RPL & DPL assumptions). */
