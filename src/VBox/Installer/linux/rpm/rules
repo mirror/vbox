@@ -87,7 +87,7 @@ ifneq ($(MAKECMDGOALS),clean)
  ifeq ($(filter-out el5 el6 ol5 ol6 centos5 centos6 fedora15 fedora16 fedora17 fedora18,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
- ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 sles10.1 sles11.0,$(rpmrel)),)
+ ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 sles10.1 sles11.0,$(rpmrel)),)
   rpmspec := rpm_suse
  endif
  ifeq ($(filter-out mdv2009.1 mdv2010.0 mdv2011.0,$(rpmrel)),)
