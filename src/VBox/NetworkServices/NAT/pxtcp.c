@@ -1220,7 +1220,11 @@ pxtcp_pcb_connect(struct pxtcp *pxtcp, const struct fwspec *fwspec)
     /* nit: comapres PF and AF, but they are the same everywhere */
     LWIP_ASSERT1(ss.ss_family == fwspec->sdom);
 
-    fwany_ipX_addr_set_src(&src_addr, (const struct sockaddr *)&ss);
+    status = fwany_ipX_addr_set_src(&src_addr, (const struct sockaddr *)&ss);
+    if (status == PXREMAP_FAILED) {
+        goto reset;
+    }
+
     if (ss.ss_family == PF_INET) {
         const struct sockaddr_in *peer4 = (const struct sockaddr_in *)&ss;
 
