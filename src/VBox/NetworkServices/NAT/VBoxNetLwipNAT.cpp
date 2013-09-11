@@ -910,8 +910,9 @@ int VBoxNetLwipNAT::init()
                 RTNETADDRIPV4 ip4addr;
                 char *pszTerm;
                 uint32_t u32Off;
-                const char *pszLo2Off = com::Utf8Str(strs[i]).c_str();
-        
+                com::Utf8Str strLo2Off(strs[i]);
+                const char *pszLo2Off = strLo2Off.c_str();
+
                 RT_ZERO(aszAddr);
                 
                 pszTerm = RTStrStr(pszLo2Off, "=");
