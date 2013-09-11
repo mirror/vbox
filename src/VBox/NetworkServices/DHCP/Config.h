@@ -195,39 +195,7 @@ public:
     }
 
     /* Should return how strong matching */
-    virtual int match(Client& client, BaseConfigEntity **cfg)
-    {
-        int iMatch = (m_criteria && m_criteria->check(client)? m_MatchLevel: 0);
-        if (m_children.empty())
-        {
-            if (iMatch > 0)
-            {
-                *cfg = this;
-                return iMatch;
-            }
-        }
-        else
-        {
-            *cfg = this;
-            /* XXX: hack */
-            BaseConfigEntity *matching = this;
-            int matchingLevel = m_MatchLevel;
-
-            for (std::vector<BaseConfigEntity *>::iterator it = m_children.begin();
-                 it != m_children.end();
-                 ++it)
-            {
-                iMatch = (*it)->match(client, &matching);
-                if (iMatch > matchingLevel)
-                {
-                    *cfg = matching;
-                    matchingLevel = iMatch;
-                }
-            }
-            return matchingLevel;
-        }
-        return iMatch;
-    }
+    virtual int match(Client& client, BaseConfigEntity **cfg);
     virtual uint32_t expirationPeriod() const = 0;
     protected:
     const ClientMatchCriteria *m_criteria;
@@ -343,13 +311,8 @@ class HostConfigEntity: public NetworkConfigEntity
                      const NetworkConfigEntity *cfg,
                      const ClientMatchCriteria *criteria):
       NetworkConfigEntity(name,
-                          static_cast<const ConfigEntity*>(cfg),
-                          criteria,
-                          10,
-                          cfg->networkId(),
-                          cfg->netmask(),
-                          addr,
-                          addr)
+                          static_cast<const ConfigEntity*>(cfg), criteria, 10,
+                          cfg->networkId(), cfg->netmask(), addr, addr)
     {
         /* upper addr == lower addr */
     }
@@ -431,53 +394,9 @@ class ConfigurationManager
                                     RTNETADDRIPV4& LowerAddress);
 
     HostConfigEntity *addHost(NetworkConfigEntity*, const RTNETADDRIPV4&, ClientMatchCriteria*);
-
-    int addToAddressList(uint8_t u8OptId, RTNETADDRIPV4& address)
-    {
-        switch(u8OptId)
-        {
-            case RTNET_DHCP_OPT_DNS:
-                m_nameservers.push_back(address);
-                break;
-            case RTNET_DHCP_OPT_ROUTERS:
-                m_routers.push_back(address);
-                break;
-            default:
-                Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
-        }
-        return VINF_SUCCESS;
-    }
-
-    int flushAddressList(uint8_t u8OptId)
-    {
-       switch(u8OptId)
-       {
-           case RTNET_DHCP_OPT_DNS:
-                m_nameservers.clear();
-                break;
-           case RTNET_DHCP_OPT_ROUTERS:
-               m_routers.clear();
-               break;
-           default:
-               Log(("dhcp-opt: list (%d) unsupported\n", u8OptId));
-       }
-       return VINF_SUCCESS;
-    }
-
-    const Ipv4AddressContainer& getAddressList(uint8_t u8OptId)
-    {
-       switch(u8OptId)
-       {
-           case RTNET_DHCP_OPT_DNS:
-               return m_nameservers;
-
-           case RTNET_DHCP_OPT_ROUTERS:
-               return m_routers;
-
-       }
-       /* XXX: Grrr !!! */
-       return m_empty;
-    }
+    int addToAddressList(uint8_t u8OptId, RTNETADDRIPV4& address);
+    int flushAddressList(uint8_t u8OptId);
+    const Ipv4AddressContainer& getAddressList(uint8_t u8OptId);
 
     private:
     ConfigurationManager(){}
