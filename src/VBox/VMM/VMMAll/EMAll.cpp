@@ -1485,14 +1485,14 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
                 if (pRegFrame->cs.Attr.n.u1Long)
                 {
                     AssertMsgFailed(("Illegal enabling of paging with CS.u1Long = 1!!\n"));
-                    return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                    return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
                 }
 
                 /* Illegal to switch to long mode before activating PAE first (AMD Arch. Programmer's Manual Volume 2: Table 14-5) */
                 if (!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PAE))
                 {
                     AssertMsgFailed(("Illegal enabling of paging with PAE disabled!!\n"));
-                    return VERR_EM_INTERPRETER; /* @todo generate #GP(0) */
+                    return VERR_EM_INTERPRETER; /** @todo generate #GP(0) */
                 }
                 msrEFER |= MSR_K6_EFER_LMA;
             }
@@ -1501,7 +1501,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
                 &&  !(val & X86_CR0_PG))
             {
                 msrEFER &= ~MSR_K6_EFER_LMA;
-                /* @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
+                /** @todo Do we need to cut off rip here? High dword of rip is undefined, so it shouldn't really matter. */
             }
             CPUMSetGuestEFER(pVCpu, msrEFER);
         }
