@@ -307,15 +307,15 @@ fwtcp_pcb_connect(void *arg)
 {
     struct fwtcp *fwtcp = (struct fwtcp *)arg;
     struct pxtcp *pxtcp;
-    err_t error;
+    u32_t timo;
 
     if (!sys_mbox_valid(&fwtcp->connmbox)) {
         return;
     }
 
     pxtcp = NULL;
-    error = sys_mbox_tryfetch(&fwtcp->connmbox, (void **)&pxtcp);
-    if (error != ERR_OK) {
+    timo = sys_mbox_tryfetch(&fwtcp->connmbox, (void **)&pxtcp);
+    if (timo == SYS_MBOX_EMPTY) {
         return;
     }
 
