@@ -253,11 +253,9 @@ void EmulatedUSB::uninit()
     WebcamsMap::iterator it = m.webcams.begin();
     while (it != m.webcams.end())
     {
-        WebcamsMap::iterator itNext = ++it;
         EUSBWEBCAM *p = it->second;
-        m.webcams.erase(it);
+        m.webcams.erase(it++);
         p->Release();
-        it = itNext;
     }
     alock.release();
 
@@ -401,6 +399,10 @@ HRESULT EmulatedUSB::webcamDetach(const com::Utf8Str &aPath)
         {
             hrc = p->Detach(m.pConsole, ptrVM.rawUVM());
             p->Release();
+        }
+        else
+        {
+            hrc = E_INVALIDARG;
         }
     }
     else
