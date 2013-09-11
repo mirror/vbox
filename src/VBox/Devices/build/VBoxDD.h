@@ -36,6 +36,7 @@ extern const PDMDEVREG g_DevicePS2KeyboardMouse;
 extern const PDMDEVREG g_DeviceI8254;
 extern const PDMDEVREG g_DeviceI8259;
 extern const PDMDEVREG g_DeviceHPET;
+extern const PDMDEVREG g_DeviceSmc;
 extern const PDMDEVREG g_DeviceMC146818;
 extern const PDMDEVREG g_DevicePIIX3IDE;
 extern const PDMDEVREG g_DeviceFloppyController;
@@ -151,3 +152,4 @@ int acpiCleanupSsdt(PPDMDEVINS pDevIns, void *pvPtr);
 RT_C_DECLS_END
 
 #endif
+
