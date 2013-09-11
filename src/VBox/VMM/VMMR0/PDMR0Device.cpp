@@ -528,7 +528,7 @@ static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
             break;
     }
 
-    /* We need to wait up the target CPU. */
+    /* We need to wake up the target CPU. */
     if (VMMGetCpuId(pVM) != idCpu)
     {
         switch (VMCPU_GET_STATE(pVCpu))
