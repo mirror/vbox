@@ -626,14 +626,15 @@ static void
 pxudp_pcb_forward_inbound(struct pxudp *pxudp)
 {
     struct pbuf *p;
+    u32_t timo;
     err_t error;
 
     if (!sys_mbox_valid(&pxudp->inmbox)) {
         return;
     }
 
-    error = sys_mbox_tryfetch(&pxudp->inmbox, (void **)&p);
-    if (error != ERR_OK) {
+    timo = sys_mbox_tryfetch(&pxudp->inmbox, (void **)&p);
+    if (timo == SYS_MBOX_EMPTY) {
         return;
     }
 
