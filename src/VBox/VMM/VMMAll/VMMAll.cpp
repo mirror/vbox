@@ -200,6 +200,7 @@ VMMDECL(VMCPUID) VMMGetCpuId(PVM pVM)
      * and then by native thread id (page fusion case).
      */
     /* RTMpCpuId had better be cheap. */
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     RTCPUID idHostCpu = RTMpCpuId();
 
     /** @todo optimize for large number of VCPUs when that becomes more common. */
