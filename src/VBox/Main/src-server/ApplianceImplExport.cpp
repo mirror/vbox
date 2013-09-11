@@ -477,6 +477,9 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 
                 case DeviceType_DVD:
                 {
+                    if (!pMedium)
+                        break;
+
                     /* get info about whether medium is a real drive/device or not */
                     BOOL fHostDrive = false;
                     rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
