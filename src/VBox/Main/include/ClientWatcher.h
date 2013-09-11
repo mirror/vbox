@@ -2,7 +2,7 @@
 
 /** @file
  *
- * VirtualBox API client watcher
+ * VirtualBox API client session watcher
  */
 
 /*
@@ -32,8 +32,8 @@
 #elif defined(RT_OS_OS2)
 # define CWUPDATEREQARG NIL_RTSEMEVENT
 # define CWUPDATEREQTYPE RTSEMEVENT
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-# define CWUPDATEREQARG
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+# define CWUPDATEREQARG NIL_RTSEMEVENT
 # define CWUPDATEREQTYPE RTSEMEVENT
 #else
 # error "Port me!"
@@ -79,7 +79,7 @@ private:
     typedef std::list<RTPROCESS> ProcessList;
     ProcessList mProcesses;
 
-#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+#if defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     uint8_t mUpdateAdaptCtr;
 #endif
 };

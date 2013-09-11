@@ -1,6 +1,6 @@
 /** @file
  *
- * VirtualBox API client crash watcher
+ * VirtualBox API client session crash watcher
  */
 
 /*
@@ -32,7 +32,7 @@
 #include "VirtualBoxImpl.h"
 #include "MachineImpl.h"
 
-#ifdef VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+#if defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
 /** Table for adaptive timeouts. After an update the counter starts at the
  * maximum value and decreases to 0, i.e. first the short timeouts are used
  * and then the longer ones. This minimizes the detection latency in the
@@ -65,7 +65,7 @@ VirtualBox::ClientWatcher::~ClientWatcher()
         ::CloseHandle(mUpdateReq);
         mUpdateReq = NULL;
     }
-#elif defined(RT_OS_OS2) || defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+#elif defined(RT_OS_OS2) || defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     if (mUpdateReq != NIL_RTSEMEVENT)
     {
         RTSemEventDestroy(mUpdateReq);
@@ -86,7 +86,7 @@ VirtualBox::ClientWatcher::ClientWatcher(const ComObjPtr<VirtualBox> &pVirtualBo
     mUpdateReq = ::CreateEvent(NULL, FALSE, FALSE, NULL);
 #elif defined(RT_OS_OS2)
     RTSemEventCreate(&mUpdateReq);
-#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
+#elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER) || defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     RTSemEventCreate(&mUpdateReq);
     /* start with high timeouts, nothing to do */
     ASMAtomicUoWriteU8(&mUpdateAdaptCtr, 0);
@@ -124,6 +124,8 @@ void VirtualBox::ClientWatcher::update()
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
     /* use short timeouts, as we expect changes */
     ASMAtomicUoWriteU8(&mUpdateAdaptCtr, RT_ELEMENTS(s_aUpdateTimeoutSteps) - 1);
+    RTSemEventSignal(mUpdateReq);
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
     RTSemEventSignal(mUpdateReq);
 #else
 # error "Port me!"
@@ -621,6 +623,174 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             updateSpawned = false;
             for (size_t i = 0; i < cntSpawned; ++i)
                 updateSpawned |= (spawnedMachines[i])->checkForSpawnFailure();
+
+            /* reap child processes */
+            {
+                AutoWriteLock alock(that->mLock COMMA_LOCKVAL_SRC_POS);
+                if (that->mProcesses.size())
+                {
+                    LogFlowFunc(("UPDATE: child process count = %d\n",
+                                 that->mProcesses.size()));
+                    VirtualBox::ClientWatcher::ProcessList::iterator it = that->mProcesses.begin();
+                    while (it != that->mProcesses.end())
+                    {
+                        RTPROCESS pid = *it;
+                        RTPROCSTATUS status;
+                        int vrc = ::RTProcWait(pid, RTPROCWAIT_FLAGS_NOBLOCK, &status);
+                        if (vrc == VINF_SUCCESS)
+                        {
+                            if (   status.enmReason != RTPROCEXITREASON_NORMAL
+                                || status.iStatus   != RTEXITCODE_SUCCESS)
+                            {
+                                switch (status.enmReason)
+                                {
+                                    default:
+                                    case RTPROCEXITREASON_NORMAL:
+                                        LogRel(("Reaper: Pid %d (%x) exited normally: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                    case RTPROCEXITREASON_ABEND:
+                                        LogRel(("Reaper: Pid %d (%x) abended: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                    case RTPROCEXITREASON_SIGNAL:
+                                        LogRel(("Reaper: Pid %d (%x) was signalled: %d (%#x)\n",
+                                                pid, pid, status.iStatus, status.iStatus));
+                                        break;
+                                }
+                            }
+                            else
+                                LogFlowFunc(("pid %d (%x) was reaped, status=%d, reason=%d\n",
+                                             pid, pid, status.iStatus,
+                                             status.enmReason));
+                            it = that->mProcesses.erase(it);
+                        }
+                        else
+                        {
+                            LogFlowFunc(("pid %d (%x) was NOT reaped, vrc=%Rrc\n",
+                                         pid, pid, vrc));
+                            if (vrc != VERR_PROCESS_RUNNING)
+                            {
+                                /* remove the process if it is not already running */
+                                it = that->mProcesses.erase(it);
+                            }
+                            else
+                                ++it;
+                        }
+                    }
+                }
+            }
+        }
+        while (true);
+    }
+    while (0);
+
+    /* release sets of machines if any */
+    machines.clear();
+    spawnedMachines.clear();
+
+#elif defined(VBOX_WITH_GENERIC_SESSION_WATCHER)
+
+    bool update = false;
+    bool updateSpawned = false;
+
+    do
+    {
+        AutoCaller autoCaller(that->mVirtualBox);
+        if (!autoCaller.isOk())
+            break;
+
+        do
+        {
+            /* release the caller to let uninit() ever proceed */
+            autoCaller.release();
+
+            /* determine wait timeout adaptively: after updating information
+             * relevant to the client watcher, check a few times more
+             * frequently. This ensures good reaction time when the signalling
+             * has to be done a bit before the actual change for technical
+             * reasons, and saves CPU cycles when no activities are expected. */
+            RTMSINTERVAL cMillies;
+            {
+                uint8_t uOld, uNew;
+                do
+                {
+                    uOld = ASMAtomicUoReadU8(&that->mUpdateAdaptCtr);
+                    uNew = uOld ? uOld - 1 : uOld;
+                } while (!ASMAtomicCmpXchgU8(&that->mUpdateAdaptCtr, uNew, uOld));
+                Assert(uOld <= RT_ELEMENTS(s_aUpdateTimeoutSteps) - 1);
+                cMillies = s_aUpdateTimeoutSteps[uOld];
+            }
+
+            int rc = RTSemEventWait(that->mUpdateReq, cMillies);
+
+            /*
+             *  Restore the caller before using VirtualBox. If it fails, this
+             *  means VirtualBox is being uninitialized and we must terminate.
+             */
+            autoCaller.add();
+            if (!autoCaller.isOk())
+                break;
+
+            if (RT_SUCCESS(rc) || update || updateSpawned)
+            {
+                /* RT_SUCCESS(rc) means an update event is signaled */
+
+#if 0
+                // get reference to the machines list in VirtualBox
+                VirtualBox::MachinesOList &allMachines = that->mVirtualBox->getMachinesList();
+
+                // lock the machines list for reading
+                AutoReadLock thatLock(allMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+                if (RT_SUCCESS(rc) || update)
+                {
+                    /* obtain a new set of opened machines */
+                    machines.clear();
+
+                    for (MachinesOList::iterator it = allMachines.begin();
+                         it != allMachines.end();
+                         ++it)
+                    {
+                        ComObjPtr<SessionMachine> sm;
+                        if ((*it)->isSessionOpenOrClosing(sm))
+                            machines.push_back(sm);
+                    }
+
+                    cnt = machines.size();
+                    LogFlowFunc(("UPDATE: direct session count = %d\n", cnt));
+                }
+
+                if (RT_SUCCESS(rc) || updateSpawned)
+                {
+                    /* obtain a new set of spawned machines */
+                    spawnedMachines.clear();
+
+                    for (MachinesOList::iterator it = allMachines.begin();
+                         it != allMachines.end();
+                         ++it)
+                    {
+                        if ((*it)->isSessionSpawning())
+                            spawnedMachines.push_back(*it);
+                    }
+
+                    cntSpawned = spawnedMachines.size();
+                    LogFlowFunc(("UPDATE: spawned session count = %d\n", cntSpawned));
+                }
+
+                // machines lock unwinds here
+#endif
+            }
+
+#if 0
+            update = false;
+            for (size_t i = 0; i < cnt; ++i)
+                update |= (machines[i])->checkForDeath();
+
+            updateSpawned = false;
+            for (size_t i = 0; i < cntSpawned; ++i)
+                updateSpawned |= (spawnedMachines[i])->checkForSpawnFailure();
+#endif
 
             /* reap child processes */
             {

@@ -34,7 +34,7 @@ HRESULT MachineToken::FinalConstruct()
 
 void MachineToken::FinalRelease()
 {
-    uninit();
+    uninit(false);
 
     BaseFinalRelease();
 }
@@ -69,7 +69,7 @@ HRESULT MachineToken::init(const ComObjPtr<SessionMachine> &pSessionMachine)
  * Uninitializes the instance and sets the ready flag to FALSE.
  * Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void MachineToken::uninit()
+void MachineToken::uninit(bool fAbandon)
 {
     LogFlowThisFunc(("\n"));
 
@@ -81,7 +81,7 @@ void MachineToken::uninit()
     /* Destroy the SessionMachine object, check is paranoia */
     if (!m.pSessionMachine.isNull())
     {
-        m.pSessionMachine->uninit();
+        m.pSessionMachine->uninit(fAbandon ? SessionMachine::Uninit::Normal : SessionMachine::Uninit::Abnormal);
         m.pSessionMachine.setNull();
     }
 }
@@ -95,7 +95,7 @@ HRESULT MachineToken::abandon(AutoCaller &aAutoCaller)
     aAutoCaller.release();
 
     /* uninit does everything we need */
-    uninit();
+    uninit(true);
     return S_OK;
 }
 
