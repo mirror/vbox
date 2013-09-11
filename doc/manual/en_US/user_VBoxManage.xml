@@ -607,6 +607,13 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--vtxux on|off</computeroutput>: If
+            hardware virtualization is enabled, for Intel VT-x only, this
+            setting enables or disables the use of the unrestricted guest mode
+            feature for executing your guest.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--accelerate3d on|off</computeroutput>: This
             enables, if the Guest Additions are installed, whether hardware 3D
             acceleration should be available; see <xref
