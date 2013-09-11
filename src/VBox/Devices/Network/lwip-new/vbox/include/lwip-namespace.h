@@ -124,7 +124,9 @@
 #define raw_sendto lwip_raw_sendto
 #define stats_init lwip_stats_init
 #define sys_arch_mbox_fetch lwip_sys_arch_mbox_fetch
-#define sys_arch_mbox_tryfetch(mbox, msg) lwip_sys_arch_mbox_fetch((mbox), (msg), 1)
+#if 0 /* XXX: cf. lwip/sys.h which misinterprets this */
+#define sys_arch_mbox_tryfetch lwip_sys_arch_mbox_tryfetch
+#endif
 #define sys_arch_protect lwip_sys_arch_protect
 #define sys_arch_sem_wait lwip_sys_arch_sem_wait
 #define sys_arch_timeouts lwip_sys_arch_timeouts

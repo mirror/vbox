@@ -385,6 +385,45 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *pvMbox, void **msg, u32_t timeout)
     return tsEnd - tsStart;
 }
 
+/**
+ * Try to get an entry from an mbox.
+ */
+u32_t sys_arch_mbox_tryfetch(sys_mbox_t *pvMbox, void **msg)
+{
+    int rc;
+    struct sys_mbox *mbox = NULL;
+    if (!pvMbox || !*pvMbox) return SYS_MBOX_EMPTY;
+    mbox = (struct sys_mbox*)*pvMbox;
+
+    rc = LWIPMutexRequest((mbox)->mutex);
+    AssertRC(rc);
+    if ((mbox)->head == (mbox)->tail)
+    {
+        /* (mbox) is empty, don't wait */
+        rc = LWIPMutexRelease((mbox)->mutex);
+        AssertRC(rc);
+	return SYS_MBOX_EMPTY;
+    }
+    if (((mbox)->head + 1) % MBOX_ENTRIES_MAX == (mbox)->tail)
+    {
+        rc = RTSemEventMultiSignal((mbox)->nonfull);
+        AssertRC(rc);
+    }
+    if (msg != NULL)
+        *msg = (mbox)->apvEntries[(mbox)->tail];
+    (mbox)->tail++;
+    (mbox)->tail %= MBOX_ENTRIES_MAX;
+    rc = RTSemEventMultiSignal((mbox)->nonfull);
+    if ((mbox)->head == (mbox)->tail)
+    {
+        rc = RTSemEventMultiReset((mbox)->nonempty);
+        AssertRC(rc);
+    }
+    rc = LWIPMutexRelease((mbox)->mutex);
+    AssertRC(rc);
+    return 0;
+}
+
 /** Check if an mbox is valid/allocated: return 1 for valid, 0 for invalid */
 int sys_mbox_valid(sys_mbox_t *pvMbox)
 {
