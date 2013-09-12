@@ -8003,8 +8003,6 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #define HMVMX_IS_CANONICAL(a_u64Addr)       ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
 
     int      rc;
-    uint64_t u64Val;
-    uint32_t u32Val;
     uint32_t uError             = VMX_IGS_ERROR;
     bool     fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
 
@@ -8047,6 +8045,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * IA32_DEBUGCTL MSR.
          */
+        uint64_t u64Val;
         rc = VMXReadVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, &u64Val);
         AssertRCBreak(rc);
         if (   (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_LOAD_DEBUG)
@@ -8057,6 +8056,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint64_t u64DebugCtlMsr = u64Val;
 
 #ifdef VBOX_STRICT
+        uint32_t u32Val;
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
         AssertRCBreak(rc);
         Assert(u32Val == pVCpu->hm.s.vmx.u32ProcCtls);
@@ -8112,7 +8112,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (   VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo)
             && VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
-            HMVMX_CHECK_BREAK(u32Val & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
+            HMVMX_CHECK_BREAK(u32Eflags & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
         }
 
         /*
