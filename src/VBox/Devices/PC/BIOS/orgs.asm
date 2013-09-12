@@ -249,11 +249,31 @@ post:
 		
 		
 in_real_mode:
-		;; TODO: This looks very iffy - we shouldn't mess with any
-		;; hardware until after we've established that cold boot
-		;; needs to be done.
+		;; TODO: Check KBC system flag first
+
+		;; read the CMOS shutdown status
+		mov	al, 0Fh
+		out	CMOS_ADDR, al
+		in	al, CMOS_DATA
+
+		;; save status
+		xchg	ah, al
+
+		;; reset the shutdown status in CMOS
+		mov	al, 0Fh
+		out	CMOS_ADDR, al
+		mov	al, 0
+		out	CMOS_DATA, al
+
+		;; pre-check the shutdown status - shutdown codes 9/A leave
+		;; the hardware alone
+		mov	al, ah
+		cmp	al, 09h
+		jz	check_shutdown
+		cmp	al, 0Ah
+		jz	check_shutdown
 		
-		xor	ax, ax
+		xor	al, al
 
 		;; reset the DMA controllers
 		out	00Dh, al
@@ -265,28 +285,18 @@ in_real_mode:
 		mov	al, 0
 		out	0D4h, al	; unmask channel 4
 
-		;; read the CMOS shutdown status
-		mov	al, 0Fh
-		out	CMOS_ADDR, al
-		in	al, CMOS_DATA
-
-		;; save status
-		mov	bl, al
-
-		;; reset the shutdown status in CMOS
-		mov	al, 0Fh
-		out	CMOS_ADDR, al
-		mov	al, 0
-		out	CMOS_DATA, al
-
+check_shutdown:
 		;; examine the shutdown status code
-		mov	al, bl
+		mov	al, ah
 		cmp	al, 0
 		jz	normal_post
+
 		cmp	al, 0Dh
 		jae	normal_post
 		cmp	al, 9
-		je	normal_post	;; TODO: really?!
+		jne	check_next_std
+		jmp	return_blkmove
+check_next_std:		
 
 		;; 05h = EOI + jump through 40:67
 		cmp	al, 5
@@ -481,43 +491,7 @@ memory_cleared:
 
 		call	rom_scan
 
-		C_SETUP
-		;; ATA/ATAPI driver setup
-		call	_ata_init
-		call	_ata_detect
-
-ifdef VBOX_WITH_AHCI
-		; AHCI driver setup
-		call	_ahci_init
-endif
-
-ifdef VBOX_WITH_SCSI
-		; SCSI driver setup
-		call	_scsi_init
-endif
-
-		;; floppy setup
-		call	floppy_post
-
-		;; hard drive setup
-		call	hard_drive_post
-
-		C_SETUP			; in case assembly code changed things
-		call	_print_bios_banner
-
-		;; El Torito floppy/hard disk emulation
-		call	_cdemu_init
-
-		; TODO: what's the point of enabling interrupts here??
-		sti			; enable interrupts
-		int	19h
-		;; does not return here
-		sti
-wait_forever:
-		hlt
-		jmp	wait_forever
-		cli
-		hlt
+		jmp	norm_post_cont
 
 
 ;; --------------------------------------------------------
@@ -560,6 +534,78 @@ hard_drive_post	proc	near
 
 hard_drive_post	endp
 
+
+norm_post_cont:
+		C_SETUP
+		;; ATA/ATAPI driver setup
+		call	_ata_init
+		call	_ata_detect
+
+ifdef VBOX_WITH_AHCI
+		; AHCI driver setup
+		call	_ahci_init
+endif
+
+ifdef VBOX_WITH_SCSI
+		; SCSI driver setup
+		call	_scsi_init
+endif
+
+		;; floppy setup
+		call	floppy_post
+
+		;; hard drive setup
+		call	hard_drive_post
+
+		C_SETUP			; in case assembly code changed things
+		call	_print_bios_banner
+
+		;; El Torito floppy/hard disk emulation
+		call	_cdemu_init
+
+		; TODO: what's the point of enabling interrupts here??
+		sti			; enable interrupts
+		int	19h
+		;; does not return here
+		sti
+wait_forever:
+		hlt
+		jmp	wait_forever
+		cli
+		hlt
+		
+
+;;
+;; Return from block move (shutdown code 09h). Care must be taken to disturb
+;; register and memory state as little as possible.
+;;
+return_blkmove:
+		mov	ax, 40h
+		mov	ds, ax
+		;; restore user stack
+		mov	ss, ds:[69h]
+		mov	sp, ds:[67h]
+		;; reset A20 gate
+		in	al, 92h
+		and	al, 0FDh
+		out	92h, al
+		;; ensure proper real mode IDT
+		lidt	fword ptr cs:_rmode_IDT
+		;; restore user segments
+		pop	ds
+		pop	es
+		;; set up BP
+		mov	bp, sp
+		;; restore status code
+		in	al, 80h
+		mov	[bp+15], al
+		;; set ZF/CF
+		cmp	ah,al		; AH is zero here!
+		;; restore registers and return
+		popa
+		sti
+		retf	2
+		
 
 ;; --------------------------------------------------------
 ;; INT 13h handler - Disk services
