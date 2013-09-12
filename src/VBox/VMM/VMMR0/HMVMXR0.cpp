@@ -8004,6 +8004,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
     int      rc;
     uint32_t uError             = VMX_IGS_ERROR;
+    uint32_t u32Val;
     bool     fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
 
     do
@@ -8056,7 +8057,6 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint64_t u64DebugCtlMsr = u64Val;
 
 #ifdef VBOX_STRICT
-        uint32_t u32Val;
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
         AssertRCBreak(rc);
         Assert(u32Val == pVCpu->hm.s.vmx.u32ProcCtls);
