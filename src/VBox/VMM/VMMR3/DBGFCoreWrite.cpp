@@ -427,6 +427,8 @@ static int dbgfR3CoreWriteWorker(PVM pVM, RTFILE hFile)
     /*
      * Write the CPU context note headers and data.
      */
+    /** @todo r=ramshankar: Dump a more standardized CPU structure rather than
+     *        dumping CPUMCTX and bump the core file version number. */
     Assert(RTFileTell(hFile) == offCpuDumps);
     for (uint32_t iCpu = 0; iCpu < pVM->cCpus; iCpu++)
     {
