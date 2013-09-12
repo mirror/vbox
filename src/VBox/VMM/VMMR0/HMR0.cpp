@@ -799,8 +799,8 @@ VMMR0_INT_DECL(int) HMR0Term(void)
 static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
-    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     NOREF(pvUser2);
 
     uint64_t   fFC            = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
@@ -903,6 +903,8 @@ static DECLCALLBACK(void) hmR0InitAmdCpu(RTCPUID idCpu, void *pvUser1, void *pvU
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM (can be NULL).
  * @param   idCpu       The identifier for the CPU the function is called on.
+ *
+ * @remarks Maybe called with interrupts disabled!
  */
 static int hmR0EnableCpu(PVM pVM, RTCPUID idCpu)
 {
@@ -1070,10 +1072,10 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     PHMGLOBALCPUINFO pCpu = &g_HvmR0.aCpuInfo[idCpu];
 
     Assert(!g_HvmR0.vmx.fSupported || !g_HvmR0.vmx.fUsingSUPR0EnableVTx);
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
     Assert(idCpu < RT_ELEMENTS(g_HvmR0.aCpuInfo));
     Assert(!pCpu->fConfigured || pCpu->hMemObj != NIL_RTR0MEMOBJ);
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (pCpu->hMemObj == NIL_RTR0MEMOBJ)
         return pCpu->fConfigured ? VERR_NO_MEMORY : VINF_SUCCESS /* not initialized. */;
