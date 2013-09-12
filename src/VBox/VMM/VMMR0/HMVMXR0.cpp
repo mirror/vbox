@@ -6740,7 +6740,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
     Assert(puIntrState);
     uint32_t u32IntrInfo = (uint32_t)u64IntrInfo;
 
-    const uint32_t uVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntrInfo);
+    const uint32_t uVector   = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntrInfo);
     const uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo);
 
 #ifdef VBOX_STRICT
@@ -6923,6 +6923,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
 {
     int rc;
+    Log4Func(("vcpu[%d]\n", pVCpu->idCpu));
 
     /* Clear interrupt-window exiting control. */
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_INT_WINDOW_EXIT)
@@ -8012,6 +8013,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR0.
          */
+        uint32_t u32GuestCR0;
         uint32_t uSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         uint32_t uZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
@@ -8019,13 +8021,13 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (fUnrestrictedGuest)
             uSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
 
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32Val);
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32GuestCR0);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK((u32Val & uSetCR0) == uSetCR0, VMX_IGS_CR0_FIXED1);
         HMVMX_CHECK_BREAK(!(u32Val & ~uZapCR0), VMX_IGS_CR0_FIXED0);
         if (   !fUnrestrictedGuest
-            && (u32Val & X86_CR0_PG)
-            && !(u32Val & X86_CR0_PE))
+            && (u32GuestCR0 & X86_CR0_PG)
+            && !(u32GuestCR0 & X86_CR0_PE))
         {
             HMVMX_ERROR_BREAK(VMX_IGS_CR0_PG_PE_COMBO);
         }
@@ -8033,12 +8035,13 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR4.
          */
+        uint32_t u32GuestCR4;
         uint64_t uSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
         uint64_t uZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
-        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32Val);
+        rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32GuestCR4);
         AssertRCBreak(rc);
-        HMVMX_CHECK_BREAK((u32Val & uSetCR4) == uSetCR4, VMX_IGS_CR4_FIXED1);
-        HMVMX_CHECK_BREAK(!(u32Val & ~uZapCR4), VMX_IGS_CR4_FIXED0);
+        HMVMX_CHECK_BREAK((u32GuestCR4 & uSetCR4) == uSetCR4, VMX_IGS_CR4_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32GuestCR4 & ~uZapCR4), VMX_IGS_CR4_FIXED0);
 
         /*
          * IA32_DEBUGCTL MSR.
@@ -8097,7 +8100,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
 
         if (   fLongModeGuest
-            || !(pCtx->cr0 & X86_CR0_PE))
+            || !(u32GuestCR0 & X86_CR0_PE))
         {
             HMVMX_CHECK_BREAK(!(u32Eflags & X86_EFL_VM), VMX_IGS_RFLAGS_VM_INVALID);
         }
@@ -8120,12 +8123,12 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             if (   fLongModeGuest
                 && !fUnrestrictedGuest)
             {
-                HMVMX_CHECK_BREAK(CPUMIsGuestPagingEnabledEx(pCtx), VMX_IGS_CR0_PG_LONGMODE);
-                HMVMX_CHECK_BREAK((pCtx->cr4 & X86_CR4_PAE), VMX_IGS_CR4_PAE_LONGMODE);
+                HMVMX_CHECK_BREAK(u32GuestCR0 & X86_CR0_PG, VMX_IGS_CR0_PG_LONGMODE);
+                HMVMX_CHECK_BREAK(u32GuestCR4 & X86_CR4_PAE, VMX_IGS_CR4_PAE_LONGMODE);
             }
 
             if (   !fLongModeGuest
-                && (pCtx->cr4 & X86_CR4_PCIDE))
+                && (u32GuestCR4 & X86_CR4_PCIDE))
             {
                 HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
             }
@@ -8196,7 +8199,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
             HMVMX_CHECK_BREAK((u64Val & MSR_K6_EFER_LMA) == (pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST),
                               VMX_IGS_EFER_LMA_GUEST_MODE_MISMATCH);
             HMVMX_CHECK_BREAK(   fUnrestrictedGuest
-                              || (u64Val & MSR_K6_EFER_LMA) == (pCtx->cr0 & X86_CR0_PG), VMX_IGS_EFER_LMA_PG_MISMATCH);
+                              || (u64Val & MSR_K6_EFER_LMA) == (u32GuestCR0 & X86_CR0_PG), VMX_IGS_EFER_LMA_PG_MISMATCH);
         }
 
         /*
