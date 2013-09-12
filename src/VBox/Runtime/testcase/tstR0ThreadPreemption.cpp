@@ -371,6 +371,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
             RTCPUID         uCurrentCpuId        = NIL_RTCPUID;
             for (;;)
             {
+                RTThreadYield();
                 RTThreadPreemptDisable(&PreemptState);
                 uCurrentCpuId = RTMpCpuId();
                 RTThreadPreemptRestore(&PreemptState);
@@ -383,7 +384,6 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
                 RTThreadSleep(cMsSleepGranularity);
                 cMsSlept += cMsSleepGranularity;
-                RTThreadYield();
             }
 
             if (!ASMAtomicReadBool(&pCtxData->fPreemptingInvoked))
