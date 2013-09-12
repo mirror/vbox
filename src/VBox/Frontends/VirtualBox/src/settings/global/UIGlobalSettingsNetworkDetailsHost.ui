@@ -12,8 +12,8 @@
  VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  </comment>
- <class>UIGlobalSettingsNetworkDetails</class>
- <widget class="QWidget" name="UIGlobalSettingsNetworkDetails">
+ <class>UIGlobalSettingsNetworkDetailsHost</class>
+ <widget class="QWidget" name="UIGlobalSettingsNetworkDetailsHost">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -341,7 +341,7 @@
   <connection>
    <sender>m_pButtonBox</sender>
    <signal>accepted()</signal>
-   <receiver>UIGlobalSettingsNetworkDetails</receiver>
+   <receiver>UIGlobalSettingsNetworkDetailsHost</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -357,7 +357,7 @@
   <connection>
    <sender>m_pButtonBox</sender>
    <signal>rejected()</signal>
-   <receiver>UIGlobalSettingsNetworkDetails</receiver>
+   <receiver>UIGlobalSettingsNetworkDetailsHost</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

@@ -883,7 +883,21 @@ void UIMessageCenter::cannotRemoveSnapshot(const CProgress &progress, const QStr
           formatErrorInfo(progress));
 }
 
-bool UIMessageCenter::confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent /*= 0*/) const
+bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *pParent /*= 0*/) const
+{
+    return questionBinary(pParent, MessageType_Question,
+                          tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
+                             "<p><b>Note:</b> this network may be in use by one or more "
+                             "virtual network adapters belonging to one of your VMs. "
+                             "After it is removed, these adapters will no longer be usable until "
+                             "you correct their settings by either choosing a different network "
+                             "name or a different adapter attachment type.</p>")
+                             .arg(strName),
+                          0 /* auto-confirm id */,
+                          tr("Remove"));
+}
+
+bool UIMessageCenter::confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent /*= 0*/) const
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Deleting this host-only network will remove "
@@ -897,6 +911,36 @@ bool UIMessageCenter::confirmHostInterfaceRemoval(const QString &strName, QWidge
                              .arg(strName),
                           0 /* auto-confirm id */,
                           tr("Remove"));
+}
+
+void UIMessageCenter::cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent /*= 0*/)
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create NAT network."),
+          formatErrorInfo(vbox));
+}
+
+void UIMessageCenter::cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent /*= 0*/)
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove NAT network <b>%1</b>.")
+             .arg(strNetworkName),
+          formatErrorInfo(vbox));
+}
+
+void UIMessageCenter::cannotCreateDHCPServer(const CVirtualBox &vbox, QWidget *pParent /*= 0*/)
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to create DHCP server."),
+          formatErrorInfo(vbox));
+}
+
+void UIMessageCenter::cannotRemoveDHCPServer(const CVirtualBox &vbox, const QString &strInterfaceName, QWidget *pParent /*= 0*/)
+{
+    error(pParent, MessageType_Error,
+          tr("Failed to remove DHCP server for network interface <b>%1</b>.")
+             .arg(strInterfaceName),
+          formatErrorInfo(vbox));
 }
 
 void UIMessageCenter::cannotCreateHostInterface(const CHost &host, QWidget *pParent /*= 0*/)
