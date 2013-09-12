@@ -2,11 +2,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIGlobalSettingsNetworkDetails class implementation
+ * UIGlobalSettingsNetworkDetailsHost class implementation
  */
 
 /*
- * Copyright (C) 2009-2010 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -17,25 +17,19 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/* Global includes */
-#include <QHostAddress>
+/* Qt includes: */
 #include <QRegExpValidator>
 
-/* Local includes */
+/* GUI includes: */
 #include "UIGlobalSettingsNetwork.h"
-#include "UIGlobalSettingsNetworkDetails.h"
+#include "UIGlobalSettingsNetworkDetailsHost.h"
 
-/* Network page details constructor: */
-UIGlobalSettingsNetworkDetails::UIGlobalSettingsNetworkDetails(QWidget *pParent)
-    : QIWithRetranslateUI2<QIDialog>(pParent
-#ifdef Q_WS_MAC
-    ,Qt::Sheet
-#endif /* Q_WS_MAC */
-    )
-    , m_pItem(0)
+UIGlobalSettingsNetworkDetailsHost::UIGlobalSettingsNetworkDetailsHost(QWidget *pParent, UIDataNetworkHost &data)
+    : QIWithRetranslateUI2<QIDialog>(pParent)
+    , m_data(data)
 {
     /* Apply UI decorations: */
-    Ui::UIGlobalSettingsNetworkDetails::setupUi(this);
+    Ui::UIGlobalSettingsNetworkDetailsHost::setupUi(this);
 
     /* Setup dialog: */
     setWindowIcon(QIcon(":/guesttools_16px.png"));
@@ -45,10 +39,10 @@ UIGlobalSettingsNetworkDetails::UIGlobalSettingsNetworkDetails(QWidget *pParent)
                             "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
                             "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\."
                             "([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])");
-    QString strTemplateIPv6("[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}:{1,2}"
-                            "[0-9a-fA-Z]{1,4}:{1,2}[0-9a-fA-Z]{1,4}");
+    QString strTemplateIPv6("[0-9a-fA-F]{1,4}:{1,2}[0-9a-fA-F]{1,4}:{1,2}"
+                            "[0-9a-fA-F]{1,4}:{1,2}[0-9a-fA-F]{1,4}:{1,2}"
+                            "[0-9a-fA-F]{1,4}:{1,2}[0-9a-fA-F]{1,4}:{1,2}"
+                            "[0-9a-fA-F]{1,4}:{1,2}[0-9a-fA-F]{1,4}");
 
     m_pIPv4Editor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
     m_pNMv4Editor->setValidator(new QRegExpValidator(QRegExp(strTemplateIPv4), this));
@@ -91,70 +85,49 @@ UIGlobalSettingsNetworkDetails::UIGlobalSettingsNetworkDetails(QWidget *pParent)
     /* Apply language settings: */
     retranslateUi();
 
+    /* Load: */
+    load();
+
     /* Fix minimum possible size: */
     resize(minimumSizeHint());
-    qApp->processEvents();
     setFixedSize(minimumSizeHint());
 }
 
-/* Get data to details sub-dialog: */
-void UIGlobalSettingsNetworkDetails::getFromItem(UIHostInterfaceItem *pItem)
+void UIGlobalSettingsNetworkDetailsHost::retranslateUi()
 {
-    m_pItem = pItem;
+    /* Translate uic generated strings: */
+    Ui::UIGlobalSettingsNetworkDetailsHost::retranslateUi(this);
+}
 
-    /* Host-only Interface: */
-    m_pEnableManualCheckbox->setChecked(!m_pItem->isDhcpClientEnabled());
+void UIGlobalSettingsNetworkDetailsHost::accept()
+{
+    /* Save before accept: */
+    save();
+    /* Call to base-class: */
+    QIDialog::accept();
+}
+
+void UIGlobalSettingsNetworkDetailsHost::load()
+{
+    /* Host Interface: */
+    m_pEnableManualCheckbox->setChecked(!m_data.m_interface.m_fDhcpClientEnabled);
 #if !0 /* !defined (Q_WS_WIN) */
     /* Disable automatic for all hosts for now: */
     m_pEnableManualCheckbox->setChecked(true);
     m_pEnableManualCheckbox->setEnabled(false);
 #endif
-    sltDhcpClientStatusChanged();
+    loadClientStuff();
 
     /* DHCP Server: */
-    m_pEnabledDhcpServerCheckbox->setChecked(m_pItem->isDhcpServerEnabled());
-    sltDhcpServerStatusChanged();
+    m_pEnabledDhcpServerCheckbox->setChecked(m_data.m_dhcpserver.m_fDhcpServerEnabled);
+    loadServerStuff();
 }
 
-/* Return data from details sub-dialog: */
-void UIGlobalSettingsNetworkDetails::putBackToItem()
+void UIGlobalSettingsNetworkDetailsHost::loadClientStuff()
 {
-    /* Host-only Interface: */
-    m_pItem->setDhcpClientEnabled(!m_pEnableManualCheckbox->isChecked());
-    if (m_pEnableManualCheckbox->isChecked())
-    {
-        m_pItem->setInterfaceAddress(m_pIPv4Editor->text());
-        m_pItem->setInterfaceMask(m_pNMv4Editor->text());
-        if (m_pItem->isIpv6Supported())
-        {
-            m_pItem->setInterfaceAddress6(m_pIPv6Editor->text());
-            m_pItem->setInterfaceMaskLength6(m_pNMv6Editor->text());
-        }
-    }
-
-    /* DHCP Server: */
-    m_pItem->setDhcpServerEnabled(m_pEnabledDhcpServerCheckbox->isChecked());
-    if (m_pEnabledDhcpServerCheckbox->isChecked())
-    {
-        m_pItem->setDhcpServerAddress(m_pDhcpAddressEditor->text());
-        m_pItem->setDhcpServerMask(m_pDhcpMaskEditor->text());
-        m_pItem->setDhcpLowerAddress(m_pDhcpLowerAddressEditor->text());
-        m_pItem->setDhcpUpperAddress(m_pDhcpUpperAddressEditor->text());
-    }
-}
-
-/* Validation stuff: */
-void UIGlobalSettingsNetworkDetails::retranslateUi()
-{
-    /* Translate uic generated strings: */
-    Ui::UIGlobalSettingsNetworkDetails::retranslateUi(this);
-}
-
-/* Handler for DHCP client settings change: */
-void UIGlobalSettingsNetworkDetails::sltDhcpClientStatusChanged()
-{
+    /* Adjust network interface fields: */
     bool fIsManual = m_pEnableManualCheckbox->isChecked();
-    bool fIsIpv6Supported = fIsManual && m_pItem->isIpv6Supported();
+    bool fIsIpv6Supported = fIsManual && m_data.m_interface.m_fIpv6Supported;
 
     m_pIPv4Editor->clear();
     m_pNMv4Editor->clear();
@@ -172,19 +145,19 @@ void UIGlobalSettingsNetworkDetails::sltDhcpClientStatusChanged()
 
     if (fIsManual)
     {
-        m_pIPv4Editor->setText(m_pItem->interfaceAddress());
-        m_pNMv4Editor->setText(m_pItem->interfaceMask());
+        m_pIPv4Editor->setText(m_data.m_interface.m_strInterfaceAddress);
+        m_pNMv4Editor->setText(m_data.m_interface.m_strInterfaceMask);
         if (fIsIpv6Supported)
         {
-            m_pIPv6Editor->setText(m_pItem->interfaceAddress6());
-            m_pNMv6Editor->setText(m_pItem->interfaceMaskLength6());
+            m_pIPv6Editor->setText(m_data.m_interface.m_strInterfaceAddress6);
+            m_pNMv6Editor->setText(m_data.m_interface.m_strInterfaceMaskLength6);
         }
     }
 }
 
-/* Handler for DHCP server settings change: */
-void UIGlobalSettingsNetworkDetails::sltDhcpServerStatusChanged()
+void UIGlobalSettingsNetworkDetailsHost::loadServerStuff()
 {
+    /* Adjust dhcp server fields: */
     bool fIsManual = m_pEnabledDhcpServerCheckbox->isChecked();
 
     m_pDhcpAddressEditor->clear();
@@ -203,10 +176,36 @@ void UIGlobalSettingsNetworkDetails::sltDhcpServerStatusChanged()
 
     if (fIsManual)
     {
-        m_pDhcpAddressEditor->setText(m_pItem->dhcpServerAddress());
-        m_pDhcpMaskEditor->setText(m_pItem->dhcpServerMask());
-        m_pDhcpLowerAddressEditor->setText(m_pItem->dhcpLowerAddress());
-        m_pDhcpUpperAddressEditor->setText(m_pItem->dhcpUpperAddress());
+        m_pDhcpAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpServerAddress);
+        m_pDhcpMaskEditor->setText(m_data.m_dhcpserver.m_strDhcpServerMask);
+        m_pDhcpLowerAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpLowerAddress);
+        m_pDhcpUpperAddressEditor->setText(m_data.m_dhcpserver.m_strDhcpUpperAddress);
+    }
+}
+
+void UIGlobalSettingsNetworkDetailsHost::save()
+{
+    /* Host Interface: */
+    m_data.m_interface.m_fDhcpClientEnabled = !m_pEnableManualCheckbox->isChecked();
+    if (m_pEnableManualCheckbox->isChecked())
+    {
+        m_data.m_interface.m_strInterfaceAddress = m_pIPv4Editor->text();
+        m_data.m_interface.m_strInterfaceMask = m_pNMv4Editor->text();
+        if (m_data.m_interface.m_fIpv6Supported)
+        {
+            m_data.m_interface.m_strInterfaceAddress6 = m_pIPv6Editor->text();
+            m_data.m_interface.m_strInterfaceMaskLength6 = m_pNMv6Editor->text();
+        }
+    }
+
+    /* DHCP Server: */
+    m_data.m_dhcpserver.m_fDhcpServerEnabled = m_pEnabledDhcpServerCheckbox->isChecked();
+    if (m_pEnabledDhcpServerCheckbox->isChecked())
+    {
+        m_data.m_dhcpserver.m_strDhcpServerAddress = m_pDhcpAddressEditor->text();
+        m_data.m_dhcpserver.m_strDhcpServerMask = m_pDhcpMaskEditor->text();
+        m_data.m_dhcpserver.m_strDhcpLowerAddress = m_pDhcpLowerAddressEditor->text();
+        m_data.m_dhcpserver.m_strDhcpUpperAddress = m_pDhcpUpperAddressEditor->text();
     }
 }
 

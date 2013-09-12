@@ -210,7 +210,12 @@ public:
     void cannotRemoveSnapshot(const CProgress &progress, const QString &strSnapshotName, const QString &strMachineName) const;
 
     /* API: Global settings warnings: */
-    bool confirmHostInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+    bool confirmNATNetworkRemoval(const QString &strName, QWidget *pParent = 0) const;
+    bool confirmHostOnlyInterfaceRemoval(const QString &strName, QWidget *pParent = 0) const;
+    void cannotCreateNATNetwork(const CVirtualBox &vbox, QWidget *pParent = 0);
+    void cannotRemoveNATNetwork(const CVirtualBox &vbox, const QString &strNetworkName, QWidget *pParent = 0);
+    void cannotCreateDHCPServer(const CVirtualBox &vbox, QWidget *pParent = 0);
+    void cannotRemoveDHCPServer(const CVirtualBox &vbox, const QString &strInterfaceName, QWidget *pParent = 0);
     void cannotCreateHostInterface(const CHost &host, QWidget *pParent = 0);
     void cannotCreateHostInterface(const CProgress &progress, QWidget *pParent = 0);
     void cannotRemoveHostInterface(const CHost &host, const QString &strInterfaceName, QWidget *pParent = 0);
