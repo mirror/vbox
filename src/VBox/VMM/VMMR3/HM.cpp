@@ -2253,48 +2253,40 @@ VMMR3_INT_DECL(int) HMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * @returns true if selector is suitable for VMX, otherwise
  *        false.
  * @param   pSel        Pointer to the selector to check (CS).
- *          uStackDpl   The DPL of the stack segment.
+ *          uStackDpl   The CPL, aka the DPL of the stack segment.
  */
 static bool hmR3IsCodeSelectorOkForVmx(PCPUMSELREG pSel, unsigned uStackDpl)
 {
-    bool    rc = false;
+    /*
+     * Segment must be an accessed code segment, it must be present and it must
+     * be usable.
+     * Note! These are all standard requirements and if CS holds anything else
+     *       we've got buggy code somewhere!
+     */
+    AssertCompile(X86DESCATTR_TYPE == 0xf);
+    AssertMsgReturn(   (pSel->Attr.u & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_CODE | X86DESCATTR_DT | X86DESCATTR_P | X86DESCATTR_UNUSABLE))
+                    ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_CODE | X86DESCATTR_DT | X86DESCATTR_P),
+                    ("%#x\n", pSel->Attr.u),
+                    false);
 
-    do
-    {
-        /* Segment must be accessed. */
-        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
-            break;
-        /* Segment must be a code segment. */
-        if (!(pSel->Attr.u & X86_SEL_TYPE_CODE))
-            break;
-        /* The S bit must be set. */
-        if (!pSel->Attr.n.u1DescType)
-            break;
-        if (pSel->Attr.n.u4Type & X86_SEL_TYPE_CONF)
-        {
-            /* For conforming segments, CS.DPL must be <= SS.DPL. */
-            if (pSel->Attr.n.u2Dpl > uStackDpl)
-                break;
-        }
-        else
-        {
-            /* For non-conforming segments, CS.DPL must equal SS.DPL. */
-            if (pSel->Attr.n.u2Dpl != uStackDpl)
-                break;
-        }
-        /* Segment must be present. */
-        if (!pSel->Attr.n.u1Present)
-            break;
-        /* G bit must be set if any high limit bits are set. */
-        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
-            break;
-        /* G bit must be clear if any low limit bits are clear. */
-        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
-            break;
+    /* For conforming segments, CS.DPL must be <= SS.DPL, while CS.DPL
+       must equal SS.DPL for non-confroming segments.
+       Note! This is also a hard requirement like above. */
+    AssertMsgReturn(  pSel->Attr.n.u4Type & X86_SEL_TYPE_CONF
+                    ? pSel->Attr.n.u2Dpl <= uStackDpl
+                    : pSel->Attr.n.u2Dpl == uStackDpl,
+                    ("u4Type=%#x u2Dpl=%u uStackDpl=%u\n", pSel->Attr.n.u4Type, pSel->Attr.n.u2Dpl, uStackDpl),
+                    false);
 
-        rc = true;
-    } while (0);
-    return rc;
+    /*
+     * The following two requirements are VT-x specific:
+     *  - G bit must be set if any high limit bits are set.
+     *  - G bit must be clear if any low limit bits are clear.
+     */
+    if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+        return true;
+    return false;
 }
 
 
@@ -2310,41 +2302,48 @@ static bool hmR3IsCodeSelectorOkForVmx(PCPUMSELREG pSel, unsigned uStackDpl)
  */
 static bool hmR3IsDataSelectorOkForVmx(PCPUMSELREG pSel)
 {
-    bool    rc = false;
-
-    /* If attributes are all zero, consider the segment unusable and therefore OK.
-     * This logic must be in sync with HMVMXR0.cpp!
+    /*
+     * Unusable segments are OK.  These days they should be marked as such, as
+     * but as an alternative we for old saved states and AMD<->VT-x migration
+     * we also treat segments with all the attributes cleared as unusable.
      */
-    if (!pSel->Attr.u)
+    if (pSel->Attr.n.u1Unusable || !pSel->Attr.u)
         return true;
 
-    do
-    {
-        /* Segment must be accessed. */
-        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
-            break;
-        /* Code segments must also be readable. */
-        if (pSel->Attr.u & X86_SEL_TYPE_CODE && !(pSel->Attr.u & X86_SEL_TYPE_READ))
-            break;
-        /* The S bit must be set. */
-        if (!pSel->Attr.n.u1DescType)
-            break;
-        /* Except for conforming segments, DPL >= RPL. */
-        if (pSel->Attr.n.u4Type <= X86_SEL_TYPE_ER_ACC && pSel->Attr.n.u2Dpl < (pSel->Sel & X86_SEL_RPL))
-            break;
-        /* Segment must be present. */
-        if (!pSel->Attr.n.u1Present)
-            break;
-        /* G bit must be set if any high limit bits are set. */
-        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
-            break;
-        /* G bit must be clear if any low limit bits are clear. */
-        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
-            break;
+    /** @todo tighten these checks. Will require CPUM load adjusting. */
 
-        rc = true;
-    } while (0);
-    return rc;
+    /* Segment must be accessed. */
+    if (pSel->Attr.u & X86_SEL_TYPE_ACCESSED)
+    {
+        /* Code segments must also be readable. */
+        if (  !(pSel->Attr.u & X86_SEL_TYPE_CODE)
+            || (pSel->Attr.u & X86_SEL_TYPE_READ))
+        {
+            /* The S bit must be set. */
+            if (pSel->Attr.n.u1DescType)
+            {
+                /* Except for conforming segments, DPL >= RPL. */
+                if (   pSel->Attr.n.u2Dpl  >= (pSel->Sel & X86_SEL_RPL)
+                    || pSel->Attr.n.u4Type >= X86_SEL_TYPE_ER_ACC)
+                {
+                    /* Segment must be present. */
+                    if (pSel->Attr.n.u1Present)
+                    {
+                        /*
+                         * The following two requirements are VT-x specific:
+                         *  - G bit must be set if any high limit bits are set.
+                         *  - G bit must be clear if any low limit bits are clear.
+                         */
+                        if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+                            && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+                            return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
 }
 
 
@@ -2358,44 +2357,41 @@ static bool hmR3IsDataSelectorOkForVmx(PCPUMSELREG pSel)
  */
 static bool hmR3IsStackSelectorOkForVmx(PCPUMSELREG pSel)
 {
-    bool    rc = false;
-
-    /* If attributes are all zero, consider the segment unusable and therefore OK.
-     * This logic must be in sync with HMVMXR0.cpp!
+    /*
+     * Unusable segments are OK.  These days they should be marked as such, as
+     * but as an alternative we for old saved states and AMD<->VT-x migration
+     * we also treat segments with all the attributes cleared as unusable.
      */
-    if (!pSel->Attr.u)
+    /** @todo r=bird: actually all zeros isn't gonna cut it... SS.DPL == CPL. */
+    if (pSel->Attr.n.u1Unusable || !pSel->Attr.u)
         return true;
 
-    do
-    {
-        /* Segment must be accessed. */
-        if (!(pSel->Attr.u & X86_SEL_TYPE_ACCESSED))
-            break;
-        /* Segment must be writable. */
-        if (!(pSel->Attr.u & X86_SEL_TYPE_WRITE))
-            break;
-        /* Segment must not be a code segment. */
-        if (pSel->Attr.u & X86_SEL_TYPE_CODE)
-            break;
-        /* The S bit must be set. */
-        if (!pSel->Attr.n.u1DescType)
-            break;
-        /* DPL must equal RPL. */
-        if (pSel->Attr.n.u2Dpl != (pSel->Sel & X86_SEL_RPL))
-            break;
-        /* Segment must be present. */
-        if (!pSel->Attr.n.u1Present)
-            break;
-        /* G bit must be set if any high limit bits are set. */
-        if ((pSel->u32Limit & 0xfff00000) && !pSel->Attr.n.u1Granularity)
-            break;
-        /* G bit must be clear if any low limit bits are clear. */
-        if ((pSel->u32Limit & 0x0fff) != 0x0fff && pSel->Attr.n.u1Granularity)
-            break;
+    /*
+     * Segment must be an accessed writable segment, it must be present.
+     * Note! These are all standard requirements and if SS holds anything else
+     *       we've got buggy code somewhere!
+     */
+    AssertCompile(X86DESCATTR_TYPE == 0xf);
+    AssertMsgReturn(   (pSel->Attr.u & (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P | X86_SEL_TYPE_CODE))
+                    ==                 (X86_SEL_TYPE_ACCESSED | X86_SEL_TYPE_WRITE | X86DESCATTR_DT | X86DESCATTR_P),
+                    ("%#x\n", pSel->Attr.u),
+                    false);
 
-        rc = true;
-    } while (0);
-    return rc;
+    /* DPL must equal RPL.
+       Note! This is also a hard requirement like above. */
+    AssertMsgReturn(pSel->Attr.n.u2Dpl == (pSel->Sel & X86_SEL_RPL),
+                    ("u2Dpl=%u Sel=%#x\n", pSel->Attr.n.u2Dpl, pSel->Sel),
+                    false);
+
+    /*
+     * The following two requirements are VT-x specific:
+     *  - G bit must be set if any high limit bits are set.
+     *  - G bit must be clear if any low limit bits are clear.
+     */
+    if (   ((pSel->u32Limit & 0xfff00000) == 0x00000000 ||  pSel->Attr.n.u1Granularity)
+        && ((pSel->u32Limit & 0x00000fff) == 0x00000fff || !pSel->Attr.n.u1Granularity) )
+        return true;
+    return false;
 }
 
 
