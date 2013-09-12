@@ -431,6 +431,36 @@ const Ipv4AddressContainer& ConfigurationManager::getAddressList(uint8_t u8OptId
     return m_empty;
 }
 
+int ConfigurationManager::setString(uint8_t u8OptId, const std::string& str)
+{
+    switch (u8OptId)
+    {
+        case RTNET_DHCP_OPT_DOMAIN_NAME:
+            m_domainName = str;
+            break;
+        default:
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+
+const std::string& ConfigurationManager::getString(uint8_t u8OptId)
+{
+    switch (u8OptId)
+    {
+        case RTNET_DHCP_OPT_DOMAIN_NAME:
+            if (m_domainName.length())
+                return m_domainName;
+            else
+                return m_noString;
+        default:
+            break;
+    }
+
+    return m_noString;
+}
+
 /**
  * Network manager
  */
@@ -725,6 +755,17 @@ int NetworkManager::processParameterReqList(Client* client, uint8_t *pu8ReqList,
                 }
                 break;
             case RTNET_DHCP_OPT_DOMAIN_NAME:
+                {
+                    std::string domainName = g_ConfigurationManager->getString(pReqList[idxParam]);
+                    if (domainName == g_ConfigurationManager->m_noString)
+                        break;
+
+                    char *pszDomainName = (char *)&opt.au8RawOpt[0];
+
+                    strcpy(pszDomainName, domainName.c_str());
+                    opt.cbRawOpt = domainName.length();
+                    client->rawOptions.push_back(opt);
+                }
                 break;
             default:
                 Log(("opt: %d is ignored\n", pReqList[idxParam]));
