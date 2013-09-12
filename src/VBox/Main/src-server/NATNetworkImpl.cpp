@@ -373,24 +373,24 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
     return rc;
 }
 
-STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aAdvertiseDefaultIPv6Route)
+STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aIPv6Enabled)
 {
-    CheckComArgOutPointerValid(aAdvertiseDefaultIPv6Route);
+    CheckComArgOutPointerValid(aIPv6Enabled);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    *aAdvertiseDefaultIPv6Route = m->fAdvertiseDefaultIPv6Route;
+    *aIPv6Enabled = m->fIPv6Enabled;
 
     return S_OK;
 }
 
-STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aAdvertiseDefaultIPv6Route)
+STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    m->fAdvertiseDefaultIPv6Route = aAdvertiseDefaultIPv6Route;
+    m->fIPv6Enabled = aIPv6Enabled;
 
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
