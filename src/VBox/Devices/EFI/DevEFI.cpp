@@ -31,6 +31,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/ctype.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
@@ -85,6 +86,8 @@ typedef struct EFIVAR
 } EFIVAR;
 /** Pointer to an EFI NVRAM variable. */
 typedef EFIVAR *PEFIVAR;
+/** Pointer to a const EFI NVRAM variable. */
+typedef EFIVAR const *PCEFIVAR;
 /** Pointer to an EFI NVRAM variable pointer. */
 typedef PEFIVAR *PPEFIVAR;
 
@@ -329,6 +332,42 @@ static int nvramLookupVariableByUuidAndName(PDEVEFI pThis, char *pszVariableName
     return rc;
 }
 
+
+/**
+ * Inserts the EFI variable into the list.
+ *
+ * This enforces the desired list ordering and/or insertion policy.
+ *
+ * @param   pThis           The EFI state.
+ * @param   pEfiVar         The variable to insert.
+ */
+static void nvramInsertVariable(PDEVEFI pThis, PEFIVAR pEfiVar)
+{
+#if 1
+    /*
+     * Sorted by UUID and name.
+     */
+    PEFIVAR pCurVar;
+    RTListForEach(&pThis->NVRAM.VarList, pCurVar, EFIVAR, ListNode)
+    {
+        int iDiff = RTUuidCompare(&pEfiVar->uuid, &pCurVar->uuid);
+        if (!iDiff)
+            iDiff = strcmp(pEfiVar->szName, pCurVar->szName);
+        if (iDiff < 0)
+        {
+            RTListNodeInsertBefore(&pCurVar->ListNode, &pEfiVar->ListNode);
+            return;
+        }
+    }
+#endif
+
+    /*
+     * Add it at the end.
+     */
+    RTListAppend(&pThis->NVRAM.VarList, &pEfiVar->ListNode);
+}
+
+
 /**
  * Creates an device internal list of variables.
  *
@@ -371,7 +410,7 @@ static int nvramLoad(PDEVEFI pThis)
         }
 
         /* Append it. */
-        RTListAppend((PRTLISTNODE)&pThis->NVRAM.VarList, &pEfiVar->ListNode);
+        nvramInsertVariable(pThis, pEfiVar);
         pThis->NVRAM.cVariables++;
     }
 
@@ -601,9 +640,9 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
             pEfiVar->cbValue       = pThis->NVRAM.VarOpBuf.cbValue;
             memcpy(pEfiVar->abValue, pThis->NVRAM.VarOpBuf.abValue, pEfiVar->cbValue);
 
-            RTListAppend(&pThis->NVRAM.VarList, &pEfiVar->ListNode);
-            pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
+            nvramInsertVariable(pThis, pEfiVar);
             pThis->NVRAM.cVariables++;
+            pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_OK;
         }
         else
             pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_ERROR;
@@ -866,6 +905,88 @@ static int nvramReadVariableOp(PDEVEFI pThis,  uint32_t *pu32, unsigned cb)
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Checks if the EFI variable value looks like a printable UTF-8 string.
+ *
+ * @returns true if it is, false if not.
+ * @param   pEfiVar             The variable.
+ * @param   pfZeroTerm          Where to return whether the string is zero
+ *                              terminated.
+ */
+static bool efiInfoNvramIsUtf8(PCEFIVAR pEfiVar, bool *pfZeroTerm)
+{
+    if (pEfiVar->cbValue < 2)
+        return false;
+    const char *pachValue = (const char *)&pEfiVar->abValue[0];
+    *pfZeroTerm = pachValue[pEfiVar->cbValue - 1] == 0;
+
+    /* Check the length. */
+    size_t cchValue = RTStrNLen((const char *)pEfiVar->abValue, pEfiVar->cbValue);
+    if (cchValue != pEfiVar->cbValue - *pfZeroTerm)
+        return false; /* stray zeros in the value, forget it. */
+
+    /* Check that the string is valid UTF-8 and printable. */
+    const char *pchCur = pachValue;
+    while ((uintptr_t)(pchCur - pachValue) < cchValue)
+    {
+        RTUNICP uc;
+        int rc = RTStrGetCpEx(&pachValue, &uc);
+        if (RT_FAILURE(rc))
+            return false;
+        /** @todo Missing RTUniCpIsPrintable. */
+        if (uc < 128 && !RT_C_IS_PRINT(uc))
+            return false;
+    }
+
+    return true;
+}
+
+
+/**
+ * Checks if the EFI variable value looks like a printable UTF-16 string.
+ *
+ * @returns true if it is, false if not.
+ * @param   pEfiVar             The variable.
+ * @param   pfZeroTerm          Where to return whether the string is zero
+ *                              terminated.
+ */
+static bool efiInfoNvramIsUtf16(PCEFIVAR pEfiVar, bool *pfZeroTerm)
+{
+    if (pEfiVar->cbValue < 4 || (pEfiVar->cbValue & 1))
+        return false;
+
+    PCRTUTF16 pwcValue = (PCRTUTF16)&pEfiVar->abValue[0];
+    size_t    cwcValue = pEfiVar->cbValue /  sizeof(RTUTF16);
+    *pfZeroTerm = pwcValue[cwcValue - 1] == 0;
+    if (!*pfZeroTerm && RTUtf16IsHighSurrogate(pwcValue[cwcValue - 1]))
+        return false; /* Catch bad string early, before reading a char too many. */
+    cwcValue -= *pfZeroTerm;
+    if (cwcValue < 2)
+        return false;
+
+    /* Check that the string is valid UTF-16, printable and spans the whole
+       value length. */
+    size_t    cAscii = 0;
+    PCRTUTF16 pwcCur = pwcValue;
+    while ((uintptr_t)(pwcCur - pwcValue) < cwcValue)
+    {
+        RTUNICP uc;
+        int rc = RTUtf16GetCpEx(&pwcCur, &uc);
+        if (RT_FAILURE(rc))
+            return false;
+        /** @todo Missing RTUniCpIsPrintable. */
+        if (uc < 128 && !RT_C_IS_PRINT(uc))
+            return false;
+        cAscii += uc < 128;
+    }
+    if (cAscii < 2)
+        return false;
+
+    return true;
+}
+
+
 /**
  * @implement_callback_method{FNDBGFHANDLERDEV}
  */
@@ -875,14 +996,30 @@ static DECLCALLBACK(void) efiInfoNvram(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, c
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     pHlp->pfnPrintf(pHlp, "NVRAM variables: %u\n", pThis->NVRAM.cVariables);
-    PEFIVAR pEfiVar;
+    PCEFIVAR pEfiVar;
     RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
     {
-        pHlp->pfnPrintf(pHlp,
-                        "Variable - fAttr=%#04x - '%RTuuid:%s' - cb=%#04x\n"
-                        "%.*Rhxd\n",
-                        pEfiVar->fAttributes, &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue,
-                        pEfiVar->cbValue, pEfiVar->abValue);
+        /* Detect UTF-8 and UTF-16 strings. */
+        bool fZeroTerm = false;
+        if (efiInfoNvramIsUtf8(pEfiVar, &fZeroTerm))
+            pHlp->pfnPrintf(pHlp,
+                            "Variable - fAttr=%#04x - '%RTuuid:%s' - cb=%#04x\n"
+                            "String value (UTF-8%s): \"%.*s\"\n",
+                            pEfiVar->fAttributes, &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue,
+                            fZeroTerm ? "" : ",nz", pEfiVar->cbValue, pEfiVar->abValue);
+        else if (efiInfoNvramIsUtf16(pEfiVar, &fZeroTerm))
+            pHlp->pfnPrintf(pHlp,
+                            "Variable - fAttr=%#04x - '%RTuuid:%s' - cb=%#04x\n"
+                            "String value (UTF-16%s): \"%.*ls\"\n",
+                            pEfiVar->fAttributes, &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue,
+                            fZeroTerm ? "" : ",nz", pEfiVar->cbValue, pEfiVar->abValue);
+        else
+            pHlp->pfnPrintf(pHlp,
+                            "Variable - fAttr=%#04x - '%RTuuid:%s' - cb=%#04x\n"
+                            "%.*Rhxd\n",
+                            pEfiVar->fAttributes, &pEfiVar->uuid, pEfiVar->szName, pEfiVar->cbValue,
+                            pEfiVar->cbValue, pEfiVar->abValue);
+
     }
 
     PDMCritSectLeave(pDevIns->pCritSectRoR3);
@@ -1316,8 +1453,13 @@ static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         }
         AssertRCReturnStmt(rc, RTMemFree(pEfiVar), rc);
 
-        /* Add it, updating the current variable pointer while we're here. */
+        /* Add it (not using nvramInsertVariable to preserve saved order),
+           updating the current variable pointer while we're here. */
+#if 1
         RTListAppend(&pThis->NVRAM.VarList, &pEfiVar->ListNode);
+#else
+        nvramInsertVariable(pThis, pEfiVar);
+#endif
         if (pThis->NVRAM.idUniqueCurVar == pEfiVar->idUniqueSavedState)
             pThis->NVRAM.pCurVar = pEfiVar;
     }
@@ -1856,6 +1998,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"BootArgs\" as a string failed"));
 
+    //strcpy(pThis->szBootArgs, "-v keepsyms=1 io=0xf");
     LogRel(("EFI boot args: %s\n", pThis->szBootArgs));
 
     /*
@@ -1882,18 +2025,15 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     }
 
     /*
-     * CPU frequencies
+     * CPU frequencies.
      */
-    /// @todo we need to have VMM API to access TSC increase speed, for now provide reasonable default
-    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1000 * 1000;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
-    if (pThis->u64TscFrequency == 0)
-        pThis->u64TscFrequency = UINT64_C(2500000000);
-    /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
+    pThis->u64TscFrequency = TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4. */
     pThis->u64FsbFrequency = pThis->u64TscFrequency / 4;
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
 
     /*
-     * GOP graphics
+     * GOP graphics.
      */
     rc = CFGMR3QueryU32Def(pCfg, "GopMode", &pThis->u32GopMode, 2 /* 1024x768 */);
     if (RT_FAILURE(rc))
@@ -1903,14 +2043,17 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->u32GopMode = 2; /* 1024x768 */
 
     /*
-     * Uga graphics.
+     * Uga graphics, default to 1024x768.
      */
-    rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->cxUgaResolution, 0); AssertRC(rc);
-    if (pThis->cxUgaResolution == 0)
-        pThis->cxUgaResolution = 1024;  /* 1024x768 */
-    rc = CFGMR3QueryU32Def(pCfg, "UgaVerticalResolution", &pThis->cyUgaResolution, 0); AssertRC(rc);
-    if (pThis->cyUgaResolution == 0)
-        pThis->cyUgaResolution = 768;    /* 1024x768 */
+    rc = CFGMR3QueryU32Def(pCfg, "UgaHorizontalResolution", &pThis->cxUgaResolution, 0);
+    AssertRCReturn(rc, rc);
+    rc = CFGMR3QueryU32Def(pCfg, "UgaVerticalResolution", &pThis->cyUgaResolution, 0);
+    AssertRCReturn(rc, rc);
+    if (pThis->cxUgaResolution == 0 || pThis->cyUgaResolution == 0)
+    {
+        pThis->cxUgaResolution = 1024;
+        pThis->cyUgaResolution = 768;
+    }
 
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*
