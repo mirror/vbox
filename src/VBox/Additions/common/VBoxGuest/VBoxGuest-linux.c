@@ -940,9 +940,9 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
      * Wake up everyone that's in a poll() and post anyone that has
      * subscribed to async notifications.
      */
-    Log(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
+    Log3(("VBoxGuestNativeISRMousePollEvent: wake_up_all\n"));
     wake_up_all(&g_PollEventQueue);
-    Log(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
+    Log3(("VBoxGuestNativeISRMousePollEvent: kill_fasync\n"));
     kill_fasync(&g_pFAsyncQueue, SIGIO, POLL_IN);
 #ifdef VBOXGUEST_WITH_INPUT_DRIVER
     /* Report events to the kernel input device */
@@ -961,7 +961,7 @@ void VBoxGuestNativeISRMousePollEvent(PVBOXGUESTDEVEXT pDevExt)
 # endif
     }
 #endif
-    Log(("VBoxGuestNativeISRMousePollEvent: done\n"));
+    Log3(("VBoxGuestNativeISRMousePollEvent: done\n"));
 }
 
 
