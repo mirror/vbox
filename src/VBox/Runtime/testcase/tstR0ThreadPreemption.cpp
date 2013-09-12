@@ -383,6 +383,7 @@ DECLEXPORT(int) TSTR0ThreadPreemptionSrvReqHandler(PSUPDRVSESSION pSession, uint
 
                 RTThreadSleep(cMsSleepGranularity);
                 cMsSlept += cMsSleepGranularity;
+                RTThreadYield();
             }
 
             if (!ASMAtomicReadBool(&pCtxData->fPreemptingInvoked))
