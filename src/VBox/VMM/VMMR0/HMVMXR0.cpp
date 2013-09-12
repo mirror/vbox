@@ -8013,7 +8013,6 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR0.
          */
-        uint32_t u32GuestCR0;
         uint32_t uSetCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         uint32_t uZapCR0 = (uint32_t)(pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         /* Exceptions for unrestricted-guests for fixed CR0 bits (PE, PG).
@@ -8021,10 +8020,11 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         if (fUnrestrictedGuest)
             uSetCR0 &= ~(X86_CR0_PE | X86_CR0_PG);
 
+        uint32_t u32GuestCR0;
         rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR0, &u32GuestCR0);
         AssertRCBreak(rc);
-        HMVMX_CHECK_BREAK((u32Val & uSetCR0) == uSetCR0, VMX_IGS_CR0_FIXED1);
-        HMVMX_CHECK_BREAK(!(u32Val & ~uZapCR0), VMX_IGS_CR0_FIXED0);
+        HMVMX_CHECK_BREAK((u32GuestCR0 & uSetCR0) == uSetCR0, VMX_IGS_CR0_FIXED1);
+        HMVMX_CHECK_BREAK(!(u32GuestCR0 & ~uZapCR0), VMX_IGS_CR0_FIXED0);
         if (   !fUnrestrictedGuest
             && (u32GuestCR0 & X86_CR0_PG)
             && !(u32GuestCR0 & X86_CR0_PE))
@@ -8035,9 +8035,10 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         /*
          * CR4.
          */
-        uint32_t u32GuestCR4;
         uint64_t uSetCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
         uint64_t uZapCR4 = (pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1);
+
+        uint32_t u32GuestCR4;
         rc = VMXReadVmcs32(VMX_VMCS_GUEST_CR4, &u32GuestCR4);
         AssertRCBreak(rc);
         HMVMX_CHECK_BREAK((u32GuestCR4 & uSetCR4) == uSetCR4, VMX_IGS_CR4_FIXED1);
