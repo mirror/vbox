@@ -20,8 +20,8 @@ include $(obj)/Makefile.include.header
 
 MOD_NAME   = vboxvideo
 
-MOD_OBJS   = HGSMIBase.o Modesetting.o VBVABase.o vbox_drv.o vbox_fb.o \
-             vbox_main.o vbox_mode.o vbox_ttm.o 
+MOD_OBJS   = HGSMIBase.o HGSMICommon.o heapoffset.o Modesetting.o vbox_drv.o \
+             vbox_fb.o vbox_main.o vbox_mode.o vbox_ttm.o VBVABase.o
 
 ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxvideo),)
  MANGLING := $(KBUILD_EXTMOD)/vboxvideo/include/VBox/VBoxGuestMangling.h
@@ -29,9 +29,10 @@ else
  MANGLING := $(KBUILD_EXTMOD)/include/VBox/VBoxGuestMangling.h
 endif
 MOD_CFLAGS = -fshort-wchar -include $(MANGLING)
-MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
+MOD_INCL   = $(addprefix -I$(KBUILD_EXTMOD),/ /include)
 # What on earth is this?
-MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include /r0drv/linux)
+MOD_INCL  += $(addprefix -I$(KBUILD_EXTMOD)/vboxvideo,/ /include)
+MOD_INCL  += -Iinclude/drm
 MOD_DEFS  := -DRT_OS_LINUX -DIN_RING0 -DIN_RT_R0 \
 	     -DIN_SUP_R0 -DVBOX -DVBOX_WITH_HGCM -DLOG_TO_BACKDOOR -DIN_MODULE \
 	     -DIN_GUEST_R0

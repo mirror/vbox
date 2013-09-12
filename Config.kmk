@@ -2824,6 +2824,7 @@ if1of ($(KBUILD_TARGET), linux)
    #
    VBOX_LINUX_INCS  += $(kernelpath)/include/asm-i386/mach-default \
                        $(kernelpath)/include/asm-x86/mach-default \
+                       $(kernelpath)/include/drm \
                        $(kernelpath)/arch/x86/include \
                        $(kernelpath)/arch/x86/include/asm/mach-default \
                        $(kernelpath)/arch/x86/include/uapi \
@@ -5171,6 +5172,7 @@ TEMPLATE_VBOXGUESTR0_SDKS.win.amd64 = ReorderCompilerIncs $(VBOX_WINDDK_GST) $(V
 TEMPLATE_VBOXGUESTR0_LIBS.win.x86   = \
 	$(PATH_SDK_$(VBOX_WINDDK)_LIB)/int64.lib
 TEMPLATE_VBOXGUESTR0_DEFS        = $(TEMPLATE_VBOXR0DRV_DEFS) IN_GUEST IN_GUEST_R0
+TEMPLATE_VBOXGUESTR0_DEFS.linux  = RT_NO_EXPORT_SYMBOL
 ifeq ($(KBUILD_TARGET),solaris)
  TEMPLATE_VBOXGUESTR0_LDFLAGS    = -r -dy
 endif
