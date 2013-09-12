@@ -462,13 +462,12 @@ int VBoxNetDhcp::init()
                 /* XXX: todo. */;
             }
             strs.setNull();
-
-            Bstr domain;
-            if (SUCCEEDED(host->COMGETTER(DomainName)(domain.asOutPutParam())))
-            {
-                /* XXX: todo. */
-            }
 #endif
+            com::Bstr domain;
+            if (SUCCEEDED(host->COMGETTER(DomainName)(domain.asOutParam())))
+                confManager->setString(RTNET_DHCP_OPT_DOMAIN_NAME, std::string(com::Utf8Str(domain).c_str()));
+            
+
         }
     }
 

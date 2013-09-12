@@ -397,24 +397,33 @@ class ConfigurationManager
     HostConfigEntity *addHost(NetworkConfigEntity*, const RTNETADDRIPV4&, ClientMatchCriteria*);
     int addToAddressList(uint8_t u8OptId, RTNETADDRIPV4& address);
     int flushAddressList(uint8_t u8OptId);
+    int setString(uint8_t u8OptId, const std::string& str);
+    const std::string& getString(uint8_t u8OptId);
     const Ipv4AddressContainer& getAddressList(uint8_t u8OptId);
 
-    private:
+private:
     ConfigurationManager(){}
     virtual ~ConfigurationManager(){}
-
     bool isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppLease = NULL);
+
+public:
+    /* nulls */
+    const Ipv4AddressContainer m_empty;
+    const std::string    m_noString;
+
+private:
     MapLease2Ip4Address m_allocations;
     /**
      * Here we can store expired Leases to do not re-allocate them latter.
      */
+
     /* XXX: MapLease2Ip4Address m_freed; */
-    /*
-     *
-     */
+    /* XXX: more universal storages are required. */
     Ipv4AddressContainer m_nameservers;
     Ipv4AddressContainer m_routers;
-    Ipv4AddressContainer m_empty;
+
+
+    std::string          m_domainName;
     VecClient m_clients;
 
 };
