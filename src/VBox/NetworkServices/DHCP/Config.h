@@ -422,10 +422,8 @@ private:
     Ipv4AddressContainer m_nameservers;
     Ipv4AddressContainer m_routers;
 
-
     std::string          m_domainName;
     VecClient m_clients;
-
 };
 
 
