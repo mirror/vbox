@@ -180,7 +180,7 @@ void UINetworkRequest::sltCancel()
 void UINetworkRequest::initialize()
 {
     /* Prepare listeners for parent(): */
-    connect(parent(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()));
+    connect(parent(), SIGNAL(sigCancelNetworkRequests()), this, SLOT(sltCancel()), Qt::QueuedConnection);
 
     /* Create network-request widget in network-manager dialog: */
     m_pNetworkManagerDialog->addNetworkRequestWidget(this);
