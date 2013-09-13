@@ -8103,11 +8103,11 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint64_t u64DebugCtlMsr = u64Val;
 
 #ifdef VBOX_STRICT
-        rc = VMXReadVmcs32(VMX_VMCS32_CTRL_PROC_EXEC, &u32Val);
+        rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
         AssertRCBreak(rc);
         Assert(u32Val == pVCpu->hm.s.vmx.u32ProcCtls);
 #endif
-        bool const fLongModeGuest = RT_BOOL(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
+        bool const fLongModeGuest = RT_BOOL(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
 
         /*
          * RIP and RFLAGS.
