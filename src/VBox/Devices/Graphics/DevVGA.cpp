@@ -236,7 +236,7 @@ typedef WINHDR *PWINHDR;
 /** The BIOS boot menu text position, X. */
 #define LOGO_F12TEXT_X       304
 /** The BIOS boot menu text position, Y. */
-#define LOGO_F12TEXT_Y       464
+#define LOGO_F12TEXT_Y       460
 
 /** Width of the "Press F12 to select boot device." bitmap.
     Anything that exceeds the limit of F12BootText below is filled with
