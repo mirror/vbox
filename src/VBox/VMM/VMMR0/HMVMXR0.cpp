@@ -41,6 +41,7 @@
 #define HMVMX_ALWAYS_CHECK_GUEST_STATE
 #define HMVMX_ALWAYS_TRAP_ALL_XCPTS
 #define HMVMX_ALWAYS_TRAP_PF
+#define HMVMX_ALWAYS_SWAP_FPU_STATE
 #endif
 
 
@@ -7533,6 +7534,12 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
     }
     Assert(!(pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_CONTEXT));
 
+#ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
+    if (!CPUMIsGuestFPUStateActive(pVCpu))
+        CPUMR0LoadGuestFPU(pVM, pVCpu, pMixedCtx);
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+#endif
+
     /*
      * Load the state shared between host and guest (FPU, debug).
      */
@@ -7626,6 +7633,15 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     TMNotifyEndOfExecution(pVCpu);                                    /* Notify TM that the guest is no longer running. */
     Assert(!(ASMGetFlags() & X86_EFL_IF));
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
+
+#ifdef HMVMX_ALWAYS_SWAP_FPU_STATE
+    if (CPUMIsGuestFPUStateActive(pVCpu))
+    {
+        hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
+        CPUMR0SaveGuestFPU(pVM, pVCpu, pMixedCtx);
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+    }
+#endif
 
     pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_REQUIRED;   /* Host state messed up by VT-x, we must restore. */
     pVCpu->hm.s.vmx.uVmcsState |= HMVMX_VMCS_STATE_LAUNCHED;          /* Use VMRESUME instead of VMLAUNCH in the next run. */
