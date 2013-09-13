@@ -3727,6 +3727,9 @@ bool VBoxGlobal::openURL (const QString &aURL)
 
 void VBoxGlobal::sltGUILanguageChange(QString strLang)
 {
+    /* Make sure medium-enumeration is not in progress! */
+    AssertReturnVoid(!isMediumEnumerationInProgress());
+    /* Load passed language: */
     loadLanguage(strLang);
 }
 
