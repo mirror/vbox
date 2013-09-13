@@ -4746,12 +4746,13 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
     int rc = CPUMR0LoadGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+
     if (rc == VINF_SUCCESS)
     {
         Assert(CPUMIsGuestFPUStateActive(pVCpu));
         HM_RESTORE_PREEMPT_IF_NEEDED();
 
-        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
         return VINF_SUCCESS;
     }
