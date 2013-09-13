@@ -1774,10 +1774,11 @@ static int check_exception(int intno, int *error_code)
 
 # ifndef VBOX
         qemu_system_reset_request();
-# else
-        remR3RaiseRC(env->pVM, VINF_EM_RESET); /** @todo test + improve tripple fault handling. */
-# endif
         return EXCP_HLT;
+# else
+        remR3RaiseRC(env->pVM, VINF_EM_TRIPLE_FAULT);
+        return EXCP_RC;
+# endif
     }
 #endif
 
