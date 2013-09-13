@@ -115,8 +115,8 @@ void UINetworkManagerDialog::addNetworkRequestWidget(UINetworkRequest *pNetworkR
     }
 
     /* Prepare network-request widget's notifications for network-request: */
-    connect(pNetworkRequestWidget, SIGNAL(sigRetry()), pNetworkRequest, SLOT(sltRetry()));
-    connect(pNetworkRequestWidget, SIGNAL(sigCancel()), pNetworkRequest, SLOT(sltCancel()));
+    connect(pNetworkRequestWidget, SIGNAL(sigRetry()), pNetworkRequest, SLOT(sltRetry()), Qt::QueuedConnection);
+    connect(pNetworkRequestWidget, SIGNAL(sigCancel()), pNetworkRequest, SLOT(sltCancel()), Qt::QueuedConnection);
 }
 
 void UINetworkManagerDialog::removeNetworkRequestWidget(const QUuid &uuid)
