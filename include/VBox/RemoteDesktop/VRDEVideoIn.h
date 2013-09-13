@@ -272,6 +272,7 @@ typedef struct VRDEVIDEOINFRAMEDESC
 #define VRDE_VIDEOIN_F_FRM_STILL              0x01 /* If still images are supported for this frame. */
 #define VRDE_VIDEOIN_F_FRM_DISCRETE_INTERVALS 0x02 /* If the discrete intervals list is included. */
 #define VRDE_VIDEOIN_F_FRM_BITRATE            0x04 /* If the bitrate fields are included. */
+#define VRDE_VIDEOIN_F_FRM_SIZE_OF_FIELDS     0x08 /* If the all optional fields start with 16 bit field size. */
 
 /*
  * Controls.
