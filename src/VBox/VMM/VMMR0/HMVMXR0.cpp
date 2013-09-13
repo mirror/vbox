@@ -140,8 +140,8 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
  * Exception bitmap mask for real-mode guests (real-on-v86).
  *
  * We need to intercept all exceptions manually (except #PF). #NM is also
- * handled separately, see hmR0VmxLoadGuestControlRegs(). #PF need not be
- * intercepted even in real-mode if we have Nested Paging support.
+ * handled separately, see hmR0VmxLoadSharedCR0(). #PF need not be intercepted
+ * even in real-mode if we have Nested Paging support.
  */
 #define HMVMX_REAL_MODE_XCPT_MASK    (  RT_BIT(X86_XCPT_DE)             | RT_BIT(X86_XCPT_DB)    | RT_BIT(X86_XCPT_NMI)   \
                                       | RT_BIT(X86_XCPT_BP)             | RT_BIT(X86_XCPT_OF)    | RT_BIT(X86_XCPT_BR)    \
@@ -1924,7 +1924,7 @@ static int hmR0VmxSetupMiscCtls(PVM pVM, PVMCPU pVCpu)
 
     /* All fields are zero-initialized during allocation; but don't remove the commented block below. */
 #if 0
-    /* All CR3 accesses cause VM-exits. Later we optimize CR3 accesses (see hmR0VmxLoadGuestControlRegs())*/
+    /* All CR3 accesses cause VM-exits. Later we optimize CR3 accesses (see hmR0VmxLoadGuestCR3AndCR4())*/
     rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_CR3_TARGET_COUNT, 0);           AssertRCReturn(rc, rc);
     rc = VMXWriteVmcs64(VMX_VMCS64_CTRL_TSC_OFFSET_FULL, 0);            AssertRCReturn(rc, rc);
 
@@ -10323,16 +10323,17 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 {
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
 
-#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
-    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-#endif
-
     /* We require CR0 and EFER. EFER is always up-to-date. */
     int rc = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
 
     /* We're playing with the host CPU state here, have to disable preemption. */
     HM_DISABLE_PREEMPT_IF_NEEDED();
+
+#ifndef HMVMX_ALWAYS_TRAP_ALL_XCPTS
+    if (!pVCpu->hm.s.vmx.RealMode.fRealOnV86Active)
+        Assert(!CPUMIsGuestFPUStateActive(pVCpu));
+#endif
 
     /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
     PVM pVM = pVCpu->CTX_SUFF(pVM);
