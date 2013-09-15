@@ -5608,13 +5608,18 @@ else
  	$(VBOX_JAVA_HOME)/include/$(VBOX_MD_OS)
 endif
 
-ifeq ($(KBUILD_TARGET), win)
-  VBOX_SEP=\;
+
+#
+# VBOX_SEP needs to be quoted when used on the shell command line.
+#
+if1of ($(KBUILD_TARGET), os2 win)
+ VBOX_SEP = $(SEMICOLON)
 else
-  VBOX_SEP=:
+ VBOX_SEP = $(COLON)
 endif
 VBOX_JAVAC_OPTS   = -encoding UTF-8 -source 1.5 -target 1.5 -Xlint:unchecked
 VBOX_JAVADOC_OPTS = -encoding UTF-8
+
 
 #
 # Legacy.
