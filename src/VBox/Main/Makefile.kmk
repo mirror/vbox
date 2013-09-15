@@ -1013,7 +1013,7 @@ $$(VBOX_JMSCOM_JAR): $(VBOX_JMSCOM_GEN)/jmscomglue.list | $$(dir $$@)
 	$(call MSG_TOOL,javac,$(notdir $@),...,)
 	$(VBOX_JAVAC) $(VBOX_JAVAC_OPTS) \
                 @$(VBOX_JMSCOM_GEN)/jmscomglue.list \
-		-d $(VBOX_JMSCOM_JDEST) -classpath $(VBOX_JMSCOM_JDEST)$(VBOX_SEP)$(VBOX_JACOB_DIR)/jacob.jar
+		-d $(VBOX_JMSCOM_JDEST) -classpath "$(VBOX_JMSCOM_JDEST)$(VBOX_SEP)$(VBOX_JACOB_DIR)/jacob.jar"
 	$(call MSG_LINK,$(notdir $@),$@)
 	$(VBOX_JAR) cf $@ -C $(VBOX_JMSCOM_JDEST) .
 
