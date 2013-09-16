@@ -125,9 +125,6 @@ HRESULT HostDnsServiceResolvConf::update()
         }
     }
 
-    if (!cNameserversFound)
-        return E_FAIL;
-
     return S_OK;
 
 }
