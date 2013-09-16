@@ -118,8 +118,7 @@ class ORClientMatchCriteria: ClientMatchCriteria
 
 class ANDClientMatchCriteria: ClientMatchCriteria
 {
-    ClientMatchCriteria* m_left;
-    ClientMatchCriteria* m_right;
+public:
     ANDClientMatchCriteria(ClientMatchCriteria *left, ClientMatchCriteria *right)
     {
         m_left = left;
@@ -130,11 +129,16 @@ class ANDClientMatchCriteria: ClientMatchCriteria
     {
         return (m_left->check(client) && m_right->check(client));
     }
+private:
+    ClientMatchCriteria* m_left;
+    ClientMatchCriteria* m_right;
+
 };
 
 
 class AnyClientMatchCriteria: public ClientMatchCriteria
 {
+public:
     virtual bool check(const Client& client) const
     {
         return true;
@@ -144,15 +148,14 @@ class AnyClientMatchCriteria: public ClientMatchCriteria
 
 class MACClientMatchCriteria: public ClientMatchCriteria
 {
-
-    public:
+public:
     MACClientMatchCriteria(const RTMAC& mac):m_mac(mac){}
 
     virtual bool check(const Client& client) const
     {
         return (client == m_mac);
     }
-    private:
+private:
     RTMAC m_mac;
 };
 
@@ -197,7 +200,8 @@ public:
     /* Should return how strong matching */
     virtual int match(Client& client, BaseConfigEntity **cfg);
     virtual uint32_t expirationPeriod() const = 0;
-    protected:
+
+protected:
     const ClientMatchCriteria *m_criteria;
     int m_MatchLevel;
     std::vector<BaseConfigEntity *> m_children;
@@ -219,8 +223,7 @@ public:
 
 class ConfigEntity: public BaseConfigEntity
 {
-    public:
-
+public:
     /* range */
     /* match conditions */
     ConfigEntity(std::string& name,
@@ -235,8 +238,6 @@ class ConfigEntity: public BaseConfigEntity
         unconst(m_parentCfg)->add(this);
     }
 
-    std::string m_name;
-    const BaseConfigEntity *m_parentCfg;
     virtual uint32_t expirationPeriod() const
     {
         if (!m_u32ExpirationPeriod)
@@ -246,6 +247,8 @@ class ConfigEntity: public BaseConfigEntity
     }
 
     /* XXX: private:*/
+    std::string m_name;
+    const BaseConfigEntity *m_parentCfg;
     uint32_t m_u32ExpirationPeriod;
 };
 
@@ -255,7 +258,7 @@ class ConfigEntity: public BaseConfigEntity
  */
 class NetworkConfigEntity:public ConfigEntity
 {
-    public:
+public:
     /* Address Pool matching with network declaration */
     NetworkConfigEntity(std::string name,
                         const BaseConfigEntity *cfg,
@@ -305,8 +308,7 @@ class NetworkConfigEntity:public ConfigEntity
  */
 class HostConfigEntity: public NetworkConfigEntity
 {
-
-    public:
+public:
     HostConfigEntity(const RTNETADDRIPV4& addr,
                      std::string name,
                      const NetworkConfigEntity *cfg,
@@ -327,7 +329,7 @@ class HostConfigEntity: public NetworkConfigEntity
 
 class RootConfigEntity: public NetworkConfigEntity
 {
-    public:
+public:
     RootConfigEntity(std::string name, uint32_t expirationPeriod);
     virtual ~RootConfigEntity(){};
 };
@@ -342,7 +344,7 @@ class RootConfigEntity: public NetworkConfigEntity
  */
 class SharedNetworkConfigEntity: public NetworkEntity
 {
-    public:
+public:
     SharedNetworkConfigEntity(){}
     int match(const Client& client) const { return m_criteria.match(client)? 3 : 0;}
 
@@ -353,13 +355,12 @@ class SharedNetworkConfigEntity: public NetworkEntity
     virtual ~SharedNetworkConfigEntity(){}
 
     std::vector<NetworkConfigEntity> Networks;
-
 };
 #endif
 
 class ConfigurationManager
 {
-    public:
+public:
     static ConfigurationManager* getConfigurationManager();
     static int extractRequestList(PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& rawOpt);
 
@@ -429,7 +430,7 @@ private:
 
 class NetworkManager
 {
-    public:
+public:
     static NetworkManager *getNetworkManager();
 
     int offer4Client(Client* lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
@@ -449,7 +450,10 @@ class NetworkManager
     INTNETIFHANDLE m_hIf;
     PINTNETBUF m_pIfBuf;
 
-    private:
+private:
+    NetworkManager(){}
+    virtual ~NetworkManager(){}
+
     int prepareReplyPacket4Client(Client *client, uint32_t u32Xid);
     int doReply(Client *client);
     int processParameterReqList(Client *client, uint8_t *pu8ReqList, int cReqList);
@@ -463,9 +467,6 @@ class NetworkManager
     RTNETADDRIPV4 m_OurAddress;
     RTNETADDRIPV4 m_OurNetmask;
     RTMAC m_OurMac;
-
-    NetworkManager(){}
-    virtual ~NetworkManager(){}
 };
 
 
