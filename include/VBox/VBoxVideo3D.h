@@ -95,6 +95,8 @@ struct VBOXTLSREFDATA_DUMMY
         VBoxTlsRefAssertImpl(cRefs > 1 || (_p)->enmTlsRefState == VBOXTLSREFDATA_STATE_DESTROYING); \
     } while (0)
 
+#define VBoxTlsRefCountGet(_p) (ASMAtomicReadS32(&(_p)->cTlsRefs))
+
 #define VBoxTlsRefRelease(_p) do { \
         int cRefs = ASMAtomicDecS32(&(_p)->cTlsRefs); \
         VBoxTlsRefAssertImpl(cRefs >= 0); \

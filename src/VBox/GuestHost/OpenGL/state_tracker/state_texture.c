@@ -250,10 +250,8 @@ crStateTextureInitTextureObj(CRContext *ctx, CRTextureObj *tobj,
         RESET(tobj->paramsBit[i], ctx->bitid);
     }
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_INIT(tobj);
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, ctx);
-#endif
 }
 
 
@@ -1015,9 +1013,7 @@ void STATE_APIENTRY crStateBindTexture(GLenum target, GLuint texture)
         tobj = crStateTextureAllocate_t(g, texture);
     }
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
-#endif
 
     /* Check the targets */
     if (tobj->target == GL_NONE)
