@@ -981,15 +981,6 @@ stubInitLocked(void)
         {
             crNetFreeConnection(ns.conn);
         }
-#if 0 && defined(CR_NEWWINTRACK)
-        {
-            Status st = XInitThreads();
-            if (st==0)
-            {
-                crWarning("XInitThreads returned %i", (int)st);
-            }
-        }
-#endif
     }
 #endif
 

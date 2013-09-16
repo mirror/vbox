@@ -645,9 +645,6 @@ int renderspu_SystemInit()
         render_spu.ws.glXChooseVisual = NULL;
     }
 
-    /* enable multi-threading */
-    XInitThreads();
-
     /* setup communication display connection */
     dpyName = renderspuGetDisplayName();
     if (!dpyName)
