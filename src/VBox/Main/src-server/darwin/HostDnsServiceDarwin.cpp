@@ -65,6 +65,8 @@ static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
     CFRunLoopRun();
 
     CFRelease(g_RunLoopRef);
+    
+    return VINF_SUCCESS;
 }
 
 HostDnsServiceDarwin::HostDnsServiceDarwin(){}
