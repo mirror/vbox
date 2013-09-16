@@ -720,6 +720,8 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     m_MacAddress.au8[5] = 0;
     m_Ipv4Address.u     = RT_MAKE_U32_FROM_U8( 10,  0,  2,  2); // NB: big-endian
     m_Ipv4Netmask.u     = RT_H2N_U32_C(0xffffff00);
+
+    fDontLoadRulesOnStartup = false;
     
     for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
         m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
