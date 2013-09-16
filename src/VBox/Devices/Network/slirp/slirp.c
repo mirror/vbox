@@ -352,8 +352,13 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
-    rc = slirpInitializeDnsSettings(pData);
-    AssertRCReturn(rc, VINF_NAT_DNS);
+    
+    if (!fUseHostResolver)
+    {
+        rc = slirpInitializeDnsSettings(pData);
+        AssertRCReturn(rc, VINF_NAT_DNS);
+    }
+
     rc = slirpTftpInit(pData);
     AssertRCReturn(rc, VINF_NAT_DNS);
 
