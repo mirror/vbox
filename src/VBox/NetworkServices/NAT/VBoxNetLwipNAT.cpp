@@ -896,53 +896,52 @@ int VBoxNetLwipNAT::init()
             netPfStrToPf(com::Utf8Str(rules[idxRules]).c_str(), 1, &Rule.Pfr);
             m_vecPortForwardRule6.push_back(Rule);
         }
-
-        com::SafeArray<BSTR> strs;
-        int count_strs;
-        hrc = net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
-        if (   SUCCEEDED(hrc) 
-            && (count_strs = strs.size()))
-        {
-            unsigned int j = 0;
-            int i;
-
-            for (i = 0; i < count_strs && j < RT_ELEMENTS(m_lo2off); ++i)
-            {
-                char aszAddr[17];
-                RTNETADDRIPV4 ip4addr;
-                char *pszTerm;
-                uint32_t u32Off;
-                com::Utf8Str strLo2Off(strs[i]);
-                const char *pszLo2Off = strLo2Off.c_str();
-
-                RT_ZERO(aszAddr);
-                
-                pszTerm = RTStrStr(pszLo2Off, "=");
-
-                if (   !pszTerm
-                    || (pszTerm - pszLo2Off) >= 17)
-                    continue;
-                
-                memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
-                rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
-                if (RT_FAILURE(rc))
-                    continue;
-
-                u32Off = RTStrToUInt32(pszTerm + 1);
-                if (u32Off == 0)
-                    continue;
-
-                ip4_addr_set_u32(&m_lo2off[j].loaddr, ip4addr.u);
-                m_lo2off[j].off = u32Off;
-                ++j;
-            }
-            
-            m_loOptDescriptor.lomap = m_lo2off;
-            m_loOptDescriptor.num_lomap = j;
-            m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
-        }
-
     } /* if (!fDontLoadRulesOnStartup) */
+
+    com::SafeArray<BSTR> strs;
+    int count_strs;
+    hrc = net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
+    if (   SUCCEEDED(hrc) 
+           && (count_strs = strs.size()))
+    {
+        unsigned int j = 0;
+        int i;
+
+        for (i = 0; i < count_strs && j < RT_ELEMENTS(m_lo2off); ++i)
+        {
+            char aszAddr[17];
+            RTNETADDRIPV4 ip4addr;
+            char *pszTerm;
+            uint32_t u32Off;
+            com::Utf8Str strLo2Off(strs[i]);
+            const char *pszLo2Off = strLo2Off.c_str();
+
+            RT_ZERO(aszAddr);
+                
+            pszTerm = RTStrStr(pszLo2Off, "=");
+
+            if (   !pszTerm
+                   || (pszTerm - pszLo2Off) >= 17)
+                continue;
+                
+            memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
+            rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
+            if (RT_FAILURE(rc))
+                continue;
+
+            u32Off = RTStrToUInt32(pszTerm + 1);
+            if (u32Off == 0)
+                continue;
+
+            ip4_addr_set_u32(&m_lo2off[j].loaddr, ip4addr.u);
+            m_lo2off[j].off = u32Off;
+            ++j;
+        }
+            
+        m_loOptDescriptor.lomap = m_lo2off;
+        m_loOptDescriptor.num_lomap = j;
+        m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
+    }
 
     hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
