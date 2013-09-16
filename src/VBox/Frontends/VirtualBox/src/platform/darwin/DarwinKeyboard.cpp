@@ -1213,13 +1213,9 @@ static void darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef e
     {
         rc = IOHIDDeviceSetValue(hidDevice, element, valueRef);
         if (rc != kIOReturnSuccess)
-        {
             LogRelFlow(("Warning! Something went wrong in attempt to turn %s HID device led (error %d)!\n", ((fEnabled) ? "on" : "off"), rc));
-        }
         else
-        {
-            LogRelFlow(("Led (%d) is turned %s\n", (int)IOHIDElementGetUsage(element), ((fEnabled) ? "on" : "off")));
-        }
+            Log2(("Led (%d) is turned %s\n", (int)IOHIDElementGetUsage(element), ((fEnabled) ? "on" : "off")));
 
         CFRelease(valueRef);
     }
@@ -1245,22 +1241,16 @@ static void darwinUpdateHostLedDeviceElements(IOHIDDeviceRef hidDevice, CFDictio
             switch (usage)
             {
                 case kHIDUsage_LED_NumLock:
-                {
                     darwinLedElementSetValue(hidDevice, element, fNumLockOn);
                     break;
-                }
 
                 case kHIDUsage_LED_CapsLock:
-                {
                     darwinLedElementSetValue(hidDevice, element, fCapsLockOn);
                     break;
-                }
 
                 case kHIDUsage_LED_ScrollLock:
-                {
                     darwinLedElementSetValue(hidDevice, element, fScrollLockOn);
                     break;
-                }
             }
 
         }
@@ -1329,9 +1319,7 @@ void DarwinUpdateHostLedDevices(bool fNumLockOn, bool fCapsLockOn, bool fScrollL
 
                 rc = IOHIDManagerClose(hidManagerRef, 0);
                 if (rc != kIOReturnSuccess)
-                {
                     LogRelFlow(("Warning! Something went wrong in attempt to close HID device manager!\n"));
-                }
             }
 
             CFRelease(deviceMatchingDictRef);
