@@ -1215,6 +1215,7 @@ int main(int argc, char *argv[])
 #if 0
     // DNS & Co.
     ///////////////////////////////////////////////////////////////////////////
+    /* XXX: Note it's endless loop */
     do
     {
         ComPtr<IHost> host;
@@ -1225,8 +1226,17 @@ int main(int argc, char *argv[])
             CHECK_ERROR_BREAK(host,COMGETTER(DomainName)(domainName.asOutParam()));
             RTPrintf("Domain name: %ls\n", domainName.raw());
         }
+
+        com::SafeArray<BSTR> strs;
+        CHECK_ERROR_BREAK(host, COMGETTER(NameServers)(ComSafeArrayAsOutParam(strs)));
+
+        unsigned int i;
+        for (i = 0; i < strs.size(); ++i)
+            RTPrintf("Name server[%d]:%s\n", i, com::Utf8Str(strs[i]).c_str());
+
+        RTThreadSleep(1000);
     }
-    while (FALSE);
+    while (1);
     RTPrintf("\n");
 #endif
 
