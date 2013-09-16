@@ -107,7 +107,7 @@ struc VMMCPU
         .pR0LoggerR3            RTR3PTR_RES 1
         .pR0LoggerR0            RTR0PTR_RES 1
 
-        .hR0ThreadCtx		RTR0PTR_RES 1
+        .hR0ThreadCtx           RTR0PTR_RES 1
 %if HC_ARCH_BITS == 32
         .u32Padding             resd 1
 %else
