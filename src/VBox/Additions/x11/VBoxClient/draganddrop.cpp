@@ -1548,12 +1548,6 @@ int DragAndDropService::run(bool fDaemonised /* = false */)
     int rc = VINF_SUCCESS;
     LogRelFlowFunc(("\n"));
 
-    /* We need to initialize XLib with thread support, otherwise our
-     * simultaneously access to the display makes trouble (has to be called
-     * before any usage of XLib). */
-    if (!XInitThreads())
-        AssertMsgFailedReturn(("Failed to initialize thread-safe XLib.\n"), VERR_GENERAL_FAILURE);
-
     do
     {
         /* Initialize our service */
