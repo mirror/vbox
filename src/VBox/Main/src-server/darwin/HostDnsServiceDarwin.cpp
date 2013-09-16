@@ -161,6 +161,9 @@ HRESULT HostDnsServiceDarwin::update()
      * }
      */
     
+    if (!propertyRef)
+        return S_OK;
+    
     CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
     if (domainNameRef)
