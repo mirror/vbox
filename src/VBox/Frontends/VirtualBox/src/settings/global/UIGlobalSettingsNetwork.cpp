@@ -55,6 +55,7 @@ public:
 
     /* API: Update stuff: */
     void updateInfo();
+    void updateData();
 
     /* API: Network item getters: */
     QString name() const { return m_data.m_strName; }
@@ -169,10 +170,11 @@ void UIItemNetworkNAT::updateInfo()
     QString strToolTip;
 
     /* Item name was not changed: */
+    setCheckState(0, m_data.m_fEnabled ? Qt::Checked : Qt::Unchecked);
     if (m_data.m_strNewName == m_data.m_strName)
     {
         /* Just use the old one: */
-        setText(0, m_data.m_strName);
+        setText(1, m_data.m_strName);
         strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Network Name"), m_data.m_strName);
     }
     /* If name was changed: */
@@ -181,7 +183,7 @@ void UIItemNetworkNAT::updateInfo()
         /* We should explain that: */
         const QString oldName = m_data.m_strName;
         const QString newName = m_data.m_strNewName.isEmpty() ? UIGlobalSettingsNetwork::tr("[empty]") : m_data.m_strNewName;
-        setText(0, UIGlobalSettingsNetwork::tr("%1 (renamed from %2)").arg(newName, oldName));
+        setText(1, UIGlobalSettingsNetwork::tr("%1 (renamed from %2)").arg(newName, oldName));
         strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("Old Network Name"), m_data.m_strName);
         strToolTip += strHeader.arg(UIGlobalSettingsNetwork::tr("New Network Name"), m_data.m_strNewName);
     }
@@ -197,6 +199,12 @@ void UIItemNetworkNAT::updateInfo()
 
     /* Assign tool-tip finally: */
     setToolTip(0, strToolTip);
+}
+
+void UIItemNetworkNAT::updateData()
+{
+    /* Update data: */
+    m_data.m_fEnabled = checkState(0) == Qt::Checked;
 }
 
 
@@ -363,7 +371,10 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
 
     /* Prepare NAT network tree-widget: */
     {
-        m_pTreeNetworkNAT->header()->hide();
+        m_pTreeNetworkNAT->setColumnCount(2);
+        m_pTreeNetworkNAT->header()->setStretchLastSection(false);
+        m_pTreeNetworkNAT->header()->setResizeMode(0, QHeaderView::ResizeToContents);
+        m_pTreeNetworkNAT->header()->setResizeMode(1, QHeaderView::Stretch);
         m_pTreeNetworkNAT->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
                 this, SLOT(sltHandleCurrentItemChangeNetworkNAT()));
@@ -371,6 +382,8 @@ UIGlobalSettingsNetwork::UIGlobalSettingsNetwork()
                 this, SLOT(sltShowContextMenuNetworkNAT(const QPoint&)));
         connect(m_pTreeNetworkNAT, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)),
                 this, SLOT(sltEditNetworkNAT()));
+        connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem*, int)),
+                this, SLOT(sltHandleItemChangeNetworkNAT(QTreeWidgetItem*)));
     }
     /* Prepare Host network tree-widget: */
     {
@@ -618,14 +631,19 @@ void UIGlobalSettingsNetwork::retranslateUi()
     /* Translate uic generated strings: */
     Ui::UIGlobalSettingsNetwork::retranslateUi(this);
 
-    /* NAT network actions: */
+    /* NAT networks: */
     {
-        /* Translate text: */
+        /* Translate tree-widget columns: */
+        m_pTreeNetworkNAT->setHeaderLabels(QStringList()
+                                           << tr("Active", "NAT network")
+                                           << tr("Name"));
+
+        /* Translate action text: */
         m_pActionAddNetworkNAT->setText(tr("&Add NAT network"));
         m_pActionDelNetworkNAT->setText(tr("&Remove NAT network"));
         m_pActionEditNetworkNAT->setText(tr("&Edit NAT network"));
 
-        /* Recompose tool-tips: */
+        /* Recompose action tool-tips: */
         m_pActionAddNetworkNAT->setToolTip(m_pActionAddNetworkNAT->text().remove('&') +
             QString(" (%1)").arg(m_pActionAddNetworkNAT->shortcut().toString()));
         m_pActionDelNetworkNAT->setToolTip(m_pActionDelNetworkNAT->text().remove('&') +
@@ -634,14 +652,14 @@ void UIGlobalSettingsNetwork::retranslateUi()
             QString(" (%1)").arg(m_pActionEditNetworkNAT->shortcut().toString()));
     }
 
-    /* Host network actions: */
+    /* Host networks: */
     {
-        /* Translate text: */
+        /* Translate action text: */
         m_pActionAddNetworkHost->setText(tr("&Add host-only network"));
         m_pActionDelNetworkHost->setText(tr("&Remove host-only network"));
         m_pActionEditNetworkHost->setText(tr("&Edit host-only network"));
 
-        /* Recompose tool-tips: */
+        /* Recompose action tool-tips: */
         m_pActionAddNetworkHost->setToolTip(m_pActionAddNetworkHost->text().remove('&') +
             QString(" (%1)").arg(m_pActionAddNetworkHost->shortcut().toString()));
         m_pActionDelNetworkHost->setToolTip(m_pActionDelNetworkHost->text().remove('&') +
@@ -732,6 +750,17 @@ void UIGlobalSettingsNetwork::sltEditNetworkNAT()
         /* Revalidate: */
         revalidate();
     }
+}
+
+void UIGlobalSettingsNetwork::sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem)
+{
+    /* Get network item: */
+    UIItemNetworkNAT *pItem = static_cast<UIItemNetworkNAT*>(pChangedItem);
+    AssertMsg(pItem, ("Changed item should present!\n"));
+
+    /* Update item data: */
+    pItem->updateData();
+    m_fChanged = true;
 }
 
 void UIGlobalSettingsNetwork::sltAddNetworkHost()
