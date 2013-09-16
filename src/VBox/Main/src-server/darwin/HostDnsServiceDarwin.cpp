@@ -39,6 +39,8 @@ static const CFStringRef kStateNetworkGlobalDNSKey = CFSTR("State:/Network/Globa
 
 static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
 {
+    NOREF(ThreadSelf);
+    NOREF(pvUser);
     g_RunLoopRef = CFRunLoopGetCurrent();
     AssertReturn(g_RunLoopRef, VERR_INTERNAL_ERROR);
 
