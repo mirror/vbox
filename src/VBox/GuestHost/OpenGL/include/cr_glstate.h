@@ -51,7 +51,6 @@ typedef struct CRContext CRContext;
 
 #include <iprt/cdefs.h>
 
-#ifndef IN_GUEST
 # include <VBox/vmm/ssm.h>
 # include <iprt/asm.h>
 
@@ -63,16 +62,7 @@ typedef struct CRContext CRContext;
 # define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (ASMBitFirstSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3) >= 0)
 # define CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj) (ASMBitFirstSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3))
 # define CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX(_pObj, _i) (ASMBitNextSet((_pObj)->ctxUsage, sizeof ((_pObj)->ctxUsage)<<3, (_i)))
-#else
-# define CR_STATE_SHAREDOBJ_USAGE_INIT(_pObj) do {} while (0)
-# define CR_STATE_SHAREDOBJ_USAGE_SET(_pObj, _pCtx) do {} while (0)
-# define CR_STATE_SHAREDOBJ_USAGE_IS_SET(_pObj, _pCtx) (false)
-# define CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(_pObj, _i) do {} while (0)
-# define CR_STATE_SHAREDOBJ_USAGE_CLEAR(_pObj, _pCtx) do {} while (0)
-# define CR_STATE_SHAREDOBJ_USAGE_IS_USED(_pObj) (GL_FALSE)
-# define CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj) (-1)
-# define CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX(_pObj, _i) (-1)
-#endif
+
 # define CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(_pObj, _i) for ((_i) = CR_STATE_SHAREDOBJ_USAGE_GET_FIRST_USED_IDX(_pObj); ((int)(_i)) >= 0; (_i) = CR_STATE_SHAREDOBJ_USAGE_GET_NEXT_USED_IDX((_pObj), ((int)(_i))))
 
 #define CR_MAX_EXTENTS 256

@@ -79,9 +79,7 @@ crStateFramebufferAllocate(CRContext *ctx, GLuint name)
 
     crStateInitFrameBuffer(buffer);
     crHashtableAdd(ctx->shared->fbTable, name, buffer);
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_INIT(buffer);
-#endif
 
     return buffer;
 }
@@ -106,9 +104,7 @@ crStateRenderbufferAllocate(CRContext *ctx, GLuint name)
 
     buffer->internalformat = GL_RGBA;
     crHashtableAdd(ctx->shared->rbTable, name, buffer);
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_INIT(buffer);
-#endif
 
     return buffer;
 }
@@ -168,10 +164,7 @@ crStateBindRenderbufferEXT(GLenum target, GLuint renderbuffer)
             CRSTATE_CHECKERR(!crHashtableIsKeyUsed(g->shared->rbTable, renderbuffer), GL_INVALID_OPERATION, "name is not a renderbuffer");
             fbo->renderbuffer = crStateRenderbufferAllocate(g, renderbuffer);
         }
-#ifndef IN_GUEST
         CR_STATE_SHAREDOBJ_USAGE_SET(fbo->renderbuffer, g);
-#endif
-
     }
     else fbo->renderbuffer = NULL;
 }
@@ -227,9 +220,7 @@ static void ctStateRenderbufferRefsCleanup(CRContext *g, GLuint fboId, CRRenderb
     crStateCheckFBOAttachments(fbo->readFB, fboId, GL_READ_FRAMEBUFFER);
     crStateCheckFBOAttachments(fbo->drawFB, fboId, GL_DRAW_FRAMEBUFFER);
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_CLEAR(rbo, g);
-#endif
 }
 
 DECLEXPORT(void) STATE_APIENTRY
@@ -250,11 +241,9 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
             rbo = (CRRenderbufferObject*) crHashtableSearch(g->shared->rbTable, renderbuffers[i]);
             if (rbo)
             {
-#ifndef IN_GUEST
                 int j;
-#endif
+
                 ctStateRenderbufferRefsCleanup(g, renderbuffers[i], rbo);
-#ifndef IN_GUEST
                 CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(rbo, j)
                 {
                     /* saved state version <= SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS does not have usage bits info,
@@ -275,7 +264,6 @@ crStateDeleteRenderbuffersEXT(GLsizei n, const GLuint *renderbuffers)
                     else
                         CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(rbo, j);
                 }
-#endif
                 crHashtableDelete(g->shared->rbTable, renderbuffers[i], crStateFreeRBO);
             }
         }
@@ -401,9 +389,8 @@ crStateBindFramebufferEXT(GLenum target, GLuint framebuffer)
             pFBO = crStateFramebufferAllocate(g, framebuffer);
         }
 
-#ifndef IN_GUEST
+
         CR_STATE_SHAREDOBJ_USAGE_SET(pFBO, g);
-#endif
     }
 
     /* @todo: http://www.opengl.org/registry/specs/ARB/framebuffer_object.txt 
@@ -458,11 +445,10 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
             fb = (CRFramebufferObject*) crHashtableSearch(g->shared->fbTable, framebuffers[i]);
             if (fb)
             {
-#ifndef IN_GUEST
                 int j;
-#endif
+
                 ctStateFramebufferRefsCleanup(g, fb);
-#ifndef IN_GUEST
+
                 CR_STATE_SHAREDOBJ_USAGE_FOREACH_USED_IDX(fb, j)
                 {
                     /* saved state version <= SHCROGL_SSM_VERSION_BEFORE_CTXUSAGE_BITS does not have usage bits info,
@@ -486,7 +472,6 @@ crStateDeleteFramebuffersEXT(GLsizei n, const GLuint *framebuffers)
                     else
                         CR_STATE_SHAREDOBJ_USAGE_CLEAR_IDX(fb, j);
                 }
-#endif
                 crHashtableDelete(g->shared->fbTable, framebuffers[i], crStateFreeFBO);
             }
         }
@@ -655,9 +640,7 @@ crStateFramebufferTexture1DEXT(GLenum target, GLenum attachment, GLenum textarge
 
     CRSTATE_CHECKERR(textarget!=GL_TEXTURE_1D, GL_INVALID_OPERATION, "textarget");
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
-#endif
 
     for (i = 0; i < cap; ++i)
     {
@@ -691,9 +674,7 @@ crStateFramebufferTexture2DEXT(GLenum target, GLenum attachment, GLenum textarge
 
     CRSTATE_CHECKERR(GL_TEXTURE_1D==textarget || GL_TEXTURE_3D==textarget, GL_INVALID_OPERATION, "textarget");
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
-#endif
 
     for (i = 0; i < cap; ++i)
     {
@@ -732,9 +713,7 @@ crStateFramebufferTexture3DEXT(GLenum target, GLenum attachment, GLenum textarge
     CRSTATE_CHECKERR(zoffset>(g->limits.max3DTextureSize-1), GL_INVALID_VALUE, "zoffset too big");
     CRSTATE_CHECKERR(textarget!=GL_TEXTURE_3D, GL_INVALID_OPERATION, "textarget");
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_SET(tobj, g);
-#endif
 
     for (i = 0; i < cap; ++i)
     {
@@ -793,9 +772,7 @@ crStateFramebufferRenderbufferEXT(GLenum target, GLenum attachment, GLenum rende
         rb = crStateRenderbufferAllocate(g, renderbuffer);
     }
 
-#ifndef IN_GUEST
     CR_STATE_SHAREDOBJ_USAGE_SET(rb, g);
-#endif
 
     for (i = 0; i < cFBOs; ++i)
     {

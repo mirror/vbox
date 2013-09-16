@@ -61,7 +61,6 @@ crStateDeleteTextureCallback(void *texObj)
     crStateDeleteTextureObject((CRTextureObj *) texObj);
 }
 
-#ifndef IN_GUEST
 typedef struct CR_STATE_RELEASEOBJ
 {
     CRContext *pCtx;
@@ -103,7 +102,7 @@ static void ReleaseRBOCallback(unsigned long key, void *data1, void *data2)
     if (!CR_STATE_SHAREDOBJ_USAGE_IS_USED(pObj))
         crHashtableDelete(pData->s->rbTable, key, crStateFreeRBO);
 }
-#endif
+
 /**
  * Decrement shared state's refcount and delete when it hits zero.
  */
@@ -124,7 +123,6 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
         crFreeHashtable(s->rbTable, crStateFreeRBO);
         crFree(s);
     }
-#ifndef IN_GUEST
     else if (pContext)
     {
         /* evaluate usage bits*/
@@ -136,7 +134,6 @@ crStateFreeShared(CRContext *pContext, CRSharedState *s)
         crHashtableWalk(s->fbTable, ReleaseFBOCallback, &CbData);
         crHashtableWalk(s->rbTable, ReleaseRBOCallback, &CbData);
     }
-#endif
 }
 
 DECLEXPORT(CRSharedState *) crStateGlobalSharedAcquire()
@@ -465,6 +462,9 @@ void crStateInit(void)
     /* Reset diff_api */
     crMemZero(&diff_api, sizeof(SPUDispatchTable));
 
+    Assert(!gSharedState);
+    gSharedState = NULL;
+
     /* Allocate the default/NULL context */
     CRASSERT(g_pAvailableContexts[0] == NULL);
     defaultContext = crStateCreateContextId(0, NULL, CR_RGB_BIT, NULL);
@@ -623,6 +623,14 @@ void crStateDestroyContext( CRContext *ctx )
 
 #ifdef CHROMIUM_THREADSAFE
     VBoxTlsRefMarkDestroy(ctx);
+# ifdef IN_GUEST
+    if (VBoxTlsRefCountGet(ctx) > 1 && ctx->shared == gSharedState)
+    {
+        /* we always need to free the global shared state to prevent the situation when guest thinks the shared objects are still valid, while host destroys them */
+        crStateFreeShared(ctx, ctx->shared);
+        ctx->shared = crStateAllocShared();
+    }
+# endif
     VBoxTlsRefRelease(ctx);
 #else
     crStateFreeContext(ctx);
