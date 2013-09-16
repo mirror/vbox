@@ -921,7 +921,7 @@ int VBoxNetLwipNAT::init()
             pszTerm = RTStrStr(pszLo2Off, "=");
 
             if (   !pszTerm
-                   || (pszTerm - pszLo2Off) >= 17)
+                || (pszTerm - pszLo2Off) >= 17)
                 continue;
                 
             memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
