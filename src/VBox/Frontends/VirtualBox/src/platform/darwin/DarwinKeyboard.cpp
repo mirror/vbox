@@ -41,7 +41,6 @@
 # include <CoreFoundation/CoreFoundation.h>
 #endif
 #include <IOKit/hid/IOHIDLib.h>
-#include <IOKit/hid/IOHIDManager.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
 
@@ -1273,7 +1272,7 @@ void DarwinUpdateHostLedDevices(bool fNumLockOn, bool fCapsLockOn, bool fScrollL
     IOReturn        rc;
     IOHIDManagerRef hidManagerRef;
 
-    hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDManagerOptionNone);
+    hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, 0);
     if (hidManagerRef)
     {
         CFDictionaryRef deviceMatchingDictRef = darwinGetLedDeviceMatchingDictionary();
