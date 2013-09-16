@@ -160,6 +160,7 @@ private slots:
     void sltAddNetworkNAT();
     void sltDelNetworkNAT();
     void sltEditNetworkNAT();
+    void sltHandleItemChangeNetworkNAT(QTreeWidgetItem *pChangedItem);
     void sltHandleCurrentItemChangeNetworkNAT();
     void sltShowContextMenuNetworkNAT(const QPoint &pos);
 
