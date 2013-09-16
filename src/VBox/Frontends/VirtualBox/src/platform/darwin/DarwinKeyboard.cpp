@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,6 +25,7 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/time.h>
+#include <iprt/mem.h>
 #include <VBox/log.h>
 #ifdef DEBUG_PRINTF
 # include <iprt/stream.h>
@@ -35,11 +36,11 @@
 # include <mach/mach_error.h>
 # include <IOKit/IOKitLib.h>
 # include <IOKit/IOCFPlugIn.h>
-# include <IOKit/hid/IOHIDLib.h>
 # include <IOKit/hid/IOHIDUsageTables.h>
 # include <IOKit/usb/USB.h>
 # include <CoreFoundation/CoreFoundation.h>
 #endif
+#include <IOKit/hid/IOHIDLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
 
@@ -1131,3 +1132,211 @@ void     DarwinReleaseKeyboard(void)
 #endif /* USE_HID_FOR_MODIFIERS */
 }
 
+/** Prepare dictionary that will be used to match HID LED device(s) while discovering. */
+static CFDictionaryRef darwinGetLedDeviceMatchingDictionary()
+{
+    CFDictionaryRef deviceMatchingDictRef;
+
+    /* Use two (key, value) pairs:
+     *      - (kIOHIDDeviceUsagePageKey, kHIDPage_GenericDesktop),
+     *      - (kIOHIDDeviceUsageKey,     kHIDUsage_GD_Keyboard). */
+
+    CFNumberRef usagePageKeyCFNumberRef; int usagePageKeyCFNumberValue = kHIDPage_GenericDesktop;
+    CFNumberRef usageKeyCFNumberRef;     int usageKeyCFNumberValue     = kHIDUsage_GD_Keyboard;
+
+    usagePageKeyCFNumberRef = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &usagePageKeyCFNumberValue);
+    if (usagePageKeyCFNumberRef)
+    {
+        usageKeyCFNumberRef = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &usageKeyCFNumberValue);
+        if (usageKeyCFNumberRef)
+        {
+            CFStringRef dictionaryKeys[2] = { CFSTR(kIOHIDDeviceUsagePageKey), CFSTR(kIOHIDDeviceUsageKey) };
+            CFNumberRef dictionaryVals[2] = { usagePageKeyCFNumberRef,         usageKeyCFNumberRef         };
+
+            deviceMatchingDictRef = CFDictionaryCreate(kCFAllocatorDefault,
+                                                       (const void **)dictionaryKeys,
+                                                       (const void **)dictionaryVals,
+                                                       2, /** two (key, value) pairs */
+                                                       &kCFTypeDictionaryKeyCallBacks,
+                                                       &kCFTypeDictionaryValueCallBacks);
+
+            CFRelease(usageKeyCFNumberRef);
+            CFRelease(usagePageKeyCFNumberRef);
+
+            return deviceMatchingDictRef;
+        }
+
+        CFRelease(usagePageKeyCFNumberRef);
+    }
+
+    return NULL;
+}
+
+/** Prepare dictionary that will be used to match HID LED device element(s) while discovering. */
+static CFDictionaryRef darwinGetLedElementMatchingDictionary()
+{
+    CFDictionaryRef elementMatchingDictRef;
+
+    /* Use only one (key, value) pair to match LED device element:
+     *      - (kIOHIDElementUsagePageKey, kHIDPage_LEDs).  */
+
+    CFNumberRef usagePageKeyCFNumberRef; int usagePageKeyCFNumberValue = kHIDPage_LEDs;
+
+    usagePageKeyCFNumberRef = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &usagePageKeyCFNumberValue);
+    if (usagePageKeyCFNumberRef)
+    {
+        CFStringRef dictionaryKeys[1] = { CFSTR(kIOHIDElementUsagePageKey), };
+        CFNumberRef dictionaryVals[1] = { usagePageKeyCFNumberRef,          };
+
+        elementMatchingDictRef = CFDictionaryCreate(kCFAllocatorDefault,
+                                                    (const void **)dictionaryKeys,
+                                                    (const void **)dictionaryVals,
+                                                    1, /** one (key, value) pair */
+                                                    &kCFTypeDictionaryKeyCallBacks,
+                                                    &kCFTypeDictionaryValueCallBacks);
+
+        CFRelease(usagePageKeyCFNumberRef);
+        return elementMatchingDictRef;
+    }
+
+    return NULL;
+}
+
+/** Turn ON or OFF a particular LED. */
+static void darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef element, bool fEnabled)
+{
+    IOHIDValueRef valueRef;
+    IOReturn      rc;
+
+    valueRef = IOHIDValueCreateWithIntegerValue(kCFAllocatorDefault, element, 0, (fEnabled) ? 1 : 0);
+    if (valueRef)
+    {
+        rc = IOHIDDeviceSetValue(hidDevice, element, valueRef);
+        if (rc != kIOReturnSuccess)
+        {
+            LogRelFlow(("Warning! Something went wrong in attempt to turn %s HID device led (error %d)!\n", ((fEnabled) ? "on" : "off"), rc));
+        }
+        else
+        {
+            LogRelFlow(("Led (%d) is turned %s\n", (int)IOHIDElementGetUsage(element), ((fEnabled) ? "on" : "off")));
+        }
+
+        CFRelease(valueRef);
+    }
+}
+
+/** Set corresponding states from NumLock, CapsLock and ScrollLock leds. */
+static void darwinUpdateHostLedDeviceElements(IOHIDDeviceRef hidDevice, CFDictionaryRef elementMatchingDict,
+                                              bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn)
+{
+    CFArrayRef matchingElementsArrayRef;
+
+    matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, 0);
+    if (matchingElementsArrayRef)
+    {
+        CFIndex cElements = CFArrayGetCount(matchingElementsArrayRef);
+
+        /* Cycle though all the elements we found */
+        for (CFIndex i = 0; i < cElements; i++)
+        {
+            IOHIDElementRef element = (IOHIDElementRef)CFArrayGetValueAtIndex(matchingElementsArrayRef, i);
+            uint32_t        usage   = IOHIDElementGetUsage(element);
+
+            switch (usage)
+            {
+                case kHIDUsage_LED_NumLock:
+                {
+                    darwinLedElementSetValue(hidDevice, element, fNumLockOn);
+                    break;
+                }
+
+                case kHIDUsage_LED_CapsLock:
+                {
+                    darwinLedElementSetValue(hidDevice, element, fCapsLockOn);
+                    break;
+                }
+
+                case kHIDUsage_LED_ScrollLock:
+                {
+                    darwinLedElementSetValue(hidDevice, element, fScrollLockOn);
+                    break;
+                }
+            }
+
+        }
+    }
+}
+
+/**
+ * Set states for host keyboard LEDs.
+ *
+ * NOTE: This function will set led values for all
+ * keyboard devices attached to the system.
+ *
+ * @param fNumLockOn        Turn on NumLock led if TRUE, turn off otherwise
+ * @param fCapsLockOn       Turn on CapsLock led if TRUE, turn off otherwise
+ * @param fScrollLockOn     Turn on ScrollLock led if TRUE, turn off otherwise
+ */
+void DarwinUpdateHostLedDevices(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn)
+{
+    IOReturn        rc;
+    IOHIDManagerRef hidManagerRef;
+
+    hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDManagerOptionNone);
+    if (hidManagerRef)
+    {
+        CFDictionaryRef deviceMatchingDictRef = darwinGetLedDeviceMatchingDictionary();
+        if (deviceMatchingDictRef)
+        {
+            IOHIDManagerSetDeviceMatching(hidManagerRef, deviceMatchingDictRef);
+
+            rc = IOHIDManagerOpen(hidManagerRef, kIOHIDOptionsTypeNone);
+            if (rc == kIOReturnSuccess)
+            {
+                CFSetRef hidDevicesSetRef;
+
+                hidDevicesSetRef = IOHIDManagerCopyDevices(hidManagerRef);
+                if (hidDevicesSetRef)
+                {
+                    /* Get all the available devices and cycle through them. */
+                    CFIndex cDevices = CFSetGetCount(hidDevicesSetRef);
+                    IOHIDDeviceRef *hidDevicesCollection = (IOHIDDeviceRef *)RTMemAllocZ((size_t)cDevices * sizeof(IOHIDDeviceRef));
+                    if (hidDevicesCollection)
+                    {
+                        CFSetGetValues(hidDevicesSetRef, (const void **)hidDevicesCollection);
+
+                        CFDictionaryRef elementMatchingDict = darwinGetLedElementMatchingDictionary();
+                        if (elementMatchingDict)
+                        {
+                            for (CFIndex i = 0; i < cDevices; i++)
+                            {
+                                if (hidDevicesCollection[i])
+                                {
+                                    if (IOHIDDeviceConformsTo(hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard))
+                                    {
+                                        darwinUpdateHostLedDeviceElements(hidDevicesCollection[i], elementMatchingDict,
+                                                                          fNumLockOn, fCapsLockOn, fScrollLockOn);
+                                    }
+                                }
+                            }
+
+                            CFRelease(elementMatchingDict);
+                        }
+
+                        RTMemFree(hidDevicesCollection);
+                    }
+                }
+
+                rc = IOHIDManagerClose(hidManagerRef, 0);
+                if (rc != kIOReturnSuccess)
+                {
+                    LogRelFlow(("Warning! Something went wrong in attempt to close HID device manager!\n"));
+                }
+            }
+
+            CFRelease(deviceMatchingDictRef);
+        }
+
+        CFRelease(hidManagerRef);
+    }
+}
