@@ -888,17 +888,19 @@ EXPORTS
     RTRandU32Ex
     RTRandU64
     RTRandU64Ex
-    RTReqAlloc
-    RTReqCall
-    RTReqCallEx
-    RTReqCallV
-    RTReqCallVoid
-    RTReqCreateQueue
-    RTReqDestroyQueue
-    RTReqFree
-    RTReqIsBusy
-    RTReqProcess
-    RTReqQueue
+    RTReqQueueAlloc
+    RTReqQueueCall
+    RTReqQueueCallEx
+    RTReqQueueCallV
+    RTReqQueueCallVoid
+    RTReqQueueCreate
+    RTReqQueueDestroy
+    RTReqQueueIsBusy
+    RTReqQueueProcess
+    RTReqGetStatus
+    RTReqRelease
+    RTReqRetain
+    RTReqSubmit
     RTReqWait
     RTS3BucketsDestroy
     RTS3Create

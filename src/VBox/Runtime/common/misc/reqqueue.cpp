@@ -98,7 +98,7 @@ RT_EXPORT_SYMBOL(RTReqQueueDestroy);
 
 RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
 {
-    LogFlow(("RTReqProcess %x\n", hQueue));
+    LogFlow(("RTReqQueueProcess %x\n", hQueue));
 
     /*
      * Check input.
@@ -137,7 +137,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
          */
         PRTREQ pReq = pReqs;
         if (pReq->pNext)
-            Log2(("RTReqProcess: 2+ requests: %p %p %p\n", pReq, pReq->pNext, pReq->pNext->pNext));
+            Log2(("RTReqQueueProcess: 2+ requests: %p %p %p\n", pReq, pReq->pNext, pReq->pNext->pNext));
         pReqs = NULL;
         while (pReq)
         {
@@ -168,7 +168,7 @@ RTDECL(int) RTReqQueueProcess(RTREQQUEUE hQueue, RTMSINTERVAL cMillies)
         }
     }
 
-    LogFlow(("RTReqProcess: returns %Rrc\n", rc));
+    LogFlow(("RTReqQueueProcess: returns %Rrc\n", rc));
     return rc;
 }
 RT_EXPORT_SYMBOL(RTReqQueueProcess);
@@ -209,7 +209,7 @@ RT_EXPORT_SYMBOL(RTReqQueueCallEx);
 
 RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMillies, unsigned fFlags, PFNRT pfnFunction, unsigned cArgs, va_list Args)
 {
-    LogFlow(("RTReqCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
+    LogFlow(("RTReqQueueCallV: cMillies=%d fFlags=%#x pfnFunction=%p cArgs=%d\n", cMillies, fFlags, pfnFunction, cArgs));
 
     /*
      * Check input.
@@ -258,10 +258,10 @@ RTDECL(int) RTReqQueueCallV(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMill
     if (!(fFlags & RTREQFLAGS_NO_WAIT))
     {
         *ppReq = pReq;
-        LogFlow(("RTReqCallV: returns %Rrc *ppReq=%p\n", rc, pReq));
+        LogFlow(("RTReqQueueCallV: returns %Rrc *ppReq=%p\n", rc, pReq));
     }
     else
-        LogFlow(("RTReqCallV: returns %Rrc\n", rc));
+        LogFlow(("RTReqQueueCallV: returns %Rrc\n", rc));
     Assert(rc != VERR_INTERRUPTED);
     return rc;
 }
