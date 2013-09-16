@@ -139,6 +139,13 @@
       </listitem>
 
       <listitem>
+        <para>Main: eliminate the use of SysV semaphores on all host OSes
+           other than Windows, namely Linux, Solaris and Mac OS X, with the
+           consequence that no system reconfiguration is needed to run more
+           than approximately 100 VMs</para>
+      </listitem>
+
+      <listitem>
         <para>Main: use the XDG standard configuration folder instead of
            .VirtualBox on systems where it is appropriate (bug #5099)</para>
       </listitem>
