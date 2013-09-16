@@ -50,10 +50,13 @@
 # if defined(RT_ARCH_AMD64)
 #  define copysignf _copysignf
 # else
-#  define _VBOX_FLOAT_BITVAL(_f) (*((const uint32_t*)((const void*)(&(_f)))))
+#  define _VBOX_BITVAL_CAST(_t, _f) (*((const _t*)((const void*)(&(_f)))))
+#  define _VBOX_BITVAL_TO_FLOATL(_f) _VBOX_BITVAL_CAST(float, _f)
+#  define _VBOX_BITVAL_FROM_FLOAT(_f) _VBOX_BITVAL_CAST(uint32_t, _f)
 DECLINLINE(float) copysignf(float val, float sign)
 {
-    return ((_VBOX_FLOAT_BITVAL(val) & 0x7fffffff) | (_VBOX_FLOAT_BITVAL(sign) & 0x80000000));
+    uint32_t u32Val = ((_VBOX_BITVAL_FROM_FLOAT(val) & 0x7fffffff) | (_VBOX_BITVAL_FROM_FLOAT(sign) & 0x80000000));
+    return _VBOX_BITVAL_TO_FLOATL(u32Val);
 }
 # endif
 #endif
