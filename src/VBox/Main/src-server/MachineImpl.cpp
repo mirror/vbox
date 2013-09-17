@@ -2753,6 +2753,16 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath)(BSTR *aFilePath)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMSETTER(SettingsFilePath)(IN_BSTR aFilePath)
+{
+    CheckComArgStrNotEmptyOrNull(aFilePath);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    ReturnComNotImplemented();
+}
+
 STDMETHODIMP Machine::COMGETTER(SettingsModified)(BOOL *aModified)
 {
     CheckComArgOutPointerValid(aModified);

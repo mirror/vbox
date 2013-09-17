@@ -456,6 +456,7 @@ public:
     STDMETHOD(COMGETTER(USBControllers))(ComSafeArrayOut(IUSBController *, aUSBControllers));
     STDMETHOD(COMGETTER(USBDeviceFilters))(IUSBDeviceFilters * *aUSBDeviceFilters);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aFilePath);
+    STDMETHOD(COMSETTER(SettingsFilePath))(IN_BSTR aFilePath);
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState))(SessionState_T *aSessionState);
     STDMETHOD(COMGETTER(SessionType))(BSTR *aSessionType);

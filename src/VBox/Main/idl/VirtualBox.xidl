@@ -4121,7 +4121,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="59b33148-7f87-4224-82a7-d141ef49fc0d"
+    uuid="8c931034-83f6-46b8-97f0-31e70d30402e"
     wsmap="managed"
     >
     <desc>
@@ -4547,9 +4547,25 @@
       <desc>Array of storage controllers attached to this machine.</desc>
     </attribute>
 
-    <attribute name="settingsFilePath" type="wstring" readonly="yes">
+    <attribute name="settingsFilePath" type="wstring">
       <desc>
         Full name of the file containing machine settings data.
+
+        Currently, it is an error to change this property on any machine.
+        Later this will allow setting a new path for the settings file, with
+        automatic relocation of all files (including snapshots and disk images)
+        which are inside the base directory.
+
+        <note>
+          Setting this property to @c null or to an empty string is forbidden. 
+        </note>
+        <note>
+          When setting this property, the specified path must be absolute. When
+          reading this property, an absolute (full) path is always returned.
+        </note>
+        <note>
+          The specified path may not exist, it will be created when necessary.
+        </note>
       </desc>
     </attribute>
 
