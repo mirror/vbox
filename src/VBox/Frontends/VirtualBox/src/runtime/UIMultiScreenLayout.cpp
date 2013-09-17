@@ -163,12 +163,9 @@ void UIMultiScreenLayout::update()
         {
             /* Get corresponding guest-screen: */
             int iGuestScreen = m_disabledGuestScreens[iGuestScreenIndex];
-            /* Re-enable guest-screen with the old arguments: */
+            /* Re-enable guest-screen with 'default' arguments: */
             LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d.\n", iGuestScreen));
-            ULONG iWidth, iHeight, iBpp;
-            LONG xOrigin, yOrigin;
-            display.GetScreenResolution(iGuestScreen, iWidth, iHeight, iBpp, xOrigin, yOrigin);
-            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, iWidth, iHeight, iBpp);
+            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, 800, 600, 32);
         }
     }
 
