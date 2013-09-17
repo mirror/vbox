@@ -1695,7 +1695,7 @@ VBoxManage setextradata "VM name"
         <para>Support for Crossbow based bridged networking was introduced
         with VirtualBox 4.1 and requires Solaris 11 build 159 or above.</para>
       </footnote> A VirtualBox VNIC template is a VNIC whose name starts with
-    "vboxvnic_template".</para>
+    "vboxvnic_template" (case-sensitive).</para>
 
     <para>Here is an example of how to use a VNIC template to configure a VLAN
     for VMs. Create a VirtualBox VNIC template, by executing as root:</para>
