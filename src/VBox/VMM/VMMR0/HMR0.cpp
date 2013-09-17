@@ -1482,7 +1482,6 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
     /* Reset these to force a TLB flush for the next entry. */
     pVCpu->hm.s.idLastCpu    = NIL_RTCPUID;
     pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
-    pVCpu->hm.s.uCurrentAsid = 0;
     VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
 
     /* Clear the VCPU <-> host CPU mapping as we've left HM context. */
