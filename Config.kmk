@@ -1694,6 +1694,10 @@ endif
 #
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
+# Note! Users of pylint 1.0 and later needs to define VBOX_WITH_PYLINT_V1_0 in
+#       LocalConfig because they changed the output arguments in an
+#       backwards incomaptible way.
+#
 ifndef VBOX_PYLINT
  VBOX_PYLINT        := $(firstword $(which pylint-2.7) $(which pylint-2.6) $(which pylint2) $(which pylint))
  ifdef VBOX_PYLINT
@@ -1703,11 +1707,15 @@ endif
 if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
  VBOX_WITH_PYLINT := 1
 endif
-VBOX_PYLINT_FLAGS    = --report=n --output-format=parseable --include-ids=y --persistent=n \
+VBOX_PYLINT_FLAGS   := --report=n \
+	$(if-expr defined(VBOX_WITH_PYLINT_V1_0)\
+	  ,--msg-template='{path}:{line}: {msg_id}({obj}:{symbol}): {msg}' \
+	  ,--output-format=msvs --include-ids=y) \
+	--persistent=n \
 	--rcfile=$(if-expr "$(KBUILD_HOST)" == "win",nul,/dev/null) \
 	--max-line-length=130 \
 	--max-attributes=20 \
-	--max-branchs=50 \
+	--max-branch$(if-expr defined(VBOX_WITH_PYLINT_V1_0),e,)s=50 \
 	--max-statements=100 \
 	--max-returns=100 \
 	--max-public-methods=139 \
