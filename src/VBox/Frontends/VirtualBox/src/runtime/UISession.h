@@ -133,6 +133,12 @@ public:
     bool isNumLock() const { return m_fNumLock; }
     bool isCapsLock() const { return m_fCapsLock; }
     bool isScrollLock() const { return m_fScrollLock; }
+    bool isHostNumLock() const { return m_fHostNumLock; }
+    bool isHostCapsLock() const { return m_fHostCapsLock; }
+    bool isHostScrollLock() const { return m_fHostScrollLock; }
+    void setHostNumLock(bool fHostNumLock) { m_fHostNumLock = fHostNumLock; }
+    void setHostCapsLock(bool fHostCapsLock) { m_fHostCapsLock = fHostCapsLock; }
+    void setHostScrollLock(bool fHostScrollLock) { m_fHostScrollLock = fHostScrollLock; }
     uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
     uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
 
@@ -299,6 +305,9 @@ private:
     bool m_fNumLock : 1;
     bool m_fCapsLock : 1;
     bool m_fScrollLock : 1;
+    bool m_fHostNumLock : 1;
+    bool m_fHostCapsLock : 1;
+    bool m_fHostScrollLock : 1;
     uint m_uNumLockAdaptionCnt;
     uint m_uCapsLockAdaptionCnt;
 

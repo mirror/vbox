@@ -24,6 +24,7 @@
 #include <QImageWriter>
 #include <QPainter>
 #include <QTimer>
+#include <QDateTime>
 #ifdef Q_WS_MAC
 # include <QMenuBar>
 #endif /* Q_WS_MAC */
@@ -1009,6 +1010,42 @@ void UIMachineLogic::cleanupHandlers()
 
 void UIMachineLogic::cleanupActionGroups()
 {
+}
+
+bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
+{
+    /* Handle machine-window events: */
+    if (UIMachineWindow *pMachineWindow = qobject_cast<UIMachineWindow*>(pWatched))
+    {
+        /* Make sure this window still registered: */
+        if (isMachineWindowsCreated() && m_machineWindowsList.contains(pMachineWindow))
+        {
+            switch (pEvent->type())
+            {
+                /* Handle *window activated* event: */
+                case QEvent::WindowActivate:
+                {
+                    /* We should save current lock states as *previous* and
+                     * set current lock states to guest values we have,
+                     * As we have no ipc between threads of different VMs
+                     * we are using 300ms timer as lazy sync timout: */
+                    QTimer::singleShot(300, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
+                    break;
+                }
+                /* Handle *window deactivated* event: */
+                case QEvent::WindowDeactivate:
+                {
+                    /* We should restore lock states to *previous* known: */
+                    sltSwitchKeyboardLedsToPreviousLeds();
+                    break;
+                }
+                /* Default: */
+                default: break;
+            }
+        }
+    }
+    /* Call to base-class: */
+    return QIWithRetranslateUI3<QObject>::eventFilter(pWatched, pEvent);
 }
 
 void UIMachineLogic::sltCheckRequestedModes()
@@ -2135,6 +2172,33 @@ void UIMachineLogic::sltChangeDockIconUpdate(bool fEnabled)
     }
 }
 #endif /* Q_WS_MAC */
+
+void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
+{
+//    /* Log statement (printf): */
+//    QString strDt = QDateTime::currentDateTime().toString("HH:mm:ss:zzz");
+//    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToGuestLeds called, machine name is {%s}\n",
+//           strDt.toAscii().constData(),
+//           session().GetMachine().GetName().toAscii().constData());
+
+    /* Here we have to save current host LED lock states in UISession registry.
+     * [void] uisession() -> setHostNumLock(), setHostCapsLock(), setHostScrollLock() can be used for that. */
+
+    /* Here we have to update host LED lock states using values provided by UISession registry.
+     * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
+}
+
+void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
+{
+//    /* Log statement (printf): */
+//    QString strDt = QDateTime::currentDateTime().toString("HH:mm:ss:zzz");
+//    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToPreviousLeds called, machine name is {%s}\n",
+//           strDt.toAscii().constData(),
+//           session().GetMachine().GetName().toAscii().constData());
+
+    /* Here we have to restore host LED lock states from UISession registry.
+     * [bool] uisession() -> isHostNumLock(), isHostCapsLock(), isHostScrollLock() can be used for that. */
+}
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
                                            const CSnapshot &snapshot,

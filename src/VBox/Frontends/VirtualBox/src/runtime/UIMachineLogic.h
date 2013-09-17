@@ -165,6 +165,9 @@ protected:
     //virtual void cleanupSessionConnections() {}
     //virtual void cleanupRequiredFeatures() {}
 
+    /* Handler: Event-filter stuff: */
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
 private slots:
 
     /* Mode request watch dog: */
@@ -220,6 +223,10 @@ private slots:
     void sltDockPreviewMonitorChanged(QAction *pAction);
     void sltChangeDockIconUpdate(bool fEnabled);
 #endif /* RT_OS_DARWIN */
+
+    /* Handlers: Keyboard LEDs sync logic: */
+    void sltSwitchKeyboardLedsToGuestLeds();
+    void sltSwitchKeyboardLedsToPreviousLeds();
 
 private:
 
