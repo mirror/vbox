@@ -2290,7 +2290,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>At
                 <entry>open the VM settings dialog</entry>
               </row>
               <row>
-                <entry><computeroutput>InformationsDialog</computeroutput></entry>
+                <entry><computeroutput>InformationDialog</computeroutput></entry>
                 <entry>N</entry>
                 <entry>show the VM information window</entry>
               </row>
