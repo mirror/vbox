@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QCursor>
 #include <QEvent>
+#include <QMap>
 
 /* GUI includes: */
 #include "UIDefs.h"
@@ -75,6 +76,22 @@ enum UIConsoleEventType
     UIConsoleEventType_ShowWindow,
     UIConsoleEventType_MAX
 };
+
+/* Keyboard Lock container: */
+struct UIKeyboardLocks
+{
+    /* Constructor: */
+    UIKeyboardLocks()
+        : m_num(false)
+        , m_caps(false)
+        , m_scroll(false)
+    {}
+    /* Variables: */
+    bool m_num;
+    bool m_caps;
+    bool m_scroll;
+};
+typedef QMap<QString, UIKeyboardLocks> UIKeyboardLocksMap;
 
 class UISession : public QObject
 {
@@ -133,14 +150,10 @@ public:
     bool isNumLock() const { return m_fNumLock; }
     bool isCapsLock() const { return m_fCapsLock; }
     bool isScrollLock() const { return m_fScrollLock; }
-    bool isHostNumLock() const { return m_fHostNumLock; }
-    bool isHostCapsLock() const { return m_fHostCapsLock; }
-    bool isHostScrollLock() const { return m_fHostScrollLock; }
-    void setHostNumLock(bool fHostNumLock) { m_fHostNumLock = fHostNumLock; }
-    void setHostCapsLock(bool fHostCapsLock) { m_fHostCapsLock = fHostCapsLock; }
-    void setHostScrollLock(bool fHostScrollLock) { m_fHostScrollLock = fHostScrollLock; }
     uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
     uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
+    void setHostLockStates(const QString &strKeyboardID, bool fNum, bool fCaps, bool fScroll);
+    void getHostLockStates(const QString &strKeyboardID, bool &fNum, bool &fCaps, bool &fScroll);
 
     /* Mouse getters: */
     bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
@@ -305,11 +318,9 @@ private:
     bool m_fNumLock : 1;
     bool m_fCapsLock : 1;
     bool m_fScrollLock : 1;
-    bool m_fHostNumLock : 1;
-    bool m_fHostCapsLock : 1;
-    bool m_fHostScrollLock : 1;
     uint m_uNumLockAdaptionCnt;
     uint m_uCapsLockAdaptionCnt;
+    UIKeyboardLocksMap m_hostLocks;
 
     /* Mouse flags: */
     bool m_fIsMouseSupportsAbsolute : 1;
