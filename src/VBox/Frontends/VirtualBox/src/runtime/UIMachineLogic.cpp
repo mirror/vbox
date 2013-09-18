@@ -2181,9 +2181,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 //           strDt.toAscii().constData(),
 //           session().GetMachine().GetName().toAscii().constData());
 
-    /* Here we have to store host LED lock states to UISession registry.
-     * This can be done for each keyboard separately, just keep in mind keyboard IDs.
-     * [void] uisession() -> setHostLockStates() can be used for that. */
+    /* Here we have to store host LED lock states. */
 
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
@@ -2197,9 +2195,7 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //           strDt.toAscii().constData(),
 //           session().GetMachine().GetName().toAscii().constData());
 
-    /* Here we have to restore host LED lock states from UISession registry.
-     * This can be done for each keyboard separately, just use the same keyboard IDs.
-     * [bool] uisession() -> getHostLockStates() can be used for that. */
+    /* Here we have to restore host LED lock states. */
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
