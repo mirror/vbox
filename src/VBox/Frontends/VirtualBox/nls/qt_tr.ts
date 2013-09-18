@@ -4904,7 +4904,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>%1 is an invalid %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bir geçersiz %2</translation>
     </message>
     <message numerus="yes">
         <source>%1 takes at most %n argument(s). %2 is therefore invalid.</source>
@@ -4944,7 +4944,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>%1 was called.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 iptal edildi.</translation>
     </message>
     <message>
         <source>%1 must be followed by %2 or %3, not at the end of the replacement string.</source>
@@ -4960,7 +4960,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>%1 matches newline characters</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 satır başı karakterleriyle eşleşiyor</translation>
     </message>
     <message>
         <source>%1 and %2 match the start and end of a line.</source>
@@ -4968,11 +4968,11 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>Matches are case insensitive</source>
-        <translation type="unfinished"></translation>
+        <translation>Eşleşenler büyük küçük harfe duyarlı</translation>
     </message>
     <message>
         <source>Whitespace characters are removed, except when they appear in character classes</source>
-        <translation type="unfinished"></translation>
+        <translation>Boşluk karakterleri kaldırıldı, karakter sınıflarında göründüklerinde hariç</translation>
     </message>
     <message>
         <source>%1 is an invalid regular expression pattern: %2</source>
@@ -5000,7 +5000,7 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>%1 cannot be retrieved</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 geri alınamaz</translation>
     </message>
     <message>
         <source>The normalization form %1 is unsupported. The supported forms are %2, %3, %4, and %5, and none, i.e. the empty string (no normalization).</source>
@@ -5040,11 +5040,11 @@ Lütfen farklı bir dosya adı seçin.</translation>
     </message>
     <message>
         <source>The variable %1 is unused</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 değişkeni kullanılmıyor</translation>
     </message>
     <message>
         <source>Version %1 is not supported. The supported XQuery version is 1.0.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sürüm %1 desteklenmiyor. Desteklenen XQuery sürümü 1.0.</translation>
     </message>
     <message>
         <source>The encoding %1 is invalid. It must contain Latin characters only, must not contain whitespace, and must match the regular expression %2.</source>

@@ -110,6 +110,10 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>Драйвер ядра VirtualBox (vboxdrv) не загружен, либо присутствует проблема с доступом к /dev/vboxdrv. Пожалуйста переустановите драйвер, выполнив &lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt; от имени администратора. Учтите, что сперва Вам необходимо установить пакет DKMS, если он доступен Вашему дистрибутиву операционной системы. Этот пакет автоматически отслеживает изменения драйверов Linux и обновит драйвер vboxdrv в случае необходимости.</translation>
     </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -185,7 +189,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation>Игнорировать</translation>
+        <translation type="obsolete">Игнорировать</translation>
     </message>
     <message>
         <source>&amp;Details</source>
@@ -209,20 +213,20 @@
     <message>
         <source>not complete</source>
         <comment>value state</comment>
-        <translation>введено не до конца</translation>
+        <translation type="obsolete">введено не до конца</translation>
     </message>
     <message>
         <source>invalid</source>
         <comment>value state</comment>
-        <translation>задано неверно</translation>
+        <translation type="obsolete">задано неверно</translation>
     </message>
     <message>
         <source>&lt;qt&gt;The value of the &lt;b&gt;%1&lt;/b&gt; field on the &lt;b&gt;%2&lt;/b&gt; page is %3.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Значение поля &lt;b&gt;%1&lt;/b&gt; на странице &lt;b&gt;%2&lt;/b&gt; %3.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Значение поля &lt;b&gt;%1&lt;/b&gt; на странице &lt;b&gt;%2&lt;/b&gt; %3.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;One of the values on the &lt;b&gt;%1&lt;/b&gt; page is %2.&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;Одно из значений на странице &lt;b&gt;%1&lt;/b&gt; %2.&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;Одно из значений на странице &lt;b&gt;%1&lt;/b&gt; %2.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
@@ -384,7 +388,7 @@
     </message>
     <message>
         <source>&amp;Network Adapters...</source>
-        <translation>&amp;Сетевые адаптеры...</translation>
+        <translation type="obsolete">&amp;Сетевые адаптеры...</translation>
     </message>
     <message>
         <source>Change the settings of network adapters</source>
@@ -392,7 +396,7 @@
     </message>
     <message>
         <source>&amp;Shared Folders...</source>
-        <translation>&amp;Общие папки...</translation>
+        <translation type="obsolete">&amp;Общие папки...</translation>
     </message>
     <message>
         <source>Create or modify shared folders</source>
@@ -427,7 +431,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="obsolete">С&amp;бор данных...</translation>
+        <translation type="unfinished">С&amp;бор данных...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -483,7 +487,7 @@
     </message>
     <message>
         <source>Enable remote desktop (RDP) connections to this machine</source>
-        <translation>Разрешить подключение удаленных клиентов по протоколу RDP к этой машине</translation>
+        <translation type="obsolete">Разрешить подключение удаленных клиентов по протоколу RDP к этой машине</translation>
     </message>
     <message>
         <source>&amp;Disable Remote Display</source>
@@ -496,7 +500,7 @@
     <message>
         <source>Enable &amp;Logging...</source>
         <comment>debug action</comment>
-        <translation>Включить с&amp;бор данных...</translation>
+        <translation type="obsolete">Включить с&amp;бор данных...</translation>
     </message>
     <message>
         <source>Disable &amp;Logging...</source>
@@ -533,7 +537,7 @@
     </message>
     <message>
         <source>Enable R&amp;emote Display</source>
-        <translation>Удалённый &amp;дисплей</translation>
+        <translation type="obsolete">Удалённый &amp;дисплей</translation>
     </message>
     <message>
         <source>&amp;Settings...</source>
@@ -894,6 +898,57 @@
         <source>Shared &amp;Clipboard</source>
         <translation>О&amp;бщий буфер обмена</translation>
     </message>
+    <message>
+        <source>Drag&apos;n&apos;Drop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save the machine state of the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Power off the virtual machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Network Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Shared Folders Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>R&amp;emote Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle remote desktop (RDP) connections to this machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Video Capture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle video capture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Video Capture Settings...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Configure video capture settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIActonPool</name>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIApplianceEditorWidget</name>
@@ -1171,15 +1226,15 @@
     <name>UIDescriptionPagePrivate</name>
     <message>
         <source>No description. Press the Edit button below to add it.</source>
-        <translation>Описание отсутствует. Чтобы его добавить, нажмите кнопку &lt;b&gt;Изменить&lt;/b&gt; внизу окна.</translation>
+        <translation type="obsolete">Описание отсутствует. Чтобы его добавить, нажмите кнопку &lt;b&gt;Изменить&lt;/b&gt; внизу окна.</translation>
     </message>
     <message>
         <source>Edit</source>
-        <translation>Изменить</translation>
+        <translation type="obsolete">Изменить</translation>
     </message>
     <message>
         <source>Edit (Ctrl+E)</source>
-        <translation>Изменить (Ctrl+E)</translation>
+        <translation type="obsolete">Изменить (Ctrl+E)</translation>
     </message>
 </context>
 <context>
@@ -1187,231 +1242,231 @@
     <message>
         <source>Name</source>
         <comment>details report</comment>
-        <translation>Имя</translation>
+        <translation type="obsolete">Имя</translation>
     </message>
     <message>
         <source>OS Type</source>
         <comment>details report</comment>
-        <translation>Тип ОС</translation>
+        <translation type="obsolete">Тип ОС</translation>
     </message>
     <message>
         <source>Information inaccessible</source>
         <comment>details report</comment>
-        <translation>Информация недоступна</translation>
+        <translation type="obsolete">Информация недоступна</translation>
     </message>
     <message>
         <source>Base Memory</source>
         <comment>details report</comment>
-        <translation>Оперативная память</translation>
+        <translation type="obsolete">Оперативная память</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1 МБ&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processors</source>
         <comment>details report</comment>
-        <translation>Процессоры</translation>
+        <translation type="obsolete">Процессоры</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Execution Cap</source>
         <comment>details report</comment>
-        <translation>Предел загрузки ЦПУ</translation>
+        <translation type="obsolete">Предел загрузки ЦПУ</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1%&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation>&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
+        <translation type="obsolete">&lt;nobr&gt;%1%&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Boot Order</source>
         <comment>details report</comment>
-        <translation>Порядок загрузки</translation>
+        <translation type="obsolete">Порядок загрузки</translation>
     </message>
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation>ACPI</translation>
+        <translation type="obsolete">ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation type="obsolete">IO APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
         <comment>details report</comment>
-        <translation>BIOS</translation>
+        <translation type="obsolete">BIOS</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation>VT-x/AMD-V</translation>
+        <translation type="obsolete">VT-x/AMD-V</translation>
     </message>
     <message>
         <source>Nested Paging</source>
         <comment>details report</comment>
-        <translation>Функция Nested Paging</translation>
+        <translation type="obsolete">Функция Nested Paging</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation>Функция PAE/NX</translation>
+        <translation type="obsolete">Функция PAE/NX</translation>
     </message>
     <message>
         <source>Acceleration</source>
         <comment>details report</comment>
-        <translation>Ускорение</translation>
+        <translation type="obsolete">Ускорение</translation>
     </message>
     <message>
         <source>Video Memory</source>
         <comment>details report</comment>
-        <translation>Видеопамять</translation>
+        <translation type="obsolete">Видеопамять</translation>
     </message>
     <message>
         <source>Screens</source>
         <comment>details report</comment>
-        <translation>Мониторы</translation>
+        <translation type="obsolete">Мониторы</translation>
     </message>
     <message>
         <source>2D Video</source>
         <comment>details report</comment>
-        <translation>2D-ускорение видео</translation>
+        <translation type="obsolete">2D-ускорение видео</translation>
     </message>
     <message>
         <source>3D</source>
         <comment>details report</comment>
-        <translation>3D-ускорение</translation>
+        <translation type="obsolete">3D-ускорение</translation>
     </message>
     <message>
         <source>Remote Desktop Server Port</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Порт сервера удалённого дисплея</translation>
+        <translation type="obsolete">Порт сервера удалённого дисплея</translation>
     </message>
     <message>
         <source>Remote Desktop Server</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Сервер удалённого дисплея</translation>
+        <translation type="obsolete">Сервер удалённого дисплея</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (VRDE Server)</comment>
-        <translation>Выключен</translation>
+        <translation type="obsolete">Выключен</translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation>(Привод CD/DVD)</translation>
+        <translation type="obsolete">(Привод CD/DVD)</translation>
     </message>
     <message>
         <source>Not Attached</source>
         <comment>details report (Storage)</comment>
-        <translation>Не подсоединены</translation>
+        <translation type="obsolete">Не подсоединены</translation>
     </message>
     <message>
         <source>Host Driver</source>
         <comment>details report (audio)</comment>
-        <translation>Аудиодрайвер</translation>
+        <translation type="obsolete">Аудиодрайвер</translation>
     </message>
     <message>
         <source>Controller</source>
         <comment>details report (audio)</comment>
-        <translation>Контроллер</translation>
+        <translation type="obsolete">Контроллер</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (audio)</comment>
-        <translation>Выключено</translation>
+        <translation type="obsolete">Выключено</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
         <comment>details report (network)</comment>
-        <translation>Сетевой мост, &apos;%1&apos;</translation>
+        <translation type="obsolete">Сетевой мост, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Internal network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Внутренняя сеть, &apos;%1&apos;</translation>
+        <translation type="obsolete">Внутренняя сеть, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Host-only adapter, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Виртуальный адаптер хоста, &apos;%1&apos;</translation>
+        <translation type="obsolete">Виртуальный адаптер хоста, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
-        <translation>Универсальный драйвер, &apos;%1&apos;</translation>
+        <translation type="obsolete">Универсальный драйвер, &apos;%1&apos;</translation>
     </message>
     <message>
         <source>Generic driver, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</source>
         <comment>details report (network)</comment>
-        <translation>Универсальный драйвер, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
+        <translation type="obsolete">Универсальный драйвер, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;}</translation>
     </message>
     <message>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
-        <translation>Адаптер %1</translation>
+        <translation type="obsolete">Адаптер %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (network)</comment>
-        <translation>Выключена</translation>
+        <translation type="obsolete">Выключена</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
-        <translation>Порт %1</translation>
+        <translation type="obsolete">Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
-        <translation>Выключены</translation>
+        <translation type="obsolete">Выключены</translation>
     </message>
     <message>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Порт %1</translation>
+        <translation type="obsolete">Порт %1</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
-        <translation>Выключены</translation>
+        <translation type="obsolete">Выключены</translation>
     </message>
     <message>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
-        <translation>Фильтры устройств</translation>
+        <translation type="obsolete">Фильтры устройств</translation>
     </message>
     <message>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
-        <translation>%1 (%2 активно)</translation>
+        <translation type="obsolete">%1 (%2 активно)</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
-        <translation>Выключено</translation>
+        <translation type="obsolete">Выключено</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
-        <translation>Общие папки</translation>
+        <translation type="obsolete">Общие папки</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (shared folders)</comment>
-        <translation>Отсутствуют</translation>
+        <translation type="obsolete">Отсутствуют</translation>
     </message>
     <message>
         <source>None</source>
         <comment>details report (description)</comment>
-        <translation>Отсутствует</translation>
+        <translation type="obsolete">Отсутствует</translation>
     </message>
 </context>
 <context>
@@ -1632,62 +1687,62 @@
     <message>
         <source>General</source>
         <comment>details report</comment>
-        <translation>Общие</translation>
+        <translation type="obsolete">Общие</translation>
     </message>
     <message>
         <source>System</source>
         <comment>details report</comment>
-        <translation>Система</translation>
+        <translation type="obsolete">Система</translation>
     </message>
     <message>
         <source>Preview</source>
         <comment>details report</comment>
-        <translation>Превью</translation>
+        <translation type="obsolete">Превью</translation>
     </message>
     <message>
         <source>Display</source>
         <comment>details report</comment>
-        <translation>Дисплей</translation>
+        <translation type="obsolete">Дисплей</translation>
     </message>
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation>Носители</translation>
+        <translation type="obsolete">Носители</translation>
     </message>
     <message>
         <source>Audio</source>
         <comment>details report</comment>
-        <translation>Аудио</translation>
+        <translation type="obsolete">Аудио</translation>
     </message>
     <message>
         <source>Network</source>
         <comment>details report</comment>
-        <translation>Сеть</translation>
+        <translation type="obsolete">Сеть</translation>
     </message>
     <message>
         <source>Serial Ports</source>
         <comment>details report</comment>
-        <translation>COM-порты</translation>
+        <translation type="obsolete">COM-порты</translation>
     </message>
     <message>
         <source>Parallel Ports</source>
         <comment>details report</comment>
-        <translation>LPT-порты</translation>
+        <translation type="obsolete">LPT-порты</translation>
     </message>
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
         <comment>details report</comment>
-        <translation>Общие папки</translation>
+        <translation type="obsolete">Общие папки</translation>
     </message>
     <message>
         <source>Description</source>
         <comment>details report</comment>
-        <translation>Описание</translation>
+        <translation type="obsolete">Описание</translation>
     </message>
     <message>
         <source>Execution Cap</source>
@@ -2670,6 +2725,26 @@ p, li { white-space: pre-wrap; }
         <comment>details (shared folders)</comment>
         <translation>Общие папки</translation>
     </message>
+    <message>
+        <source>Video Capture File</source>
+        <comment>details (display/video capture)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Capture Attributes</source>
+        <comment>details (display/video capture)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Video Capture</source>
+        <comment>details (display/video capture)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details (display/video capture)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2905,7 +2980,7 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsExtension</name>
     <message>
         <source>&amp;Extension Packages:</source>
-        <translation>&amp;Список плагинов:</translation>
+        <translation type="obsolete">&amp;Список плагинов:</translation>
     </message>
     <message>
         <source>Lists all installed packages.</source>
@@ -2943,6 +3018,10 @@ p, li { white-space: pre-wrap; }
         <source>Extensions</source>
         <translation>Плагины</translation>
     </message>
+    <message>
+        <source>&amp;Extension Packages</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsGeneral</name>
@@ -2972,11 +3051,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the application will provide an icon with the context menu in the system tray.</source>
-        <translation>Если стоит галочка, в области системных уведомлений рабочего стола (системном трее) будет отображаться значок приложения с контекстным меню.</translation>
+        <translation type="obsolete">Если стоит галочка, в области системных уведомлений рабочего стола (системном трее) будет отображаться значок приложения с контекстным меню.</translation>
     </message>
     <message>
         <source>&amp;Show System Tray Icon</source>
-        <translation>&amp;Значок в системном трее</translation>
+        <translation type="obsolete">&amp;Значок в системном трее</translation>
     </message>
     <message>
         <source>When checked, the Dock Icon will reflect the VM window content in realtime.</source>
@@ -2988,7 +3067,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation>&amp;Показывать Док и Менюбар в режиме полного экрана</translation>
+        <translation type="obsolete">&amp;Показывать Док и Менюбар в режиме полного экрана</translation>
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
@@ -2996,18 +3075,38 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
-        <translation>Отключать &amp;хранитель экрана хоста</translation>
+        <translation type="obsolete">Отключать &amp;хранитель экрана хоста</translation>
+    </message>
+    <message>
+        <source>&amp;Dock and Menubar:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Auto Show in Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Host Screen Saver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disable at Virtual Machine Runtime</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsInput</name>
     <message>
         <source>Host &amp;Key:</source>
-        <translation>&amp;Хост-клавиша:</translation>
+        <translation type="obsolete">&amp;Хост-клавиша:</translation>
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Показывает клавишу, используемую в качестве хост-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую хост-клавишу. Нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
+        <translation type="obsolete">Показывает клавишу, используемую в качестве хост-клавиши в окне ВМ. Активируйте поле ввода и нажмите новую хост-клавишу. Нельзя использовать буквенные, цифровые клавиши, клавиши управления курсором и редактирования.</translation>
     </message>
     <message>
         <source>Reset Host Key</source>
@@ -3027,11 +3126,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset host combination</source>
-        <translation>Сбросить хост-комбинацию</translation>
+        <translation type="obsolete">Сбросить хост-комбинацию</translation>
     </message>
     <message>
         <source>Resets the key combination used as the host combination in the VM window.</source>
-        <translation>Сбрасывает назначенную хост-комбинацию в значение &apos;не установлено&apos;.</translation>
+        <translation type="obsolete">Сбрасывает назначенную хост-комбинацию в значение &apos;не установлено&apos;.</translation>
+    </message>
+    <message>
+        <source>Host Combo</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Some items have the same shortcuts assigned.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;VirtualBox Manager</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Virtual &amp;Machine</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all the available shortcuts which can be configured.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter a sequence to filter the shortcut list.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3062,7 +3185,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Interface Language:</source>
-        <translation>&amp;Язык интерфейса:</translation>
+        <translation type="obsolete">&amp;Язык интерфейса:</translation>
     </message>
     <message>
         <source>Lists all available user interface languages. The effective language is written in &lt;b&gt;bold&lt;/b&gt;. Select &lt;i&gt;Default&lt;/i&gt; to reset to the system default language.</source>
@@ -3088,6 +3211,10 @@ p, li { white-space: pre-wrap; }
         <source>Author(s):</source>
         <translation>Автор(ы):</translation>
     </message>
+    <message>
+        <source>&amp;Interface Languages</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetwork</name>
@@ -3098,31 +3225,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>host IPv4 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>IPv4 адрес адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
+        <translation type="obsolete">IPv4 адрес адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
     </message>
     <message>
         <source>host IPv4 network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>IPv4 маска адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
+        <translation type="obsolete">IPv4 маска адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
     </message>
     <message>
         <source>host IPv6 address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>IPv6 адрес адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
+        <translation type="obsolete">IPv6 адрес адаптера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
     </message>
     <message>
         <source>DHCP server address of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>адрес DHCP сервера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
+        <translation type="obsolete">адрес DHCP сервера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задан не корректно</translation>
     </message>
     <message>
         <source>DHCP server network mask of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>маска DHCP сервера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
+        <translation type="obsolete">маска DHCP сервера сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
     </message>
     <message>
         <source>DHCP lower address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>нижняя граница предоставляемых DHCP сервером адресов сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
+        <translation type="obsolete">нижняя граница предоставляемых DHCP сервером адресов сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
     </message>
     <message>
         <source>DHCP upper address bound of &lt;b&gt;%1&lt;/b&gt; is wrong</source>
-        <translation>верхняя граница предоставляемых DHCP сервером адресов сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
+        <translation type="obsolete">верхняя граница предоставляемых DHCP сервером адресов сети &lt;b&gt;&apos;%1&apos;&lt;/b&gt; задана не корректно</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -3223,7 +3350,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Host-only Networks:</source>
-        <translation>&amp;Виртуальные сети хоста:</translation>
+        <translation type="obsolete">&amp;Виртуальные сети хоста:</translation>
     </message>
     <message>
         <source>Lists all available host-only networks.</source>
@@ -3241,100 +3368,379 @@ p, li { white-space: pre-wrap; }
         <source>Networking</source>
         <translation>Сеть</translation>
     </message>
+    <message>
+        <source>&amp;NAT Networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists all available NAT networks.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Host-only Networks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>[empty]</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 (renamed from %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Old Network Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Network Name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network CIDR</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>yes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>no</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default IPv6 route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <comment>NAT network</comment>
+        <translation type="unfinished">Активен</translation>
+    </message>
+    <message>
+        <source>&amp;Add NAT network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Remove NAT network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Edit NAT network</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetworkDetails</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation>Детали виртуальной сети хоста</translation>
+        <translation type="obsolete">Детали виртуальной сети хоста</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation>&amp;Адаптер</translation>
+        <translation type="obsolete">&amp;Адаптер</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation>&amp;Ручная конфигурация</translation>
+        <translation type="obsolete">&amp;Ручная конфигурация</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation>Настроить виртуальный адаптер сети хоста вручную.</translation>
+        <translation type="obsolete">Настроить виртуальный адаптер сети хоста вручную.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation>IPv4 &amp;адрес:</translation>
+        <translation type="obsolete">IPv4 &amp;адрес:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation>Отображает IPv4 адрес адаптера хоста данной виртуальной сети.</translation>
+        <translation type="obsolete">Отображает IPv4 адрес адаптера хоста данной виртуальной сети.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation>IPv4 &amp;маска сети:</translation>
+        <translation type="obsolete">IPv4 &amp;маска сети:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation>Отображает IPv4 маску адаптера хоста данной виртуальной сети.</translation>
+        <translation type="obsolete">Отображает IPv4 маску адаптера хоста данной виртуальной сети.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation>IPv6 а&amp;дрес:</translation>
+        <translation type="obsolete">IPv6 а&amp;дрес:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation>Отображает IPv6 адрес адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+        <translation type="obsolete">Отображает IPv6 адрес адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation>IPv6 д&amp;лина маски сети:</translation>
+        <translation type="obsolete">IPv6 д&amp;лина маски сети:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation>Отображает длину IPv6 маски адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+        <translation type="obsolete">Отображает длину IPv6 маски адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation>DHCP &amp;сервер</translation>
+        <translation type="obsolete">DHCP &amp;сервер</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation>&amp;Включить сервер</translation>
+        <translation type="obsolete">&amp;Включить сервер</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation>Отображает запускается ли DHCP сервер при старте машины.</translation>
+        <translation type="obsolete">Отображает запускается ли DHCP сервер при старте машины.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation>А&amp;дрес сервера:</translation>
+        <translation type="obsolete">А&amp;дрес сервера:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation type="obsolete">Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation>&amp;Маска сети сервера:</translation>
+        <translation type="obsolete">&amp;Маска сети сервера:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation type="obsolete">Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation>&amp;Нижняя граница адресов:</translation>
+        <translation type="obsolete">&amp;Нижняя граница адресов:</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation type="obsolete">Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation>В&amp;ерхняя граница адресов:</translation>
+        <translation type="obsolete">В&amp;ерхняя граница адресов:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation>Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation type="obsolete">Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetailsHost</name>
+    <message>
+        <source>Host-only Network Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Adapter</source>
+        <translation type="unfinished">&amp;Адаптер</translation>
+    </message>
+    <message>
+        <source>Manual &amp;Configuration</source>
+        <translation type="unfinished">&amp;Ручная конфигурация</translation>
+    </message>
+    <message>
+        <source>Use manual configuration for this host-only network adapter.</source>
+        <translation type="unfinished">Настроить виртуальный адаптер сети хоста вручную.</translation>
+    </message>
+    <message>
+        <source>&amp;IPv4 Address:</source>
+        <translation type="unfinished">IPv4 &amp;адрес:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 address for this adapter.</source>
+        <translation type="unfinished">Отображает IPv4 адрес адаптера хоста данной виртуальной сети.</translation>
+    </message>
+    <message>
+        <source>IPv4 Network &amp;Mask:</source>
+        <translation type="unfinished">IPv4 &amp;маска сети:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <translation type="unfinished">Отображает IPv4 маску адаптера хоста данной виртуальной сети.</translation>
+    </message>
+    <message>
+        <source>I&amp;Pv6 Address:</source>
+        <translation type="unfinished">IPv6 а&amp;дрес:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Отображает IPv6 адрес адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+    </message>
+    <message>
+        <source>IPv6 Network Mask &amp;Length:</source>
+        <translation type="unfinished">IPv6 д&amp;лина маски сети:</translation>
+    </message>
+    <message>
+        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <translation type="unfinished">Отображает длину IPv6 маски адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+    </message>
+    <message>
+        <source>&amp;DHCP Server</source>
+        <translation type="unfinished">DHCP &amp;сервер</translation>
+    </message>
+    <message>
+        <source>&amp;Enable Server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
+        <translation type="unfinished">Отображает запускается ли DHCP сервер при старте машины.</translation>
+    </message>
+    <message>
+        <source>Server Add&amp;ress:</source>
+        <translation type="unfinished">А&amp;дрес сервера:</translation>
+    </message>
+    <message>
+        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+    </message>
+    <message>
+        <source>Server &amp;Mask:</source>
+        <translation type="unfinished">&amp;Маска сети сервера:</translation>
+    </message>
+    <message>
+        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+    </message>
+    <message>
+        <source>&amp;Lower Address Bound:</source>
+        <translation type="unfinished">&amp;Нижняя граница адресов:</translation>
+    </message>
+    <message>
+        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+    </message>
+    <message>
+        <source>&amp;Upper Address Bound:</source>
+        <translation type="unfinished">В&amp;ерхняя граница адресов:</translation>
+    </message>
+    <message>
+        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <translation type="unfinished">Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsNetworkDetailsNAT</name>
+    <message>
+        <source>NAT Network Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network &amp;Enabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable this NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network &amp;Name:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the name for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network &amp;CIDR:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Displays the CIDR for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Network Options:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports &amp;DHCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines whether this network supports DHCP.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Supports &amp;IPv6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines whether this network supports IPv6.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Advertise Default IPv6 &amp;Route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3365,27 +3771,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked the authentication supplied will be used with the proxy server.</source>
-        <translation>Если стоит галочка, VirtualBox будет использовать данные настройки аутентификации для работы с прокси-сервером.</translation>
+        <translation type="obsolete">Если стоит галочка, VirtualBox будет использовать данные настройки аутентификации для работы с прокси-сервером.</translation>
     </message>
     <message>
         <source>&amp;Use authentication</source>
-        <translation>И&amp;спользовать аутентификацию</translation>
+        <translation type="obsolete">И&amp;спользовать аутентификацию</translation>
     </message>
     <message>
         <source>User &amp;name:</source>
-        <translation>Им&amp;я пользователя:</translation>
+        <translation type="obsolete">Им&amp;я пользователя:</translation>
     </message>
     <message>
         <source>Changes the user name used for authentication.</source>
-        <translation>Задаёт имя пользователя для аутентификации на прокси-сервере.</translation>
+        <translation type="obsolete">Задаёт имя пользователя для аутентификации на прокси-сервере.</translation>
     </message>
     <message>
         <source>Pass&amp;word:</source>
-        <translation>Па&amp;роль:</translation>
+        <translation type="obsolete">Па&amp;роль:</translation>
     </message>
     <message>
         <source>Changes the password used for authentication.</source>
-        <translation>Задаёт пароль пользователя для аутентификации на прокси-сервере.</translation>
+        <translation type="obsolete">Задаёт пароль пользователя для аутентификации на прокси-сервере.</translation>
+    </message>
+    <message>
+        <source>No proxy host is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No proxy port is currently specified.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3449,64 +3863,135 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIHostComboEditor</name>
     <message>
+        <source>&lt;key_%1&gt;</source>
+        <translation type="unfinished">&lt;клавиша_%1&gt;</translation>
+    </message>
+    <message>
         <source>Left </source>
-        <translation>Левый </translation>
+        <translation type="unfinished">Левый </translation>
     </message>
     <message>
         <source>Right </source>
-        <translation>Правый </translation>
+        <translation type="unfinished">Правый </translation>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation>Левый Shift</translation>
+        <translation type="unfinished">Левый Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation>Правый Shift</translation>
+        <translation type="unfinished">Правый Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation>Левый Ctrl</translation>
+        <translation type="unfinished">Левый Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation>Правый Ctrl</translation>
+        <translation type="unfinished">Правый Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation>Левый Alt</translation>
+        <translation type="unfinished">Левый Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation>Правый Alt</translation>
+        <translation type="unfinished">Правый Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation>Левая Win-клавиша</translation>
+        <translation type="unfinished">Левая Win-клавиша</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation>Правая Win-клавиша</translation>
+        <translation type="unfinished">Правая Win-клавиша</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation>Клавиша Menu</translation>
+        <translation type="unfinished">Клавиша Menu</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation>Alt Gr</translation>
+        <translation type="unfinished">Alt Gr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation>Caps Lock</translation>
+        <translation type="unfinished">Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation>Scroll Lock</translation>
+        <translation type="unfinished">Scroll Lock</translation>
+    </message>
+    <message>
+        <source>Host+</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIHotKeyEditor</name>
+    <message>
+        <source>Left </source>
+        <translation type="obsolete">Левый </translation>
+    </message>
+    <message>
+        <source>Right </source>
+        <translation type="obsolete">Правый </translation>
+    </message>
+    <message>
+        <source>Left Shift</source>
+        <translation type="obsolete">Левый Shift</translation>
+    </message>
+    <message>
+        <source>Right Shift</source>
+        <translation type="obsolete">Правый Shift</translation>
+    </message>
+    <message>
+        <source>Left Ctrl</source>
+        <translation type="obsolete">Левый Ctrl</translation>
+    </message>
+    <message>
+        <source>Right Ctrl</source>
+        <translation type="obsolete">Правый Ctrl</translation>
+    </message>
+    <message>
+        <source>Left Alt</source>
+        <translation type="obsolete">Левый Alt</translation>
+    </message>
+    <message>
+        <source>Right Alt</source>
+        <translation type="obsolete">Правый Alt</translation>
+    </message>
+    <message>
+        <source>Left WinKey</source>
+        <translation type="obsolete">Левая Win-клавиша</translation>
+    </message>
+    <message>
+        <source>Right WinKey</source>
+        <translation type="obsolete">Правая Win-клавиша</translation>
+    </message>
+    <message>
+        <source>Menu key</source>
+        <translation type="obsolete">Клавиша Menu</translation>
+    </message>
+    <message>
+        <source>Alt Gr</source>
+        <translation type="obsolete">Alt Gr</translation>
+    </message>
+    <message>
+        <source>Caps Lock</source>
+        <translation type="obsolete">Caps Lock</translation>
+    </message>
+    <message>
+        <source>Scroll Lock</source>
+        <translation type="obsolete">Scroll Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation>&lt;клавиша_%1&gt;</translation>
+        <translation type="obsolete">&lt;клавиша_%1&gt;</translation>
     </message>
     <message>
         <source>F1</source>
@@ -3606,7 +4091,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>None</source>
-        <translation>Не установлено</translation>
+        <translation type="obsolete">Не установлено</translation>
+    </message>
+    <message>
+        <source>Reset shortcut to default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unset shortcut</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIHotKeyTableModel</name>
+    <message>
+        <source>Name</source>
+        <translation type="unfinished">Имя</translation>
+    </message>
+    <message>
+        <source>Shortcut</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3836,16 +4340,33 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Indicates whether the Remote Desktop Server is enabled (&lt;img src=:/vrdp_16px.png/&gt;) or not (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</source>
-        <translation>Показывает, включен удаленный дисплей (VRDP-сервер) (&lt;img src=:/vrdp_16px.png/&gt;) или нет (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
+        <translation type="obsolete">Показывает, включен удаленный дисплей (VRDP-сервер) (&lt;img src=:/vrdp_16px.png/&gt;) или нет (&lt;img src=:/vrdp_disabled_16px.png/&gt;).</translation>
     </message>
     <message>
         <source>&lt;hr&gt;The Remote Desktop Server is listening on port %1</source>
-        <translation>&lt;hr&gt;VRDP-сервер ожидает соединений на порту %1</translation>
+        <translation type="obsolete">&lt;hr&gt;VRDP-сервер ожидает соединений на порту %1</translation>
     </message>
     <message>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation>Отображает статус разнообразных опций, используемых виртуальной машиной:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Отображает статус разнообразных опций, используемых виртуальной машиной:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture file:&lt;/b&gt; %1&lt;/nobr&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <comment>Virtualization Stuff LED</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3891,19 +4412,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No CD/DVD Devices Attached</source>
-        <translation>Нет подсоединенных приводов оптических дисков</translation>
+        <translation type="obsolete">Нет подсоединенных приводов оптических дисков</translation>
     </message>
     <message>
         <source>No CD/DVD devices attached to that VM</source>
-        <translation>Нет подсоединенных приводов оптических дисков</translation>
+        <translation type="obsolete">Нет подсоединенных приводов оптических дисков</translation>
     </message>
     <message>
         <source>No Floppy Devices Attached</source>
-        <translation>Нет подсоединенных приводов гибких дисков</translation>
+        <translation type="obsolete">Нет подсоединенных приводов гибких дисков</translation>
     </message>
     <message>
         <source>No floppy devices attached to that VM</source>
-        <translation>Нет подсоединенных приводов гибких дисков</translation>
+        <translation type="obsolete">Нет подсоединенных приводов гибких дисков</translation>
     </message>
     <message>
         <source>No USB Devices Connected</source>
@@ -3949,7 +4470,7 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsDisplay</name>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch the virtual machine to fullscreen or seamless mode.</source>
-        <translation>под видеопамять выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для переключения виртуальной машины в полноэкранный режим или в режим интеграции дисплея.</translation>
+        <translation type="obsolete">под видеопамять выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для переключения виртуальной машины в полноэкранный режим или в режим интеграции дисплея.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -4021,7 +4542,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for HD Video to be played efficiently.</source>
-        <translation>под видеопамять выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для того, что бы видео формата HD корректно воспроизводилось.</translation>
+        <translation type="obsolete">под видеопамять выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для того, что бы видео формата HD корректно воспроизводилось.</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will be given access to the Video Acceleration capabilities available on the host.</source>
@@ -4061,15 +4582,142 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have 3D Acceleration enabled for a operation system which uses the WDDM video driver. For maximal performance set the guest VRAM to at least &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Вы решили использовать 3D-ускорение для гостевой ОС, использующей WDDM видео-драйвер. Для достижения максимальной производительности задайте количество видео-памяти гостевой ОС минимум в &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Вы решили использовать 3D-ускорение для гостевой ОС, использующей WDDM видео-драйвер. Для достижения максимальной производительности задайте количество видео-памяти гостевой ОС минимум в &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
-        <translation>для этой машины выбрана функция 2D-ускорения видео. Поскольку данная функция поддерживается лишь классом гостевых систем Windows, она будет отключена.</translation>
+        <translation type="obsolete">для этой машины выбрана функция 2D-ускорения видео. Поскольку данная функция поддерживается лишь классом гостевых систем Windows, она будет отключена.</translation>
     </message>
     <message>
         <source>you enabled 3D acceleration. However, 3D acceleration is not working on the current host setup so you will not be able to start the VM.</source>
-        <translation>для этой машины выбрана функция 3D-ускорения. Однако, Вашей конфигурацией оборудования эта функция не поддерживается, поэтому Вы не сможете запустить виртуальную машину.</translation>
+        <translation type="obsolete">для этой машины выбрана функция 3D-ускорения. Однако, Вашей конфигурацией оборудования эта функция не поддерживается, поэтому Вы не сможете запустить виртуальную машину.</translation>
+    </message>
+    <message>
+        <source>Video &amp;Capture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Enable Video Capture</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>File &amp;Path:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the filename VirtualBox uses to save the recorded content.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame &amp;Size:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the resolution (frame size) of the recorded video.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Frame Rate:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Quality:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Screens:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to fullscreen or seamless mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VRDE server port value is not currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The VRDE authentication timeout value is not currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>User Defined</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 fps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>fps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>low</source>
+        <comment>quality</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>medium</source>
+        <comment>quality</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>high</source>
+        <comment>quality</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>kbps</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screen %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable video recording for screen %1.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4304,7 +4952,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>для этой машины выбран 64-битный тип гостевой ОС. В связи с тем, что такие гостевые ОС требуют активации функций аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
+        <translation type="obsolete">для этой машины выбран 64-битный тип гостевой ОС. В связи с тем, что такие гостевые ОС требуют активации функций аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
     </message>
     <message>
         <source>&amp;Drag&apos;n&apos;Drop:</source>
@@ -4313,6 +4961,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Selects which data will be copied between the guest and the host OS by drag&apos;n&apos;drop. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>Задает режим работы Drag&apos;n&apos;Drop-функции обмена между гостевой и основной ОС. Заметьте, что использование этой функции требует установки пакета дополнений гостевой ОС.</translation>
+    </message>
+    <message>
+        <source>No name specified for the virtual machine.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4470,15 +5126,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no bridged network adapter is selected</source>
-        <translation>не выбран адаптер для подключения по сетевому мосту.</translation>
+        <translation type="obsolete">не выбран адаптер для подключения по сетевому мосту.</translation>
     </message>
     <message>
         <source>no internal network name is specified</source>
-        <translation>не указано имя внутренней сети.</translation>
+        <translation type="obsolete">не указано имя внутренней сети.</translation>
     </message>
     <message>
         <source>no host-only network adapter is selected</source>
-        <translation>не выбран виртуальный сетевой адаптер хоста.</translation>
+        <translation type="obsolete">не выбран виртуальный сетевой адаптер хоста.</translation>
     </message>
     <message>
         <source>Not selected</source>
@@ -4539,7 +5195,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no generic driver is selected</source>
-        <translation>не выбран универсальный драйвер.</translation>
+        <translation type="obsolete">не выбран универсальный драйвер.</translation>
     </message>
     <message>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
@@ -4559,11 +5215,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>the MAC address must be 12 hexadecimal digits long.</source>
-        <translation>длина MAC адреса должна ровняться 12и шестнадцатеричным символам.</translation>
+        <translation type="obsolete">длина MAC адреса должна ровняться 12и шестнадцатеричным символам.</translation>
     </message>
     <message>
         <source>the second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
-        <translation>вторая цифра MAC-адреса не может быть нечётной, поскольку допустима лишь одноадресная конфигурация.</translation>
+        <translation type="obsolete">вторая цифра MAC-адреса не может быть нечётной, поскольку допустима лишь одноадресная конфигурация.</translation>
+    </message>
+    <message>
+        <source>No bridged network adapter is currently selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No internal network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No host-only network adapter is currently selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No generic driver is currently selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The MAC address must be 12 hexadecimal digits long.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4728,15 +5408,35 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsParallelPage</name>
     <message>
         <source>Duplicate port number selected </source>
-        <translation>Выбран повторяющийся номер порта</translation>
+        <translation type="obsolete">Выбран повторяющийся номер порта</translation>
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>Не задан путь к порту</translation>
+        <translation type="obsolete">Не задан путь к порту</translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>Введен повторяющийся путь к порту</translation>
+        <translation type="obsolete">Введен повторяющийся путь к порту</translation>
+    </message>
+    <message>
+        <source>No IRQ is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No I/O port is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Two or more ports have the same settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No port path is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are currently duplicate port paths specified.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4988,15 +5688,35 @@ p, li { white-space: pre-wrap; }
     <name>UIMachineSettingsSerialPage</name>
     <message>
         <source>Duplicate port number selected </source>
-        <translation>Выбран повторяющийся номер порта</translation>
+        <translation type="obsolete">Выбран повторяющийся номер порта</translation>
     </message>
     <message>
         <source>Port path not specified </source>
-        <translation>Не задан путь к порту</translation>
+        <translation type="obsolete">Не задан путь к порту</translation>
     </message>
     <message>
         <source>Duplicate port path entered </source>
-        <translation>Введен повторяющийся путь к порту</translation>
+        <translation type="obsolete">Введен повторяющийся путь к порту</translation>
+    </message>
+    <message>
+        <source>No IRQ is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No I/O port is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Two or more ports have the same settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No port path is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There are currently duplicate port paths specified.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5095,11 +5815,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="obsolete">Не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
+        <translation type="unfinished">Не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;%1&lt;/i&gt; использует устройство, которое уже подключено к &lt;i&gt;%2&lt;/i&gt;.</translation>
+        <translation type="obsolete">&lt;i&gt;%1&lt;/i&gt; использует устройство, которое уже подключено к &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>Add Controller</source>
@@ -5391,15 +6111,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>no name specified for controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>не указано имя контроллера на позиции &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">не указано имя контроллера на позиции &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>controller at position &lt;b&gt;%1&lt;/b&gt; uses the name that is already used by controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation>контроллер на позиции &lt;b&gt;%1&lt;/b&gt; использует имя, используемое контроллером на позиции &lt;b&gt;%2&lt;/b&gt;.</translation>
+        <translation type="obsolete">контроллер на позиции &lt;b&gt;%1&lt;/b&gt; использует имя, используемое контроллером на позиции &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>no hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation>не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
+        <translation type="obsolete">не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>at most one supported</source>
@@ -5413,7 +6133,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you are currently using more storage controllers than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2.</source>
-        <translation>В данный момент больше контроллеров носителей информации, чем поддерживается чипсетом %1. Пожалуйста, измените тип чипсета на странице &apos;Система&apos; или уменьшите количество следующих контроллеров на странице &apos;Носители&apos;: %2.</translation>
+        <translation type="obsolete">В данный момент больше контроллеров носителей информации, чем поддерживается чипсетом %1. Пожалуйста, измените тип чипсета на странице &apos;Система&apos; или уменьшите количество следующих контроллеров на странице &apos;Носители&apos;: %2.</translation>
     </message>
     <message>
         <source>&amp;Port Count:</source>
@@ -5427,32 +6147,48 @@ p, li { white-space: pre-wrap; }
         <source>Controller: %1</source>
         <translation>Контроллер: %1</translation>
     </message>
+    <message>
+        <source>No name is currently specified for the controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The controller at position &lt;b&gt;%1&lt;/b&gt; has the same name as the controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsSystem</name>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. Not enough memory is left for your host operating system. Please select a smaller amount.</source>
-        <translation>виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Недостаточно памяти для операционной системы хоста. Задайте меньшее значение.</translation>
+        <translation type="obsolete">виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Недостаточно памяти для операционной системы хоста. Задайте меньшее значение.</translation>
     </message>
     <message>
         <source>you have assigned more than &lt;b&gt;%1%&lt;/b&gt; of your computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) to the virtual machine. There might not be enough memory left for your host operating system. Continue at your own risk.</source>
-        <translation>виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Для операционной системы хоста может оказаться недостаточно памяти. Продолжайте на свой страх и риск.</translation>
+        <translation type="obsolete">виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Для операционной системы хоста может оказаться недостаточно памяти. Продолжайте на свой страх и риск.</translation>
     </message>
     <message>
         <source>for performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation>в целях производительности, число виртуальных процессоров, подсоединённых к виртуальной машине, не может превышать число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;) более чем в два раза. Пожалуйста, задайте меньшее число виртуальных процессоров.</translation>
+        <translation type="obsolete">в целях производительности, число виртуальных процессоров, подсоединённых к виртуальной машине, не может превышать число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;) более чем в два раза. Пожалуйста, задайте меньшее число виртуальных процессоров.</translation>
     </message>
     <message>
         <source>you have assigned more virtual CPUs to the virtual machine than the number of physical CPUs on your host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation>для данной машины заданно число виртуальных процессоров, превышающее число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;). Это может отрицательно отразиться на производительности виртуальной машины. Имеет смысл уменьшить число виртуальных процессоров данной машины.</translation>
+        <translation type="obsolete">для данной машины заданно число виртуальных процессоров, превышающее число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;). Это может отрицательно отразиться на производительности виртуальной машины. Имеет смысл уменьшить число виртуальных процессоров данной машины.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>для данной машины выбрано более одного виртуального процессора, что в свою очередь требует активации функции IO-APIC, иначе виртуальные процессоры не будут активны. Таким образом, эта функция будет включена автоматически в момент сохранения настроек ВМ.</translation>
+        <translation type="obsolete">для данной машины выбрано более одного виртуального процессора, что в свою очередь требует активации функции IO-APIC, иначе виртуальные процессоры не будут активны. Таким образом, эта функция будет включена автоматически в момент сохранения настроек ВМ.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>для данной машины выбрано более одного виртуального процессора, что в свою очередь требует активации функций аппаратной виртуализации (VT-x/AMD-V), иначе виртуальные процессоры не будут активны. Таким образом, эта функция будет включена автоматически в момент сохранения настроек ВМ.</translation>
+        <translation type="obsolete">для данной машины выбрано более одного виртуального процессора, что в свою очередь требует активации функций аппаратной виртуализации (VT-x/AMD-V), иначе виртуальные процессоры не будут активны. Таким образом, эта функция будет включена автоматически в момент сохранения настроек ВМ.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
@@ -5599,11 +6335,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>If checked, an absolute pointing device (a USB tablet) will be supported. Otherwise, only a standard PS/2 mouse will be emulated.</source>
-        <translation>Если стоит галочка, будут поддерживаться абсолютные устройства позиционирования (такие как USB планшет). В противном случае, эмулированы будут лишь стандартные PS/2 мыши.</translation>
+        <translation type="obsolete">Если стоит галочка, будут поддерживаться абсолютные устройства позиционирования (такие как USB планшет). В противном случае, эмулированы будут лишь стандартные PS/2 мыши.</translation>
     </message>
     <message>
         <source>Enable &amp;absolute pointing device</source>
-        <translation>&amp;Абсолютные устройства позиционирования</translation>
+        <translation type="obsolete">&amp;Абсолютные устройства позиционирования</translation>
     </message>
     <message>
         <source>&amp;Chipset:</source>
@@ -5627,11 +6363,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have set the processor execution cap to a low value. This can make the machine feel slow to respond.</source>
-        <translation>Вы установили предел загрузки ЦПУ в слишком малое значение, что может привести к очень медленной работе виртуальной машины.</translation>
+        <translation type="obsolete">Вы установили предел загрузки ЦПУ в слишком малое значение, что может привести к очень медленной работе виртуальной машины.</translation>
     </message>
     <message>
         <source>you have enabled a USB HID (Human Interface Device). This will not work unless USB emulation is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>Вы включили поддержку USB HID (устройства пользовательского интерфейса). Данная опция не работает без активированной USB эмуляции, поэтому USB эмуляция будет активирована в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
+        <translation type="obsolete">Вы включили поддержку USB HID (устройства пользовательского интерфейса). Данная опция не работает без активированной USB эмуляции, поэтому USB эмуляция будет активирована в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1%&lt;/qt&gt;</source>
@@ -5645,11 +6381,55 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>Вы выбрали чипсет ICH9 для данной машины. Машина не сможет функционировать, если функция IO-APIC будет отключена, поэтому данная функция будет включена автоматически при закрытии данного окна нажатием кнопки ОК.</translation>
+        <translation type="obsolete">Вы выбрали чипсет ICH9 для данной машины. Машина не сможет функционировать, если функция IO-APIC будет отключена, поэтому данная функция будет включена автоматически при закрытии данного окна нажатием кнопки ОК.</translation>
     </message>
     <message>
         <source>you have hardware virtualization (VT-x/AMD-V) enabled. Your host configuration does not support hardware virtualization, so it will be disabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
         <translation type="obsolete">для данной машины выбрана функция аппаратного ускорения (VT-x/AMD-V). Конфигурация Вашего оборудования не поддерживает аппаратное ускорение, поэтому данная функция будет отключена в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
+    </message>
+    <message>
+        <source>&amp;Pointing device:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5781,7 +6561,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.</source>
-        <translation>в настоящий момент, поддержка USB 2.0 активна для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;%1&lt;/b&gt;. Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.</translation>
+        <translation type="obsolete">в настоящий момент, поддержка USB 2.0 активна для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;%1&lt;/b&gt;. Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.</translation>
+    </message>
+    <message>
+        <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0 to be able to start the machine.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5875,11 +6659,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Action:</source>
-        <translation>Де&amp;йствие:</translation>
+        <translation type="obsolete">Де&amp;йствие:</translation>
     </message>
     <message>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>Задает действие, выполняемое основным ПК при подключении совпадающего устройства: передать его в основную ОС (&lt;i&gt;Игнорировать&lt;/i&gt;) или захватить его для дальнейшего использования виртуальными машинами (&lt;i&gt;Удержать&lt;/i&gt;).</translation>
+        <translation type="obsolete">Задает действие, выполняемое основным ПК при подключении совпадающего устройства: передать его в основную ОС (&lt;i&gt;Игнорировать&lt;/i&gt;) или захватить его для дальнейшего использования виртуальными машинами (&lt;i&gt;Удержать&lt;/i&gt;).</translation>
     </message>
     <message>
         <source>USB Filter Details</source>
@@ -5916,7 +6700,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Select</source>
-        <translation>&amp;Выбрать</translation>
+        <translation type="obsolete">&amp;Выбрать</translation>
     </message>
     <message>
         <source>C&amp;lose</source>
@@ -5984,7 +6768,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation>Не удалось задать глобальные настройки VirtualBox.</translation>
+        <translation type="obsolete">Не удалось задать глобальные настройки VirtualBox.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -5992,15 +6776,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation>Не удалось создать новую виртуальную машину.</translation>
+        <translation type="obsolete">Не удалось создать новую виртуальную машину.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось создать новую виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось создать новую виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to apply the settings to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось применить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось применить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to start the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6018,7 +6802,7 @@ p, li { white-space: pre-wrap; }
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось сохранить состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
-    <message>
+    <message id="0">
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось создать снимок виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -6076,7 +6860,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось удалить сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось удалить сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -6088,11 +6872,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Не удалось создать общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) для виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось создать общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) для виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на  &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на  &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
@@ -6104,7 +6888,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot run VirtualBox in &lt;i&gt;VM Selector&lt;/i&gt; mode due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удается запустить VirtualBox в режиме &lt;i&gt;Окно выбора ВМ&lt;/i&gt; из-за локальных ограничений.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удается запустить VirtualBox в режиме &lt;i&gt;Окно выбора ВМ&lt;/i&gt; из-за локальных ограничений.&lt;/p&gt;&lt;p&gt;Работа приложения будет завершена.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
@@ -6170,11 +6954,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось найти файл локализации для языка &lt;b&gt;%1&lt;/b&gt; в каталоге &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будет временно установлен системный язык по умолчанию. Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось найти файл локализации для языка &lt;b&gt;%1&lt;/b&gt; в каталоге &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будет временно установлен системный язык по умолчанию. Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось загрузить файл локализации &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Будет временно установлен английский язык (встроенный). Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось загрузить файл локализации &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Будет временно установлен английский язык (встроенный). Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions installed in the Guest OS are too old: the installed version is %1, the expected version is %2. Some features that require Guest Additions (mouse integration, guest display auto-resize) will most likely stop working properly.&lt;/p&gt;&lt;p&gt;Please update the Guest Additions to the current version by choosing &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
@@ -6194,7 +6978,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Закройте все программы гостевой ОС, которые могут использовать эту папку, и попробуйте снова.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Закройте все программы гостевой ОС, которые могут использовать эту папку, и попробуйте снова.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -6206,11 +6990,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите скачать CD-образ Дополнений гостевой ОС по ссылке&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 байт)?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите скачать CD-образ Дополнений гостевой ОС по ссылке&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 байт)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;CD-образ Дополнений гостевой ОС был успешно скачан по ссылке &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранен локально как &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Хотите ли Вы зарегистрировать этот CD-образ и подключить его к виртуальному CD/DVD-приводу?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;CD-образ Дополнений гостевой ОС был успешно скачан по ссылке &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранен локально как &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Хотите ли Вы зарегистрировать этот CD-образ и подключить его к виртуальному CD/DVD-приводу?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
@@ -6222,11 +7006,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to find license files in &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Не удалось найти файлы лицензий в папке &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Не удалось найти файлы лицензий в папке &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation>Не удалось открыть файл лицензии &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Проверьте права доступа к файлу.</translation>
+        <translation type="obsolete">Не удалось открыть файл лицензии &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Проверьте права доступа к файлу.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6234,7 +7018,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Congratulations! You have been successfully registered as a user of VirtualBox.&lt;/p&gt;&lt;p&gt;Thank you for finding time to fill out the registration form!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Поздравляем! Вы успешно зарегистрировались в качестве пользователя VirtualBox.&lt;/p&gt;&lt;p&gt;Спасибо за то, что нашли время и заполнили эту регистрационную форму!&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Поздравляем! Вы успешно зарегистрировались в качестве пользователя VirtualBox.&lt;/p&gt;&lt;p&gt;Спасибо за то, что нашли время и заполнили эту регистрационную форму!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
@@ -6254,11 +7038,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Не удалось сохранить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось сохранить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation>Не удалось загрузить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; из &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось загрузить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; из &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6287,7 +7071,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Download</source>
         <comment>additions</comment>
-        <translation>Скачать</translation>
+        <translation type="obsolete">Скачать</translation>
     </message>
     <message>
         <source>Mount</source>
@@ -6317,12 +7101,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Switch</source>
         <comment>fullscreen</comment>
-        <translation>Переключить</translation>
+        <translation type="obsolete">Переключить</translation>
     </message>
     <message>
         <source>Switch</source>
         <comment>seamless</comment>
-        <translation>Переключить</translation>
+        <translation type="obsolete">Переключить</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you really want to reset the virtual machine?&lt;/p&gt;&lt;p&gt;This will cause any unsaved data in applications running inside it to be lost.&lt;/p&gt;</source>
@@ -6443,7 +7227,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите освободить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Это приведет к отсоединению этого носителя от следующих виртуальных машин: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите освободить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Это приведет к отсоединению этого носителя от следующих виртуальных машин: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Release</source>
@@ -6452,15 +7236,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите убрать %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите убрать %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; из списка используемых носителей?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
-        <translation>Имейте в виду, что этот жесткий диск недоступен, поэтому его файл не может быть удален.</translation>
+        <translation type="obsolete">Имейте в виду, что этот жесткий диск недоступен, поэтому его файл не может быть удален.</translation>
     </message>
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>Следующий диалог позволит Вам выбрать, нужно ли удалять файл этого жесткого диска или Вы хотите сохранить его для дальнейшего использования.</translation>
+        <translation type="obsolete">Следующий диалог позволит Вам выбрать, нужно ли удалять файл этого жесткого диска или Вы хотите сохранить его для дальнейшего использования.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
@@ -6473,11 +7257,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Хотите ли Вы удалить файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жесткий диск будет убран из списка используемых жестких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жесткий диск в список при необходимости.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жесткий диск будет убран из списка используемых жестких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жесткий диск в список при необходимости.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6491,7 +7275,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -6499,7 +7283,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation type="obsolete">Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6519,11 +7303,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Не удалось открыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Не удалось открыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to close the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation>Не удалось закрыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
+        <translation type="obsolete">Не удалось закрыть %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
         <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -6531,7 +7315,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to connect to the VirtualBox online registration service due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось подключится к службе онлайн-регистрации VirtualBox из-за следующей ошибки:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось подключится к службе онлайн-регистрации VirtualBox из-за следующей ошибки:&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to obtain the new version information due to the following error:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</source>
@@ -6654,15 +7438,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
-        <translation>Не удалось создать виртуальный сетевой адаптер основной операционной системы.</translation>
+        <translation type="obsolete">Не удалось создать виртуальный сетевой адаптер основной операционной системы.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Your existing VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Существующие файлы настроек VirtualBox будут автоматически сконвертированы из старого формата в новый, необходимый для новой версии VirtualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt; для запуска VirtualBox сейчас, либо &lt;b&gt;Выход&lt;/b&gt;, если желаете завершить работу VirtualBox без дальнейших действий.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Существующие файлы настроек VirtualBox будут автоматически сконвертированы из старого формата в новый, необходимый для новой версии VirtualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;ОК&lt;/b&gt; для запуска VirtualBox сейчас, либо &lt;b&gt;Выход&lt;/b&gt;, если желаете завершить работу VirtualBox без дальнейших действий.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open appliance.</source>
-        <translation>Не удалось открыть конфигурацию.</translation>
+        <translation type="obsolete">Не удалось открыть конфигурацию.</translation>
     </message>
     <message>
         <source>Failed to open/interpret appliance &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6670,31 +7454,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось импортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось импортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
-        <translation>Не удалось создать конфигурацию.</translation>
+        <translation type="obsolete">Не удалось создать конфигурацию.</translation>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось подготовить экспорт конфигурации &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось подготовить экспорт конфигурации &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
-        <translation>Не удалось создать конфигурацию.</translation>
+        <translation type="obsolete">Не удалось создать конфигурацию.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось экспортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось экспортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Удаление данной виртуальной сети хоста приведёт к удалению виртуального сетевого адаптера хоста, на котором основана данная сеть. Хотите ли Вы удалить адаптер &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; этот виртуальный сетевой адаптер хоста может использоваться в данный момент одним или более виртуальным сетевым адаптером гостя, принадлежащим одной из Ваших ВМ. После того как он будет удалён, эти гостевые адаптеры не будут функционировать до тех пор, пока Вы не скорректируете их настройки, выбрав другой виртуальный сетевой адаптер хоста или иной тип подключения к сети.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Удаление данной виртуальной сети хоста приведёт к удалению виртуального сетевого адаптера хоста, на котором основана данная сеть. Хотите ли Вы удалить адаптер &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; этот виртуальный сетевой адаптер хоста может использоваться в данный момент одним или более виртуальным сетевым адаптером гостя, принадлежащим одной из Ваших ВМ. После того как он будет удалён, эти гостевые адаптеры не будут функционировать до тех пор, пока Вы не скорректируете их настройки, выбрав другой виртуальный сетевой адаптер хоста или иной тип подключения к сети.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation>Файл с именем &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Замена приведёт к перезаписи его содержимого.</translation>
+        <translation type="obsolete">Файл с именем &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Замена приведёт к перезаписи его содержимого.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -6702,19 +7486,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Указан неверный адрес электронной почты либо неверный пароль.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Указан неверный адрес электронной почты либо неверный пароль.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to register the VirtualBox product.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось зарегистрировать VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось зарегистрировать VirtualBox.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation>Не удалось проверить файлы.</translation>
+        <translation type="obsolete">Не удалось проверить файлы.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation>Не удалось удалить файлы.</translation>
+        <translation type="obsolete">Не удалось удалить файлы.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -6776,19 +7560,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Не удалось подключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; к машине &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось подключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; к машине &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force mounting of this medium?</source>
-        <translation> Желаете принудительно подключить данное устройство?</translation>
+        <translation type="obsolete"> Желаете принудительно подключить данное устройство?</translation>
     </message>
     <message>
         <source>Unable to unmount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation>Не удалось отключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; от машины &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось отключить %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; от машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source> Would you like to force unmounting of this medium?</source>
-        <translation> Желаете принудительно отключить данное устройство?</translation>
+        <translation type="obsolete"> Желаете принудительно отключить данное устройство?</translation>
     </message>
     <message>
         <source>Force Unmount</source>
@@ -6800,41 +7584,41 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось подключить установочный пакет гостевых дополнений VirtualBox &lt;b&gt;%1&lt;/b&gt;, поскольку данная машина не имеет привода оптических дисков. Пожалуйста добавьте привод, используя страницу носителей информации диалога настройки виртуальной машины.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось подключить установочный пакет гостевых дополнений VirtualBox &lt;b&gt;%1&lt;/b&gt;, поскольку данная машина не имеет привода оптических дисков. Пожалуйста добавьте привод, используя страницу носителей информации диалога настройки виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
         <comment>warnAboutSettingsAutoConversion message box</comment>
-        <translation>&amp;Выход</translation>
+        <translation type="obsolete">&amp;Выход</translation>
     </message>
     <message>
         <source>&lt;p&gt;The following VirtualBox settings files will be automatically converted from the old format to a new format required by the new version of VirtualBox.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to start VirtualBox now or press &lt;b&gt;Exit&lt;/b&gt; if you want to terminate the VirtualBox application without any further actions.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Текущие файлы настроек VirtualBox будут автоматически сконвертированы из старого формата в новый, необходимый новой версии VirtualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Согласен&lt;/b&gt; для запуска VirtualBox или &lt;b&gt;Выход&lt;/b&gt; если желаете завершить работу VirtualBox, не выполняя конвертации.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Текущие файлы настроек VirtualBox будут автоматически сконвертированы из старого формата в новый, необходимый новой версии VirtualBox.&lt;/p&gt;&lt;p&gt;Нажмите &lt;b&gt;Согласен&lt;/b&gt; для запуска VirtualBox или &lt;b&gt;Выход&lt;/b&gt; если желаете завершить работу VirtualBox, не выполняя конвертации.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>hard disk</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">жёсткий диск</translation>
+        <translation type="obsolete">жёсткий диск</translation>
     </message>
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished">CD/DVD</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">образ оптического диска</translation>
+        <translation type="obsolete">образ оптического диска</translation>
     </message>
     <message>
         <source>floppy</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished">Floppy</translation>
+        <translation type="obsolete">Floppy</translation>
     </message>
     <message>
         <source>floppy image</source>
         <comment>failed to mount ...</comment>
-        <translation type="unfinished">образ гибкого диска</translation>
+        <translation type="obsolete">образ гибкого диска</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -6853,7 +7637,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать привод оптических дисков основного компьютера или образ оптического диска к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать привод оптических дисков основного компьютера или образ оптического диска к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6882,19 +7666,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to fullscreen mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключить гостевую операционную систему в режим полного экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось переключить гостевую операционную систему в режим полного экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Can not switch the guest display to seamless mode. You have more virtual screens configured than physical screens are attached to your host.&lt;/p&gt;&lt;p&gt;Please either lower the virtual screens in your VM configuration or attach additional screens to your host.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось переключить гостевую операционную систему в режим интеграции экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось переключить гостевую операционную систему в режим интеграции экрана. Данная машина настроена на поддержку большего количества виртуальных мониторов, чем реально имеется на Вашем хосте.&lt;/p&gt;&lt;p&gt;Пожалуйста уменьшите количество виртуальных мониторов в настройках Вашей машины, либо подключите дополнительные мониторы к Вашему хосту.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox User Manual &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось обнаружить Руководство Пользователя VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Не желаете ли загрузить данный документ с сайта в сети Интернет?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось обнаружить Руководство Пользователя VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Не желаете ли загрузить данный документ с сайта в сети Интернет?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы уверены, что хотите загрузить руководство пользователя VirtualBox, находящееся по адресу &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 б)?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите загрузить руководство пользователя VirtualBox, находящееся по адресу &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (размер %3 б)?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to download the VirtualBox User Manual from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
@@ -6902,11 +7686,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, но не может быть сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста укажите иное местоположение для данного файла.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, но не может быть сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста укажите иное местоположение для данного файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open virtual machine located in %1.</source>
@@ -6942,35 +7726,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь добавить виртуальный жёсткий диск к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете создать новый пустой файл для хранения содержимого диска или выбрать существующий?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить виртуальный жёсткий диск к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете создать новый пустой файл для хранения содержимого диска или выбрать существующий?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
         <comment>add attachment routine</comment>
-        <translation>&amp;Создать новый диск</translation>
+        <translation type="obsolete">&amp;Создать новый диск</translation>
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
         <comment>add attachment routine</comment>
-        <translation>&amp;Выбрать существующий диск</translation>
+        <translation type="obsolete">&amp;Выбрать существующий диск</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь добавить новый привод оптических дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ оптического диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить новый привод оптических дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ оптического диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
         <comment>add attachment routine</comment>
-        <translation>&amp;Выбрать образ</translation>
+        <translation type="obsolete">&amp;Выбрать образ</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
         <comment>add attachment routine</comment>
-        <translation>Оставить &amp;пустым</translation>
+        <translation type="obsolete">Оставить &amp;пустым</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь добавить новый привод гибких дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ гибкого диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить новый привод гибких дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ гибкого диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6998,11 +7782,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось установить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось установить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось удалить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось удалить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -7010,15 +7794,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation>Текущие правила проброса портов неверны. Значения хостовых и гостевых портов не могут быть равны нулю.</translation>
+        <translation type="obsolete">Текущие правила проброса портов неверны. Значения хостовых и гостевых портов не могут быть равны нулю.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Настройки проброса портов не были сохранены.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, эти настройки будут утеряны.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Настройки проброса портов не были сохранены.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, эти настройки будут утеряны.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
-        <translation>Сожалеем, произошло что-то в корне невероятное...</translation>
+        <translation type="obsolete">Сожалеем, произошло что-то в корне невероятное...</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -7055,23 +7839,23 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Switch</source>
         <comment>scale</comment>
-        <translation>Переключить</translation>
+        <translation type="obsolete">Переключить</translation>
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось открыть плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось открыть плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь установить плагин VirtualBox. Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Имя:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версия:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Описание:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь установить плагин VirtualBox. Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Имя:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версия:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Описание:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
-        <translation>&amp;Установить</translation>
+        <translation type="obsolete">&amp;Установить</translation>
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation>Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.</translation>
+        <translation type="obsolete">Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -7099,11 +7883,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Вы собираетесь удалить VirtualBox плагин &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Вы уверены, что хотите продолжить?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Вы собираетесь удалить VirtualBox плагин &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Вы уверены, что хотите продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation>Плагин &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; был успешно установлен.</translation>
+        <translation type="obsolete">Плагин &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; был успешно установлен.</translation>
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
@@ -7139,11 +7923,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось зарегистрировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось зарегистрировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Настройки машины были изменены извне. У Вас в данный момент имеются несохранённые изменения.&lt;/p&gt;&lt;p&gt;Желаете загрузить новые настройки или оставить свои изменения?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Настройки машины были изменены извне. У Вас в данный момент имеются несохранённые изменения.&lt;/p&gt;&lt;p&gt;Желаете загрузить новые настройки или оставить свои изменения?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
@@ -7159,7 +7943,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось скопировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось скопировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -7175,19 +7959,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось сменить тип носителя с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось сменить тип носителя с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;В настоящий момент, поддержка USB 2.0 включена для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;В настоящий момент, поддержка USB 2.0 включена для данной виртуальной машины. Однако, для того, чтобы она работала верно, необходимо установить плагин &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Пожалуйста, установите плагин, предварительно загрузив его с сайта поддержки VirtualBox. После этого Вы сможете повторно активировать поддержку USB 2.0. До установки плагина поддержка USB 2.0 будет автоматически отключаться по принятии настроек данной машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>Не удалось найти снимок &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation type="obsolete">Не удалось найти снимок &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось сохранить скачанный файл как &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось сохранить скачанный файл как &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You have an old version (%1) of the &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; installed.&lt;/p&gt;&lt;p&gt;Do you wish to download latest one from the Internet?&lt;/p&gt;</source>
@@ -7196,7 +7980,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Download</source>
         <comment>extension pack</comment>
-        <translation>Скачать</translation>
+        <translation type="obsolete">Скачать</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%2&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
@@ -7222,7 +8006,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Ok</source>
         <comment>extension pack</comment>
-        <translation>ОК</translation>
+        <translation type="obsolete">ОК</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to initialize COM because the VirtualBox global configuration directory &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; is not accessible. Please check the permissions of this directory and of its parent directory.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
@@ -7231,7 +8015,7 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0.  Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation>
+        <translation type="obsolete">
             <numerusform>&lt;p&gt;Виртуальная машина &lt;b&gt;%1&lt;/b&gt; в данный момент находится в сохранённом состоянии.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, рабочее состояние экспортируемой машины будет сброшено. Прочие машины не будут изменены.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Виртуальные машины &lt;b&gt;%1&lt;/b&gt; в данный момент находятся в сохранённом состоянии.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, рабочее состояние экспортируемых машины будет сброшено. Прочие машины не будут изменены.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Виртуальные машины &lt;b&gt;%1&lt;/b&gt; в данный момент находятся в сохранённом состоянии.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, рабочее состояние экспортируемых машины будет сброшено. Прочие машины не будут изменены.&lt;/p&gt;</numerusform>
@@ -7269,7 +8053,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось удалить директорию машины &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста убедитесь в существовании директории и наличии прав на её удаление.&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось удалить директорию машины &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста убедитесь в существовании директории и наличии прав на её удаление.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
@@ -7277,15 +8061,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation>Вы собираетесь создать новую виртуальную машину без привода жёсткого диска. У Вас не будет возможности установить операционную систему до тех пор, пока Вы не добавите как минимум один жёсткий диск. Однако, Вы сможете запустить машину и загрузить операционную систему с оптического диска.</translation>
+        <translation type="obsolete">Вы собираетесь создать новую виртуальную машину без привода жёсткого диска. У Вас не будет возможности установить операционную систему до тех пор, пока Вы не добавите как минимум один жёсткий диск. Однако, Вы сможете запустить машину и загрузить операционную систему с оптического диска.</translation>
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation>Не удалось скопировать данные.</translation>
+        <translation type="obsolete">Не удалось скопировать данные.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Не удалось найти файл образа дополнений гостевой ОС.&lt;/p&gt;&lt;p&gt;Скачать этот файл из сети Интернет?&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;Не удалось найти файл образа дополнений гостевой ОС.&lt;/p&gt;&lt;p&gt;Скачать этот файл из сети Интернет?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to discard the saved state of the following virtual machines?&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;This operation is equivalent to resetting or powering off the machine without doing a proper shutdown of the guest OS.&lt;/p&gt;</source>
@@ -7337,7 +8121,211 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Close Virtual Machine</source>
-        <translation>Выключить виртуальную машину</translation>
+        <translation type="obsolete">Выключить виртуальную машину</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ignore</source>
+        <translation type="unfinished">Игнорировать</translation>
+    </message>
+    <message>
+        <source>Create &amp;new disk</source>
+        <translation type="unfinished">&amp;Создать новый диск</translation>
+    </message>
+    <message>
+        <source>&amp;Choose existing disk</source>
+        <translation type="unfinished">&amp;Выбрать существующий диск</translation>
+    </message>
+    <message>
+        <source>Leave &amp;empty</source>
+        <translation type="unfinished">Оставить &amp;пустым</translation>
+    </message>
+    <message>
+        <source>&amp;Choose disk</source>
+        <translation type="unfinished">&amp;Выбрать образ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to release the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the hard disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the optical disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to open the floppy disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to close the hard disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to close the optical disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch</source>
+        <translation type="unfinished">Переключить</translation>
+    </message>
+    <message>
+        <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="unfinished">Скачать</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;, но не может быть сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста укажите иное местоположение для данного файла.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
+        <translation type="unfinished">&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+    </message>
+    <message>
+        <source>VirtualBox - MessageType_Question</source>
+        <comment>msg box title</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - MessageType_Warning</source>
+        <comment>msg box title</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - MessageType_Error</source>
+        <comment>msg box title</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
+        <comment>msg box title</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message id="false">
+        <source>Close</source>
+        <translation type="unfinished">Закрыть</translation>
+    </message>
+    <message>
+        <source>Ok</source>
+        <translation type="unfinished">ОК</translation>
+    </message>
+    <message>
+        <source>Do not show this message again</source>
+        <translation type="unfinished">Больше не показывать это сообщение</translation>
     </message>
 </context>
 <context>
@@ -7383,6 +8371,25 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Скачивается CD-образ пакета Дополнений гостевой ОС с &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
+    </message>
+</context>
+<context>
+    <name>UIMiniToolBar</name>
+    <message>
+        <source>Always show the toolbar</source>
+        <translation type="unfinished">Держать тулбар в зоне видимости</translation>
+    </message>
+    <message>
+        <source>Minimize Window</source>
+        <translation type="unfinished">Свернуть окно</translation>
+    </message>
+    <message>
+        <source>Exit Full Screen or Seamless Mode</source>
+        <translation type="unfinished">Выйти из режима полного экрана</translation>
+    </message>
+    <message>
+        <source>Close VM</source>
+        <translation type="unfinished">Закрыть ВМ</translation>
     </message>
 </context>
 <context>
@@ -7443,7 +8450,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Error: %1.</source>
-        <translation>Ошибка: %1.</translation>
+        <translation type="obsolete">Ошибка: %1.</translation>
     </message>
     <message>
         <source>Network Operation</source>
@@ -7456,6 +8463,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Cancel network operation</source>
         <translation>Отменить сетевую операцию</translation>
+    </message>
+    <message>
+        <source>The network operation failed with the error: %1.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7476,6 +8487,33 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Double-click for more information.</source>
         <translation>Дважды щелкните мышью для более полной информации.</translation>
+    </message>
+</context>
+<context>
+    <name>UINetworkReplyPrivate</name>
+    <message>
+        <source>Host not found</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Content access denied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Protocol failure</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wrong SSL certificate format</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSL authentication failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unknown reason</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8142,6 +9180,13 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
+    <name>UIPopupCenter</name>
+    <message>
+        <source>Click for full details</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>UIPortForwardingModel</name>
     <message>
         <source>Name</source>
@@ -8300,7 +9345,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>On the &lt;b&gt;%1&lt;/b&gt; page, %2</source>
-        <translation>На странице &lt;b&gt;&apos;%1&apos;&lt;/b&gt;: %2</translation>
+        <translation type="obsolete">На странице &lt;b&gt;&apos;%1&apos;&lt;/b&gt;: %2</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -8308,11 +9353,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Non-optimal settings detected</source>
-        <translation>Обнаружены неоптимальные настройки</translation>
+        <translation type="obsolete">Обнаружены неоптимальные настройки</translation>
     </message>
     <message>
         <source>Settings</source>
         <translation>Настройки</translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1: %2&lt;/b&gt; page:</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8335,7 +9388,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB</source>
-        <translation>USB</translation>
+        <translation type="obsolete">USB</translation>
     </message>
     <message>
         <source>Network</source>
@@ -8728,31 +9781,31 @@ p, li { white-space: pre-wrap; }
     <name>UIVMPreviewWindow</name>
     <message>
         <source>Update Disabled</source>
-        <translation>Выключить обновление</translation>
+        <translation type="obsolete">Выключить обновление</translation>
     </message>
     <message>
         <source>Every 0.5 s</source>
-        <translation>Каждые полсекунды</translation>
+        <translation type="obsolete">Каждые полсекунды</translation>
     </message>
     <message>
         <source>Every 1 s</source>
-        <translation>Каждую секунду</translation>
+        <translation type="obsolete">Каждую секунду</translation>
     </message>
     <message>
         <source>Every 2 s</source>
-        <translation>Каждые 2 секунды</translation>
+        <translation type="obsolete">Каждые 2 секунды</translation>
     </message>
     <message>
         <source>Every 5 s</source>
-        <translation>Каждые 5 секунд</translation>
+        <translation type="obsolete">Каждые 5 секунд</translation>
     </message>
     <message>
         <source>Every 10 s</source>
-        <translation>Каждые 10 секунд</translation>
+        <translation type="obsolete">Каждые 10 секунд</translation>
     </message>
     <message>
         <source>No Preview</source>
-        <translation>Выключить превью</translation>
+        <translation type="obsolete">Выключить превью</translation>
     </message>
 </context>
 <context>
@@ -9045,7 +10098,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Please choose a virtual appliance file</source>
-        <translation>Укажите расположение файла конфигурации</translation>
+        <translation type="obsolete">Укажите расположение файла конфигурации</translation>
     </message>
     <message>
         <source>Open Virtualization Format Archive (%1)</source>
@@ -9061,7 +10114,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Write legacy OVF 0.9</source>
-        <translation>&amp;Сохранить в формате OVF 0.9</translation>
+        <translation type="obsolete">&amp;Сохранить в формате OVF 0.9</translation>
     </message>
     <message>
         <source>Create a Manifest file for automatic data integrity checks on import.</source>
@@ -9091,6 +10144,42 @@ p, li { white-space: pre-wrap; }
         <source>&amp;Local Filesystem </source>
         <translation>&amp;Локальная файловая система</translation>
     </message>
+    <message>
+        <source>Storage settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a file to export virtual appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>F&amp;ormat:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OVF 0.9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OVF 1.0</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OVF 2.0</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in standard OVF 1.0 format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Write in new experimental OVF 2.0 format.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Storage settings</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIWizardExportAppPageBasic3</name>
@@ -9105,6 +10194,17 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>Пожалуйста заполните дополнительные поля такие как имя пользователя, пароль, имя хоста и имя хранилища. В конце укажите имя файла-цели для экспорта OVF.</translation>
+    </message>
+    <message>
+        <source>Choose a file to export virtual appliance...</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIWizardExportAppPageExpert</name>
+    <message>
+        <source>Choose a file to export virtual appliance...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9134,7 +10234,7 @@ p, li { white-space: pre-wrap; }
     <name>UIWizardImportApp</name>
     <message>
         <source>Import Virtual Applicance</source>
-        <translation>Импорт конфигурации</translation>
+        <translation type="obsolete">Импорт конфигурации</translation>
     </message>
     <message>
         <source>Restore Defaults</source>
@@ -9154,11 +10254,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Open appliance...</source>
-        <translation>Открыть конфигурацию...</translation>
+        <translation type="obsolete">Открыть конфигурацию...</translation>
     </message>
     <message>
         <source>Select an appliance to import</source>
-        <translation>Укажите файл конфигурации для импорта</translation>
+        <translation type="obsolete">Укажите файл конфигурации для импорта</translation>
     </message>
     <message>
         <source>Open Virtualization Format (%1)</source>
@@ -9171,6 +10271,18 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation>Далее перечислены виртуальные машины и их устройства, описанные в импортируемой конфигурации. Большинство из указанных параметров можно изменить двойным щелчком мыши на выбранном элементе, либо отключить используя соответствующие галочки.</translation>
+    </message>
+    <message>
+        <source>Import Virtual Appliance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a virtual appliance file to import...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please choose a virtual appliance file to import</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -9979,7 +11091,11 @@ p, li { white-space: pre-wrap; }
     <name>VBoxEmptyFileSelector</name>
     <message>
         <source>&amp;Choose...</source>
-        <translation>&amp;Выбрать...</translation>
+        <translation type="obsolete">&amp;Выбрать...</translation>
+    </message>
+    <message>
+        <source>Choose...</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -11819,6 +12935,60 @@ p, li { white-space: pre-wrap; }
         <source>Please choose a location for new virtual hard drive file</source>
         <translation>Укажите местоположение нового виртуального жёсткого диска</translation>
     </message>
+    <message>
+        <source>Enabled</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>details report (Unrestricted Execution)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrestricted Execution</source>
+        <comment>details report</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PS/2 Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Mouse/Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PS/2 and USB Mouse</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Mouse/Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enabled</source>
+        <comment>unrestricted execution</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <comment>unrestricted execution</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>VBoxGlobalSettings</name>
@@ -11923,11 +13093,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;New...</source>
-        <translation>&amp;Создать...</translation>
+        <translation type="obsolete">&amp;Создать...</translation>
     </message>
     <message>
         <source>&amp;Add...</source>
-        <translation>&amp;Добавить...</translation>
+        <translation type="obsolete">&amp;Добавить...</translation>
     </message>
     <message>
         <source>R&amp;emove</source>
@@ -11947,7 +13117,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add an existing medium</source>
-        <translation>Добавить существующий носитель</translation>
+        <translation type="obsolete">Добавить существующий носитель</translation>
     </message>
     <message>
         <source>Remove the selected medium</source>
@@ -11987,7 +13157,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>All files (*)</source>
-        <translation>Все файлы (*)</translation>
+        <translation type="obsolete">Все файлы (*)</translation>
     </message>
     <message>
         <source>Select a hard disk image file</source>
@@ -12123,26 +13293,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Create a new virtual hard drive</source>
-        <translation>Создать новый виртуальный жесткий диск</translation>
+        <translation type="obsolete">Создать новый виртуальный жесткий диск</translation>
     </message>
 </context>
 <context>
-    <name>UIMiniToolBar</name>
+    <name>VBoxMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation>Держать тулбар в зоне видимости</translation>
+        <translation type="obsolete">Держать тулбар в зоне видимости</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation>Выйти из режима полного экрана</translation>
+        <translation type="obsolete">Выйти из режима полного экрана</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation>Закрыть ВМ</translation>
+        <translation type="obsolete">Закрыть ВМ</translation>
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation>Свернуть окно</translation>
+        <translation type="obsolete">Свернуть окно</translation>
     </message>
 </context>
 <context>
@@ -12945,11 +14115,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Details</source>
-        <translation>&amp;Детали</translation>
+        <translation type="obsolete">&amp;Детали</translation>
     </message>
     <message>
         <source>&amp;Runtime</source>
-        <translation>&amp;Работа</translation>
+        <translation type="obsolete">&amp;Работа</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
@@ -13073,6 +14243,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Drag&apos;n&apos;Drop Mode</source>
         <translation>Drag&apos;n&apos;Drop</translation>
+    </message>
+    <message>
+        <source>Configuration &amp;Details</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Runtime Information</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

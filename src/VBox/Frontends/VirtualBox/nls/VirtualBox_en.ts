@@ -2,6 +2,36 @@
 <!DOCTYPE TS>
 <TS version="2.0" language="en">
 <context>
+    <name>UIGChooserItemGroup</name>
+    <message numerus="yes">
+        <location filename="../src/selector/graphics/chooser/UIGChooserItemGroup.cpp" line="664"/>
+        <source>%n group(s)</source>
+        <comment>Group item tool-tip / Group info</comment>
+        <translation>
+            <numerusform>%n group</numerusform>
+            <numerusform>%n groups</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/selector/graphics/chooser/UIGChooserItemGroup.cpp" line="680"/>
+        <source>%n machine(s)</source>
+        <comment>Group item tool-tip / Machine info</comment>
+        <translation>
+            <numerusform>%n machine</numerusform>
+            <numerusform>%n machines</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/selector/graphics/chooser/UIGChooserItemGroup.cpp" line="681"/>
+        <source>(%n running)</source>
+        <comment>Group item tool-tip / Running machine info</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>UIMessageCenter</name>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -79,25 +109,6 @@
         <translation>
             <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable image attached to it. As long as you are working from this snapshot the immutable image will not be reset to avoid loss of data.</numerusform>
             <numerusform>Warning: You are taking a snapshot of a running machine which has %n immutable images attached to it. As long as you are working from this snapshot the immutable images will not be reset to avoid loss of data.</numerusform>
-        </translation>
-    </message>
-</context>
-<context>
-    <name>UIGChooserItemGroup</name>
-    <message numerus="yes">
-        <source>%n group(s)</source>
-        <comment>Group item tool-tip / Group info</comment>
-        <translation>
-            <numerusform>%n group</numerusform>
-            <numerusform>%n groups</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>%n machine(s)</source>
-        <comment>Group item tool-tip / Machine info</comment>
-        <translation>
-            <numerusform>%n machine</numerusform>
-            <numerusform>%n machines</numerusform>
         </translation>
     </message>
 </context>

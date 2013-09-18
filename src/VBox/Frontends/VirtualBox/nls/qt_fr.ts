@@ -51,7 +51,7 @@
     <name>Phonon::</name>
     <message>
         <source>Notifications</source>
-        <translation></translation>
+        <translation>Notifications</translation>
     </message>
     <message>
         <source>Music</source>
@@ -63,7 +63,7 @@
     </message>
     <message>
         <source>Communication</source>
-        <translation></translation>
+        <translation>Communication</translation>
     </message>
     <message>
         <source>Games</source>
@@ -85,8 +85,8 @@ Des fonctionnalités vidéo ont été desactivées.</translation>
     <message>
         <source>Warning: You do not seem to have the base GStreamer plugins installed.
           All audio and video support has been disabled</source>
-        <translation>Attention: Vous n&apos;avez apparemment pas installées les plugins de base de GStreamer.
-Le support audio et vidéo est désactivé.</translation>
+        <translation>Attention : Vous n&apos;avez apparemment pas installé les plugins de base de GStreamer.
+Le support audio et vidéo a été désactivé</translation>
     </message>
 </context>
 <context>
@@ -101,8 +101,8 @@ have libgstreamer-plugins-base installed.</source>
     <message numerus="yes">
         <source>A required codec is missing. You need to install the following codec(s) to play this content: %0</source>
         <translation>
-            <numerusform>Un codec requis est manquant. Vous devez installer le codec suivant pour jouer le contenu: %0</numerusform>
-            <numerusform>Des codecs requis sont manquants. Vous devez installer les codecs suivants pour jouer le contenu: %0 </numerusform>
+            <numerusform>%nUn codec requis est manquant. Vous devez installer le codec suivant pour jouer le contenu : %0</numerusform>
+            <numerusform>%nDes codecs requis sont manquants. Vous devez installer les codecs suivants pour jouer le contenu : %0 </numerusform>
         </translation>
     </message>
     <message>
@@ -595,7 +595,7 @@ en
     <name>Q3ToolBar</name>
     <message>
         <source>More...</source>
-        <translation>Reste...</translation>
+        <translation>Plus...</translation>
     </message>
 </context>
 <context>
@@ -703,7 +703,7 @@ en
     </message>
     <message>
         <source>Executable &apos;%1&apos; requires Qt %2, found Qt %3.</source>
-        <translation>L&apos;exécutable &apos;%1&apos; requiert Qt %2 (Qt %3 présent).</translation>
+        <translation>L&apos;exécutable &apos;%1&apos; requiert Qt %2 (Qt %3 installé).</translation>
     </message>
     <message>
         <source>Incompatible Qt Library Error</source>
@@ -804,42 +804,42 @@ en
     <message>
         <source>%1: permission denied</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: permission refusée</translation>
+        <translation>%1 : permission refusée</translation>
     </message>
     <message>
         <source>%1: already exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: existe déjà</translation>
+        <translation>%1 : existe déjà</translation>
     </message>
     <message>
         <source>%1: doesn&apos;t exists</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: n&apos;existe pas</translation>
+        <translation>%1 : n&apos;existe pas</translation>
     </message>
     <message>
         <source>%1: out of resources</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: plus de ressources disponibles</translation>
+        <translation>%1 : plus de ressources disponibles</translation>
     </message>
     <message>
         <source>%1: unknown error %2</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: erreur inconnue %2</translation>
+        <translation>%1 : erreur inconnue %2</translation>
     </message>
     <message>
         <source>%1: key is empty</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: clé vide</translation>
+        <translation>%1 : clé vide</translation>
     </message>
     <message>
         <source>%1: unable to make key</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: impossible de créer la clé</translation>
+        <translation>%1 : impossible de créer la clé</translation>
     </message>
     <message>
         <source>%1: ftok failed</source>
         <comment>QSystemSemaphore</comment>
-        <translation>%1: ftok a échoué</translation>
+        <translation>%1 : ftok a échoué</translation>
     </message>
 </context>
 <context>
@@ -911,7 +911,7 @@ en
     <name>QDial</name>
     <message>
         <source>QDial</source>
-        <translation></translation>
+        <translation>QDial</translation>
     </message>
     <message>
         <source>SpeedoMeter</source>
@@ -930,7 +930,7 @@ en
     </message>
     <message>
         <source>Done</source>
-        <translation>Terminer</translation>
+        <translation>Terminé</translation>
     </message>
 </context>
 <context>
@@ -1083,15 +1083,15 @@ en
     </message>
     <message>
         <source>Debug Message:</source>
-        <translation>Message de débogage:</translation>
+        <translation>Message de débogage :</translation>
     </message>
     <message>
         <source>Warning:</source>
-        <translation>Avertissement:</translation>
+        <translation>Avertissement :</translation>
     </message>
     <message>
         <source>Fatal Error:</source>
-        <translation>Erreur fatale:</translation>
+        <translation>Erreur fatale :</translation>
     </message>
 </context>
 <context>
@@ -1241,7 +1241,7 @@ Voulez-vous quand même le supprimer?</translation>
     </message>
     <message>
         <source>Look in:</source>
-        <translation>Voir dans:</translation>
+        <translation>Voir dans :</translation>
     </message>
     <message>
         <source>Create New Folder</source>
@@ -2219,11 +2219,11 @@ Voulez-vous quand même le supprimer?</translation>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Ce programme utilise Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition est prévu pour le développement d&apos;applications Open Source. Vous devez avoir un license commerciale de Qt pour développer des applications propiétaires (Closed Source).&lt;/p&gt;&lt;p&gt;Vous pouvez aller sur &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; pour plus d&apos;informations sur les licenses Qt.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ce programme utilise Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition est prévu pour le développement d&apos;applications Open Source. Vous devez avoir un license commerciale de Qt pour développer des applications propiétaires (Closed Source).&lt;/p&gt;&lt;p&gt;Vous pouvez aller sur &lt;a href=&quot;http://qt.digia.com/Product/Licensing/&quot;&gt;http://qt.digia.com/Product/Licensing/&lt;/a&gt; pour plus d&apos;informations sur les licenses Qt.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;À propos de Qt&lt;/h3&gt;%1&lt;p&gt;Qt est une librairie C + + boîte à outils de développement d&apos;applications multi-plateformes.&lt;/p&gt;&lt;p&gt;Qt fournit une source unique portabilité sur MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux et tous les principaux Unix commerciaux. Qt est également disponible pour les systèmes embarqués comme Qt pour Linux embarqué et Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt est disponible sous trois différentes options de licence visant à répondre aux besoins de nos différents utilisateurs.&lt;/p&gt;&lt;p&gt;Qt est un produit Digia. Veuillez visiter &lt;a href=&quot;http://qt.digia.com/&quot;&gt;qt.digia.com&lt;/a&gt; pour de plus amples informations.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2474,7 +2474,7 @@ Voulez-vous quand même le supprimer?</translation>
     <name>QODBCDriver</name>
     <message>
         <source>Unable to connect</source>
-        <translation>Incapable d&apos;établir une connexion</translation>
+        <translation>Impossible d&apos;établir une connexion</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
@@ -2486,15 +2486,15 @@ Voulez-vous quand même le supprimer?</translation>
     </message>
     <message>
         <source>Unable to commit transaction</source>
-        <translation>Incapable de soumettre la transaction</translation>
+        <translation>Impossible de soumettre la transaction</translation>
     </message>
     <message>
         <source>Unable to rollback transaction</source>
-        <translation>Incapable d&apos;annuler la transaction</translation>
+        <translation>Impossible d&apos;annuler la transaction</translation>
     </message>
     <message>
         <source>Unable to enable autocommit</source>
-        <translation>Impossible d&apos;active l&apos;autocommit</translation>
+        <translation>Impossible d&apos;activer l&apos;autocommit</translation>
     </message>
 </context>
 <context>
@@ -3409,7 +3409,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation>Inser</translation>
+        <translation>Insérer</translation>
     </message>
     <message>
         <source>Del</source>
@@ -4051,7 +4051,8 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Frame load interruped by policy change</source>
-        <translation>Chargement de la frame interrompu par un changement de configuration.</translation>
+        <translatorcomment>Cadre or Trame might be as well a good fit in this context</translatorcomment>
+        <translation>Chargement du frame interrompu par un changement de régle</translation>
     </message>
     <message>
         <source>Cannot show mimetype</source>
@@ -4675,11 +4676,11 @@ Veuillez choisir un nom de fichier différent.</translation>
     <name>QtXmlPatterns</name>
     <message>
         <source>An %1-attribute with value %2 has already been declared.</source>
-        <translation>Un attribute %1 avec la valeur %2 est déjà déclaré.</translation>
+        <translation>Un attribut %1 avec la valeur %2 est déjà déclaré.</translation>
     </message>
     <message>
         <source>An %1-attribute must have a valid %2 as value, which %3 isn&apos;t.</source>
-        <translation>Un attribute %1 doit avoir un %2 valide, %3 ne l&apos;a pas.</translation>
+        <translation>Un attribut %1 doit avoir un %2 valide, %3 ne l&apos;a pas.</translation>
     </message>
     <message>
         <source>Network timeout.</source>
@@ -4703,15 +4704,15 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Overflow: Can&apos;t represent date %1.</source>
-        <translation>Overflow: ne peut pas représenter la date %1.</translation>
+        <translation>Dépassement : impossible de représenter la date %1.</translation>
     </message>
     <message>
         <source>Day %1 is invalid for month %2.</source>
-        <translation>Jour %1 est invalide pour le mois %2.</translation>
+        <translation>Le jour %1 est invalide pour le mois %2.</translation>
     </message>
     <message>
         <source>Time 24:%1:%2.%3 is invalid. Hour is 24, but minutes, seconds, and milliseconds are not all 0; </source>
-        <translation>L&apos;heure 24:%1:%2.%3 est invalide. L&apos;heure est 24 mais les minutes, seconndes et millisecondes ne sont pas à 0;</translation>
+        <translation>L&apos;heure 24:%1:%2.%3 est invalide. L&apos;heure est 24 mais les minutes, secondes et millisecondes ne sont pas à 0 ;</translation>
     </message>
     <message>
         <source>Time %1:%2:%3.%4 is invalid.</source>
@@ -4719,7 +4720,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Overflow: Date can&apos;t be represented.</source>
-        <translation>Overflow : la date ne peut pas être représentée.</translation>
+        <translation>Dépassement : la date ne peut pas être représentée.</translation>
     </message>
     <message>
         <source>At least one component must be present.</source>
@@ -4735,11 +4736,11 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>The first operand in an integer division, %1, cannot be infinity (%2).</source>
-        <translation>Le premier opérande dans une division entière, %1, ne peut être infini (%2).</translation>
+        <translation>La première opérande dans une division entière, %1, ne peut être l&apos;infini (%2).</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation>Le second opérande dans une division, %1, ne peut être nul (%2).</translation>
+        <translation>La seconde opérande dans une division, %1, ne peut être nul (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
@@ -4751,19 +4752,19 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Integer division (%1) by zero (%2) is undefined.</source>
-        <translation>Division entière (%1) par zéro (%2) indéfinie.</translation>
+        <translation>La division entière (%1) par zéro (%2) est indéfinie.</translation>
     </message>
     <message>
         <source>Division (%1) by zero (%2) is undefined.</source>
-        <translation>Division (%1) par zéro (%2) indéfinie.</translation>
+        <translation>La division de (%1) par zéro (%2) est indéfinie.</translation>
     </message>
     <message>
         <source>Modulus division (%1) by zero (%2) is undefined.</source>
-        <translation>Module division (%1) par zéro (%2) indéfinie.</translation>
+        <translation>Le reste de la division de (%1) par zéro (%2) est indéfinie.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 (not-a-number) is not allowed.</source>
-        <translation>Diviser une valeur du type %1 par %2 (not-a-number) est interdit.</translation>
+        <translation>Diviser une valeur du type %1 par %2 (pas un nombre) est interdit.</translation>
     </message>
     <message>
         <source>Dividing a value of type %1 by %2 or %3 (plus or minus zero) is not allowed.</source>
@@ -4771,7 +4772,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Multiplication of a value of type %1 by %2 or %3 (plus or minus infinity) is not allowed.</source>
-        <translation>La multiplication d&apos;une valeur du type %1 par %2 ou %3 (plus ou moins infini) est interdite.</translation>
+        <translation>La multiplication d&apos;une valeur du type %1 par %2 ou %3 (plus ou moins l&apos;infini) est interdite.</translation>
     </message>
     <message>
         <source>A value of type %1 cannot have an Effective Boolean Value.</source>
@@ -5161,19 +5162,19 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Two namespace declaration attributes have the same name: %1.</source>
-        <translation>Deux attributs de déclarations de namespace ont le même nom : %1.</translation>
+        <translation>Deux attributs de déclarations de nom d&apos;espace ont le même nom : %1.</translation>
     </message>
     <message>
         <source>The namespace URI must be a constant and cannot use enclosed expressions.</source>
-        <translation>L&apos;URI de namespace doit être une constante et ne peut contenir d&apos;expressions.</translation>
+        <translation>L&apos;URI de nom d&apos;espace doit être une constante et ne peut contenir d&apos;expressions.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already appeared on this element.</source>
-        <translation>Un attribute nommé %1 existe déjà pour cet élément.</translation>
+        <translation>Un attribut nommé %1 existe déjà pour cet élément.</translation>
     </message>
     <message>
         <source>A direct element constructor is not well-formed. %1 is ended with %2.</source>
-        <translation>Un constructeur direct d&apos;élément est mal-formé. %1 est terminé par %2.</translation>
+        <translation>Un constructeur direct d&apos;élément est malformé. %1 se termine par %2.</translation>
     </message>
     <message>
         <source>The name %1 does not refer to any schema type.</source>
@@ -5181,11 +5182,11 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>%1 is an complex type. Casting to complex types is not possible. However, casting to atomic types such as %2 works.</source>
-        <translation>%1 est une type complexe. Caster vers des types complexes n&apos;est pas possible. Cependant, caster vers des types atomiques comme %2 marche.</translation>
+        <translation>%1 est de type complexe. Caster vers des types complexes n&apos;est pas possible. Cependant, caster vers des types atomiques comme %2 marche.</translation>
     </message>
     <message>
         <source>%1 is not an atomic type. Casting is only possible to atomic types.</source>
-        <translation>%1 n&apos;est pas un type atomique. Il est uniquement possible de caster vers des types atomiques.</translation>
+        <translation>%1 n&apos;est pas de type atomique. Il est uniquement possible de caster vers des types atomiques.</translation>
     </message>
     <message>
         <source>%1 is not a valid name for a processing-instruction. Therefore this name test will never match.</source>
@@ -5193,11 +5194,12 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>%1 is not in the in-scope attribute declarations. Note that the schema import feature is not supported.</source>
-        <translation>%1 n&apos;est pas dans les déclaration d&apos;attribut in-scope. La fonctionnalité d&apos;inport de schéma n&apos;est pas supportée.</translation>
+        <translatorcomment>in-scope may be translated by périmètre in this context </translatorcomment>
+        <translation>%1 n&apos;est pas dans le périmètre des déclarations d&apos;attribut. La fonctionnalité d&apos;import de schéma n&apos;est pas supportée.</translation>
     </message>
     <message>
         <source>The name of an extension expression must be in a namespace.</source>
-        <translation>Le nom d&apos;une expression d&apos;extension doit être dans un namespace.</translation>
+        <translation>Le nom d&apos;une expression d&apos;extension doit être dans un espace de nom.</translation>
     </message>
     <message>
         <source>empty</source>
@@ -5225,7 +5227,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Promoting %1 to %2 may cause loss of precision.</source>
-        <translation>La Promotion de %1 vers %2 peut causer un perte de précision.</translation>
+        <translation>La promotion de %1 vers %2 peut causer un perte de précision.</translation>
     </message>
     <message>
         <source>The focus is undefined.</source>
@@ -5233,11 +5235,11 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to add attributes after any other kind of node.</source>
-        <translation>Il est impossible d&apos;ajouter des attributs après un autre type de noeuds.</translation>
+        <translation>Il est impossible d&apos;ajouter des attributs après un autre type de noeud.</translation>
     </message>
     <message>
         <source>An attribute by name %1 has already been created.</source>
-        <translation>Un attribute de nom %1 a déjà été créé.</translation>
+        <translation>Un attribut de nom %1 a déjà été créé.</translation>
     </message>
     <message>
         <source>Only the Unicode Codepoint Collation is supported(%1). %2 is unsupported.</source>
@@ -5253,7 +5255,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>The namespace for a user defined function cannot be empty (try the predefined prefix %1 which exists for cases like this)</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;espace de noms pour une fonction définie par l&apos;utilisateur ne peut pas être vide (essayez le préfixe prédéfini %1 qui existe pour les cas comme celui-ci)</translation>
     </message>
 </context>
 <context>
@@ -5264,7 +5266,7 @@ Veuillez choisir un nom de fichier différent.</translation>
     </message>
     <message>
         <source>Volume: %1%</source>
-        <translation></translation>
+        <translation>Volume : %1%</translation>
     </message>
 </context>
 <context>
