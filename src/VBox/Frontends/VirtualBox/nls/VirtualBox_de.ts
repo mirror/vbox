@@ -89,7 +89,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
+        <translation>Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -707,15 +707,15 @@
     </message>
     <message>
         <source>Save the machine state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Sichert den Zustand der virtuellen Maschine</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Schaltet die virtuelle Maschine aus</translation>
     </message>
     <message>
         <source>&amp;Network Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Netzwerk-Einstellungen...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
@@ -723,7 +723,7 @@
     </message>
     <message>
         <source>R&amp;emote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Fernsteuerung</translation>
     </message>
     <message>
         <source>Toggle remote desktop (RDP) connections to this machine</source>
@@ -1551,7 +1551,7 @@
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
 </context>
 <context>
@@ -1679,7 +1679,7 @@
     </message>
     <message>
         <source>&amp;Extension Packages</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zusatzpakete</translation>
     </message>
 </context>
 <context>
@@ -1785,11 +1785,11 @@
     </message>
     <message>
         <source>Lists all the available shortcuts which can be configured.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt alle konfigurierbaren Tastenkombinationen.</translation>
     </message>
     <message>
         <source>Enter a sequence to filter the shortcut list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liste der Tastenkombinationen filtern.</translation>
     </message>
 </context>
 <context>
@@ -1991,11 +1991,11 @@
     </message>
     <message>
         <source>&amp;NAT Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;NAT-Netzwerke</translation>
     </message>
     <message>
         <source>Lists all available NAT networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zeigt die verfügbaren NAT-Netzwerke.</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks</source>
@@ -2035,35 +2035,35 @@
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Alter Netzwerk-Name</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Neuer Netzwerk-Name</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Unterstützt DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished"></translation>
+        <translation>ja</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished"></translation>
+        <translation>nein</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6-Unterstützung</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished"></translation>
+        <translation>Default-IPv6-Route</translation>
     </message>
     <message>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
@@ -2100,19 +2100,19 @@
     <message>
         <source>Active</source>
         <comment>NAT network</comment>
-        <translation type="unfinished">aktiv</translation>
+        <translation>aktiv</translation>
     </message>
     <message>
         <source>&amp;Add NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk &amp;hinzufügen</translation>
     </message>
     <message>
         <source>&amp;Remove NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk &amp;entfernen</translation>
     </message>
     <message>
         <source>&amp;Edit NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>NAT-Netzwerk ä&amp;ndern</translation>
     </message>
 </context>
 <context>
@@ -2214,102 +2214,102 @@
     <name>UIGlobalSettingsNetworkDetailsHost</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished">Einstellungen für Host-only Netzwerk</translation>
+        <translation>Einstellungen für Host-only Netzwerk</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Adapter</translation>
+        <translation>&amp;Adapter</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished">Manuelle &amp;Konfiguration</translation>
+        <translation>Manuelle &amp;Konfiguration</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished">Erlaubt die manuelle Konfiguration dieses Host-only Netzwerkadapters.</translation>
+        <translation>Erlaubt die manuelle Konfiguration dieses Host-only Netzwerkadapters.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">&amp;IPv4-Adresse:</translation>
+        <translation>&amp;IPv4-Adresse:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Zeigt die IPv4-Adresse für diesen Adapter.</translation>
+        <translation>Zeigt die IPv4-Adresse für diesen Adapter.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4-Netz&amp;maske:</translation>
+        <translation>IPv4-Netz&amp;maske:</translation>
     </message>
     <message>
         <source>Displays the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Zeigt die IPv4-Netzmaske für diesen Adapter.</translation>
+        <translation>Zeigt die IPv4-Netzmaske für diesen Adapter.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">I&amp;Pv6-Adresse:</translation>
+        <translation>I&amp;Pv6-Adresse:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zeigt die IPv6-Adresse für diesen Adapter falls IPv6 unterstützt wird.</translation>
+        <translation>Zeigt die IPv6-Adresse für diesen Adapter falls IPv6 unterstützt wird.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished">IPv6 Netzmasken-&amp;Länge:</translation>
+        <translation>IPv6 Netzmasken-&amp;Länge:</translation>
     </message>
     <message>
         <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Zeigt die IPv6 Netzmasken-Prefixlänge für diesen Adapter falls IPv6 unterstützt wird.</translation>
+        <translation>Zeigt die IPv6 Netzmasken-Prefixlänge für diesen Adapter falls IPv6 unterstützt wird.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">&amp;DHCP-Server</translation>
+        <translation>&amp;DHCP-Server</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished">Server &amp;aktivieren</translation>
+        <translation>Server &amp;aktivieren</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished">Zeigt an, ob der DHCP-Server beim Start der Maschine aktiviert wird oder nicht.</translation>
+        <translation>Zeigt an, ob der DHCP-Server beim Start der Maschine aktiviert wird oder nicht.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">Server-A&amp;dresse:</translation>
+        <translation>Server-A&amp;dresse:</translation>
     </message>
     <message>
         <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die Adresse des DHCP-Servers der die IP-Adressen für das Netzwerk an diesem Hostadapter verwaltet.</translation>
+        <translation>Zeigt die Adresse des DHCP-Servers der die IP-Adressen für das Netzwerk an diesem Hostadapter verwaltet.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">Server-&amp;Maske:</translation>
+        <translation>Server-&amp;Maske:</translation>
     </message>
     <message>
         <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die Netzmaske des DHCP-Servers, der die IP-Adressen an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die Netzmaske des DHCP-Servers, der die IP-Adressen an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">&amp;Kleinste Adresse:</translation>
+        <translation>&amp;Kleinste Adresse:</translation>
     </message>
     <message>
         <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die kleinste IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die kleinste IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">&amp;Größte Adresse:</translation>
+        <translation>&amp;Größte Adresse:</translation>
     </message>
     <message>
         <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Zeigt die größte IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
+        <translation>Zeigt die größte IP-Adresse, die der DHCP-Server für das Netzwerk an diesem Host-only Netzwerkadapter verwaltet.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetworkDetailsNAT</name>
     <message>
         <source>NAT Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für NAT-Netzwerk</translation>
     </message>
     <message>
         <source>Network &amp;Enabled</source>
@@ -2321,7 +2321,7 @@
     </message>
     <message>
         <source>Network &amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-&amp;Name:</translation>
     </message>
     <message>
         <source>Displays the name for this network.</source>
@@ -2329,7 +2329,7 @@
     </message>
     <message>
         <source>Network &amp;CIDR:</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-&amp;CIDR:</translation>
     </message>
     <message>
         <source>Displays the CIDR for this network.</source>
@@ -2337,11 +2337,11 @@
     </message>
     <message>
         <source>Network Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Optionen:</translation>
     </message>
     <message>
         <source>Supports &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Unterstützt &amp;DHCP</translation>
     </message>
     <message>
         <source>Determines whether this network supports DHCP.</source>
@@ -2349,7 +2349,7 @@
     </message>
     <message>
         <source>Supports &amp;IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>Unterstützt &amp;IPv6</translation>
     </message>
     <message>
         <source>Determines whether this network supports IPv6.</source>
@@ -2485,71 +2485,71 @@
     <name>UIHostComboEditor</name>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished">&lt;Taste_%1&gt;</translation>
+        <translation>&lt;Taste_%1&gt;</translation>
     </message>
     <message>
         <source>Left </source>
-        <translation type="unfinished">Links</translation>
+        <translation>Links</translation>
     </message>
     <message>
         <source>Right </source>
-        <translation type="unfinished">Rechts</translation>
+        <translation>Rechts</translation>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Shift Links</translation>
+        <translation>Shift Links</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Shift Rechts</translation>
+        <translation>Shift Rechts</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Strg Links</translation>
+        <translation>Strg Links</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Strg Rechts</translation>
+        <translation>Strg Rechts</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Alt Links</translation>
+        <translation>Alt Links</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="unfinished">Alt Rechts</translation>
+        <translation>Alt Rechts</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="unfinished">Win Links</translation>
+        <translation>Win Links</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="unfinished">Win Rechts</translation>
+        <translation>Win Rechts</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="unfinished">Menü</translation>
+        <translation>Menü</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished">AltGr</translation>
+        <translation>AltGr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished">Umsch Lock</translation>
+        <translation>Umsch Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished">Rollen Lock</translation>
+        <translation>Rollen Lock</translation>
     </message>
     <message>
         <source>Host+</source>
-        <translation type="unfinished"></translation>
+        <translation>Host+</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine</translation>
     </message>
 </context>
 <context>
@@ -2631,11 +2631,11 @@
     <name>UIHotKeyTableModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Name</translation>
+        <translation>Name</translation>
     </message>
     <message>
         <source>Shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>Tastenkombination</translation>
     </message>
 </context>
 <context>
@@ -2989,7 +2989,7 @@
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Dateipfad:</translation>
     </message>
     <message>
         <source>This setting determines the filename VirtualBox uses to save the recorded content.</source>
@@ -2997,7 +2997,7 @@
     </message>
     <message>
         <source>Frame &amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bild&amp;größe:</translation>
     </message>
     <message>
         <source>This setting determines the resolution (frame size) of the recorded video.</source>
@@ -3013,7 +3013,7 @@
     </message>
     <message>
         <source>&amp;Frame Rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bild&amp;rate:</translation>
     </message>
     <message>
         <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
@@ -3021,7 +3021,7 @@
     </message>
     <message>
         <source>&amp;Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Qualität:</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
@@ -3033,7 +3033,7 @@
     </message>
     <message>
         <source>&amp;Screens:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bildschirme:</translation>
     </message>
     <message>
         <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
@@ -3069,34 +3069,34 @@
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 fps</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished"></translation>
+        <translation>fps</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>niedrig</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>mittel</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>hoch</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished"></translation>
+        <translation>kbps</translation>
     </message>
     <message>
         <source>Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Bildschirm %1</translation>
     </message>
     <message>
         <source>Enable video recording for screen %1.</source>
@@ -4218,7 +4218,7 @@
     </message>
     <message>
         <source>&amp;Pointing device:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zeigergerät:</translation>
     </message>
     <message>
         <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
@@ -5602,7 +5602,7 @@
     </message>
     <message>
         <source>Ignore</source>
-        <translation type="unfinished">Ignorieren</translation>
+        <translation>Ignorieren</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -5610,15 +5610,15 @@
     </message>
     <message>
         <source>&amp;Choose existing disk</source>
-        <translation type="unfinished">&amp;Vorhandene Platte auswählen</translation>
+        <translation>&amp;Vorhandene Platte auswählen</translation>
     </message>
     <message>
         <source>Leave &amp;empty</source>
-        <translation type="unfinished">&amp;Kein Medium</translation>
+        <translation>&amp;Kein Medium</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
-        <translation type="unfinished">&amp;Medium auswählen</translation>
+        <translation>&amp;Medium auswählen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -5698,7 +5698,7 @@
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished">Einschalten</translation>
+        <translation>Einschalten</translation>
     </message>
     <message>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5722,7 +5722,7 @@
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished">Herunterladen</translation>
+        <translation>Herunterladen</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
@@ -5750,11 +5750,11 @@
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen, kann aber nicht lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert werden. Bitte wählen Sie ein anderes Verzeichnis.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+        <translation>&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen, kann aber nicht lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert werden. Bitte wählen Sie ein anderes Verzeichnis.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
-        <translation type="unfinished">&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
+        <translation>&lt;p&gt;Das VirtualBox-Benutzerhandbuch wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal unter &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
         <source>VirtualBox - MessageType_Question</source>
@@ -5778,34 +5778,34 @@
     </message>
     <message id="false">
         <source>Close</source>
-        <translation type="unfinished">Schließen</translation>
+        <translation>Schließen</translation>
     </message>
     <message>
         <source>Ok</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>Do not show this message again</source>
-        <translation type="unfinished">Diese Meldung später nicht mehr zeigen</translation>
+        <translation>Diese Meldung später nicht mehr zeigen</translation>
     </message>
 </context>
 <context>
     <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="unfinished">Toolbar immer zeigen</translation>
+        <translation>Toolbar immer zeigen</translation>
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation type="unfinished">Anwendung minimieren</translation>
+        <translation>Anwendung minimieren</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="unfinished">Vollbildmodus bzw. nahtlosen Modus verlassen</translation>
+        <translation>Vollbildmodus bzw. nahtlosen Modus verlassen</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished">VM beenden</translation>
+        <translation>VM beenden</translation>
     </message>
 </context>
 <context>
@@ -6755,23 +6755,23 @@
     </message>
     <message>
         <source>OVF 0.9</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF 0.0</translation>
     </message>
     <message>
         <source>OVF 1.0</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF 1.0</translation>
     </message>
     <message>
         <source>OVF 2.0</source>
-        <translation type="unfinished"></translation>
+        <translation>OVF 2.0</translation>
     </message>
     <message>
         <source>Write in standard OVF 1.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeuge OVF-1.0-Format.</translation>
     </message>
     <message>
         <source>Write in new experimental OVF 2.0 format.</source>
-        <translation type="unfinished"></translation>
+        <translation>Erzeuge das experimentelle OVF-2.0-Format.</translation>
     </message>
     <message>
         <source>&amp;Storage settings</source>
@@ -7063,7 +7063,7 @@
     </message>
     <message>
         <source>Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>Auswählen...</translation>
     </message>
 </context>
 <context>
@@ -8409,56 +8409,56 @@
     <message>
         <source>Enabled</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details report (Unrestricted Execution)</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unrestricted Execution</translation>
     </message>
     <message>
         <source>PS/2 Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PS/2-Maus</translation>
     </message>
     <message>
         <source>USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB-Maus</translation>
     </message>
     <message>
         <source>USB Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB-Tablet</translation>
     </message>
     <message>
         <source>PS/2 and USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PS/2- und USB-Maus</translation>
     </message>
     <message>
         <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB-Multitouch-Maus/Tablet</translation>
     </message>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">aktiviert</translation>
+        <translation>aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">deaktiviert</translation>
+        <translation>deaktiviert</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Unrestricted Execution</translation>
     </message>
 </context>
 <context>
@@ -8913,11 +8913,11 @@
     </message>
     <message>
         <source>Configuration &amp;Details</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Konfiguration</translation>
     </message>
     <message>
         <source>&amp;Runtime Information</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Laufzeit</translation>
     </message>
 </context>
 </TS>
