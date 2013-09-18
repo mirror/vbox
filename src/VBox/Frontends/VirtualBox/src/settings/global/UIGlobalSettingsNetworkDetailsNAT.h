@@ -47,6 +47,9 @@ protected:
 
 private slots:
 
+    /* Handler: Port-forwarding stuff: */
+    void sltEditPortForwarding();
+
     /* Handler: Dialog stuff: */
     void accept();
 

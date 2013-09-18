@@ -22,6 +22,7 @@
 /* GUI includes: */
 #include "UISettingsPage.h"
 #include "UIGlobalSettingsNetwork.gen.h"
+#include "UIMachineSettingsPortForwardingDlg.h"
 
 /* Forward declarations: */
 class UIItemNetworkNAT;
@@ -39,6 +40,7 @@ struct UIDataNetworkNAT
     bool m_fSupportsDHCP;
     bool m_fSupportsIPv6;
     bool m_fAdvertiseDefaultIPv6Route;
+    UIPortForwardingDataList m_redirects;
     bool operator==(const UIDataNetworkNAT &other) const
     {
         return m_fEnabled == other.m_fEnabled &&
@@ -47,7 +49,8 @@ struct UIDataNetworkNAT
                m_strCIDR == other.m_strCIDR &&
                m_fSupportsDHCP == other.m_fSupportsDHCP &&
                m_fSupportsIPv6 == other.m_fSupportsIPv6 &&
-               m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route;
+               m_fAdvertiseDefaultIPv6Route == other.m_fAdvertiseDefaultIPv6Route &&
+               m_redirects == other.m_redirects;
     }
 };
 
