@@ -267,7 +267,7 @@ private:
     UIDockIconPreview *m_pDockIconPreview;
     QActionGroup *m_pDockPreviewSelectMonitorGroup;
     int m_DockIconPreviewMonitor;
-    void *m_hostLedsState;
+    void *m_pHostLedsState;
 #endif /* Q_WS_MAC */
 
     /* Friend classes: */

@@ -566,7 +566,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pDockIconPreview(0)
     , m_pDockPreviewSelectMonitorGroup(0)
     , m_DockIconPreviewMonitor(0)
-    , m_hostLedsState(NULL)
+    , m_pHostLedsState(NULL)
 #endif /* Q_WS_MAC */
 {
 }
@@ -2191,8 +2191,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
 #ifdef Q_WS_MAC
-    if (m_hostLedsState == NULL)
-        m_hostLedsState = DarwinHidDevicesKeepLedsState();
+    if (m_pHostLedsState == NULL)
+        m_pHostLedsState = DarwinHidDevicesKeepLedsState();
     DarwinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
 #endif /* Q_WS_MAC */
 }
@@ -2207,10 +2207,10 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 
     /* Here we have to restore host LED lock states. */
 #ifdef Q_WS_MAC
-    if (m_hostLedsState)
+    if (m_pHostLedsState)
     {
-        DarwinHidDevicesApplyAndReleaseLedsState(m_hostLedsState);
-        m_hostLedsState = NULL;
+        DarwinHidDevicesApplyAndReleaseLedsState(m_pHostLedsState);
+        m_pHostLedsState = NULL;
     }
 #endif /* Q_WS_MAC */
 }
