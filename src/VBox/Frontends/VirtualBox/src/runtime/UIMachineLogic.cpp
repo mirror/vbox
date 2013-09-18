@@ -489,7 +489,7 @@ void UIMachineLogic::sltKeyboardLedsChanged()
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
     LogRelFlow(("UIMachineLogic::sltKeyboardLedsChanged: Updating host LED lock states (NOT IMPLEMENTED).\n"));
 #ifdef Q_WS_MAC
-    //DarwinUpdateHostLedDevices(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+    DarwinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
 #endif
 }
 
@@ -566,6 +566,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualSt
     , m_pDockIconPreview(0)
     , m_pDockPreviewSelectMonitorGroup(0)
     , m_DockIconPreviewMonitor(0)
+    , m_hostLedsState(NULL)
 #endif /* Q_WS_MAC */
 {
 }
@@ -2189,6 +2190,11 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
+#ifdef Q_WS_MAC
+    if (m_hostLedsState == NULL)
+        m_hostLedsState = DarwinHidDevicesKeepLedsState();
+    DarwinHidDevicesBroadcastLeds(uisession()->isNumLock(), uisession()->isCapsLock(), uisession()->isScrollLock());
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
@@ -2200,6 +2206,13 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //           session().GetMachine().GetName().toAscii().constData());
 
     /* Here we have to restore host LED lock states. */
+#ifdef Q_WS_MAC
+    if (m_hostLedsState)
+    {
+        DarwinHidDevicesApplyAndReleaseLedsState(m_hostLedsState);
+        m_hostLedsState = NULL;
+    }
+#endif /* Q_WS_MAC */
 }
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
