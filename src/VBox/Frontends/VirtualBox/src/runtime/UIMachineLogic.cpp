@@ -199,6 +199,7 @@ void UIMachineLogic::prepare()
     sltMachineStateChanged();
     sltAdditionsStateChanged();
     sltMouseCapabilityChanged();
+    sltSwitchKeyboardLedsToGuestLeds();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Prepare debugger: */
@@ -211,6 +212,9 @@ void UIMachineLogic::prepare()
 
 void UIMachineLogic::cleanup()
 {
+    /* Deinitialization: */
+    sltSwitchKeyboardLedsToPreviousLeds();
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Cleanup debugger: */
     cleanupDebugger();
