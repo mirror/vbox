@@ -221,6 +221,22 @@ typedef struct VRDEVIDEOINDEVICEDESC
 #define VRDE_VIDEOIN_F_DEV_CAP_TRIGGER         0x02 /* Whether hardware triggering is supported. */
 #define VRDE_VIDEOIN_F_DEV_CAP_TRIGGER_USAGE   0x04 /* 0 - still image, 1 - generic button event.*/
 
+/* VRDEVIDEOINDEVICEDESC extended description. */
+typedef struct VRDEVIDEOINDEVICEEXT
+{
+    uint32_t fu32Fields;
+    /* One or more VRDEVIDEOINDEVICEFIELD follow. */
+} VRDEVIDEOINDEVICEEXT;
+
+typedef struct VRDEVIDEOINDEVICEFIELDHDR
+{
+    uint16_t cbField;  /* Number of bytes reserved for this field. */
+} VRDEVIDEOINDEVICEFIELDHDR;
+
+/* VRDEVIDEOINDEVICEDESC::fu32Fields */
+#define VRDE_VIDEOIN_F_DEV_EXT_NAME   0x00000001 /* Utf8 device name. */
+#define VRDE_VIDEOIN_F_DEV_EXT_SERIAL 0x00000002 /* Utf8 device serial number. */
+
 /* The video format descriptor. */
 typedef struct VRDEVIDEOINFORMATDESC
 {
