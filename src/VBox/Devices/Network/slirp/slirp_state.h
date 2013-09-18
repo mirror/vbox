@@ -246,6 +246,9 @@ typedef struct NATState
 #endif
     uma_zone_t zone_ext_refcnt;
     bool fUseHostResolver;
+    /** Flag whether using the host resolver mode is permanent
+     * because the user configured it that way. */
+    bool fUseHostResolverPermanent;
     /* from dnsproxy/dnsproxy.h*/
     unsigned int authoritative_port;
     unsigned int authoritative_timeout;

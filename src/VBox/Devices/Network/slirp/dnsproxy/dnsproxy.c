@@ -361,6 +361,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
         {
             static int fail_counter = 0;
             RTMemFree(req);
+            /** @todo: This is completely bogus, fail_counter will always be 0. */
             if (fail_counter == 0)
               LogRel(("NAT/dnsproxy: Empty DNS entry (suppressed 100 times)\n"));
             else

@@ -697,9 +697,10 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
      * We're going update dns list at least once per DHCP transaction (!not on every operation
      * within transaction), assuming that transaction can't be longer than 1 min.
      */
-    if (   !pData->fUseHostResolver
+    if (   !pData->fUseHostResolverPermanent
         && (   pData->dnsLastUpdate == 0
-            || curtime - pData->dnsLastUpdate > 60 * 1000)) /* one minute*/
+            || curtime - pData->dnsLastUpdate > 60 * 1000
+            || pData->fUseHostResolver)) /* one minute*/
     {
         uint8_t i = 2; /* i = 0 - tag, i == 1 - length */
         parameter_list = dhcp_find_option(&bp->bp_vend[0], RFC2132_PARAM_LIST);
