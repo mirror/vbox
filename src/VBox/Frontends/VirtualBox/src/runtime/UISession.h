@@ -77,22 +77,6 @@ enum UIConsoleEventType
     UIConsoleEventType_MAX
 };
 
-/* Keyboard Lock container: */
-struct UIKeyboardLocks
-{
-    /* Constructor: */
-    UIKeyboardLocks()
-        : m_num(false)
-        , m_caps(false)
-        , m_scroll(false)
-    {}
-    /* Variables: */
-    bool m_num;
-    bool m_caps;
-    bool m_scroll;
-};
-typedef QMap<QString, UIKeyboardLocks> UIKeyboardLocksMap;
-
 class UISession : public QObject
 {
     Q_OBJECT;
@@ -152,8 +136,6 @@ public:
     bool isScrollLock() const { return m_fScrollLock; }
     uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
     uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
-    void setHostLockStates(const QString &strKeyboardID, bool fNum, bool fCaps, bool fScroll);
-    void getHostLockStates(const QString &strKeyboardID, bool &fNum, bool &fCaps, bool &fScroll);
 
     /* Mouse getters: */
     bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
@@ -320,7 +302,6 @@ private:
     bool m_fScrollLock : 1;
     uint m_uNumLockAdaptionCnt;
     uint m_uCapsLockAdaptionCnt;
-    UIKeyboardLocksMap m_hostLocks;
 
     /* Mouse flags: */
     bool m_fIsMouseSupportsAbsolute : 1;
