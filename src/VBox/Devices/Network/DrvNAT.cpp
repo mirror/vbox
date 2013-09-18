@@ -964,7 +964,17 @@ static DECLCALLBACK(void) drvNatDnsChanged(SCDynamicStoreRef hDynStor, CFArrayRe
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
 
-    pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, PDMNETWORKLINKSTATE_DOWN_RESUME);
+    LogRel(("NAT: DNS servers changed, triggering reconnect\n"));
+
+    CFDictionaryRef hDnsDict = (CFDictionaryRef)SCDynamicStoreCopyValue(hDynStor, CFSTR("State:/Network/Global/DNS"));
+    if (hDnsDict)
+    {
+        CFArrayRef hArrAddresses = (CFArrayRef)CFDictionaryGetValue(hDnsDict, kSCPropNetDNSServerAddresses);
+        if (hArrAddresses)
+            pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, PDMNETWORKLINKSTATE_DOWN_RESUME);
+
+        CFRelease(hDnsDict);
+    }
 }
 #endif
 
