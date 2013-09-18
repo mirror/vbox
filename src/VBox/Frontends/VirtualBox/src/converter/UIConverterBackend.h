@@ -135,6 +135,8 @@ template<> QString toString(const KStorageBus &bus);
 template<> QString toString(const KStorageControllerType &type);
 template<> QString toString(const KChipsetType &type);
 template<> QString toString(const KNATProtocol &protocol);
+template<> QString toInternalString(const KNATProtocol &protocol);
+template<> KNATProtocol fromInternalString<KNATProtocol>(const QString &strProtocol);
 template<> KPortMode fromString<KPortMode>(const QString &strMode);
 template<> KUSBDeviceFilterAction fromString<KUSBDeviceFilterAction>(const QString &strAction);
 template<> KAudioDriverType fromString<KAudioDriverType>(const QString &strType);
