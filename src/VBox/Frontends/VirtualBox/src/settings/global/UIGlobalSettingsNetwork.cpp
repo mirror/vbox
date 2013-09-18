@@ -24,6 +24,7 @@
 /* GUI includes: */
 #include "VBoxGlobal.h"
 #include "UIIconPool.h"
+#include "UIConverter.h"
 #include "UIMessageCenter.h"
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
@@ -126,7 +127,7 @@ bool UIItemNetworkNAT::validate(UIValidationMessage &message)
     if (m_data.m_strNewName.isEmpty())
     {
         /* Emptiness validation: */
-        message.second << UIGlobalSettingsNetwork::tr("The new name for NAT network previously called <b>%1</b> is empty.").arg(m_data.m_strName);
+        message.second << UIGlobalSettingsNetwork::tr("No new name specified for the NAT network previously called <b>%1</b>.").arg(m_data.m_strName);
         fNameValid = false;
         fPass = false;
     }
@@ -136,9 +137,9 @@ bool UIItemNetworkNAT::validate(UIValidationMessage &message)
     {
         /* Emptiness validation: */
         if (fNameValid)
-            message.second << UIGlobalSettingsNetwork::tr("The CIDR for NAT network <b>%1</b> is empty.").arg(m_data.m_strNewName);
+            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network <b>%1</b>.").arg(m_data.m_strNewName);
         else
-            message.second << UIGlobalSettingsNetwork::tr("The CIDR for NAT network previously called <b>%1</b> is empty.").arg(m_data.m_strName);
+            message.second << UIGlobalSettingsNetwork::tr("No CIDR specified for the NAT network previously called <b>%1</b>.").arg(m_data.m_strName);
         fPass = false;
     }
     else
@@ -149,10 +150,10 @@ bool UIItemNetworkNAT::validate(UIValidationMessage &message)
         if (RT_FAILURE(rc))
         {
             if (fNameValid)
-                message.second << UIGlobalSettingsNetwork::tr("The CIDR <i>%1</i> for NAT network <b>%2</b> is invalid.")
+                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network <b>%2</b>.")
                                                               .arg(m_data.m_strCIDR, m_data.m_strNewName);
             else
-                message.second << UIGlobalSettingsNetwork::tr("The CIDR <i>%1</i> for NAT network previously called <b>%2</b> is invalid.")
+                message.second << UIGlobalSettingsNetwork::tr("Invalid CIDR specified (<i>%1</i>) for the NAT network previously called <b>%2</b>.")
                                                               .arg(m_data.m_strCIDR, m_data.m_strName);
             fPass = false;
         }
@@ -198,7 +199,7 @@ void UIItemNetworkNAT::updateInfo()
         strToolTip += strSubHeader.arg(UIGlobalSettingsNetwork::tr("Default IPv6 route"), UIGlobalSettingsNetwork::tr("yes"));
 
     /* Assign tool-tip finally: */
-    setToolTip(0, strToolTip);
+    setToolTip(1, strToolTip);
 }
 
 void UIItemNetworkNAT::updateData()
@@ -921,6 +922,22 @@ UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwo
     data.m_fSupportsIPv6 = network.GetIPv6Enabled();
     data.m_fAdvertiseDefaultIPv6Route = network.GetAdvertiseDefaultIPv6RouteEnabled();
 
+    /* Load redirect options: */
+    QVector<QString> redirects = network.GetPortForwardRules4();
+    foreach (const QString &strRedirect, redirects)
+    {
+        QStringList redirectData = strRedirect.split(':');
+        Assert(redirectData.size() == 6);
+        if (redirectData.size() != 6)
+            continue;
+        data.m_redirects << UIPortForwardingData(redirectData[0],
+                                                 gpConverter->fromInternalString<KNATProtocol>(redirectData[1]),
+                                                 QString(redirectData[2]).remove('[').remove(']'),
+                                                 redirectData[3].toUInt(),
+                                                 QString(redirectData[4]).remove('[').remove(']'),
+                                                 redirectData[5].toUInt());
+    }
+
     /* Return data: */
     return data;
 }
@@ -939,6 +956,16 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataNetworkNAT &da
     network.SetNeedDhcpServer(data.m_fSupportsDHCP);
     network.SetIPv6Enabled(data.m_fSupportsIPv6);
     network.SetAdvertiseDefaultIPv6RouteEnabled(data.m_fAdvertiseDefaultIPv6Route);
+
+    /* Rewrite redirect options: */
+    QVector<QString> oldRedirects = network.GetPortForwardRules4();
+    foreach (const QString &strRedirect, oldRedirects)
+        network.RemovePortForwardRule(false, strRedirect.section(':', 0, 0));
+    foreach (const UIPortForwardingData &newRedirect, data.m_redirects)
+        network.AddPortForwardRule(false,
+                                   newRedirect.name, newRedirect.protocol,
+                                   newRedirect.hostIp, newRedirect.hostPort.value(),
+                                   newRedirect.guestIp, newRedirect.guestPort.value());
 }
 
 void UIGlobalSettingsNetwork::createTreeItemNetworkNAT(const UIDataNetworkNAT &data, bool fChooseItem)

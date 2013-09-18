@@ -68,6 +68,14 @@ void UIGlobalSettingsNetworkDetailsNAT::polishEvent(QShowEvent*)
     m_pContainerOptions->setEnabled(m_pCheckboxNetwork->isChecked());
 }
 
+void UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding()
+{
+    /* Open dialog to edit port-forwarding rules: */
+    UIMachineSettingsPortForwardingDlg dlg(this, m_data.m_redirects);
+    if (dlg.exec() == QDialog::Accepted)
+        m_data.m_redirects = dlg.rules();
+}
+
 void UIGlobalSettingsNetworkDetailsNAT::accept()
 {
     /* Save before accept: */

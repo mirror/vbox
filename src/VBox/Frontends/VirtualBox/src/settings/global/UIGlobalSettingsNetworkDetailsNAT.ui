@@ -21,7 +21,7 @@
    <item row="0" column="0">
     <widget class="QCheckBox" name="m_pCheckboxNetwork">
      <property name="text">
-      <string>Network &amp;Enabled</string>
+      <string>&amp;Enable Network</string>
      </property>
      <property name="toolTip">
       <string>Enable this NAT network.</string>
@@ -31,7 +31,7 @@
    <item row="1" column="0" colspan="2">
     <widget class="QWidget" name="m_pContainerOptions">
      <layout class="QGridLayout">
-      <item row="0" column="0" rowspan="3">
+      <item row="0" column="0">
        <spacer>
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -127,6 +127,16 @@
         </property>
        </widget>
       </item>
+      <item row="5" column="2">
+       <widget class="QPushButton" name="m_pButtonPortForwarding">
+        <property name="whatsThis">
+         <string>Opens dialog to manage port forwarding rules.</string>
+        </property>
+        <property name="text">
+         <string>&amp;Port Forwarding</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -172,6 +182,12 @@
    <signal>toggled(bool)</signal>
    <receiver>m_pCheckboxAdvertiseDefaultIPv6Route</receiver>
    <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>m_pButtonPortForwarding</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>UIGlobalSettingsNetworkDetailsNAT</receiver>
+   <slot>sltEditPortForwarding()</slot>
   </connection>
   <connection>
    <sender>m_pButtonBox</sender>
