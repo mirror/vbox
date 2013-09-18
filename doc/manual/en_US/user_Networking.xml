@@ -556,8 +556,10 @@
           and above), it is possible to use Solaris' Crossbow Virtual Network
           Interfaces (VNICs) directly with VirtualBox without any additional
           configuration other than each VNIC must be exclusive for every guest
-          network interface. With VirtualBox 2.0.4 and above, VNICs can be
-          used but with the following caveats:</para>
+          network interface.</para>
+
+          <para>Starting with VirtualBox 2.0.4 and up to VirtualBox 4.0, VNICs
+          can be used but with the following caveats:</para>
 
           <itemizedlist>
             <listitem>
