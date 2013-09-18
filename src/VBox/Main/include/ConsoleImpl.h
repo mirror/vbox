@@ -614,7 +614,6 @@ private:
 
     static DECLCALLBACK(int) configGuestProperties(void *pvConsole, PUVM pUVM);
     static DECLCALLBACK(int) configGuestControl(void *pvConsole);
-    void vmstateChangePowerOff(bool fCalledFromReset /* = false */);
     static DECLCALLBACK(void) vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, VMSTATE enmOldState, void *pvUser);
     static DECLCALLBACK(int) unplugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
     static DECLCALLBACK(int) plugCpu(Console *pThis, PUVM pUVM, VMCPUID idCpu);
@@ -681,6 +680,7 @@ private:
     static DECLCALLBACK(void)   vmm2User_NotifyEmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM, PUVMCPU pUVCpu);
     static DECLCALLBACK(void)   vmm2User_NotifyPdmtInit(PCVMM2USERMETHODS pThis, PUVM pUVM);
     static DECLCALLBACK(void)   vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM);
+    static DECLCALLBACK(void)   vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM pUVM);
 
     static DECLCALLBACK(void *) drvStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(void)   drvStatus_UnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
@@ -788,6 +788,8 @@ private:
     bool mfSnapshotFolderDiskTypeShown : 1;
     /** true if a USB controller is available (i.e. USB devices can be attached). */
     bool mfVMHasUsbController : 1;
+    /** true if the VM power off was caused by reset. */
+    bool mfPowerOffCausedByReset : 1;
 
     /** Pointer to the VMM -> User (that's us) callbacks. */
     struct MYVMM2USERMETHODS : public VMM2USERMETHODS
