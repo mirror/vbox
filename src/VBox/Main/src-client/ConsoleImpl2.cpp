@@ -1010,6 +1010,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_UnrestrictedExecution, &fEnableUX); H();
         InsertConfigInteger(pHM, "EnableUX", fEnableUX);
 
+        /* Reset overwrite. */
+        if (isResetTurnedIntoPowerOff())
+            InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
+
+
         /*
          * MM values.
          */

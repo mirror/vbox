@@ -221,6 +221,16 @@ typedef struct VMM2USERMETHODS
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyPdmtTerm,(PCVMM2USERMETHODS pThis, PUVM pUVM));
 
+    /**
+     * Notification callback that that a VM reset will be turned into a power off.
+     *
+     * @param   pThis       Pointer to the callback method table.
+     * @param   pUVM        The user mode VM handle.
+     *
+     * @remarks This is optional and shall be set to NULL if not wanted.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyResetTurnedIntoPowerOff,(PCVMM2USERMETHODS pThis, PUVM pUVM));
+
     /** Magic value (VMM2USERMETHODS_MAGIC) marking the end of the structure. */
     uint32_t    u32EndMagic;
 } VMM2USERMETHODS;
@@ -228,7 +238,7 @@ typedef struct VMM2USERMETHODS
 /** Magic value of the VMM2USERMETHODS (Franz Kafka). */
 #define VMM2USERMETHODS_MAGIC         UINT32_C(0x18830703)
 /** The VMM2USERMETHODS structure version. */
-#define VMM2USERMETHODS_VERSION       UINT32_C(0x00020000)
+#define VMM2USERMETHODS_VERSION       UINT32_C(0x00020001)
 
 
 /**

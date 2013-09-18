@@ -163,6 +163,8 @@ typedef struct VMINT
     R3PTRTYPE(PVMRUNTIMEERROR)      pRuntimeErrorR3;
     /** The VM was/is-being teleported and has not yet been fully resumed. */
     bool                            fTeleportedAndNotFullyResumedYet;
+    /** The VM should power off instead of reset. */
+    bool                            fPowerOffInsteadOfReset;
 } VMINT;
 /** Pointer to the VM Internal Data (part of the VM structure). */
 typedef VMINT *PVMINT;

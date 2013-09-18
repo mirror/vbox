@@ -196,6 +196,7 @@ VMMR3DECL(int)   VMR3Create(uint32_t cCpus, PCVMM2USERMETHODS pVmm2UserMethods,
         AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyEmtTerm, VERR_INVALID_POINTER);
         AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyPdmtInit, VERR_INVALID_POINTER);
         AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyPdmtTerm, VERR_INVALID_POINTER);
+        AssertPtrNullReturn(pVmm2UserMethods->pfnNotifyResetTurnedIntoPowerOff, VERR_INVALID_POINTER);
         AssertReturn(pVmm2UserMethods->u32EndMagic == VMM2USERMETHODS_MAGIC,   VERR_INVALID_PARAMETER);
     }
     AssertPtrNullReturn(pfnVMAtError, VERR_INVALID_POINTER);
@@ -840,6 +841,9 @@ static int vmR3ReadBaseConfig(PVM pVM, PUVM pUVM, uint32_t cCpus)
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         rc = VINF_SUCCESS;
     AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"UUID\" failed, rc=%Rrc\n", rc), rc);
+
+    rc = CFGMR3QueryBoolDef(pRoot, "PowerOffInsteadOfReset", &pVM->vm.s.fPowerOffInsteadOfReset, false);
+    AssertLogRelMsgRCReturn(rc, ("Configuration error: Querying \"PowerOffInsteadOfReset\" failed, rc=%Rrc\n", rc), rc);
 
     return VINF_SUCCESS;
 }
@@ -2852,6 +2856,14 @@ VMMR3DECL(int) VMR3Reset(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
 
+    if (pVM->vm.s.fPowerOffInsteadOfReset)
+    {
+        if (   pUVM->pVmm2UserMethods
+            && pUVM->pVmm2UserMethods->pfnNotifyResetTurnedIntoPowerOff)
+            pUVM->pVmm2UserMethods->pfnNotifyResetTurnedIntoPowerOff(pUVM->pVmm2UserMethods, pUVM);
+        return VMR3PowerOff(pUVM);
+    }
+
     /*
      * Gather all the EMTs to make sure there are no races before
      * changing the VM state.
@@ -4433,6 +4445,26 @@ VMMR3DECL(int) VMR3SetCpuExecutionCap(PUVM pUVM, uint32_t uCpuExecutionCap)
     Log(("VMR3SetCpuExecutionCap: new priority = %d\n", uCpuExecutionCap));
     /* Note: not called from EMT. */
     pVM->uCpuExecutionCap = uCpuExecutionCap;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Control whether the VM should power off when resetting.
+ *
+ * @returns VBox status code.
+ * @param   pUVM                The user mode VM handle.
+ * @param   fPowerOffInsteadOfReset Flag whether the VM should power off when
+ *                                  resetting.
+ */
+VMMR3DECL(int) VMR3SetPowerOffInsteadOfReset(PUVM pUVM, bool fPowerOffInsteadOfReset)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+
+    /* Note: not called from EMT. */
+    pVM->vm.s.fPowerOffInsteadOfReset = fPowerOffInsteadOfReset;
     return VINF_SUCCESS;
 }
 

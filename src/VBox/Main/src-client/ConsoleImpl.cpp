@@ -380,6 +380,7 @@ Console::Console()
     , mfSnapshotFolderExt4WarningShown(false)
     , mfSnapshotFolderDiskTypeShown(false)
     , mfVMHasUsbController(false)
+    , mfPowerOffCausedByReset(false)
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
@@ -420,6 +421,7 @@ HRESULT Console::FinalConstruct()
     pVmm2UserMethods->pfnNotifyEmtTerm  = Console::vmm2User_NotifyEmtTerm;
     pVmm2UserMethods->pfnNotifyPdmtInit = Console::vmm2User_NotifyPdmtInit;
     pVmm2UserMethods->pfnNotifyPdmtTerm = Console::vmm2User_NotifyPdmtTerm;
+    pVmm2UserMethods->pfnNotifyResetTurnedIntoPowerOff = Console::vmm2User_NotifyResetTurnedIntoPowerOff;
     pVmm2UserMethods->u32EndMagic       = VMM2USERMETHODS_MAGIC;
     pVmm2UserMethods->pConsole          = this;
     mpVmm2UserMethods = pVmm2UserMethods;
@@ -2181,19 +2183,19 @@ STDMETHODIMP Console::PowerDown(IProgress **aProgress)
     {
         ComPtr<IProgress> pProgress;
 
+#ifdef VBOX_WITH_GUEST_PROPS
         alock.release();
 
-#ifdef VBOX_WITH_GUEST_PROPS
-    if (isResetTurnedIntoPowerOff())
-    {
-        mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
-        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
-                                   Bstr("PowerOff").raw(), Bstr("RDONLYGUEST").raw());
-        mMachine->SaveSettings();
-    }
-#endif
+        if (isResetTurnedIntoPowerOff())
+        {
+            mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
+            mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
+                                       Bstr("PowerOff").raw(), Bstr("RDONLYGUEST").raw());
+            mMachine->SaveSettings();
+        }
 
         alock.acquire();
+#endif
 
         /*
          * request a progress object from the server
@@ -7707,101 +7709,6 @@ HRESULT Console::removeSharedFolder(const Utf8Str &strName)
     return S_OK;
 }
 
-/**
- * Internal VM power off worker.
- *
- * @return nothing.
- * @param  that   Console object.
- * @param  fCalledFromReset Flag whether the worker was called from the reset state change.
- */
-void Console::vmstateChangePowerOff(bool fCalledFromReset = false)
-{
-#ifdef VBOX_WITH_GUEST_PROPS
-    if (isResetTurnedIntoPowerOff())
-    {
-        Bstr strPowerOffReason;
-
-        if (fCalledFromReset)
-            strPowerOffReason = Bstr("Reset");
-        else
-            strPowerOffReason = Bstr("PowerOff");
-
-        mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
-        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
-                                   strPowerOffReason.raw(), Bstr("RDONLYGUEST").raw());
-        mMachine->SaveSettings();
-    }
-#endif
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (mVMStateChangeCallbackDisabled)
-        return;
-
-    /* Do we still think that it is running? It may happen if this is a
-     * VM-(guest-)initiated shutdown/poweroff.
-     */
-    if (   mMachineState != MachineState_Stopping
-        && mMachineState != MachineState_Saving
-        && mMachineState != MachineState_Restoring
-        && mMachineState != MachineState_TeleportingIn
-        && mMachineState != MachineState_FaultTolerantSyncing
-        && mMachineState != MachineState_TeleportingPausedVM
-        && !mVMIsAlreadyPoweringOff
-       )
-    {
-        LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
-
-        /*
-         * Prevent powerDown() from calling VMR3PowerOff() again if this was called from
-         * the power off state change.
-         * When called from the Reset state make sure to call VMR3PowerOff() first.
-         */
-        Assert(mVMPoweredOff == false);
-        mVMPoweredOff = !fCalledFromReset;
-
-        /*
-         * request a progress object from the server
-         * (this will set the machine state to Stopping on the server
-         * to block others from accessing this machine)
-         */
-        ComPtr<IProgress> pProgress;
-        HRESULT rc = mControl->BeginPoweringDown(pProgress.asOutParam());
-        AssertComRC(rc);
-
-        /* sync the state with the server */
-        setMachineStateLocally(MachineState_Stopping);
-
-        /* Setup task object and thread to carry out the operation
-         * asynchronously (if we call powerDown() right here but there
-         * is one or more mpUVM callers (added with addVMCaller()) we'll
-         * deadlock).
-         */
-        std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(this, pProgress));
-
-         /* If creating a task failed, this can currently mean one of
-          * two: either Console::uninit() has been called just a ms
-          * before (so a powerDown() call is already on the way), or
-          * powerDown() itself is being already executed. Just do
-          * nothing.
-          */
-        if (!task->isOk())
-        {
-            LogFlowFunc(("Console is already being uninitialized.\n"));
-            return;
-        }
-
-        int vrc = RTThreadCreate(NULL, Console::powerDownThread,
-                                 (void *)task.get(), 0,
-                                 RTTHREADTYPE_MAIN_WORKER, 0,
-                                 "VMPwrDwn");
-        AssertMsgRCReturnVoid(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
-
-        /* task is now owned by powerDownThread(), so release it */
-        task.release();
-    }
-}
-
 /** @callback_method_impl{FNVMATSTATE}
  *
  * @note    Locks the Console object for writing.
@@ -7832,7 +7739,90 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
          */
         case VMSTATE_OFF:
         {
-            that->vmstateChangePowerOff();
+#ifdef VBOX_WITH_GUEST_PROPS
+            if (that->isResetTurnedIntoPowerOff())
+            {
+                Bstr strPowerOffReason;
+
+                if (that->mfPowerOffCausedByReset)
+                    strPowerOffReason = Bstr("Reset");
+                else
+                    strPowerOffReason = Bstr("PowerOff");
+
+                that->mMachine->DeleteGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw());
+                that->mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VMPowerOffReason").raw(),
+                                                 strPowerOffReason.raw(), Bstr("RDONLYGUEST").raw());
+                that->mMachine->SaveSettings();
+            }
+#endif
+
+            AutoWriteLock alock(that COMMA_LOCKVAL_SRC_POS);
+
+            if (that->mVMStateChangeCallbackDisabled)
+                return;
+
+            /* Do we still think that it is running? It may happen if this is a
+             * VM-(guest-)initiated shutdown/poweroff.
+             */
+            if (   that->mMachineState != MachineState_Stopping
+                && that->mMachineState != MachineState_Saving
+                && that->mMachineState != MachineState_Restoring
+                && that->mMachineState != MachineState_TeleportingIn
+                && that->mMachineState != MachineState_FaultTolerantSyncing
+                && that->mMachineState != MachineState_TeleportingPausedVM
+                && !that->mVMIsAlreadyPoweringOff
+               )
+            {
+                LogFlowFunc(("VM has powered itself off but Console still thinks it is running. Notifying.\n"));
+
+                /*
+                 * Prevent powerDown() from calling VMR3PowerOff() again if this was called from
+                 * the power off state change.
+                 * When called from the Reset state make sure to call VMR3PowerOff() first.
+                 */
+                Assert(that->mVMPoweredOff == false);
+                that->mVMPoweredOff = true;
+
+                /*
+                 * request a progress object from the server
+                 * (this will set the machine state to Stopping on the server
+                 * to block others from accessing this machine)
+                 */
+                ComPtr<IProgress> pProgress;
+                HRESULT rc = that->mControl->BeginPoweringDown(pProgress.asOutParam());
+                AssertComRC(rc);
+
+                /* sync the state with the server */
+                that->setMachineStateLocally(MachineState_Stopping);
+
+                /* Setup task object and thread to carry out the operation
+                 * asynchronously (if we call powerDown() right here but there
+                 * is one or more mpUVM callers (added with addVMCaller()) we'll
+                 * deadlock).
+                 */
+                std::auto_ptr<VMPowerDownTask> task(new VMPowerDownTask(that, pProgress));
+
+                 /* If creating a task failed, this can currently mean one of
+                  * two: either Console::uninit() has been called just a ms
+                  * before (so a powerDown() call is already on the way), or
+                  * powerDown() itself is being already executed. Just do
+                  * nothing.
+                  */
+                if (!task->isOk())
+                {
+                    LogFlowFunc(("Console is already being uninitialized.\n"));
+                    return;
+                }
+
+                int vrc = RTThreadCreate(NULL, Console::powerDownThread,
+                                         (void *)task.get(), 0,
+                                         RTTHREADTYPE_MAIN_WORKER, 0,
+                                         "VMPwrDwn");
+                AssertMsgRCReturnVoid(vrc, ("Could not create VMPowerDown thread (%Rrc)\n", vrc));
+
+                /* task is now owned by powerDownThread(), so release it */
+                task.release();
+            }
             break;
         }
 
@@ -7902,15 +7892,10 @@ DECLCALLBACK(void) Console::vmstateChangeCallback(PUVM pUVM, VMSTATE enmState, V
 
         case VMSTATE_RESETTING:
         {
-            if (!that->isResetTurnedIntoPowerOff())
-            {
 #ifdef VBOX_WITH_GUEST_PROPS
-                /* Do not take any read/write locks here! */
-                that->guestPropertiesHandleVMReset();
+            /* Do not take any read/write locks here! */
+            that->guestPropertiesHandleVMReset();
 #endif
-            }
-            else
-                that->vmstateChangePowerOff(true /* fCalledFromReset*/);
             break;
         }
 
@@ -10015,6 +10000,18 @@ Console::vmm2User_NotifyPdmtTerm(PCVMM2USERMETHODS pThis, PUVM pUVM)
 {
     NOREF(pThis); NOREF(pUVM);
     VirtualBoxBase::uninitializeComForThread();
+}
+
+/**
+ * @interface_method_impl{VMM2USERMETHODS,pfnNotifyResetTurnedIntoPowerOff}
+ */
+/*static*/ DECLCALLBACK(void)
+Console::vmm2User_NotifyResetTurnedIntoPowerOff(PCVMM2USERMETHODS pThis, PUVM pUVM)
+{
+    Console *pConsole = ((MYVMM2USERMETHODS *)pThis)->pConsole;
+    NOREF(pUVM);
+
+    pConsole->mfPowerOffCausedByReset = true;
 }
 
 
