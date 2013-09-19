@@ -779,6 +779,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
                 }
 
                 // machines lock unwinds here
+#else
+                NOREF(cnt);
 #endif
             }
 
@@ -790,6 +792,8 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher::worker(RTTHREAD /* thread */, void 
             updateSpawned = false;
             for (size_t i = 0; i < cntSpawned; ++i)
                 updateSpawned |= (spawnedMachines[i])->checkForSpawnFailure();
+#else
+            NOREF(cntSpawned);
 #endif
 
             /* reap child processes */
