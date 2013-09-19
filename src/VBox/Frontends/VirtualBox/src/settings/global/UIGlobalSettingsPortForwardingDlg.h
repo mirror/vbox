@@ -16,8 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMachineSettingsPortForwardingDlg_h__
-#define __UIMachineSettingsPortForwardingDlg_h__
+#ifndef __UIGlobalSettingsPortForwardingDlg_h__
+#define __UIGlobalSettingsPortForwardingDlg_h__
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
@@ -25,20 +25,24 @@
 #include "UIPortForwardingTable.h"
 
 /* Forward declarations: */
+class QTabWidget;
 class QIDialogButtonBox;
 
-/* Machine settings / Network page / NAT attachment / Port forwarding dialog: */
-class UIMachineSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
+/* Global settings / Network page / NAT network tab / Port forwarding dialog: */
+class UIGlobalSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor/destructor: */
-    UIMachineSettingsPortForwardingDlg(QWidget *pParent, const UIPortForwardingDataList &rules);
+    UIGlobalSettingsPortForwardingDlg(QWidget *pParent,
+                                      const UIPortForwardingDataList &ipv4rules,
+                                      const UIPortForwardingDataList &ipv6rules);
 
     /* API: Rules stuff: */
-    const UIPortForwardingDataList& rules() const;
+    const UIPortForwardingDataList& ipv4rules() const;
+    const UIPortForwardingDataList& ipv6rules() const;
 
 private slots:
 
@@ -52,8 +56,10 @@ private:
     void retranslateUi();
 
     /* Widgets: */
-    UIPortForwardingTable *m_pTable;
+    QTabWidget *m_pTabWidget;
+    UIPortForwardingTable *m_pIPv4Table;
+    UIPortForwardingTable *m_pIPv6Table;
     QIDialogButtonBox *m_pButtonBox;
 };
 
-#endif // __UIMachineSettingsPortForwardingDlg_h__
+#endif // __UIGlobalSettingsPortForwardingDlg_h__

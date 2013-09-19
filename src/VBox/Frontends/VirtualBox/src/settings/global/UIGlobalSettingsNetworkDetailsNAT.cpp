@@ -23,6 +23,7 @@
 /* GUI includes: */
 #include "UIGlobalSettingsNetwork.h"
 #include "UIGlobalSettingsNetworkDetailsNAT.h"
+#include "UIGlobalSettingsPortForwardingDlg.h"
 
 UIGlobalSettingsNetworkDetailsNAT::UIGlobalSettingsNetworkDetailsNAT(QWidget *pParent, UIDataNetworkNAT &data)
     : QIWithRetranslateUI2<QIDialog>(pParent)
@@ -71,9 +72,12 @@ void UIGlobalSettingsNetworkDetailsNAT::polishEvent(QShowEvent*)
 void UIGlobalSettingsNetworkDetailsNAT::sltEditPortForwarding()
 {
     /* Open dialog to edit port-forwarding rules: */
-    UIMachineSettingsPortForwardingDlg dlg(this, m_data.m_redirects);
+    UIGlobalSettingsPortForwardingDlg dlg(this, m_data.m_ipv4rules, m_data.m_ipv6rules);
     if (dlg.exec() == QDialog::Accepted)
-        m_data.m_redirects = dlg.rules();
+    {
+        m_data.m_ipv4rules = dlg.ipv4rules();
+        m_data.m_ipv6rules = dlg.ipv6rules();
+    }
 }
 
 void UIGlobalSettingsNetworkDetailsNAT::accept()

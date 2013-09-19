@@ -922,20 +922,55 @@ UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwo
     data.m_fSupportsIPv6 = network.GetIPv6Enabled();
     data.m_fAdvertiseDefaultIPv6Route = network.GetAdvertiseDefaultIPv6RouteEnabled();
 
-    /* Load redirect options: */
-    QVector<QString> redirects = network.GetPortForwardRules4();
-    foreach (const QString &strRedirect, redirects)
+    /* Load IPv4 rules: */
+    QVector<QString> ipv4rules = network.GetPortForwardRules4();
+    foreach (QString strIPv4Rule, ipv4rules)
     {
-        QStringList redirectData = strRedirect.split(':');
-        Assert(redirectData.size() == 6);
-        if (redirectData.size() != 6)
+        /* Replace all ':' with ',' first: */
+        strIPv4Rule.replace(':', ',');
+        /* Parse rules: */
+        QStringList rules = strIPv4Rule.split(',');
+        Assert(rules.size() == 6);
+        if (rules.size() != 6)
             continue;
-        data.m_redirects << UIPortForwardingData(redirectData[0],
-                                                 gpConverter->fromInternalString<KNATProtocol>(redirectData[1]),
-                                                 QString(redirectData[2]).remove('[').remove(']'),
-                                                 redirectData[3].toUInt(),
-                                                 QString(redirectData[4]).remove('[').remove(']'),
-                                                 redirectData[5].toUInt());
+        data.m_ipv4rules << UIPortForwardingData(rules[0],
+                                                 gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                 QString(rules[2]).remove('[').remove(']'),
+                                                 rules[3].toUInt(),
+                                                 QString(rules[4]).remove('[').remove(']'),
+                                                 rules[5].toUInt());
+    }
+
+    /* Load IPv6 rules: */
+    QVector<QString> ipv6rules = network.GetPortForwardRules6();
+    foreach (QString strIPv6Rule, ipv6rules)
+    {
+        /* Replace all ':' with ',' first: */
+        strIPv6Rule.replace(':', ',');
+        /* But replace ',' back with ':' for addresses: */
+        QRegExp re("\\[[^:]+\\]");
+        re.setMinimal(true);
+        while (re.indexIn(strIPv6Rule) != -1)
+        {
+            QString strCapOld = re.cap(0);
+            QString strCapNew = strCapOld;
+            strCapNew.replace(',', ':');
+            strIPv6Rule.replace(strCapOld, strCapNew);
+        }
+        /* Parse rules: */
+        QStringList rules = strIPv6Rule.split(',');
+        Assert(rules.size() == 6);
+        if (rules.size() != 6)
+        {
+            printf("strIPv6Rule = {%s}\n", strIPv6Rule.toAscii().constData());
+            continue;
+        }
+        data.m_ipv6rules << UIPortForwardingData(rules[0],
+                                                 gpConverter->fromInternalString<KNATProtocol>(rules[1]),
+                                                 QString(rules[2]).remove('[').remove(']'),
+                                                 rules[3].toUInt(),
+                                                 QString(rules[4]).remove('[').remove(']'),
+                                                 rules[5].toUInt());
     }
 
     /* Return data: */
@@ -957,15 +992,25 @@ void UIGlobalSettingsNetwork::saveCacheItemNetworkNAT(const UIDataNetworkNAT &da
     network.SetIPv6Enabled(data.m_fSupportsIPv6);
     network.SetAdvertiseDefaultIPv6RouteEnabled(data.m_fAdvertiseDefaultIPv6Route);
 
-    /* Rewrite redirect options: */
-    QVector<QString> oldRedirects = network.GetPortForwardRules4();
-    foreach (const QString &strRedirect, oldRedirects)
-        network.RemovePortForwardRule(false, strRedirect.section(':', 0, 0));
-    foreach (const UIPortForwardingData &newRedirect, data.m_redirects)
+    /* Rewrite IPv4 rules: */
+    QVector<QString> oldIPv4Rules = network.GetPortForwardRules4();
+    foreach (const QString &strRule, oldIPv4Rules)
+        network.RemovePortForwardRule(false, strRule.section(':', 0, 0));
+    foreach (const UIPortForwardingData &newRule, data.m_ipv4rules)
         network.AddPortForwardRule(false,
-                                   newRedirect.name, newRedirect.protocol,
-                                   newRedirect.hostIp, newRedirect.hostPort.value(),
-                                   newRedirect.guestIp, newRedirect.guestPort.value());
+                                   newRule.name, newRule.protocol,
+                                   newRule.hostIp, newRule.hostPort.value(),
+                                   newRule.guestIp, newRule.guestPort.value());
+
+    /* Rewrite IPv6 rules: */
+    QVector<QString> oldIPv6Rules = network.GetPortForwardRules6();
+    foreach (const QString &strRule, oldIPv6Rules)
+        network.RemovePortForwardRule(true, strRule.section(':', 0, 0));
+    foreach (const UIPortForwardingData &newRule, data.m_ipv6rules)
+        network.AddPortForwardRule(true,
+                                   newRule.name, newRule.protocol,
+                                   newRule.hostIp, newRule.hostPort.value(),
+                                   newRule.guestIp, newRule.guestPort.value());
 }
 
 void UIGlobalSettingsNetwork::createTreeItemNetworkNAT(const UIDataNetworkNAT &data, bool fChooseItem)
