@@ -438,8 +438,8 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
         }
         case KNetworkAttachmentType_NATNetwork:
         {
-            m_pAdapterNameCombo->setWhatsThis(tr("Enter the name of the NAT network that this network card "
-                                                 "will be connected to. You can create and remove adapters "
+            m_pAdapterNameCombo->setWhatsThis(tr("Selects the name of the NAT network that this network card "
+                                                 "will be connected to. You can create and remove networks "
                                                  "using the global network settings in the virtual machine "
                                                  "manager window."));
             m_pAdapterNameCombo->setEditable(false);
