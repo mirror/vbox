@@ -3116,12 +3116,26 @@ VMMDECL(void) CPUMDeactivateGuestFPUState(PVMCPU pVCpu)
  * Checks if the guest debug state is active.
  *
  * @returns boolean
- * @param   pVM         Pointer to the VM.
+ * @param   pVM         Pointer to the VMCPU.
  */
 VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_GUEST);
 }
+
+
+/**
+ * Checks if the guest debug state is to be made active during the world-switch
+ * (currently only used for the 32->64 switcher case).
+ *
+ * @returns boolean
+ * @param   pVM         Pointer to the VMCPU.
+ */
+VMMDECL(bool) CPUMIsGuestDebugStateActivePending(PVMCPU pVCpu)
+{
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_REGS_GUEST);
+}
+
 
 /**
  * Checks if the hyper debug state is active.
@@ -3132,6 +3146,19 @@ VMMDECL(bool) CPUMIsGuestDebugStateActive(PVMCPU pVCpu)
 VMMDECL(bool) CPUMIsHyperDebugStateActive(PVMCPU pVCpu)
 {
     return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_USED_DEBUG_REGS_HYPER);
+}
+
+
+/**
+ * Checks if the hyper debug state is to be made active during the world-switch
+ * (currently only used for the 32->64 switcher case).
+ *
+ * @returns boolean
+ * @param   pVM         Pointer to the VMCPU.
+ */
+VMMDECL(bool) CPUMIsHyperDebugStateActivePending(PVMCPU pVCpu)
+{
+    return RT_BOOL(pVCpu->cpum.s.fUseFlags & CPUM_SYNC_DEBUG_REGS_HYPER);
 }
 
 
