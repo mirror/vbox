@@ -441,7 +441,7 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
                                                  "will be connected to. You can create and remove adapters "
                                                  "using the global network settings in the virtual machine "
                                                  "manager window."));
-            m_pAdapterNameCombo->setEditable(true);
+            m_pAdapterNameCombo->setEditable(false);
             break;
         }
         default:
