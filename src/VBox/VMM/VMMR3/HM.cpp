@@ -999,8 +999,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     LogRel(("HM:   VMCS size                           = %u\n", MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
     LogRel(("HM:   VMCS physical address limit         = %s\n", MSR_IA32_VMX_BASIC_INFO_VMCS_PHYS_WIDTH(pVM->hm.s.vmx.Msrs.u64BasicInfo) ? "< 4 GB" : "None"));
     LogRel(("HM:   VMCS memory type                    = %#x\n", MSR_IA32_VMX_BASIC_INFO_VMCS_MEM_TYPE(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   Dual-monitor treatment support      = %RTbool\n", !!MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
-    LogRel(("HM:   OUTS & INS instruction-info         = %RTbool\n", !!MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo)));
+    LogRel(("HM:   Dual-monitor treatment support      = %RTbool\n", RT_BOOL(MSR_IA32_VMX_BASIC_INFO_VMCS_DUAL_MON(pVM->hm.s.vmx.Msrs.u64BasicInfo))));
+    LogRel(("HM:   OUTS & INS instruction-info         = %RTbool\n", RT_BOOL(MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))));
     LogRel(("HM: Max resume loops                = %u\n", pVM->hm.s.cMaxResumeLoops));
 
     LogRel(("HM: MSR_IA32_VMX_PINBASED_CTLS      = %#RX64\n", pVM->hm.s.vmx.Msrs.VmxPinCtls.u));
@@ -1119,13 +1119,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
                 MSR_IA32_VMX_MISC_PREEMPT_TSC_BIT(val), pVM->hm.s.vmx.cPreemptTimerShift));
     }
 
-    LogRel(("HM:   MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT = %RTbool\n", !!MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(val)));
+    LogRel(("HM:   MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_STORE_EFERLMA_VMEXIT(val))));
     LogRel(("HM:   MSR_IA32_VMX_MISC_ACTIVITY_STATES      = %#x\n", MSR_IA32_VMX_MISC_ACTIVITY_STATES(val)));
     LogRel(("HM:   MSR_IA32_VMX_MISC_CR3_TARGET           = %#x\n", MSR_IA32_VMX_MISC_CR3_TARGET(val)));
     LogRel(("HM:   MSR_IA32_VMX_MISC_MAX_MSR              = %u\n", MSR_IA32_VMX_MISC_MAX_MSR(val)));
-    LogRel(("HM:   MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM = %RTbool\n", !!MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(val)));
-    LogRel(("HM:   MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2   = %RTbool\n", !!MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(val)));
-    LogRel(("HM:   MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO  = %RTbool\n", !!MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(val)));
+    LogRel(("HM:   MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_RDMSR_SMBASE_MSR_SMM(val))));
+    LogRel(("HM:   MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2   = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_SMM_MONITOR_CTL_B2(val))));
+    LogRel(("HM:   MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO  = %RTbool\n", RT_BOOL(MSR_IA32_VMX_MISC_VMWRITE_VMEXIT_INFO(val))));
     LogRel(("HM:   MSR_IA32_VMX_MISC_MSEG_ID              = %#x\n", MSR_IA32_VMX_MISC_MSEG_ID(val)));
 
     /* Paranoia */
