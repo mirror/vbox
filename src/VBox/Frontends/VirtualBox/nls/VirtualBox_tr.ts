@@ -2462,7 +2462,7 @@
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>İşaretlendiğinde, anamakine ekran koruyucusu, sanal makine nezaman çalışıyor olsa etkisizleştirilecektir.</translation>
+        <translation type="obsolete">İşaretlendiğinde, anamakine ekran koruyucusu, sanal makine nezaman çalışıyor olsa etkisizleştirilecektir.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -2477,11 +2477,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Host Screen Saver:</source>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2750,23 +2754,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3060,7 +3064,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3110,6 +3114,14 @@
     <message>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished">Bağlantı noktası yönlendirme kurallarını yönetmek için ileti açar.</translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">B.Noktası Y&amp;önlendirme</translation>
     </message>
 </context>
 <context>
@@ -3650,11 +3662,11 @@
         <translation type="obsolete">Bu sanal makine tarafından kullanılan farklı özelliklerin durumunu gösterir:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5372,7 +5384,7 @@
         <translation type="obsolete">bu VM&apos;e ICH9 yonga seti atadınız. IO-APIC özelliği ayrıca etkinleştirilmedikçe düzgün bir şekilde çalışmayacak. Bu, VM Ayarlarında TAMAM düğmesine basarak kabul ettiğinizde otomatik olarak yapılacaktır.</translation>
     </message>
     <message>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5756,7 +5768,7 @@
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">Genel VirtualBox özelliklerini ayarlama başarısız.</translation>
+        <translation>Genel VirtualBox özelliklerini ayarlama başarısız.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -5764,7 +5776,7 @@
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">Yeni bir sanal makine oluşturma başarısız.</translation>
+        <translation>Yeni bir sanal makine oluşturma başarısız.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5798,7 +5810,7 @@
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin durumunu kaydetme başarısız.</translation>
     </message>
-    <message id="0">
+    <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin anlık görüntüsünü oluşturma başarısız.</translation>
     </message>
@@ -5913,7 +5925,7 @@
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; anamakine ağ arayüzünü kaldırma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; anamakine ağ arayüzünü kaldırma başarısız.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -5925,7 +5937,7 @@
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%3&lt;/b&gt;sanal makinesi için &lt;b&gt;%1&lt;/b&gt; paylaşılan klasörünü (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; klasörünü işaret eden) oluşturma başarısız.</translation>
+        <translation>&lt;b&gt;%3&lt;/b&gt;sanal makinesi için &lt;b&gt;%1&lt;/b&gt; paylaşılan klasörünü (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; klasörünü işaret eden) oluşturma başarısız.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6035,7 +6047,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%3&lt;/b&gt;sanal makinesinden &lt;b&gt;%1&lt;/b&gt; paylaşılan klasörünü (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; klasörünü işaret eden) kaldırma başarısız.&lt;/p&gt;&lt;p&gt;Lütfen misafir İS içerisinde bu paylaşılan klasörü kullanabilen tüm programları kapatın ve tekrar deneyin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%3&lt;/b&gt;sanal makinesinden &lt;b&gt;%1&lt;/b&gt; paylaşılan klasörünü (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; klasörünü işaret eden) kaldırma başarısız.&lt;/p&gt;&lt;p&gt;Lütfen misafir İS içerisinde bu paylaşılan klasörü kullanabilen tüm programları kapatın ve tekrar deneyin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -6063,7 +6075,7 @@
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; lisans dosyasını açma başarısız. Dosya izinlerini kontrol edin.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; lisans dosyasını açma başarısız. Dosya izinlerini kontrol edin.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6095,7 +6107,7 @@
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarlarını &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; adresine kaydetme başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesinin ayarlarını &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; adresine kaydetme başarısız.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -6323,11 +6335,11 @@
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; yerinde sabit disk depolama birimi zaten mevcut. Bu yeri kullanan yeni bir sanal sabit disk oluşturamassınız, çünkü başka bir sanal sabit disk tarafından zaten kullanılıyor olabilir.&lt;/p&gt;&lt;p&gt;Lütfen farklı bir yer belirtin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; yerinde sabit disk depolama birimi zaten mevcut. Bu yeri kullanan yeni bir sanal sabit disk oluşturamassınız, çünkü başka bir sanal sabit disk tarafından zaten kullanılıyor olabilir.&lt;/p&gt;&lt;p&gt;Lütfen farklı bir yer belirtin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sabit diskinin depolama birimini silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Sil&lt;/b&gt;&apos;i seçerseniz sonrasında belirtilmiş depolama birimi kalıcı olarak silinecektir. Bu işlem &lt;b&gt;geri alınamaz&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Keep&lt;/b&gt;&apos;u seçerseniz sonrasında sabit disk sadece bilinen sabit diskler listesinden kaldırılacaktır ama daha sonra tekrar bu sabit diski listeye eklemeyi mümkün kılmak için depolama birimi dokunulmadan bırakılacaktır.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sabit diskinin depolama birimini silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Sil&lt;/b&gt;&apos;i seçerseniz sonrasında belirtilmiş depolama birimi kalıcı olarak silinecektir. Bu işlem &lt;b&gt;geri alınamaz&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Eğer &lt;b&gt;Keep&lt;/b&gt;&apos;u seçerseniz sonrasında sabit disk sadece bilinen sabit diskler listesinden kaldırılacaktır ama daha sonra tekrar bu sabit diski listeye eklemeyi mümkün kılmak için depolama birimi dokunulmadan bırakılacaktır.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6341,11 +6353,11 @@
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sabit diskinin depolama birimini silme başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sabit diskinin depolama birimini silme başarısız.</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sabit disk depolamasını oluşturma başarısız.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sabit disk depolamasını oluşturma başarısız.</translation>
     </message>
     <message>
         <source>Failed to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6463,7 +6475,7 @@
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; cihazını içe aktarma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; cihazını içe aktarma başarısız.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -6471,7 +6483,7 @@
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; cihazını dışa aktarılmaya hazırlama başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; cihazını dışa aktarılmaya hazırlama başarısız.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -6479,15 +6491,15 @@
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; cihazını dışa aktarma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; cihazını dışa aktarma başarısız.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Sadece-anamakine ağını silmek bu ağ tabanlı sadece-anamakine arayüzünü kaldıracak. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; (sadece-anamakine ağı) arayüzünü kaldırma istiyor musunuz?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; bu arayüz VM&apos;lerinizden birine ait olan bir ya da daha fazla sanal ağ bağdaştırıcıları tarafından kullanımda olabilir. Kaldırıldıktan sonra, bu bağdaştırıcılar ya farklı bir arayüz adı ya da farklı bir bağdaştırıcı eklenti türü seçip ayarları düzeltene kadar artık kullanılabilir olmayacaklar.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sadece-anamakine ağını silmek bu ağ tabanlı sadece-anamakine arayüzünü kaldıracak. &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; (sadece-anamakine ağı) arayüzünü kaldırma istiyor musunuz?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Not:&lt;/b&gt; bu arayüz VM&apos;lerinizden birine ait olan bir ya da daha fazla sanal ağ bağdaştırıcıları tarafından kullanımda olabilir. Kaldırıldıktan sonra, bu bağdaştırıcılar ya farklı bir arayüz adı ya da farklı bir bağdaştırıcı eklenti türü seçip ayarları düzeltene kadar artık kullanılabilir olmayacaklar.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; adında bir dosya zaten mevcut. Değiştirmek istediğinize emin misiniz?&lt;br /&gt;&lt;br /&gt;Değiştirmek içeriklerini üzerine yazacak.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; adında bir dosya zaten mevcut. Değiştirmek istediğinize emin misiniz?&lt;br /&gt;&lt;br /&gt;Değiştirmek içeriklerini üzerine yazacak.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -6503,11 +6515,11 @@
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="obsolete">Dosyaları kontrol etme başarısız.</translation>
+        <translation>Dosyaları kontrol etme başarısız.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">Dosyayı kaldırma başarısız.</translation>
+        <translation>Dosyayı kaldırma başarısız.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -6612,7 +6624,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;CD/DVD-ROM aygıtını silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Herhangi bir CD veya ISO kalıbını bağlayamayacaksınız ya da onsuz Misafir Eklentilerini yükleyemeyeceksiniz!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;CD/DVD-ROM aygıtını silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Herhangi bir CD veya ISO kalıbını bağlayamayacaksınız ya da onsuz Misafir Eklentilerini yükleyemeyeceksiniz!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6685,7 +6697,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine sanal bir sabit disk eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Disk içeriklerini tutmak için boş, yeni bir dosya oluşturmak ya da mevcut bir tane seçmek ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine sanal bir sabit disk eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Disk içeriklerini tutmak için boş, yeni bir dosya oluşturmak ya da mevcut bir tane seçmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6699,7 +6711,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine yeni bir CD/DVD sürücü eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Sürücüye koymak için sanal bir CD/DVD disk seçmek ya da şimdilik boş bırakmak ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine yeni bir CD/DVD sürücü eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Sürücüye koymak için sanal bir CD/DVD disk seçmek ya da şimdilik boş bırakmak ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -6713,7 +6725,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine yeni bir disket sürücü eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Sürücüye koymak için sanal bir disket seçmek ya da şimdilik boş bırakmak ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; denetleyicisine yeni bir disket sürücü eklemek üzeresiniz.&lt;/p&gt;&lt;p&gt;Sürücüye koymak için sanal bir disket seçmek ya da şimdilik boş bırakmak ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6733,11 +6745,11 @@
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini yükleme başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini yükleme başarısız.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini kaldırma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini kaldırma başarısız.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6745,11 +6757,11 @@
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="obsolete">Şu anki bağlantı noktası yönlendirme kuralları geçerli değil. Anamakine veya misafir bağlantı noktası değerleri sıfıra ayarlanmış olabilir.</translation>
+        <translation>Şu anki bağlantı noktası yönlendirme kuralları geçerli değil. Anamakine veya misafir bağlantı noktası değerleri sıfıra ayarlanmış olabilir.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Bağlantı noktası yönlendirme yapılandırmasında kaydedilmemiş değişiklikler var.&lt;/p&gt;&lt;p&gt;Eğer ilerlerseniz değişikliklerinizden vazgeçilecektir.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bağlantı noktası yönlendirme yapılandırmasında kaydedilmemiş değişiklikler var.&lt;/p&gt;&lt;p&gt;Eğer ilerlerseniz değişikliklerinizden vazgeçilecektir.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6790,11 +6802,11 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini açma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; Genişletme Paketini açma başarısız.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Bir VirtualBox genişletme paketini yüklemek üzeresiniz. Genişletme paketleri VirtualBox&apos;ın işlevselliğini tamamlar ve sisteminize zarar verebilme ihtimali olabilen sistem seviyesinde yazılım içerebilir. Lütfen aşağıdan açıklamayı gözden geçirin ve sadece genişletme paketini güvenilir bir kaynaktan elde ettiyseniz ilerleyin.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Adı:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Sürüm:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Açıklama:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Bir VirtualBox genişletme paketini yüklemek üzeresiniz. Genişletme paketleri VirtualBox&apos;ın işlevselliğini tamamlar ve sisteminize zarar verebilme ihtimali olabilen sistem seviyesinde yazılım içerebilir. Lütfen aşağıdan açıklamayı gözden geçirin ve sadece genişletme paketini güvenilir bir kaynaktan elde ettiyseniz ilerleyin.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Adı:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Sürüm:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Açıklama:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -6802,7 +6814,7 @@
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="obsolete">Genişletme paketleri VirtualBox&apos;ın işlevselliğini tamamlar ve sisteminize zarar verebilme ihtimali olabilen sistem seviyesinde yazılım içerebilir. Lütfen aşağıdan açıklamayı gözden geçirin ve sadece genişletme paketini güvenilir bir kaynaktan elde ettiyseniz ilerleyin.</translation>
+        <translation>Genişletme paketleri VirtualBox&apos;ın işlevselliğini tamamlar ve sisteminize zarar verebilme ihtimali olabilen sistem seviyesinde yazılım içerebilir. Lütfen aşağıdan açıklamayı gözden geçirin ve sadece genişletme paketini güvenilir bir kaynaktan elde ettiyseniz ilerleyin.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -6830,11 +6842,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; VirtualBox genişletme paketini kaldırmak üzeresiniz.&lt;/p&gt;&lt;p&gt;İlerlemek istediğinize emin misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; VirtualBox genişletme paketini kaldırmak üzeresiniz.&lt;/p&gt;&lt;p&gt;İlerlemek istediğinize emin misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; genişletme paketi&lt;br&gt; başarılı olarak yüklendi.</translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; genişletme paketi&lt;br&gt; başarılı olarak yüklendi.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
@@ -6842,11 +6854,11 @@
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesini kayıt ettirme başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesini kayıt ettirme başarısız.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Makine ayarları siz düzenlerken değiştirildi. Şu anda kaydedilmemiş ayar değişikliklerine sahipsiniz.&lt;/p&gt;&lt;p&gt;Değiştirilmiş ayarları yeniden yüklemek veya kendi değişikliklerinizi tutmak ister misiniz?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Makine ayarları siz düzenlerken değiştirildi. Şu anda kaydedilmemiş ayar değişikliklerine sahipsiniz.&lt;/p&gt;&lt;p&gt;Değiştirilmiş ayarları yeniden yüklemek veya kendi değişikliklerinizi tutmak ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
@@ -6862,7 +6874,7 @@
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesini çoğaltma başarısız.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; sanal makinesini çoğaltma başarısız.</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -6870,7 +6882,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ortam türü &lt;b&gt;%1&lt;/b&gt; öğesinden &lt;b&gt;%2&lt;/b&gt; öğesine değiştirilirken hata oldu.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ortam türü &lt;b&gt;%1&lt;/b&gt; öğesinden &lt;b&gt;%2&lt;/b&gt; öğesine değiştirilirken hata oldu.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -6902,7 +6914,7 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; adındaki anlık görüntü bulunamıyor.</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; adındaki anlık görüntü bulunamıyor.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -6986,7 +6998,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; makine klasörü kaldırılamıyor.&lt;/p&gt;&lt;p&gt;Lütfen bu klasörün gerçekten var olduğunu ve kaldırmak için izinlere sahip olduğunuzu kontrol edin.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; makine klasörü kaldırılamıyor.&lt;/p&gt;&lt;p&gt;Lütfen bu klasörün gerçekten var olduğunu ve kaldırmak için izinlere sahip olduğunuzu kontrol edin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
@@ -6994,11 +7006,11 @@
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="obsolete">Sabit diski olmayan yeni bir sanal makine oluşturmak üzeresiniz. Bir tane ekleyene kadar makine üzerine bir işletim sistemi yükleyemeyeceksiniz. Bu arada sadece sanal optik diski kullanarak veya ağdan makineyi başlatabileceksiniz.</translation>
+        <translation>Sabit diski olmayan yeni bir sanal makine oluşturmak üzeresiniz. Bir tane ekleyene kadar makine üzerine bir işletim sistemi yükleyemeyeceksiniz. Bu arada sadece sanal optik diski kullanarak veya ağdan makineyi başlatabileceksiniz.</translation>
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation type="obsolete">Veriyi kaldırma başarısız.</translation>
+        <translation>Veriyi kaldırma başarısız.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -7075,6 +7087,30 @@
     <message>
         <source>Ignore</source>
         <translation type="unfinished">Yoksay</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -7168,6 +7204,13 @@
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform>&lt;p&gt;Şurada belirtilen %n sanal makine şu anda kaydedilmiş durumunda: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Eğer devam ederseniz, dışa aktarılmış makine(ler)in çalışma zamanı durumundan vazgeçilecektir. Diğer makine(ler) değiştirilmeyecektir.&lt;/p&gt;</numerusform>
+        </translation>
+    </message>
     <message>
         <source>Switch</source>
         <translation type="unfinished">Değiştir</translation>
@@ -7229,26 +7272,6 @@
         <translation type="unfinished">&lt;p&gt;VirtualBox Kullanıcı Kılavuzu &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ve &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; ile yerel olarak kaydedildi.&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="false">
         <source>Close</source>
         <translation type="unfinished">Kapat</translation>
     </message>

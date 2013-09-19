@@ -2831,7 +2831,7 @@
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>Pasirinkus, pagrindiniame kompiuteryje bus išjungta ekrano užsklanda tol, kol veiks virtuali mašina.</translation>
+        <translation type="obsolete">Pasirinkus, pagrindiniame kompiuteryje bus išjungta ekrano užsklanda tol, kol veiks virtuali mašina.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -2854,11 +2854,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Host Screen Saver:</source>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3135,23 +3139,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3445,7 +3449,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3495,6 +3499,14 @@
     <message>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished">Atveria langą prievadų persiuntimo taisyklių tvarkymui.</translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Prievadų persiuntimas</translation>
     </message>
 </context>
 <context>
@@ -4158,11 +4170,11 @@
         <translation type="obsolete">Rodo įvairias virtualios mašinos funkcijas:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5636,7 +5648,7 @@
         <translation type="obsolete">šiai VM priskyrėte ICH9 lustų rinkinį. Ši savybė neveiktų, jei neįgalinsite IO-ACPI. Todėl šią savybė bus automatiškai įgalinta nuspausdus mygtuką „Gerai“.</translation>
     </message>
     <message>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6022,7 +6034,7 @@
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">Nepavyko nustatyti bendrų VirtualBox savybių.</translation>
+        <translation>Nepavyko nustatyti bendrų VirtualBox savybių.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -6030,7 +6042,7 @@
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">Nepavyko sukurti naujos virtualios mašinos.</translation>
+        <translation>Nepavyko sukurti naujos virtualios mašinos.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6056,7 +6068,7 @@
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
-    <message id="0">
+    <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Nepavyko sukurti virtualios mašinos momentinės būvio kopijos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -6098,7 +6110,7 @@
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko pašalinti pagrindinio kompiuterio tinklo sąsajos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko pašalinti pagrindinio kompiuterio tinklo sąsajos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -6110,7 +6122,7 @@
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko sukurti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Nepavyko sukurti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) virtualiai mašinai &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6224,7 +6236,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepavyko pašalinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) iš virtualios mašinos &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Užverkite visas svečio OS programas, kurios gali naudotis tuo aplanku ir bandykite iš naujo.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Nepavyko pašalinti bendrojo aplanko &lt;b&gt;%1&lt;/b&gt; (ties &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) iš virtualios mašinos &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Užverkite visas svečio OS programas, kurios gali naudotis tuo aplanku ir bandykite iš naujo.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -6256,7 +6268,7 @@
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">Nepavyko atverti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Tikrinkite leidimus.</translation>
+        <translation>Nepavyko atverti licencijos rinkmenos &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Tikrinkite leidimus.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6280,7 +6292,7 @@
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko įrašyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Nepavyko įrašyti virtualios mašinos &lt;b&gt;%1&lt;/b&gt; nuostatų į &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -6493,11 +6505,11 @@
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Standusis diskas ties &lt;b&gt;%1&lt;/b&gt; jau yra. Negalima sukurti kurti naujo virtualaus standžiojo disko, kuris užima tą pačią vietą.&lt;/p&gt;&lt;p&gt;Nurodykite kitą vietą.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Standusis diskas ties &lt;b&gt;%1&lt;/b&gt; jau yra. Negalima sukurti kurti naujo virtualaus standžiojo disko, kuris užima tą pačią vietą.&lt;/p&gt;&lt;p&gt;Nurodykite kitą vietą.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tikrai norite ištrinti standųjį diską &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Pašalinti&lt;/b&gt;, laikmena iš karto ištrinta &lt;b&gt;negrįžtamai&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Išlaikyti&lt;/b&gt;, standusis diskas bus pašalintas tik iš žinomų laikmenų sąrašo, bet jis nebus ištrintas kompiuteryje, tad vėiau jį vėl galėsite įtraukti į minėtą sąrašą.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tikrai norite ištrinti standųjį diską &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Pašalinti&lt;/b&gt;, laikmena iš karto ištrinta &lt;b&gt;negrįžtamai&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jei renkatės &lt;b&gt;Išlaikyti&lt;/b&gt;, standusis diskas bus pašalintas tik iš žinomų laikmenų sąrašo, bet jis nebus ištrintas kompiuteryje, tad vėiau jį vėl galėsite įtraukti į minėtą sąrašą.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6513,11 +6525,11 @@
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko pašalinti standžiojo disko kaupiklio &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko pašalinti standžiojo disko kaupiklio &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Nepavyko sukurti standžiojo disko kaupiklio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>Nepavyko sukurti standžiojo disko kaupiklio &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -6615,7 +6627,7 @@
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko importuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko importuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -6623,7 +6635,7 @@
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko eksportavimui paruošti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko eksportavimui paruošti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -6631,11 +6643,15 @@
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko eksportuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko eksportuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Rinkmena pavadinimu &lt;b&gt;%1&lt;/b&gt; jau yra. Ar ją pakeisti?&lt;br /&gt;&lt;br /&gt;Tokiu atveju būtų perrašytas jos turinys.</translation>
+        <translation>Rinkmena pavadinimu &lt;b&gt;%1&lt;/b&gt; jau yra. Ar ją pakeisti?&lt;br /&gt;&lt;br /&gt;Tokiu atveju būtų perrašytas jos turinys.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -6651,11 +6667,11 @@
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="obsolete">Rinkmenų patikrinti nepavyko.</translation>
+        <translation>Rinkmenų patikrinti nepavyko.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">Nepavyko pašalinti rinkmenos.</translation>
+        <translation>Nepavyko pašalinti rinkmenos.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -6797,7 +6813,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įtaisą?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdžio, negalėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Tikrai pašalinti CD/DVD-ROM įtaisą?&lt;/p&gt;&lt;p&gt;Jei taip, negalėsite prijungti jokio CD ar ISO atvaizdžio, negalėsite įdiegti svečio papildinių!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6942,7 +6958,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują standųjį diską.&lt;/p&gt;&lt;p&gt;Ar tuo pačiu norėtumėte sukurti naują tuščią rinkmeną disko turiniui laikyti, ar pasirinkti esamą?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują standųjį diską.&lt;/p&gt;&lt;p&gt;Ar tuo pačiu norėtumėte sukurti naują tuščią rinkmeną disko turiniui laikyti, ar pasirinkti esamą?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6956,7 +6972,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują CD/DVD įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų CD/DVD diską ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują CD/DVD įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų CD/DVD diską ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -6970,7 +6986,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują diskelio įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų diskelį ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ketinate prie &lt;b&gt;%1&lt;/b&gt; valdiklio pridėti naują diskelio įtaisą.&lt;/p&gt;&lt;p&gt;Ar norėtumėte tuo pačiu pasirinkti virtualų diskelį ir jį įdėti į įtaisą, ar šiuo metu įtaisą palikti tuščią?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -7044,11 +7060,11 @@
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko įdiegti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko įdiegti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko pašalinti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko pašalinti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
@@ -7060,11 +7076,11 @@
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="obsolete">Dabartinės prievadų nukreipimo taisyklės yra netinkamos. Pagr. kompiuterio ar svečio sistemos prievadas negali būti nulis.</translation>
+        <translation>Dabartinės prievadų nukreipimo taisyklės yra netinkamos. Pagr. kompiuterio ar svečio sistemos prievadas negali būti nulis.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Yra neįrašytų prievadų persiuntimo konfigūracijos pakeitimų.&lt;/p&gt;&lt;p&gt;Jei tęsite, prarasite atliktus pakeitimus.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Yra neįrašytų prievadų persiuntimo konfigūracijos pakeitimų.&lt;/p&gt;&lt;p&gt;Jei tęsite, prarasite atliktus pakeitimus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Fatal Error&lt;/nobr&gt;</source>
@@ -7174,11 +7190,11 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko atverti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko atverti papildinių paketo &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Pavadinimas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versija:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Aprašas:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -7186,7 +7202,7 @@
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="obsolete">Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.</translation>
+        <translation>Ketinate įdiegti VirtualBox papildinių paketą. Papildinių paketai papildo esamas VirtualBox funkcijas, bet juose esanti sisteminio lygio programinė įranga gali padaryti žalos visai sistemai. Peržiūrėkite žemiau pateiktą papildinių paketų aprašą ir tęskite tik tuomet, jei papildinių paketą gavote iš patikimų šaltinių.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -7214,11 +7230,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Ketinate pašalinti VirtualBox papildinių paketą &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Ketinate pašalinti VirtualBox papildinių paketą &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="obsolete">Papildinių paketas &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; įdiegtas.</translation>
+        <translation>Papildinių paketas &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; įdiegtas.</translation>
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
@@ -7234,11 +7250,11 @@
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko užregistruoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko užregistruoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Jums besirenkant mašinos nuostatas, jos buvo pakeistos. Jūs dar neįrašėte pakeitimų.&lt;/p&gt;&lt;p&gt;Ar iš naujo įkelti nuostatas, ar išlaikyti dabar Jūsų atliktus pakeitimus?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Jums besirenkant mašinos nuostatas, jos buvo pakeistos. Jūs dar neįrašėte pakeitimų.&lt;/p&gt;&lt;p&gt;Ar iš naujo įkelti nuostatas, ar išlaikyti dabar Jūsų atliktus pakeitimus?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
@@ -7254,7 +7270,7 @@
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyko klonuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyko klonuoti virtualios mašinos &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Create a snapshot of the current machine state</source>
@@ -7266,7 +7282,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -7294,7 +7310,7 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Nepavyksta rasti momentinio būvio &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Nepavyksta rasti momentinio būvio &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -7374,7 +7390,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to drop data.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7448,6 +7476,30 @@
     <message>
         <source>Ignore</source>
         <translation type="unfinished">Nepaisyti</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -7541,6 +7593,15 @@
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
         <source>Switch</source>
         <translation type="unfinished">Perjungti</translation>
@@ -7602,26 +7663,6 @@
         <translation type="unfinished">&lt;p&gt;Sėkmingai parsiųstas VirtualBox naudotojo žinynas iš &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; ir įrašytas vietinėje sistemoje kaip &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="false">
         <source>Close</source>
         <translation type="unfinished">Užverti</translation>
     </message>

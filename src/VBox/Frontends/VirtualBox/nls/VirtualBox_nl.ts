@@ -2566,7 +2566,7 @@
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>Als dit is ingesteld wordt de schermbeveiliging van de host uitgeschakeld zodra een virtuele machine draait.</translation>
+        <translation type="obsolete">Als dit is ingesteld wordt de schermbeveiliging van de host uitgeschakeld zodra een virtuele machine draait.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -2581,11 +2581,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Host Screen Saver:</source>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2854,23 +2858,23 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3164,7 +3168,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3214,6 +3218,14 @@
     <message>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished">Opent een dialoog om doorverwijsregels van de poort te beheren.</translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Poort doorverwijzing</translation>
     </message>
 </context>
 <context>
@@ -3666,11 +3678,11 @@
         <translation type="obsolete">Toont de status van verscheidene features die door deze virtuele machine worden gebruikt:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5138,7 +5150,7 @@
         <translation type="obsolete">U hebt hardwarevirtualisatie (VT-x/AMD-V) ingeschakeld. Echter, aangezien uw hostconfiguratie geen hardwarevirtualisatie ondersteunt, zal deze optie weer worden uitgezet. Dit uitzetten wordt automatisch gedaan als u de VM instellingen accepteert door op de OK-knop te klikken.</translation>
     </message>
     <message>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5525,7 +5537,7 @@
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">Het is niet gelukt de algemene VirtualBox eigenschappen in te stellen.</translation>
+        <translation>Het is niet gelukt de algemene VirtualBox eigenschappen in te stellen.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -5533,7 +5545,7 @@
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">Het is niet gelukt een nieuwe virtuele machine aan te maken.</translation>
+        <translation>Het is niet gelukt een nieuwe virtuele machine aan te maken.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5559,7 +5571,7 @@
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Het is niet gelukt de staat van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan.</translation>
     </message>
-    <message id="0">
+    <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Het is niet gelukt een snapshot van virtuele machine &lt;b&gt;%1&lt;/b&gt; te maken.</translation>
     </message>
@@ -5597,11 +5609,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Verwijderen van dit host-only netwerk zal leiden tot het verwijderen van de host-only interface waarop dit netwerk is gebaseerd. Wilt u deze (host-only netwerk) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Deze interface wordt mogelijk door meerdere virtuele netwerkadapters van uw virtuele machines gebruikt. Nadat deze interface is verwijderd zullen de adapters niet meer bruikbaar zijn, tenzij u de instellingen corrigeert door hetzij een andere interfacenaam hetzij een andere soort adapter te kiezen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Verwijderen van dit host-only netwerk zal leiden tot het verwijderen van de host-only interface waarop dit netwerk is gebaseerd. Wilt u deze (host-only netwerk) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Deze interface wordt mogelijk door meerdere virtuele netwerkadapters van uw virtuele machines gebruikt. Nadat deze interface is verwijderd zullen de adapters niet meer bruikbaar zijn, tenzij u de instellingen corrigeert door hetzij een andere interfacenaam hetzij een andere soort adapter te kiezen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt netwerk interface &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
+        <translation>Het is niet gelukt netwerk interface &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -5613,7 +5625,7 @@
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (verwijzend naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) aan te maken voor virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Het is niet gelukt om gedeelde map &lt;b&gt;%1&lt;/b&gt; (verwijzend naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) aan te maken voor virtuele machine &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -5709,7 +5721,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Het is niet gelukt om de gedeeld map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuele machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sluit alle programma&apos;s af in het gastbesturingssysteem die deze map mogen gebruiken en probeer het opnieuw.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Het is niet gelukt om de gedeeld map &lt;b&gt;%1&lt;/b&gt; (die verwijst naar &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) te verwijderen van virtuele machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Sluit alle programma&apos;s af in het gastbesturingssysteem die deze map mogen gebruiken en probeer het opnieuw.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -5741,7 +5753,7 @@
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">Het is niet gelukt het licentiebestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te openen. Controleer de toegangsrechten.</translation>
+        <translation>Het is niet gelukt het licentiebestand &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te openen. Controleer de toegangsrechten.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5821,7 +5833,7 @@
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan in &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Het is niet gelukt de instellingen van virtuele machine &lt;b&gt;%1&lt;/b&gt; op te slaan in &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -5932,11 +5944,11 @@
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De opslageenheid van de harde schijf op locatie &lt;b&gt;%1&lt;/b&gt; bestaat al. U kunt geen nieuwe virtuele harde schijf aanmaken op deze locatie omdat deze mogelijk door een andere virtuele harde schijf wordt gebruikt.&lt;/p&gt;&lt;p&gt;Geef een andere locatie op.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;De opslageenheid van de harde schijf op locatie &lt;b&gt;%1&lt;/b&gt; bestaat al. U kunt geen nieuwe virtuele harde schijf aanmaken op deze locatie omdat deze mogelijk door een andere virtuele harde schijf wordt gebruikt.&lt;/p&gt;&lt;p&gt;Geef een andere locatie op.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Wilt u de opslageenheid van harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Verwijderen&lt;/b&gt; dan wordt de opslageenheid permanent verwijderd.Deze actie &lt;b&gt;kan niet&lt;/b&gt; teruggedraaid worden.&lt;p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Behouden&lt;/b&gt; dan wordt de harde schijf alleen uit de lijst met bekende harde schijven gehaald maar de opslageendheid blijft onaangetast, waardoor het mogelijk is om de harde schijf op een later moment weer op de lijst te zetten.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Wilt u de opslageenheid van harde schijf &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; verwijderen?&lt;/p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Verwijderen&lt;/b&gt; dan wordt de opslageenheid permanent verwijderd.Deze actie &lt;b&gt;kan niet&lt;/b&gt; teruggedraaid worden.&lt;p&gt;&lt;p&gt;Selecteert u &lt;b&gt;Behouden&lt;/b&gt; dan wordt de harde schijf alleen uit de lijst met bekende harde schijven gehaald maar de opslageendheid blijft onaangetast, waardoor het mogelijk is om de harde schijf op een later moment weer op de lijst te zetten.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -5950,11 +5962,11 @@
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de opslageenheid van harde schijf &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
+        <translation>Het is niet gelukt de opslageenheid van harde schijf &lt;b&gt;%1&lt;/b&gt; te verwijderen.</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Het is niet gelukt de harde schijf opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken</translation>
+        <translation>Het is niet gelukt de harde schijf opslag &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; aan te maken</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -6010,7 +6022,7 @@
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt appliance &lt;b&gt;%1&lt;/b&gt; te importeren.</translation>
+        <translation>Het is niet gelukt appliance &lt;b&gt;%1&lt;/b&gt; te importeren.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -6018,11 +6030,11 @@
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de export van appliance &lt;b&gt;%1&lt;/b&gt; voor te bereiden.</translation>
+        <translation>Het is niet gelukt de export van appliance &lt;b&gt;%1&lt;/b&gt; voor te bereiden.</translation>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt appliance &lt;b&gt;%1&lt;/b&gt; te exporteren.</translation>
+        <translation>Het is niet gelukt appliance &lt;b&gt;%1&lt;/b&gt; te exporteren.</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -6034,7 +6046,7 @@
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Een bestand met de naam &lt;b&gt;%1&lt;/b&gt; bestaat al. Weet u het zeker dat deze wilt vervangen?&lt;br/&gt;&lt;br/&gt;Vervangen betekent overschrijven van de inhoud.</translation>
+        <translation>Een bestand met de naam &lt;b&gt;%1&lt;/b&gt; bestaat al. Weet u het zeker dat deze wilt vervangen?&lt;br/&gt;&lt;br/&gt;Vervangen betekent overschrijven van de inhoud.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -6050,11 +6062,11 @@
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="obsolete">Het is niet gelukt de bestanden te controleren.</translation>
+        <translation>Het is niet gelukt de bestanden te controleren.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">Het is niet gelukt het bestand te verwijderen.</translation>
+        <translation>Het is niet gelukt het bestand te verwijderen.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -6145,7 +6157,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Weet u zeker dat u het cd/dvd-apparaat wilt verwijderen?&lt;/p&gt;&lt;p&gt;Het is daarna niet meer mogelijk om CD&apos;s of ISO-images te koppelen of de Guest Additions te installeren!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Weet u zeker dat u het cd/dvd-apparaat wilt verwijderen?&lt;/p&gt;&lt;p&gt;Het is daarna niet meer mogelijk om CD&apos;s of ISO-images te koppelen of de Guest Additions te installeren!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6234,7 +6246,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;U staat op het punt een virtuele harde schijf aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een nieuw, leeg bestand aanmaken voor de schijfinhoud, of een bestaande selecteren?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt een virtuele harde schijf aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een nieuw, leeg bestand aanmaken voor de schijfinhoud, of een bestaande selecteren?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6248,7 +6260,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;U staat op het punt een nieuw CD/DVD station aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuele CD/DVD schijf in het station plaatsen of vooralsnog leeg laten?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt een nieuw CD/DVD station aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuele CD/DVD schijf in het station plaatsen of vooralsnog leeg laten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -6262,7 +6274,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;U staat op het punt een nieuw diskette-station aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuele diskette in het station plaatsen of vooralsnog leeg laten?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt een nieuw diskette-station aan controller &lt;b&gt;%1&lt;/b&gt; toe te voegen.&lt;/p&gt;&lt;p&gt;Wilt u een virtuele diskette in het station plaatsen of vooralsnog leeg laten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6291,11 +6303,11 @@
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
         <translatorcomment>Extention Pack als naam laten staan, net als Guest Additions</translatorcomment>
-        <translation type="obsolete">Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
+        <translation>Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te deïnstalleren.</translation>
+        <translation>Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te deïnstalleren.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6303,11 +6315,11 @@
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="obsolete">De huidige regels voor het doorverwijzen van poorten zijn niet geldig. Geen van de poorten, noch van de host noch van de gast, mogen op nul staan.</translation>
+        <translation>De huidige regels voor het doorverwijzen van poorten zijn niet geldig. Geen van de poorten, noch van de host noch van de gast, mogen op nul staan.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De poort doorverwijzings configuratie heeft nog niet-opgeslagen wijzigingen.&lt;/p&gt;&lt;p&gt;Doorgaan betekent dat deze wijzigingen verloren gaan.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;De poort doorverwijzings configuratie heeft nog niet-opgeslagen wijzigingen.&lt;/p&gt;&lt;p&gt;Doorgaan betekent dat deze wijzigingen verloren gaan.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -6352,11 +6364,11 @@
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
+        <translation>Het is niet gelukt het Extention Pack &lt;b&gt;%1&lt;/b&gt; te installeren.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;U staat op het punt een Extention Pack voor VirtualBox te installeren. Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeemniveau bevatten dat mogelijk schadelijk is voor uw systeem. Bekijk de beschrijving hieronder alstublieft en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt een Extention Pack voor VirtualBox te installeren. Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeemniveau bevatten dat mogelijk schadelijk is voor uw systeem. Bekijk de beschrijving hieronder alstublieft en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Naam:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Versie:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Beschrijving:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -6364,7 +6376,7 @@
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="obsolete">Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeemniveau bevatten dat mogelijk schadelijk is voor uw systeem. Bekijk de beschrijving hieronder alstublieft en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.</translation>
+        <translation>Uitbreidingspakketten vullen de functionaliteit van VirtualBox aan en kan software op systeemniveau bevatten dat mogelijk schadelijk is voor uw systeem. Bekijk de beschrijving hieronder alstublieft en ga alleen verder als u een uitbreidingspakket van een betrouwbare bron hebt ontvangen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -6392,11 +6404,11 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;U staat op het punt het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U staat op het punt het uitbreidingspakket &lt;b&gt;%1&lt;/b&gt; te verwijderen. Weet u dit zeker?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="obsolete">Het uitbreidingspakket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; is met succes geïnstalleerd.</translation>
+        <translation>Het uitbreidingspakket &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; is met succes geïnstalleerd.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
@@ -6404,11 +6416,11 @@
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt de virtuele machine &lt;b&gt;%1&lt;/b&gt; te registreren.</translation>
+        <translation>Het is niet gelukt de virtuele machine &lt;b&gt;%1&lt;/b&gt; te registreren.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;De machine-instellingen werden veranderd terwijl u deze aan het bewerken was. U hebt momenteel niet-opgeslagen veranderingen.&lt;/p&gt;&lt;p&gt; Wilt u de veranderde instellingen herladen of uw eigen veranderingen houden?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;De machine-instellingen werden veranderd terwijl u deze aan het bewerken was. U hebt momenteel niet-opgeslagen veranderingen.&lt;/p&gt;&lt;p&gt; Wilt u de veranderde instellingen herladen of uw eigen veranderingen houden?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
@@ -6424,7 +6436,7 @@
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;b/&gt; te klonen.</translation>
+        <translation>Het is niet gelukt virtuele machine &lt;b&gt;%1&lt;b/&gt; te klonen.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -6440,7 +6452,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Fout bij veranderen van mediumtype van &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Fout bij veranderen van mediumtype van &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -6468,7 +6480,7 @@
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Kan snapshot met de naam &lt;b&gt;%1&lt;/b&gt; niet vinden.</translation>
+        <translation>Kan snapshot met de naam &lt;b&gt;%1&lt;/b&gt; niet vinden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -6559,7 +6571,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Kan de machinemap &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt; niet verwijderen.&lt;/p&gt;&lt;p&gt;Kijk of deze map echt bestaat en zo ja, of u voldoende rechten hebt om de map te mogen verwijderen.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kan de machinemap &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt; niet verwijderen.&lt;/p&gt;&lt;p&gt;Kijk of deze map echt bestaat en zo ja, of u voldoende rechten hebt om de map te mogen verwijderen.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
@@ -6567,11 +6579,11 @@
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="obsolete">U staat op het punt een nieuwe virtuele machine zonder harde schijf aan te maken. U zult niet in staat zijn een besturingssysteem te instaleren voordat u een schijf hebt toegevoegd. Tot die tijd kunt u alleen de machine starten met gebruikmaking van een virtuele optische schijf of vanaf het netwerk.</translation>
+        <translation>U staat op het punt een nieuwe virtuele machine zonder harde schijf aan te maken. U zult niet in staat zijn een besturingssysteem te instaleren voordat u een schijf hebt toegevoegd. Tot die tijd kunt u alleen de machine starten met gebruikmaking van een virtuele optische schijf of vanaf het netwerk.</translation>
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation type="obsolete">Data droppen is niet gelukt.</translation>
+        <translation>Data droppen is niet gelukt.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -6648,6 +6660,30 @@
     <message>
         <source>Ignore</source>
         <translation type="unfinished">Negeren</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6741,6 +6777,14 @@
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
         <source>Switch</source>
         <translation type="unfinished"></translation>
@@ -6802,26 +6846,6 @@
         <translation type="unfinished">&lt;p&gt;De gebruikershandleiding van VirtualBox is succesvol gedownload van &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; en lokaal opgeslagen als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="false">
         <source>Close</source>
         <translation type="unfinished">Sluiten</translation>
     </message>

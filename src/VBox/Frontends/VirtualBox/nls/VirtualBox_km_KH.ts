@@ -2426,10 +2426,6 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">បង្ហាញ​ចត​ដោយ​ស្វ័យ​ប្រវត្តិ​ និងរបារ​ម៉ឺនុយ​​អេក្រង់​ពេញ​</translation>
     </message>
     <message>
-        <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>&amp;Dock and Menubar:</source>
         <translation type="unfinished"></translation>
     </message>
@@ -2438,11 +2434,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Host Screen Saver:</source>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2802,23 +2802,23 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3112,7 +3112,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3161,6 +3161,14 @@ creating/removing host-only network</comment>
     </message>
     <message>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3748,11 +3756,11 @@ p, li { white-space: pre-wrap; }
         <translation>បង្ហាញ​ថាតើ​ក្ដារចុច​ត្រូវ​បានចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ (&lt;img src=:/hostkey_captured_16px.png/&gt;) ឬ​មិនមែន (&lt;img src=:/hostkey_16px.png/&gt;) ។</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5227,7 +5235,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5599,7 +5607,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​កំណត់លក្ខណៈសម្បត្តិរបស់ VirtualBox ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុង​ការ​កំណត់លក្ខណៈសម្បត្តិរបស់ VirtualBox ។</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -5607,7 +5615,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុង​ការ​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5633,7 +5641,7 @@ network adapter name</comment>
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>បាន​បរាជ័យ​ក្នុងកា​ររក្សាទុក​ស្ថានភាព​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
-    <message id="0">
+    <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>បានបរាជ័យ​ក្នុងការ​បង្កើត​រូបថត​អេក្រង់​របស់ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
@@ -5675,7 +5683,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​យក​ចំណុច​ប្រទាក់​បណ្ដាញ​ម៉ាស៊ីន​ &lt;b&gt;%1&lt;/b&gt; ចេញ ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​យក​ចំណុច​ប្រទាក់​បណ្ដាញ​ម៉ាស៊ីន​ &lt;b&gt;%1&lt;/b&gt; ចេញ ។</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -5687,7 +5695,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​របង្កើត​ថត &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ​ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របង្កើត​ថត &lt;b&gt;%1&lt;/b&gt; (ចង្អុល​ទៅ​ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) សម្រាប់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -5793,7 +5801,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b&gt;%1&lt;/b&gt; ចេញ (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b&gt;%1&lt;/b&gt; ចេញ (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -5825,7 +5833,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​របើក​ឯកសារ​អាជ្ញាប័ណ្ណ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។ ពិនិត្យ​មើល​សិទ្ធិ​របស់​ឯកសារ ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​របើក​ឯកសារ​អាជ្ញាប័ណ្ណ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។ ពិនិត្យ​មើល​សិទ្ធិ​របស់​ឯកសារ ។</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -5849,7 +5857,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">បានបរាជ័យ​ក្នុង​ការ​រក្សាទុក​ការ​កំណត់​​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ទៅ&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
+        <translation>បានបរាជ័យ​ក្នុង​ការ​រក្សាទុក​ការ​កំណត់​​របស់​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%1&lt;/b&gt; ទៅ&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -6049,11 +6057,11 @@ network adapter name</comment>
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;មាន​ឯកតា​ផ្ទុក​​របស់​ថាសរឹង​នៅ​ទីតាំង &lt;b&gt;%1&lt;/b&gt; រួច​ហើយ ។ អ្នក​មិនអាច​បង្កើត​ថាសរឹង​និម្មិត​ថ្មី​បាន​ទេ ដែល​ប្រើ​ទីតាំង​នេះ ពីព្រោះ​វា​អាច​ត្រូវ​បានប្រើ​ដោយ​ថាសរឹង​និម្មិត​ផ្សេង ។&lt;/p&gt;&lt;p&gt;សូម​បញ្ជាក់​ទីតាំង​ផ្សេង ​។&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;មាន​ឯកតា​ផ្ទុក​​របស់​ថាសរឹង​នៅ​ទីតាំង &lt;b&gt;%1&lt;/b&gt; រួច​ហើយ ។ អ្នក​មិនអាច​បង្កើត​ថាសរឹង​និម្មិត​ថ្មី​បាន​ទេ ដែល​ប្រើ​ទីតាំង​នេះ ពីព្រោះ​វា​អាច​ត្រូវ​បានប្រើ​ដោយ​ថាសរឹង​និម្មិត​ផ្សេង ។&lt;/p&gt;&lt;p&gt;សូម​បញ្ជាក់​ទីតាំង​ផ្សេង ​។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ដែរឬទេ?&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;លុប&lt;/b&gt; បន្ទាប់​មក​ឯកតា​ផ្ទុក​ដែល​បានបញ្ជាក់​នឹង​ត្រូ​វបាន​លុប​ជា​អចិន្ត្រៃយ៍ ។ ប្រតិបត្តិការ​នេះ &lt;b&gt;មិនអាច​ត្រូ​វបាន​ធ្វើ​វិញ​បានទេ&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;រក្សាទុក&lt;/b&gt; បន្ទាប់​មក​ថាសរឹង​នឹង​ត្រូវ​បានយកចេញ​តែ​ពី​បញ្ជី​របស់​ថាសរឹង​ដែល​ស្គាល់​ប៉ុណ្ណោះ ប៉ុន្តែ​ឯកតា​ផ្ទុក​នឹង​មិន​ត្រូ​វបាន​ប៉ះពាល់​ទេ ដែល​ធ្វើ​ឲ្យ​វា​អាច​បន្ថែម​ថាសរឹង​នេះ​ទៅកាន់​បញ្ជី​ពេលក្រោយ​ម្ដង​ទៀត​បាន ។&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;តើ​អ្នក​ចង់​លុប​ឯកតា​ផ្ទុក​របស់​ថាសរឹង​ &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ដែរឬទេ?&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;លុប&lt;/b&gt; បន្ទាប់​មក​ឯកតា​ផ្ទុក​ដែល​បានបញ្ជាក់​នឹង​ត្រូ​វបាន​លុប​ជា​អចិន្ត្រៃយ៍ ។ ប្រតិបត្តិការ​នេះ &lt;b&gt;មិនអាច​ត្រូ​វបាន​ធ្វើ​វិញ​បានទេ&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ជ្រើស &lt;b&gt;រក្សាទុក&lt;/b&gt; បន្ទាប់​មក​ថាសរឹង​នឹង​ត្រូវ​បានយកចេញ​តែ​ពី​បញ្ជី​របស់​ថាសរឹង​ដែល​ស្គាល់​ប៉ុណ្ណោះ ប៉ុន្តែ​ឯកតា​ផ្ទុក​នឹង​មិន​ត្រូ​វបាន​ប៉ះពាល់​ទេ ដែល​ធ្វើ​ឲ្យ​វា​អាច​បន្ថែម​ថាសរឹង​នេះ​ទៅកាន់​បញ្ជី​ពេលក្រោយ​ម្ដង​ទៀត​បាន ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -6067,11 +6075,11 @@ network adapter name</comment>
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​លុប​ការ​ផ្ទុក​របស់​ថាសរឹង &lt;b&gt;%1&lt;/b&gt; ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងការ​លុប​ការ​ផ្ទុក​របស់​ថាសរឹង &lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">បានបរាជ័យ​ក្នុង​​ការ​បង្កើត​ការ​ផ្ទុក​ថាសរឹង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;</translation>
+        <translation>បានបរាជ័យ​ក្នុង​​ការ​បង្កើត​ការ​ផ្ទុក​ថាសរឹង &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; ។&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -6103,7 +6111,7 @@ network adapter name</comment>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">​មាន​ឈ្មោះ​ឯកសាររបស់​&lt;b&gt;%1&lt;/b&gt;រួច​ហើយ​ ។ តើ​អ្នក​ពិត​ជាចង់​ជំនួស​វា​​ឬ ?&lt;br /&gt;&lt;br /&gt;​ការ​ជំនួស​វា​នឹង​សរសេរ​ជាន់​លើ​
+        <translation>​មាន​ឈ្មោះ​ឯកសាររបស់​&lt;b&gt;%1&lt;/b&gt;រួច​ហើយ​ ។ តើ​អ្នក​ពិត​ជាចង់​ជំនួស​វា​​ឬ ?&lt;br /&gt;&lt;br /&gt;​ការ​ជំនួស​វា​នឹង​សរសេរ​ជាន់​លើ​
 មាតិកា​​របស់​វា​ ។</translation>
     </message>
     <message>
@@ -6255,7 +6263,7 @@ medium</comment>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ការ​លុប​បណ្តាញ​ ម៉ា​ស៊ីន​​-តែ​មួយ​​ នេះ​នឹង​យក​ចេញ​ សំអាង​ទៅ​លើ​បណ្តាញ​ចំនុច​ប្រទាក់​ ម៉ាស៊ីន​​-តែ​មួយ​ នេះ ។ ​តើ​អ្នកពិត​ជា​ចង់​យក​ចេញ​​ (បណ្តាញ ម៉ាស៊ីន​​-​តែ​មួយ​​) ចំណុច​ប្រទាក់​​&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;សម្គាល់​ ៖&lt;/b&gt; ចំណុច​ប្រ​ទាក់​នេះ​អាចប្រើ​​មួយ​ ឬ​​ច្រើន​​អាដាប់​ទ័រ​បណ្តាញនិម្មិត​​​ជាកម្ម​សិទ្ធ​មួយ​នៃ​​​ VMs របស់​អ្នក​ ។ ក្រោយ​ពេល​វា​ត្រូវ​បាន​យក​ចេញ​ អាដាប់​ទ័រ​ទាំង​នេះ​នឹង​មិន​អាច​ប្រើ​បាន​យូរ​ឡើយ​​ រហូត​ដល់​អ្នក​​កែ​ការ​កំណត់​​របស់​វា​មួយ​ណា​ក៏មាន​​​ឈ្មោះ​ខុស​គ្នា​​ចំណុច​ប្រទាក់​ ឬ​ប្រ​ភេទ​ខុស​គ្នា​នៃ​​​ឯកសារ​​ភ្ជាប់​អាដាប់​ទ័រ​ ។&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ការ​លុប​បណ្តាញ​ ម៉ា​ស៊ីន​​-តែ​មួយ​​ នេះ​នឹង​យក​ចេញ​ សំអាង​ទៅ​លើ​បណ្តាញ​ចំនុច​ប្រទាក់​ ម៉ាស៊ីន​​-តែ​មួយ​ នេះ ។ ​តើ​អ្នកពិត​ជា​ចង់​យក​ចេញ​​ (បណ្តាញ ម៉ាស៊ីន​​-​តែ​មួយ​​) ចំណុច​ប្រទាក់​​&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;សម្គាល់​ ៖&lt;/b&gt; ចំណុច​ប្រ​ទាក់​នេះ​អាចប្រើ​​មួយ​ ឬ​​ច្រើន​​អាដាប់​ទ័រ​បណ្តាញនិម្មិត​​​ជាកម្ម​សិទ្ធ​មួយ​នៃ​​​ VMs របស់​អ្នក​ ។ ក្រោយ​ពេល​វា​ត្រូវ​បាន​យក​ចេញ​ អាដាប់​ទ័រ​ទាំង​នេះ​នឹង​មិន​អាច​ប្រើ​បាន​យូរ​ឡើយ​​ រហូត​ដល់​អ្នក​​កែ​ការ​កំណត់​​របស់​វា​មួយ​ណា​ក៏មាន​​​ឈ្មោះ​ខុស​គ្នា​​ចំណុច​ប្រទាក់​ ឬ​ប្រ​ភេទ​ខុស​គ្នា​នៃ​​​ឯកសារ​​ភ្ជាប់​អាដាប់​ទ័រ​ ។&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to create the host-only network interface.</source>
@@ -6300,15 +6308,15 @@ warnAboutSettingsAutoConversion message box</comment>
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​រនាំចូល​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រនាំចូល​ឧបករណ៍&lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ទៅ​ពិនិត្យ​មើល​ឯកសារ​ ។</translation>
+        <translation>បាន​បរាជ័យ​ទៅ​ពិនិត្យ​មើល​ឯកសារ​ ។</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ​ចេញ ។</translation>
+        <translation>បាន​បរាជ័យ​ក្នុងកា​រយក​ឯកសារ​ចេញ ។</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -6316,7 +6324,7 @@ warnAboutSettingsAutoConversion message box</comment>
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ទៅ​រៀប​ចំ​នាំ​ចូលឧបករណ៍​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
+        <translation>បាន​បរាជ័យ​ទៅ​រៀប​ចំ​នាំ​ចូលឧបករណ៍​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -6324,7 +6332,7 @@ warnAboutSettingsAutoConversion message box</comment>
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">បាន​បរាជ័យ​ទៅ​នាំ​ចេញឧបករណ៍​​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
+        <translation>បាន​បរាជ័យ​ទៅ​នាំ​ចេញឧបករណ៍​​ &lt;b&gt;%1&lt;/b&gt; ។</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -6408,7 +6416,7 @@ failed to close ...</comment>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;តើ​​​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឧបករណ៍​​ស៊ី​ឌី​​/​ឌី​វីឌី​-រ៉ូម​ឬ​​?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​​មិន​អាច​ម៉ោន​ស៊ី​ឌី​ ឬ​រូប​ភាព ISO ឬ​ដំឡើង​​ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​​ដោយ​គ្មាន​វា​បាន​​ទេ ​​!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;តើ​​​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឧបករណ៍​​ស៊ី​ឌី​​/​ឌី​វីឌី​-រ៉ូម​ឬ​​?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​​មិន​អាច​ម៉ោន​ស៊ី​ឌី​ ឬ​រូប​ភាព ISO ឬ​ដំឡើង​​ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​​ដោយ​គ្មាន​វា​បាន​​ទេ ​​!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6526,6 +6534,18 @@ medium</comment>
         <translation type="unfinished">យកចេញ</translation>
     </message>
     <message>
+        <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6542,8 +6562,24 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&amp;Remove</source>
         <translation type="unfinished">យកចេញ​</translation>
+    </message>
+    <message>
+        <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Failed to attach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) to the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6583,6 +6619,18 @@ medium</comment>
         <translation type="obsolete">ប្ដូរ</translation>
     </message>
     <message>
+        <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6607,7 +6655,23 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that the parent really exists and that you have permissions to create the machine folder.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6623,7 +6687,15 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Create a snapshot of the current machine state</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6644,6 +6716,10 @@ medium</comment>
     </message>
     <message>
         <source>Could not load the Host USB Proxy service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6715,7 +6791,19 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to drop data.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6789,6 +6877,30 @@ medium</comment>
     <message>
         <source>Ignore</source>
         <translation type="unfinished">មិនអើពើ</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -6882,6 +6994,13 @@ medium</comment>
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
         <source>Switch</source>
         <translation type="unfinished">ប្ដូរ</translation>
@@ -6943,26 +7062,6 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="false">
         <source>Close</source>
         <translation type="unfinished">បិទ</translation>
     </message>

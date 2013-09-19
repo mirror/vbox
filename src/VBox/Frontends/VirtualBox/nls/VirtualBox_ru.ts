@@ -3071,7 +3071,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>Если стоит галочка, хранитель экрана основной машины (хоста) будет приостановлен на время работы виртуальных машин.</translation>
+        <translation type="obsolete">Если стоит галочка, хранитель экрана основной машины (хоста) будет приостановлен на время работы виртуальных машин.</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -3086,11 +3086,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Host Screen Saver:</source>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3381,23 +3385,23 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3691,7 +3695,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3741,6 +3745,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished">Открыть диалог для управления правилами проброса портов.</translation>
+    </message>
+    <message>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">&amp;Проброс портов</translation>
     </message>
 </context>
 <context>
@@ -4352,11 +4364,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Отображает статус разнообразных опций, используемых виртуальной машиной:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6388,7 +6400,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">для данной машины выбрана функция аппаратного ускорения (VT-x/AMD-V). Конфигурация Вашего оборудования не поддерживает аппаратное ускорение, поэтому данная функция будет отключена в момент сохранения настроек виртуальной машины при закрытии данного диалога.</translation>
     </message>
     <message>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6768,7 +6780,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">Не удалось задать глобальные настройки VirtualBox.</translation>
+        <translation>Не удалось задать глобальные настройки VirtualBox.</translation>
     </message>
     <message>
         <source>Failed to access the USB subsystem.</source>
@@ -6776,7 +6788,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">Не удалось создать новую виртуальную машину.</translation>
+        <translation>Не удалось создать новую виртуальную машину.</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -6802,7 +6814,7 @@ p, li { white-space: pre-wrap; }
         <source>Failed to save the state of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось сохранить состояние виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
-    <message id="0">
+    <message>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>Не удалось создать снимок виртуальной машины &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
@@ -6860,7 +6872,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось удалить сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось удалить сетевой хост-интерфейс &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to attach the USB device &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -6872,7 +6884,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось создать общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) для виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
+        <translation>Не удалось создать общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) для виртуальной машины &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -6978,7 +6990,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Закройте все программы гостевой ОС, которые могут использовать эту папку, и попробуйте снова.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось удалить общую папку &lt;b&gt;%1&lt;/b&gt; (указывающую на &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) из виртуальной машины &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Закройте все программы гостевой ОС, которые могут использовать эту папку, и попробуйте снова.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -7010,7 +7022,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">Не удалось открыть файл лицензии &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Проверьте права доступа к файлу.</translation>
+        <translation>Не удалось открыть файл лицензии &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Проверьте права доступа к файлу.</translation>
     </message>
     <message>
         <source>Failed to send the ACPI Power Button press event to the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -7038,7 +7050,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось сохранить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
+        <translation>Не удалось сохранить настройки виртуальной машины &lt;b&gt;%1&lt;/b&gt; в &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -7257,11 +7269,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Файл жесткого диска &lt;b&gt;%1&lt;/b&gt;, уже существует. Вы не можете создать новый виртуальный жесткий диск, который использует этот файл, потому что он, возможно, уже используется другим жестким диском.&lt;/p&gt;&lt;p&gt;Пожалуйста, укажите другое расположение файла.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Хотите ли Вы удалить файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жесткий диск будет убран из списка используемых жестких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жесткий диск в список при необходимости.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Хотите ли Вы удалить файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Удалить&lt;/b&gt;, то указанный файл будет физически удален. Эту операцию &lt;b&gt;отменить нельзя&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Если Вы выберете &lt;b&gt;Сохранить&lt;/b&gt;, то жесткий диск будет убран из списка используемых жестких дисков, но указанный файл удален не будет, что дает возможность вновь добавить этот жесткий диск в список при необходимости.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -7275,7 +7287,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось удалить файл жесткого диска &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
@@ -7283,7 +7295,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
+        <translation>Не удалось создать файл жесткого диска &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -7454,7 +7466,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось импортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось импортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create appliance.</source>
@@ -7462,7 +7474,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось подготовить экспорт конфигурации &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось подготовить экспорт конфигурации &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
@@ -7470,15 +7482,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось экспортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось экспортировать конфигурацию &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Удаление данной виртуальной сети хоста приведёт к удалению виртуального сетевого адаптера хоста, на котором основана данная сеть. Хотите ли Вы удалить адаптер &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; этот виртуальный сетевой адаптер хоста может использоваться в данный момент одним или более виртуальным сетевым адаптером гостя, принадлежащим одной из Ваших ВМ. После того как он будет удалён, эти гостевые адаптеры не будут функционировать до тех пор, пока Вы не скорректируете их настройки, выбрав другой виртуальный сетевой адаптер хоста или иной тип подключения к сети.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Удаление данной виртуальной сети хоста приведёт к удалению виртуального сетевого адаптера хоста, на котором основана данная сеть. Хотите ли Вы удалить адаптер &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание:&lt;/b&gt; этот виртуальный сетевой адаптер хоста может использоваться в данный момент одним или более виртуальным сетевым адаптером гостя, принадлежащим одной из Ваших ВМ. После того как он будет удалён, эти гостевые адаптеры не будут функционировать до тех пор, пока Вы не скорректируете их настройки, выбрав другой виртуальный сетевой адаптер хоста или иной тип подключения к сети.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">Файл с именем &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Замена приведёт к перезаписи его содержимого.</translation>
+        <translation>Файл с именем &lt;b&gt;%1&lt;/b&gt; уже существует. Вы уверены, что хотите его заменить?&lt;br /&gt;&lt;br /&gt;Замена приведёт к перезаписи его содержимого.</translation>
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
@@ -7494,11 +7506,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to check files.</source>
-        <translation type="obsolete">Не удалось проверить файлы.</translation>
+        <translation>Не удалось проверить файлы.</translation>
     </message>
     <message>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">Не удалось удалить файлы.</translation>
+        <translation>Не удалось удалить файлы.</translation>
     </message>
     <message>
         <source>You seem to have the USBFS filesystem mounted at /sys/bus/usb/drivers. We strongly recommend that you change this, as it is a severe mis-configuration of your system which could cause USB devices to fail in unexpected ways.</source>
@@ -7637,7 +7649,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать привод оптических дисков основного компьютера или образ оптического диска к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы уверены, что хотите удалить виртуальный привод оптических дисков?&lt;/p&gt;&lt;p&gt;Без такого устройства у Вас не будет возможности подключать привод оптических дисков основного компьютера или образ оптического диска к виртуальной машине. Кроме того, Вы не сможете установить дополнения гостевой операционной системы!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -7726,7 +7738,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить виртуальный жёсткий диск к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете создать новый пустой файл для хранения содержимого диска или выбрать существующий?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь добавить виртуальный жёсткий диск к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете создать новый пустой файл для хранения содержимого диска или выбрать существующий?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -7740,7 +7752,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить новый привод оптических дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ оптического диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь добавить новый привод оптических дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ оптического диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -7754,7 +7766,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь добавить новый привод гибких дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ гибкого диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь добавить новый привод гибких дисков к контроллеру &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Желаете выбрать образ гибкого диска и поместить его в данный привод или оставить привод пустым?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to detach the hard disk (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) from the slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -7782,11 +7794,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось установить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось установить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось удалить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось удалить плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -7794,11 +7806,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="obsolete">Текущие правила проброса портов неверны. Значения хостовых и гостевых портов не могут быть равны нулю.</translation>
+        <translation>Текущие правила проброса портов неверны. Значения хостовых и гостевых портов не могут быть равны нулю.</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Настройки проброса портов не были сохранены.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, эти настройки будут утеряны.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Настройки проброса портов не были сохранены.&lt;/p&gt;&lt;p&gt;Если Вы продолжите, эти настройки будут утеряны.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Sorry, some generic error happens.</source>
@@ -7843,11 +7855,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось открыть плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось открыть плагин &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь установить плагин VirtualBox. Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Имя:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версия:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Описание:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь установить плагин VirtualBox. Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Имя:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Версия:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Описание:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
@@ -7855,7 +7867,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="obsolete">Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.</translation>
+        <translation>Плагины дополняют функциональность VirtualBox и могут представлять собой системные программы потенциально опасные для Вашей системы. Пожалуйста ознакомьтесь с описанием данного плагина и продолжайте лишь в том случае, если Вы получили плагин из достоверного источника.</translation>
     </message>
     <message>
         <source>&lt;p&gt;An older version of the extension pack is already installed, would you like to upgrade? &lt;p&gt;%1&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;New Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Current Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%5&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
@@ -7883,11 +7895,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Вы собираетесь удалить VirtualBox плагин &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Вы уверены, что хотите продолжить?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Вы собираетесь удалить VirtualBox плагин &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Вы уверены, что хотите продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="obsolete">Плагин &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; был успешно установлен.</translation>
+        <translation>Плагин &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; был успешно установлен.</translation>
     </message>
     <message>
         <source>Deletion of all files belonging to the VM is currently disabled on Windows/x64 to prevent a crash. That will be fixed in the next release.</source>
@@ -7923,11 +7935,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось зарегистрировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось зарегистрировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Настройки машины были изменены извне. У Вас в данный момент имеются несохранённые изменения.&lt;/p&gt;&lt;p&gt;Желаете загрузить новые настройки или оставить свои изменения?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Настройки машины были изменены извне. У Вас в данный момент имеются несохранённые изменения.&lt;/p&gt;&lt;p&gt;Желаете загрузить новые настройки или оставить свои изменения?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Reload settings</source>
@@ -7943,7 +7955,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось скопировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось скопировать виртуальную машину &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are about to restore snapshot &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;You can create a snapshot of the current state of the virtual machine first by checking the box below; if you do not do this the current state will be permanently lost. Do you wish to proceed?&lt;/p&gt;</source>
@@ -7959,7 +7971,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Не удалось сменить тип носителя с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось сменить тип носителя с &lt;b&gt;&apos;%1&apos;&lt;/b&gt; на &lt;b&gt;&apos;%2&apos;&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -7967,7 +7979,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">Не удалось найти снимок &lt;b&gt;%1&lt;/b&gt;.</translation>
+        <translation>Не удалось найти снимок &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -8053,7 +8065,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Не удалось удалить директорию машины &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста убедитесь в существовании директории и наличии прав на её удаление.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Не удалось удалить директорию машины &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Пожалуйста убедитесь в существовании директории и наличии прав на её удаление.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Cannot create the machine folder &lt;b&gt;%1&lt;/b&gt; in the parent folder &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;This folder already exists and possibly belongs to another machine.&lt;/p&gt;</source>
@@ -8061,11 +8073,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="obsolete">Вы собираетесь создать новую виртуальную машину без привода жёсткого диска. У Вас не будет возможности установить операционную систему до тех пор, пока Вы не добавите как минимум один жёсткий диск. Однако, Вы сможете запустить машину и загрузить операционную систему с оптического диска.</translation>
+        <translation>Вы собираетесь создать новую виртуальную машину без привода жёсткого диска. У Вас не будет возможности установить операционную систему до тех пор, пока Вы не добавите как минимум один жёсткий диск. Однако, Вы сможете запустить машину и загрузить операционную систему с оптического диска.</translation>
     </message>
     <message>
         <source>Failed to drop data.</source>
-        <translation type="obsolete">Не удалось скопировать данные.</translation>
+        <translation>Не удалось скопировать данные.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -8142,6 +8154,30 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Ignore</source>
         <translation type="unfinished">Игнорировать</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -8235,6 +8271,15 @@ p, li { white-space: pre-wrap; }
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message numerus="yes">
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
     <message>
         <source>Switch</source>
         <translation type="unfinished">Переключить</translation>
@@ -8296,26 +8341,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&lt;p&gt;Руководство Пользователя VirtualBox было успешно загружено с сетевого адреса &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; и сохранено локально по адресу &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message id="false">
         <source>Close</source>
         <translation type="unfinished">Закрыть</translation>
     </message>
