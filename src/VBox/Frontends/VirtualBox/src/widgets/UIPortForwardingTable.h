@@ -108,7 +108,7 @@ class UIPortForwardingTable : public QIWithRetranslateUI<QWidget>
 public:
 
     /* Constructor: */
-    UIPortForwardingTable(const UIPortForwardingDataList &rules = UIPortForwardingDataList());
+    UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6);
 
     /* API: Rules stuff: */
     const UIPortForwardingDataList& rules() const;

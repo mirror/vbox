@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * UIMachineSettingsPortForwardingDlg class implementation
+ * UIGlobalSettingsPortForwardingDlg class implementation
  */
 
 /*
@@ -20,16 +20,19 @@
 /* Qt includes: */
 #include <QVBoxLayout>
 #include <QPushButton>
+#include <QTabWidget>
 
 /* GUI includes: */
-#include "UIMachineSettingsPortForwardingDlg.h"
+#include "UIGlobalSettingsPortForwardingDlg.h"
 #include "UIIconPool.h"
 #include "QIDialogButtonBox.h"
 
-UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *pParent,
-                                                                       const UIPortForwardingDataList &rules)
+UIGlobalSettingsPortForwardingDlg::UIGlobalSettingsPortForwardingDlg(QWidget *pParent,
+                                                                     const UIPortForwardingDataList &ipv4rules,
+                                                                     const UIPortForwardingDataList &ipv6rules)
     : QIWithRetranslateUI<QIDialog>(pParent)
-    , m_pTable(0)
+    , m_pIPv4Table(0)
+    , m_pIPv6Table(0)
     , m_pButtonBox(0)
 {
     /* Set dialog icon: */
@@ -38,8 +41,16 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     /* Create layout: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     {
-        /* Create table: */
-        m_pTable = new UIPortForwardingTable(rules, false);
+        /* Create tab-widget: */
+        m_pTabWidget = new QTabWidget;
+        {
+            /* Create table tabs: */
+            m_pIPv4Table = new UIPortForwardingTable(ipv4rules, false);
+            m_pIPv6Table = new UIPortForwardingTable(ipv6rules, true);
+            /* Add widgets into tab-widget: */
+            m_pTabWidget->addTab(m_pIPv4Table, QString());
+            m_pTabWidget->addTab(m_pIPv6Table, QString());
+        }
         /* Create button-box: */
         m_pButtonBox = new QIDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, Qt::Horizontal);
         {
@@ -48,7 +59,7 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
             connect(m_pButtonBox->button(QDialogButtonBox::Cancel), SIGNAL(clicked()), this, SLOT(reject()));
         }
         /* Add widgets into layout: */
-        pMainLayout->addWidget(m_pTable);
+        pMainLayout->addWidget(m_pTabWidget);
         pMainLayout->addWidget(m_pButtonBox);
     }
 
@@ -56,34 +67,42 @@ UIMachineSettingsPortForwardingDlg::UIMachineSettingsPortForwardingDlg(QWidget *
     retranslateUi();
 }
 
-const UIPortForwardingDataList& UIMachineSettingsPortForwardingDlg::rules() const
+const UIPortForwardingDataList& UIGlobalSettingsPortForwardingDlg::ipv4rules() const
 {
-    return m_pTable->rules();
+    return m_pIPv4Table->rules();
 }
 
-void UIMachineSettingsPortForwardingDlg::accept()
+const UIPortForwardingDataList& UIGlobalSettingsPortForwardingDlg::ipv6rules() const
+{
+    return m_pIPv6Table->rules();
+}
+
+void UIGlobalSettingsPortForwardingDlg::accept()
 {
     /* Validate table: */
-    bool fPassed = m_pTable->validate();
+    bool fPassed = m_pIPv4Table->validate() && m_pIPv6Table->validate();
     if (!fPassed)
         return;
     /* Call to base-class: */
     QIWithRetranslateUI<QIDialog>::accept();
 }
 
-void UIMachineSettingsPortForwardingDlg::reject()
+void UIGlobalSettingsPortForwardingDlg::reject()
 {
     /* Discard table: */
-    bool fPassed = m_pTable->discard();
+    bool fPassed = m_pIPv4Table->discard() && m_pIPv6Table->discard();
     if (!fPassed)
         return;
     /* Call to base-class: */
     QIWithRetranslateUI<QIDialog>::reject();
 }
 
-void UIMachineSettingsPortForwardingDlg::retranslateUi()
+void UIGlobalSettingsPortForwardingDlg::retranslateUi()
 {
     /* Set window title: */
     setWindowTitle(tr("Port Forwarding Rules"));
+    /* Set tab-widget tab names: */
+    m_pTabWidget->setTabText(0, tr("IPv4"));
+    m_pTabWidget->setTabText(1, tr("IPv6"));
 }
 

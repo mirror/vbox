@@ -42,16 +42,16 @@
 /* External includes: */
 #include <math.h>
 
-/* IP validator: */
-class IPValidator : public QValidator
+/* IPv4 validator: */
+class IPv4Validator : public QValidator
 {
     Q_OBJECT;
 
 public:
 
     /* Constructor/destructor: */
-    IPValidator(QObject *pParent) : QValidator(pParent) {}
-    ~IPValidator() {}
+    IPv4Validator(QObject *pParent) : QValidator(pParent) {}
+    ~IPv4Validator() {}
 
     /* Handler: Validation stuff: */
     QValidator::State validate(QString &strInput, int& /*iPos*/) const
@@ -66,6 +66,31 @@ public:
             return QValidator::Acceptable;
         else if (intRegExp.indexIn(strStringToValidate) != -1)
             return QValidator::Intermediate;
+        else
+            return QValidator::Invalid;
+    }
+};
+
+/* IPv6 validator: */
+class IPv6Validator : public QValidator
+{
+    Q_OBJECT;
+
+public:
+
+    /* Constructor/destructor: */
+    IPv6Validator(QObject *pParent) : QValidator(pParent) {}
+    ~IPv6Validator() {}
+
+    /* Handler: Validation stuff: */
+    QValidator::State validate(QString &strInput, int& /*iPos*/) const
+    {
+        QString strStringToValidate(strInput);
+        strStringToValidate.remove(' ');
+        QString strDigits("([0-9a-fA-F]{0,4})");
+        QRegExp intRegExp(QString("^%1(:%1(:%1(:%1(:%1(:%1(:%1(:%1)?)?)?)?)?)?)?$").arg(strDigits));
+        if (intRegExp.indexIn(strStringToValidate) != -1)
+            return QValidator::Acceptable;
         else
             return QValidator::Invalid;
     }
@@ -139,8 +164,8 @@ private:
     }
 };
 
-/* IP editor: */
-class IPEditor : public QLineEdit
+/* IPv4 editor: */
+class IPv4Editor : public QLineEdit
 {
     Q_OBJECT;
     Q_PROPERTY(IpData ip READ ip WRITE setIp USER true);
@@ -148,12 +173,44 @@ class IPEditor : public QLineEdit
 public:
 
     /* Constructor: */
-    IPEditor(QWidget *pParent = 0) : QLineEdit(pParent)
+    IPv4Editor(QWidget *pParent = 0) : QLineEdit(pParent)
     {
         setFrame(false);
         setAlignment(Qt::AlignCenter);
-        setValidator(new IPValidator(this));
+        setValidator(new IPv4Validator(this));
         setInputMask("000.000.000.000");
+    }
+
+private:
+
+    /* API: IP stuff: */
+    void setIp(IpData ip)
+    {
+        setText(ip);
+    }
+
+    /* API: IP stuff: */
+    IpData ip() const
+    {
+        return text() == "..." ? QString() : text();
+    }
+};
+
+/* IPv6 editor: */
+class IPv6Editor : public QLineEdit
+{
+    Q_OBJECT;
+    Q_PROPERTY(IpData ip READ ip WRITE setIp USER true);
+
+public:
+
+    /* Constructor: */
+    IPv6Editor(QWidget *pParent = 0) : QLineEdit(pParent)
+    {
+        setFrame(false);
+        setAlignment(Qt::AlignCenter);
+        setValidator(new IPv6Validator(this));
+        // setInputMask("000.000.000.000"); // No mask for now...
     }
 
 private:
@@ -434,7 +491,7 @@ bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &va
 }
 
 
-UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rules)
+UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rules, bool fIPv6)
     : m_fIsTableDataChanged(false)
     , m_pTableView(0)
     , m_pToolBar(0)
@@ -533,9 +590,18 @@ UIPortForwardingTable::UIPortForwardingTable(const UIPortForwardingDataList &rul
             /* Register ip type: */
             int iIpId = qRegisterMetaType<IpData>();
             /* Register ip editor: */
-            QStandardItemEditorCreator<IPEditor> *pIpEditorItemCreator = new QStandardItemEditorCreator<IPEditor>();
-            /* Link ip type & editor: */
-            pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIpEditorItemCreator);
+            if (!fIPv6)
+            {
+                QStandardItemEditorCreator<IPv4Editor> *pIPv4EditorItemCreator = new QStandardItemEditorCreator<IPv4Editor>();
+                /* Link ip type & editor: */
+                pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv4EditorItemCreator);
+            }
+            else
+            {
+                QStandardItemEditorCreator<IPv6Editor> *pIPv6EditorItemCreator = new QStandardItemEditorCreator<IPv6Editor>();
+                /* Link ip type & editor: */
+                pNewItemEditorFactory->registerEditor((QVariant::Type)iIpId, pIPv6EditorItemCreator);
+            }
 
             /* Register port type: */
             int iPortId = qRegisterMetaType<PortData>();
