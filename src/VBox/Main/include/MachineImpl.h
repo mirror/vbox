@@ -456,7 +456,6 @@ public:
     STDMETHOD(COMGETTER(USBControllers))(ComSafeArrayOut(IUSBController *, aUSBControllers));
     STDMETHOD(COMGETTER(USBDeviceFilters))(IUSBDeviceFilters * *aUSBDeviceFilters);
     STDMETHOD(COMGETTER(SettingsFilePath))(BSTR *aFilePath);
-    STDMETHOD(COMSETTER(SettingsFilePath))(IN_BSTR aFilePath);
     STDMETHOD(COMGETTER(SettingsModified))(BOOL *aModified);
     STDMETHOD(COMGETTER(SessionState))(SessionState_T *aSessionState);
     STDMETHOD(COMGETTER(SessionType))(BSTR *aSessionType);
@@ -567,6 +566,7 @@ public:
     STDMETHOD(RemoveAllCPUIDLeaves)();
     STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
+    STDMETHOD(SetSettingsFilePath)(IN_BSTR aFilePath, IProgress **aProgress);
     STDMETHOD(SaveSettings)();
     STDMETHOD(DiscardSettings)();
     STDMETHOD(Unregister)(CleanupMode_T cleanupMode, ComSafeArrayOut(IMedium*, aMedia));

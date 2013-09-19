@@ -2713,7 +2713,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(BridgedInterface)(name.raw());
+                        rc = pNetworkAdapter->COMSETTER(BridgedInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -2746,7 +2746,7 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         rc = nwInterfaces[j]->COMGETTER(Name)(name.asOutParam());
                         if (FAILED(rc)) throw rc;
                         /* Set the interface name to attach to */
-                        pNetworkAdapter->COMSETTER(HostOnlyInterface)(name.raw());
+                        rc = pNetworkAdapter->COMSETTER(HostOnlyInterface)(name.raw());
                         if (FAILED(rc)) throw rc;
                         break;
                     }
@@ -2765,6 +2765,27 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 /* Attach to the right interface */
                 rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_Generic);
                 if (FAILED(rc)) throw rc;
+            }
+            /* Next test for NAT network interfaces */
+            else if (pvsys->strExtraConfigCurrent.endsWith("type=NATNetwork", Utf8Str::CaseInsensitive))
+            {
+                /* Attach to the right interface */
+                rc = pNetworkAdapter->COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork);
+                if (FAILED(rc)) throw rc;
+                com::SafeIfaceArray<INATNetwork> nwNATNetworks;
+                rc = mVirtualBox->COMGETTER(NATNetworks)(ComSafeArrayAsOutParam(nwNATNetworks));
+                if (FAILED(rc)) throw rc;
+                // Pick the first NAT network (if there is any)
+                if (nwNATNetworks.size())
+                {
+                    Bstr name;
+                    rc = nwNATNetworks[0]->COMGETTER(NetworkName)(name.asOutParam());
+                    if (FAILED(rc)) throw rc;
+                    /* Set the NAT network name to attach to */
+                    rc = pNetworkAdapter->COMSETTER(NATNetwork)(name.raw());
+                    if (FAILED(rc)) throw rc;
+                    break;
+                }
             }
         }
     }
@@ -3324,7 +3345,8 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
     {
         it1->fEnabled = false;
         if (!(   fKeepAllMACs
-              || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NAT)))
+              || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NAT)
+              || (fKeepNATMACs && it1->mode == NetworkAttachmentType_NATNetwork)))
             Host::generateMACAddress(it1->strMACAddress);
     }
     /* Now iterate over all network entries. */

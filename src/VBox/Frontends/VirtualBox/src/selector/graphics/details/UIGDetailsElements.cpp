@@ -676,6 +676,12 @@ void UIGDetailsUpdateThreadNetwork::run()
                                                             .arg(adapter.GetGenericDriver(), strGenericDriverProperties));
                             break;
                         }
+                        case KNetworkAttachmentType_NATNetwork:
+                        {
+                            strAttachmentType = strAttachmentType.arg(QApplication::translate("UIGDetails", "NAT Network, '%1'", "details (network)")
+                                                                      .arg(adapter.GetNATNetwork()));
+                            break;
+                        }
                         default:
                         {
                             strAttachmentType = strAttachmentType.arg(gpConverter->toString(type));

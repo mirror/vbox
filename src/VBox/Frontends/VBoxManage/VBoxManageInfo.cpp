@@ -1072,6 +1072,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                             strAttachment = Utf8StrFmt("Host-only Interface '%ls'", strHostonlyAdp.raw());
                         break;
                     }
+
                     case NetworkAttachmentType_Generic:
                     {
                         Bstr strGenericDriver;
@@ -1102,6 +1103,21 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                         }
                         break;
                     }
+
+                    case NetworkAttachmentType_NATNetwork:
+                    {
+                        Bstr strNetwork;
+                        nic->COMGETTER(NATNetwork)(strNetwork.asOutParam());
+                        if (details == VMINFO_MACHINEREADABLE)
+                        {
+                            RTPrintf("nat-network%d=\"%ls\"\n", currentNIC + 1, strNetwork.raw());
+                            strAttachment = "natnetwork";
+                        }
+                        else
+                            strAttachment = Utf8StrFmt("NAT Network '%s'", Utf8Str(strNetwork).c_str());
+                        break;
+                    }
+
                     default:
                         strAttachment = "unknown";
                         break;

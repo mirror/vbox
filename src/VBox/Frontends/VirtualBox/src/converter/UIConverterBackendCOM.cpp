@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2012 Oracle Corporation
+ * Copyright (C) 2012-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -289,6 +289,7 @@ template<> QString toString(const KNetworkAttachmentType &type)
         case KNetworkAttachmentType_Internal: return QApplication::translate("VBoxGlobal", "Internal Network", "NetworkAttachmentType");
         case KNetworkAttachmentType_HostOnly: return QApplication::translate("VBoxGlobal", "Host-only Adapter", "NetworkAttachmentType");
         case KNetworkAttachmentType_Generic:  return QApplication::translate("VBoxGlobal", "Generic Driver", "NetworkAttachmentType");
+        case KNetworkAttachmentType_NATNetwork:  return QApplication::translate("VBoxGlobal", "NAT Network", "NetworkAttachmentType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();

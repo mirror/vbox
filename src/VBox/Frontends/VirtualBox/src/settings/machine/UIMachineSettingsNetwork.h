@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,6 +43,7 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strHostInterfaceName(QString())
         , m_strGenericDriverName(QString())
         , m_strGenericProperties(QString())
+        , m_strNATNetworkName(QString())
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
         , m_redirects(UIPortForwardingDataList()) {}
@@ -59,6 +60,7 @@ struct UIDataSettingsMachineNetworkAdapter
                (m_strHostInterfaceName == other.m_strHostInterfaceName) &&
                (m_strGenericDriverName == other.m_strGenericDriverName) &&
                (m_strGenericProperties == other.m_strGenericProperties) &&
+               (m_strNATNetworkName == other.m_strNATNetworkName) &&
                (m_strMACAddress == other.m_strMACAddress) &&
                (m_fCableConnected == other.m_fCableConnected) &&
                (m_redirects == other.m_redirects);
@@ -77,6 +79,7 @@ struct UIDataSettingsMachineNetworkAdapter
     QString m_strHostInterfaceName;
     QString m_strGenericDriverName;
     QString m_strGenericProperties;
+    QString m_strNATNetworkName;
     QString m_strMACAddress;
     bool m_fCableConnected;
     UIPortForwardingDataList m_redirects;
@@ -164,6 +167,7 @@ private:
     QString m_strInternalNetworkName;
     QString m_strHostInterfaceName;
     QString m_strGenericDriverName;
+    QString m_strNATNetworkName;
     UIPortForwardingDataList m_portForwardingRules;
 };
 
@@ -185,6 +189,8 @@ public:
     const QStringList& hostInterfaceList() const { return m_hostInterfaceList; }
     /* Generic driver list: */
     const QStringList& genericDriverList() const { return m_genericDriverList; }
+    /* NAT network list: */
+    const QStringList& natNetworkList() const { return m_natNetworkList; }
 
 protected:
 
@@ -224,6 +230,7 @@ private:
     void refreshInternalNetworkList(bool fFullRefresh = false);
     void refreshHostInterfaceList();
     void refreshGenericDriverList(bool fFullRefresh = false);
+    void refreshNATNetworkList();
 
     /* Various static stuff: */
     static QStringList otherInternalNetworkList();
@@ -239,6 +246,7 @@ private:
     QStringList m_internalNetworkList;
     QStringList m_hostInterfaceList;
     QStringList m_genericDriverList;
+    QStringList m_natNetworkList;
 
     /* Cache: */
     UICacheSettingsMachineNetwork m_cache;

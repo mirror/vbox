@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2012 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +29,7 @@
 #include "CNetworkAdapter.h"
 #include "CNATEngine.h"
 #include "CHostNetworkInterface.h"
+#include "CNATNetwork.h"
 
 /* Other VBox includes: */
 #ifdef VBOX_WITH_VDE
@@ -141,6 +142,9 @@ void UIMachineSettingsNetwork::uploadAdapterCache(UICacheSettingsMachineNetworkA
             adapterData.m_strGenericDriverName = alternativeName();
             adapterData.m_strGenericProperties = m_pGenericPropertiesTextEdit->toPlainText();
             break;
+        case KNetworkAttachmentType_NATNetwork:
+            adapterData.m_strNATNetworkName = alternativeName();
+            break;
         default:
             break;
     }
@@ -210,6 +214,15 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
             if (alternativeName().isNull())
             {
                 message.second << tr("No generic driver is currently selected.");
+                fPass = false;
+            }
+            break;
+        }
+        case KNetworkAttachmentType_NATNetwork:
+        {
+            if (alternativeName().isNull())
+            {
+                message.second << tr("No NAT network name is currently specified.");
                 fPass = false;
             }
             break;
@@ -288,6 +301,9 @@ QString UIMachineSettingsNetwork::alternativeName(int iType) const
             break;
         case KNetworkAttachmentType_Generic:
             strResult = m_strGenericDriverName;
+            break;
+        case KNetworkAttachmentType_NATNetwork:
+            strResult = m_strNATNetworkName;
             break;
         default:
             break;
@@ -419,6 +435,15 @@ void UIMachineSettingsNetwork::sltHandleAttachmentTypeChange()
             m_pAdapterNameCombo->setEditable(true);
             break;
         }
+        case KNetworkAttachmentType_NATNetwork:
+        {
+            m_pAdapterNameCombo->setWhatsThis(tr("Enter the name of the NAT network that this network card "
+                                                 "will be connected to. You can create and remove adapters "
+                                                 "using the global network settings in the virtual machine "
+                                                 "manager window."));
+            m_pAdapterNameCombo->setEditable(true);
+            break;
+        }
         default:
         {
             m_pAdapterNameCombo->setWhatsThis(QString());
@@ -479,6 +504,14 @@ void UIMachineSettingsNetwork::sltHandleAlternativeNameChange()
                 if (!m_strGenericDriverName.isNull())
                     emit sigTabUpdated();
             }
+            break;
+        }
+        case KNetworkAttachmentType_NATNetwork:
+        {
+            QString newName(m_pAdapterNameCombo->itemData(m_pAdapterNameCombo->currentIndex()).toString() == QString(pEmptyItemCode) ||
+                            m_pAdapterNameCombo->currentText().isEmpty() ? QString() : m_pAdapterNameCombo->currentText());
+            if (m_strNATNetworkName != newName)
+                m_strNATNetworkName = newName;
             break;
         }
         default:
@@ -559,6 +592,10 @@ void UIMachineSettingsNetwork::populateComboboxes()
         ++iAttachmentTypeIndex;
         m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_Generic));
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_Generic);
+        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
+        ++iAttachmentTypeIndex;
+        m_pAttachmentTypeComboBox->insertItem(iAttachmentTypeIndex, gpConverter->toString(KNetworkAttachmentType_NATNetwork));
+        m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, KNetworkAttachmentType_NATNetwork);
         m_pAttachmentTypeComboBox->setItemData(iAttachmentTypeIndex, m_pAttachmentTypeComboBox->itemText(iAttachmentTypeIndex), Qt::ToolTipRole);
         ++iAttachmentTypeIndex;
 
@@ -658,6 +695,9 @@ void UIMachineSettingsNetwork::updateAlternativeList()
         case KNetworkAttachmentType_Generic:
             m_pAdapterNameCombo->insertItems(0, m_pParent->genericDriverList());
             break;
+        case KNetworkAttachmentType_NATNetwork:
+            m_pAdapterNameCombo->insertItems(0, m_pParent->natNetworkList());
+            break;
         default:
             break;
     }
@@ -669,6 +709,7 @@ void UIMachineSettingsNetwork::updateAlternativeList()
         {
             case KNetworkAttachmentType_Bridged:
             case KNetworkAttachmentType_HostOnly:
+            case KNetworkAttachmentType_NATNetwork:
             {
                 /* If adapter list is empty => add 'Not selected' item: */
                 int pos = m_pAdapterNameCombo->findData(pEmptyItemCode);
@@ -705,6 +746,7 @@ void UIMachineSettingsNetwork::updateAlternativeName()
         case KNetworkAttachmentType_Internal:
         case KNetworkAttachmentType_HostOnly:
         case KNetworkAttachmentType_Generic:
+        case KNetworkAttachmentType_NATNetwork:
         {
             m_pAdapterNameCombo->setCurrentIndex(position(m_pAdapterNameCombo, alternativeName()));
             break;
@@ -769,6 +811,7 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshInternalNetworkList(true);
     refreshHostInterfaceList();
     refreshGenericDriverList(true);
+    refreshNATNetworkList();
 
     /* For each network adapter: */
     for (int iSlot = 0; iSlot < m_pTwAdapters->count(); ++iSlot)
@@ -915,6 +958,9 @@ void UIMachineSettingsNetworkPage::saveFromCacheTo(QVariant &data)
                             case KNetworkAttachmentType_Generic:
                                 adapter.SetGenericDriver(adapterData.m_strGenericDriverName);
                                 updateGenericProperties(adapter, adapterData.m_strGenericProperties);
+                                break;
+                            case KNetworkAttachmentType_NATNetwork:
+                                adapter.SetNATNetwork(adapterData.m_strNATNetworkName);
                                 break;
                             default:
                                 break;
@@ -1087,6 +1133,18 @@ void UIMachineSettingsNetworkPage::refreshGenericDriverList(bool fFullRefresh /*
             if (!strName.isEmpty() && !m_genericDriverList.contains(strName))
                 m_genericDriverList << strName;
         }
+    }
+}
+
+void UIMachineSettingsNetworkPage::refreshNATNetworkList()
+{
+    /* Reload NAT network list: */
+    m_natNetworkList.clear();
+    const CNATNetworkVector &nws = vboxGlobal().virtualBox().GetNATNetworks();
+    for (int i = 0; i < nws.size(); ++i)
+    {
+        const CNATNetwork &nw = nws[i];
+        m_natNetworkList << nw.GetNetworkName();
     }
 }
 

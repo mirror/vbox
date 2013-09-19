@@ -760,6 +760,18 @@ int handleControlVM(HandlerArg *a)
                         CHECK_ERROR_RET(adapter, COMSETTER(GenericDriver)(Bstr(a->argv[3]).raw()), 1);
                         CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_Generic), 1);
                     }
+                    else if (!strcmp(a->argv[2], "natnetwork"))
+                    {
+                        if (a->argc <= 3)
+                        {
+                            errorArgument("Missing argument to '%s'", a->argv[2]);
+                            rc = E_FAIL;
+                            break;
+                        }
+                        CHECK_ERROR_RET(adapter, COMSETTER(Enabled)(TRUE), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(NATNetwork)(Bstr(a->argv[3]).raw()), 1);
+                        CHECK_ERROR_RET(adapter, COMSETTER(AttachmentType)(NetworkAttachmentType_NATNetwork), 1);
+                    }
                     /** @todo obsolete, remove eventually */
                     else if (!strcmp(a->argv[2], "vde"))
                     {
@@ -1457,7 +1469,7 @@ int handleControlVM(HandlerArg *a)
                 rc = E_FAIL;
                 break;
             }
-            
+
         }
         else
         {

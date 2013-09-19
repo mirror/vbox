@@ -2421,6 +2421,13 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             }
         }
     }
+    else if (elmMode.nameEquals("NATNetwork"))
+    {
+        enmAttachmentType = NetworkAttachmentType_NATNetwork;
+
+        if (!elmMode.getAttributeValue("name", nic.strNATNetworkName))    // required network name
+            throw ConfigFileError(this, &elmMode, N_("Required NATNetwork/@name element is missing"));
+    }
     else if (elmMode.nameEquals("VDE"))
     {
         enmAttachmentType = NetworkAttachmentType_Generic;
@@ -4459,6 +4466,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                 buildNetworkXML(NetworkAttachmentType_HostOnly, *pelmDisabledNode, false, nic);
             if (nic.mode != NetworkAttachmentType_Generic)
                 buildNetworkXML(NetworkAttachmentType_Generic, *pelmDisabledNode, false, nic);
+            if (nic.mode != NetworkAttachmentType_NATNetwork)
+                buildNetworkXML(NetworkAttachmentType_NATNetwork, *pelmDisabledNode, false, nic);
             buildNetworkXML(nic.mode, *pelmAdapter, true, nic);
         }
     }
@@ -4771,6 +4780,11 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                     pelmProp->setAttribute("value", it->second);
                 }
             }
+            break;
+
+        case NetworkAttachmentType_NATNetwork:
+            if (fEnabled || !nic.strNATNetworkName.isEmpty())
+                elmParent.createChild("NATNetwork")->setAttribute("name", nic.strNATNetworkName);
             break;
 
         default: /*case NetworkAttachmentType_Null:*/
@@ -5318,13 +5332,27 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds default frontend setting, graphics controller
-        // setting, explicit long mode setting and video capturing.
+        // setting, explicit long mode setting, video capturing and NAT networking.
         if (   !hardwareMachine.strDefaultFrontend.isEmpty()
             || hardwareMachine.graphicsControllerType != GraphicsControllerType_VBoxVGA
             || hardwareMachine.enmLongMode != Hardware::LongMode_Legacy
             || machineUserData.ovIcon.length() > 0
             || hardwareMachine.fVideoCaptureEnabled)
+        {
             m->sv = SettingsVersion_v1_14;
+            return;
+        }
+        NetworkAdaptersList::const_iterator netit;
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end();
+             ++netit)
+        {
+            if (netit->mode == NetworkAttachmentType_NATNetwork)
+            {
+                m->sv = SettingsVersion_v1_14;
+                break;
+            }
+        }
     }
 
     if (m->sv < SettingsVersion_v1_14)

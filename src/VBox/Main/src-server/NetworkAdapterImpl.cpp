@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -477,6 +477,13 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(
             mData->mInternalNetwork = "intnet";
         }
 
+        /* there must a NAT network name */
+        if (mData->mNATNetwork.isEmpty())
+        {
+            Log(("NAT network name not defined, setting to default \"NatNetwork\"\n"));
+            mData->mNATNetwork = "NatNetwork";
+        }
+
         mData->mAttachmentType = aAttachmentType;
 
         m_fModified = true;
@@ -525,6 +532,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(BridgedInterface)(IN_BSTR aBridgedInterfa
 
     if (mData->mBridgedInterface != aBridgedInterface)
     {
+        /* if an empty/null string is to be set, bridged interface must be
+         * turned off */
+        if (   (aBridgedInterface == NULL || *aBridgedInterface == '\0')
+            && mData->mAttachmentType == NetworkAttachmentType_Bridged)
+        {
+            return setError(E_FAIL,
+                            tr("Empty or null bridged interface name is not valid"));
+        }
+
         mData.backup();
         mData->mBridgedInterface = aBridgedInterface;
 
@@ -576,6 +592,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostOnlyInterface)(IN_BSTR aHostOnlyInter
 
     if (mData->mHostOnlyInterface != aHostOnlyInterface)
     {
+        /* if an empty/null string is to be set, host only interface must be
+         * turned off */
+        if (   (aHostOnlyInterface == NULL || *aHostOnlyInterface == '\0')
+            && mData->mAttachmentType == NetworkAttachmentType_HostOnly)
+        {
+            return setError(E_FAIL,
+                            tr("Empty or null host only interface name is not valid"));
+        }
+
         mData.backup();
         mData->mHostOnlyInterface = aHostOnlyInterface;
 
@@ -683,6 +708,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
 
     if (mData->mNATNetwork != aNATNetwork)
     {
+        /* if an empty/null string is to be set, host only interface must be
+         * turned off */
+        if (   (aNATNetwork == NULL || *aNATNetwork == '\0')
+            && mData->mAttachmentType == NetworkAttachmentType_NATNetwork)
+        {
+            return setError(E_FAIL,
+                            tr("Empty or null NAT network name is not valid"));
+        }
+
         mData.backup();
         mData->mNATNetwork = aNATNetwork;
 
@@ -694,9 +728,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        /* Changing the NAT network isn't allowed during runtime, therefore
-         * no immediate replug in CFGM logic => changeAdapter=FALSE */
-        mParent->onNetworkAdapterChange(this, FALSE);
+        /* When changing the host adapter, adapt the CFGM logic to make this
+         * change immediately effect and to notify the guest that the network
+         * might have changed, therefore changeAdapter=TRUE. */
+        mParent->onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -1208,6 +1243,7 @@ HRESULT NetworkAdapter::loadSettings(BandwidthControl *bwctl,
     mData->mHostOnlyInterface = data.strHostOnlyName;
     mData->mGenericDriver = data.strGenericDriver;
     mData->mGenericProperties = data.genericProperties;
+    mData->mNATNetwork = data.strNATNetworkName;
 
     // leave the lock before setting attachment type
     alock.release();
@@ -1267,6 +1303,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 
     data.strGenericDriver = mData->mGenericDriver;
     data.genericProperties = mData->mGenericProperties;
+
+    data.strNATNetworkName = mData->mNATNetwork;
 
     // after saving settings, we are no longer different from the XML on disk
     m_fModified = false;

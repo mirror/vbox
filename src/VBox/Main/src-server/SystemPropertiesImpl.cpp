@@ -389,6 +389,7 @@ STDMETHODIMP SystemProperties::GetMaxNetworkAdaptersOfType(ChipsetType_T aChipse
     {
         case NetworkAttachmentType_NAT:
         case NetworkAttachmentType_Internal:
+        case NetworkAttachmentType_NATNetwork:
             /* chipset default is OK */
             break;
         case NetworkAttachmentType_Bridged:
