@@ -1428,6 +1428,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
             pVmcb->guest.u64DR7 = CPUMGetHyperDR7(pVCpu);
             pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
             pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+            pVCpu->hm.s.fUsingHyperDR7 = true;
         }
 
         /** @todo If we cared, we could optimize to allow the guest to read registers
@@ -1447,6 +1448,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
             pVmcb->guest.u64DR7 = pCtx->dr[7];
             pVmcb->guest.u64DR6 = pCtx->dr[6];
             pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_DRX;
+            pVCpu->hm.s.fUsingHyperDR7 = false;
         }
 
         /*
@@ -1931,9 +1933,7 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Debug registers.
      */
-    /** @todo We need to save DR6, DR7 according to what we did in
-     *        hmR0SvmLoadSharedDebugState(). */
-    if (!CPUMIsHyperDebugStateActive(pVCpu))
+    if (!pVCpu->hm.s.fUsingHyperDR7)
     {
         pMixedCtx->dr[6] = pVmcb->guest.u64DR6;
         pMixedCtx->dr[7] = pVmcb->guest.u64DR7;
