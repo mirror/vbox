@@ -3435,6 +3435,7 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, (uint32_t)CPUMGetHyperDR7(pVCpu));
         AssertRCReturn(rc, rc);
 
+        pVCpu->hm.s.fUsingHyperDR7 = true;
         fInterceptDB = true;
         fInterceptMovDRx = true;
     }
@@ -3481,8 +3482,11 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             fInterceptDB = true;
         }
 
+        /* Update guest DR7. */
         rc = VMXWriteVmcs32(VMX_VMCS_GUEST_DR7, pMixedCtx->dr[7]);
         AssertRCReturn(rc, rc);
+
+        pVCpu->hm.s.fUsingHyperDR7 = false;
     }
 
     /*
@@ -5788,8 +5792,7 @@ static int hmR0VmxSaveGuestDR7(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
     if (!(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_DEBUG))
     {
-        /** @todo We need to update DR7 according to what was done in hmR0VmxLoadSharedDebugState(). */
-        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        if (!pVCpu->hm.s.fUsingHyperDR7)
         {
             /* Upper 32-bits are always zero. See Intel spec. 2.7.3 "Loading and Storing Debug Registers". */
             uint32_t u32Val;
