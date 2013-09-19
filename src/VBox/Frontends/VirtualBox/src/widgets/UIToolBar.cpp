@@ -30,7 +30,7 @@
 #include <QCleanlooksStyle>
 #include <QWindowsStyle>
 
-UIToolBar::UIToolBar(QWidget *pParent /*= 0*/)
+UIToolBar::UIToolBar(QWidget *pParent /* = 0*/)
     : QToolBar(pParent)
     , m_pMainWindow(qobject_cast<QMainWindow*>(pParent))
 {

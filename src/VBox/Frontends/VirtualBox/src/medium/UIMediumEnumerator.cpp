@@ -52,7 +52,7 @@ private:
 };
 
 
-UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /*= 3*/, ulong uWorkerTimeout /*= 5000*/)
+UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /* = 3*/, ulong uWorkerTimeout /* = 5000*/)
     : m_pThreadPool(0)
     , m_fMediumEnumerationInProgress(false)
 {

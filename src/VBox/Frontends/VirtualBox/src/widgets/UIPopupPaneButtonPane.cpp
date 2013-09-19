@@ -28,7 +28,7 @@
 #include "QIToolButton.h"
 #include "QIMessageBox.h"
 
-UIPopupPaneButtonPane::UIPopupPaneButtonPane(QWidget *pParent /*= 0*/)
+UIPopupPaneButtonPane::UIPopupPaneButtonPane(QWidget *pParent /* = 0*/)
     : QWidget(pParent)
     , m_iDefaultButton(0)
     , m_iEscapeButton(0)

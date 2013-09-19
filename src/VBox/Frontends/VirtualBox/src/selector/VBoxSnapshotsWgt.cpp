@@ -596,7 +596,7 @@ void VBoxSnapshotsWgt::sltTakeSnapshot()
     takeSnapshot();
 }
 
-void VBoxSnapshotsWgt::sltRestoreSnapshot(bool fSuppressNonCriticalWarnings /*= false*/)
+void VBoxSnapshotsWgt::sltRestoreSnapshot(bool fSuppressNonCriticalWarnings /* = false*/)
 {
     /* Get currently chosen item: */
     SnapshotWgtItem *pItem = mTreeWidget->currentItem() ? static_cast<SnapshotWgtItem*>(mTreeWidget->currentItem()) : 0;

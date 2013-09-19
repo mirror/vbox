@@ -43,7 +43,7 @@
 UIRuntimeMiniToolBar::UIRuntimeMiniToolBar(QWidget *pParent,
                                            Qt::Alignment alignment,
                                            IntegrationMode integrationMode,
-                                           bool fAutoHide /*= true*/)
+                                           bool fAutoHide /* = true*/)
     : QWidget(pParent)
     /* Variables: General stuff: */
     , m_alignment(alignment)
@@ -104,7 +104,7 @@ void UIRuntimeMiniToolBar::setIntegrationMode(IntegrationMode integrationMode)
     m_pToolbar->setIntegrationMode(m_integrationMode);
 }
 
-void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /*= true*/)
+void UIRuntimeMiniToolBar::setAutoHide(bool fAutoHide, bool fPropagateToChild /* = true*/)
 {
     /* Make sure auto-hide really changed: */
     if (m_fAutoHide == fAutoHide)

@@ -66,7 +66,7 @@ private:
 };
 
 
-UIThreadPool::UIThreadPool(ulong uWorkerCount /*= 3*/, ulong uWorkerIdleTimeout /*= 5000*/)
+UIThreadPool::UIThreadPool(ulong uWorkerCount /* = 3*/, ulong uWorkerIdleTimeout /* = 5000*/)
     : m_workers(uWorkerCount /* maximum worker count */)
     , m_uIdleTimeout(uWorkerIdleTimeout) /* time for worker idle timeout */
     , m_fTerminating(false) /* termination status */

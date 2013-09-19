@@ -931,7 +931,7 @@ bool VBoxGlobal::toLPTPortNumbers (const QString &aName, ulong &aIRQ,
     return false;
 }
 
-QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /*= true*/)
+QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUseHtml /* = true*/)
 {
     /* Search for corresponding UI medium: */
     const QString strMediumID = cmedium.isNull() ? UIMedium::nullID() : cmedium.GetId();
@@ -1810,7 +1810,7 @@ QString VBoxGlobal::openMedium(UIMediumType mediumType, QString strMediumLocatio
     return QString();
 }
 
-void VBoxGlobal::startMediumEnumeration(bool fForceStart /*= true*/)
+void VBoxGlobal::startMediumEnumeration(bool fForceStart /* = true*/)
 {
     /* Make sure VBoxGlobal is already valid: */
     AssertReturnVoid(mValid);
@@ -3380,8 +3380,8 @@ bool VBoxGlobal::shouldWeShowMachine(CMachine &machine)
 
 /* static */
 bool VBoxGlobal::shouldWeAllowMachineReconfiguration(CMachine &machine,
-                                                     bool fIncludingMachineGeneralCheck /*= false*/,
-                                                     bool fIncludingMachineStateCheck /*= false*/)
+                                                     bool fIncludingMachineGeneralCheck /* = false*/,
+                                                     bool fIncludingMachineStateCheck /* = false*/)
 {
     /* Should we perform machine general check? */
     if (fIncludingMachineGeneralCheck)
@@ -3410,7 +3410,7 @@ bool VBoxGlobal::shouldWeAllowMachineReconfiguration(CMachine &machine,
 
 /* static */
 bool VBoxGlobal::shouldWeShowDetails(CMachine &machine,
-                                     bool fIncludingMachineGeneralCheck /*= false*/)
+                                     bool fIncludingMachineGeneralCheck /* = false*/)
 {
     /* Should we perform machine general check? */
     if (fIncludingMachineGeneralCheck)
@@ -3431,7 +3431,7 @@ bool VBoxGlobal::shouldWeShowDetails(CMachine &machine,
 
 /* static */
 bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
-                                               bool fIncludingSanityCheck /*= true*/)
+                                               bool fIncludingSanityCheck /* = true*/)
 {
     if (fIncludingSanityCheck)
     {
@@ -3452,7 +3452,7 @@ bool VBoxGlobal::shouldWeAutoMountGuestScreens(CMachine &machine,
 
 /* static */
 bool VBoxGlobal::shouldWeAllowSnapshotOperations(CMachine &machine,
-                                                 bool fIncludingSanityCheck /*= true*/)
+                                                 bool fIncludingSanityCheck /* = true*/)
 {
     if (fIncludingSanityCheck)
     {

@@ -25,7 +25,7 @@
 # include <QContextMenuEvent>
 #endif
 
-QIStateIndicator::QIStateIndicator(QWidget *pParent /*= 0*/)
+QIStateIndicator::QIStateIndicator(QWidget *pParent /* = 0*/)
   : QIWithRetranslateUI<QFrame>(pParent)
   , mState(0)
   , mSize(0, 0)

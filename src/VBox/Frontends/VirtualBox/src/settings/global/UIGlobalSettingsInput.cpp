@@ -316,7 +316,7 @@ Qt::ItemFlags UIHotKeyTableModel::flags(const QModelIndex &index) const
     return Qt::NoItemFlags;
 }
 
-QVariant UIHotKeyTableModel::headerData(int iSection, Qt::Orientation orientation, int iRole /*= Qt::DisplayRole*/) const
+QVariant UIHotKeyTableModel::headerData(int iSection, Qt::Orientation orientation, int iRole /* = Qt::DisplayRole*/) const
 {
     /* Switch for different roles: */
     switch (iRole)
@@ -341,7 +341,7 @@ QVariant UIHotKeyTableModel::headerData(int iSection, Qt::Orientation orientatio
     return QVariant();
 }
 
-QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /*= Qt::DisplayRole*/) const
+QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /* = Qt::DisplayRole*/) const
 {
     /* No data for invalid index: */
     if (!index.isValid()) return QVariant();
@@ -436,7 +436,7 @@ QVariant UIHotKeyTableModel::data(const QModelIndex &index, int iRole /*= Qt::Di
     return QVariant();
 }
 
-bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value, int iRole /*= Qt::EditRole*/)
+bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole*/)
 {
     /* Nothing to set for invalid index: */
     if (!index.isValid()) return false;
@@ -476,7 +476,7 @@ bool UIHotKeyTableModel::setData(const QModelIndex &index, const QVariant &value
     return false;
 }
 
-void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /*= Qt::AscendingOrder*/)
+void UIHotKeyTableModel::sort(int iColumn, Qt::SortOrder order /* = Qt::AscendingOrder*/)
 {
     /* Sort whole the list: */
     qStableSort(m_shortcuts.begin(), m_shortcuts.end(), UIShortcutCacheItemFunctor(iColumn, order));
