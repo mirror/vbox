@@ -210,6 +210,12 @@ typedef struct SVMTRANSIENT
     bool            fVectoringPF;
     /** Whether the TSC offset mode needs to be updated. */
     bool            fUpdateTscOffsetting;
+    /** Whether the guest FPU state was active at the time of #VMEXIT. */
+    bool            fWasGuestFPUStateActive;
+    /** Whether the guest debug state was active at the time of #VMEXIT. */
+    bool            fWasGuestDebugStateActive;
+    /** Whether the hyper debug state was active at the time of #VMEXIT. */
+    bool            fWasHyperDebugStateActive;
 } SVMTRANSIENT, *PSVMTRANSIENT;
 AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode,       sizeof(uint64_t));
 AssertCompileMemberAlignment(SVMTRANSIENT, fRestoreTscAuxMsr, sizeof(uint64_t));
@@ -1397,14 +1403,26 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          *
          * Note! DBGF expects a clean DR6 state before executing guest code.
          */
-        if (!CPUMIsHyperDebugStateActive(pVCpu))
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        if (   CPUMIsGuestInLongModeEx(pMixedCtx)
+            && !CPUMIsHyperDebugStateActivePending(pVCpu))
+        {
             CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
-        Assert(!CPUMIsGuestDebugStateActive(pVCpu));
-        Assert(CPUMIsHyperDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
+            Assert(!CPUMIsGuestDebugStateActivePending(pVCpu));
+            Assert(CPUMIsHyperDebugStateActivePending(pVCpu));
+        }
+        else
+#endif
+        if (!CPUMIsHyperDebugStateActive(pVCpu))
+        {
+            CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
+            Assert(!CPUMIsGuestDebugStateActive(pVCpu));
+            Assert(CPUMIsHyperDebugStateActive(pVCpu));
+        }
 
         /* Update DR6 & DR7. (The other DRx values are handled by CPUM one way or the other.) */
         if (   pVmcb->guest.u64DR6 != X86_DR6_INIT_VAL
-            || pVmcb->guest.u64DR7 != CPUMGetHyperDR7(pVCpu) )
+            || pVmcb->guest.u64DR7 != CPUMGetHyperDR7(pVCpu))
         {
             pVmcb->guest.u64DR7 = CPUMGetHyperDR7(pVCpu);
             pVmcb->guest.u64DR6 = X86_DR6_INIT_VAL;
@@ -1436,20 +1454,40 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          */
         if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
         {
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+            if (   CPUMIsGuestInLongModeEx(pMixedCtx)
+                && !CPUMIsGuestDebugStateActivePending(pVCpu))
+            {
+                CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+                Assert(!CPUMIsHyperDebugStateActivePending(pVCpu));
+                Assert(CPUMIsGuestDebugStateActivePending(pVCpu));
+            }
+            else
+#endif
             if (!CPUMIsGuestDebugStateActive(pVCpu))
             {
                 CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
+                Assert(!CPUMIsHyperDebugStateActive(pVCpu));
+                Assert(CPUMIsGuestDebugStateActive(pVCpu));
             }
-            Assert(!CPUMIsHyperDebugStateActive(pVCpu));
-            Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
             Log5(("hmR0SvmLoadSharedDebugState: Loaded guest DRx\n"));
         }
         /*
-         * If no debugging enabled, we'll lazy load DR0-3.
+         * If no debugging enabled, we'll lazy load DR0-3. We don't need to
+         * intercept #DB as DR6 is updated in the VMCB.
          */
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+        else if (   (   CPUMIsGuestInLongModeEx(pMixedCtx)
+                     && !CPUMIsGuestDebugStateActivePending(pVCpu))
+                 || !CPUMIsGuestDebugStateActive(pVCpu))
+#else
         else if (!CPUMIsGuestDebugStateActive(pVCpu))
+#endif
+        {
             fInterceptMovDRx = true;
+        }
     }
 
     /*
@@ -1763,7 +1801,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
+static void hmR0SvmLoadSharedState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(!VMMRZCallRing3IsEnabled(pVCpu));
@@ -1892,6 +1930,8 @@ static void hmR0SvmSaveGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     /*
      * Guest Debug registers.
      */
+    /** @todo We need to save DR6, DR7 according to what we did in
+     *        hmR0SvmLoadSharedDebugState(). */
     if (!CPUMIsHyperDebugStateActive(pVCpu))
     {
         pMixedCtx->dr[6] = pVmcb->guest.u64DR6;
@@ -1982,7 +2022,7 @@ static int hmR0SvmLeaveSession(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     /* When thread-context hooks are used, we can avoid doing the leave again if we had been preempted before
-       and done this from the VMXR0ThreadCtxCallback(). */
+       and done this from the SVMR0ThreadCtxCallback(). */
     if (!pVCpu->hm.s.fLeaveDone)
     {
         hmR0SvmLeave(pVM, pVCpu, pCtx);
@@ -2863,7 +2903,7 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     /* Load the state shared between host and guest (FPU, debug). */
     PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_HOST_GUEST_SHARED_STATE)
-        hmR0VmxLoadSharedState(pVCpu, pVmcb, pCtx);
+        hmR0SvmLoadSharedState(pVCpu, pVmcb, pCtx);
     pVCpu->hm.s.fContextUseFlags &= ~HM_CHANGED_HOST_CONTEXT;       /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!pVCpu->hm.s.fContextUseFlags, ("fContextUseFlags=%#x\n", pVCpu->hm.s.fContextUseFlags));
 
@@ -2878,6 +2918,21 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
         hmR0SvmUpdateTscOffsetting(pVCpu);
         pSvmTransient->fUpdateTscOffsetting = false;
     }
+
+    /* Store status of the shared guest-host state at the time of VMRUN. */
+#if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
+    if (CPUMIsGuestInLongModeEx(pCtx))
+    {
+        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActivePending(pVCpu);
+        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActivePending(pVCpu);
+    }
+    else
+#endif
+    {
+        pSvmTransient->fWasGuestDebugStateActive = CPUMIsGuestDebugStateActive(pVCpu);
+        pSvmTransient->fWasHyperDebugStateActive = CPUMIsHyperDebugStateActive(pVCpu);
+    }
+    pSvmTransient->fWasGuestFPUStateActive = CPUMIsGuestFPUStateActive(pVCpu);
 
     /* Flush the appropriate tagged-TLB entries. */
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB-shootdowns, set this across the world switch. */
@@ -4217,15 +4272,17 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
     HMSVM_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitDRxRead);
 
-    /* We should -not- get this VM-exit if the guest is debugging. */
-    AssertMsgReturn(!CPUMIsGuestDebugStateActive(pVCpu),
+    /* We should -not- get this VM-exit if we're not stepping or the guest is debugging. */
+    AssertMsgReturn(   pVCpu->hm.s.fSingleInstruction
+                    || DBGFIsStepping(pVCpu)
+                    || !pSvmTransient->fWasGuestDebugStateActive,
                     ("hmR0SvmExitReadDRx: Unexpected exit. pVCpu=%p pCtx=%p\n", pVCpu, pCtx),
                     VERR_SVM_UNEXPECTED_EXIT);
 
     /*
      * Lazy DR0-3 loading?
      */
-    if (!CPUMIsHyperDebugStateActive(pVCpu))
+    if (!pSvmTransient->fWasHyperDebugStateActive)
     {
         Assert(!DBGFIsStepping(pVCpu)); Assert(!pVCpu->hm.s.fSingleInstruction);
         Log5(("hmR0SvmExitReadDRx: Lazy loading guest debug registers\n"));
@@ -4236,7 +4293,8 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         pVmcb->ctrl.u16InterceptWrDRx = 0;
         pVmcb->ctrl.u64VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
-        /* We're playing with the host CPU state here, make sure we don't preempt. */
+        /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
+        VMMRZCallRing3Disable(pVCpu);
         HM_DISABLE_PREEMPT_IF_NEEDED();
 
         /* Save the host & load the guest debug state, restart execution of the MOV DRx instruction. */
@@ -4244,6 +4302,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
         Assert(CPUMIsGuestDebugStateActive(pVCpu) || HC_ARCH_BITS == 32);
 
         HM_RESTORE_PREEMPT_IF_NEEDED();
+        VMMRZCallRing3Enable(pVCpu);
 
         STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxContextSwitch);
         return VINF_SUCCESS;
@@ -4387,7 +4446,8 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                             && (pCtx->cr4 & X86_CR4_DE))
                         || DBGFBpIsHwIoArmed(pVM)))
         {
-            /* We're playing with the host CPU state here, make sure we don't preempt. */
+            /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
+            VMMRZCallRing3Disable(pVCpu);
             HM_DISABLE_PREEMPT_IF_NEEDED();
 
             STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxIoCheck);
@@ -4408,6 +4468,7 @@ HMSVM_EXIT_DECL hmR0SvmExitIOInstr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
                 rcStrict = rcStrict2;
 
             HM_RESTORE_PREEMPT_IF_NEEDED();
+            VMMRZCallRing3Enable(pVCpu);
         }
 
         HMSVM_CHECK_SINGLE_STEP(pVCpu, rcStrict);
@@ -4737,32 +4798,42 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     HMSVM_CHECK_EXIT_DUE_TO_EVENT_DELIVERY();
 
-#ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
-    Assert(!CPUMIsGuestFPUStateActive(pVCpu));
-#endif
-
-    /* We're playing with the host CPU state here, make sure we don't preempt. */
+    /* We're playing with the host CPU state here, make sure we don't preempt or longjmp. */
+    VMMRZCallRing3Disable(pVCpu);
     HM_DISABLE_PREEMPT_IF_NEEDED();
 
-    /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
-    int rc = CPUMR0LoadGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
-
-    if (rc == VINF_SUCCESS)
+    int rc;
+    /* If the guest FPU was active at the time of the #NM exit, then it's a guest fault. */
+    if (pSvmTransient->fWasGuestFPUStateActive)
     {
-        Assert(CPUMIsGuestFPUStateActive(pVCpu));
-        HM_RESTORE_PREEMPT_IF_NEEDED();
-
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
-        return VINF_SUCCESS;
+        rc = VINF_EM_RAW_GUEST_TRAP;
+        Assert(CPUMIsGuestFPUStateActive(pVCpu) || (pVCpu->hm.s.fContextUseFlags & HM_CHANGED_GUEST_CR0));
+    }
+    else
+    {
+#ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
+        Assert(!pSvmTransient->fWasGuestFPUStateActive);
+#endif
+        /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
+        rc = CPUMR0LoadGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+        Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 
     HM_RESTORE_PREEMPT_IF_NEEDED();
+    VMMRZCallRing3Enable(pVCpu);
 
-    /* Forward #NM to the guest. */
-    Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-    hmR0SvmSetPendingXcptNM(pVCpu);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
+    if (rc == VINF_SUCCESS)
+    {
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_CR0;
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
+    }
+    else
+    {
+        /* Forward #NM to the guest. */
+        Assert(rc == VINF_EM_RAW_GUEST_TRAP);
+        hmR0SvmSetPendingXcptNM(pVCpu);
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
+    }
     return VINF_SUCCESS;
 }
 
