@@ -283,13 +283,13 @@ template<> QString toString(const KNetworkAttachmentType &type)
 {
     switch (type)
     {
-        case KNetworkAttachmentType_Null:     return QApplication::translate("VBoxGlobal", "Not attached", "NetworkAttachmentType");
-        case KNetworkAttachmentType_NAT:      return QApplication::translate("VBoxGlobal", "NAT", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Bridged:  return QApplication::translate("VBoxGlobal", "Bridged Adapter", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Internal: return QApplication::translate("VBoxGlobal", "Internal Network", "NetworkAttachmentType");
-        case KNetworkAttachmentType_HostOnly: return QApplication::translate("VBoxGlobal", "Host-only Adapter", "NetworkAttachmentType");
-        case KNetworkAttachmentType_Generic:  return QApplication::translate("VBoxGlobal", "Generic Driver", "NetworkAttachmentType");
-        case KNetworkAttachmentType_NATNetwork:  return QApplication::translate("VBoxGlobal", "NAT Network", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Null:       return QApplication::translate("VBoxGlobal", "Not attached", "NetworkAttachmentType");
+        case KNetworkAttachmentType_NAT:        return QApplication::translate("VBoxGlobal", "NAT", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Bridged:    return QApplication::translate("VBoxGlobal", "Bridged Adapter", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Internal:   return QApplication::translate("VBoxGlobal", "Internal Network", "NetworkAttachmentType");
+        case KNetworkAttachmentType_HostOnly:   return QApplication::translate("VBoxGlobal", "Host-only Adapter", "NetworkAttachmentType");
+        case KNetworkAttachmentType_Generic:    return QApplication::translate("VBoxGlobal", "Generic Driver", "NetworkAttachmentType");
+        case KNetworkAttachmentType_NATNetwork: return QApplication::translate("VBoxGlobal", "NAT Network", "NetworkAttachmentType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
