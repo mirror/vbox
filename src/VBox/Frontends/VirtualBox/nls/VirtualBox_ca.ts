@@ -3157,7 +3157,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3173,7 +3173,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3212,7 +3212,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Reinicialitza la combinacio de tecles que es fa servir com a combinacio de l&apos;amfitrio a la finestra de la màquina virtual.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3837,7 +3837,7 @@ p, li { white-space: pre-wrap; }
         <translation>Quan estigui marcat, el VirtualBox farà servir els paràmetres de servidor intermediari proveïts per a tasques com la baixada de les Guest Additions o la comprovació d&apos;actualitzacions.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>Habilita &amp;el servidor intermediari</translation>
     </message>
     <message>
@@ -3896,7 +3896,7 @@ p, li { white-space: pre-wrap; }
         <translation>Quan estigui marcat, l&apos;aplicació es connectarà periòdicament al web del VirtualBox per comprovar si hi ha noves versions disponibles.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Comprova si hi ha actualitzacions</translation>
     </message>
     <message>
@@ -3920,7 +3920,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Trieu això si voleu ser notificats sobre actualitzacions estables del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Versions publicades estables</translation>
     </message>
     <message>
@@ -3928,7 +3928,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Trieu això si voleu ser informats de noves versions publicades del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Totes les noves versions</translation>
     </message>
     <message>
@@ -3936,7 +3936,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Trieu això si voleu ser notificats de les noves versions i versions en desenvolupament del VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Totes les &amp;noves versions i també versions en desenvolupament</translation>
     </message>
 </context>
@@ -5281,7 +5281,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Adreça &amp;Mac:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Cable connectat</translation>
     </message>
     <message>
@@ -5444,7 +5444,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Genera una nova adreça MAC aleatòria.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Cable connectat</translation>
     </message>
     <message>
@@ -6117,7 +6117,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tipus (format):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Connectat a:</translation>
     </message>
     <message>

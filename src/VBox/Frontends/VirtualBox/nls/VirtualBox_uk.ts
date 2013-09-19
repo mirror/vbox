@@ -2911,7 +2911,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2927,7 +2927,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2966,7 +2966,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Скидає комбінацію клавіш, яка використовуються як комбінація у вікні віртуальної машини.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3591,7 +3591,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо позначено, VirtualBox буде використовувати налаштування проксі для завдань на кшталт звантаження гостьових доповнень або перевіряння на оновлення.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Увімкнути проксі</translation>
     </message>
     <message>
@@ -3650,7 +3650,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо це позначено, програма періодично буде під&apos;єднуватись до сайту VirtualBox і перевірятиме доступність нових версій VirtualBox.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Перевірити на оновлення</translation>
     </message>
     <message>
@@ -3674,7 +3674,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись лише про стабільні оновлення VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Версії стабільного випуску</translation>
     </message>
     <message>
@@ -3682,7 +3682,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись про всі нові випуски VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Усі нові випуски</translation>
     </message>
     <message>
@@ -3690,7 +3690,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Виберіть це, якщо ви бажаєте сповіщатись про всі нові та підготовчі випуски VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Усі н&amp;ові випуски і підготовчі випуски</translation>
     </message>
 </context>
@@ -4968,7 +4968,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Адреса Mac:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Кабель під&apos;єднано</translation>
     </message>
     <message>
@@ -5067,7 +5067,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Створює нову випадкову адресу MAC.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Кабель під&apos;єднаний</translation>
     </message>
     <message>
@@ -5736,7 +5736,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тип (формат):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Долучено до:</translation>
     </message>
     <message>

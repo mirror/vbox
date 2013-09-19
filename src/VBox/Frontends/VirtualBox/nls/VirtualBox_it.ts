@@ -3516,7 +3516,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3532,7 +3532,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3571,7 +3571,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Reimposta il tasto utilizzato come tasto host nella finestra della MV.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4196,7 +4196,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se marcata, VirtualBox utilizzerà le impostazioni del proxy fornite per attività come lo scaricamento delle Guest Additions dalla rete o il controllo degli aggiornamenti.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>A&amp;bilita il proxy</translation>
     </message>
     <message>
@@ -4255,7 +4255,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se marcata, l&apos;applicazione si collegherà periodicamente al sito web di VirtualBox e verificherà la disponibilità di una nuova versione di VirtualBox.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Controlla aggiornamenti</translation>
     </message>
     <message>
@@ -4279,7 +4279,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Seleziona questa opzione se desideri ricevere solo notifiche per gli aggiornamenti stabili di VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>Ver&amp;sioni finali stabili</translation>
     </message>
     <message>
@@ -4287,7 +4287,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Seleziona questa opzione se desideri ricevere notifiche per tutti i nuovi rilasci di VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Tutti i nuovi ril&amp;asci</translation>
     </message>
     <message>
@@ -4295,7 +4295,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Seleziona questa opzione per ricevere notifiche relative a tutte le nuove versioni di VirtualBox, comprese le versioni che precedono il rilascio ufficiale.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Tutte le versioni finali e &amp;pre-rilascio</translation>
     </message>
 </context>
@@ -5509,7 +5509,7 @@ p, li { white-space: pre-wrap; }
         <translation>Indica se il cavo di rete virtuale è collegato all&apos;avvio della macchina o meno.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Cavo connesso</translation>
     </message>
     <message>
@@ -5791,7 +5791,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Genera un nuovo indirizzo MAC casuale.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Cavo connesso</translation>
     </message>
     <message>
@@ -6360,7 +6360,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tipo (Formato):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Collegato a:</translation>
     </message>
     <message>

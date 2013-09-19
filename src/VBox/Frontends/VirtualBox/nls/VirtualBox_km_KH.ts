@@ -2430,7 +2430,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2446,7 +2446,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2469,7 +2469,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">ចាប់យក​ក្ដារចុច​ដោយ​ស្វ័យ​ប្រវត្តិ</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3179,7 +3179,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3214,7 +3214,7 @@ creating/removing host-only network</comment>
         <translation>នៅពេល​បាន​គូសធីក កម្មវិធី​នឹង​តភ្ជាប់​ទៅ​កាន់តំបន់បណ្ដាញ VirtualBox តាម​កាល​កំណត់ ហើយ​ពិនិត្យ​មើល​ថាតើ​មានកំណែ VirtualBox ដែរឬទេ ។</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>ពិនិត្យ​មើល​ភាព​ទាន់សម័យ</translation>
     </message>
     <message>
@@ -3238,7 +3238,7 @@ creating/removing host-only network</comment>
         <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិនបើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ភាព​ទាន់សម័យ​ស្ថិតស្ថេរ​ដល់ VirtualBox ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>កំណែ​ចេញ​ផ្សាយ​ស្ថិតស្ថេរ​</translation>
     </message>
     <message>
@@ -3246,7 +3246,7 @@ creating/removing host-only network</comment>
         <translation>&lt;p&gt;ជ្រើសវា​ ប្រសិន​បើ​អ្នក​ចង់​ឲ្យ​ជូន​ដំណឹង​អំពី​ការ​ចេញផ្សាយ​ VirtualBox ថ្មី ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>ការ​ចេញផ្សាយ​ថ្មី​ទាំងអស់​</translation>
     </message>
     <message>
@@ -3254,7 +3254,7 @@ creating/removing host-only network</comment>
         <translation>&lt;p&gt;ជ្រើស​វាដើម្បី​ឲ្យ​ជូន​ដំណឹង​អំពី​​កំណែ​​ចេញផ្សាយ​​​របស់ VirtualBox និង​និងចេញ​ផ្សាយ​មុន​របស់ VirtualBox ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>ការ​ចេញ​ផ្សាយ​ថ្មី និង​ចេញ​ផ្សាយ​មុន​ទាំងអស់</translation>
     </message>
 </context>
@@ -4273,7 +4273,7 @@ network adapter name</comment>
         <translation type="obsolete">អាសយដ្ឋាន Mac ៖</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation> បាន​តភ្ជាប់​ខ្សែ​</translation>
     </message>
     <message>
@@ -4900,7 +4900,7 @@ network adapter name</comment>
         <translation>ប្រ​ភេទ​​ (ទ្រង់​ទ្រាយ​) ៖</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
     </message>
     <message>

@@ -2791,7 +2791,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2807,7 +2807,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2838,7 +2838,7 @@
         <translation type="obsolete">Reset kombinasi tombol yang dipakai sebagai kombinasi host dalam window VM.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3449,7 +3449,7 @@
         <translation>Bila ditandai, VirtualBox akan memakai pengaturan proksi yang diberikan untuk tugas seperti men-download Guest Addition dari jaringan atau memeriksa update.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Nyalakan proksi</translation>
     </message>
     <message>
@@ -3508,7 +3508,7 @@
         <translation>Bila ditandai, aplikasi akan menyambung secara periodik ke situs web VirtualBox dan memeriksa apakah sebuah versi baru VirtualBox telah tersedia.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Periksa update</translation>
     </message>
     <message>
@@ -3532,7 +3532,7 @@
         <translation>&lt;p&gt;Pilih ini bila Anda hanya menghendaki untuk diberitahu tentang update stabil atas VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>Versi rilis &amp;stabil</translation>
     </message>
     <message>
@@ -3540,7 +3540,7 @@
         <translation>&lt;p&gt;Pilih ini bila Anda menghendaki untuk diberitahu tentang semua rilis baru VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>Semu&amp;a rilis baru</translation>
     </message>
     <message>
@@ -3548,7 +3548,7 @@
         <translation>&lt;p&gt;Pilih ini untuk diberitahu tentang semua rilis baru VirtualBox dan versi prarilis dari VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Semua rilis baru dan &amp;prarilis</translation>
     </message>
 </context>
@@ -4651,7 +4651,7 @@
         <translation type="obsolete">Alamat &amp;MAC:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>Ka&amp;bel terhubung</translation>
     </message>
     <message>
@@ -5307,7 +5307,7 @@
         <translation>Tipe (Format):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Terpasang Pada:</translation>
     </message>
     <message>

@@ -2702,7 +2702,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2718,7 +2718,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2749,7 +2749,7 @@
         <translation type="obsolete">Restaura a combinação da chave usada como combinação de hospedeiro na janela do VM.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3360,7 +3360,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3395,7 +3395,7 @@
         <translation>Quando seleccionado, a aplicação ligar-se-á periódicamente ao sítio web do VirtualBox para verificar se existe uma nova versão disponível.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Procurar por actualizações</translation>
     </message>
     <message>
@@ -3419,7 +3419,7 @@
         <translation>&lt;p&gt;Escolha esta se deseja apenas ser notificado acerca de actualizações estáveis para o VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Lançamento de versões estáveis</translation>
     </message>
     <message>
@@ -3427,7 +3427,7 @@
         <translation>&lt;p&gt;Escolha esta se deseja apenas ser notificado acerca de todos os lançamentos novos do VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Todos os novos lançamentos</translation>
     </message>
     <message>
@@ -3435,7 +3435,7 @@
         <translation>&lt;p&gt;Escolha esta se deseja apenas ser notificado acerca de todos os lançamentos novos e versões de pré-lançamento do VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Todos os novos lançamentos e &amp;pré-lançamentos</translation>
     </message>
 </context>
@@ -4614,7 +4614,7 @@
         <translation type="obsolete">Endereço &amp;Mac:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Cabo conectado</translation>
     </message>
     <message>
@@ -5302,7 +5302,7 @@
         <translation>Tipo (Formato):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Ligado a:</translation>
     </message>
     <message>

@@ -2741,7 +2741,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2757,7 +2757,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2796,7 +2796,7 @@
         <translation type="obsolete">Réinitialise la combinaison de touches utilisée comme touches hôte dans la machine virtuelle.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3421,7 +3421,7 @@
         <translation>Si cette case est cochée VirtualBox utilisera le proxy pour le téléchargement des additions invité depuis le réseau ou pour la vérification des mises à jour.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Activer le proxy</translation>
     </message>
     <message>
@@ -3480,7 +3480,7 @@
         <translation>Si cette case est cochée l&apos;application vérifiera périodiquement sur le site de VirtualBox si une nouvelle version est disponible.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Chercher des mises à jour</translation>
     </message>
     <message>
@@ -3504,7 +3504,7 @@
         <translation>&lt;p&gt;Choisissez ceci si vous ne vous intéressez qu&apos;aux versions stables de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>Versions &amp;stables</translation>
     </message>
     <message>
@@ -3512,7 +3512,7 @@
         <translation>&lt;p&gt;Choisissez ceci si vous vous intéressez à toutes les nouvelles versions de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Toutes les nouvelles versions</translation>
     </message>
     <message>
@@ -3520,7 +3520,7 @@
         <translation>&lt;p&gt;Choisissez ceci si vous vous intéressez à toutes les nouvelles versions de VirtualBox, y compris les expérimentales.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Toutes, même les e&amp;xpérimentales</translation>
     </message>
 </context>
@@ -4528,7 +4528,7 @@
         <translation type="obsolete">Adresse &amp;MAC :</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Câble branché</translation>
     </message>
     <message>
@@ -5163,7 +5163,7 @@
         <translation>Type (format) :</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Attaché à :</translation>
     </message>
     <message>

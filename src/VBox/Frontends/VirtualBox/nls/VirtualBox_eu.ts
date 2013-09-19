@@ -2164,7 +2164,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2180,7 +2180,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2199,7 +2199,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2679,7 +2679,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2714,7 +2714,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2738,7 +2738,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2746,7 +2746,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2754,7 +2754,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3710,7 +3710,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4283,7 +4283,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

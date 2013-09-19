@@ -1981,7 +1981,7 @@
         <translation>وقتیکه انتخاب شده،ویرچوال باکس از تنظیمات پراکسی عرضه شده برای وظایفی مثل دانلود افزونه مهمان از شبکه یا بررسی برای بروزرسانی استفاده خواهد کرد.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>فعال کرد&amp;ن پراکسی</translation>
     </message>
     <message>
@@ -2032,7 +2032,7 @@
         <translation>وقتیکه انتخاب شده،برنامه بطور دوره ای به وبسایت برنامه متصل میشود و نسخه جدید برنامه را اگر موجود باشد بررسی میکند.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>بررسی برای بروزرس&amp;انی</translation>
     </message>
     <message>
@@ -2056,7 +2056,7 @@
         <translation>&lt;p&gt;اگر میخواهید از بروزرسانی نسخه های پایدار مطلع شوید این گزینه را انتخاب کنید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>نسخه های &amp;پایدار</translation>
     </message>
     <message>
@@ -2064,7 +2064,7 @@
         <translation>&lt;p&gt;اگر میخواهید از همه نسخه های جدید برنامه مطلع شوید این گزینه را انتخاب کنید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>همه نس&amp;خه های جدید</translation>
     </message>
     <message>
@@ -2072,7 +2072,7 @@
         <translation>&lt;p&gt;این گزینه را برای مطلع شدن از نسخه های جدید و پیش نسخه های برنامه انتخاب کنید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>همه نسخه ها و پیش نسخه ه&amp;ا</translation>
     </message>
 </context>
@@ -2618,7 +2618,7 @@
         <translation>هرگاه کابل شبکه مجازی در اِستارت آپ ماشین متصل شده است یا نه،را نشان میدهد.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>کابل متصل ش&amp;ده است</translation>
     </message>
     <message>
@@ -3148,7 +3148,7 @@
         <translation>نوع (فرمت):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>ضمیمه شده به:</translation>
     </message>
     <message>

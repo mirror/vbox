@@ -3098,7 +3098,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3114,7 +3114,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3153,7 +3153,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">가상 머신 창에 사용하는 호스트 키 조합을 초기화합니다.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3778,7 +3778,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 VirtualBox 게스트 확장 다운로드 및 업데이트 확인 등 네트워크를 사용하는 작업에 아래 프록시를 사용합니다.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>프록시 사용하기(&amp;E)</translation>
     </message>
     <message>
@@ -3837,7 +3837,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 주기적으로 VirtualBox 웹 사이트에 연결하여 새 버전이 있는가를 검사합니다.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>업데이트 찾기(&amp;C)</translation>
     </message>
     <message>
@@ -3861,7 +3861,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox의 안정 버전 업데이트 알림만 받으려면 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>안정 릴리즈 버전(&amp;S)</translation>
     </message>
     <message>
@@ -3869,7 +3869,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox의 모든 업데이트 알림을 받으려면 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>모든 새 릴리즈(&amp;A)</translation>
     </message>
     <message>
@@ -3877,7 +3877,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox의 릴리즈 및 테스트 버전을 포함한 모든 업데이트 알림을 받으려면 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>모든 새 릴리즈 및 테스트 버전(&amp;P)</translation>
     </message>
 </context>
@@ -5142,7 +5142,7 @@ p, li { white-space: pre-wrap; }
         <translation>가상 네트워크 케이블이 머신 시작 시 연결되거나 연결되지 않음을 표시합니다.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>케이블 연결됨(&amp;C)</translation>
     </message>
     <message>
@@ -5305,7 +5305,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">새 무작위적 MAC 주소를 생성합니다.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">케이블 연결됨(&amp;C)</translation>
     </message>
     <message>
@@ -5959,7 +5959,7 @@ p, li { white-space: pre-wrap; }
         <translation>종류 (형식):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>다음에 연결됨:</translation>
     </message>
     <message>

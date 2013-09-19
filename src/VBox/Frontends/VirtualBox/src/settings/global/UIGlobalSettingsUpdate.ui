@@ -24,7 +24,7 @@
       <string>When checked, the application will periodically connect to the VirtualBox website and check whether a new VirtualBox version is available.</string>
      </property>
      <property name="text">
-      <string>&amp;Check for updates</string>
+      <string>&amp;Check for Updates</string>
      </property>
     </widget>
    </item>
@@ -122,7 +122,7 @@
          <string>&lt;p>Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p></string>
         </property>
         <property name="text">
-         <string>&amp;Stable release versions</string>
+         <string>&amp;Stable Release Versions</string>
         </property>
        </widget>
       </item>
@@ -132,7 +132,7 @@
          <string>&lt;p>Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p></string>
         </property>
         <property name="text">
-         <string>&amp;All new releases</string>
+         <string>&amp;All New Releases</string>
         </property>
        </widget>
       </item>
@@ -142,7 +142,7 @@
          <string>&lt;p>Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p></string>
         </property>
         <property name="text">
-         <string>All new releases and &amp;pre-releases</string>
+         <string>All New Releases and &amp;Pre-Releases</string>
         </property>
        </widget>
       </item>

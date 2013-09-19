@@ -3243,7 +3243,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3259,7 +3259,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3298,7 +3298,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Reiniciar la combinación de techas usada como combinación anfitrión en la ventana de MV.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3923,7 +3923,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionado, VirtualBox usará la configuración proporcionada para tareas como descargar las «Guest Additions» de la red o comprobar las actualizaciones.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Habilitar proxy</translation>
     </message>
     <message>
@@ -3982,7 +3982,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionada, la aplicación se conectará periódicamente al sitio web de VirtualBox y comprobará si hay una nueva versión de VirtualBox disponible.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Comprobar actualizaciones</translation>
     </message>
     <message>
@@ -4006,7 +4006,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Elija esto si sólo desea ser notificado sobre las actualizaciones estables de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Publicaciones de versiones estables</translation>
     </message>
     <message>
@@ -4014,7 +4014,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Elija esto si desea ser notificado sobre todas las nuevas publicaciones de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Todas las nuevas publicaciones</translation>
     </message>
     <message>
@@ -4022,7 +4022,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Elija esto para ser notificado sobre todas las nuevas publicaciones y pre-publicaciones de VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Todas las nuevas publicaciones y &amp;pre-publicaciones</translation>
     </message>
 </context>
@@ -5214,7 +5214,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Dirección &amp;MAC:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Cable conectado</translation>
     </message>
     <message>
@@ -5321,7 +5321,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Genera una nueva dirección MAC al azar.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Cable Conectado</translation>
     </message>
     <message>
@@ -5978,7 +5978,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tipo (Formato):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Conectado a:</translation>
     </message>
     <message>

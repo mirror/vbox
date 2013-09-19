@@ -24,7 +24,7 @@
       <string>When checked, VirtualBox will use the proxy settings supplied for tasks like downloading Guest Additions from the network or checking for updates.</string>
      </property>
      <property name="text">
-      <string>&amp;Enable proxy</string>
+      <string>&amp;Enable Proxy</string>
      </property>
     </widget>
    </item>

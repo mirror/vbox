@@ -1742,7 +1742,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1758,7 +1758,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1789,7 +1789,7 @@
         <translation type="obsolete">重設在 VM 視窗中作為 Host 鍵組合使用的按鍵組合。</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2400,7 +2400,7 @@
         <translation>勾選時，VirtualBox 將使用提供的 Proxy 設定工作，如從網路下載 Guest Additions 或檢查更新。</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>啟用 Proxy(&amp;E)</translation>
     </message>
     <message>
@@ -2459,7 +2459,7 @@
         <translation>勾選時，應用程式將定時連線到 VirtualBox 網站並檢查新的 VirtualBox 版本是否可用。</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>檢查更新(&amp;C)</translation>
     </message>
     <message>
@@ -2483,7 +2483,7 @@
         <translation>&lt;p&gt;選擇這個，如果您只想要有關 VirtualBox 的穩定版更新通知。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>穩定發佈版本(&amp;S)</translation>
     </message>
     <message>
@@ -2491,7 +2491,7 @@
         <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 的發佈通知。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>所有新的發佈(&amp;A)</translation>
     </message>
     <message>
@@ -2499,7 +2499,7 @@
         <translation>&lt;p&gt;選擇這個，如果您想要關於所有新的 VirtualBox 發佈和 VirtualBox 預先發佈的版本通知。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>所有新的發佈和預先發佈(&amp;P)</translation>
     </message>
 </context>
@@ -3287,7 +3287,7 @@
         <translation>指示機器啟動時是否已插入虛擬網路線。</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>線路已連接(&amp;C)</translation>
     </message>
     <message>
@@ -3865,7 +3865,7 @@
         <translation>類型 (格式)：</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>附加到：</translation>
     </message>
     <message>

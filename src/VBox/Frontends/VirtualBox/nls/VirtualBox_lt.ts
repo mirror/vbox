@@ -2850,7 +2850,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2866,7 +2866,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2905,7 +2905,7 @@
         <translation type="obsolete">Atstatyti klavišų kombinaciją, kuri naudojama kaip pagrindinio kompiuterio kombinacija VM lange.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3516,7 +3516,7 @@
         <translation>Kai pažymėta, VirtualBox užduotims tokioms kaip svečio papildinių parsiuntimas ar atnaujinimų tikrinimas, naudos tarpinio serverio nustatymus.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Naudoti įgaliotąjį serverį</translation>
     </message>
     <message>
@@ -3575,7 +3575,7 @@
         <translation>Pasirinkus, programa karts nuo karto prisijungs prie VirtualBox svetainės ir tikrins, ar yra naujesnių VirtualBox versijų.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Tikrinti, ar yra atnaujinimų</translation>
     </message>
     <message>
@@ -3599,7 +3599,7 @@
         <translation>&lt;p&gt;Pasirinkite, jei norite sužinoti tik apie galimas stabilias VirtualBox versijas.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Stabilias versijas</translation>
     </message>
     <message>
@@ -3607,7 +3607,7 @@
         <translation>&lt;p&gt;Pasirinkite, jei norite sužinoti apie visas naujas VirtualBox versijas.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Visas naujas versijas</translation>
     </message>
     <message>
@@ -3615,7 +3615,7 @@
         <translation>&lt;p&gt;Pasirinkite, jei norite sužinoti apie visas naujas VirtualBox versijas, įskaitant ir eksperimentines.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Visas naujas versijas, įskaitant &amp;eksperimentines</translation>
     </message>
 </context>
@@ -4688,7 +4688,7 @@
         <translation>Rodo, ar virtualaus tinklo kabelis yra prijungtas mašinos paleidimo metu.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kabelis prijungtas</translation>
     </message>
     <message>
@@ -5195,7 +5195,7 @@
         <translation>Vieta:</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Susietas su:</translation>
     </message>
     <message>
@@ -10112,7 +10112,7 @@ IPv6.</translation>
         <translation type="obsolete">Pasirinkus, programa karts nuo karto prisijungs prie VirtualBox svetainės ir tikrins, ar yra naujesnių VirtualBox versijų.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation type="obsolete">&amp;Tikrinti, ar yra atnaujinimų</translation>
     </message>
     <message>
@@ -10136,7 +10136,7 @@ IPv6.</translation>
         <translation type="obsolete">&lt;p&gt;Pasirinkite, jei norite sužinoti tik apie galimas stabilias VirtualBox versijas.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation type="obsolete">&amp;Stabilias versijas</translation>
     </message>
     <message>
@@ -10144,7 +10144,7 @@ IPv6.</translation>
         <translation type="obsolete">&lt;p&gt;Pasirinkite, jei norite sužinoti apie visas naujas VirtualBox versijas.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation type="obsolete">&amp;Visas naujas versijas</translation>
     </message>
     <message>
@@ -10152,7 +10152,7 @@ IPv6.</translation>
         <translation type="obsolete">&lt;p&gt;Pasirinkite, jei norite sužinoti apie visas naujas VirtualBox versijas, įskaitant ir eksperimentines.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation type="obsolete">Visas naujas versijas, įskaitant &amp;eksperimentines</translation>
     </message>
 </context>
@@ -14395,7 +14395,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Tipas (formatas):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation type="obsolete">Susietas su:</translation>
     </message>
     <message>
@@ -14500,7 +14500,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Rodo, ar virtualaus tinklo kabelis yra prijungtas mašinos paleidimo metu.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Kabelis prijungtas</translation>
     </message>
 </context>

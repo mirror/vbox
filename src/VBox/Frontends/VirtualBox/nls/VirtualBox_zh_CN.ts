@@ -2548,7 +2548,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2564,7 +2564,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2595,7 +2595,7 @@
         <translation type="obsolete">重置在虚拟机窗口中用作主机组合键的组合键。</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3207,7 +3207,7 @@
         <translation>选中时，VirtualBox 将使用提供的代理设置连接网络，如从网络下载增强功能包，或检查更新。</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>启用代理(&amp;E)</translation>
     </message>
     <message>
@@ -3266,7 +3266,7 @@
         <translation>选中时，应用程序将定期连接到 VirtualBox 网站，并检查是否有新版本的 VirtualBox 可用。</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>检查更新(&amp;C)</translation>
     </message>
     <message>
@@ -3290,7 +3290,7 @@
         <translation>&lt;p&gt;如果您只想 VirtualBox 有稳定更新时通知，则选择此项。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>稳定发行版本(&amp;S)</translation>
     </message>
     <message>
@@ -3298,7 +3298,7 @@
         <translation>&lt;p&gt;如果您想要在所有 VirtualBox 新版本时通知，则选择此项。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>所有新发布的版本(&amp;A)</translation>
     </message>
     <message>
@@ -3306,7 +3306,7 @@
         <translation>&lt;p&gt;要通知所有 VirtualBox 新版本和预览版，则选择此项。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>所有新发布和预发布的版本(&amp;P)</translation>
     </message>
 </context>
@@ -4157,7 +4157,7 @@
         <translation>指示虚拟网线在启动时是否连接.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>接入网线(&amp;C)</translation>
     </message>
     <message>
@@ -4754,7 +4754,7 @@
         <translation>类型 (格式):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>分配到:</translation>
     </message>
     <message>

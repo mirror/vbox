@@ -3223,7 +3223,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3239,7 +3239,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3278,7 +3278,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">A virtuális gép ablakában gazda-kombinációként használt billentyűkombináció vsszaállítása.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3903,7 +3903,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ha engedélyezed, a VirtualBox az olyan feladatokhoz, mint az Integrációs szolgáltatások letöltése vagy a frissítések ellenőrzése, a proxy szerver beállításait fogja használni.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Proxy használata</translation>
     </message>
     <message>
@@ -3962,7 +3962,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ha engedélyezed, a VirtualBox időnként ellenőrizni fogja a weben, hogy elérhető-e újabb verzió a jelenleginél.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>Frissítések elle&amp;nőrzése</translation>
     </message>
     <message>
@@ -3986,7 +3986,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Válaszd ezt, ha csak a stabil VirtualBox frissítésekről szeretnél értesülni&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>a &amp;stabil kiadásokat</translation>
     </message>
     <message>
@@ -3994,7 +3994,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról szeretnél értesülni&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>minden új ki&amp;adást</translation>
     </message>
     <message>
@@ -4002,7 +4002,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Válaszd ezt, ha minden új VirtualBox kiadásról és előzetes kiadásról szeretnél értesülni&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>az elő&amp;zetes és a végeges kiadásokat</translation>
     </message>
 </context>
@@ -5260,7 +5260,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;MAC cím:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kábel bedugva</translation>
     </message>
     <message>
@@ -5359,7 +5359,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Véletlen MAC cím generálása.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Kábel bedugva</translation>
     </message>
     <message>
@@ -6030,7 +6030,7 @@ p, li { white-space: pre-wrap; }
         <translation>Típus (formátum):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Csatlakoztatva:</translation>
     </message>
     <message>

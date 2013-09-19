@@ -3343,7 +3343,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="89"/>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3363,7 +3363,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="115"/>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3451,7 +3451,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsInput.cpp" line="97"/>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4202,7 +4202,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsProxy.ui" line="27"/>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>プロキシーを有効化(&amp;E)</translation>
     </message>
     <message>
@@ -4269,7 +4269,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="27"/>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>アップデートを確認(&amp;C)</translation>
     </message>
     <message>
@@ -4299,7 +4299,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="125"/>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>安定版のみ(&amp;S)</translation>
     </message>
     <message>
@@ -4309,7 +4309,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="135"/>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>すべてのリリース版(&amp;A)</translation>
     </message>
     <message>
@@ -4319,7 +4319,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsUpdate.ui" line="145"/>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>すべてのリリース版とプレリリース版(&amp;P)</translation>
     </message>
 </context>
@@ -5899,7 +5899,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="252"/>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>ケーブル接続(&amp;C)</translation>
     </message>
     <message>
@@ -5992,7 +5992,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">MACアドレスをランダムに生成します。</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">ケーブル接続(&amp;C)</translation>
     </message>
     <message>
@@ -6970,7 +6970,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="533"/>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>割り当て:</translation>
     </message>
     <message>
