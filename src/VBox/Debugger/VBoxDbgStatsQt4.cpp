@@ -2851,7 +2851,12 @@ void
 VBoxDbgStatsView::resizeColumnsToContent()
 {
     for (int i = 0; i <= 8; i++)
+    {
         resizeColumnToContents(i);
+        /* Some extra room for distinguishing numbers better in Value, Min, Avg, Max, Total, dInt columns. */
+        if (i >= 2 && i <= 7)
+            setColumnWidth(i, columnWidth(i) + 10);
+    }
 }
 
 
