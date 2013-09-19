@@ -1654,7 +1654,10 @@ static int vdIoCtxProcessSync(PVDIOCTX pIoCtx)
         rc = pDisk->rcSync;
     }
     else /* Success or error. */
+    {
+        rc = pIoCtx->rcReq;
         vdIoCtxFree(pDisk, pIoCtx);
+    }
 
     return rc;
 }
