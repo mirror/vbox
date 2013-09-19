@@ -282,10 +282,13 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
         }
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
-        err = dir_emit(ctx, d_name, strlen(d_name), fake_ino, DT_UNKNOWN);
+        if (!dir_emit(ctx, d_name, strlen(d_name), fake_ino, DT_UNKNOWN))
+        {
+            LogFunc(("dir_emit failed\n"));
+            return 0;
+        }
 #else
         err = filldir(opaque, d_name, strlen(d_name), dir->f_pos, fake_ino, DT_UNKNOWN);
-#endif
         if (err)
         {
             LogFunc(("filldir returned error %d\n", err));
@@ -293,6 +296,7 @@ static int sf_dir_read(struct file *dir, void *opaque, filldir_t filldir)
                only when it runs out of space in opaque */
             return 0;
         }
+#endif
 
         dir->f_pos += 1;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
