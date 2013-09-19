@@ -244,8 +244,8 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    fxsave  [rdx + CPUMCPU.Guest.fpu]
-    fxrstor [rdx + CPUMCPU.Host.fpu]
+    o64 fxsave  [rdx + CPUMCPU.Guest.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)
@@ -293,7 +293,11 @@ BEGINPROC cpumR0RestoreHostFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
+%ifdef RT_ARCH_AMD64
+    o64 fxrstor [xDX + CPUMCPU.Host.fpu]
+%else
     fxrstor [xDX + CPUMCPU.Host.fpu]
+%endif
 
 .done:
     mov     cr0, xCX                    ; and restore old CR0 again
@@ -308,7 +312,7 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    fxrstor [rdx + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Host.fpu]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)
