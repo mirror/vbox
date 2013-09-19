@@ -1404,7 +1404,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          * Note! DBGF expects a clean DR6 state before executing guest code.
          */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        if (   CPUMIsGuestInLongModeEx(pMixedCtx)
+        if (   CPUMIsGuestInLongModeEx(pCtx)
             && !CPUMIsHyperDebugStateActivePending(pVCpu))
         {
             CPUMR0LoadHyperDebugState(pVCpu, false /* include DR6 */);
@@ -1455,7 +1455,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         if (pCtx->dr[7] & (X86_DR7_ENABLED_MASK | X86_DR7_GD)) /** @todo Why GD? */
         {
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-            if (   CPUMIsGuestInLongModeEx(pMixedCtx)
+            if (   CPUMIsGuestInLongModeEx(pCtx)
                 && !CPUMIsGuestDebugStateActivePending(pVCpu))
             {
                 CPUMR0LoadGuestDebugState(pVCpu, false /* include DR6 */);
@@ -1479,7 +1479,7 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
          * intercept #DB as DR6 is updated in the VMCB.
          */
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
-        else if (   (   CPUMIsGuestInLongModeEx(pMixedCtx)
+        else if (   (   CPUMIsGuestInLongModeEx(pCtx)
                      && !CPUMIsGuestDebugStateActivePending(pVCpu))
                  || !CPUMIsGuestDebugStateActive(pVCpu))
 #else
@@ -1738,7 +1738,7 @@ VMMR0DECL(int) SVMR0SaveHostState(PVM pVM, PVMCPU pVCpu)
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pMixedCtx   Pointer to the guest-CPU context.
+ * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
  */
