@@ -385,6 +385,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/UIPopupPaneButtonPane.h \
 	src/widgets/UIPopupStack.h \
 	src/widgets/UIPopupStackViewport.h \
+	src/widgets/UIPortForwardingTable.h \
 	src/widgets/UIProgressDialog.h \
 	src/widgets/UISpacerWidgets.h \
 	src/widgets/UISpecialControls.h \
@@ -457,10 +458,10 @@ VirtualBox_QT_MOCSRCS = \
 	src/selector/UIActionPoolSelector.cpp \
 	src/selector/UIVMDesktop.cpp \
 	src/settings/UISettingsDialogSpecific.cpp \
-	src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp \
 	src/settings/machine/UIMachineSettingsStorage.cpp \
 	src/settings/machine/UIMachineSettingsUSB.cpp \
 	src/widgets/UIHotKeyEditor.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/wizards/importappliance/UIWizardImportApp.cpp
 
 VirtualBox_QT_MOCSRCS.darwin += \
@@ -639,6 +640,7 @@ VirtualBox_SOURCES = \
 	src/widgets/UIPopupPaneButtonPane.cpp \
 	src/widgets/UIPopupStack.cpp \
 	src/widgets/UIPopupStackViewport.cpp \
+	src/widgets/UIPortForwardingTable.cpp \
 	src/widgets/UIProgressDialog.cpp \
 	src/widgets/UISpecialControls.cpp \
 	src/widgets/UIToolBar.cpp \

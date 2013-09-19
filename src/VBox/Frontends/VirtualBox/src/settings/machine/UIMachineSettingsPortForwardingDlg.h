@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -19,142 +19,42 @@
 #ifndef __UIMachineSettingsPortForwardingDlg_h__
 #define __UIMachineSettingsPortForwardingDlg_h__
 
-/* GUI includes */
+/* GUI includes: */
 #include "QIWithRetranslateUI.h"
 #include "QIDialog.h"
-
-/* COM includes: */
-#include "COMEnums.h"
+#include "UIPortForwardingTable.h"
 
 /* Forward declarations: */
-class QITableView;
-class UIToolBar;
 class QIDialogButtonBox;
-class UIPortForwardingModel;
 
-/* Name data: */
-class NameData : public QString
-{
-public:
-
-    NameData() : QString() {}
-    NameData(const QString &ruleName) : QString(ruleName) {}
-};
-Q_DECLARE_METATYPE(NameData);
-
-/* Ip data: */
-class IpData : public QString
-{
-public:
-
-    IpData() : QString() {}
-    IpData(const QString &ipAddress) : QString(ipAddress) {}
-};
-Q_DECLARE_METATYPE(IpData);
-
-/* Port data: */
-class PortData
-{
-public:
-
-    PortData() : m_uValue(0) {}
-    PortData(ushort uValue) : m_uValue(uValue) {}
-    PortData(const PortData &other) : m_uValue(other.value()) {}
-    bool operator==(const PortData &other) { return m_uValue == other.m_uValue; }
-    ushort value() const { return m_uValue; }
-
-private:
-
-    ushort m_uValue;
-};
-Q_DECLARE_METATYPE(PortData);
-
-/* Port forwarding data: */
-struct UIPortForwardingData
-{
-    UIPortForwardingData(const NameData &strName, KNATProtocol eProtocol,
-                         const IpData &strHostIp, PortData uHostPort,
-                         const IpData &strGuestIp, PortData uGuestPort)
-        : name(strName), protocol(eProtocol)
-        , hostIp(strHostIp), hostPort(uHostPort)
-        , guestIp(strGuestIp), guestPort(uGuestPort) {}
-    bool operator==(const UIPortForwardingData &other)
-    {
-        return name == other.name &&
-               protocol == other.protocol &&
-               hostIp == other.hostIp &&
-               hostPort == other.hostPort &&
-               guestIp == other.guestIp &&
-               guestPort == other.guestPort;
-    }
-    NameData name;
-    KNATProtocol protocol;
-    IpData hostIp;
-    PortData hostPort;
-    IpData guestIp;
-    PortData guestPort;
-};
-
-/* Port forwarding data list: */
-typedef QList<UIPortForwardingData> UIPortForwardingDataList;
-
-/* Port forwarding dialog: */
+/* Machine settings / Network page / NAT attachment / Port forwarding dialog: */
 class UIMachineSettingsPortForwardingDlg : public QIWithRetranslateUI<QIDialog>
 {
     Q_OBJECT;
 
 public:
 
-    /* Port forwarding dialog constructor: */
-    UIMachineSettingsPortForwardingDlg(QWidget *pParent = 0,
-                                    const UIPortForwardingDataList &rules = UIPortForwardingDataList());
-    /* Port forwarding dialog destructor: */
-    ~UIMachineSettingsPortForwardingDlg();
+    /* Constructor/destructor: */
+    UIMachineSettingsPortForwardingDlg(QWidget *pParent,
+                                       const UIPortForwardingDataList &rules = UIPortForwardingDataList());
 
-    /* The list of chosen rules: */
+    /* API: Rules stuff: */
     const UIPortForwardingDataList& rules() const;
 
 private slots:
 
-    /* Action's slots: */
-    void sltAddRule();
-    void sltCopyRule();
-    void sltDelRule();
-
-    /* Table slots: */
-    void sltTableDataChanged();
-    void sltCurrentChanged();
-    void sltShowTableContexMenu(const QPoint &position);
-    void sltAdjustTable();
-
-    /* Dialog slots: */
+    /* Handlers: Dialog stuff: */
     void accept();
     void reject();
 
 private:
 
-    /* UI Translator: */
+    /* Handler: Translation stuff: */
     void retranslateUi();
 
-    /* Event filter: */
-    bool eventFilter(QObject *pObj, QEvent *pEvent);
-
-    /* Flags: */
-    bool fIsTableDataChanged;
-
     /* Widgets: */
-    QITableView *m_pTableView;
-    UIToolBar *m_pToolBar;
+    UIPortForwardingTable *m_pTable;
     QIDialogButtonBox *m_pButtonBox;
-
-    /* Model: */
-    UIPortForwardingModel *m_pModel;
-
-    /* Actions: */
-    QAction *m_pAddAction;
-    QAction *m_pCopyAction;
-    QAction *m_pDelAction;
 };
 
 #endif // __UIMachineSettingsPortForwardingDlg_h__
-
