@@ -4314,7 +4314,7 @@ HMSVM_EXIT_DECL hmR0SvmExitReadDRx(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pS
      */
     /** @todo Decode assist.  */
     VBOXSTRICTRC rc = EMInterpretInstruction(pVCpu, CPUMCTX2CORE(pCtx), 0 /* pvFault */);
-    Log5(("hmR0SvmExitReadDRx: Emulatined DRx access: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
+    Log5(("hmR0SvmExitReadDRx: Emulated DRx access: rc=%Rrc\n", VBOXSTRICTRC_VAL(rc)));
     if (RT_LIKELY(rc == VINF_SUCCESS))
     {
         /* Not necessary for read accesses but whatever doesn't hurt for now, will be fixed with decode assist. */
