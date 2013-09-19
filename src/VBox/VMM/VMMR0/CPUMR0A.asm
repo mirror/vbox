@@ -103,8 +103,14 @@ BEGINPROC cpumR0SaveHostRestoreGuestFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+%ifdef RT_ARCH_AMD64
+    ; Use explicit REX prefix. See @bugref{6398}.
+    o64 fxsave  [xDX + CPUMCPU.Host.fpu]    ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
+    o64 fxrstor [xDX + CPUMCPU.Guest.fpu]
+%else
+    fxsave  [xDX + CPUMCPU.Host.fpu]        ; ASSUMES that all VT-x/AMD-V boxes sports fxsave/fxrstor (safe assumption)
     fxrstor [xDX + CPUMCPU.Guest.fpu]
+%endif
 
 %ifdef VBOX_WITH_KERNEL_USING_XMM
     ; Restore the non-volatile xmm registers. ASSUMING 64-bit windows
@@ -132,8 +138,8 @@ ALIGNCODE(16)
 BITS 64
 .sixtyfourbit_mode:
     and     edx, 0ffffffffh
-    fxsave  [rdx + CPUMCPU.Host.fpu]
-    fxrstor [rdx + CPUMCPU.Guest.fpu]
+    o64 fxsave  [rdx + CPUMCPU.Host.fpu]
+    o64 fxrstor [rdx + CPUMCPU.Guest.fpu]
     jmp far [.fpret wrt rip]
 .fpret:                                 ; 16:32 Pointer to .the_end.
     dd      .done, NAME(SUPR0AbsKernelCS)
@@ -216,8 +222,14 @@ BEGINPROC cpumR0SaveGuestRestoreHostFPUState
 .legacy_mode:
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
 
-    fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
+%ifdef RT_ARCH_AMD64
+    ; Use explicit REX prefix. See @bugref{6398}.
+    o64 fxsave  [xDX + CPUMCPU.Guest.fpu]   ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
+    o64 fxrstor [xDX + CPUMCPU.Host.fpu]
+%else
+    fxsave  [xDX + CPUMCPU.Guest.fpu]       ; ASSUMES that all VT-x/AMD-V boxes support fxsave/fxrstor (safe assumption)
     fxrstor [xDX + CPUMCPU.Host.fpu]
+%endif
 
 .done:
     mov     cr0, xCX                    ; and restore old CR0 again ;; @todo optimize this.
