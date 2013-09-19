@@ -1076,7 +1076,7 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** VMCS revision identifier used by the processor. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      (a & 0x7FFFFFFF)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      ((a) & 0x7FFFFFFF)
 /** Size of the VMCS. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    (((a) >> 32) & 0xFFF)
 /** Width of physical address used for the VMCS.
@@ -1468,13 +1468,13 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_EXIT_REASON
  * @{
  */
-#define VMX_EXIT_REASON_BASIC(a)                                  (a & 0xffff)
+#define VMX_EXIT_REASON_BASIC(a)                                  ((a) & 0xffff)
 /** @} */
 
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
  */
-#define VMX_ENTRY_INTERRUPTION_INFO_VALID(a)                      (a & RT_BIT(31))
+#define VMX_ENTRY_INTERRUPTION_INFO_VALID(a)                      ((a) & RT_BIT(31))
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                    8
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                       ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 /** @} */
@@ -1483,19 +1483,19 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO
  * @{
  */
-#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                      (a & 0xff)
+#define VMX_EXIT_INTERRUPTION_INFO_VECTOR(a)                      ((a) & 0xff)
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                     8
-#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        ((a >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
+#define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID               RT_BIT(11)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         (a & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
-#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)                 (a & RT_BIT(12))
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         ((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
+#define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)                 ((a) & RT_BIT(12))
 #ifdef VBOX_WITH_OLD_VTX_CODE
 # define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT                    31
 #endif
 #define VMX_EXIT_INTERRUPTION_INFO_VALID                          RT_BIT(31)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    (a & RT_BIT(31))
+#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    ((a) & RT_BIT(31))
 /** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
-#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)        (a & ~RT_BIT(12))
+#define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)        ((a) & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_EXIT_INTERRUPTION_INFO_TYPE
@@ -1512,13 +1512,13 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_RO_IDT_VECTORING_INFO
  * @{
  */
-#define VMX_IDT_VECTORING_INFO_VECTOR(a)                          (a & 0xff)
+#define VMX_IDT_VECTORING_INFO_VECTOR(a)                          ((a) & 0xff)
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                         8
-#define VMX_IDT_VECTORING_INFO_TYPE(a)                            ((a >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
+#define VMX_IDT_VECTORING_INFO_TYPE(a)                            (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
-#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             (a & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
-#define VMX_IDT_VECTORING_INFO_VALID(a)                           (a & RT_BIT(31))
-#define VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(a)                 (a & ~RT_BIT(12))
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             ((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+#define VMX_IDT_VECTORING_INFO_VALID(a)                           ((a) & RT_BIT(31))
+#define VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(a)                 ((a) & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE
@@ -1621,15 +1621,15 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** 0-2:  Debug register number */
-#define VMX_EXIT_QUALIFICATION_DRX_REGISTER(a)                  (a & 7)
+#define VMX_EXIT_QUALIFICATION_DRX_REGISTER(a)                  ((a) & 7)
 /** 3:    Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES1(a)                      ((a >> 3) & 1)
+#define VMX_EXIT_QUALIFICATION_DRX_RES1(a)                      (((a) >> 3) & 1)
 /** 4:    Direction of move (0 = write, 1 = read) */
-#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION(a)                 ((a >> 4) & 1)
+#define VMX_EXIT_QUALIFICATION_DRX_DIRECTION(a)                 (((a) >> 4) & 1)
 /** 5-7:  Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_DRX_RES2(a)                      ((a >> 5) & 7)
+#define VMX_EXIT_QUALIFICATION_DRX_RES2(a)                      (((a) >> 5) & 7)
 /** 8-11: General purpose register number. */
-#define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)                    ((a >> 8) & 0xF)
+#define VMX_EXIT_QUALIFICATION_DRX_GENREG(a)                    (((a) >> 8) & 0xF)
 /** Rest: reserved. */
 /** @} */
 
@@ -1646,19 +1646,19 @@ typedef VMXMSRS *PVMXMSRS;
  * @{
  */
 /** 0-3:   Control register number (0 for CLTS & LMSW) */
-#define VMX_EXIT_QUALIFICATION_CRX_REGISTER(a)                  (a & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_REGISTER(a)                  ((a) & 0xF)
 /** 4-5:   Access type. */
-#define VMX_EXIT_QUALIFICATION_CRX_ACCESS(a)                    ((a >> 4) & 3)
+#define VMX_EXIT_QUALIFICATION_CRX_ACCESS(a)                    (((a) >> 4) & 3)
 /** 6:     LMSW operand type */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_OP(a)                   ((a >> 6) & 1)
+#define VMX_EXIT_QUALIFICATION_CRX_LMSW_OP(a)                   (((a) >> 6) & 1)
 /** 7:     Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES1(a)                      ((a >> 7) & 1)
+#define VMX_EXIT_QUALIFICATION_CRX_RES1(a)                      (((a) >> 7) & 1)
 /** 8-11:  General purpose register number (0 for CLTS & LMSW). */
-#define VMX_EXIT_QUALIFICATION_CRX_GENREG(a)                    ((a >> 8) & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_GENREG(a)                    (((a) >> 8) & 0xF)
 /** 12-15: Reserved; cleared to 0. */
-#define VMX_EXIT_QUALIFICATION_CRX_RES2(a)                      ((a >> 12) & 0xF)
+#define VMX_EXIT_QUALIFICATION_CRX_RES2(a)                      (((a) >> 12) & 0xF)
 /** 16-31: LMSW source data (else 0). */
-#define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)                 ((a >> 16) & 0xFFFF)
+#define VMX_EXIT_QUALIFICATION_CRX_LMSW_DATA(a)                 (((a) >> 16) & 0xFFFF)
 /** Rest: reserved. */
 /** @} */
 
@@ -1674,8 +1674,8 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_EXIT_QUALIFICATION_TASK_SWITCH
  * @{
  */
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)          (a & 0xffff)
-#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)              ((a >> 30)& 0x3)
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_SELECTOR(a)          ((a) & 0xffff)
+#define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE(a)              (((a) >> 30) & 0x3)
 /** Task switch caused by a call instruction. */
 #define VMX_EXIT_QUALIFICATION_TASK_SWITCH_TYPE_CALL            0
 /** Task switch caused by an iret instruction. */
