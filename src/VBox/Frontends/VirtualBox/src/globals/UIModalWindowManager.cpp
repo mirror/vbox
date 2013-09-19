@@ -150,7 +150,7 @@ bool UIModalWindowManager::isWindowOnTheTopOfTheModalWindowStack(QWidget *pWindo
     return contains(pWindow, true);
 }
 
-void UIModalWindowManager::registerNewParent(QWidget *pWindow, QWidget *pParentWindow /*= 0*/)
+void UIModalWindowManager::registerNewParent(QWidget *pWindow, QWidget *pParentWindow /* = 0*/)
 {
     /* Make sure passed-widget-pointer is not null: */
     if (!pWindow)
@@ -255,7 +255,7 @@ void UIModalWindowManager::sltRemoveFromStack(QObject *pObject)
     }
 }
 
-bool UIModalWindowManager::contains(QWidget *pParentWindow, bool fAsTheTopOfStack /*= false*/)
+bool UIModalWindowManager::contains(QWidget *pParentWindow, bool fAsTheTopOfStack /* = false*/)
 {
     /* False if passed-parent-widget pointer is null: */
     if (!pParentWindow)

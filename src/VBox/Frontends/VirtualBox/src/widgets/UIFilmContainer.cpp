@@ -28,7 +28,7 @@
 /* GUI includes: */
 #include "UIFilmContainer.h"
 
-UIFilmContainer::UIFilmContainer(QWidget *pParent /*= 0*/)
+UIFilmContainer::UIFilmContainer(QWidget *pParent /* = 0*/)
     : QWidget(pParent)
     , m_pMainLayout(0)
     , m_pScroller(0)
@@ -120,7 +120,7 @@ void UIFilmContainer::prepareScroller()
     m_pMainLayout->addWidget(m_pScroller);
 }
 
-UIFilm::UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent /*= 0*/)
+UIFilm::UIFilm(int iScreenIndex, BOOL fEnabled, QWidget *pParent /* = 0*/)
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_iScreenIndex(iScreenIndex)
     , m_fWasEnabled(fEnabled)

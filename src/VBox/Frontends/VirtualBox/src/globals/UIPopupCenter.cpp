@@ -171,9 +171,9 @@ void UIPopupCenter::setPopupStackOrientation(QWidget *pParent, UIPopupStackOrien
 
 void UIPopupCenter::message(QWidget *pParent, const QString &strPopupPaneID,
                             const QString &strMessage, const QString &strDetails,
-                            const QString &strButtonText1 /*= QString()*/,
-                            const QString &strButtonText2 /*= QString()*/,
-                            bool fProposeAutoConfirmation /*= false*/)
+                            const QString &strButtonText1 /* = QString()*/,
+                            const QString &strButtonText2 /* = QString()*/,
+                            bool fProposeAutoConfirmation /* = false*/)
 {
     showPopupPane(pParent, strPopupPaneID,
                   strMessage, strDetails,
@@ -189,7 +189,7 @@ void UIPopupCenter::popup(QWidget *pParent, const QString &strPopupPaneID,
 
 void UIPopupCenter::alert(QWidget *pParent, const QString &strPopupPaneID,
                           const QString &strMessage,
-                          bool fProposeAutoConfirmation /*= false*/)
+                          bool fProposeAutoConfirmation /* = false*/)
 {
     message(pParent, strPopupPaneID, strMessage, QString(),
             QApplication::translate("UIMessageCenter", "Close") /* 1st button text */,
@@ -199,9 +199,9 @@ void UIPopupCenter::alert(QWidget *pParent, const QString &strPopupPaneID,
 
 void UIPopupCenter::question(QWidget *pParent, const QString &strPopupPaneID,
                              const QString &strMessage,
-                             const QString &strButtonText1 /*= QString()*/,
-                             const QString &strButtonText2 /*= QString()*/,
-                             bool fProposeAutoConfirmation /*= false*/)
+                             const QString &strButtonText1 /* = QString()*/,
+                             const QString &strButtonText2 /* = QString()*/,
+                             bool fProposeAutoConfirmation /* = false*/)
 {
     message(pParent, strPopupPaneID, strMessage, QString(),
             strButtonText1, strButtonText2,
@@ -215,8 +215,8 @@ void UIPopupCenter::recall(QWidget *pParent, const QString &strPopupPaneID)
 
 void UIPopupCenter::showPopupPane(QWidget *pParent, const QString &strPopupPaneID,
                                   const QString &strMessage, const QString &strDetails,
-                                  QString strButtonText1 /*= QString()*/, QString strButtonText2 /*= QString()*/,
-                                  bool fProposeAutoConfirmation /*= false*/)
+                                  QString strButtonText1 /* = QString()*/, QString strButtonText2 /* = QString()*/,
+                                  bool fProposeAutoConfirmation /* = false*/)
 {
     /* Make sure parent is set! */
     AssertPtrReturnVoid(pParent);

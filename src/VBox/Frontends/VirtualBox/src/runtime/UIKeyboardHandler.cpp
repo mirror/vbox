@@ -341,7 +341,7 @@ int UIKeyboardHandler::keyboardState() const
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-void UIKeyboardHandler::setDebuggerActive(bool aActive /*= true*/)
+void UIKeyboardHandler::setDebuggerActive(bool aActive /* = true*/)
 {
     if (aActive)
     {

@@ -1384,7 +1384,7 @@ void UIMachineLogic::sltClose()
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
-                                             const QString &strControl /*= QString()*/)
+                                             const QString &strControl /* = QString()*/)
 {
     /* Do not process if window(s) missed! */
     if (!isMachineWindowsCreated())

@@ -46,7 +46,7 @@ void QIDialog::setVisible(bool fVisible)
         m_pEventLoop->exit();
 }
 
-int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /*= false*/)
+int QIDialog::exec(bool fShow /* = true */, bool fApplicationModal /* = false*/)
 {
     /* Reset the result-code: */
     setResult(QDialog::Rejected);
