@@ -43,6 +43,7 @@
 *******************************************************************************/
 #ifdef VBOX_WITH_STATISTICS
 # define HMSVM_EXITCODE_STAM_COUNTER_INC(u64ExitCode) do { \
+        STAM_COUNTER_INC(&pVCpu->hm.s.StatExitAll); \
         if ((u64ExitCode) == SVM_EXIT_NPF) \
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitReasonNpf); \
         else \

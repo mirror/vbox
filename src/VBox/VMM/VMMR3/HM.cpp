@@ -646,6 +646,7 @@ static int hmR3InitCPU(PVM pVM)
         AssertRC(rc);
 
 #ifdef VBOX_WITH_STATISTICS
+        HM_REG_COUNTER(&pVCpu->hm.s.StatExitAll,                "/HM/CPU%d/Exit/All", "Exits (total).");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowNM,           "/HM/CPU%d/Exit/Trap/Shw/#NM", "Shadow #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitGuestNM,            "/HM/CPU%d/Exit/Trap/Gst/#NM", "Guest #NM (device not available, no math co-processor) exception.");
         HM_REG_COUNTER(&pVCpu->hm.s.StatExitShadowPF,           "/HM/CPU%d/Exit/Trap/Shw/#PF", "Shadow #PF (page fault) exception.");
@@ -1627,9 +1628,9 @@ static int hmR3TermCPU(PVM pVM)
  */
 VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
-    /* Sync. entire state on VM reset R0-reentry. It's safe to update
+    /* Sync. entire state on VM reset R0-reentry. It's safe to reset
        the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
-    pVCpu->hm.s.fContextUseFlags = (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+    VMCPU_HMCF_RESET_TO(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
     pVCpu->hm.s.vmx.u32CR0Mask     = 0;
     pVCpu->hm.s.vmx.u32CR4Mask     = 0;
@@ -2647,7 +2648,7 @@ VMMR3_INT_DECL(bool) HMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
  */
 VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
 {
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+    VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 
 
@@ -2658,7 +2659,7 @@ VMMR3_INT_DECL(void) HMR3NotifyScheduled(PVMCPU pVCpu)
  */
 VMMR3_INT_DECL(void) HMR3NotifyEmulated(PVMCPU pVCpu)
 {
-    pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_ALL_GUEST;
+    VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
 }
 
 
