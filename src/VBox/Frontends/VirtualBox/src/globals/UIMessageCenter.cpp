@@ -2708,19 +2708,19 @@ int UIMessageCenter::showMessageBox(QWidget *pParent, MessageType type,
             icon = AlertIconType_Information;
             break;
         case MessageType_Question:
-            title = tr("VirtualBox - MessageType_Question", "msg box title");
+            title = tr("VirtualBox - Question", "msg box title");
             icon = AlertIconType_Question;
             break;
         case MessageType_Warning:
-            title = tr("VirtualBox - MessageType_Warning", "msg box title");
+            title = tr("VirtualBox - Warning", "msg box title");
             icon = AlertIconType_Warning;
             break;
         case MessageType_Error:
-            title = tr("VirtualBox - MessageType_Error", "msg box title");
+            title = tr("VirtualBox - Error", "msg box title");
             icon = AlertIconType_Critical;
             break;
         case MessageType_Critical:
-            title = tr("VirtualBox - MessageType_Critical MessageType_Error", "msg box title");
+            title = tr("VirtualBox - Critical Error", "msg box title");
             icon = AlertIconType_Critical;
             break;
         case MessageType_GuruMeditation:
