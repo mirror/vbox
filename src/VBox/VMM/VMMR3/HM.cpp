@@ -1627,7 +1627,8 @@ static int hmR3TermCPU(PVM pVM)
  */
 VMMR3_INT_DECL(void) HMR3ResetCpu(PVMCPU pVCpu)
 {
-    /* On first entry we'll sync everything. */
+    /* Sync. entire state on VM reset R0-reentry. It's safe to update
+       the HM flags here, all other EMTs are in ring-3. See VMR3Reset(). */
     pVCpu->hm.s.fContextUseFlags = (HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
 
     pVCpu->hm.s.vmx.u32CR0Mask     = 0;
