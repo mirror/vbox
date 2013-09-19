@@ -222,9 +222,9 @@ template<> QString toString(const KPointingHIDType &type)
     {
         case KPointingHIDType_PS2Mouse:      return QApplication::translate("VBoxGlobal", "PS/2 Mouse", "PointingHIDType");
         case KPointingHIDType_USBMouse:      return QApplication::translate("VBoxGlobal", "USB Mouse", "PointingHIDType");
-        case KPointingHIDType_USBTablet:     return QApplication::translate("VBoxGlobal", "USB Mouse/Tablet", "PointingHIDType");
+        case KPointingHIDType_USBTablet:     return QApplication::translate("VBoxGlobal", "USB Tablet", "PointingHIDType");
         case KPointingHIDType_ComboMouse:    return QApplication::translate("VBoxGlobal", "PS/2 and USB Mouse", "PointingHIDType");
-        case KPointingHIDType_USBMultiTouch: return QApplication::translate("VBoxGlobal", "USB Multi-Touch Mouse/Tablet", "PointingHIDType");
+        case KPointingHIDType_USBMultiTouch: return QApplication::translate("VBoxGlobal", "USB Multi-Touch Tablet", "PointingHIDType");
         default: AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
