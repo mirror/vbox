@@ -2577,7 +2577,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2593,7 +2593,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2624,7 +2624,7 @@
         <translation type="obsolete">Reset de toetscombinatie die als hostcombinatie wordt gebruikt in het VM-scherm.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3235,7 +3235,7 @@
         <translation>Als dit is ingesteld zal VirtualBox de proxy-instellingen gebruiken voor taken als downloaden van de Guest Additions van het netwerk of controleren op updates.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>Proxy insch&amp;akelen</translation>
     </message>
     <message>
@@ -3294,7 +3294,7 @@
         <translation>Als dit is ingesteld zal het programma verbinding zoeken met de VirtualBox-website en controleren of een nieuwe versie van VirtualBox beschikbaar is.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Controleer op updates</translation>
     </message>
     <message>
@@ -3318,7 +3318,7 @@
         <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van de stabiele updates van VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translatorcomment>release is algemeen geaccepteerde nederlandse term</translatorcomment>
         <translation>&amp;Stabiele release-versies</translation>
     </message>
@@ -3327,7 +3327,7 @@
         <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van alle nieuwe VirtualBox-releases.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Alle nieuwe releases</translation>
     </message>
     <message>
@@ -3335,8 +3335,8 @@
         <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van alle nieuwe VirtualBox-releases en van pre-release versies van VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
-        <translation>Alle nieuwe releases en &amp;pre-releases</translation>
+        <source>All New Releases and &amp;Pre-Releases</source>
+        <translation>Alle nieuwe releases en &amp;Pre-Releases</translation>
     </message>
 </context>
 <context>
@@ -4185,7 +4185,7 @@
         <translation>Geeft aan of de kabel van het virtuele netwerk tijdens het opstarten van de machine is aangesloten of niet.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kabel aangesloten</translation>
     </message>
     <message>
@@ -4782,7 +4782,7 @@
         <translation>Type (formaat):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Aangesloten aan:</translation>
     </message>
     <message>

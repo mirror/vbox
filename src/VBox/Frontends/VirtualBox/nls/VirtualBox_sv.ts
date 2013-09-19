@@ -3242,7 +3242,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3258,7 +3258,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3297,7 +3297,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Återställer tangentkombinationen som används som värdkombinationen i värdmaskinfönstret.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3922,7 +3922,7 @@ p, li { white-space: pre-wrap; }
         <translation>När kryssad kommer VirtualBox att använda proxyinställningarna som angivits för funktioner som hämtning av gästtillägg från nätverket eller kontroll av uppdateringar.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>A&amp;ktivera proxyserver</translation>
     </message>
     <message>
@@ -3981,7 +3981,7 @@ p, li { white-space: pre-wrap; }
         <translation>När kryssad kommer programmet att med jämna mellanrum ansluta till VIrtualBox webbplats och kontrollera huruvida det finns en ny version av VirtualBox tillgänglig.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Leta efter uppdateringar</translation>
     </message>
     <message>
@@ -4005,7 +4005,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Välj denna om du endast vill bli informerad om stabila uppdateringar till VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Stabila utgåvor</translation>
     </message>
     <message>
@@ -4013,7 +4013,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Alla nya utgåvor</translation>
     </message>
     <message>
@@ -4021,7 +4021,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Välj denna om du vill bli informerad om alla nya VirtualBox-utgåvor och förutgåvor av VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Alla nya utgåvor och &amp;förutgåvor</translation>
     </message>
 </context>
@@ -5362,7 +5362,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mas&amp;kinvaruadress:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kabel ansluten</translation>
     </message>
     <message>
@@ -5513,7 +5513,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Genererar en ny slumpmässig maskinvaruadress.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Kabel ansluten</translation>
     </message>
     <message>
@@ -6202,7 +6202,7 @@ serial ports</comment>
         <translation>Typ (Format):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Ansluten till:</translation>
     </message>
     <message>

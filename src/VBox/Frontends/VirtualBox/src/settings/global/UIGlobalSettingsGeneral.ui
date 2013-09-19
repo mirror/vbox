@@ -86,7 +86,7 @@
    <item row="2" column="1">
     <widget class="QCheckBox" name="m_pCheckBoxPresentationMode">
      <property name="text">
-      <string>Auto Show in Fullscreen</string>
+      <string>Auto-Show in Fullscreen</string>
      </property>
      <property name="whatsThis">
       <string>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</string>
@@ -112,7 +112,7 @@
       <string>When checked, the host screensaver will be disabled whenever a virtual machine is running.</string>
      </property>
      <property name="text">
-      <string>Disable at Virtual Machine Runtime</string>
+      <string>Disable When Running Virtual Machines</string>
      </property>
     </widget>
    </item>

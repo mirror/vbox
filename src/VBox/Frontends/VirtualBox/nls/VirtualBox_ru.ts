@@ -3082,7 +3082,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3098,7 +3098,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3137,7 +3137,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Сбрасывает назначенную хост-комбинацию в значение &apos;не установлено&apos;.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3762,7 +3762,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, VirtualBox будет использовать данные настройки для работы с прокси-сервером в целях загрузки гостевых дополнений и проверки обновлений.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Использовать прокси-сервер</translation>
     </message>
     <message>
@@ -3821,7 +3821,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, программа будет периодически подключаться к веб-сайту VirtualBox и проверять наличие новой версии.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Проверять обновления</translation>
     </message>
     <message>
@@ -3845,7 +3845,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Выберете этот пункт, если хотите быть информированы лишь о стабильных релизных версиях VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Стабильные релизные версии</translation>
     </message>
     <message>
@@ -3853,7 +3853,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Выберете этот пункт, если хотите быть информированы о всех релизных версиях VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Все релизные версии</translation>
     </message>
     <message>
@@ -3861,7 +3861,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Выберете этот пункт, если хотите быть информированы о всех релизных и тестовых версиях VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Вс&amp;е релизные и тестовые версии</translation>
     </message>
 </context>
@@ -5178,7 +5178,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">MAC-&amp;адрес:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Кабель подключен</translation>
     </message>
     <message>
@@ -5337,7 +5337,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Генерирует новый случайный MAC-адрес.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Кабель подключен</translation>
     </message>
     <message>
@@ -6010,7 +6010,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тип (Формат):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Подсоединён к:</translation>
     </message>
     <message>

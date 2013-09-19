@@ -3089,7 +3089,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3105,7 +3105,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3144,7 +3144,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nulstiller tastekombinationen brugt som værtstast-sekvens i VM-vinduet.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3769,7 +3769,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vil VirtualBox bruge proxy-indstillingerne til at hente Gæstetilføjelserne eller kontrollere om en nyere udgave er tilgængelig.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>Brug proxy</translation>
     </message>
     <message>
@@ -3828,7 +3828,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vil applikationen periodisk forbinde sig til VirtualBox&apos; hjemmeside for at kontrollere om en nyere udgave er tilgængelig.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>Søg efter opdateringer</translation>
     </message>
     <message>
@@ -3852,7 +3852,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Vælg dette, hvis du kun ønsker besked om nye stabile udgaver af VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Stabile udgaver</translation>
     </message>
     <message>
@@ -3860,7 +3860,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Vælg dette, hvis du ønsker besked om alle udgaver af VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Alle udgaver</translation>
     </message>
     <message>
@@ -3868,7 +3868,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Vælg dette, hvis du ønsker besked om alle udgaver af VirtualBox, inklusiv beta-versioner.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Både færdige udgaver og beta-versioner</translation>
     </message>
 </context>
@@ -4937,7 +4937,7 @@ p, li { white-space: pre-wrap; }
         <translation>Angiver om det virtuelle netværkskabel er tilsluttet maskinen under opstart eller ej.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>Kabel tilsluttet</translation>
     </message>
     <message>
@@ -5037,7 +5037,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Generér en ny tilfældig MAC-adresse.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">Kabel tilsluttet</translation>
     </message>
     <message>
@@ -5687,7 +5687,7 @@ p, li { white-space: pre-wrap; }
         <translation>Type (Format):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Tilsluttet til:</translation>
     </message>
     <message>

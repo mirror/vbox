@@ -3086,7 +3086,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3102,7 +3102,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3141,7 +3141,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation type="obsolete">Връща настройката за основен клавиш във виртуалния прозорец по подразбиране.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3766,7 +3766,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>Когато е избрано, VirtualBox ще използва настройките за прокси за задачи като изтегляне на Виртуални Добавки от мрежата или проверка за обновления.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>По&amp;зволяване на прокси</translation>
     </message>
     <message>
@@ -3825,7 +3825,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>Когато е избрано, програмата периодично ще се свързва към сайта на VirtualBox и ще проверява дали е налична нова версия на VirtualBox.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Проверка за обновления</translation>
     </message>
     <message>
@@ -3849,7 +3849,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>&lt;p&gt;Изберете това, ако искате да получавате известия само за стабилни обновления на VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Версии със стабилни издания</translation>
     </message>
     <message>
@@ -3857,7 +3857,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>&lt;p&gt;Изберете това, ако искате да получавате известия за всички нови издания на VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Всички нови издания</translation>
     </message>
     <message>
@@ -3865,7 +3865,7 @@ p, li { white-space: pre-wrap; &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; 
         <translation>&lt;p&gt;Изберете това, за да получавате известия за всички нови издания и предварителни версии на VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Всички нови издания и &amp;предварителни версии</translation>
     </message>
 </context>
@@ -5077,7 +5077,7 @@ p, li { white-space: pre-wrap; }
         <translation>Показва дали виртуалният мрежов кабел да бъде свързан към машината или не.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Свързан кабел</translation>
     </message>
     <message>
@@ -5176,7 +5176,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Генериране на нов случаен MAC адрес.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">&amp;Свързан кабел</translation>
     </message>
     <message>
@@ -5830,7 +5830,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тип (Формат):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Закачен към:</translation>
     </message>
     <message>

@@ -2473,7 +2473,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2489,7 +2489,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2520,7 +2520,7 @@
         <translation type="obsolete">VM penceresinde anamakine birleşimi olarak kullanılan tuş birleşimini sıfırlar.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3131,7 +3131,7 @@
         <translation>İşaretlendiğinde, VirtualBox ağdan Misafir Eklentilerini indirme ya da güncellemeleri kontrol etme gibi görevler için sağlanan proksi ayarlarını kullanacaktır.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>Proksi &amp;etkin</translation>
     </message>
     <message>
@@ -3190,7 +3190,7 @@
         <translation>İşaretlendiğinde, uygulama VirtualBox web sitesine düzenli aralıklarla bağlanacak ve yeni bir VirtualBox sürümünün mevcut olup olmadıını kontrol edecektir.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>Güncellemeleri &amp;kontrol et</translation>
     </message>
     <message>
@@ -3214,7 +3214,7 @@
         <translation>&lt;p&gt;Eğer sadece VirtualBox&apos;ın sağlam güncellemeleri hakkında bilgilendirilmek istiyorsanız bunu seçin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Sağlam yayım sürümleri</translation>
     </message>
     <message>
@@ -3222,7 +3222,7 @@
         <translation>&lt;p&gt;Eğer tüm yeni VirtualBox yayımları hakkında bilgilendirilmek istiyorsanız bunu seçin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Tüm yeni yayımlar</translation>
     </message>
     <message>
@@ -3230,7 +3230,7 @@
         <translation>&lt;p&gt;Tüm yeni VirtualBox yayımları ve VirtualBox&apos;ın ön-yayımı hakkında bilgilendirilmek için bunu seçin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Tüm yeni yayımlar ve ö&amp;n-yayımlar</translation>
     </message>
 </context>
@@ -4351,7 +4351,7 @@
         <translation>İlave ağ bağdaştırıcısı seçeneklerini gösterir veya gizler.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kablo bağlandı</translation>
     </message>
     <message>
@@ -5023,7 +5023,7 @@
         <translation>Türü (Biçim):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Şuna Takıldı:</translation>
     </message>
     <message>

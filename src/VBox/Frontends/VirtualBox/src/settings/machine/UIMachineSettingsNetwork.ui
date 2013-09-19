@@ -249,7 +249,7 @@
          <string>Indicates whether the virtual network cable is plugged in on machine startup or not.</string>
         </property>
         <property name="text">
-         <string>&amp;Cable connected</string>
+         <string>&amp;Cable Connected</string>
         </property>
        </widget>
       </item>

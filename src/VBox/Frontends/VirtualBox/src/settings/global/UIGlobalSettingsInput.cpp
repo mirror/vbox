@@ -94,7 +94,7 @@ void UIGlobalSettingsInput::loadToCacheFrom(QVariant &data)
     UISettingsPageGlobal::fetchData(data);
 
     /* Load host-combo shortcut to cache: */
-    m_cache.m_shortcuts << UIShortcutCacheItem(UIHostCombo::hostComboCacheKey(), tr("Host Combo"),  m_settings.hostCombo(), QString());
+    m_cache.m_shortcuts << UIShortcutCacheItem(UIHostCombo::hostComboCacheKey(), tr("Host Key Combination"),  m_settings.hostCombo(), QString());
     /* Load all other shortcuts to cache: */
     const QMap<QString, UIShortcut>& shortcuts = gShortcutPool->shortcuts();
     const QList<QString> shortcutKeys = shortcuts.keys();

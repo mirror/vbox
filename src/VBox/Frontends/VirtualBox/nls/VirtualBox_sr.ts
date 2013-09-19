@@ -3012,7 +3012,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3028,7 +3028,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3059,7 +3059,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ресетуј комбинацију за хост у прозору машине.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3680,7 +3680,7 @@ p, li { white-space: pre-wrap; }
         <translation>Када одабрано, VirtualBox ће користити постаке проксија за, на пример, преузимање &apos;додатака госта&apos; или провере ажурирања.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>Упали прокси</translation>
     </message>
     <message>
@@ -3739,7 +3739,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако унето, програм ће се прикачивати на сајту VirtualBox-а да се провери ажурирање.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>Провери ажурирања</translation>
     </message>
     <message>
@@ -3763,7 +3763,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени само о стабилних ажурирања VirtualBox-а.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>Стабилна верзија</translation>
     </message>
     <message>
@@ -3771,7 +3771,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени о свим ажурирања VirtualBox-а.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>Сва ажурирања</translation>
     </message>
     <message>
@@ -3779,7 +3779,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Одабрати ово ако желите да будете обавештени о свим ажурирања VirtualBox-а и верзијама пре обнављивања.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Све верзије и пре-онвављивање</translation>
     </message>
 </context>
@@ -4959,7 +4959,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mac адреса:</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>Привезан каблом</translation>
     </message>
     <message>
@@ -5050,7 +5050,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Генерише нову MAC адресу.</translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation type="obsolete">Привезан каблом</translation>
     </message>
     <message>
@@ -5723,7 +5723,7 @@ p, li { white-space: pre-wrap; }
         <translation>Тип (Формат):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Прикачено на:</translation>
     </message>
     <message>

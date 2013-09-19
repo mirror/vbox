@@ -2897,7 +2897,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Auto Show in Fullscreen</source>
+        <source>Auto-Show in Fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2913,7 +2913,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Disable at Virtual Machine Runtime</source>
+        <source>Disable When Running Virtual Machines</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -2944,7 +2944,7 @@
         <translation type="obsolete">Resetuje klávesovú kombináciu používanú ako hostiteľskú kombináciu v okne virtuálneho stroja.</translation>
     </message>
     <message>
-        <source>Host Combo</source>
+        <source>Host Key Combination</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3565,7 +3565,7 @@
         <translation>Keď je voľba zaškrtnutá, VirtualBox použije zadané nastavenia proxy pre úlohy ako napríklad sťahovanie Hosťovských doplnkov alebo kontrolu aktualizácii.</translation>
     </message>
     <message>
-        <source>&amp;Enable proxy</source>
+        <source>&amp;Enable Proxy</source>
         <translation>&amp;Povoliť proxy</translation>
     </message>
     <message>
@@ -3624,7 +3624,7 @@
         <translation>Ak je zaškrtnuté, aplikácia sa bude pravidelne pripájať na webový server VirtualBoxu a kontrolovať, či nie sú dostupné nové verzie.</translation>
     </message>
     <message>
-        <source>&amp;Check for updates</source>
+        <source>&amp;Check for Updates</source>
         <translation>&amp;Kontrolovať aktualizácie</translation>
     </message>
     <message>
@@ -3648,7 +3648,7 @@
         <translation>&lt;p&gt;Vyberte túto voľbu, ak chcete byť upozornený iba na stabilné aktualizácie VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;Stable release versions</source>
+        <source>&amp;Stable Release Versions</source>
         <translation>&amp;Stabilné verzie</translation>
     </message>
     <message>
@@ -3656,7 +3656,7 @@
         <translation>&lt;p&gt;Vyberte túto voľbu, ak chcete byť upozornený na všetky nové verzie VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&amp;All new releases</source>
+        <source>&amp;All New Releases</source>
         <translation>&amp;Všetky nové verzie</translation>
     </message>
     <message>
@@ -3664,7 +3664,7 @@
         <translation>&lt;p&gt;Vyberte túto voľbu, ak chcete byť upozornený na všetky nové verzie (aj testovacie) VirtualBoxu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>All new releases and &amp;pre-releases</source>
+        <source>All New Releases and &amp;Pre-Releases</source>
         <translation>Všetky nové verzie a &amp;testovacie verzie</translation>
     </message>
 </context>
@@ -4770,7 +4770,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Cable connected</source>
+        <source>&amp;Cable Connected</source>
         <translation>&amp;Kábel pripojený</translation>
     </message>
     <message>
@@ -5398,7 +5398,7 @@
         <translation>Typ (formát):</translation>
     </message>
     <message>
-        <source>Attached To:</source>
+        <source>Attached to:</source>
         <translation>Pripojený k:</translation>
     </message>
     <message>
