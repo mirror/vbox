@@ -105,7 +105,6 @@ public:
     STDMETHOD(COMGETTER(State))(MediumState_T *aState);
     STDMETHOD(COMGETTER(Variant))(ComSafeArrayOut(MediumVariant_T, aVariant));
     STDMETHOD(COMGETTER(Location))(BSTR *aLocation);
-    STDMETHOD(COMSETTER(Location))(IN_BSTR aLocation);
     STDMETHOD(COMGETTER(Name))(BSTR *aName);
     STDMETHOD(COMGETTER(DeviceType))(DeviceType_T *aDeviceType);
     STDMETHOD(COMGETTER(HostDrive))(BOOL *aHostDrive);
@@ -153,6 +152,7 @@ public:
                         IMedium *aParent, IProgress **aProgress);
     STDMETHOD(CloneToBase)(IMedium *aTarget, ComSafeArrayIn(MediumVariant_T, aVariant),
                            IProgress **aProgress);
+    STDMETHOD(SetLocation)(IN_BSTR aLocation, IProgress **aProgress);
     STDMETHOD(Compact)(IProgress **aProgress);
     STDMETHOD(Resize)(LONG64 aLogicalSize, IProgress **aProgress);
     STDMETHOD(Reset)(IProgress **aProgress);

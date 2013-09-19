@@ -2753,16 +2753,6 @@ STDMETHODIMP Machine::COMGETTER(SettingsFilePath)(BSTR *aFilePath)
     return S_OK;
 }
 
-STDMETHODIMP Machine::COMSETTER(SettingsFilePath)(IN_BSTR aFilePath)
-{
-    CheckComArgStrNotEmptyOrNull(aFilePath);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    ReturnComNotImplemented();
-}
-
 STDMETHODIMP Machine::COMGETTER(SettingsModified)(BOOL *aModified)
 {
     CheckComArgOutPointerValid(aModified);
@@ -5286,6 +5276,18 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         mParent->onExtraDataChange(mData->mUuid, aKey, aValue);
 
     return S_OK;
+}
+
+STDMETHODIMP Machine::SetSettingsFilePath(IN_BSTR aFilePath, IProgress **aProgress)
+{
+    CheckComArgStrNotEmptyOrNull(aFilePath);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    *aProgress = NULL;
+    ReturnComNotImplemented();
 }
 
 STDMETHODIMP Machine::SaveSettings()

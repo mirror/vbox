@@ -1382,7 +1382,7 @@
   // IVirtualBox
   /////////////////////////////////////////////////////////////////////////
   -->
-  <!-- This is experimental interface to LWIP based NAT server -->
+
   <interface name="INATNetwork" extends="$unknown"
     uuid="a63c75da-4c99-4e9d-8351-eb73651c18cc"
     wsmap="managed">
@@ -2585,7 +2585,7 @@
     <method name="createNATNetwork">
       <!-- Here we create a record in NAT network array with name
            and gateway/network parameters this information should
-           be enough for VBoxNet[Lwip]NAT and VBoxNetDHCP for
+           be enough for VBoxNetNAT and VBoxNetDHCP for
            servicing the guests.
       -->
       <param name="networkName" type="wstring" dir="in"/>
@@ -4121,7 +4121,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="8c931034-83f6-46b8-97f0-31e70d30402e"
+    uuid="7108c7c7-2c0a-47ee-9c69-022fe2a466bf"
     wsmap="managed"
     >
     <desc>
@@ -4547,25 +4547,9 @@
       <desc>Array of storage controllers attached to this machine.</desc>
     </attribute>
 
-    <attribute name="settingsFilePath" type="wstring">
+    <attribute name="settingsFilePath" type="wstring" readonly="yes">
       <desc>
         Full name of the file containing machine settings data.
-
-        Currently, it is an error to change this property on any machine.
-        Later this will allow setting a new path for the settings file, with
-        automatic relocation of all files (including snapshots and disk images)
-        which are inside the base directory.
-
-        <note>
-          Setting this property to @c null or to an empty string is forbidden. 
-        </note>
-        <note>
-          When setting this property, the specified path must be absolute. When
-          reading this property, an absolute (full) path is always returned.
-        </note>
-        <note>
-          The specified path may not exist, it will be created when necessary.
-        </note>
       </desc>
     </attribute>
 
@@ -6312,6 +6296,35 @@
         <desc>
           New property value.
         </desc>
+      </param>
+    </method>
+
+    <method name="setSettingsFilePath">
+      <desc>
+        Currently, it is an error to change this property on any machine.
+        Later this will allow setting a new path for the settings file, with
+        automatic relocation of all files (including snapshots and disk images)
+        which are inside the base directory. This operation is only allowed
+        when there are no pending unsaved settings.
+
+        <note>
+          Setting this property to @c null or to an empty string is forbidden. 
+          When setting this property, the specified path must be absolute.
+          The specified path may not exist, it will be created when necessary.
+        </note>
+
+        <result name="E_NOTIMPL">
+          The operation is not implemented yet.
+        </result>
+      </desc>
+
+      <param name="settingsFilePath" type="wstring" dir="in">
+        <desc>New settings file path, will be used to determine the new
+        location for the attached media if it is in the same directory or
+        below as the original settings file.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
       </param>
     </method>
 
@@ -13044,7 +13057,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IMedium" extends="$unknown"
-    uuid="8df5fc17-503a-4171-85bc-039b6f24d86b"
+    uuid="05f2bbb6-a3a6-4fb9-9b49-6d0dda7142ac"
     wsmap="managed"
     >
     <desc>
@@ -13258,25 +13271,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <attribute name="location" type="wstring">
+    <attribute name="location" type="wstring" readonly="yes">
       <desc>
         Location of the storage unit holding medium data.
 
         The format of the location string is medium type specific. For medium
         types using regular files in a host's file system, the location
         string is the full file name.
-
-        Some medium types may support changing the storage unit location by
-        simply changing the value of this property. If this operation is not
-        supported, the implementation will return E_NOTIMPL in attempt to set
-        this attribute's value.
-
-        When setting a value of the location attribute which is a regular file
-        in the host's file system, the given file name may be either relative to
-        the <link to="IVirtualBox::homeFolder">VirtualBox home folder</link> or
-        absolute. Note that if the given location specification does not contain
-        the file extension part then a proper default extension will be
-        automatically appended by the implementation depending on the medium type.
       </desc>
     </attribute>
 
@@ -14184,6 +14185,42 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </method>
 
     <!-- other methods -->
+
+    <method name="setLocation">
+      <desc>
+        Changes the location of this medium. Some medium types may support
+        changing the storage unit location by simply changing the value of the
+        associated property. In this case the operation is performed
+        immediately, and @a progress is returning a @c null reference.
+        Otherwise on success there is a progress object returned, which
+        signals progress and completion of the operation. This distinction is
+        necessary because for some formats the operation is very fast, while
+        for others it can be very slow (moving the image file by copying all
+        data), and in the former case it'd be a waste of resources to create
+        a progress object which will immediately signal completion.
+
+        When setting a location for a medium which corresponds to a/several
+        regular file(s) in the host's file system, the given file name may be
+        either relative to the <link to="IVirtualBox::homeFolder">VirtualBox
+        home folder</link> or absolute. Note that if the given location
+        specification does not contain the file extension part then a proper
+        default extension will be automatically appended by the implementation
+        depending on the medium type.
+
+        <result name="E_NOTIMPL">
+          The operation is not implemented yet.
+        </result>
+        <result name="VBOX_E_NOT_SUPPORTED">
+          Medium format does not support changing the location.
+        </result>
+      </desc>
+      <param name="location" type="wstring" dir="in">
+        <desc>New location.</desc>
+      </param>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+    </method>
 
     <method name="compact">
       <desc>
@@ -15650,7 +15687,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="NetworkAttachmentType"
-    uuid="2ac4bc71-6b82-417a-acd1-f7426d2570d6"
+    uuid="524a8f9d-4b86-4b51-877d-1aa27c4ebeac"
     >
     <desc>
       Network attachment type.
@@ -15664,6 +15701,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Internal"              value="3"/>
     <const name="HostOnly"              value="4"/>
     <const name="Generic"               value="5"/>
+    <const name="NATNetwork"            value="6"/>
   </enum>
 
   <enum

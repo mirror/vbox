@@ -1542,27 +1542,6 @@ STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
     return S_OK;
 }
 
-STDMETHODIMP Medium::COMSETTER(Location)(IN_BSTR aLocation)
-{
-    CheckComArgStrNotEmptyOrNull(aLocation);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /// @todo NEWMEDIA for file names, add the default extension if no extension
-    /// is present (using the information from the VD backend which also implies
-    /// that one more parameter should be passed to setLocation() requesting
-    /// that functionality since it is only allowed when called from this method
-
-    /// @todo NEWMEDIA rename the file and set m->location on success, then save
-    /// the global registry (and local registries of portable VMs referring to
-    /// this medium), this will also require to add the mRegistered flag to data
-
-    ReturnComNotImplemented();
-}
-
 STDMETHODIMP Medium::COMGETTER(Name)(BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
@@ -2891,6 +2870,29 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         delete pTask;
 
     return rc;
+}
+
+STDMETHODIMP Medium::SetLocation(IN_BSTR aLocation, IProgress **aProgress)
+{
+    CheckComArgStrNotEmptyOrNull(aLocation);
+    CheckComArgOutPointerValid(aProgress);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /// @todo NEWMEDIA for file names, add the default extension if no extension
+    /// is present (using the information from the VD backend which also implies
+    /// that one more parameter should be passed to setLocation() requesting
+    /// that functionality since it is only allowed when called from this method
+
+    /// @todo NEWMEDIA rename the file and set m->location on success, then save
+    /// the global registry (and local registries of portable VMs referring to
+    /// this medium), this will also require to add the mRegistered flag to data
+
+    *aProgress = NULL;
+    ReturnComNotImplemented();
 }
 
 STDMETHODIMP Medium::Compact(IProgress **aProgress)
@@ -5985,7 +5987,7 @@ HRESULT Medium::queryInfo(bool fSetImageId, bool fSetParentId)
 
     pToken->Abandon();
     pToken.setNull();
-    
+
     if (FAILED(rc)) return rc;
 
     /* If this is a base image which incorrectly has a parent UUID set,
