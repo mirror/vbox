@@ -38,6 +38,38 @@
 
 RT_C_DECLS_BEGIN
 
+/** @def VMCPU_HMCF_CLEAR
+ * Clears a HM-context flag for the given VCPU.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlag   The flag to clear.
+ */
+#define VMCPU_HMCF_CLEAR(pVCpu, fFlag)          ((pVCpu)->hm.s.fContextUseFlags &= ~(fFlag))
+
+/** @def VMCPU_FF_SET
+ * Sets a HM-context flag for the given VCPU.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlag   The flag to set.
+ */
+#define VMCPU_HMCF_SET(pVCpu, fFlag)            ((pVCpu)->hm.s.fContextUseFlags |= (fFlag))
+
+/** @def VMCPU_HMCF_IS_SET
+ * Checks if -only- the specified HM-context flag is set and nothing else.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlag   The flag to check.
+ */
+#define VMCPU_HMCF_IS_SET(pVCpu, fFlag)         (((pVCpu)->hm.s.fContextUseFlags & (fFlag)) == (fFlag))
+
+/** @def VMCPU_HMCF_IS_PENDING
+ * Checks if a HM-context flags is pending.
+ *
+ * @param   pVCpu   Pointer to the VMCPU.
+ * @param   fFlags  The flags to check for.
+ */
+#define VMCPU_HMCF_IS_PENDING(pVCpu, fFlags)    RT_BOOL((pVCpu)->hm.s.fContextUseFlags & (fFlags))
+
 /**
  * Checks whether HM (VT-x/AMD-V) is being used by this VM.
  *
