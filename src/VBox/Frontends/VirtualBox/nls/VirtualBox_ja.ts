@@ -3337,6 +3337,36 @@ p, li { white-space: pre-wrap; }
         <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="76"/>
+        <source>&amp;Dock and Menubar:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="89"/>
+        <source>Auto Show in Fullscreen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="92"/>
+        <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="99"/>
+        <source>&amp;Host Screensaver:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="112"/>
+        <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="115"/>
+        <source>Disable at Virtual Machine Runtime</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Default &amp;Hard Disk Folder:</source>
         <translation type="obsolete">デフォルトのハードディスクフォルダー(&amp;H):</translation>
     </message>
@@ -3351,34 +3381,8 @@ p, li { white-space: pre-wrap; }
         <translation>VRDP 認証ライブラリー(&amp;R):</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="76"/>
-        <source>&amp;Dock and Menubar:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="89"/>
-        <source>Auto Show in Fullscreen</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="92"/>
-        <source>When checked, Dock and Menubar will be shown in virtual machine fullscreen.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="99"/>
-        <source>&amp;Host Screen Saver:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="112"/>
         <source>When checked, the host screen saver will be disabled whenever a virtual machine is running.</source>
-        <translation>仮想マシンの起動中、ホストのスクリーンセーバーを無効化します。</translation>
-    </message>
-    <message>
-        <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="115"/>
-        <source>Disable at Virtual Machine Runtime</source>
-        <translation type="unfinished"></translation>
+        <translation type="obsolete">仮想マシンの起動中、ホストのスクリーンセーバーを無効化します。</translation>
     </message>
     <message>
         <source>Disable Host &amp;ScreenSaver</source>
@@ -3587,269 +3591,269 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">DHCP アドレス上限値&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が不正</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="129"/>
-        <source>The new name for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="130"/>
+        <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="139"/>
-        <source>The CIDR for NAT network &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="140"/>
+        <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="141"/>
-        <source>The CIDR for NAT network previously called &lt;b&gt;%1&lt;/b&gt; is empty.</source>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="142"/>
+        <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="152"/>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="153"/>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="155"/>
-        <source>The CIDR &lt;i&gt;%1&lt;/i&gt; for NAT network previously called &lt;b&gt;%2&lt;/b&gt; is invalid.</source>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="156"/>
+        <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="178"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="179"/>
         <source>Network Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="185"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="186"/>
         <source>[empty]</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="186"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="187"/>
         <source>%1 (renamed from %2)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="187"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="188"/>
         <source>Old Network Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="188"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="189"/>
         <source>New Network Name</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="192"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="193"/>
         <source>Network CIDR</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="193"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="194"/>
         <source>Supports DHCP</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="194"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="196"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="198"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="195"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="197"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="199"/>
         <source>yes</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="194"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="196"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="195"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="197"/>
         <source>no</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="195"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="196"/>
         <source>Supports IPv6</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="198"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="199"/>
         <source>Default IPv6 route</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="243"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="244"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="250"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="251"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="259"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="260"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="271"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="272"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="277"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="278"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="283"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="284"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="289"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="290"/>
         <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="307"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="308"/>
         <source>Adapter</source>
         <translation>アダプター</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="309"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="310"/>
         <source>Automatically configured</source>
         <comment>interface</comment>
         <translation>自動構成</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="310"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="311"/>
         <source>Manually configured</source>
         <comment>interface</comment>
         <translation>手動構成</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="313"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="314"/>
         <source>IPv4 Address</source>
         <translation>IPv4 アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="315"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="325"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="343"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="316"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="326"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="344"/>
         <source>Not set</source>
         <comment>address</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="317"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="318"/>
         <source>IPv4 Network Mask</source>
         <translation>IPv4 ネットマスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="319"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="347"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="320"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="348"/>
         <source>Not set</source>
         <comment>mask</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="323"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="324"/>
         <source>IPv6 Address</source>
         <translation>IPv6 アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="327"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="328"/>
         <source>IPv6 Network Mask Length</source>
         <translation>IPv6 ネットマスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="329"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="330"/>
         <source>Not set</source>
         <comment>length</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="335"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="336"/>
         <source>DHCP Server</source>
         <translation>DHCP サーバー</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="337"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="338"/>
         <source>Enabled</source>
         <comment>server</comment>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="338"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="339"/>
         <source>Disabled</source>
         <comment>server</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="341"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="342"/>
         <source>Address</source>
         <translation>アドレス</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="345"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="346"/>
         <source>Network Mask</source>
         <translation>ネットマスク</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="349"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="350"/>
         <source>Lower Bound</source>
         <translation>下限</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="351"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="355"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="352"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="356"/>
         <source>Not set</source>
         <comment>bound</comment>
         <translation>未設定</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="353"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="354"/>
         <source>Upper Bound</source>
         <translation>上限</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="588"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="589"/>
         <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="638"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="639"/>
         <source>Active</source>
         <comment>NAT network</comment>
         <translation type="unfinished">有効</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="642"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="643"/>
         <source>&amp;Add NAT network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="643"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="644"/>
         <source>&amp;Remove NAT network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="644"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="645"/>
         <source>&amp;Edit NAT network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="658"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="659"/>
         <source>&amp;Add host-only network</source>
         <translation>ホストオンリーネットワークを追加(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="659"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="660"/>
         <source>&amp;Remove host-only network</source>
         <translation>ホストオンリーネットワークを除去(&amp;R)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="660"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="661"/>
         <source>&amp;Edit host-only network</source>
         <translation>ホストオンリーネットワークを編集(&amp;E)</translation>
     </message>
     <message>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="777"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="829"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="778"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="830"/>
         <source>Networking</source>
         <translation>ネットワーク</translation>
     </message>
@@ -3888,7 +3892,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.ui" line="91"/>
-        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="639"/>
+        <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="640"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
@@ -4115,7 +4119,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="24"/>
-        <source>Network &amp;Enabled</source>
+        <source>&amp;Enable Network</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4177,6 +4181,16 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="126"/>
         <source>Determines whether default IPv6 route should be advertised for this network.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="133"/>
+        <source>Opens dialog to manage port forwarding rules.</source>
+        <translation type="unfinished">ポートフォワーディングのルールを設定するダイアログを開きます。</translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="136"/>
+        <source>&amp;Port Forwarding</source>
+        <translation type="unfinished">ポートフォワーディング(&amp;P)</translation>
     </message>
 </context>
 <context>
@@ -4825,21 +4839,21 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="547"/>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;</source>
+        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="553"/>
-        <source>&lt;b&gt;Video capture disabled&lt;/b&gt;</source>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="552"/>
+        <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="558"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="557"/>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture file:&lt;/b&gt; %1&lt;/nobr&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="681"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="680"/>
         <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
@@ -4867,18 +4881,18 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想マシンで使用される仮想化支援機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="696"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="695"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="729"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="728"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>ホストマウスポインターのキャプチャー状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="779"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="778"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>キーボードがゲストOSにキャプチャーされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
@@ -4902,12 +4916,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">試験的ビルド %1r%2 - %3</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="621"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="627"/>
         <source>Preview Monitor %1</source>
         <translation>プレビュー ディスプレイ %1</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1135"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1177"/>
         <source>Snapshot %1</source>
         <translation>スナップショット %1</translation>
     </message>
@@ -4928,7 +4942,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">フロッピーデバイスのマウント解除</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1230"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1272"/>
         <source>Select a filename for the screenshot ...</source>
         <translation>スクリーンショットの名前を選択...</translation>
     </message>
@@ -4949,12 +4963,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">フロッピーデバイス 未割り当て</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1738"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1780"/>
         <source>No USB Devices Connected</source>
         <translation>USB デバイス 未接続</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1739"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1781"/>
         <source>No supported devices connected to the host PC</source>
         <translation>ホストマシンに接続されたデバイスはサポートされていません</translation>
     </message>
@@ -6111,37 +6125,37 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMachineSettingsPortForwardingDlg</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="672"/>
+        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="87"/>
         <source>Port Forwarding Rules</source>
         <translation>ポートフォワーディング ルール</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="675"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="675"/>
         <source>This table contains a list of port forwarding rules.</source>
         <translation>ポートフォワーディング ルールをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="678"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="678"/>
         <source>Insert new rule</source>
         <translation>新規ルールを追加</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="679"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="679"/>
         <source>Copy selected rule</source>
         <translation>選択したルールをコピー</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="680"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="680"/>
         <source>Delete selected rule</source>
         <translation>選択したルールを削除</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="681"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="681"/>
         <source>This button adds new port forwarding rule.</source>
         <translation>新規ポートフォワーディング ルールを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="682"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="682"/>
         <source>This button deletes selected port forwarding rule.</source>
         <translation>選択したポートフォワーディング ルールを削除します。</translation>
     </message>
@@ -6770,21 +6784,21 @@ p, li { white-space: pre-wrap; }
         <translation>仮想ハードディスクファイルの選択...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1547"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1589"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2665"/>
         <source>Choose a virtual CD/DVD disk file...</source>
         <translation>仮想CD/DVDディスクファイルの選択...</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1548"/>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1554"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1590"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1596"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2672"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2689"/>
         <source>Remove disk from virtual drive</source>
         <translation>仮想ドライブからディスクを除去</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMachineLogic.cpp" line="1553"/>
+        <location filename="../src/runtime/UIMachineLogic.cpp" line="1595"/>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.cpp" line="2682"/>
         <source>Choose a virtual floppy disk file...</source>
         <translation>仮想フロッピーディスクファイルの選択...</translation>
@@ -7180,7 +7194,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="279"/>
-        <source>&amp;Pointing device:</source>
+        <source>&amp;Pointing Device:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7654,181 +7668,31 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="261"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2711"/>
         <source>VirtualBox - Question</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - 質問</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="265"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2715"/>
         <source>VirtualBox - Warning</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - 警告</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="269"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2719"/>
         <source>VirtualBox - Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - エラー</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="273"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2723"/>
         <source>VirtualBox - Critical Error</source>
         <comment>msg box title</comment>
         <translation>VirtualBox - 重大なエラー</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="368"/>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="417"/>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="427"/>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="463"/>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="673"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1731"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1870"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1891"/>
-        <source>Ignore</source>
-        <translation type="unfinished">無視</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1029"/>
-        <source>Create &amp;new disk</source>
-        <translation type="unfinished">新規ディスクの作成(&amp;N)</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1029"/>
-        <source>&amp;Choose existing disk</source>
-        <translation type="unfinished">既存のディスクを選択(&amp;C)</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1040"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1051"/>
-        <source>Leave &amp;empty</source>
-        <translation type="unfinished">空のドライブ(&amp;E)</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1040"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1051"/>
-        <source>&amp;Choose disk</source>
-        <translation type="unfinished">ディスクを選択(&amp;C)</translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1174"/>
-        <source>&lt;p&gt;Are you sure you want to release the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1180"/>
-        <source>&lt;p&gt;Are you sure you want to release the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1186"/>
-        <source>&lt;p&gt;Are you sure you want to release the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1208"/>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1220"/>
-        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1227"/>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1235"/>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1326"/>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1328"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1344"/>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1332"/>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1334"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1350"/>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1342"/>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1348"/>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1378"/>
-        <source>Failed to open the hard disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1383"/>
-        <source>Failed to open the optical disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1388"/>
-        <source>Failed to open the floppy disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1407"/>
-        <source>Failed to close the hard disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1412"/>
-        <source>Failed to close the optical disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1417"/>
-        <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1833"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1846"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1859"/>
-        <source>Switch</source>
-        <translation type="unfinished">切り替え</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1940"/>
@@ -7906,30 +7770,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&lt;p&gt;VirtualBox ユーザーマニュアルを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;からダウンロードし、&lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt;に保存しました。&lt;/p&gt; {1&quot;?} {1&lt;?} {2&lt;?}</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2711"/>
-        <source>VirtualBox - MessageType_Question</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2715"/>
-        <source>VirtualBox - MessageType_Warning</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2719"/>
-        <source>VirtualBox - MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2723"/>
-        <source>VirtualBox - MessageType_Critical MessageType_Error</source>
-        <comment>msg box title</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2742"/>
         <source>Do not show this message again</source>
         <comment>msg box flag</comment>
@@ -7960,8 +7800,9 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox COMオブジェクトの作成に失敗しました。&lt;/p&gt;&lt;p&gt;アプリケーションを終了します。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="979"/>
         <source>Failed to set global VirtualBox properties.</source>
-        <translation type="obsolete">グローバルなVirtualBoxのプロパティの設定に失敗しました。</translation>
+        <translation>グローバルなVirtualBoxのプロパティの設定に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="993"/>
@@ -7969,8 +7810,9 @@ p, li { white-space: pre-wrap; }
         <translation>USBサブシステムのアクセスに失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1443"/>
         <source>Failed to create a new virtual machine.</source>
-        <translation type="obsolete">新規仮想マシンの作成に失敗しました。</translation>
+        <translation>新規仮想マシンの作成に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to create a new virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -7982,8 +7824,9 @@ p, li { white-space: pre-wrap; }
         <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を開けませんでした。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1450"/>
         <source>Failed to register the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想マシン &lt;b&gt;%1&lt;/b&gt; の登録に失敗しました。</translation>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt; の登録に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="518"/>
@@ -7995,8 +7838,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の設定の適用に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1015"/>
         <source>&lt;p&gt;The machine settings were changed while you were editing them. You currently have unsaved setting changes.&lt;/p&gt;&lt;p&gt;Would you like to reload the changed settings or to keep your own changes?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;編集中にマシンの設定が変更されました。現在保存されていない変更が含まれています。.&lt;/p&gt;&lt;p&gt;変更を再読み込みするか、現在の設定を保持しますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;編集中にマシンの設定が変更されました。現在保存されていない変更が含まれています。.&lt;/p&gt;&lt;p&gt;変更を再読み込みするか、現在の設定を保持しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1019"/>
@@ -8036,71 +7880,14 @@ p, li { white-space: pre-wrap; }
         <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の状態の保存に失敗しました。</translation>
     </message>
     <message>
-        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想マシン &lt;b&gt;%1&lt;/b&gt;.のクローンに失敗しました。</translation>
-    </message>
-    <message id="0">
-        <location filename="../src/globals/UIMessageCenter.cpp" line="839"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="847"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="889"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="903"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="919"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="926"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="934"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="941"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="949"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="956"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="963"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="971"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="979"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1015"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1025"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1035"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1046"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1057"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1099"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1106"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1113"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1122"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1131"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1142"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1153"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1161"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1254"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1272"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1280"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1431"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1443"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1450"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1458"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1466"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1474"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1484"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1492"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1500"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1508"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1551"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1559"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1566"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1573"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1587"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1595"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1603"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="1611"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2140"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2159"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2215"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2225"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2232"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2239"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2247"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2255"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2263"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2271"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2279"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2286"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2294"/>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="2301"/>
+        <source>Failed to clone the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation>仮想マシン &lt;b&gt;%1&lt;/b&gt;.のクローンに失敗しました。</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="839"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="847"/>
         <source>Failed to create a snapshot of the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のスナップショット作成に失敗しました。</translation>
     </message>
@@ -8212,8 +7999,10 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ホストネットワークインターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="963"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="971"/>
         <source>Failed to remove the host network interface &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">ホストネットワークインターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を取り除けませんでした。</translation>
+        <translation>ホストネットワークインターフェース&lt;b&gt;&quot;%1&quot;&lt;/b&gt;を取り除けませんでした。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1907"/>
@@ -8228,14 +8017,16 @@ p, li { white-space: pre-wrap; }
         <translation>USB デバイス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の仮想マシン&lt;b&gt;&quot;%2&quot;&lt;/b&gt;からの割り当て解除に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1113"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1122"/>
         <source>Failed to create the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) for the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の作成に失敗しました。</translation>
+        <translation>仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の作成に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;の共有フォルダー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;(参照先 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の除去に失敗しました。</translation>
     </message>
-    <message id="false">
+    <message>
         <location filename="../src/globals/UIPopupCenter.cpp" line="195"/>
         <source>Close</source>
         <translation type="unfinished">閉じる</translation>
@@ -8265,12 +8056,16 @@ p, li { white-space: pre-wrap; }
         <translation>Guest Additionsの更新に失敗しました。Guest Additionsのインストールイメージは手動インストールのためマウントされます。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2239"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2247"/>
         <source>Failed to install the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のインストールに失敗しました。</translation>
+        <translation>機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のインストールに失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2255"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2263"/>
         <source>Failed to uninstall the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のアンインストールに失敗しました。</translation>
+        <translation>機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のアンインストールに失敗しました。</translation>
     </message>
     <message>
         <source>You are about to remove the Extension Pack &lt;b&gt;%1&lt;/b&gt;. Are you sure you want to do that?</source>
@@ -8282,12 +8077,200 @@ p, li { white-space: pre-wrap; }
         <translation>除去(&amp;R)</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1099"/>
         <source>The current port forwarding rules are not valid. None of the host or guest port values may be set to zero.</source>
-        <translation type="obsolete">現在のポートフォワーディングルールは無効です。 ホストまたはゲストポートの値にゼロが設定されています。</translation>
+        <translation>現在のポートフォワーディングルールは無効です。 ホストまたはゲストポートの値にゼロが設定されています。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="368"/>
+        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="417"/>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="427"/>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="463"/>
+        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="673"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1731"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1870"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1891"/>
+        <source>Ignore</source>
+        <translation type="unfinished">無視</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="889"/>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="919"/>
+        <source>Failed to create NAT network.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="926"/>
+        <source>Failed to remove NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="934"/>
+        <source>Failed to create DHCP server.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="941"/>
+        <source>Failed to remove DHCP server for network interface &lt;b&gt;%1&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="949"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="956"/>
+        <source>Failed to create the host network interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1029"/>
+        <source>Create &amp;new disk</source>
+        <translation type="unfinished">新規ディスクの作成(&amp;N)</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1029"/>
+        <source>&amp;Choose existing disk</source>
+        <translation type="unfinished">既存のディスクを選択(&amp;C)</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1040"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1051"/>
+        <source>Leave &amp;empty</source>
+        <translation type="unfinished">空のドライブ(&amp;E)</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1040"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1051"/>
+        <source>&amp;Choose disk</source>
+        <translation type="unfinished">ディスクを選択(&amp;C)</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1106"/>
         <source>&lt;p&gt;There are unsaved changes in the port forwarding configuration.&lt;/p&gt;&lt;p&gt;If you proceed your changes will be discarded.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ポートフォワーディング設定の変更が保存されていません。&lt;/p&gt;&lt;p&gt;続行すると変更は破棄されます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ポートフォワーディング設定の変更が保存されていません。&lt;/p&gt;&lt;p&gt;続行すると変更は破棄されます。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1174"/>
+        <source>&lt;p&gt;Are you sure you want to release the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1180"/>
+        <source>&lt;p&gt;Are you sure you want to release the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1186"/>
+        <source>&lt;p&gt;Are you sure you want to release the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1208"/>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1220"/>
+        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1227"/>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1235"/>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1326"/>
+        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1328"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1344"/>
+        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1332"/>
+        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1334"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1350"/>
+        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1342"/>
+        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1348"/>
+        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1378"/>
+        <source>Failed to open the hard disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1383"/>
+        <source>Failed to open the optical disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1388"/>
+        <source>Failed to open the floppy disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1407"/>
+        <source>Failed to close the hard disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1412"/>
+        <source>Failed to close the optical disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1417"/>
+        <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1573"/>
+        <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
+        <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1641"/>
@@ -8413,8 +8396,10 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想マシン&lt;b&gt;%1&lt;b&gt;のスナップショット保存フォルダーのパスを&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;に変更できませんでした。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1131"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1142"/>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダー&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダーを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダー&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダーを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
@@ -8459,8 +8444,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;にライセンスファイルが見つかりません。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2294"/>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
-        <translation type="obsolete">ライセンスファイル&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;が開けません。ファイルのパーミッションを確認してください。</translation>
+        <translation>ライセンスファイル&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;が開けません。ファイルのパーミッションを確認してください。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="763"/>
@@ -8496,8 +8482,9 @@ p, li { white-space: pre-wrap; }
 &lt;p&gt;アプリケーションを終了します。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1153"/>
         <source>Failed to save the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の設定の&lt;b&gt;&lt;nobr&gt;&quot;%2&quot;&lt;/nobr&gt;&lt;/b&gt;への保存に失敗しました。</translation>
+        <translation>仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の設定の&lt;b&gt;&lt;nobr&gt;&quot;%2&quot;&lt;/nobr&gt;&lt;/b&gt;への保存に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to load the settings of the virtual machine &lt;b&gt;%1&lt;/b&gt; from &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.</source>
@@ -8826,12 +8813,14 @@ p, li { white-space: pre-wrap; }
         <translation>除去</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1474"/>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ハードディスクストレージ装置の場所 &lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに存在します。別の仮想ハードディスクが使用しているため、この場所に新規仮想ハードディスクを作成できません。&lt;/p&gt;&lt;p&gt;別の場所を指定してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ハードディスクストレージ装置の場所 &lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに存在します。別の仮想ハードディスクが使用しているため、この場所に新規仮想ハードディスクを作成できません。&lt;/p&gt;&lt;p&gt;別の場所を指定してください。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1254"/>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;のストレージ装置を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;[削除]&lt;/b&gt;を選択すると、指定されたストレージ装置は永久に削除されます。この操作は&lt;b&gt;元に戻せません&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[保持]&lt;/b&gt;を選択すると、ハードディスクはリストから取り除かれますが、ストレージ装置は後でリストに再度追加できるように、そのまま置かれます。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;ハードディスク&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;&lt;/nobr&gt;のストレージ装置を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;[削除]&lt;/b&gt;を選択すると、指定されたストレージ装置は永久に削除されます。この操作は&lt;b&gt;元に戻せません&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[保持]&lt;/b&gt;を選択すると、ハードディスクはリストから取り除かれますが、ストレージ装置は後でリストに再度追加できるように、そのまま置かれます。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1265"/>
@@ -8846,16 +8835,21 @@ p, li { white-space: pre-wrap; }
         <translation>保持</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1272"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1280"/>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">ハードディスクストレージ装置&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の削除に失敗しました。</translation>
+        <translation>ハードディスクストレージ装置&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の削除に失敗しました。</translation>
     </message>
     <message>
         <source>&lt;p&gt;There are no unused hard disks available for the newly created attachment.&lt;/p&gt;&lt;p&gt;Press the &lt;b&gt;Create&lt;/b&gt; button to start the &lt;i&gt;New Virtual Disk&lt;/i&gt; wizard and create a new hard disk, or press the &lt;b&gt;Select&lt;/b&gt; if you wish to open the &lt;i&gt;Virtual Media Manager&lt;/i&gt;.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のハードディスクがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[作成]&lt;/b&gt;ボタンをクリックし、&lt;i&gt;新規仮想ディスク作成ウィザード&lt;/i&gt;を起動して新規ハードディスクイメージを作成するか、&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャー&lt;/i&gt;を開き、動作を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1484"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1492"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1500"/>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation type="obsolete">ハードディスクストレージ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。&lt;/nobr&gt;</translation>
+        <translation>ハードディスクストレージ&lt;nobr&gt;&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の作成に失敗しました。&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to attach the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to slot &lt;i&gt;%2&lt;/i&gt; of the machine &lt;b&gt;%3&lt;/b&gt;.</source>
@@ -9050,8 +9044,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;本当にスナップショット &lt;b&gt;%1&lt;/b&gt; をリストアしますか？&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1611"/>
         <source>Can&apos;t find snapshot named &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; という名前のスナップショットが見つかりません。</translation>
+        <translation>&lt;b&gt;%1&lt;/b&gt; という名前のスナップショットが見つかりません。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="539"/>
@@ -9084,8 +9079,9 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;以下の仮想マシンの保存状態を破棄しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;この操作はゲストOSを適切にシャットダウンせずにリセットまたは電源をオフにすることと同等です。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1161"/>
         <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;メディアタイプを&lt;b&gt;%1&lt;/b&gt; から &lt;b&gt;%2&lt;/b&gt; にする際にエラーが発生しました。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;メディアタイプを&lt;b&gt;%1&lt;/b&gt; から &lt;b&gt;%2&lt;/b&gt; にする際にエラーが発生しました。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1229"/>
@@ -9094,8 +9090,9 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;注：このメディアの記憶装置は削除されません。再度利用することができます。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1025"/>
         <source>&lt;p&gt;You are about to add a virtual hard disk to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to create a new, empty file to hold the disk contents or select an existing one?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想ハードディスクをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;空の仮想ハードディスクを新規作成しますか？既存の仮想ハードディスクを選択しますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想ハードディスクをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;空の仮想ハードディスクを新規作成しますか？既存の仮想ハードディスクを選択しますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Create &amp;new disk</source>
@@ -9108,8 +9105,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">既存のディスクを選択(&amp;C)</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1035"/>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;CD/DVDドライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想CD/DVDディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;CD/DVDドライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想CD/DVDディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -9122,8 +9120,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">空のドライブ(&amp;E)</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1046"/>
         <source>&lt;p&gt;You are about to add a new floppy drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual floppy disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;フロッピードライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想フロッピーディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;フロッピードライブをコントローラー&lt;b&gt;&quot;%1&quot;&lt;/b&gt;に追加します。&lt;/p&gt;&lt;p&gt;仮想フロッピーディスクをドライブに割り当てますか？空のドライブだけ割り当てますか？&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1293"/>
@@ -9154,8 +9153,9 @@ p, li { white-space: pre-wrap; }
         <translation>仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のオープンまたは解析に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1551"/>
         <source>Failed to import appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のインポートに失敗しました。</translation>
+        <translation>仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のインポートに失敗しました。</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -9168,24 +9168,29 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想アプライアンスの作成に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1587"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1595"/>
         <source>Failed to prepare the export of the appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のエクスポートの前処理に失敗しました。</translation>
+        <translation>仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のエクスポートの前処理に失敗しました。</translation>
     </message>
     <message>
         <source>Failed to create an appliance.</source>
         <translation type="obsolete">仮想アプライアンスの作成に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1603"/>
         <source>Failed to export appliance &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のエクスポートに失敗しました。</translation>
+        <translation>仮想アプライアンス&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のエクスポートに失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="903"/>
         <source>&lt;p&gt;Deleting this host-only network will remove the host-only interface this network is based on. Do you want to remove the (host-only network) interface &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this interface may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different interface name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;このインターフェースを削除すると、このインターフェースが基づいているホストオンリーネットワークインターフェースが削除されます。ホストオンリーネットワークインターフェース&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt;このインターフェースは他の仮想ネットワークアダプターで使用しているかもしれません。削除した場合、それらのアダプターは、他のインターフェース名を選ぶか、別のアダプタータイプを選んで設定を変更するまで使用できません。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;このインターフェースを削除すると、このインターフェースが基づいているホストオンリーネットワークインターフェースが削除されます。ホストオンリーネットワークインターフェース&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;を削除しますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;注：&lt;/b&gt;このインターフェースは他の仮想ネットワークアダプターで使用しているかもしれません。削除した場合、それらのアダプターは、他のインターフェース名を選ぶか、別のアダプタータイプを選んで設定を変更するまで使用できません。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2301"/>
         <source>A file named &lt;b&gt;%1&lt;/b&gt; already exists. Are you sure you want to replace it?&lt;br /&gt;&lt;br /&gt;Replacing it will overwrite its contents.</source>
-        <translation type="obsolete">ファイル名&lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに使われています。ファイルを置き換えますか？&lt;br /&gt;&lt;br /&gt;ファイルの内容は上書きされます。</translation>
+        <translation>ファイル名&lt;b&gt;&quot;%1&quot;&lt;/b&gt;はすでに使われています。ファイルを置き換えますか？&lt;br /&gt;&lt;br /&gt;ファイルの内容は上書きされます。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1758"/>
@@ -9269,12 +9274,14 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;以下の仮想マシンを本当に電源オフしますか？&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフすると、その中で稼動中のすべてのアプリケーションの保存されていないデータは失われます。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1559"/>
         <source>Failed to check files.</source>
-        <translation type="obsolete">ファイルの確認に失敗しました。</translation>
+        <translation>ファイルの確認に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1566"/>
         <source>Failed to remove file.</source>
-        <translation type="obsolete">ファイルの除去に失敗しました。</translation>
+        <translation>ファイルの除去に失敗しました。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="358"/>
@@ -9335,6 +9342,13 @@ p, li { white-space: pre-wrap; }
         <translation>仮想マシン&lt;b&gt;&quot;%2&quot;&lt;/b&gt;のスナップショット&lt;b&gt;&quot;%1&quot;&lt;/b&gt;の削除に失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1833"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1846"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1859"/>
+        <source>Switch</source>
+        <translation type="unfinished">切り替え</translation>
+    </message>
+    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1897"/>
         <source>&lt;p&gt;Could not change the guest screen to this host screen due to insufficient guest video memory.&lt;/p&gt;&lt;p&gt;You should configure the virtual machine to have at least &lt;b&gt;%1&lt;/b&gt; of video memory.&lt;/p&gt;</source>
         <translation>&lt;p&gt;ビデオメモリー不足のため、ゲスト スクリーンをこのホスト スクリーンに変更できません。&lt;/p&gt;&lt;p&gt;仮想マシンの構成で&lt;b&gt;%1&lt;/b&gt;以上のビデオメモリーを指定してください。&lt;/p&gt;</translation>
@@ -9371,8 +9385,9 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;新規の割り当てに利用できる未使用のメディアがありません。&lt;/p&gt;&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックして、&lt;i&gt;仮想メディアマネージャー&lt;/i&gt;を開いてください。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1057"/>
         <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;CD/DVD-ROM デバイスを削除しますか？&lt;/p&gt;&lt;p&gt;デバイスがない場合、CD/DVDメディアやISOイメージファイルのマウントおよびGuest Additions のインストールはできません！&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;CD/DVD-ROM デバイスを削除しますか？&lt;/p&gt;&lt;p&gt;デバイスがない場合、CD/DVDメディアやISOイメージファイルのマウントおよびGuest Additions のインストールはできません！&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1061"/>
@@ -9525,8 +9540,9 @@ p, li { white-space: pre-wrap; }
         <translation>電源オフ</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1508"/>
         <source>&lt;p&gt;Cannot remove the machine folder &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please check that this folder really exists and that you have permissions to remove it.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシンのフォルダー&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;を除去できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;このフォルダーが本当に存在し、除去する権限があるか確認してください。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;仮想マシンのフォルダー&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;を除去できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;このフォルダーが本当に存在し、除去する権限があるか確認してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1517"/>
@@ -9539,8 +9555,9 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;仮想マシンフォルダー&lt;b&gt;%1&lt;/b&gt;を親フォルダー&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;に作成できません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;親フォルダーの存在と、フォルダー作成に必要な権限の有無を確認してください。&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="1431"/>
         <source>You are about to create a new virtual machine without a hard drive. You will not be able to install an operating system on the machine until you add one. In the mean time you will only be able to start the machine using a virtual optical disk or from the network.</source>
-        <translation type="obsolete">ハードドライブなしで新しい仮想マシンを作成しようとしています。それを追加するまではオペレーティングシステムをインストールすることはできません。仮想光学ディスクか、ネットワークから起動することしかできないことを意味します。</translation>
+        <translation>ハードドライブなしで新しい仮想マシンを作成しようとしています。それを追加するまではオペレーティングシステムをインストールすることはできません。仮想光学ディスクか、ネットワークから起動することしかできないことを意味します。</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -9550,20 +9567,24 @@ p, li { white-space: pre-wrap; }
         </translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2225"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2232"/>
         <source>Failed to open the Extension Pack &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="obsolete">機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のオープンに失敗しました。</translation>
+        <translation>機能拡張パッケージ&lt;b&gt;&quot;%1&quot;&lt;/b&gt;のオープンに失敗しました。</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2140"/>
         <source>&lt;p&gt;You are about to install a VirtualBox extension pack. Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Name:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Version:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;Description:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;VirtualBox 機能拡張パッケージをインストールします。機能拡張パッケージはVirtualBoxに機能を追加しますが、、コンピューターに危害を与えるようなシステムレベルのソフトウェアを含んでいる可能性があります。。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名前:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;バージョン:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;説明:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VirtualBox 機能拡張パッケージをインストールします。機能拡張パッケージはVirtualBoxに機能を追加しますが、、コンピューターに危害を与えるようなシステムレベルのソフトウェアを含んでいる可能性があります。。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。&lt;/p&gt;&lt;p&gt;&lt;table cellpadding=0 cellspacing=0&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;名前:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;バージョン:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;&lt;b&gt;説明:&amp;nbsp;&amp;nbsp;&lt;/b&gt;&lt;/td&gt;&lt;td&gt;%3&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Install</source>
         <translation type="obsolete">インストール(&amp;I)</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2159"/>
         <source>Extension packs complement the functionality of VirtualBox and can contain system level software that could be potentially harmful to your system. Please review the description below and only proceed if you have obtained the extension pack from a trusted source.</source>
-        <translation type="obsolete">機能拡張パッケージはVirtualBoxに機能を追加しますが、システムに危害を与えるシステムレベルのソフトウェアを含むこともできます。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。</translation>
+        <translation>機能拡張パッケージはVirtualBoxに機能を追加しますが、システムに危害を与えるシステムレベルのソフトウェアを含むこともできます。信頼できる発行元から機能拡張パッケージを入手した場合に限り、以下の内容を確認して、処理を続行してください。</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2173"/>
@@ -9596,12 +9617,14 @@ p, li { white-space: pre-wrap; }
         <translation>再インストール(&amp;R)</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2215"/>
         <source>&lt;p&gt;You are about to remove the VirtualBox extension pack &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Are you sure you want to proceed?&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt; VirtualBox 機能拡張パッケージ&quot;&lt;b&gt;%1&lt;/b&gt;&quot;を除去します。&lt;/p&gt;&lt;p&gt;続行しますか？&lt;/p&gt;</translation>
+        <translation>&lt;p&gt; VirtualBox 機能拡張パッケージ&quot;&lt;b&gt;%1&lt;/b&gt;&quot;を除去します。&lt;/p&gt;&lt;p&gt;続行しますか？&lt;/p&gt;</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2271"/>
         <source>The extension pack &lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt; was installed successfully.</source>
-        <translation type="obsolete">機能拡張パッケージ&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt;のインストールに成功しました。</translation>
+        <translation>機能拡張パッケージ&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;nobr&gt;&lt;br&gt;のインストールに成功しました。</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -9629,8 +9652,10 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">フロッピーイメージ</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2279"/>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="2286"/>
         <source>Failed to drop data.</source>
-        <translation type="obsolete">データのドロップに失敗しました。</translation>
+        <translation>データのドロップに失敗しました。</translation>
     </message>
     <message>
         <source>&lt;p&gt;USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; to be installed.&lt;/p&gt;&lt;p&gt;Please install the Extension Pack from the VirtualBox download site. After this you will be able to re-enable USB 2.0. It will be disabled in the meantime unless you cancel the current settings changes.&lt;/p&gt;</source>
@@ -9753,12 +9778,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMultiScreenLayout</name>
     <message>
-        <location filename="../src/runtime/UIMultiScreenLayout.cpp" line="319"/>
+        <location filename="../src/runtime/UIMultiScreenLayout.cpp" line="316"/>
         <source>Virtual Screen %1</source>
         <translation>仮想スクリーン %1</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIMultiScreenLayout.cpp" line="326"/>
+        <location filename="../src/runtime/UIMultiScreenLayout.cpp" line="323"/>
         <source>Use Host Screen %1</source>
         <translation>ホスト スクリーン %1 を使う</translation>
     </message>
@@ -10605,32 +10630,32 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UIPortForwardingModel</name>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="257"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="313"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="258"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="314"/>
         <source>Protocol</source>
         <translation>プロトコル</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="259"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="315"/>
         <source>Host IP</source>
         <translation>ホスト IP</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="260"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="316"/>
         <source>Host Port</source>
         <translation>ホスト ポート</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="261"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="317"/>
         <source>Guest IP</source>
         <translation>ゲスト IP</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsPortForwardingDlg.cpp" line="262"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="318"/>
         <source>Guest Port</source>
         <translation>ゲスト ポート</translation>
     </message>
@@ -13796,42 +13821,42 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="379"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="508"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="543"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Null Audio Driver</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="380"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="509"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="544"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Windows マルチメディア</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="381"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="510"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="545"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>OSS オーディオドライバー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="382"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="511"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="546"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>ALSA オーディオドライバー</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="383"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="512"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="547"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="384"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="513"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="548"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
@@ -13867,7 +13892,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="446"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="563"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="598"/>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
         <translation>LsiLogic SAS</translation>
@@ -14004,21 +14029,21 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="337"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="480"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="515"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>切断</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="338"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="481"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="516"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>ホストにパイプ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="339"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="482"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="517"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>ホストデバイス</translation>
@@ -14049,7 +14074,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="526"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1200"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="689"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="688"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
@@ -14063,7 +14088,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="484"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1168"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="666"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="665"/>
         <source>Enabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>有効</translation>
@@ -14071,7 +14096,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="485"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1169"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="667"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="666"/>
         <source>Disabled</source>
         <comment>details report (VT-x/AMD-V)</comment>
         <translation>無効</translation>
@@ -14115,7 +14140,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1188"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="692"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="691"/>
         <source>Execution Cap</source>
         <comment>details report</comment>
         <translation>使用率制限</translation>
@@ -14278,28 +14303,28 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="387"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="516"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="551"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
         <translation>Solaris オーディオ</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="386"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="515"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="550"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
         <translation>PulseAudio</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="398"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="528"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="563"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
         <translation>ICH AC97</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="399"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="529"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="564"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
         <translation>SoundBlaster 16</translation>
@@ -14537,42 +14562,42 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="442"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="559"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="594"/>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="443"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="560"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="595"/>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="444"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="561"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="596"/>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
         <translation>ICH6</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="441"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="558"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="593"/>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
         <translation>AHCI</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="439"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="556"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="591"/>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
         <translation>Lsilogic</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="440"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="557"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="592"/>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
@@ -14616,7 +14641,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1185"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="697"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="696"/>
         <source>Processor(s)</source>
         <comment>details report</comment>
         <translation>プロセッサー数</translation>
@@ -14656,7 +14681,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="340"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="483"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="518"/>
         <source>Raw File</source>
         <comment>PortMode</comment>
         <translation>Rawファイル</translation>
@@ -14997,14 +15022,14 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="367"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="495"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="530"/>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
         <translation>無視</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="368"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="496"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="531"/>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
         <translation>保持</translation>
@@ -15095,28 +15120,28 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="411"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="542"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="577"/>
         <source>Null</source>
         <comment>AuthType</comment>
         <translation>Null</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="412"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="543"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="578"/>
         <source>External</source>
         <comment>AuthType</comment>
         <translation>外部</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="413"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="544"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="579"/>
         <source>Guest</source>
         <comment>AuthType</comment>
         <translation>ゲスト</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="400"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="530"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="565"/>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
         <translation>Intel HD オーディオ</translation>
@@ -15144,7 +15169,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="445"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="562"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="597"/>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
         <translation>I82078</translation>
@@ -15345,36 +15370,36 @@ Version %1</source>
         </translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="671"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="670"/>
         <source>Enabled</source>
         <comment>nested paging</comment>
         <translation>有効</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="672"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="671"/>
         <source>Disabled</source>
         <comment>nested paging</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="676"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="675"/>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
         <translation type="unfinished">有効</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="677"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="676"/>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
         <translation type="unfinished">無効</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="690"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="689"/>
         <source>Nested Paging</source>
         <translation>ネステッドページング</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="691"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="690"/>
         <source>Unrestricted Execution</source>
         <translation type="unfinished"></translation>
     </message>
