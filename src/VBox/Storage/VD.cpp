@@ -5526,6 +5526,7 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
          * first if it was openend in read-write mode and open again afterwards.
          */
         if (   RT_UNLIKELY(rc == VERR_VD_IMAGE_CORRUPTED)
+            && !(uOpenFlags & VD_OPEN_FLAGS_READONLY)
             && pImage->Backend->pfnRepair)
         {
             rc = pImage->Backend->pfnRepair(pszFilename, pDisk->pVDIfsDisk, pImage->pVDIfsImage, 0 /* fFlags */);
