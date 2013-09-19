@@ -331,7 +331,6 @@ GLboolean crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id )
 GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
 {
     FreeElem *f;
-    CRASSERT(id != 0);
     CRASSERT(id <= pool->max);
 
     RTListForEach(&pool->freeList, f, FreeElem, Node)
