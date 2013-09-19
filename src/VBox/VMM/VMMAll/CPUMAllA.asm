@@ -157,7 +157,12 @@ hlfpua_switch_fpu_ctx:
     jz short hlfpua_no_fxsave
 %endif
 
+%ifdef RT_ARCH_AMD64
+    ; Use explicit REX prefix. See @bugref{6398}.
+    o64 fxsave  [xDX + CPUMCPU.Host.fpu]
+%else
     fxsave  [xDX + CPUMCPU.Host.fpu]
+%endif
     or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
     fxrstor [xDX + CPUMCPU.Guest.fpu]
 hlfpua_finished_switch:
