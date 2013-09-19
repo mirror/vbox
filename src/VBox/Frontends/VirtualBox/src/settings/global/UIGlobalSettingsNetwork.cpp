@@ -948,7 +948,7 @@ UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwo
         /* Replace all ':' with ',' first: */
         strIPv6Rule.replace(':', ',');
         /* But replace ',' back with ':' for addresses: */
-        QRegExp re("\\[[^:]+\\]");
+        QRegExp re("\\[[^:\\[\\]]+\\]");
         re.setMinimal(true);
         while (re.indexIn(strIPv6Rule) != -1)
         {
