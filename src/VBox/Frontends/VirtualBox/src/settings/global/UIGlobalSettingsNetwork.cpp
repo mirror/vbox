@@ -961,10 +961,7 @@ UIDataNetworkNAT UIGlobalSettingsNetwork::generateDataNetworkNAT(const CNATNetwo
         QStringList rules = strIPv6Rule.split(',');
         Assert(rules.size() == 6);
         if (rules.size() != 6)
-        {
-            printf("strIPv6Rule = {%s}\n", strIPv6Rule.toAscii().constData());
             continue;
-        }
         data.m_ipv6rules << UIPortForwardingData(rules[0],
                                                  gpConverter->fromInternalString<KNATProtocol>(rules[1]),
                                                  QString(rules[2]).remove('[').remove(']'),
