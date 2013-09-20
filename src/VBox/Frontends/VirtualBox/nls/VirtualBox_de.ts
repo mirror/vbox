@@ -1731,7 +1731,7 @@
     </message>
     <message>
         <source>Auto-Show in Fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatisch im Vollbildmodus</translation>
     </message>
     <message>
         <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
@@ -1786,11 +1786,11 @@
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;VirtualBox-Manager</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuelle &amp;Maschine</translation>
     </message>
     <message>
         <source>Lists all the available shortcuts which can be configured.</source>
@@ -1857,7 +1857,7 @@
     </message>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Sprachen der Nutzeroberfläche</translation>
     </message>
 </context>
 <context>
@@ -2012,15 +2012,15 @@
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kein neuer Name für das NAT-Netzwerk mit der bisherigen Bezeichnung &lt;b&gt;%1&lt;/b&gt; angegeben.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine CIDR-Adresse für das NAT-Netzwerk &lt;b&gt;%1&lt;/b&gt; angegeben.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine CIDR-Adresse für das NAT-Netzwerk mit der bisherigen Bezeichnung &lt;b&gt;%1&lt;/b&gt; angegeben.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
@@ -2032,31 +2032,31 @@
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-Name</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="unfinished"></translation>
+        <translation>[leer]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (umbenannt zu %2)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Alter Netzwerk-Name</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Neuer Netzwerk-Name</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished"></translation>
+        <translation>Netzwerk-CIDR</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Unterstützt DHCP</translation>
     </message>
     <message>
         <source>yes</source>
@@ -2068,7 +2068,7 @@
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>Unterstützt IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
@@ -2223,7 +2223,7 @@
     <name>UIGlobalSettingsNetworkDetailsHost</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished">Einstellungen für Host-only Netzwerk</translation>
+        <translation>Einstellungen für Host-only Netzwerk</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
@@ -2318,7 +2318,7 @@
     <name>UIGlobalSettingsNetworkDetailsNAT</name>
     <message>
         <source>NAT Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Einstellungen für NAT-Netzwerk</translation>
     </message>
     <message>
         <source>&amp;Enable Network</source>
@@ -2800,15 +2800,15 @@
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Videoaufzeichnung aktiv:&lt;/nobr&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Videoaufzeichnung deaktiviert&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture file:&lt;/b&gt; %1&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Videoaufzeichnungs-Datei:&lt;/b&gt; %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
@@ -3009,7 +3009,7 @@
     </message>
     <message>
         <source>Video &amp;Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Video&amp;aufzeichnung</translation>
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
@@ -3017,11 +3017,11 @@
     </message>
     <message>
         <source>&amp;Enable Video Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Videoaufzeichnung aktivieren</translation>
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>Datei&amp;pfad:</translation>
     </message>
     <message>
         <source>This setting determines the filename VirtualBox uses to save the recorded content.</source>
@@ -3029,7 +3029,7 @@
     </message>
     <message>
         <source>Frame &amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bild&amp;größe:</translation>
     </message>
     <message>
         <source>This setting determines the resolution (frame size) of the recorded video.</source>
@@ -3045,7 +3045,7 @@
     </message>
     <message>
         <source>&amp;Frame Rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bild&amp;rate:</translation>
     </message>
     <message>
         <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
@@ -3053,7 +3053,7 @@
     </message>
     <message>
         <source>&amp;Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Qualität:</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
@@ -3065,7 +3065,7 @@
     </message>
     <message>
         <source>&amp;Screens:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Bildschirme:</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
@@ -3101,34 +3101,34 @@
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 fps</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished"></translation>
+        <translation>fps</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>niedrig</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>mittel</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>hoch</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished"></translation>
+        <translation>kbps</translation>
     </message>
     <message>
         <source>Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Bildschirm %1</translation>
     </message>
     <message>
         <source>Enable video recording for screen %1.</source>
@@ -4258,7 +4258,7 @@
     </message>
     <message>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Zeigergerät:</translation>
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
@@ -7115,7 +7115,7 @@
     </message>
     <message>
         <source>Choose...</source>
-        <translation type="unfinished"></translation>
+        <translation>Schließen...</translation>
     </message>
 </context>
 <context>
@@ -8524,7 +8524,7 @@
     </message>
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sie können Medienabbilder in den VM-Einstellungen erzeugen oder hinzufügen.</translation>
     </message>
 </context>
 <context>
