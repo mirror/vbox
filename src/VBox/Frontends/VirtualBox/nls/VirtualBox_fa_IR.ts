@@ -2506,7 +2506,7 @@
         <translation>توضیحات ماشین مجازی را نشان میدهد.فیلد توضیحات برای نوشتن توضیح در جزئیات پیکربندی سیستم عامل مهمان نصب شده سودمند است.</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>وقتیکه انتخاب شده،هرگونه تغییر اجرا شده در سی دی/دی وی دی بارگیری شده یا رسانه فلاپی حین اِجرای ماشین در فایل تنظیمات بمنظور حفظ پیکربندی رسانه بارگیری شده بین اِجراها ذخیره خواهد شد.</translation>
     </message>
     <message>
@@ -3986,11 +3986,11 @@
         <translation>&lt;p&gt;موفق به حذف پوشه اشتراکی &lt;b&gt;%1&lt;/b&gt; (اشاره به &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) از ماشین مجازی &lt;b&gt;%3&lt;/b&gt; نشد.&lt;/p&gt;&lt;p&gt;Pلطفا همه برنامه ها را در سیستم عامل مهمان ببندید ممکن است از پوشه اشتراکی استفاده کنند،سپس دوباره سعی کنید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation>&lt;p&gt;آیا میخواهید ایمیج سی دی افزونه مهمان ویرچوال باکس را از &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (حجم %3 بایت) دانلود کنید؟&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation>&lt;p&gt;ایمیج سی دی افزونه مهمان ویرچوال باکس با موفقیت از &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; دانلود شد و بطور محلی بعنوان &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; ذخیره شد.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;آیا میخواهید این ایمیج سی دی را ثبت کرده و آن را در درایو سی دی/دی وی دی مجازی بارگیری کنید؟&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4309,7 +4309,7 @@
         <translation>موفق به حذف ضبط وضعیت &lt;b&gt;%1&lt;/b&gt; ماشین مجازی &lt;b&gt;%2&lt;/b&gt; نشد.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation>قادر به بارگیری %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; در ماشین &lt;b&gt;%3&lt;/b&gt; نیست.</translation>
     </message>
     <message>
@@ -4329,7 +4329,7 @@
         <translation>تخلیه اجباری</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;نمیتوان ایمیج سی دی نصب کننده افزونه مهمان ویرچوال باکس را داخل ماشین مجازی &lt;b&gt;%1&lt;/b&gt;قرار داد، چونکه ماشین درایو سی دی/دی وی دی ندارد. لطفا یک درایو توسط صفحه ذخیره ساز در پنجره تنظیمات ماشین مجازی اضافه کنید.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4367,7 +4367,7 @@
         <translation>ایمیج فلاپی</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
         <translation>&lt;p&gt;آیا میخواهید دستگاه سی دی/دی وی دی رام را حذف کنید؟&lt;/p&gt;&lt;p&gt;شما قادر به بارگیری سی دی یا ایمیج ایزو یا نصب افزونه مهمان بدون آن نیستید!&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4484,7 +4484,7 @@
         <translation>موفق به جداکردن دستگاه فلاپی (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) از شکاف &lt;i&gt;%2&lt;/i&gt; از ماشین &lt;b&gt;%3&lt;/b&gt; نشد.</translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>موفق به بروزرسانی افزونه مهمان نشد. ایمیج نصب افزونه مهمان برای ارائه نصب دستی بارگیری خواهد شد.</translation>
     </message>
     <message>
@@ -4757,7 +4757,7 @@
         <translation>موفق به رها کردن داده نشد.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation>&lt;p&gt;قادر به یافتن فایل ایمیج سی دی افزونه مهمان ویرچوال باکس نیست.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;آیا میخواهید ایمیج سی دی را از اینترنت دانلود کنید؟&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6200,7 +6200,7 @@
         <translation>فلاپی</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
         <translation>سی دی/دی وی دی-رام</translation>
     </message>

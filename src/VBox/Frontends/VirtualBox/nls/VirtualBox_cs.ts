@@ -1805,11 +1805,11 @@
         <translation type="obsolete">Zrušit</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Stahuji obraz CD Přídavky pro hosta VirtualBoxu z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Zrušit stahování obrazu CD Přídavky pro hosta VirtualBoxu</translation>
     </message>
     <message>
@@ -1864,11 +1864,11 @@
         <translation type="obsolete">Zrušit</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Stahuji obraz CD s Přídavky pro hosta VirtualBoxu z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Zrušit stahování obrazu CD s Přídavky pro hosta VirtualBoxu</translation>
     </message>
     <message>
@@ -2259,8 +2259,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Typ média</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM mechaniku</translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">&amp;CD/DVD mechaniku</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
@@ -2299,8 +2299,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Shrnutí</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM mechanika</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD mechanika</translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -2431,8 +2431,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Shrnutí</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM mechanika</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD mechanika</translation>
     </message>
     <message>
         <source>Type</source>
@@ -4972,7 +4972,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">O&amp;statní</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Je-li zatrženo, bude jakákoliv změna připojených CD/DVD nebo disket provedená za běhu počítače uložena v souboru nastavení za účelem zachování konfigurace připojených médií mezi starty.</translation>
     </message>
     <message>
@@ -5948,7 +5948,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add CD/DVD Device</source>
-        <translation>Přidat CD/DVD-ROM mechaniku</translation>
+        <translation>Přidat CD/DVD mechaniku</translation>
     </message>
     <message>
         <source>Add Floppy Device</source>
@@ -7182,19 +7182,19 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Nepodařilo se odstranit sdílený sdresář &lt;b&gt;%1&lt;/b&gt; (ukazující do &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) z virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Prosím zavřete všechny programy v hostovaném OS, které by jej mohly používat, a zkuste to znovu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepodařilo se stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jste si jistí, že chcete stáhnout obraz CD Přídavků pro hosta VirtualBoxu z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (velikost %3 bajtů)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Obraz CD Přídavků pro hosta VirtualBoxu byl úspěšně stažen z &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; a uložen lokálně jako &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete zaregistrovat tento obraz CD a připojit ho do virtuální CD/DVD mechaniky?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7801,7 +7801,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Selhalo odpojení %1 ze slotu &lt;i&gt;%2&lt;/i&gt; virtuálního počítače &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Nelze připojit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; k počítači &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -7825,8 +7825,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Selhalo vysunutí disku z virtuálního počítače. Disk může být být zablokován hostovaným operačním systémem. Zkontrolujte to prosím a zkuste znovu.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Nepodařilo se připojit obraz CD disku s instalací přídavků pro aplikaci VirtualBox do virtuálního počítače &lt;b&gt;%1&lt;/b&gt; protože nemá CD/DVD-ROM zařízení. Přidejte prosím zařízení na záložce uložiště ve vlastnostech virtuálního počítače.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Nepodařilo se připojit obraz CD disku s instalací přídavků pro aplikaci VirtualBox do virtuálního počítače &lt;b&gt;%1&lt;/b&gt; protože nemá CD/DVD zařízení. Přidejte prosím zařízení na záložce uložiště ve vlastnostech virtuálního počítače.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -7873,8 +7873,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">disketová mechanika</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Opravdu chcete smazat CD/DVD-ROM zařízení?&lt;/p&gt;&lt;p&gt;Bez něj nebudete moci připojit žádný CD nebo DVD obraz ani nainstalovat přídavky pro hosta!&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Opravdu chcete smazat CD/DVD zařízení?&lt;/p&gt;&lt;p&gt;Bez něj nebudete moci připojit žádný CD nebo DVD obraz ani nainstalovat přídavky pro hosta!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -8014,7 +8014,7 @@ p, li { white-space: pre-wrap; }
         </translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Nepodařilo se aktualizovat přídavky pro hosta. Obraz s instalací přídavku pro hosta bude připojen pro možnost ruční instalace.</translation>
     </message>
     <message>
@@ -8329,7 +8329,7 @@ p, li { white-space: pre-wrap; }
         <translation>Vytváříte nový virtuální počítač bez pevného disku. Pokud do něj nějaký pevný disk nepřidáte, nebude možné nainstalovat operační systém. Bude možné spustit virtuální počítač pouze pomocí virtuálního optického disku nebo ze sítě.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nelze najít obraz CD Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;/p&gt;&lt;p&gt;Chcete stáhnout tento obraz CD z internetu?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8397,7 +8397,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8473,27 +8473,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8542,15 +8542,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8558,19 +8558,19 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Stáhnout</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8609,11 +8609,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Zrušit</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Zruší stahování obrazu CD s přídavky pro hosta aplikace VirtualBox</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Stahování obrazu CD s přídavky pro hosta &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -8639,11 +8639,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Zruší stahování obrazu CD disku s přídavky pro hosta</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Stahování CD obrazu disku s přídavky pro hosta z &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -11299,11 +11299,11 @@ Verze %1</translation>
         <translation type="obsolete">Odpojí soubor s obrazem diskety</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM obraz...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">&amp;CD/DVD obraz...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
+        <source>Mount a CD/DVD image file</source>
         <translation type="obsolete">Připojí soubor s obrazem CD/DVD</translation>
     </message>
     <message>
@@ -11311,7 +11311,7 @@ Verze %1</translation>
         <translation type="obsolete">Odpojit C&amp;D/DVD</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
+        <source>Unmount the currently mounted CD/DVD media</source>
         <translation type="obsolete">Odpojí právě připojené CD/DVD medium</translation>
     </message>
     <message>
@@ -11384,7 +11384,7 @@ Verze %1</translation>
         <translation type="obsolete">Připoji&amp;t disketu</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
+        <source>Mount &amp;CD/DVD</source>
         <translation type="obsolete">Připojit &amp;CD/DVD</translation>
     </message>
     <message>
@@ -11430,7 +11430,7 @@ Verze %1</translation>
         <translation type="obsolete">nepřipojena</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Indikuje&amp;nbsp;aktivitu&amp;nbsp;CD/DVD&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -11497,7 +11497,7 @@ Verze %1</translation>
         <translation type="obsolete">Snímek %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nelze najít CD obraz Přídavků pro hosta VirtualBoxu &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nebo &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11589,9 +11589,9 @@ Verze %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Žádné připojené médium&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu CD/DVD:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -12034,7 +12034,7 @@ Verze %1</translation>
         <translation type="obsolete">Vyberte obraz disku</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
+        <source>Select a CD/DVD disk image file</source>
         <translation type="obsolete">Vyberte CD/DVD obraz</translation>
     </message>
     <message>
@@ -12062,7 +12062,7 @@ Verze %1</translation>
         <translation type="obsolete">Aktualizuje seznam médií</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
         <translation type="obsolete">CD/DVD obrazy (*.iso);;Všechny soubory (*)</translation>
     </message>
     <message>
@@ -12381,7 +12381,7 @@ Verze %1</translation>
         <translation type="obsolete">Hostitelská jednotka</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
         <translation type="obsolete">CD/DVD</translation>
     </message>
@@ -12545,7 +12545,7 @@ Verze %1</translation>
         <translation>Disketa</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
         <translation>CD/DVD</translation>
     </message>
@@ -13544,8 +13544,8 @@ Verze %1</translation>
         <translation type="obsolete">Vybrat soubor s obrazem virtuálního CD/DVD</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete"> CD/DVD-ROM disk</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete"> CD/DVD disk</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -14481,11 +14481,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Vyberte soubor s obrazem disku</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
         <translation type="obsolete">CD/DVD obrazy (*.iso);;Všechny soubory (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
+        <source>Select a CD/DVD disk image file</source>
         <translation type="obsolete">Vyberte soubor s obrazem CD/DVD</translation>
     </message>
     <message>
@@ -14553,8 +14553,8 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Připojen k</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">CD/DVD-ROM disk</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD disk</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -15850,8 +15850,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation>Rozlišení obrazovky</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">Statistika CD/DVD-ROM</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">Statistika CD/DVD</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -16198,7 +16198,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Hostitelská CD/&amp;DVD mechanika</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Vypíše hostitelské CD/DVD mechaniky dostupné pro připojení k virtuálnímu počítači.</translation>
     </message>
     <message>
@@ -16257,8 +16257,8 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete"> Disketa </translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete"> CD/DVD </translation>
     </message>
     <message>
         <source> Audio </source>
@@ -16643,7 +16643,7 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
         <translation type="obsolete">Vyvolá Správce virtuálních disků pro vytvoření nového nebo výběr existujícího pevného disku pro připojení.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Vypíše hostitelské disketové mechaniky dostupné pro připojení k virtuálnímu počítači.</translation>
     </message>
     <message>
@@ -16651,7 +16651,7 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
         <translation type="obsolete">Vyvolá Správce virtuálních disků pro výběr obrazu diskety pro připojení.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Vypíše hostitelské CD/DVD mechaniky dostupné pro připojení k virtuálnímu počítači.</translation>
     </message>
     <message>
@@ -16742,7 +16742,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">Pamatovat si &amp;média připojená za běhu</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">Je-li zatrženo, bude jakákoliv změna připojených CD/DVD nebo disket provedená za běhu počítače uložena v souboru nastavení za účelem zachování konfigurace připojených médií mezi starty.</translation>
     </message>
     <message>
@@ -16830,7 +16830,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">Pevné disky</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
@@ -16929,7 +16929,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">Hostitelská &amp;disketová mechanika</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Vypíše hostitelské disketové mechaniky dostupné pro připojení k virtuálnímu počítači.</translation>
     </message>
     <message>

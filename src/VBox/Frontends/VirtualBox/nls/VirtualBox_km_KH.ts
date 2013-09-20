@@ -1290,11 +1290,11 @@
         <translation type="obsolete">បោះពុម្ព</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
     </message>
     <message>
@@ -1662,7 +1662,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ប្រភេទ​មេឌៀ</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
+        <source>&amp;CD/DVD Device</source>
         <translation type="obsolete">ឧបករណ៍​ស៊ីឌី/ឌីវីឌី​រ៉ូម</translation>
     </message>
     <message>
@@ -1690,7 +1690,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">សេចក្ដីសង្ខេប</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
+        <source>CD/DVD Device</source>
         <translation type="obsolete">ឧបករណ៍​ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
     </message>
     <message>
@@ -1793,7 +1793,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;ប្រសិន​បើ​ខា​ងលើ​ត្រឹមត្រូវ​ហើយ ចុច​ប៊ូតុង &lt;b&gt;បញ្ចប់&lt;/b&gt; ។ នៅពេល​អ្នក​ចុច​វា មេឌៀ​ដែល​បាន​ជ្រើស​នឹង​ត្រូវ​បានម៉ោន​​លើ​ម៉ាស៊ីន​និម្មិត ហើយ​ម៉ាស៊ីន​នឹង​ចាប់ផ្ដើម​ប្រតិបត្តិ ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
+        <source>CD/DVD Device</source>
         <translation type="obsolete">ឧបករណ៍​ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
     </message>
     <message>
@@ -4163,7 +4163,7 @@ p, li { white-space: pre-wrap; }
         <translation>បង្ហាញ​សេចក្ដីពិពណ៌នា​របស់ម៉ាស៊ីន​និម្មិត ។ វាល​សេចក្ដី​ពិពន៌នា​មានប្រយោជន៍​សម្រាប់​ផ្ដល់​យោបល់​អំពី​សេចក្ដី​លម្អិត​កំណត់​រចនាសម្ព័ន្ធ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បាន​ដំឡើង ។</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>ប្រសិនបើបាន​គូស​ធីក ការ​ផ្លាស់ប្ដូរ​ទៅ​មេឌៀ​ថាសទន់ ឬ​ស៊ីឌី/ឌីវីឌី​ដែល​បានម៉ោន​ បាន អនុវត្ត​កំឡុង​ពេល​​ប្រតិបត្តិការ​ម៉ាស៊ីន នឹង​ត្រូវ​បាន​រក្សាទុក​ក្នុង​ឯកសារ​កំណត់​ ដើម្បី​បម្រុង​ទុក​នូវ​ការ​កំណត់​រចនាសម្ព័ន្ធ​របស់​មេឌៀ​ដែល​បានម៉ោន​​ចន្លោះ​ពេល​រត់ ។</translation>
     </message>
     <message>
@@ -5832,19 +5832,19 @@ network adapter name</comment>
         <translation>&lt;p&gt;បានបរាជ័យ​ក្នុងកា​រយក​ថត​ដែល​បានចែករំលែក &lt;b&gt;%1&lt;/b&gt; ចេញ (ចង្អុល​ទៅ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) ពី​ម៉ាស៊ីន​និម្មិត &lt;b&gt;%3&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បិទ​កម្មវិធី​ទាំង​អស់​នៅ​ក្នុង​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់ម៉ាស៊ីន​ភ្ញៀវ​ដែល​អាច​កំពុង​ប្រើ​ថត​ដែលបានចែករំលែក​នេះ ហើយ​ព្យាយាម​ម្ដង​ទៀត ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;មិនអាច​រក​​ឯកសារ​រូបភាព​ស៊ីឌី​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ឬ &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​ពី​អ៊ីនធឺណិត​ដែរឬទេ ?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;បាន​បរាជ័យ​ក្នុងកា​រទាញ​​​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;តើ​អ្នក​ប្រាក​ដ​ជា​ចង់​ទាញ​យក​រូបភាព​ស៊ីឌី​បន្ថែម​របស់​ម៉ាស៊ីន​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (ទំហំ %3 បៃ) ដែរឬទេ?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;រូបភាពស៊ីឌីផ្នែក​នែក​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ VirtualBត្រូ​វបាន​ទាញយក​ដោយ​ជោគជ័យ​ពីr&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;​%2&lt;/a&gt;&lt;/nobr&gt;bហើយ​បាន​រក្សាទុក​ក្នុង​មូលដ្ឋាន​ជា as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt; ។&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;តើ​អ្នក​ចង់​ចុះឈ្មោះ​រូបភាព​ស៊ីឌី​នេះ ហើយ​ម៉ោន​វា​នៅ​លើ​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​និម្មិតដែរឬទេ ?ve?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6266,7 +6266,7 @@ medium</comment>
         <translation type="obsolete">បាន​បរាជ័យ​ក្នុង​ការ​ផ្ដាច់​ %1 ពី​រន្ធ &lt;i&gt;%2&lt;/i&gt; របស់​ម៉ាស៊ីន&lt;b&gt;%3&lt;/b&gt; ។</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">មិនអាច​ម៉ោន %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; នៅ​លើ​ម៉ាស៊ីន &lt;b&gt;%3&lt;/b&gt;បាន​ទេ ។</translation>
     </message>
     <message>
@@ -6298,7 +6298,7 @@ medium</comment>
         <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​​​បង្កើត​ចំណុច​ប្រ​ទាក់​បណ្តាញ​ម៉ាស៊ីន​​-តែ​មួយ​</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;មិនអាច​បញ្ចូល​រូបភាព​ស៊ីឌី​កម្មវិធី​ដំឡើង​បន្ថែម​របស់​ម៉ាស៊ីន VirtualBox ​ទៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត​&lt;b&gt;%1&lt;/b&gt;បាន​ទេ ព្រោះ​ថា​ម៉ាស៊ីន​មាន​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​រ៉ូម ។ សូម​បន្ថែម​ដ្រាយ ដោយ​ប្រើ​ទំព័រ​ផ្ទុក​នៃ​ប្រអប់​កំណត់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6443,7 +6443,7 @@ failed to close ...</comment>
         <translation type="obsolete">ឧបករណ៍​ថាសទន់​</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
         <translation>&lt;p&gt;តើ​​​អ្នក​ប្រាកដ​ជា​ចង់​លុប​ឧបករណ៍​​ស៊ី​ឌី​​/​ឌី​វីឌី​-រ៉ូម​ឬ​​?&lt;/p&gt;&lt;p&gt;អ្នក​នឹង​​មិន​អាច​ម៉ោន​ស៊ី​ឌី​ ឬ​រូប​ភាព ISO ឬ​ដំឡើង​​ការ​បន្ថែម​ម៉ាស៊ីន​ភ្ញៀវ​​ដោយ​គ្មាន​វា​បាន​​ទេ ​​!&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6586,7 +6586,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6899,7 +6899,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6975,27 +6975,27 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7042,15 +7042,15 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7058,19 +7058,19 @@ medium</comment>
         <translation type="unfinished">ទាញយក</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7105,22 +7105,22 @@ medium</comment>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">បោះបង់ការ​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​ភ្ញៀវ VirtualBox</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">កំពុង​ទាញយក​រូបភាព​ស៊ីឌី​បន្ថែម​​ភ្ញៀវ​របស់ VirtualBox ពី &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -9687,7 +9687,7 @@ Virtualization Stuff LED</comment>
         <translation>ថាសទន់</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
         <translation>ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
     </message>
@@ -11693,11 +11693,11 @@ medium</comment>
         <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាសរឹង</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
         <translation type="obsolete">រូបភាព​ស៊ីឌី/ឌីវីឌី​រ៉ូម (*.iso);; ឯកសារ​ទាំងអស់ (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
+        <source>Select a CD/DVD disk image file</source>
         <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ស៊ីឌី/ឌីវីឌីរ៉ូម</translation>
     </message>
     <message>
@@ -12590,7 +12590,7 @@ details report (VRDP server port)</comment>
         <translation type="obsolete">ថាសរឹង</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <translation type="obsolete">ស៊ីឌី/ឌីវីឌី​រ៉ូម</translation>
     </message>
     <message>

@@ -9678,7 +9678,7 @@ Zvolte, prosím, pro soubor jiný název.</translation>
     </message>
     <message>
         <location line="+131"/>
-        <source>Component with id %1 has been defined previously.</source>
+        <source>Component with the identifier %1 has been defined previously.</source>
         <translation>Součást s ID %1 je již stanovena.</translation>
     </message>
     <message>

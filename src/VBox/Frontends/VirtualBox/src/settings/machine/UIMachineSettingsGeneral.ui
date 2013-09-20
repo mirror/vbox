@@ -188,7 +188,7 @@
              </sizepolicy>
             </property>
             <property name="whatsThis" >
-             <string>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</string>
+             <string>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</string>
             </property>
             <property name="text" >
              <string>&amp;Remember Runtime Changes</string>
