@@ -1249,8 +1249,8 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PVMCPU pVCpu = &pVM->aCpus[i];
-            LogRel(("HM: CPU[%u] Last instruction error %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
-            LogRel(("HM: CPU[%u] HM error               %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
+            LogRel(("HM: CPU[%u] Last instruction error  %#x\n", i, pVCpu->hm.s.vmx.LastError.u32InstrError));
+            LogRel(("HM: CPU[%u] HM error                %#x (%u)\n", i, pVCpu->hm.s.u32HMError, pVCpu->hm.s.u32HMError));
         }
         return VMSetError(pVM, rc, RT_SRC_POS, "VT-x setup failed: %Rrc", rc);
     }
@@ -1298,13 +1298,13 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     {
         LogRel(("HM: Nested paging enabled!\n"));
         if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_SINGLE_CONTEXT)
-            LogRel(("HM:   EPT flush type               = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
+            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_SINGLE_CONTEXT\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_ALL_CONTEXTS)
-            LogRel(("HM:   EPT flush type               = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
+            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_ALL_CONTEXTS\n"));
         else if (pVM->hm.s.vmx.enmFlushEpt == VMX_FLUSH_EPT_NOT_SUPPORTED)
-            LogRel(("HM:   EPT flush type               = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
+            LogRel(("HM:   EPT flush type                = VMX_FLUSH_EPT_NOT_SUPPORTED\n"));
         else
-            LogRel(("HM:   EPT flush type               = %d\n", pVM->hm.s.vmx.enmFlushEpt));
+            LogRel(("HM:   EPT flush type                = %d\n", pVM->hm.s.vmx.enmFlushEpt));
 
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             LogRel(("HM: Unrestricted guest execution enabled!\n"));
