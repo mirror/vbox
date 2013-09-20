@@ -1228,7 +1228,7 @@ static int darwinLedElementSetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
     {
         rc = IOHIDDeviceSetValue(hidDevice, element, valueRef);
         if (rc != kIOReturnSuccess)
-            LogRelFlow(("Warning! Something went wrong in attempt to turn %s HID device led (error %d)!\n", ((fEnabled) ? "on" : "off"), rc));
+            Log2(("Warning! Something went wrong in attempt to turn %s HID device led (error %d)!\n", ((fEnabled) ? "on" : "off"), rc));
         else
             Log2(("Led (%d) is turned %s\n", (int)IOHIDElementGetUsage(element), ((fEnabled) ? "on" : "off")));
 
@@ -1430,7 +1430,7 @@ void * DarwinHidDevicesKeepLedsState(void)
 
                     rc = IOHIDManagerClose(hidsState->hidManagerRef, 0);
                     if (rc != kIOReturnSuccess)
-                        LogRelFlow(("Warning! Something went wrong in attempt to close HID device manager!\n"));
+                        Log2(("Warning! Something went wrong in attempt to close HID device manager!\n"));
                 }
 
                 CFRelease(deviceMatchingDictRef);
@@ -1487,7 +1487,7 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 
         rc = IOHIDManagerClose(hidsState->hidManagerRef, 0);
         if (rc != kIOReturnSuccess)
-            LogRelFlow(("Warning! Something went wrong in attempt to close HID device manager!\n"));
+            Log2(("Warning! Something went wrong in attempt to close HID device manager!\n"));
 
         CFRelease(hidsState->hidManagerRef);
 
@@ -1558,7 +1558,7 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
 
                 rc = IOHIDManagerClose(hidManagerRef, 0);
                 if (rc != kIOReturnSuccess)
-                    LogRelFlow(("Warning! Something went wrong in attempt to close HID device manager!\n"));
+                    Log2(("Warning! Something went wrong in attempt to close HID device manager!\n"));
             }
 
             CFRelease(deviceMatchingDictRef);
