@@ -2654,13 +2654,13 @@
  * Defined as the major MSC version if the compiler have and uses intrin.h.
  * Otherwise it is 0. */
 #ifdef _MSC_VER
-# if   _MSC_VER >= 1700
+# if   _MSC_VER >= 1700 /* Visual C++ v11.0 / 2012 */
 #  define RT_INLINE_ASM_USES_INTRIN 17
-# elif _MSC_VER >= 1600
+# elif _MSC_VER >= 1600 /* Visual C++ v10.0 / 2010 */
 #  define RT_INLINE_ASM_USES_INTRIN 16
-# elif _MSC_VER >= 1500
+# elif _MSC_VER >= 1500 /* Visual C++ v9.0 / 2008 */
 #  define RT_INLINE_ASM_USES_INTRIN 15
-# elif _MSC_VER >= 1400
+# elif _MSC_VER >= 1400 /* Visual C++ v8.0 / 2005 */
 #  define RT_INLINE_ASM_USES_INTRIN 14
 # endif
 #endif
