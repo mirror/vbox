@@ -109,7 +109,7 @@ public:
     {
         setFrame(false);
         setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-        setValidator(new QRegExpValidator(QRegExp("[^,]*"), this));
+        setValidator(new QRegExpValidator(QRegExp("[^,:]*"), this));
     }
 
 private:
