@@ -2632,10 +2632,16 @@ static void surface_upload_data(struct wined3d_surface *surface, const struct wi
                 surface->texture_target, surface->texture_level, dst_point->x, dst_point->y,
                 update_w, update_h, format->glFormat, format->glType, addr);
 
+#ifdef VBOX_WITH_WINE_FIX_SURFUPDATA
+        gl_info->gl_ops.gl.p_glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+#endif
         gl_info->gl_ops.gl.p_glPixelStorei(GL_UNPACK_ROW_LENGTH, src_pitch / format->byte_count);
         gl_info->gl_ops.gl.p_glTexSubImage2D(surface->texture_target, surface->texture_level,
                 dst_point->x, dst_point->y, update_w, update_h, format->glFormat, format->glType, addr);
         gl_info->gl_ops.gl.p_glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+#ifdef VBOX_WITH_WINE_FIX_SURFUPDATA
+        gl_info->gl_ops.gl.p_glPixelStorei(GL_UNPACK_ALIGNMENT, surface->resource.device->surface_alignment);
+#endif
         checkGLcall("glTexSubImage2D");
     }
 
