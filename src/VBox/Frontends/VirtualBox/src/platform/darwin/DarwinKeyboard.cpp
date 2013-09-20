@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_KBD_LEDS_SYNC
+//#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -289,7 +289,7 @@ static uint32_t     g_fOldHIDModifierMask;
 
 #endif /* USE_HID_FOR_MODIFIERS */
 
-#ifdef VBOX_KBD_LEDS_SYNC
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
 /* HID LEDs synchronization data: LED states. */
 typedef struct VBoxHidLeds_t {
     bool             fNumLockOn;
@@ -304,7 +304,7 @@ typedef struct VBoxHidsState_t {
     VBoxHidLeds_t   *hidLedsCollection;
     CFIndex          cDevices;
 } VBoxHidsState_t;
-#endif /* VBOX_KBD_LEDS_SYNC */
+#endif /* VBOX_WITH_KBD_LEDS_SYNC */
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -1150,7 +1150,7 @@ void     DarwinReleaseKeyboard(void)
 #endif /* USE_HID_FOR_MODIFIERS */
 }
 
-#ifdef VBOX_KBD_LEDS_SYNC
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
 /** Prepare dictionary that will be used to match HID LED device(s) while discovering. */
 static CFDictionaryRef darwinGetLedDeviceMatchingDictionary()
 {
@@ -1357,12 +1357,12 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 
     return rc2;
 }
-#endif /* VBOX_KBD_LEDS_SYNC */
+#endif /* VBOX_WITH_KBD_LEDS_SYNC */
 
 /** Save the states of leds for all HID devices attached to the system and return it. */
 void * DarwinHidDevicesKeepLedsState(void)
 {
-#ifdef VBOX_KBD_LEDS_SYNC
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
     IOReturn         rc;
     VBoxHidsState_t *hidsState;
 
@@ -1449,7 +1449,7 @@ void * DarwinHidDevicesKeepLedsState(void)
     }
 
     return NULL;
-#else /* VBOX_KBD_LEDS_SYNC */
+#else /* VBOX_WITH_KBD_LEDS_SYNC */
     return NULL;
 #endif
 }
@@ -1463,7 +1463,7 @@ void * DarwinHidDevicesKeepLedsState(void)
  */
 int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 {
-#ifdef VBOX_KBD_LEDS_SYNC
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
     VBoxHidsState_t *hidsState = (VBoxHidsState_t *)pState;
 
     CFIndex     i;
@@ -1505,7 +1505,7 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
     }
 
     return rc2;
-#else /* VBOX_KBD_LEDS_SYNC */
+#else /* VBOX_WITH_KBD_LEDS_SYNC */
     (void)pState;
     return 0;
 #endif
@@ -1524,7 +1524,7 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn)
 {
 /* Temporary disabled */
-#ifdef VBOX_KBD_LEDS_SYNC
+#ifdef VBOX_WITH_KBD_LEDS_SYNC
     IOReturn        rc;
     IOHIDManagerRef hidManagerRef;
 
@@ -1582,7 +1582,7 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
 
         CFRelease(hidManagerRef);
     }
-#else /* VBOX_KBD_LEDS_SYNC */
+#else /* VBOX_WITH_KBD_LEDS_SYNC */
     (void)fNumLockOn;
     (void)fCapsLockOn;
     (void)fScrollLockOn;
