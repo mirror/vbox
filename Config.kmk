@@ -1694,9 +1694,10 @@ endif
 #
 # Note! Yes, --max-branchs is a typo, but not by me.
 #
-# Note! Users of pylint 1.0 and later needs to define VBOX_WITH_PYLINT_V1_0 in
-#       LocalConfig because they changed the output arguments in an
-#       backwards incomaptible way.
+# Note! Users of older pylint release (< 1.0) needs to define
+#       VBOX_WITH_PYLINT_PRE_V1_0 in LocalConfig because they changed the
+#	 output arguments in an backwards incompatible way and added more
+#       attribute regex options.
 #
 ifndef VBOX_PYLINT
  VBOX_PYLINT        := $(firstword $(which pylint-2.7) $(which pylint-2.6) $(which pylint2) $(which pylint))
@@ -1708,14 +1709,14 @@ if !defined(VBOX_WITH_PYLINT) && defined(VBOX_PYLINT)
  VBOX_WITH_PYLINT := 1
 endif
 VBOX_PYLINT_FLAGS   := --report=n \
-	$(if-expr defined(VBOX_WITH_PYLINT_V1_0)\
+	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0)\
 	  ,--msg-template='{path}:{line}: {msg_id}({obj}:{symbol}): {msg}' \
 	  ,--output-format=msvs --include-ids=y) \
 	--persistent=n \
 	--rcfile=$(if-expr "$(KBUILD_HOST)" == "win",nul,/dev/null) \
 	--max-line-length=130 \
 	--max-attributes=20 \
-	--max-branch$(if-expr defined(VBOX_WITH_PYLINT_V1_0),e,)s=50 \
+	--max-branch$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),e,)s=50 \
 	--max-statements=100 \
 	--max-returns=100 \
 	--max-public-methods=139 \
@@ -1732,7 +1733,7 @@ VBOX_PYLINT_FLAGS   := --report=n \
 	--class-rgx='(td|)[A-Z_][a-zA-Z0-9_]+$(DOLLAR)' \
 	--const-rgx='(g_(k|)[abcdefhmnpilorstu]+[A-Z][a-zA-Z0-9]+|[A-Z_][A-Z0-9_]+|__copyright__|__version__|__file__|__all__)$(DOLLAR)' \
 	--good-names='i,j,k,t,o,c,e,_' \
-	$(if-expr defined(VBOX_WITH_PYLINT_V1_0),--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
+	$(if-expr !defined(VBOX_WITH_PYLINT_PRE_V1_0),--class-attribute-rgx='(k[abcdefhmnpilorstu]+[A-Z0-9][a-zA-Z0-9_]{0,32}|[A-Z_][A-Z0-9_]{2,32})',) \
 	--disable=W0301,W0511,W0603,W0702,W0703,C0321,R0201,I0011 \
 	--ignored-classes=testdriver.vboxcon \
 
