@@ -581,7 +581,7 @@
         <translation type="unfinished">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
@@ -615,7 +615,7 @@
         <translation type="unfinished">Gestionar medii &amp;virtuale...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">Afișează dialogul Gestionar medii virtuale</translation>
     </message>
     <message>
@@ -640,7 +640,7 @@
         <translation type="unfinished">&amp;Preferințe...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Afișează dialogul preferințe globale</translation>
     </message>
     <message>
@@ -1862,7 +1862,7 @@
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Sursă:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ați pornit o mașină virtuală nouă pentru prima oară. Acest asistent vă va ajuta să efectuați pașii necesari bootării unui sistem de operare ales de dvs pe mașina virtuală.&lt;/p&gt;&lt;p&gt;Notați faptul că nu veți putea instala acum un sistem de operare musafir chiar acum, pentru că nu ați conectat nici un disc dur la ea. Dacă nu asta doriți, puteți revoca execuția acestui asistent, apoi selectați &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări al acestei mașini și schimba configurația discului dur.&lt;/p&gt;&lt;p&gt;Folosiți butonul &lt;b&gt;Înainte&lt;/b&gt; pentru a merge la pagina următoare și butonul &lt;b&gt;Înapoi&lt;/b&gt; pentru a reveni la pagina anterioară. Puteți apăsa oricând butonul &lt;b&gt;Renunță&lt;/b&gt; pentru a opri execuția acestui asistent.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -1931,7 +1931,7 @@
         <translation type="obsolete">&lt;p&gt;Ați pornit pentru prima oară o mașină virtuală proaspăt creată. Acest asistent vă va ajuta să parcurgeți pașii necesari pentru instalarea unui sistem de operare la alegerea dvs pe această mașină virtuală.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ați pornit pentru prima oară o mașină virtuală proaspăt creată. Acest asistent vă va ajuta să parcurgeți pașii necesari pentru bootarea unui sistem de operare la alegerea dvs pe această mașină virtuală.&lt;/p&gt;&lt;p&gt;Notați faptul că nu veți putea instala acum un sistem de operare pe această mașină virtuală deoarece nu ați atașat niciun disc dur la ea. Dacă acest lucru nu este ceea ce doriți, puteți anula execuția acestui asistent, apoi selecta &lt;b&gt;Setări&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox pentru a accesa dialogul de setări și a schimba configurarea discurilor dure.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3254,7 +3254,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4518,7 +4518,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Ca&amp;blu de rețea conectat</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6221,12 +6221,12 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut găsi un fișier de limbă pentru limba &lt;b&gt;%1&lt;/b&gt; în directorul &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;
 &lt;p&gt;Limbajul interfeței va fi resetată temporar la cea implicită a sistemului. Mergeți la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteți deschide din meniul &lt;b&gt;Fișier&lt;/b&gt; al ferestrei principale VirtualBox, și selectați o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut încărca fișierul de limbă &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Limbajul interfeței va fi resetată temporar la Engleză (implicit). Mergeți la dialogul &lt;b&gt;Setări globale&lt;/b&gt; pe care îl puteți deschide din meniul &lt;b&gt;Fișier&lt;/b&gt; al ferestrei principale VirtualBox, și selectați o limbă existentă în pagina &lt;b&gt;Limbă&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6295,7 +6295,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">&lt;p&gt;O eroare critică s-a petrecut în timpul execuției mașinii virtuale și execuția a fost oprită.&lt;/p&gt;&lt;p&gt;Pentru ajutor, vă rugăm verificați secțiunea Community pe &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; sau contractul dvs de suport tehnic. Vă rugăm oferiți conținutul fișierului jurnal &lt;tt&gt;VBox.log&lt;/tt&gt; și fișierul imagine &lt;tt&gt;VBox.png&lt;/tt&gt;, pe care le puteți găsi în dosarul &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, alături de o descriere a ceea ce făceați în momentul producerii acestei erori. Notați că puteți de asemenea accesa fișierele de mai sus selectând &lt;b&gt;Afișează jurnal&lt;/b&gt; din meniul &lt;b&gt;Mașină&lt;/b&gt; al ferestrei principale VirtualBox.&lt;/p&gt;&lt;p&gt;Apăsați &lt;b&gt;OK&lt;/b&gt; dacă doriți să opriți mașina sau apăsați &lt;b&gt;Ignoră&lt;/b&gt; dacă doriți să o lăsați așa cum este pentru depanare. Notați că depanarea necesită cunoștințe și unelte speciale, astfel că este recomandat să apăsați &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu ați conectat nici un disc dur la mașina virtuală nouă. Mașina nu va fi capabilă să booteze dacă nu conectați un disc dur cu un sistem de operare musafir sau un alt mediu bootabil, folosind dialogul setări mașină sau Asistentul de primă rulare.&lt;/p&gt;&lt;p&gt;Doriți să continuați?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6573,7 +6573,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
@@ -7193,15 +7193,15 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Închidere mașină virtuală</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7378,7 +7378,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8016,7 +8016,7 @@ Va fi folosit de către toate produsele VirtualBox pentru a identifica mașina v
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selectați imaginea de disc hard virtual care va fi folosită
@@ -8131,7 +8131,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">&lt;p&gt;Introduceți un nume pentru noua mașină virtuală și selectați tipul sistemului de operare musafir pe care plănuiți să îl instalați în mașină.&lt;/p&gt;&lt;p&gt;Numele mașinii virtuale indică în mod uzual configurația software și hardware. Va fi folosit de către toate produsele VirtualBox pentru a identifica mașina virtuală creată.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selectați imaginea de disc hard virtual care va fi folosită ca disc de boot pentru mașina virtuală. Puteți fie crea un disc hard nou utilizând butonul &lt;b&gt;Nou&lt;/b&gt; sau puteți selecta o imagine de disc hard existentă din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialogul Manager discuri virtuale).&lt;/p&gt;&lt;p&gt;Dacă aveți nevoie de setarea mai complexă a unui disc virtual, puteți sări peste acest pas și să atașați ulterior un disc hard utilizând dialogul Setări MV.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8176,7 +8176,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
         <translation type="obsolete">Renunță</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selectați imaginea de disc hard virtual care va fi folosită ca disc de pornire pentru mașina virtuală. Puteți fie crea un disc fix nou utilizând butonul &lt;b&gt;Nou&lt;/b&gt; sau selecta o imagine de disc fix existentă din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialogul Gestionar discuri virtuale).&lt;/p&gt;&lt;p&gt;Dacă aveți nevoie de setarea mai complexă a unui disc virtual, puteți sări peste acest pas și atașa ulterior un disc fix utilizând dialogul Setări mașină virtuală.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8253,7 +8253,7 @@ din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialog
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Selectați imaginea de disc hard virtual care va fi folosită ca disc de pornire pentru mașina virtuală. Puteți fie crea un disc fix nou utilizând butonul &lt;b&gt;Nou&lt;/b&gt; sau selecta o imagine de disc fix existentă din listă apăsând butonul &lt;b&gt;Existent&lt;/b&gt; (pentru a invoca dialogul Administrator discuri virtuale).&lt;/p&gt;&lt;p&gt;Dacă aveți nevoie de setarea mai complexă a unui disc virtual, puteți sări peste acest pas și atașa ulterior un disc fix utilizând dialogul Setări mașină virtuală.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9933,7 +9933,7 @@ Versiunea %1</translation>
         <translation type="obsolete">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
@@ -10764,7 +10764,7 @@ Versiunea %1</translation>
         <translation>Resetare</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Deschide o fereastră dialog pentru a selecta un alt dosar.</translation>
     </message>
     <message>
@@ -10772,7 +10772,7 @@ Versiunea %1</translation>
         <translation>Restabilește calea  către dosar la valoarea implicită.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Deschide o fereastră dialog pentru a selecta un alt fișier.</translation>
     </message>
     <message>
@@ -12662,13 +12662,13 @@ mașini virtuale.</translation>
         <translation type="obsolete">Selectare</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the
+        <source>Opens a window to select the
 default VDI folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul VDI implicit.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the
+        <source>Opens a window to select the
 default virtual machine folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul mașinii virtuale implicite.</translation>
@@ -12897,12 +12897,12 @@ Calea implicită actuală va fi afișată după ce acceptați schimbările și d
 Acest director este folosit, dacă nu este explicit specificat altfel, atunci când creați noi mașini virtuale.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta
 directorul VDI implicit.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Deschide dialogul pentru a selecta directorul mașinii virtuale implicite.</translation>
     </message>
     <message>
@@ -12932,7 +12932,7 @@ toate apăsarile de taste (inclusiv cele specifice sistemului, gen Alt+Tab) sunt
         <translation type="obsolete">Afișează calea către biblioteca ce oferă autentificare clienților Remote Display (VRDP).</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">Deschide un dialog de selecție a fișierului bibliotecă de autentificare VRDP.</translation>
     </message>
     <message>
@@ -13693,7 +13693,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Afișeză dialogul Manager discuri virtuale</translation>
     </message>
     <message>
@@ -13706,7 +13706,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Afișează dialogul preferințe globale</translation>
     </message>
     <message>
@@ -13818,7 +13818,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">&amp;Despre VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Arată dialogul cu informații despre produs</translation>
     </message>
     <message>
@@ -13950,7 +13950,7 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Gestionar medii &amp;virtuale...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Afișează dialogul Gestionar medii virtuale</translation>
     </message>
     <message>

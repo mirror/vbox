@@ -452,7 +452,7 @@
         <translation>VirtualBox i&amp;nfo...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Toon produktinformatie</translation>
     </message>
     <message>
@@ -486,7 +486,7 @@
         <translation>&amp;Virtuele Media Manager...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Toon de dialoog Virtuele Media Manager</translation>
     </message>
     <message>
@@ -511,7 +511,7 @@
         <translation>&amp;Voorkeuren...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Toon dialoog Algemene Instellingen</translation>
     </message>
     <message>
@@ -1815,7 +1815,7 @@
         <translation type="obsolete">&lt;p&gt;U hebt een nieuw aangemaakte virtuele machine voor de eerste keer opgestart. Deze assistent zal u helpen met de stappen die nodig zijn om het besturingssyteem van uw keuze op deze virtuele machine te installeren.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;U hebt een nieuw aangemaakte virtuele machine voor de eerste keer opgestart. Deze assistent zal u helpen met de stappen die nodig zijn voor het opstarten van een door u gekozen besturingsysteem voor deze virtuele machine.&lt;/p&gt;&lt;p&gt;Merk op dat u nu nog geen besturingsysteem op deze virtuele machine kunt installeren, omdat hieraan nog geen harde schijf is gekoppeld. Is dit niet wat u wilt, dan kunt u de uitvoering van deze assistent annuleren. Selecteer vervolgens &lt;b&gt;Instellingen&lt;/b&gt; uit het&lt;b&gt;Machine&lt;/b&gt; menu in het hoofdvenster van VirtualBox om de dialoog voor instellingen van deze machine te benaderen. Verander daar de configuratie van de harde schijf.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3225,7 +3225,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Opent een dialoog om doorverwijsregels van de poort te beheren.</translation>
     </message>
     <message>
@@ -4209,7 +4209,7 @@
         <translation>&amp;Kabel aangesloten</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Opent een dialoog om doorverwijsregels van de poort te beheren.</translation>
     </message>
     <message>
@@ -5740,11 +5740,11 @@
         <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kan geen taalbestand vinden voor de taal &lt;b&gt;%1&lt;/b&gt; in de map &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;De taal wordt tijdelijk teruggezet op de systeemstandaard. Ga naar &lt;b&gt;Voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm. Selecteer één van de aanwezige talen op de pagina &lt;b&gt;Talen&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kan het taalbestand &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; niet laden.&lt;p&gt;De taal wordt tijdelijk teruggezet naar Engels (ingebouwd). Ga naar &lt;b&gt;Voorkeuren&lt;/b&gt; dialoog, deze is te bereiken via het menu in het VirtualBox hoofdscherm. Selecteer een van de aanwezige talen op de pagina &lt;b&gt;Talen&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5772,7 +5772,7 @@
         <translation>&lt;p&gt;Het venster van de virtuele machine is geöptimaliseerd om te werken in &lt;b&gt;%1 bits&lt;/b&gt; kleurenmodus, echter de kleurkwaliteit van het virtuele beeldscherm staat op &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Open de beeldscherm-eigenschappen in het gastbesturingssysteem en selecteer indien beschikbaar &lt;b&gt;%3 bits&lt;/b&gt;kleurenmodus voor de beste prestatie van het video-subsysteem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Let op:&lt;/b&gt; Sommige besturingssystemen (zoals OS/2) werken in 32 bits kleurenmodus maar melden dit als 24 bits kleurenmodus (16 miljoen kleuren).U kunt proberen een andere kleurkwaliteit te selecteren om deze boodschap weg te krijgen of u kunt de boodschap gewoon nu uitzetten indien u zeker weet dat de vereiste kleurkwaliteit (%4&amp;nbsp; bit) niet beschikbaar is op het gastbesturingssysteem.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;U hebt geen harde schijf aan de nieuwe virtuele machine gekoppeld. De machine kan niet eerder opstarten dan nadat u eerst een harde schijf met een gastbesturingssysteem of een andere opstartbaar medium hebt aangekoppeld. U kunt dit doen via het dialoog Machine-instellingen of door de Start Assistent op te starten.&lt;/p&gt;&lt;p&gt;Wilt u doorgaan?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5937,7 +5937,7 @@
         <translation type="obsolete">VirtualBox i&amp;nfo...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Toon produktinformatie</translation>
     </message>
     <message>
@@ -6146,7 +6146,7 @@
         <translation>Forceer Afkoppeling</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kon VirtualBox Guest Additions installatie-CD image niet aan de virtuele machine &lt;b&gt;%1&lt;/b&gt; koppelen, omdat de machine geen cd/dvd-station heeft. Voeg een station toe via de Opslagpagina bij de instellingen van de virtuele machine.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6670,15 +6670,15 @@
         <translation type="obsolete">Sluit virtuele machine af</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6854,7 +6854,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8588,7 +8588,7 @@
         <translation>Terugzetten</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Opent een dialoog om een andere map te selecteren.</translation>
     </message>
     <message>
@@ -8596,7 +8596,7 @@
         <translation>Zet het pad naar de map terug op de standaardwaarde.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Opent een dialoog om een ander bestand te selecteren.</translation>
     </message>
     <message>
@@ -10470,7 +10470,7 @@
         <translation type="obsolete">&amp;Voorkeuren...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Toon de dialoog Algemene Instellingen</translation>
     </message>
     <message>
@@ -10526,7 +10526,7 @@
         <translation type="obsolete">&amp;Virtuele Media Manager...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Toon de dialoog Virtuele Media Manager</translation>
     </message>
     <message>

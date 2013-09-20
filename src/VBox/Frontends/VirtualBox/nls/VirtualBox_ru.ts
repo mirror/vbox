@@ -588,7 +588,7 @@
         <translation>&amp;О программе...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Показать диалоговое окно с информацией о программе VirtualBox</translation>
     </message>
     <message>
@@ -622,7 +622,7 @@
         <translation>&amp;Менеджер виртуальных носителей...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Открыть менеджер виртуальных носителей</translation>
     </message>
     <message>
@@ -647,7 +647,7 @@
         <translation>&amp;Настройки...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Открыть диалог глобальных настроек</translation>
     </message>
     <message>
@@ -2261,7 +2261,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Физический привод %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Вы запустили новую виртуальную машину в первый раз. Этот мастер поможет Вам выполнить шаги, необходимые для загрузки операционной системы на данную виртуальную машину.&lt;/p&gt;&lt;p&gt;Учтите, что Вы не сможете установить операционную систему на эту виртуальную машину прямо сейчас, потому что Вы не подсоединили к ней ни одного жесткого диска. Если это не то, что Вы хотите, Вы можете отменить выполнение мастера, выбрать &lt;b&gt;Свойства&lt;/b&gt; из меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirtualBox для открытия диалога настроек машины и изменить конфигурацию жестких дисков.&lt;/p&gt;&lt;p&gt;Нажмите кнопку &lt;b&gt;Далее&lt;/b&gt;, чтобы перейти к следующей странице мастера, или кнопку &lt;b&gt;Назад&lt;/b&gt; для возврата на предыдущую страницу. Нажмите кнопку &lt;b&gt;Отмена&lt;/b&gt;, если вы хотите отменить выполнение этого мастера.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2335,7 +2335,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Вы запустили вновь созданную машину первый раз. Данный мастер поможет Вам осуществить установку выбранной Вами операционной системы на данную машину.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Вы запустили вновь созданную машину первый раз. Данный мастер поможет Вам осуществить загрузку выбранной Вами операционной системы на данной машине.&lt;/p&gt;&lt;p&gt;Учтите, что в данный момент Вы не имеете возможности установить операционную систему на данную машину, поскольку Вы не подсоединили к ней ни одного жёсткого диска. Если это не то, что Вы планировали, Вы можете прервать выполнение данного мастера, выбрать &lt;b&gt;Свойства&lt;/b&gt; из меню &lt;b&gt;Машина&lt;/b&gt; главного окна VirtualBox для доступа к настройкам данной машины и исправить конфигурацию жёстких дисков по Вашему усмотрению.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3752,7 +3752,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Открыть диалог для управления правилами проброса портов.</translation>
     </message>
     <message>
@@ -5153,7 +5153,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Тип адаптера:</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">Открыть диалог расширенных настроек для выбранного типа подключения.</translation>
     </message>
     <message>
@@ -5202,7 +5202,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Кабель подключен</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Открыть диалог для управления правилами проброса портов.</translation>
     </message>
     <message>
@@ -6993,11 +6993,11 @@ p, li { white-space: pre-wrap; }
         <translation>Код&amp;nbsp;ошибки&amp;nbsp;метода: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Не удалось найти файл локализации для языка &lt;b&gt;%1&lt;/b&gt; в каталоге &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будет временно установлен системный язык по умолчанию. Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Не удалось загрузить файл локализации &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Будет временно установлен английский язык (встроенный). Перейдите в диалог &lt;b&gt;Настройки&lt;/b&gt;, который можно открыть из меню &lt;b&gt;Файл&lt;/b&gt; главного окна VirtualBox, и выберите один из существующих языков на странице &lt;b&gt;Язык&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7041,7 +7041,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Окно виртуальной машины оптимизировано для работы в режиме &lt;b&gt;%1-битной&lt;/b&gt; цветопередачи, однако в настоящий момент виртуальный дисплей работает в &lt;b&gt;%2-битном&lt;/b&gt; режиме.&lt;/p&gt;&lt;p&gt;Откройте диалог свойств дисплея гостевой ОС и выберите &lt;b&gt;%3-битный&lt;/b&gt; режим цветопередачи (если он доступен) для обеспечения наилучшей производительности виртуальной видеоподсистемы.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Примечание&lt;/b&gt;. Некоторые операционные системы, такие как OS/2, могут фактически работать в 32-битном режиме, но показывать его в настройках как 24-битный (16 миллионов цветов). Вы можете попробовать выбрать другой режим цветопередачи, чтобы проверить, не исчезнет ли это сообщение. Помимо этого, Вы можете запретить показ данного сообщения, если Вы уверены, что требуемый режим цветопередачи (%4&amp;nbsp;бит) недоступен в данной гостевой ОС.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Вы не подсоединили ни одного жесткого диска к новой виртуальной машине. Такая машина не сможет загрузиться, пока Вы не подсоедините к ней жесткий диск с гостевой операционной системой или какой-либо другой загрузочный носитель позже, используя диалог свойств машины или Мастер первого запуска.&lt;/p&gt;&lt;p&gt;Хотите ли Вы продолжить?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7258,7 +7258,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;О программе...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Показать диалоговое окно с информацией о программе VirtualBox</translation>
     </message>
     <message>
@@ -7623,7 +7623,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Не удалось извлечь диск из виртуального привода. Возможно данный привод используется гостевой операционной системой. Пожалуйста проверьте данный факт и попробуйте снова.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Не удалось подключить установочный пакет гостевых дополнений VirtualBox &lt;b&gt;%1&lt;/b&gt;, поскольку данная машина не имеет привода оптических дисков. Пожалуйста добавьте привод, используя страницу носителей информации диалога настройки виртуальной машины.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8164,15 +8164,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Выключить виртуальную машину</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8349,7 +8349,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9079,7 +9079,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Отмена</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Выберите жесткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жесткий диск, нажав кнопку &lt;b&gt;Создать&lt;/b&gt;, либо выбрать существующий из выпадающего списка или из Менеджера виртуальных носителей (который откроется при нажатии на кнопку &lt;b&gt;Существующий&lt;/b&gt;).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жестких дисков, то можно пропустить этот шаг и подсоединить жесткие диски позднее с помощью диалога Свойств машины.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9156,7 +9156,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Выберите жёсткий диск, который будет загрузочным диском виртуальной машины. Вы можете создать новый жёсткий диск, выбрав опцию &lt;b&gt;Создать новый жёсткий диск&lt;/b&gt;, либо указать существующий, выбрав опцию &lt;b&gt;Использовать существующий жёсткий диск&lt;/b&gt;, а затем выбрать диск из выпадающего списка или из &lt;b&gt;Менеджера виртуальных носителей&lt;/b&gt; (который откроется при нажатии на кнопку справа от списка).&lt;/p&gt;&lt;p&gt;Если Вам требуется более сложная конфигурация жёстких дисков, то можно пропустить этот шаг и подсоединить жёсткие диски позднее с помощью диалога настроек машины.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11178,7 +11178,7 @@ p, li { white-space: pre-wrap; }
         <translation>Сбросить</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Открывает диалог для выбора папки.</translation>
     </message>
     <message>
@@ -11186,7 +11186,7 @@ p, li { white-space: pre-wrap; }
         <translation>Устанавливает путь к папке, используемый по умолчанию.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Открывает диалог для выбора файла.</translation>
     </message>
     <message>
@@ -13588,7 +13588,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Свойства...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Открыть диалог глобальных настроек</translation>
     </message>
     <message>
@@ -13712,7 +13712,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Менеджер виртуальных носителей...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Открыть диалог Менеджера виртуальных носителей</translation>
     </message>
     <message>

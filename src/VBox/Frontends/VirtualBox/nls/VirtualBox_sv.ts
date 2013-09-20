@@ -585,7 +585,7 @@
         <translation type="unfinished">Hanterare för virtuella &amp;media...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">Visa Hanterare för virtuella media</translation>
     </message>
     <message>
@@ -610,7 +610,7 @@
         <translation type="unfinished">&amp;Inställningar...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Visa allmänna inställningar</translation>
     </message>
     <message>
@@ -806,7 +806,7 @@
         <translation type="unfinished">&amp;Om VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished">Visa en dialogruta med produktinformation</translation>
     </message>
     <message>
@@ -2328,7 +2328,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Värdenhet %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Den här guiden kommer att hjälpa dig att genomföra de nödvändiga stegen som behövs för att starta upp ett valfritt operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att du inte kan installera ett operativsystem på den här virtuella maskinen just nu därför att du inte har anslutit en hårddisk till den. Om det inte är vad du vill göra så kan du avbryta körningen av den här guiden eller välja &lt;b&gt;Inställningar&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster för att komma åt inställningsdialogrutan för den här maskinen och ändra hårddiskkonfigurationen.&lt;/p&gt;&lt;p&gt;Använd knappen &lt;b&gt;Nästa&lt;/b&gt; för att gå till nästa sida i guiden och &lt;b&gt;Bakåt&lt;/b&gt; för att återgå till föregående sida. Du kan även trycka på &lt;b&gt;Avbryt&lt;/b&gt; om du vill avbryta körningen av den här guiden.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2407,7 +2407,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Denna guide hjälper dig att genomföra de steg som krävs för att installera ett operativsystem på denna virtuella maskin.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du har startat en nyligen skapad virtuell maskin för första gången. Denna guide hjälper dig att genomföra de steg som krävs för att starta upp ett operativsystem på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Observera att du inte kommer att kunna installera ett operativsystem på denna virtuella maskin just nu på grund av att du inte har anslutit någon hårddisk till den ännu. Om detta inte är vad du planerat så kan du avbryta körningen av denna guide. Välj sedan &lt;b&gt;Inställningar&lt;/b&gt; från &lt;b&gt;Maskin&lt;/b&gt;-menyn i huvudfönstret för VirtualBox för att komma åt inställningsdialogen för denna maskin och ändra hårddiskkonfigurationen.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3912,7 +3912,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Öppnar dialogrutan för att hantera regler för omdirigering av portar.</translation>
     </message>
     <message>
@@ -5337,7 +5337,7 @@ p, li { white-space: pre-wrap; }
         <translation>Adapter&amp;typ:</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">Öppna utökade inställningar för aktuell anslutningstyp.</translation>
     </message>
     <message>
@@ -5386,7 +5386,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Kabel ansluten</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Öppnar dialogrutan för att hantera regler för omdirigering av portar.</translation>
     </message>
     <message>
@@ -7233,11 +7233,11 @@ serial ports</comment>
         <translation>Anropare&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunde inte hitta en språkfil för språket &lt;b&gt;%1&lt;/b&gt; i katalogen &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Språket kommer att temporärt återställas till systemets standardspråk. Gå till dialogrutan &lt;b&gt;Inställningar&lt;/b&gt; som du kan öppna från menyn &lt;b&gt;Arkiv&lt;/b&gt; i VirtualBox huvudfönster, och välj ett av de befintliga språken på sidan &lt;b&gt;Språk&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunde inte läsa in språkfilen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Språket kommer att temporärt återställas till engelska (inbyggt). Gå till dialogrutan &lt;b&gt;Inställningar&lt;/b&gt; som du kan öppna från menyn &lt;b&gt;Arkiv&lt;/b&gt; i VirtualBox huvudfönster, och välja ett av de befintliga språken på sidan &lt;b&gt;Språk&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7285,7 +7285,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Ett kritiskt fel har inträffat vid körning av den virtuella maskinen och maskinkörningen har stoppats.&lt;/p&gt;&lt;p&gt;Se Community-sektionen på &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; för mer hjälp eller ditt supportkontrakt. Tillhandahåll innehållet i loggfilen &lt;tt&gt;VBox.log&lt;/tt&gt; och bildfilen &lt;tt&gt;VBox.png&lt;/tt&gt;, vilka du kan hitta i katalogen &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, såväl som en beskrivning av vad du gjorde när felet inträffade. Observera att du även kan komma åt ovanstående filer genom att välja &lt;b&gt;Visa logg&lt;/b&gt; från menyn &lt;b&gt;Maskin&lt;/b&gt; i VirtualBox huvudfönster.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;OK&lt;/b&gt; om du vill stänga av maskinen eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; om du vill lämna den som den är för vidare felsökning. Observera dock att felsökning kräver speciell kunskap och verktyg, därför rekommenderas det att trycka på &lt;b&gt;OK&lt;/b&gt; nu.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du anslöt inte en hårddisk till den nya virtuella maskinen. Maskinen kommer inte att kunna starta såvida inte du ansluter en hårddisk med ett gästoperativsystem eller något annat startbart media till den senare genom att använda dialogrutan för maskininställningar eller Förstagångsguiden.&lt;/p&gt;&lt;p&gt;Vill du fortsätta?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7559,7 +7559,7 @@ serial ports</comment>
         <translation type="obsolete">&amp;Om VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Visa en dialogruta med produktinformation</translation>
     </message>
     <message>
@@ -7924,7 +7924,7 @@ serial ports</comment>
         <translation type="obsolete">Misslyckades med att mata ut disken från den virtuella enheten. Enheten kan vara låst av gästoperativsystemet. Kontrollera detta och försök igen.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunde inte mata in installationsavbildningen för VirtualBox Gästtillägg i den virtuella maskinen &lt;b&gt;%1&lt;/b&gt; eftersom maskinen inte har några CD/DVD-ROM-enheter. Lägg till en enhet med hjälp av lagringssidan i inställningsdialogen för den virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8491,15 +8491,15 @@ serial ports</comment>
         <translation type="obsolete">Stäng virtuell maskin</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8675,7 +8675,7 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9478,7 +9478,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Ange ett namn för den nya virtuella maskinen och välj vilken typ av gästoperativsystem som du planerar att installera på den virtuella maskinen.&lt;/p&gt;&lt;p&gt;Namnet på den virtuella maskinen brukar ofta indikera dess programvara och maskinvarukonfiguration. Det kommer att användas av alla VirtualBox-komponenter för att identifiera din virtuella maskin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning som ska användas som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt;  (för att anropa Virtuella diskhanteraren).&lt;/p&gt;&lt;p&gt;Om du behöver en mer avancerat hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningsdialogrutan.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9523,7 +9523,7 @@ serial ports</comment>
         <translation type="obsolete">Avbryt</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hantera för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9604,7 +9604,7 @@ serial ports</comment>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Välj en hårddiskavbildning att använda som uppstartshårddisk för den virtuella maskinen. Du kan antingen skapa en ny hårddisk med knappen &lt;b&gt;Ny&lt;/b&gt; eller välja en befintlig hårddiskavbildning från rullgardinslistan eller genom att trycka på knappen &lt;b&gt;Befintlig&lt;/b&gt; (för att anropa Hanterare för virtuella media).&lt;/p&gt;&lt;p&gt;Om du behöver en mer komplicerad hårddiskkonfiguration kan du även hoppa över detta steg och ansluta hårddiskar senare via inställningarna för virtuella maskinen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11825,7 +11825,7 @@ Version %1</translation>
         <translation>Återställ</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Öppnar en dialogruta för att välja en annan mapp.</translation>
     </message>
     <message>
@@ -11833,7 +11833,7 @@ Version %1</translation>
         <translation>Återställer mappsökvägen till standardvärdet.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Öppnar en dialogruta för att välja en annan fil.</translation>
     </message>
     <message>
@@ -14286,7 +14286,7 @@ Version %1</translation>
         <translation type="obsolete">Virtuell &amp;diskhanterare...</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Visa den virtuella diskhanteraren</translation>
     </message>
     <message>
@@ -14392,7 +14392,7 @@ Version %1</translation>
         <translation type="obsolete">Hanterare för virtuella &amp;media...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Visa Hanterare för virtuella media</translation>
     </message>
     <message>
@@ -14417,7 +14417,7 @@ Version %1</translation>
         <translation type="obsolete">&amp;Inställningar...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Visa allmänna inställningar</translation>
     </message>
     <message>

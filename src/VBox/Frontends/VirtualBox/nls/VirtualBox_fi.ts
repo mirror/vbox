@@ -544,7 +544,7 @@
         <translation type="unfinished">&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -578,7 +578,7 @@
         <translation type="unfinished">&amp;Virtuaalimedioiden hallinta...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">Näytä virtuaalimedioiden hallintaikkuna</translation>
     </message>
     <message>
@@ -603,7 +603,7 @@
         <translation type="unfinished">&amp;Asetukset...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Näyttää yleisasetusten asetusikkuna</translation>
     </message>
     <message>
@@ -1698,7 +1698,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Isäntäkoneen asema %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Olet käynnistänyt uuden virtuaalikoneen ensimmäistä kertaa. Tämä apulainen auttaa sinua tehtävissä, jotka vaaditaan uuden käyttöjärjestelmän käynnistämisessä virtuaalikoneessa.&lt;/p&gt;&lt;p&gt;Huomaa ettet voi asentaa nyt käyttöjärjestelmää tähän virtuaalikoneeseen, koska et ole liittänyt siihen kiintolevyä. Jos haluat kuitenkin asentaa käyttöjärjestelmän, keskeytä tämän apulaisen suoritus, avaa tämän virtuaalikoneen asetuset valitsemalla &lt;b&gt;Asetukset&lt;/b&gt; VirtualBoxin pääikkunan &lt;b&gt;Kone&lt;/b&gt;-valikosta ja muuta kiintolevyjen asetuksia.&lt;/p&gt;&lt;p&gt;Voit siirtyä apulaisen seuraavalle sivulle napista &lt;b&gt;Seuraava&lt;/b&gt; ja edelliselle sivulle napista &lt;b&gt;Takaisin&lt;/b&gt;. Voit myös painaa nappia &lt;b&gt;Peru&lt;/b&gt;, jos haluat keskeyttää tämän apulaisen suorittamisen.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3118,7 +3118,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4382,7 +4382,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Nimi:</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">Avaa tämänhetkisen liitostavan lisäasetukset.</translation>
     </message>
     <message>
@@ -4466,7 +4466,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Kaapeli liitetty</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6180,11 +6180,11 @@ p, li { white-space: pre-wrap; }
         <translation>Kutsujan&amp;nbsp;RC:</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kielitiedostoa kielelle &lt;b&gt;%1&lt;/b&gt; ei löytynyt kansiosta &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Kieli asetetaan väliaikaisesti järjestelmän oletuskieleksi. Siirry VirtualBoxin pääikkunan &lt;b&gt;File&lt;/b&gt;-valikon kohtaan &lt;b&gt;Preferences&lt;/b&gt;, josta voit valita jonkun olemassaolevista kielistä &lt;b&gt;Language&lt;/b&gt;-sivulta.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kielitiedostoa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; ei voitu ladata.&lt;/p&gt;&lt;p&gt;Kieli on väliaikaisesti asetettu oletusarvoon Englanti. Siirry VirtualBoxin pääikkunan &lt;b&gt;File&lt;/b&gt;-valikon kohtaan &lt;b&gt;Preferences&lt;/b&gt;, josta voit valita jonkun olemassaolevista kielistä &lt;b&gt;Language&lt;/b&gt;-sivulta.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6232,7 +6232,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Virtuaalikoneen ikkuna on optimoitu toimimaan &lt;b&gt;%1&amp;nbsp;bittisessä&lt;/b&gt; väritilassa, mutta virtuaalinäytön värimäärä on asetettu nyt arvoon &lt;b&gt;%2&amp;nbsp;bittiä&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Avaa virtuaalikoneen näyttöasetukset ja valitse värien määräksi &lt;b&gt;%3&amp;nbsp;bittinen&lt;/b&gt; tila, jos saatavilla, jotta saat parhaan laatuisen videokuvan virtuaalikoneestasi.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Huomautus:&lt;/b&gt; joissain käyttöjärjestelmissä kuten OS/2, värien bittisyvyys saattaa todellisuudessa olla 32&amp;nbsp;bittiä mutta ne raportoivat tämän 24&amp;nbsp;bittisenä (16 miljoonaa väriä). Voit yrittää valita toisen värimäärän nähdäksesi häipyykö tämä varoitus, tai voit vain estää tämän viestin näyttämisen jos olet varma että vaadittu värisyvyys (%4&amp;nbsp;bittiä) ei ole saatavilla virtuaalikoneen käyttöjärjestelmässä.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Et liittänyt uuteen virtuaalikoneeseen kiintolevyä. Virtuaalikone ei voi käynnistyä, jollet liitä siihen kiintolevyä, jolla on asiakaskäyttöjärjestelmä, tai jotain muuta käynnistettävää mediaa myöhemmin käyttäen virtuaalikoneen asetuksia tai ensimmäisen käyttökerran asetusapulaista.&lt;/p&gt;&lt;p&gt;Haluatko varmasti jatkaa?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6474,7 +6474,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Näytä tietoja tuotteesta ikkunassa</translation>
     </message>
     <message>
@@ -7111,15 +7111,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Sulje virtuaalikone</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7295,7 +7295,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7933,7 +7933,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
         <translation type="obsolete">Peru</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7994,7 +7994,7 @@ Kaikki VirtualBoxin komponentit käyttävät sitä koneen tunnistukseen.&lt;/p&g
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Valitse virtuaalikoneessa käytettävä kiintolevyn levykuva. Voit luoda uuden levykuvan napista &lt;b&gt;Uusi&lt;/b&gt;, valita aiemmin luodun levykuvan pudotusvalikosta tai valita levykuvan virtuaalimedioiden hallinnasta painamassa nappia &lt;b&gt;Olemassaoleva&lt;/b&gt;. &lt;/p&gt;&lt;p&gt;Jos haluat tehdä monimutkaisemman kiintolevymäärittelyn, voit ohittaa tämän kohdan ja lisätä kiintolevyt myöhemmin virtuaalikoneen asetuksista.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9529,7 +9529,7 @@ Version %1</source>
         <translation type="obsolete">&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Näytä tuotetiedot sisältävä valintaikkuna</translation>
     </message>
     <message>
@@ -10124,7 +10124,7 @@ Version %1</source>
         <translation>Nollaa</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Avaa ikkunan, josta voi valita toisen kansion.</translation>
     </message>
     <message>
@@ -10132,7 +10132,7 @@ Version %1</source>
         <translation>Palauttaa kansion polun oletusarvoon.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Avaa ikkunan, josta voi valita eri tiedoston.</translation>
     </message>
     <message>
@@ -12662,7 +12662,7 @@ Version %1</source>
         <translation type="obsolete">Ctrl+L</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Näyttää virtuaalilevyjen hallinnan valintaikkunan</translation>
     </message>
     <message>
@@ -12675,7 +12675,7 @@ Version %1</source>
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Näyttää yleisasetusten asetusikkuna</translation>
     </message>
     <message>
@@ -12779,7 +12779,7 @@ Version %1</source>
         <translation type="obsolete">&amp;Tietoja VirtualBoxista...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Näytä tuotetiedot sisältävä valintaikkuna</translation>
     </message>
     <message>
@@ -12895,7 +12895,7 @@ Version %1</source>
         <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Näytä virtuaalimedioiden hallintaikkuna</translation>
     </message>
     <message>

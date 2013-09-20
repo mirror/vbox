@@ -508,7 +508,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -542,7 +542,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -567,7 +567,7 @@
         <translation type="unfinished">Hobes&amp;penak...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Ezarpen orokor leihoa bistarazi</translation>
     </message>
     <message>
@@ -1494,7 +1494,7 @@
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Mota:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Jatorria:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sortu  berri duzun makina birtuala lehen aldiz abiarazi duzu. Morroi honek hautatu duzun sistema eragile makina birtualean abiarazteko bete beharreko urratsak betetzen lagunduko zaitu.&lt;/p&gt;&lt;p&gt;Kontutan izan ezin duzula sistema eragile bat orain instalatu makina birtual honetan ez bait duzu disko gogorrik erantsi makina birtualari. Hau ez bada nahi duzuna, morroi honen exekuzioa utzi dezakezu, &lt;b&gt;Ezarpenak&lt;/b&gt; hautatu VirtusalBox leiho nagusiaren &lt;b&gt;Makina&lt;/b&gt; menutik makina honen ezapen leihoa eskuratzeko eta disko gogor konfigurazioa aldatu.&lt;/p&gt;&lt;p&gt;Erabili &lt;b&gt;Hurrengoa&lt;/b&gt; botoia morroiko hurrengo orrialdera joateko eta &lt;b&gt;Atzera&lt;/b&gt; botoia sakatu aurreko orrialdera joateko. &lt;b&gt;Utzi&lt;/b&gt; sakatu dezakezu morroiaren exekuzioa bertan behera uzteko.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2669,7 +2669,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3734,7 +3734,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5249,7 +5249,7 @@
         <translation>Deitura eta RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ezin da &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; hizkuntza fitxategia kargatu.&lt;p&gt;Hizkuntza aldiroko Ingelesera (barneratua) berrezarriko da. Mesedez joan VirtualBox leiho nagusiko &lt;b&gt;Fitxategia&lt;/b&gt; menuan aurki dezakezun &lt;b&gt;Hobespenak&lt;/b&gt; leihora eta hautatu erabilgarri daudenetako bat &lt;b&gt;Hizkuntza&lt;/b&gt; orrialdean.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5305,7 +5305,7 @@
         <translation>&lt;p&gt;Makina birtualaren leihoa &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; kolore moduan funtzionatzeko garatua izan da baina pantaila birtualaren kalitatea &lt;b&gt;%2&amp;nbsp;bitera&lt;/b&gt; ezarririk dago.&lt;/p&gt;&lt;p&gt;Mesedez ireki bezero sistema eragileko pantaila propietateak eta hautatu &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; duen modu bat, erabilgarri badago, bideo birtual azpisistemak ahal den hobekien funtzionatzeko.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Kontutan izan&lt;/b&gt; OS/2 bezalako zenbait sistema eragilek 32 bit-eako moduan lan egiten dutela, baina 24 bit-etara (16 Milioi kolore) dagoela dirudi. Beste kolore kalitate bat hautatzea probatu dezakezu, edo mezu hau baztertu dezakezu ziur bazaude eskatutako kolore kalitatea (%4&amp;nbsp;bit) ezin dela Sistema eragile bezeroan erabili.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ez duzu disko gogor birtualik erantsi makina birtual honetara. Makina ez da abiarazteko gai izango sistema eragile duen disko gogor bat edo beste euskarri abiarazgarri baten bat erantsi arte, berau beranduago egiteko ezarpen leiho edo Lehen Abiarazte Morroiaren bidez egin dezakezu.&lt;/p&gt;&lt;p&gt;Aurrera jarraitu nahi al duzu?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6009,15 +6009,15 @@
         <translation type="obsolete">Makina Birtuala Itxi</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6192,7 +6192,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6653,7 +6653,7 @@ Hau VirtualBox-ek zure makina birtuala identifikatzeko erabiliko du.&lt;/p&gt;</
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Hautatu makina birtualak abio disko gogor bezala
@@ -8253,7 +8253,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="obsolete">VirtualBox - &amp;Honi Buruz...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Karpeta hauatzeko leiho bat irekitzen du</translation>
     </message>
     <message>
@@ -8814,7 +8814,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished">Berrezarri</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8822,7 +8822,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10775,11 +10775,11 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Lehenetsiriko makina birtual karpetaren bidea bistaratzen du. Karpeta hau erabiliko, beste ezer zehazten ez den bitartean, makina birtualak sortzerakoan.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Lehenetsiriko VDI karpeta hautatzeko leihoa irekitzen du.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Lehenetsiriko makina birtual karpeta hautatzeko leihoa irekitzen du.</translation>
     </message>
     <message>
@@ -10807,7 +10807,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Urruneko Pantaila (VRDP) bezeroentzat autentifikazioaz hornitzen duen liburutegiaren bidea erakusten du.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">VRDP autentifikazio liburutegiaren bidea hautatzeko leihoa irekitzen du.</translation>
     </message>
     <message>
@@ -11207,7 +11207,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Ktrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Makina Birtual Kudeaketa leihoa bistazten du</translation>
     </message>
     <message>
@@ -11220,7 +11220,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">Ktrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Ezarpen orokor leihoa bistarazi</translation>
     </message>
     <message>
@@ -11332,7 +11332,7 @@ sistemako lehenetsiriko hizkuntza berrezartzeko.&lt;/qt&gt;
         <translation type="obsolete">VirtualBox-ri &amp;Buruz...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Produktu argibideekin leiho bat bistarazi du</translation>
     </message>
     <message>

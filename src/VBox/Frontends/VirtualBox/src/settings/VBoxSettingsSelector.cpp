@@ -320,7 +320,7 @@ void VBoxSettingsTreeViewSelector::clear()
 }
 
 /**
- *  Returns a path to the given page of this settings dialog. See ::path() for
+ *  Returns a path to the given page of this settings window. See ::path() for
  *  details.
  */
 QString VBoxSettingsTreeViewSelector::pagePath (const QString &aMatch) const

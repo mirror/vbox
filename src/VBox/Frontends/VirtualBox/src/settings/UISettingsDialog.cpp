@@ -462,7 +462,7 @@ bool UISettingsDialog::eventFilter(QObject *pObject, QEvent *pEvent)
     if (!pObject->isWidgetType())
         return QIMainDialog::eventFilter(pObject, pEvent);
 
-    /* Ignore widgets which window is NOT settings dialog: */
+    /* Ignore widgets which window is NOT settings window: */
     QWidget *pWidget = static_cast<QWidget*>(pObject);
     if (pWidget->window() != this)
         return QIMainDialog::eventFilter(pObject, pEvent);

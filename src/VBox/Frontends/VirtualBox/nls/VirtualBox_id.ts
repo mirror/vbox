@@ -564,7 +564,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished">Tunjukkan dialog dengan informasi produk</translation>
     </message>
     <message>
@@ -598,7 +598,7 @@
         <translation type="unfinished">Manajer Media &amp;Virtual...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">Menampilkan dialog Manajer Disk Virtual</translation>
     </message>
     <message>
@@ -623,7 +623,7 @@
         <translation type="unfinished">&amp;Preferensi...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Buka dialog setting global</translation>
     </message>
     <message>
@@ -1986,7 +1986,7 @@
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tipe:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Anda telah memulai mesin virtual baru untuk pertama kalinya. Wizard ini akan membantu anda untuk melakukan langkah-langkah yang perlu untuk mem-boot sebuah sistem operasi pilihan anda pada mesin virtual.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa anda tidak akan dapat meng-instal sebuah sistem operasi pada mesin virtual ini pada saat ini karena anda tidak memasang hard disk apapun kepadanya. Bila ini bukan yang anda inginkan, anda dapat membatalkan eksekusi dari wizard ini, pilih &lt;b&gt;Setting&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; pada jendela utama VirtualBox untuk mengakses dialog setting mesin ini dan mengubah konfigurasi hard disk.&lt;/p&gt;&lt;p&gt;Gunakan tombol &lt;b&gt;Lanjut&lt;/b&gt;untuk pergi ke halaman wizard berikutnya dan tombol &lt;b&gt;Kembali&lt;/b&gt; untuk kembali pada halaman sebelumnya. Anda juga dapat menekan &lt;b&gt;Batal&lt;/b&gt; bila anda ingin membatalkan eksekusi wizard ini.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2025,7 +2025,7 @@
         <translation type="obsolete">&lt;p&gt;Anda telah memulai mesin virtual yang baru dibuat untuk pertama kali. Wizard ini akan membantu Anda melaksanakan langkah-langkah yang diperlukan untuk memasang sistem operasi pilihan Anda pada mesin virtual ini.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Anda telah memulai mesin virtual yang baru dibuat untuk pertama kali. Wizard ini akan membantu Anda melaksanakan langkah-langkah yang diperlukan untuk memasang sistem operasi pilihan Anda pada mesin virtual ini.&lt;/p&gt;&lt;p&gt;Perhatikan bahwa Anda tidak akan dapat memasang sistem operasi ke dalam mesin virtual ini saat ini karena Anda belum menempelkan sebarang hard disk kepadanya. Bila ini bukan yang Anda mau, Anda dapat membatalkan eksekusi wizard ini, pilih &lt;b&gt;Tatanan&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dari window utama VirtualBox untuk mengakses dialog penataan dari mesin ini dan ubah konfigurasi hard disk.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3439,7 +3439,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Buka dialog untuk mengelola aturan penerusan port.</translation>
     </message>
     <message>
@@ -4675,7 +4675,7 @@
         <translation>Ka&amp;bel terhubung</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Buka dialog untuk mengelola aturan penerusan port.</translation>
     </message>
     <message>
@@ -6333,11 +6333,11 @@
         <translation>RC&amp;nbsp;Pemanggil: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Tidak dapat menemukan file bahasa untuk bahasa &lt;b&gt;%1&lt;/b&gt; dalam direktori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bahasa akan sementara di-reset pada nilai awal bahasa sistem. Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Tidak dapat memuat file bahasa &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Bahasa akan sementara di-reset pada bahasa Inggris (built-in). Silahkan melihat dialog &lt;b&gt;Preferensi&lt;/b&gt; yang dapat anda buka dari menu &lt;b&gt;File&lt;/b&gt; pada jendela utama VirtualBox , dan pilih satu dari bahasa yang tersedia pada halaman, &lt;b&gt;Bahasa&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6397,7 +6397,7 @@
         <translation type="obsolete">&lt;p&gt;Kesalahan kritikal telah terjadi saat menjalankan mesin virtual dan eksekusi mesin telah dihentikan.&lt;/p&gt;&lt;p&gt;Untuk bantuan, silahkan kunjungi bagian Community (Komunitas) &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; atau kontrak pendukung anda. Mohon sediakan isi dari file log file &lt;tt&gt;VBox.log&lt;/tt&gt; dan file image &lt;tt&gt;VBox.png&lt;/tt&gt;, yang dapat anda temukan pada direktori &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, demikian juga dengan deskripsi tentang apa yang anda lakukan saat kesalahan ini terjadi. Perhatikan bahwa anda juga dapat mengakses file diatas dengan memilih &lt;b&gt;Tampilkan Log&lt;/b&gt; dari menu &lt;b&gt;Mesin&lt;/b&gt; dalam jendela utama VirtualBox.&lt;/p&gt;&lt;p&gt;Tekan &lt;b&gt;Baik&lt;/b&gt; bila anda ingin mematikan mesin atau tekan &lt;b&gt;Abaikan&lt;/b&gt; bila anda ingin membiarkannya untuk debugging. Mohon perhatikan bahwa debugging membutuhkan pengetahuan dan alat khusus, sehingga dianjurkan untuk menekan &lt;b&gt;Baik&lt;/b&gt; sekarang.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Anda tidak memasang sebuah hard disk pada mesin virtual yang baru. Mesin tersebut tidak akan dapat di-boot kecuali anda memasang sebuah hard disk dengan sistem operasi guest atau media bootable lainnya pada waktu lain menggunakan dialog setting mesin atau First Run Wizard.&lt;/p&gt;&lt;p&gt;Anda ingin melanjutkan?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6667,7 +6667,7 @@
         <translation type="obsolete">Tent&amp;ang VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Tunjukkan dialog dengan informasi produk</translation>
     </message>
     <message>
@@ -6934,7 +6934,7 @@
         <translation>Paksa Unmount</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;b&gt;Tak bisa menyisipkan image CD installer VirtualBox Guest Additions ke dalam mesin virtual &lt;b&gt;%1&lt;/b&gt;, karena mesin tak memiliki drive CD/DVD-ROM. Silakan tambahkan sebuah drive memakai halaman penyimpanan dari dialog pengaturan mesin virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7449,15 +7449,15 @@
         <translation type="obsolete">Tutup Mesin Virtual</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7632,7 +7632,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8304,7 +8304,7 @@ Hal tersebut akan digunakan oleh semua komponen VirtualBox untuk mengidentifikas
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pilih sebuah image hard disk untuk digunakan
@@ -10061,7 +10061,7 @@ Versi %1</translation>
         <translation type="obsolete">&amp;Tentang VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Tunjukkan dialog dengan informasi produk</translation>
     </message>
     <message>
@@ -10647,7 +10647,7 @@ Versi %1</translation>
         <translation>Reset</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Buka dialog untuk memilih folder lain.</translation>
     </message>
     <message>
@@ -10655,7 +10655,7 @@ Versi %1</translation>
         <translation>Reset path folder ke nilai default.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Buka dialog untuk memilih file lain.</translation>
     </message>
     <message>
@@ -12753,11 +12753,11 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Menampilkan path ke folder default mesin virtual. Folder ini digunakan, bila tidak disebutkan sebaliknya secara eksplisit, saat menambahkan atau menciptakan mesin virtual baru.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Buka dialog untuk memilih nilai awal folder VDI.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Buka dialog untuk memilih nilai awal folder mesin virtual.</translation>
     </message>
     <message>
@@ -12785,7 +12785,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Menampilkan path menuju library yang menyediakan otentikasi untuk klien Remote Display (VRDP).</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">Buka dialog untuk memilih file VRDP authentication library file.</translation>
     </message>
     <message>
@@ -13510,7 +13510,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Tampilkan dialog Virtual Disk Manager</translation>
     </message>
     <message>
@@ -13523,7 +13523,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Buka dialog setting global</translation>
     </message>
     <message>
@@ -13635,7 +13635,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Tent&amp;ang VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Tunjukkan dialog dengan informasi produk</translation>
     </message>
     <message>
@@ -13755,7 +13755,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
         <translation type="obsolete">Manajer Media &amp;Virtual...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Menampilkan dialog Manajer Disk Virtual</translation>
     </message>
     <message>

@@ -478,7 +478,7 @@
         <translation type="unfinished">អំពី VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished">បង្ហាញ​ប្រអប់​ដែល​មាន​ព័ត៌មាន​ផលិតផល</translation>
     </message>
     <message>
@@ -512,7 +512,7 @@
         <translation type="unfinished">កម្មវិធី​គ្រប់គ្រង​ម៉ាស៊ីន​និម្មិត...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">បង្ហាញ​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​​​មេឌៀ​និម្មិត</translation>
     </message>
     <message>
@@ -537,7 +537,7 @@
         <translation type="unfinished">ចំណូល​ចិត្ត...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">បង្ហាញ​ប្រអប់​កំណត់​សកល</translation>
     </message>
     <message>
@@ -1698,7 +1698,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ឧបករណ៍​ថាស​ទន់</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;អ្នក​បាន​ចាប់ផ្ដើម​ម៉ាស៊ីន​និម្មិត​ដែល​ទើប​បានបង្កើត​ថ្មី​ជា​លើក​ដំបូង ។ អ្នក​ជំនួយ​ការ​នេះ​នឹង​ជួយ​អ្នក​ក្នុងការ​អនុវត្ត​ជំហាន​ដែល​ចាំបាច់​សម្រាប់​ចាប់ផ្ដើម​ប្រព័ន្ធ​ប្រតិបត្តិការ​ជា​ជម្រើស​របស់​អ្នក​នៅ​លើ​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;&lt;p&gt;ចំណាំ​ថា អ្នក​នឹង​មិន​អាច​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ក្នុង​ម៉ាស៊ីន​និម្មិត​ឥឡូវ​បានទេ ពីព្រោះ​អ្នក​មិន​បាន​ភ្ជាប់​ថាសរឹង​ ។ ប្រសិន​បើ​នេះ​មិនមែន​ជា​អ្វី​ដែល​អ្នក​ចង់​បានទេ អ្នក​អាច​បោះបង់​ប្រតិបត្តិការ​នៃ​អ្នក​ជំនួយ​ការ​នេះ​បាន ដោយ​ជ្រើស &lt;b&gt;ការ​កំណត់&lt;/b&gt; ពី​ម៉ឺនុយ​ &lt;b&gt;ម៉ាស៊ីន&lt;/b&gt; របស់​បង្អួច​ VirtualBox មេ ដើម្បី​ចូលដំណើរការ​ប្រអប់​កំណត់​របស់​ម៉ាស៊ីន​នេះ ហើយ​ផ្លាស់ប្ដូរ​កា​រកំណត់​រចនាសម្ព័ន្ធ​ថាសរឹង ។&lt;/p&gt;&lt;p&gt;ប្រើ​ប៊ូតុង &lt;b&gt;បន្ទាប់&lt;/b&gt; ដើម្បី​ទៅ​ទំព័រ​បន្ទាប់​របស់​អ្នក​ជំនួយការ ហើយ​ប៊ូតុង &lt;b&gt;ថយក្រោយ&lt;/b&gt; ដើម្បីត្រឡប់​ទៅ​ទំព័រ​មុន ។ អ្នក​ក៏អា​ច​ចុច &lt;b&gt;បោះបង់&lt;/b&gt; ប្រសិន​បើ​អ្នក​បោះបង់​ប្រត្តិការ​អ្នក​ជំនួយការ​នេះ ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -3169,7 +3169,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4302,7 +4302,7 @@ network adapter name</comment>
         <translation type="unfinished">មិន​​បាន​ជ្រើស​ឡើយ​</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5804,11 +5804,11 @@ network adapter name</comment>
         <translation>Callee&amp;nbsp;RC ៖ </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;រក​មិន​ឃើញ​​ឯកសារ​ភាសា​សម្រាប់​ភាសា &lt;b&gt;%1&lt;/b&gt; នៅ​ក្នុង &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;ទេ ។&lt;/p&gt;&lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ឡើង​វិញជា​បណ្ដោះអាសន្ន​ទៅ​ភាសា​លំនាំដើម​របស់​ប្រព័ន្ធ ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូលចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច​ VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុង​ចំណោម​ភាសា​ដែល​មាន​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;មិនអាច​ផ្ទុក​ឯកសារ​ភាសា &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; បានទេ ។ &lt;p&gt;ភាសា​នឹង​ត្រូវ​បានកំណត់​ទៅ​ជា​ភាសា​អង់គ្លេស​ជា​បណ្ដោះអាសន្ន ។ សូម​ចូល​ទៅ​ប្រអប់ &lt;b&gt;ចំណូល​ចិត្ត&lt;/b&gt; ដែល​អ្នក​អាច​បើក​ពី​ម៉ឺនុយ​ &lt;b&gt;ឯកសារ&lt;/b&gt; នៃ​បង្អួច VirtualBox មេ ហើយ​ជ្រើស​ភាសា​មួយ​ក្នុងចំណោម​ភាសា​ដែល​មាន​ស្រាប់​នៅ​លើ​ទំព័រ &lt;b&gt;ភាសា&lt;/b&gt; ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5852,7 +5852,7 @@ network adapter name</comment>
         <translation>&lt;p&gt;បង្អួច​ម៉ាស៊ីន​និម្មិត​ត្រូវ​បានធ្វើ​ឲ្យ​ប្រសើរ​ដើម្បី​ធ្វើការ​ក្នុងរបៀប​ពណ៌ &lt;b&gt;%1&amp;nbsp;ប៊ីត&lt;/b&gt; ប៉ុន្តែ​គុណភាពពណ៌​​នៃ​ការ​បង្ហាញ​និម្មិត​បច្ចុប្បន្ន​ត្រូវ​បានកំណត់​ទៅ &lt;b&gt;%2&amp;nbsp;ប៊ីត&lt;/b&gt; ។&lt;/p&gt;&lt;p&gt;សូម​បើក​ប្រអប់លក្ខណៈសម្បត្តិ​បង្ហាញ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ ហើយ​ជ្រើសរបៀប​ពណ៌ &lt;b&gt;%3&amp;nbsp;ប៊ីត&lt;/b&gt; ប្រសិនបើ​មាន សម្រាប់​ការអនុវត្ត​ដ៏​ល្អ​បំផុត​របស់​ប្រព័ន្ធ​រង​វីដែអូ​និម្មិត ។&lt;/p&gt;&lt;p&gt;&lt;b&gt;ចំណាំ&lt;/b&gt; ។ ប្រព័ន្ធ​ប្រតិបត្តិការ​មួយ​ចំនួន ដូចជា OS/2 អាច​ដំណើរការ​យ៉ាង​ពិតប្រាកដ​នៅ​ក្នុង​របៀប ៣២&amp;nbsp;ប៊ីត ប៉ុន្តែ​រាយការណ៍​ជា ២៤&amp;nbsp;ប៊ីត (១៦​ លាន​ពណ៌) ។ អ្នក​អាច​ព្យាយាម​ជ្រើស​គុណភាព​ពណ៌​ផ្សេង​ដើម្បីមើល​ថាតើ​សារ​នេះ​មិនបង្ហាញ​ ឬ​អ្នក​អាច​បិទ​សារ​យ៉ាង​សាមញ្ញ ឥឡូវ​ប្រសិនបើ​អ្នក​ប្រាកដ​គុណភាព​ពណ៌​ដែល​ត្រូវការ (%4&amp;nbsp;ប៊ីត) មិនអាច​ប្រើ​បាននៅ​ក្នុង​ប្រព័ន្ធ ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បានផ្ដល់​ឲ្យ​ទេ ។&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;អ្នកមិនបានភ្ជាប់​ថាសរឹង​ទៅកាន់​ម៉ាស៊ីន​និម្មិត​ថ្មីទេ ។ ម៉ាស៊ីន​នឹង​មិនអាច​ចាប់ផ្ដើម​បានទេ លុះត្រា​តែ​អ្នក​ភ្ជាប់​ថាសរឹង​ជា​មួយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ ឬ​មេឌៀ​ចាប់ផ្ដើម​ផ្សេងៗ​មួយ​ចំនួន​ទៀត​ទៅវា​ ពេលក្រោយ​ប្រើ​ប្រអប់​កំណត់​ម៉ាស៊ីន​ ឬ​រត់​អ្នក​ជំនួយការ​សិន ។&lt;/p&gt;&lt;p&gt;តើអ្នក​ចង់​បន្ត​ដែរឬទេ ?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6046,7 +6046,7 @@ network adapter name</comment>
         <translation type="obsolete">អំពី VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">បង្ហាញ​ប្រអប់​ដែល​មាន​ព័ត៌មាន​ផលិតផល</translation>
     </message>
     <message>
@@ -6298,7 +6298,7 @@ medium</comment>
         <translation type="obsolete">បាន​បរាជ័យ​ក្នុងការ​​​បង្កើត​ចំណុច​ប្រ​ទាក់​បណ្តាញ​ម៉ាស៊ីន​​-តែ​មួយ​</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;មិនអាច​បញ្ចូល​រូបភាព​ស៊ីឌី​កម្មវិធី​ដំឡើង​បន្ថែម​របស់​ម៉ាស៊ីន VirtualBox ​ទៅ​ក្នុង​ម៉ាស៊ីន​និម្មិត​&lt;b&gt;%1&lt;/b&gt;បាន​ទេ ព្រោះ​ថា​ម៉ាស៊ីន​មាន​ដ្រាយ​ស៊ីឌី/ឌីវីឌី​រ៉ូម ។ សូម​បន្ថែម​ដ្រាយ ដោយ​ប្រើ​ទំព័រ​ផ្ទុក​នៃ​ប្រអប់​កំណត់​ម៉ាស៊ីន​និម្មិត ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6887,15 +6887,15 @@ medium</comment>
         <translation type="obsolete">បិទ​ម៉ាស៊ីន​និម្មិត</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7070,7 +7070,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7584,7 +7584,7 @@ medium</comment>
         <translation type="obsolete">បោះបង់</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;ជ្រើស​រូបភាព​ថាសរឹង​ត្រូវ​ប្រើ​ជា​ថាស​រឹង​ចាប់ផ្ដើម​របស់ម៉ាស៊ីន​និម្មិត ។ អ្នកអាច​បង្កើត​ថាសរឹង​ថ្មី​ដោយ​ប្រើ​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ឬ​ជ្រើស​រូបភាព​ថាសរឹង​ដែលមាន​ស្រាប់​ពី​បញ្ជី​ទម្លាក់ចុះ ឬ​ដោយ​ចុច​ប៊ូតុង &lt;b&gt;មាន​ស្រាប់&lt;/b&gt; (ដើម្បីដកហូត​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត) ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ត្រូវការ​រៀបចំ​ថាសរឹង​ដែល​ស្មុគស្មាញ អ្នក​ក៏​អាច​រំលង​ជំហាន​នេះ ហើយ​ភ្ជាប់​ថាសរឹង​ពេលក្រោយ​ដោយ​ប្រើ​ប្រអប់​កំណត់របស់ VM ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7657,7 +7657,7 @@ medium</comment>
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;ជ្រើស​រូបភាព​ថាសរឹង​ត្រូវ​ប្រើ​ជា​ថាស​រឹង​ចាប់ផ្ដើម​របស់ម៉ាស៊ីន​និម្មិត ។ អ្នកអាច​បង្កើត​ថាសរឹង​ថ្មី​ដោយ​ប្រើ​ប៊ូតុង &lt;b&gt;ថ្មី&lt;/b&gt; ឬ​ជ្រើស​រូបភាព​ថាសរឹង​ដែលមាន​ស្រាប់​ពី​បញ្ជី​ទម្លាក់ចុះ ឬ​ដោយ​ចុច​ប៊ូតុង &lt;b&gt;មាន​ស្រាប់&lt;/b&gt; (ដើម្បីដកហូត​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត) ។&lt;/p&gt;&lt;p&gt;ប្រសិនបើ​អ្នក​ត្រូវការ​រៀបចំ​ថាសរឹង​ដែល​ស្មុគស្មាញ អ្នក​ក៏​អាច​រំលង​ជំហាន​នេះ ហើយ​ភ្ជាប់​ថាសរឹង​ពេលក្រោយ​ដោយ​ប្រើ​ប្រអប់​កំណត់របស់ VM ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9411,7 +9411,7 @@ Virtualization Stuff LED</comment>
         <translation>កំណត់​ឡើង​វិញ</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>បើក​ប្រអប់ ដើម្បី​ជ្រើស​ថត​ផ្សេង ។</translation>
     </message>
     <message>
@@ -9419,7 +9419,7 @@ Virtualization Stuff LED</comment>
         <translation>កំណត់​ផ្លូវថត​ទៅ​តម្លៃ​លំនាំដើម​ឡើង​វិញ ។</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>បើក​ប្រអប់​ដើម្បី​ជ្រើស​ឯកសារ​ផ្សេង ។</translation>
     </message>
     <message>
@@ -11979,7 +11979,7 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">ចំណូល​ចិត្ត...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">បង្ហាញ​ប្រអប់​កំណត់​សកល</translation>
     </message>
     <message>
@@ -12095,7 +12095,7 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">កម្មវិធី​គ្រប់គ្រង​ម៉ាស៊ីន​និម្មិត...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">បង្ហាញ​ប្រអប់​កម្មវិធី​គ្រប់គ្រង​​​មេឌៀ​និម្មិត</translation>
     </message>
     <message>

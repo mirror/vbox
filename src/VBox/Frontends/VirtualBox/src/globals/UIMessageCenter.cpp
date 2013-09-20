@@ -365,7 +365,7 @@ void UIMessageCenter::warnAboutWrongUSBMounted() const
 void UIMessageCenter::cannotStartSelector() const
 {
     alert(0, MessageType_Critical,
-          tr("<p>Cannot start VirtualBox Manager due to local restrictions.</p>"
+          tr("<p>Cannot start the VirtualBox Manager due to local restrictions.</p>"
              "<p>The application will now terminate.</p>"));
 }
 
@@ -416,7 +416,7 @@ void UIMessageCenter::cannotFindLanguage(const QString &strLangId, const QString
     alert(0, MessageType_Error,
           tr("<p>Could not find a language file for the language <b>%1</b> in the directory <b><nobr>%2</nobr></b>.</p>"
              "<p>The language will be temporarily reset to the system default language. "
-             "Please go to the <b>Preferences</b> dialog which you can open from the <b>File</b> menu of the "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
              "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
              .arg(strLangId).arg(strNlsPath));
 }
@@ -426,7 +426,7 @@ void UIMessageCenter::cannotLoadLanguage(const QString &strLangFile) const
     alert(0, MessageType_Error,
           tr("<p>Could not load the language file <b><nobr>%1</nobr></b>. "
              "<p>The language will be temporarily reset to English (built-in). "
-             "Please go to the <b>Preferences</b> dialog which you can open from the <b>File</b> menu of the "
+             "Please go to the <b>Preferences</b> window which you can open from the <b>File</b> menu of the "
              "VirtualBox Manager window, and select one of the existing languages on the <b>Language</b> page.</p>")
              .arg(strLangFile));
 }
@@ -2040,7 +2040,7 @@ void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) c
     alert(0, MessageType_Error,
           tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> CD image into the virtual machine <b>%1</b>, "
              "as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the "
-             "virtual machine settings dialog.</p>")
+             "virtual machine settings window.</p>")
              .arg(strMachineName));
 }
 

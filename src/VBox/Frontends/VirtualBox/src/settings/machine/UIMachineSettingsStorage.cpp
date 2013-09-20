@@ -3659,9 +3659,9 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UICacheSettingsM
 
 void UIMachineSettingsStorage::setDialogType(SettingsDialogType settingsDialogType)
 {
-    /* Update model 'settings dialog type': */
+    /* Update model 'settings window type': */
     mStorageModel->setDialogType(settingsDialogType);
-    /* Update 'settings dialog type' of base class: */
+    /* Update 'settings window type' of base class: */
     UISettingsPageMachine::setDialogType(settingsDialogType);
 }
 

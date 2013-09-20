@@ -540,7 +540,7 @@
         <translation type="unfinished">&amp;Virtualių laikmenų tvarkytuvė...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="unfinished">Atveria virtualių laikmenų tvarkytuvę</translation>
     </message>
     <message>
@@ -565,7 +565,7 @@
         <translation type="unfinished">&amp;Nuostatos...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="unfinished">Keisti bendras nuostatas</translation>
     </message>
     <message>
@@ -761,7 +761,7 @@
         <translation type="unfinished">&amp;Apie VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="unfinished">Rodyti langą su produkto informacija</translation>
     </message>
     <message>
@@ -2035,7 +2035,7 @@
         <translation type="obsolete">&lt;p&gt;Jūs pirmą kartą paleidote naujai sukurtą virtualią mašiną. Šis vediklis padės atlikti svarbiausius žingsnius įdiegiant pasirinktą operacinę sistemą į šią virtualią mašiną.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pirmą kartą paleidote naujai sukurtą virtualią mašiną. Šis vediklis padės atlikti svarbiausius žingsnius įkraunant operacinę sistemą iš pasirinktos virtualios mašinos.&lt;/p&gt;&lt;p&gt;Atminkite, kad šią akimirką negalite įdiegti operacinės sistemos į virtualią mašiną, nes neprijungėte jokio standžiojo disko. Jei vis tik norite įdiegti, galite atšaukti šį vediklį, pagrindiniame VirtualBox lange iš &lt;b&gt;Mašinos&lt;/b&gt; meniu pasirinkite &lt;b&gt;Nuostatas&lt;/b&gt; ir pakeiskite standžiųjų diskų konfigūraciją.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3506,7 +3506,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Atveria langą prievadų persiuntimo taisyklių tvarkymui.</translation>
     </message>
     <message>
@@ -4712,7 +4712,7 @@
         <translation>&amp;Kabelis prijungtas</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Atveria langą prievadų persiuntimo taisyklių tvarkymui.</translation>
     </message>
     <message>
@@ -6239,11 +6239,11 @@
         <translation>Iššaukė&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepavyksta rasti &lt;b&gt;%1&lt;/b&gt; kalbos rinkmenos kataloge &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Laikinai bus naudojama sistemos numatytoji kalba. Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepavyksta įkelti kalbos rinkmenos &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Laikinai bus naudojama anglų kalba.Eikite į &lt;b&gt;nuostatas&lt;/b&gt; per &lt;b&gt;rinkmenos&lt;/b&gt; meniu, esantį pagrindiniame VirtualBox lange, ir pasirinkite egzistuojančią kalbą &lt;b&gt;kalbos&lt;/b&gt; kortelėje.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6287,7 +6287,7 @@
         <translation>&lt;p&gt;Virtualios mašinos langas sukonfigūruotas dirbti &lt;b&gt;%1&amp;nbsp;bitų&lt;/b&gt; spalvų veiksenoje, tačiau virtualus ekranas šiuo metu naudoja &lt;b&gt;%2&amp;nbsp;bitų&lt;/b&gt; veikseną.&lt;/p&gt;&lt;p&gt;Jei įmanoma, atverkite svečio OS ekrano nuostatas ir pasirinkite &lt;b&gt;%3&amp;nbsp;bitų&lt;/b&gt; spalvų veikseną; taip užtikrinsite geriausią virtualios vaizdo posistemės veikimą.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Atminkite&lt;/b&gt;. Kai kurios operacinės sistemos, pavyzdžiui OS/2, gali iš tikrųjų dirbti 32&amp;nbsp;bitų veiksenoje, tačiau pranešti, kad yra 24&amp;nbsp;bitų (16 milijonų spalvų). Galite pasirinkti kitą spalvų veikseną, kad įsitikintumėte, ar šis pranešimai pasirodo pagrįstai; arba galite uždrausti šio pranešimo pakartotinį rodymą, jei žinote, kad reikiamos spalvų veiksenos (%4&amp;nbsp;bitų) svečio OS nepalaiko.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Naujai virtualiai mašinai nepriskyrėte jokio standžiojo disko. Jei nepriskirsite standžiojo disko su svečio operacine sistema arba kitos įkraunamos laikmenos, kuri būtų naudojama mašinos nuostatų lange arba pirmojo paleidimo vediklyje, mašinos nebus galima paleisti.&lt;/p&gt;&lt;p&gt;Tęsti?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6492,7 +6492,7 @@
         <translation type="obsolete">&amp;Apie VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Rodyti langą su produkto informacija</translation>
     </message>
     <message>
@@ -6778,7 +6778,7 @@
         <translation type="obsolete">Nepavyko išmesti disko iš virtualaus įtaiso. Galbūt įtaisą užblokavo svečio operacinė sistema. Patikrinkite ir bandykite iš naujo.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepavyksta prijungti VirtualBox svečio papildinių diegimo CD atvaizdžio prie virtualios mašinos &lt;b&gt;%1&lt;/b&gt;, nes mašina neturi CD/DVD įtaiso.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7486,15 +7486,15 @@
         <translation type="obsolete">Užverti virtualią mašiną</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7671,7 +7671,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8285,7 +8285,7 @@
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Pasirinkite standžiojo diko atvaizdį, naudotiną kaip virtualios mašinos įkrovos standųjį diską. Galite arba sukurti naują diską nuspaudę &lt;b&gt;Naujas&lt;/b&gt;, arba pasirinkite jau sukurtąjį iš išskleidžiamojo meniu nuspaudę &lt;b&gt;Esamas&lt;/b&gt; (atsivers virtualių laikmenų tvarkytuvė).&lt;/p&gt;&lt;p&gt;Jei norite sudėtingesnės disko konfigūracijos, galite praleisti šį etapą – standųjį diską pridėsite vėliau per šios virtualios mašinos nuostatas.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9698,7 +9698,7 @@
         <translation>Numatyta</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Atveriamas langas kitokio aplanko pasirinkimui.</translation>
     </message>
     <message>
@@ -9706,7 +9706,7 @@
         <translation>Atstato numatytąjį aplanko kelią.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Atveriamas langas kitokios rinkmenos pasirinkimui.</translation>
     </message>
     <message>
@@ -13308,7 +13308,7 @@ IPv6.</translation>
         <translation type="obsolete">&amp;Virtualių laikmenų tvarkytuvė...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Atveria virtualių laikmenų tvarkytuvę</translation>
     </message>
     <message>
@@ -13333,7 +13333,7 @@ IPv6.</translation>
         <translation type="obsolete">&amp;Nuostatos...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Keisti bendras nuostatas</translation>
     </message>
     <message>

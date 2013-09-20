@@ -826,7 +826,7 @@
     </message>
     <message>
         <location filename="../src/globals/UIActionPool.cpp" line="510"/>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>製品情報ダイアログを表示</translation>
     </message>
     <message>
@@ -863,7 +863,7 @@
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="76"/>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>仮想メディアマネージャー ダイアログを表示</translation>
     </message>
     <message>
@@ -894,7 +894,7 @@
     </message>
     <message>
         <location filename="../src/selector/UIActionPoolSelector.cpp" line="170"/>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>環境設定ダイアログを表示</translation>
     </message>
     <message>
@@ -2424,7 +2424,7 @@ p, li { white-space: pre-wrap; }
 </translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注：ハードディスクが割り当てられていないため、現在オペレーティングシステムをこの仮想マシンにインストールすることができません。このウィザードの実行を中止し、VirtualBoxメインウィンドウの&lt;b&gt;[仮想マシン]&lt;/b&gt;メニューから&lt;b&gt;[設定]&lt;/b&gt;を選び、仮想マシンの設定ダイアログにアクセスしてハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。ウィザードの実行を中止したい場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2490,7 +2490,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;新規作成された仮想マシンが初めて起動されました。このウィザードは、仮想マシンにオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;新規作成された仮想マシンが初めて起動されました。このウィザードは、仮想マシンを起動するために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注：ハードディスクが割り当てられていないため、この仮想マシンにオペレーティングシステムをインストールすることができません。このウィザードの実行を中止して、VirtualBox メインウィンドウの&lt;b&gt;[仮想マシン]&lt;/b&gt;メニューから&lt;b&gt;[設定]&lt;/b&gt;を選んで設定ダイアログにアクセスし、ハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -4190,7 +4190,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="133"/>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">ポートフォワーディングのルールを設定するダイアログを開きます。</translation>
     </message>
     <message>
@@ -5790,7 +5790,7 @@ p, li { white-space: pre-wrap; }
         <translation>アダプタータイプ(&amp;T):</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">現在の割り当てタイプのための拡張設定ダイアログを開きます。</translation>
     </message>
     <message>
@@ -5938,7 +5938,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="259"/>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>ポートフォワーディングのルールを設定するダイアログを開きます。</translation>
     </message>
     <message>
@@ -7780,7 +7780,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2041"/>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8117,17 +8117,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="368"/>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="417"/>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="427"/>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8406,11 +8406,11 @@ p, li { white-space: pre-wrap; }
         <translation>呼び出し先&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;言語ファイル&lt;b&gt;&quot;%1&quot;&lt;/b&gt;が&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;ディレクトリ中に見つかりません。&lt;/p&gt;&lt;p&gt;言語は一時的にシステムのデフォルト言語に設定されます。VirtualBoxメインウィンドウの&lt;b&gt;[ファイル]&lt;/b&gt;メニューから&lt;b&gt;[環境設定]&lt;/b&gt;ダイアログを開き、&lt;b&gt;[言語]&lt;/b&gt;ページで表示されている言語を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;言語ファイル&lt;b&gt;&lt;nobr&gt;&quot;%1&quot;&lt;/nobr&gt;&lt;/b&gt;が読み込めません。&lt;/p&gt;&lt;p&gt;言語は一時的にEnglish(内蔵)に設定されます。VirtualBoxメインウィンドウの&lt;b&gt;[ファイル]&lt;/b&gt;メニューから&lt;b&gt;[環境設定]&lt;/b&gt;ダイアログを開き、&lt;b&gt;[言語]&lt;/b&gt;ページで表示されている言語を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8470,7 +8470,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;仮想マシン実行中に重大なエラーが発生したため、仮想マシンは停止しました。&lt;/p&gt;&lt;p&gt;問題の解決のため、&lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt;のCommunityセクションを参照するか、サポート契約を締結してください。あなたがエラー発生時に行った操作と共に、&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;ディレクトリに格納されているログファイル(&lt;tt&gt;VBox.log&lt;/tt&gt;)とイメージファイル(&lt;tt&gt;VBox.png&lt;/tt&gt;)を提供してください。注：VirualBoxメインウィンドウの&lt;b&gt;[仮想マシン]&lt;/b&gt;メニューから[ログを参照]を選択して、上記ファイルにアクセスすることができます。&lt;/p&gt;&lt;p&gt;仮想マシンを電源オフするには&lt;b&gt;[OK]&lt;/b&gt;ボタンをクリックしてください。このままデバッグを行うには&lt;b&gt;[無視]&lt;/b&gt;ボタンをクリックしてください。デバッグには特別な知識とツールを必要とするため、&lt;b&gt;[OK]&lt;/b&gt;ボタンをクリックすることを推奨します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;新規仮想マシンにハードディスクが割り当てられていません。仮想マシン設定ダイアログか初回起動ウィザードを使用してゲストOSをインストールしたハードディスクまたは他の起動可能なメディアを割り当てないと仮想マシンは起動しません。&lt;/p&gt;&lt;p&gt;続行しますか？&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8776,7 +8776,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">製品情報ダイアログを表示</translation>
     </message>
     <message>
@@ -9463,7 +9463,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想ドライブのディスクの取り出しに失敗しました。このドライブはゲストOSによってロックされています。確認後、再実行してください。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;がCD/DVD-ROMドライブを持たないため、VirtualBox Guest AdditionsのインストールCDイメージを仮想マシンに挿入できません。 仮想マシン設定ダイアログの[ストレージ]ページでドライブを追加してください。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10361,7 +10361,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。
@@ -10450,7 +10450,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">&lt;p&gt;新規仮想マシンの名前を入力し、仮想マシンにインストールしたいゲストOSのタイプを選択してください。&lt;/p&gt;&lt;p&gt;通常、仮想マシンの名前はソフトウェアとハードウェア構成を示します。VirtualBoxは作成された仮想マシンを特定するためにこの名前を使用します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャーを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10495,7 +10495,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャーを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10572,7 +10572,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャーを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -12607,7 +12607,7 @@ Version %1</source>
         <translation type="obsolete">VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">製品情報ダイアログを表示する</translation>
     </message>
     <message>
@@ -13360,7 +13360,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="314"/>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>他のフォルダーを選択するダイアログを開きます。</translation>
     </message>
     <message>
@@ -13370,7 +13370,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/widgets/VBoxFilePathSelectorWidget.cpp" line="323"/>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>他のファイルを選択するダイアログを開きます。</translation>
     </message>
     <message>
@@ -15840,11 +15840,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">デフォルトの仮想マシンフォルダーのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">ダイアログを開いてデフォルトのVDIフォルダーを選択します。</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">ダイアログを開いてデフォルトの仮想マシンフォルダーを選択します。</translation>
     </message>
     <message>
@@ -15860,7 +15860,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">VRDP 認証ライブラリーファイルの選択ダイアログを開きます。</translation>
     </message>
     <message>
@@ -16670,7 +16670,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">仮想ディスクマネージャー ダイアログを表示</translation>
     </message>
     <message>
@@ -16683,7 +16683,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">環境設定ダイアログを表示</translation>
     </message>
     <message>
@@ -16795,7 +16795,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">VirtualBox について(&amp;A)...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">製品情報ダイアログを表示</translation>
     </message>
     <message>
@@ -16986,7 +16986,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">マネージャー</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">仮想メディアマネージャー ダイアログを表示</translation>
     </message>
     <message>

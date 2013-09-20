@@ -641,7 +641,7 @@
         <translation>VirtualBox név&amp;jegy...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Termékinformációs ablak megjelenítése</translation>
     </message>
     <message>
@@ -675,7 +675,7 @@
         <translation>&amp;Virtuális média-kezelő...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>A Virtuális médiakezelő indítása</translation>
     </message>
     <message>
@@ -700,7 +700,7 @@
         <translation>&amp;Beállítások...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Itt lehet megtenni a globális beállításokat</translation>
     </message>
     <message>
@@ -2357,7 +2357,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Gazda eszköz %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Egy újonnan létrehozott virtuális gépet először indítottál el. Az a varázsló segít az általad választott virtuális gép indítási folyamatának lépéseiben.&lt;/p&gt;&lt;p&gt;Most még nem leszel képes operációs rendszert telepíteni a virtuális gépre, mert nem csatlakoztattál még hozzá merevlemezt. Ha nem ezt akarod, megszakíthatod a varázsló futását, a VirtualBox főablakában a &lt;b&gt;Gép&lt;/b&gt; menüből a &lt;b&gt;Konfigurálás&lt;/b&gt; menüpontot kiválasztva elérheted a gép beállításainak ablakát és módosíthatod a merevlemez konfigurációját.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;Tovább&lt;/b&gt; gombbal a varázsló következő oldalára lépsz és a &lt;b&gt;Vissza&lt;/b&gt; gombbal az előző oldalra. A &lt;b&gt;Mégsem&lt;/b&gt; gombbal megszakíthatod a varászló futását.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2436,7 +2436,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Először indítod el ezt a gépet. Ez a varázsló segít a választott operációs rendszer telepítésének előkészítésében.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Először indítod el ezt a gépet. Ez a varázsló segít a választott operációs rendszer telepítésének előkészítésében.&lt;/p&gt;&lt;p&gt;Most még nem tudsz operációs rendszert telepíteni erre a virtuális gépre, mert még nem csatlakoztattál hozzá merevlemezt. Ha nem is szeretnél, megszakíthatod a varázsló futását, a &lt;b&gt;Gép&lt;/b&gt; &lt;b&gt;Konfigurálás&lt;/b&gt; almenübe lépve a virtuális gép beállításaiban módosíthatod a merevlemez beállításait.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3893,7 +3893,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Megnyitja a port továbbítási szabályait kezelő ablakot.</translation>
     </message>
     <message>
@@ -5284,7 +5284,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Kábel bedugva</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Megnyitja a port továbbítási szabályait kezelő ablakot.</translation>
     </message>
     <message>
@@ -7008,11 +7008,11 @@ p, li { white-space: pre-wrap; }
         <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt; nyelv fájlja nem található a mappában: &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;A nyelv ideiglenesen visszaáll a rendszer alapértelmezett nyelvére. A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;A nyelvi fájl nem tölthető be: &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;A nyelv ideiglenesen visszaáll angolra (beépítet). A Virtualbox ablakában, a &lt;b&gt;Fájl&lt;/b&gt;menün belül válaszd a &lt;b&gt;Beállítások&lt;/b&gt; menüpontot, és a &lt;b&gt;Nyelv&lt;/b&gt; oldalon válassz egy nyelvet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7069,7 +7069,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;A virtuális gép ablaka &lt;b&gt;%1&amp;nbsp;bites&lt;/b&gt; színmélységű munkára van optimalizálva, de a virtuális megjelenítő jelenlegi színmélysége &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Nyisd meg a vendég OS megjelenítési tulajdonságait és válassz egy &lt;b&gt;%3&amp;nbsp;bites&lt;/b&gt; módot, ha elérhető, a virtuális videóalrendszer legjobb teljesítménye érdekében.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Megjegyzés&lt;/b&gt;. Néhány operációs rendszer, mint az OS/2, működhetnek 32&amp;nbsp;bites módban, de mégis 24&amp;nbsp;bitnek (16 millió szín) érzékeli. Próbáld meg másik színmélységet választani, hogy akkor eltűnik-e ez az üzenet vay egyszerűen kikapcsolhatod most is, ha biztos vagy bene, hogy a szükséges színmélység (%4&amp;nbsp;bit) nem érhető el az adott vendég rendszeren.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem csatoltál merevlemezt az új virtuális géphez. A gép nem lesz képes elindulni, hacsak nem csatolsz egy merevlemezt a vendég operációs rendszerhez vagy egyéb bootolható médiát, amit később a gép beállításai ablak vagy az Első indítási varázsló használhat.&lt;/p&gt;&lt;p&gt;Folytatni akarod?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7307,7 +7307,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox név&amp;jegy...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Egy ablak mutatása a termékinformációkkal</translation>
     </message>
     <message>
@@ -7672,7 +7672,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuálus gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8222,15 +8222,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Virtuális gép bezárása</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8405,7 +8405,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9302,7 +9302,7 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben.
@@ -9327,7 +9327,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="obsolete">&lt;p&gt;Írjd be az új gép nevét és válaszd ki, milyen típusú operációs rendszert telepítenél bele.&lt;/p&gt;&lt;p&gt;A név általában utal a gép hardver és/vagy szoftverkonfigurációjára. Ez a név lesz a gép azonosítására használva minden VirtualBox komponensben.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben.Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből,esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt;&lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9372,7 +9372,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
         <translation type="obsolete">Mégsem</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben. Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből, esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt; &lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod a gép beállításainak ablakában.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9453,7 +9453,7 @@ esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Válaszd ki a merevlemez képfájlt amit boot eszköznek szeretnél használni a virtuális gépben. Készíthetsz új merevlemezt is az &lt;b&gt;Új&lt;/b&gt; gomb megnyomásával, vagy választhatsz egy létezőt a legördülő menüből, esetleg a &lt;b&gt;Létező&lt;/b&gt; gombbal a Virtuális lemezkezelőből.&lt;/p&gt; &lt;p&gt;Ha ennél bonyolultabb beállítást szeretnél, hagyd ki ezt a lépést, és majd később beállíthatod a gép beállításainak ablakában.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11167,7 +11167,7 @@ Verzió %1</translation>
         <translation type="obsolete">A VirtualBox név&amp;jegye...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Egy ablak mutatása a termékinformációkkal</translation>
     </message>
     <message>
@@ -11961,7 +11961,7 @@ Verzió %1</translation>
         <translation>Reset</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Megnyit egy ablakot az egy másik mappa kiválasztásához.</translation>
     </message>
     <message>
@@ -11969,7 +11969,7 @@ Verzió %1</translation>
         <translation>Visszaállítja a mappa útvonalát az alapértelmezésre.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Megnyit egy ablakot az egy másik fájl kiválasztásához.</translation>
     </message>
     <message>
@@ -14173,11 +14173,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Megmutatja az aktuális alapértelmezett virtuális gép mappát. Ez a mappa az alapértelmezés, ha nem ad meg mappát új virtuális gép készítésekor.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Megnyit egy ablakot az alapértelmezett VDI mappa kiválasztásához.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Megnyit egy ablakot az alapértelmezett virtuális gép mappa kiválasztásához.</translation>
     </message>
     <message>
@@ -14210,7 +14210,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Az azonosítási könyvtár elérési útját mutatja, ami a VRDP klienseket autentikálja. </translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">Megnyit egy ablakot a VRDP azonosítási könyvtár kiválasztásához.</translation>
     </message>
     <message>
@@ -14820,7 +14820,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">A Virtuális lemezkezelő indítása</translation>
     </message>
     <message>
@@ -14833,7 +14833,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Itt lehet megtenni a globális beállításokat</translation>
     </message>
     <message>
@@ -14945,7 +14945,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Virtu&amp;alBox névjegy...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Termékinformációs ablak megjelenítése</translation>
     </message>
     <message>
@@ -15053,7 +15053,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&amp;Virtuális média-kezelő...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">A Virtuális médiakezelő indítása</translation>
     </message>
     <message>
