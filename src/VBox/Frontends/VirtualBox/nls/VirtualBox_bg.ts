@@ -4985,7 +4985,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако е избрано, ще се показва малка лента с инструменти при цял екран и безрамков режим.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Показване при &amp;Цял екран/Безрамков режим</translation>
     </message>
     <message>
@@ -4993,7 +4993,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако е избрано, малката лента с инструменти ще се показва в горния край на екрана, вместо на стандартната ѝ позиция в долния край на екрана.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Показване &amp;отгоре на екрана</translation>
     </message>
     <message>
@@ -5417,7 +5417,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Списък с папки</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Авто монтиране</translation>
     </message>
     <message>
@@ -5866,7 +5866,7 @@ p, li { white-space: pre-wrap; }
         <translation>Позволява използването на I/O кеширащите възможности на реалната машина.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Използване на I/O кеш на хоста</translation>
     </message>
     <message>
@@ -5962,7 +5962,7 @@ p, li { white-space: pre-wrap; }
         <translation>Когато е избрано, това маркира медията като механично статично съхранение (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Механично статично устройство (SSD)</translation>
     </message>
     <message>
@@ -6186,7 +6186,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако е избрано, RTC устройството ще съобщава времето в UTC, иначе - в локално (на реалната машина) време. Unix обикновено очаква хардуерният часовник да бъде зададен към UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Хардуерен часовник към &amp;UTC време</translation>
     </message>
     <message>

@@ -4073,7 +4073,7 @@
         <translation>选中，将在全屏或无缝模式显示小工具栏。</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>在全屏或无缝模式显示(&amp;F)</translation>
     </message>
     <message>
@@ -4081,7 +4081,7 @@
         <translation>选中，小工具栏将出现在屏幕的顶部，而不是默认的底部位置。</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>在屏幕顶部显示(&amp;T)</translation>
     </message>
     <message>
@@ -4449,7 +4449,7 @@
         <translation>共享文件夹列表(&amp;F)</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>自动挂载</translation>
     </message>
     <message>
@@ -4790,7 +4790,7 @@
         <translation>允许使用主机输入输出 (I/O) 缓存功能。</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>使用主机输入输出 (I/O) 缓存</translation>
     </message>
     <message>
@@ -4879,7 +4879,7 @@
         <translation>选中时，虚拟机系统会将虚拟磁盘视为固态设备。</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>固态驱动器(&amp;S)</translation>
     </message>
     <message>
@@ -5092,7 +5092,7 @@
         <translation>选中时，RTC时钟设备将使用国际标准时间(UTC)，否则使用当地(本机)时间。Unix系统通常预计硬件时钟设置为国际标准时间(UTC)。</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>硬件时钟使用国际标准时间(&amp;UTC)</translation>
     </message>
     <message>

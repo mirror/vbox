@@ -4513,7 +4513,7 @@
         <translation>Bila ditandai, menampilkan ToolBar Mini dalam mode Fullscreen dan Seamless.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Tampilkan Dalam &amp;Fullscreen/Seamless</translation>
     </message>
     <message>
@@ -4521,7 +4521,7 @@
         <translation>Bila ditandai, menampilkan ToolBar Mini di puncak layar, bukan di posisi default di dasar layar.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>&amp;Tampilkan Di Puncak Layar</translation>
     </message>
     <message>
@@ -4966,7 +4966,7 @@
         <translation>Daftar &amp;Folder</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Mount Otomatis</translation>
     </message>
     <message>
@@ -5343,7 +5343,7 @@
         <translation>Mengijinkan pemakaian kapabilitas caching I/O host.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Gunakan cache I/O host</translation>
     </message>
     <message>
@@ -5431,7 +5431,7 @@
         <translation>Saat ditandai, sistem guest akan melihat disk virtual sebagai device solid state.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>Drive &amp;solid-state</translation>
     </message>
     <message>
@@ -5642,7 +5642,7 @@
         <translation>Bila ditandai, device RTC akan melaporkan waktu dalam UTC, bila tidak, dalam waktu lokal (host). Unix biasanya mengharapkan jam hardware ditata ke UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Jam hardware dalam waktu &amp;UTC</translation>
     </message>
     <message>

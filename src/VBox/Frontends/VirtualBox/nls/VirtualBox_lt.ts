@@ -4605,7 +4605,7 @@
         <translation>Jei pažymėta, viso ekrano ir integruoto darbo veiksenose bus rodoma maža įrankinė.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Rodyti viso &amp;ekrano/integravimo veiksenoje</translation>
     </message>
     <message>
@@ -4613,7 +4613,7 @@
         <translation>Jei pažymėta, maža įrankinė bus rodoma ekrano viršuje, o ne apačioje.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Rodyti &amp;virš kitų langų</translation>
     </message>
     <message>
@@ -4938,7 +4938,7 @@
         <translation>Kelias</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Automatinis prijungimas</translation>
     </message>
     <message>
@@ -5183,7 +5183,7 @@
         <translation>Leidžia naudotis pagrindinio kompiuterio įvesties/išvesties podėlio funkcijomis.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Naudoti pagrindinio kompiuterio įvesties/išvesties podėlį</translation>
     </message>
     <message>
@@ -5415,7 +5415,7 @@
         <translation>Kai pažymėta, svečio sitema matys virtualų diską kaip kietos būsenos įrenginį.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Puslaidininkinis diskas</translation>
     </message>
     <message>
@@ -5552,7 +5552,7 @@
         <translation>Pažymėjus, RTC įtaisas laiką praneš pasauliniu formatu (UTC); priešingu atveju – vietiniu (pagrindinio kompiuterio) laiku. Unix sistemose aparatinis laikrodis paprastai nustatytas į pasaulinį.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Aparatinis laikrodis &amp;pasauliniu laiku</translation>
     </message>
     <message>
@@ -14210,7 +14210,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Jei pažymėta, viso ekrano ir integruoto darbo veiksenose bus rodoma maža įrankinė.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation type="obsolete">Rodyti viso &amp;ekrano/integravimo veiksenoje</translation>
     </message>
     <message>
@@ -14218,7 +14218,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Jei pažymėta, maža įrankinė bus rodoma ekrano viršuje, o ne apačioje.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation type="obsolete">Rodyti &amp;virš kitų langų</translation>
     </message>
 </context>
@@ -14441,7 +14441,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Leidžia naudotis pagrindinio kompiuterio įvesties/išvesties podėlio funkcijomis.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation type="obsolete">Naudoti pagrindinio kompiuterio įvesties/išvesties podėlį</translation>
     </message>
     <message>
@@ -14927,7 +14927,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Pažymėjus, RTC įtaisas laiką praneš pasauliniu formatu (UTC); priešingu atveju – vietiniu (pagrindinio kompiuterio) laiku. Unix sistemose aparatinis laikrodis paprastai nustatytas į pasaulinį.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation type="obsolete">Aparatinis laikrodis &amp;pasauliniu laiku</translation>
     </message>
     <message>

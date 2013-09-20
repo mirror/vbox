@@ -5365,7 +5365,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se habilitado, exibe a minibarra de ferramentas enquanto estiver nos modos Tela Cheia ou Seamless.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Exibir nos modos Tela Cheia/Seamless (&amp;F)</translation>
     </message>
     <message>
@@ -5373,7 +5373,7 @@ p, li { white-space: pre-wrap; }
         <translation>se marcado, exibe a mini barra de ferramentas no topo da tela, ao invés da posição padrão na parte de baixo da tela.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Exibir No &amp;Topo da Tela</translation>
     </message>
     <message>
@@ -5983,7 +5983,7 @@ p, li { white-space: pre-wrap; }
         <translation>Lista de Pastas (&amp;F)</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Montar Automaticamente</translation>
     </message>
     <message>
@@ -6444,7 +6444,7 @@ p, li { white-space: pre-wrap; }
         <translation>Permite o uso de facilidades de cache de I/O do hospedeiro.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Utilizar cache de I/O do hospedeiro</translation>
     </message>
     <message>
@@ -6540,7 +6540,7 @@ p, li { white-space: pre-wrap; }
         <translation>Quando selecionado, define a mídia como sendo de estado sólido (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>Drive de estado &amp;sólido</translation>
     </message>
     <message>
@@ -6764,7 +6764,7 @@ p, li { white-space: pre-wrap; }
         <translation>Quando selecionado, o dispositivo de RTC (relógio interno) irá indicar o horário em UTC, caso contrário irá indicar o horário local. Sistemas UNIX geralmente assumem que o relógio está definido para UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Relógio da máquina retorna hora &amp;UTC</translation>
     </message>
     <message>

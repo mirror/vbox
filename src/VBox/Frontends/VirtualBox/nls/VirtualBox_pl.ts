@@ -4657,7 +4657,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pokazywanie miniaturowego paska narzędzi w trybach pełnoekranowym i zintegrowanym.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Pokaż w trybie p&amp;ełnoekranowym/zintegrowanym</translation>
     </message>
     <message>
@@ -4665,7 +4665,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pokazywanie miniaturowego paska narzędzi u góry ekranu, zamiast domyślnej pozycji u dołu ekranu.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Pokaż u &amp;góry ekranu</translation>
     </message>
     <message>
@@ -5231,7 +5231,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Lista katalogów</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5680,7 +5680,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pozwala używać właściwości buforowania I/O systemu gospodarza.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Użyj buforowania I/O gospodarza</translation>
     </message>
     <message>
@@ -5776,7 +5776,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5975,7 +5975,7 @@ p, li { white-space: pre-wrap; }
         <translation>Decyduje o tym, czy zegar czasu rzeczywistego (RTC) będzie ustawiony na UTC, czy będzie używał czasu lokalnego (jak u gospodarza). Typowo w systemach UNIX oczekuje się zegara sprzętowego ustawionego na UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Czas zegara w &amp;UTC</translation>
     </message>
     <message>

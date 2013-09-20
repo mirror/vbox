@@ -4344,7 +4344,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Dacă este bifat, afișează Minibara în modul pe tot ecranul și în cel transparent.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Arată în mod pe tot &amp;ecranul/transparent</translation>
     </message>
     <message>
@@ -4352,7 +4352,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Dacă este bifată, poziționează minibara în partea de sus a ecranului, deși poziția implicită este la baza ecranului.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Poziționează &amp;sus</translation>
     </message>
     <message>
@@ -4833,7 +4833,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>&amp;Listă dosare</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5254,7 +5254,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Permite folosirea capabilităților de caching I/O ale gazdei.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Folosește I/O cache gazdă</translation>
     </message>
     <message>
@@ -5350,7 +5350,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5546,7 +5546,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

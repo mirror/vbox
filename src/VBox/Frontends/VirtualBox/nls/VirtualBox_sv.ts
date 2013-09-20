@@ -5155,7 +5155,7 @@ p, li { white-space: pre-wrap; }
         <translation>Om kryssad, visa minimal verktygsrad i helskärmsläge och sömlöst läge.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Visa i &amp;helskärm/sömlöst läge</translation>
     </message>
     <message>
@@ -5163,7 +5163,7 @@ p, li { white-space: pre-wrap; }
         <translation>Om kryssad kommer minimala verktygsraden att visas överst på skärmen istället för på dess standardposition längst ner på skärmen.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Visa övers&amp;t på skärmen</translation>
     </message>
     <message>
@@ -5771,7 +5771,7 @@ parallel ports</comment>
         <translation>&amp;Mapplista</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Montera automatiskt</translation>
     </message>
     <message>
@@ -6238,7 +6238,7 @@ serial ports</comment>
         <translation>Tillåter användning av värdförmågor för in/ut-mellanlagring.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Använd in/ut-mellanlagring för värd</translation>
     </message>
     <message>
@@ -6334,7 +6334,7 @@ serial ports</comment>
         <translation type="obsolete">När kryssad kommer detta att markera detta media som icke-roterande lagring (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Solid-State Drive</translation>
     </message>
     <message>
@@ -6566,7 +6566,7 @@ serial ports</comment>
         <translation>Om kryssad kommer RTC-enheten att rapportera tiden i UTC, om inte i lokaltid (värd). Unix förväntar sig oftast att maskinvaruklockan ställs in i UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Maskinvaruklocka i &amp;UTC-tid</translation>
     </message>
     <message>

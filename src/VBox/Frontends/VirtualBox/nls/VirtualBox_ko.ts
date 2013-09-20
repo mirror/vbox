@@ -5003,7 +5003,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 전체 화면 및 심리스 모드에서 작은 도구 모음을 표시합니다.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>전체 화면/심리스 모드에서 보이기(&amp;F)</translation>
     </message>
     <message>
@@ -5011,7 +5011,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 작은 도구 모음을 화면 아래 대신 위에 표시합니다.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>화면 위에 보이기(&amp;T)</translation>
     </message>
     <message>
@@ -5546,7 +5546,7 @@ p, li { white-space: pre-wrap; }
         <translation>폴더 목록(&amp;F)</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>자동 마운트</translation>
     </message>
     <message>
@@ -5995,7 +5995,7 @@ p, li { white-space: pre-wrap; }
         <translation>호스트 I/O 캐시를 사용합니다.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>호스트 I/O 캐시 사용하기</translation>
     </message>
     <message>
@@ -6091,7 +6091,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 이 미디어를 SSD로 표시합니다.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>SSD(&amp;S)</translation>
     </message>
     <message>
@@ -6315,7 +6315,7 @@ p, li { white-space: pre-wrap; }
         <translation>선택하면 RTC 장치는 현재 시간을 UTC로 보고하며, 선택하지 않으면 지역 시간으로 보고합니다. 일부 유닉스는 하드웨어 시간이 UTC로 되어 있다고 가정합니다.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>하드웨어 시각을 UTC로 보고하기(&amp;U)</translation>
     </message>
     <message>

@@ -5074,7 +5074,7 @@ p, li { white-space: pre-wrap; }
         <translation>Si està marcat, mostra la barra d&apos;eines mini als modes fluid i de pantalla completa.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Mostra en pantalla completa/&amp;fluid</translation>
     </message>
     <message>
@@ -5082,7 +5082,7 @@ p, li { white-space: pre-wrap; }
         <translation>Si està marcat, mostra una barra d&apos;eines petita a la part de dalt de la pantalla en lloc de a la posició per defecte a la part de sota.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Mostra a la par&amp;t de dalt de la pantalla</translation>
     </message>
     <message>
@@ -5692,7 +5692,7 @@ p, li { white-space: pre-wrap; }
         <translation>Llista de &amp;carpetes</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Munta automàticament</translation>
     </message>
     <message>
@@ -6153,7 +6153,7 @@ p, li { white-space: pre-wrap; }
         <translation>Permet l&apos;utilització de les capacitats de captura E/S.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Fes servir la memòria cau E/S</translation>
     </message>
     <message>
@@ -6249,7 +6249,7 @@ p, li { white-space: pre-wrap; }
         <translation>Quan estigui marcat, el sistema client veurà el disc virtual com a un dispositiu d&apos;estat sòlid.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>Dispositiu d&apos;e&amp;stat sòlid</translation>
     </message>
     <message>
@@ -6473,7 +6473,7 @@ p, li { white-space: pre-wrap; }
         <translation>Si està marcat, el dispositiu TRC informarà de l&apos;hora en UTC, d&apos;altra manera es mostrarà en hora local (amfitrió). Els sistemes Unix normalment s&apos;esperen que el rellotge de maquinari estigui definiti com a UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Rellotge de maquinari en hora &amp;UTC</translation>
     </message>
     <message>

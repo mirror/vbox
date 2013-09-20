@@ -86,7 +86,7 @@
         </column>
         <column>
          <property name="text">
-          <string>Auto-Mount</string>
+          <string>Auto-mount</string>
          </property>
         </column>
         <column>

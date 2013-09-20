@@ -4845,7 +4845,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vises mini-værktøjslinjen i Fuldskærm og Rammefri tilstand.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Vis i &amp;Fuldskærm/Rammefri tilstand</translation>
     </message>
     <message>
@@ -4853,7 +4853,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vises mini-værktøjslinjen i toppen af skærmen fremfor som standard i bunden af skærmen.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Vis i &amp;toppen af skærm</translation>
     </message>
     <message>
@@ -5278,7 +5278,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Folderoversigt</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Tilslut automatiskt</translation>
     </message>
     <message>
@@ -5723,7 +5723,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tillader værten at bruge sit I/O mellemlager.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Brug I/O mellemlager</translation>
     </message>
     <message>
@@ -5820,7 +5820,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vil gæsten se den virtuelle disk som en SSD-disk.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;SSD-disk</translation>
     </message>
     <message>
@@ -6044,7 +6044,7 @@ p, li { white-space: pre-wrap; }
         <translation>Hvis markeret, vil uret bruge UTC som tidszone - hvis ikke bruges lokal (vært) tid. Unix forventer normalt at hardware-uret er sat til UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Hardware-ur i &amp;UTC time</translation>
     </message>
     <message>

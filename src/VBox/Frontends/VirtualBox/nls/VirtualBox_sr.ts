@@ -4794,7 +4794,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако унето, показати алатну траку у пуном екрану или интегрисаном моду.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Покажи у пуном екрану/интегрисано</translation>
     </message>
     <message>
@@ -4802,7 +4802,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако унето, покажи малу алатну траку на врх екрана, уместо на дну.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Покажи на врх екрана</translation>
     </message>
     <message>
@@ -5302,7 +5302,7 @@ p, li { white-space: pre-wrap; }
         <translation>Списак фасцикла</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Ауто-монтирај</translation>
     </message>
     <message>
@@ -5759,7 +5759,7 @@ p, li { white-space: pre-wrap; }
         <translation>Дозволи да се користи I/O могућност кеширања хоста.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Користи I/O кеш хоста</translation>
     </message>
     <message>
@@ -5847,7 +5847,7 @@ p, li { white-space: pre-wrap; }
         <translation>Када унето, гост ће видети виртуални диск као SSD.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>SSD</translation>
     </message>
     <message>
@@ -6071,7 +6071,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ако унето, RTC уређај ће показивати време у UTC, у супротно биће у локалну (хост) време. Јуникс нормално очекује да време буде постављено у UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Хардверски сат у UTC времену</translation>
     </message>
     <message>
