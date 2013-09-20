@@ -77,6 +77,7 @@ public:
     STDMETHOD(COMGETTER(OSVersion))(BSTR *version);
     STDMETHOD(COMGETTER(UTCTime))(LONG64 *aUTCTime);
     STDMETHOD(COMGETTER(Acceleration3DAvailable))(BOOL *aSupported);
+    STDMETHOD(COMGETTER(VideoCaptureDevices))(ComSafeArrayOut(IHostVideoCaptureDevice*, aVideoCaptureDevices));
 
     // IHost methods
     STDMETHOD(CreateHostOnlyNetworkInterface)(IHostNetworkInterface **aHostNetworkInterface,

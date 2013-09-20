@@ -375,6 +375,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_HOSTUSBDEVICE,
     /** Main group, IHostUSBDeviceFilter. */
     LOG_GROUP_MAIN_HOSTUSBDEVICEFILTER,
+    /** Main group, IHostVideoCaptureDevice. */
+    LOG_GROUP_MAIN_HOSTVIDEOCAPTUREDEVICE,
     /** Main group, IInternalMachineControl. */
     LOG_GROUP_MAIN_INTERNALMACHINECONTROL,
     /** Main group, IInternalSessionControl. */
@@ -842,6 +844,7 @@ typedef enum LOGGROUP
     "MAIN_HOSTPCIDEVICEPLUGEVENT", \
     "MAIN_HOSTUSBDEVICE", \
     "MAIN_HOSTUSBDEVICEFILTER", \
+    "MAIN_HOSTVIDEOCAPTUREDEVICE", \
     "MAIN_INTERNALMACHINECONTROL", \
     "MAIN_INTERNALSESSIONCONTROL", \
     "MAIN_KEYBOARD", \

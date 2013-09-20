@@ -8308,8 +8308,30 @@
   </interface>
 
   <interface
+    name="IHostVideoCaptureDevice" extends="$unknown"
+    uuid="b3979ea4-bf32-4a03-8158-44d64a59487d"
+    wsmap="managed"
+    >
+    <desc>
+      Represents one of host's video capture devices, for example a webcam.
+    </desc>
+    <attribute name="name" type="wstring" readonly="yes">
+      <desc>User friendly name.</desc>
+    </attribute>
+
+    <attribute name="path" type="wstring" readonly="yes">
+      <desc>The host path of the device.</desc>
+    </attribute>
+
+    <attribute name="alias" type="wstring" readonly="yes">
+      <desc>An alias which can be used for IConsole::webcamAttach</desc>
+    </attribute>
+
+  </interface>
+
+  <interface
     name="IHost" extends="$unknown"
-    uuid="a6107246-f939-42c4-82b6-8aca40327b6d"
+    uuid="e1e3150d-1764-4819-b53a-c09a75a8b8f0"
     wsmap="managed"
     >
     <desc>
@@ -8764,6 +8786,10 @@
         <desc>New Ethernet MAC address.</desc>
       </param>
     </method>
+
+    <attribute name="videoCaptureDevices" type="IHostVideoCaptureDevice" safearray="yes" readonly="yes">
+      <desc>List of currently available host video capture devices.</desc>
+    </attribute>
 
   </interface>
 
