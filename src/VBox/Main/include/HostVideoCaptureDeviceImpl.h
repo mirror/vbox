@@ -24,7 +24,9 @@
 
 #include <list>
 
-typedef std::list<ComObjPtr<IHostVideoCaptureDevice> > HostVideoCaptureDeviceList;
+class HostVideoCaptureDevice;
+
+typedef std::list<ComObjPtr<HostVideoCaptureDevice> > HostVideoCaptureDeviceList;
 
 class ATL_NO_VTABLE HostVideoCaptureDevice :
     public HostVideoCaptureDeviceWrap
