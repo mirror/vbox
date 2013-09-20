@@ -576,11 +576,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6339,11 +6339,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6588,7 +6588,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Maszyna Wirtualna jest aktualnie w stanie &lt;b&gt;Wstrzymania&lt;/b&gt; i tym samym nie obsłuży żadnych danych wejściowych pochodzących od klawiatury lub myszy. Aby kontynuować pracę w maszynie wirtualnej, należy ją najpierw wznowić poprzez wybranie odpowiedniej opcji z menu &lt;i&gt;Maszyna&lt;/i&gt; w oknie maszyny.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jeden lub więcej z zarejestrowanych wirtualnych twardych dysków, nośników CD/DVD lub dyskietek nie jest w tej chwili dostępny. W wyniku, nie będziesz mógł używać wirtualnych maszyn korzystających z tych nośników dopóki dostęp do nich nie zostanie uzyskany ponownie.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;OK&lt;/b&gt;, aby otworzyć Menedżera dysków wirtualnych i sprawdzić które z nośników są niedostępne lub wcisnąć &lt;b&gt;Ignoruj&lt;/b&gt;, aby zignorować tę wiadomość.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6845,7 +6845,7 @@ p, li { white-space: pre-wrap; }
         <translation>Przechwyć</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jeden lub więcej z zarejestrowanych wirtualnych twardych dysków, nośników CD/DVD lub dyskietek nie jest w tej chwili dostępny. W wyniku tego nie będzie można używać maszyn wirtualnych korzystających z tych nośników, dopóki dostęp do nich nie zostanie uzyskany ponownie.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;Sprawdź&lt;/b&gt;, aby otworzyć Menedżera dysków wirtualnych i sprawdzić które z nośników są niedostępne lub &lt;b&gt;Ignoruj&lt;/b&gt;, aby zignorować tę wiadomość.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7013,7 +7013,7 @@ p, li { white-space: pre-wrap; }
         <translation>Wysuń</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Usunąć %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; z listy znanych nośników?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7088,7 +7088,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nie udało się zamknąć %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nie udało się uzyskać stanu dostępności nośnika &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7100,7 +7100,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Nie udało się uzyskać informacji o nowej wersji programu z powodu następującego błędu:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Jeden lub więcej z zarejestrowanych wirtualnych twardych dysków, nośników CD/DVD lub dyskietek nie jest w tej chwili dostępny. W wyniku tego nie będzie można używać maszyn wirtualnych korzystających z tych nośników, dopóki dostęp do nich nie zostanie uzyskany ponownie.&lt;/p&gt;&lt;p&gt;Proszę wcisnąć &lt;b&gt;Sprawdź&lt;/b&gt;, aby otworzyć Menedżera nośników wirtualnych i sprawdzić które z nośników są niedostępne lub &lt;b&gt;Ignoruj&lt;/b&gt;, aby zignorować tę wiadomość.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7567,7 +7567,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7652,7 +7652,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7884,7 +7884,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7892,11 +7892,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10432,7 +10432,7 @@ Wersja %1</translation>
         <translation type="obsolete">Od&amp;montuj dyskietkę</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Odmontowuje aktualnie zamontowaną dyskietkę</translation>
     </message>
     <message>
@@ -10706,7 +10706,7 @@ Wersja %1</translation>
         <translation type="obsolete">Wskazuje, czy klawiatura jest przechwycona przez goszczony system operacyjny (&lt;img src=:/hostkey_captured_16px.png/&gt;) czy nie (&lt;img src=:/hostkey_16px.png/&gt;).</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Wskaźnik aktywności nośnika w stacji dyskietek:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11163,7 +11163,7 @@ Wersja %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Migawka:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Błąd sprawdzania dostępności nośnika</translation>
     </message>
@@ -11188,7 +11188,7 @@ Wersja %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Podłączony do:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Błąd sprawdzania dostępności nośnika</translation>
     </message>
@@ -11226,7 +11226,7 @@ Wersja %1</translation>
         <translation type="obsolete">Obrazy dyskietek (*.img)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Wybierz plik obrazu dyskietki</translation>
     </message>
     <message>
@@ -11246,7 +11246,7 @@ Wersja %1</translation>
         <translation type="obsolete">Wysuwa wybrany nośnik poprzez odłączenie go od maszyny</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation type="obsolete">Odświeża listę nośników</translation>
     </message>
     <message>
@@ -12187,7 +12187,7 @@ Wersja %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Sprawdzanie dostępności...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Błąd sprawdzania dostępności nośnika.&lt;br&gt;%1.</translation>
     </message>
@@ -12207,7 +12207,7 @@ Wersja %1</translation>
         <translation>Niedostępny</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Niektóre nośniki w tym łańcuchu dysków twardych są niedostępne. Proszę użyć Menedżera nośników wirtualnych w trybie &lt;b&gt;Pokaż różnicowe dyski twarde&lt;/b&gt;, aby sprawdzić te nośniki.</translation>
     </message>
     <message>
@@ -12535,12 +12535,12 @@ Wersja %1</translation>
         <translation>&lt;i&gt;Sprawdzanie dostępności...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Błąd sprawdzania dostępności nośnika.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Nie wybrano nośnika&lt;/b&gt;</translation>
     </message>
@@ -12549,12 +12549,12 @@ Wersja %1</translation>
         <translation>Można to zmienić również w trakcie działania maszyny wirtualnej.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Brak dostępnych nośników&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Obrazy nośników można utworzyć używając Menedżera nośników wirtualnych.</translation>
     </message>
     <message>
@@ -12563,7 +12563,7 @@ Wersja %1</translation>
         <translation>Podłączenie tego dysku twardego zostanie wykonane pośrednio, z użyciem nowo utworzonego różnicowego dysku twardego.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Niektóre nośniki w tym łańcuchu dysków twardych są niedostępne. Proszę użyć Menedżera nośników wirtualnych w trybie &lt;b&gt;Pokaż różnicowe dyski twarde&lt;/b&gt;, aby sprawdzić te nośniki.</translation>
     </message>
@@ -13761,7 +13761,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
         <translation type="obsolete">Brak dysku twardego</translation>
     </message>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Żaden nośnik nie jest dostępny. Proszę użyć Menedżera nośników wirtualnych, aby dodać nośnik odpowiedniego typu.</translation>
     </message>
     <message>
@@ -13800,19 +13800,19 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
         <translation type="obsolete">Tworzy nowy wirtualny dysk twardy</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Dodaje istniejący nośnik</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Usuwa wybrany nośnik</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Wysuwa wybrany nośnik poprzez odłączenie go od maszyn</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Odświeża listę nośników</translation>
     </message>
     <message>
@@ -13860,7 +13860,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
         <translation type="obsolete">Obrazy dyskietek (*.img);;Wszystkie pliki (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Wybierz plik obrazu dyskietki</translation>
     </message>
     <message>
@@ -13948,11 +13948,11 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -516,11 +516,11 @@
         <translation>Перемкнутись між звичайним і ціловикроєним режимом стільничної інтеграції</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Перемкнутись на &amp;масштабний режим</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Перемкнутись між звичайним і масштабним режимом</translation>
     </message>
     <message>
@@ -6476,11 +6476,11 @@ p, li { white-space: pre-wrap; }
         <translation>Змінити атрибути носія</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ви збираєтесь змінити атрибути віртуально диска в &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Будь ласка, виберіть один із цих типів носія і натисніть &lt;b&gt;%2&lt;/b&gt;, що продовжити, або ж &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Вибрати тип носія:</translation>
     </message>
 </context>
@@ -6997,7 +6997,7 @@ p, li { white-space: pre-wrap; }
         <translation>Відпустити</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ви впевнені, що бажаєте вилучити %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; зі списку відомих носіїв?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7072,7 +7072,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Не вдалося закрити %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Не вдається отримати стан доступності носія &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7084,7 +7084,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Неможливо одержати нову інформацію про версію через таку помилку:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Один або більше віртуальних носіїв жорстких дисків, CD/DVD або дискет — недоступні. У результаті, ви не можете керувати віртуальною машиною, що використовує той носій, допоки носій не стане доступним.&lt;/p&gt;&lt;p&gt;Натисність &lt;b&gt;Перевірити&lt;/b&gt;, щоб відкрити вікно менеджера віртуальних носіїв і побачити які носії недоступні, або натиснути &lt;b&gt;Ігнорувати&lt;/b&gt;, щоб уникнути цього повідомлення.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7603,7 +7603,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;ціловикроєний&lt;/b&gt; режим. Можете повенутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в ціловикроєному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Вікно віртуальної машини буде перемкнуто на &lt;b&gt;масштабний&lt;/b&gt; режим. Можете повенутись до віконного режим у будь-який момент через натиснення &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, &lt;i&gt;головну&lt;/i&gt; клавішу визначено як &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Зауважте, що панель головного меню сховано в масштабному режимі. Ви можете дістатись до неї через натиснення &lt;b&gt;головна клавіша+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7704,7 +7704,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Відновити зріз&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Помилка зміни типу носія з &lt;b&gt;%1&lt;/b&gt; на &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7990,7 +7990,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7998,11 +7998,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10519,7 +10519,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Демонтувати &amp;дискету</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Демонтувати вже змонтовану дискету</translation>
     </message>
     <message>
@@ -10670,7 +10670,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Перемкнутись в цілокроєний режим інтеграції стільниці</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Показує активність дискети:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11792,7 +11792,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Перевірка доступності...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Не вдалось перевірити доступність носія.&lt;br&gt;%1.</translation>
     </message>
@@ -11812,7 +11812,7 @@ p, li { white-space: pre-wrap; }
         <translation>Недоступний</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Деякі з носіїв цієї низки жорстких дисків недоступні. Будь ласка, використайте керування віртуальними носіями в режимі &lt;b&gt;Показати обчислення жорстких дисків&lt;/b&gt;, щоб оглянути цей носій.</translation>
     </message>
     <message>
@@ -12120,12 +12120,12 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;i&gt;Перевірка доступності...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Не вдалось перевірити доступність носія.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Не вибрано носія&lt;/b&gt;</translation>
     </message>
@@ -12134,12 +12134,12 @@ p, li { white-space: pre-wrap; }
         <translation>Ви також можете це змінювати протягом роботи машини.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Немає доступного носія&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Ви можете створити носій образів, використовуючи керування віртуальними носіями.</translation>
     </message>
     <message>
@@ -12148,7 +12148,7 @@ p, li { white-space: pre-wrap; }
         <translation>Під&apos;єднання цього жорсткого диска буде здійснюватись непрямим чином, використовуючи новостворені обчислення жорсткого диска.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Деякі носії цієї низки жорсткий дисків недоступні. Будь ласка, використайте керування віртуальними носіями в режимі &lt;b&gt;Показати обчислення жорстких дисків&lt;/b&gt;, щоб оглянути цей носій.</translation>
     </message>
@@ -12918,7 +12918,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Жодного доступного носія. Використайте керування віртуальними носіями, щоб додати носія відповідного типу.</translation>
     </message>
     <message>
@@ -12957,19 +12957,19 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Створити новий віртуальний диск</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Додати наявний носій</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Вилучити вибраний носій</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Відпустити вибраний носій від&apos;єднавши його з машин</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Оновити список носіїв</translation>
     </message>
     <message>
@@ -13017,7 +13017,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Образи дискет (*.img);;Усі файли (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Вибрати файл образу дискети</translation>
     </message>
     <message>
@@ -13121,11 +13121,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Змінити…</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Скопіювати наявний носій</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Змінити атрибути вибраного носія</translation>
     </message>
     <message>

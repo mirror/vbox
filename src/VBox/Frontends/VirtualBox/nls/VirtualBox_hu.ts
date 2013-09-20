@@ -577,11 +577,11 @@
         <translation>Váltás a normál és az asztal-integrációs mód között</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Átméretezhető módba váltá&amp;s</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Váltás a normál és a átméretezhető mód között</translation>
     </message>
     <message>
@@ -6774,11 +6774,11 @@ p, li { white-space: pre-wrap; }
         <translation>Médium atttribútimainak módosítása</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Módosítani akarod a virtuális lemez attribútumát, ami itt van: &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Válassz egyet a következő típusok közül, majd &lt;b&gt;%2&lt;/b&gt; gomb a folytatáshoz. Egyébként &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Válassz médium típust:</translation>
     </message>
 </context>
@@ -7324,7 +7324,7 @@ p, li { white-space: pre-wrap; }
         <translation>Elenged</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Biztos törölni akarod az ismert médiumok listájáról ezt, ami egy %1 : &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7399,7 +7399,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Sikertelen bezárás: %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>A(z) &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; médium állapotinformációinak bekérése sikertelen.</translation>
     </message>
     <message>
@@ -7411,7 +7411,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Az új verzióinformáció nem érhető el a következő hiba miatt:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Egy vagy több virtuális merevlemez, CD/DVD vagy floppy jelenleg nem érhető el. Ennek eredményeképp, nem leszel képes olyan műveletek végrehajtására, melyek ezt a médiumot használnák, amíg az újra elérhető nem lesz.&lt;/p&gt;&lt;p&gt;Az &lt;b&gt;Ellenőrzés&lt;/b&gt; gombbal nyisd meg a Virtuális médiakezelő ablakot és láthatod az elérhetetlen médiát, vagy a &lt;b&gt;Kihagy&lt;/b&gt; gombbal figyelmen kívül hagyod ezt az üzenetet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7928,7 +7928,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;asztal-integrációs&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik asztal-integrációs módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;A virtuális gép ablaka most &lt;b&gt;átméretezhető&lt;/b&gt; módra vált. Bármikor visszaléphetsz az ablakos módba a(z) &lt;b&gt;%1&lt;/b&gt; gomb megnyomásával. Ne feledd, hogy a &lt;i&gt;gazda&lt;/i&gt; gomb jelenleg ez: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Ne feledd, hogy a főmenü eltűnik átméretezhető módnál. A &lt;b&gt;gazda+Home&lt;/b&gt; gombok megnyomásával érheted el.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8033,7 +8033,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Biztos vissza akarod állítani a pillanatképet: &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Hiba a médium &lt;b&gt;%1&lt;/b&gt; típusáról &lt;b&gt;%2&lt;/b&gt; típusra történő váltáskor.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8290,7 +8290,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8298,11 +8298,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11094,7 +11094,7 @@ Verzió %1</translation>
         <translation type="obsolete">F&amp;loppy lecsatolása</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Lecsatolja az aktuális floppy eszközt</translation>
     </message>
     <message>
@@ -11347,7 +11347,7 @@ Verzió %1</translation>
         <translation type="obsolete">Átkapcsolás asztal-integrációs módra</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Jelzi a floppy meghajtón az aktivitást:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11800,7 +11800,7 @@ Verzió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Pillanatkép:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Hiba a média ellenőrzésekor</translation>
     </message>
@@ -11825,7 +11825,7 @@ Verzió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ide csatolva:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Hiba a média ellenőrzésekor</translation>
     </message>
@@ -11863,7 +11863,7 @@ Verzió %1</translation>
         <translation type="obsolete">Floppy képek (*.img)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Floppy képfájl kiválasztása</translation>
     </message>
     <message>
@@ -11883,7 +11883,7 @@ Verzió %1</translation>
         <translation type="obsolete">Engedje el a képfájlt az azt birtokló virtuális gép</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation type="obsolete">Média lista frissítése</translation>
     </message>
     <message>
@@ -12862,7 +12862,7 @@ Verzió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Elérhetőség tesztelése...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;A média elérhetőségének ellenőrzése sikertelen.&lt;br&gt;%1.</translation>
     </message>
@@ -12882,7 +12882,7 @@ Verzió %1</translation>
         <translation>Elérhetetlen</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Néhány média elérhetetlen a merevlemezláncon. Használd a Virtuális média kezelőt &lt;b&gt;Különbözeti merevlemezek mutatása&lt;/b&gt; módba, ezen médiák megtekintéséhez.</translation>
     </message>
     <message>
@@ -13197,12 +13197,12 @@ Verzió %1</translation>
         <translation>&lt;i&gt;Elérhetőség tesztelése...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>A média elérhetőségének ellenőrzése sikertelen.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Nincs média kiválasztva&lt;/b&gt;</translation>
     </message>
@@ -13211,12 +13211,12 @@ Verzió %1</translation>
         <translation>A gép bekapcsolt állapota mellett is változtatható.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Nincs elérhető média&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Képfájlokat a virtuális média menedzserrel hozhatsz létre.</translation>
     </message>
     <message>
@@ -13225,7 +13225,7 @@ Verzió %1</translation>
         <translation>Ezen merevlemez csatlakoztatása egy új különbözeti lemez készítését fogja okozni.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Valamelyik média ebben a merevlemez-láncban elérhetetlen. Kérlek, használd a Virtuális médiakezelőt &lt;b&gt;Különbözeti merevlemezek mutatása&lt;/b&gt; módban a probléma felderítéséhez.</translation>
     </message>
@@ -14329,7 +14329,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Nincs merevlemez</translation>
     </message>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Nincs elérhető média. Használd a Virtuális médiakezelőt egy megfelelő típusú média hozzáadásához.</translation>
     </message>
     <message>
@@ -14368,19 +14368,19 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Új virtuális merevlemez készítése</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Létező médium hozzáadása</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>A kiválasztott médium eltávolítása</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>A kiválasztott médium elengedése a gépekről történő lecsatolással</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Média lista frissítése</translation>
     </message>
     <message>
@@ -14428,7 +14428,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Floppy képfájl (*.img);;Minden  fájl (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Floppy képfájl kiválasztása</translation>
     </message>
     <message>
@@ -14532,11 +14532,11 @@ to the system default language.&lt;/qt&gt;
         <translation>&amp;Módosítás...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Létező médium másolása</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>A kiválasztott médium attribútumainak módosítása</translation>
     </message>
     <message>

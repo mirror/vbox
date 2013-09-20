@@ -543,11 +543,11 @@
         <translation>Växla mellan normalt läge och sömlöst skrivbordsläge</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Växla till &amp;skalningsläge</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Växla mellan normalt läge och skalningsläge</translation>
     </message>
     <message>
@@ -6950,11 +6950,11 @@ serial ports</comment>
         <translation>Ändra mediaattribut</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Du är på väg att ändra attribut för den virtuella disken i &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Välj en av följande mediatyper och tryck på &lt;b&gt;%2&lt;/b&gt; för att fortsätta eller &lt;b&gt;%3&lt;/b&gt; om inte.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Välj mediatyp:</translation>
     </message>
 </context>
@@ -7404,7 +7404,7 @@ serial ports</comment>
         <translation>Fånga</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;En eller flera av de registrerade virtuella hårddiskarna, CD/DVD- eller diskettmedia är för närvarande inte tillgängliga. Du kommer därför inte att kunna köra virtuella maskiner som använder dessa media förräns de senare blir tillgängliga.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Kontrollera&lt;/b&gt; för att öppna hanteraren för virtuella diskar och se vilket media som inte är tillgängligt, eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att ignorera det här meddelandet.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7576,7 +7576,7 @@ serial ports</comment>
         <translation>Frigör</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Är du säker på att du vill ta bort %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; från listan över kända media?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7651,7 +7651,7 @@ serial ports</comment>
         <translation type="obsolete">Misslyckades med att stänga %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Misslyckades med att få tag på tillgänglighetstillstånd för mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7663,7 +7663,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Kunde inte hämta information om ny version på grund av följande fel:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;En eller flera virtuella hårddiskar, CD/DVD- eller diskettmedia är inte tillgängliga för närvarande. Du kommer därför inte att kunna använda virtuella maskiner som använder dessa media förrän de blir åtkomliga.&lt;/p&gt;&lt;p&gt;Tryck på &lt;b&gt;Kontrollera&lt;/b&gt; för att öppna Hanterare för virtuella media och se vilket media som är oåtkomligt, eller tryck på &lt;b&gt;Ignorera&lt;/b&gt; för att ignorera detta meddelande.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8173,7 +8173,7 @@ serial ports</comment>
         <translation>&lt;p&gt;Det virtuella maskinfönstret kommer nu att växlas till &lt;b&gt;sömlöst läge&lt;/b&gt;. Du kan gå tillbaka till fönsterläge när som helst genom att trycka på &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Observera att &lt;i&gt;värd&lt;/i&gt;tangenten för närvarande har definierats som &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Observera att huvudmenyraden döljs i sömlöst läge. Du kan komma åt den genom att trycka på &lt;b&gt;Värd+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Det virtuella maskinfönstret kommer nu att växlas till &lt;b&gt;skalningsläge&lt;/b&gt;. Du kan gå tillbaka till fönsterläge när som helst genom att trycka på &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Observera att &lt;i&gt;värd&lt;/i&gt;tangenten för närvarande har definierats som &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Observera att huvudmenyraden döljs i skalningsläget. Du kan komma åt den genom att trycka på &lt;b&gt;Värd+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8278,7 +8278,7 @@ serial ports</comment>
         <translation type="obsolete">&lt;p&gt;Är du säker på att du vill återställa ögonblicksbilden &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fel vid byte av mediatyp från &lt;b&gt;%1&lt;/b&gt; till &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8559,7 +8559,7 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8567,11 +8567,11 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11180,7 +11180,7 @@ Version %1</translation>
         <translation type="obsolete">Avmontera d&amp;iskett</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Avmontera den för tillfället monterade disketten</translation>
     </message>
     <message>
@@ -11335,7 +11335,7 @@ Version %1</translation>
         <translation type="obsolete">Växla till sömlöst läge för skrivbordsintegration</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikerar aktiviteten för diskettmediet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11676,7 +11676,7 @@ Version %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ögonblicksbild:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fel vid kontroll av mediatillgänglighet</translation>
     </message>
@@ -11701,7 +11701,7 @@ Version %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Ansluten till:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Fel vid kontroll av mediatillgänglighet</translation>
     </message>
@@ -11727,7 +11727,7 @@ Version %1</translation>
         <translation type="obsolete">Välj en CD/DVD-diskavbildningsfil</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Välj en diskettavbildningsfil</translation>
     </message>
     <message>
@@ -11747,7 +11747,7 @@ Version %1</translation>
         <translation type="obsolete">Frigör det markerade mediet genom att koppla loss det från maskinen</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation type="obsolete">Uppdatera medialistan</translation>
     </message>
     <message>
@@ -12691,7 +12691,7 @@ Version %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Kontrollerar tillgänglighet...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Misslyckades med att kontrollera mediets tillgänglighet.&lt;br&gt;%1.</translation>
     </message>
@@ -12711,7 +12711,7 @@ Version %1</translation>
         <translation>Oåtkomlig</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Delar av mediet i denna hårddiskkedja är inte tillgängliga. Använd Hanterare för virtuella media i &lt;b&gt;Visa skiljande hårddiskar&lt;/b&gt;-läget för att inspektera dessa media.</translation>
     </message>
     <message>
@@ -13039,12 +13039,12 @@ Version %1</translation>
         <translation>&lt;i&gt;Kontrollerar tillgänglighet...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Misslyckades med att kontrollera tillgängligt media.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Inget media valt&lt;/b&gt;</translation>
     </message>
@@ -13053,12 +13053,12 @@ Version %1</translation>
         <translation>Du kan även ändra detta när maskinen är igång.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Inget media tillgängligt&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Du kan skapa mediaavbildningar med Hanterare för virtuella media.</translation>
     </message>
     <message>
@@ -13067,7 +13067,7 @@ Version %1</translation>
         <translation>Anslutning av denna hårddisk kommer att genomföras indirekt med en nyligen skapad skiljande hårddisk.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Några av de media som finns på denna hårddiskkedja är inte åtkomliga. Använd Hanterare för virtuella media i &lt;b&gt;Visa skiljande hårddiskar&lt;/b&gt;-läget för att inspektera dessa media.</translation>
     </message>
@@ -13835,7 +13835,7 @@ Version %1</translation>
         <translation type="obsolete">Ingen hårddisk</translation>
     </message>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Inget media tillgängligt. Använd Hanterare för virtuella media för att lägga till media av motsvarande typ.</translation>
     </message>
     <message>
@@ -13874,19 +13874,19 @@ Version %1</translation>
         <translation type="obsolete">Skapa en ny virtuell hårddisk</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Lägg till ett befintligt media</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Ta bort markerat media</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Frigör det markerade mediet genom att koppla loss det från maskinerna</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Uppdatera medialistan</translation>
     </message>
     <message>
@@ -13934,7 +13934,7 @@ Version %1</translation>
         <translation type="obsolete">Diskettavbildningar (*.img);;Alla filer (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Välj en diskettavbildningsfil</translation>
     </message>
     <message>
@@ -14038,11 +14038,11 @@ Version %1</translation>
         <translation>Än&amp;dra...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Kopiera ett befintligt media</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Ändra attribut för valt media</translation>
     </message>
     <message>

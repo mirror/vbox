@@ -355,11 +355,11 @@
         <translation>تعویض بین حالت معمولی و حالت یکپارچگی دسکتاپ</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>رفتن به &amp;حالت مقیاس</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>تعویض بین حالت معمولی و مقیاس</translation>
     </message>
     <message>
@@ -3763,11 +3763,11 @@
         <translation>ویرایش صفات رسانه</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;شما درصدد تغییر صفات دیسک مجازی قرار گرفته در زیر هستید. &lt;b&gt;%1&lt;/b&gt; .&lt;/p&gt;&lt;p&gt;لطفا یکی از رسانه های زیر را انتخاب کنید و &lt;b&gt;%2&lt;/b&gt; فشار دهید تا پیشرفت کند یا &lt;b&gt;%3&lt;/b&gt; را فشار دهید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>نوع رسانه را انتخاب کنید:</translation>
     </message>
 </context>
@@ -4122,7 +4122,7 @@
         <translation>ترخیص</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation>&lt;p&gt;آیا میخواهید %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; را از لیست رسانه شناخته شده حذف کنید؟&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4173,7 +4173,7 @@
         <translation>موفق به بستن %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; نشد.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>موفق به تعیین وضعیت دسترسی پذیری رسانه &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; نشد.</translation>
     </message>
     <message>
@@ -4181,7 +4181,7 @@
         <translation>&lt;p&gt;به علت خطای زیر موفق به اتصال به سرویس ثبت نام آنلاین ویرچوال باکس نشد:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;یک یا تعداد بیشتری دیسک سخت مجازی، سی دی/دی وی دی یا رسانه فلاپی اکنون قابل دسترسی نیستند. درنتیجه، تا زمانیکه این رسانه ها قابل دسترسی نباشد شما قادر به استفاده از ماشین مجازی نیستید.&lt;/p&gt;&lt;p&gt;دکمه &lt;b&gt;بررسی&lt;/b&gt; را برای بازکردن پنجره مدیر رسانه مجازی فشار دهید و مشاهده کنید کدام رسانه ها قابل دسترسی نیستند، یا دکمه &lt;b&gt;چشمپوشی&lt;/b&gt; را برای نادیده گرفتن این پیام فشار دهید.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4536,7 +4536,7 @@
         <translation>&lt;p&gt;پنجره ماشین مجازی حالا به حالت &lt;b&gt;یکپارچه&lt;/b&gt; میرود.با فشاردادن &lt;b&gt;%1&lt;/b&gt; میتوانید به حالت پنجره ای بروید.&lt;/p&gt;&lt;p&gt;توجه داشته باشید که کلید &lt;i&gt;میزبان&lt;/i&gt; اکنون بعنوان &lt;b&gt;%2&lt;/b&gt; تعریف شده است.&lt;/p&gt;&lt;p&gt;توجه کنید که نوارمنوی اصلی در حالت یکپارچه پنهان است. میتوانید با فشاردادن &lt;b&gt;Host+Home&lt;/b&gt; به آن دسترسی داشته باشید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;پنجره ماشین مجازی حالا به حالت &lt;b&gt;مقیاس&lt;/b&gt;میرود. با فشاردادن &lt;b&gt;%1&lt;/b&gt; میتوانید به حالت پنجره ای بروید.&lt;/p&gt;&lt;p&gt;توجه داشته باشید که کلید &lt;i&gt;میزبان&lt;/i&gt; اکنون بعنوان &lt;b&gt;%2&lt;/b&gt; تعریف شده است.&lt;/p&gt;&lt;p&gt;توجه کنید که نوارمنوی اصلی در حالت مقیاس پنهان است. میتوانید با فشاردادن &lt;b&gt;Host+Home&lt;/b&gt; به آن دسترسی داشته باشید.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4625,7 +4625,7 @@
         <translation>ایجاد یک ضبط وضعیت از وضعیت فعلی ماشین</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;خطای تغییر رسانه از &lt;b&gt;%1&lt;/b&gt; به &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6775,12 +6775,12 @@
         <translation>&lt;i&gt;بررسی دسترسی پذیری...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>موفق به بررسی دسترسی پذیری رسانه نشد.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;رسانه ای انتخاب نشده است&lt;/b&gt;</translation>
     </message>
@@ -6789,12 +6789,12 @@
         <translation>همچنین میتوانید زمانی که ماشین در حال اِجراست این را تغییر دهید.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;رسانه ای موجود نیست&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>میتوانید ایمیج رسانه را توسط مدیر رسانه مجازی ایجاد کنید.</translation>
     </message>
     <message>
@@ -6803,7 +6803,7 @@
         <translation>ضمیمه کردن این دیسک سخت بطور غیرمستقیم توسط یک دیسک سخت متفاوت ایجاد شده جدید اِجرا شده است.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>برخی از رسانه ها در این زنجیره دیسک سخت غیرقابل دسترسی است. لطفا از مدیر رسانه مجازی در حالت &lt;b&gt;نمایش دیسک سخت متفاوت &lt;/b&gt; برای بررسی این رسانه ها استفاده کنید.</translation>
     </message>
@@ -7354,19 +7354,19 @@
         <translation>تازه&amp; کردن</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation>افزودن یک رسانه موجود</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>حذف رسانه انتخاب شده</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>رسانه انتخاب شده را با جداکردن آن از ماشین ترخیص میکند</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>تازه کردن لیست رسانه</translation>
     </message>
     <message>
@@ -7435,11 +7435,11 @@
         <translation>ویرا&amp;یش...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>کپی یک رسانه موجود</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>ویرایش صفات رسانه انتخاب شده</translation>
     </message>
     <message>

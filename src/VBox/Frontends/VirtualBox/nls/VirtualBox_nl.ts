@@ -388,11 +388,11 @@
         <translation>Schakel tussen Normale en Naadloze modus (scherm van gast wordt naadloos in hostbureaublad geïntegreerd)</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Schakel over naar &amp;Schaalmodus</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Schakel tussen Normale en Schaalmodus</translation>
     </message>
     <message>
@@ -5502,12 +5502,12 @@
         <translation>Bewerk mediumattributen</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translatorcomment>%2=de knop OK  %3=de knop CANCEL</translatorcomment>
         <translation>&lt;p&gt;U staat op het punt de attributen van de virtuele schijf op plek &lt;b&gt;%1&lt;/b&gt; te veranderen.&lt;/p&gt;&lt;p&gt;Kies hieronder een mediumtype en druk op &lt;b&gt;%2&lt;/b&gt; om door te gaan, of &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Kies mediumtype:</translation>
     </message>
 </context>
@@ -5954,7 +5954,7 @@
         <translation>Release</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Weet u zeker dat u %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; wilt verwijderen uit de lijst met bekende media?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6005,7 +6005,7 @@
         <translation type="obsolete">Het is niet gelukt %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; te sluiten.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Het is niet gelukt de toegankelijkheidsstatus van medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; op te halen.</translation>
     </message>
     <message>
@@ -6017,7 +6017,7 @@
         <translation type="obsolete">&lt;p&gt;Het is niet gelukt om infomatie over de nieuwe versie op te halen vanwege de volgende fout:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Eén of meer virtuele harde schijven, cd/dvd&apos;s of de diskette zijn nu niet te benaderen. Hierdoor kunt u niet met de virtuele machines werken die deze media gebruiken, totdat dit medium of deze media weer benaderbaar zijn.&lt;/p&gt;&lt;p&gt;Druk op de knop &lt;b&gt;Controleren&lt;/b&gt; om de Virtuele Media Manager te openen om na te gaan welk medium niet te benaderen is, of druk op de knop &lt;b&gt;Negeren&lt;/b&gt; om dit bericht te negeren.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6382,7 +6382,7 @@
         <translation>&lt;p&gt;De virtuele machine schakelt nu over op de &lt;b&gt;naadloze&lt;/b&gt; modus. U kunt ieder moment terugkeren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;Hosttoets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Besef dat het hoofdmenu is verborgen in naadloze modus. U kunt dit menu benaderen door op de &lt;b&gt;Hosttoets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;De virtuele machine schakelt nu over op de &lt;b&gt;schaalbare&lt;/b&gt; modus. U kunt ieder moment terugkeren door op &lt;b&gt;%1&lt;/b&gt; te drukken. Let op: de &lt;i&gt;Hosttoets&lt;/i&gt; is op dit moment &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Besef dat het hoofdmenu in schaalbare modus niet zichtbaar is. U kunt dit menu dan benaderen door op de &lt;b&gt;Hosttoets+Home&lt;/b&gt; te drukken.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6479,7 +6479,7 @@
         <translation type="obsolete">&lt;p&gt;Weet u zeker dat u momentopname &lt;b&gt;%1&lt;/b&gt; wilt terugzetten?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fout bij veranderen van mediumtype van &lt;b&gt;%1&lt;/b&gt; in &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6738,7 +6738,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6746,11 +6746,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9468,12 +9468,12 @@
         <translation>&lt;i&gt;Controleren toegankelijkheid...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Kan de toegankelijkheid van de media niet controleren.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Geen medium geselecteerd&lt;/b&gt;</translation>
     </message>
@@ -9482,12 +9482,12 @@
         <translation>U kunt dit ook aanpassen terwijl de machine draait.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Geen media beschikbaar&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>U kunt media images aanmaken met behulp van de Virtuele Media Manager.</translation>
     </message>
     <message>
@@ -9497,7 +9497,7 @@
         <translation>Aankoppelen van deze harde schijf wordt indirect uitgevoerd met gebruik van een nieuw aangemaakte differencing harde schijf.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Enkele media in deze keten van harde schijven zijn niet te benaderen. Gebruik de Virtuele Media Manager in &lt;b&gt;Geef differencing harde schijven weer&lt;/b&gt;-modus om deze media te inspecteren.</translation>
     </message>
@@ -10266,19 +10266,19 @@
         <translation type="obsolete">Maak een nieuwe virtuele harde schijf aan</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Voeg een bestaand medium toe</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Verwijder het geselecteerde medium</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Geeft het geselecteerde medium vrij door deze te ontkoppelen van de machines</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Ververs de lijst met media</translation>
     </message>
     <message>
@@ -10302,7 +10302,7 @@
         <translation type="obsolete">Selecter een cd/dvd schijfbestand</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Selecteer een diskette schijfbestand</translation>
     </message>
     <message>
@@ -10391,11 +10391,11 @@
         <translation>&amp;Aanpassen...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Kopieer een bestaand medium</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Pas de attributen van het geselecteerde medium aan</translation>
     </message>
     <message>

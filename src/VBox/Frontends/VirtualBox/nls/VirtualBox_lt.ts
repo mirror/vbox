@@ -484,11 +484,11 @@
         <translation>Pereiti į įprastą arba integruoto darbalaukio veikseną</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Pereiti į &amp;keičiamo lango dydžio veikseną</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Pereiti į įprastą arba keičiamo lango dydžio veikseną</translation>
     </message>
     <message>
@@ -6002,11 +6002,11 @@
         <translation>Keisti laikmenos atributus</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Keistumėte &lt;b&gt;%1&lt;/b&gt; virtualaus disko atributus.&lt;/p&gt;&lt;p&gt;Pasirinkite laikmenos tipą ir norėdami tęsti spauskite &lt;b&gt;%2&lt;/b&gt;, priešingu atveju – &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Pasirinkite laikmenos tipą:</translation>
     </message>
 </context>
@@ -6510,7 +6510,7 @@
         <translation type="obsolete">Atlaisvinti</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Tikrai pašalinti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; iš žinomų laikmenų sąrašo?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6568,7 +6568,7 @@
         <translation type="obsolete">Nepavyko užverti %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nepavyko nustatyti &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; laikmenos pasiekiamumo būsenos.</translation>
     </message>
     <message>
@@ -6580,7 +6580,7 @@
         <translation type="obsolete">&lt;p&gt;Nepavyksta gauti informacijos apie naują versiją, nes įvyko klaida:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vienas ar keli virtualūs standieji diskai, CD/DVD ar diskelių įtaisai nebepasiekiami. Todėl negalėsite naudotis tomis virtualiomis mašinomis, kurios naudoja tas laikmenas tol, kol jos nebus pasiekiamos.&lt;/p&gt;&lt;p&gt;Norėdami atverti virtualių laikmenų tvarkytuvę ir pamatyti tas laikmenas, spauskite &lt;b&gt;Tikrinti&lt;/b&gt;, o norėdami nekreipti dėmesio į šį pranešimą, spauskite &lt;b&gt;Nepaisyti&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7208,7 +7208,7 @@
         <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;integruoto darbalaukio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, integruotoje veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Virtualios mašinos langas netrukus pereis į &lt;b&gt;keičiamo lango dydžio&lt;/b&gt; veikseną. Į įprastą lango veikseną sugrįšite nuspaudę &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Atminkite, kad &lt;i&gt;pagrindinio kompiuterio&lt;/i&gt; klavišas šiuo metu yra &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Be to, keičiamo lango dydžio veiksenoje meniu juosta yra paslėpta. Ją pasieksite nuspaudę &lt;b&gt;(pagr. komp. klav.) + Prad&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7309,7 +7309,7 @@
         <translation type="obsolete">&lt;p&gt;Tikrai atkurti momentinį būvį &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Klaida keičiant laikmenos tipą iš &lt;b&gt;%1&lt;/b&gt; į &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7554,7 +7554,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7562,11 +7562,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11247,13 +11247,13 @@ IPv6.</translation>
         <translation type="obsolete">&lt;i&gt;Tikrinamas prieinamumas...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium
 </comment>
         <translation type="obsolete">Nepavyko patikrinti laikmenų prieinamumo.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium
 </comment>
         <translation type="obsolete">&lt;b&gt;Laikmena nepasirinkta&lt;/b&gt;</translation>
@@ -11263,13 +11263,13 @@ IPv6.</translation>
         <translation>Galite pakeisti ir veikiančioje mašinoje.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium
 </comment>
         <translation type="obsolete">&lt;b&gt;Laikmenų nėra&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Naują laikmeną sukursite naudodamiesi virtualių laikmenų tvarkytuve.</translation>
     </message>
     <message>
@@ -11278,7 +11278,7 @@ IPv6.</translation>
         <translation>Su šiuo standžiuoju disku bus dirbama ne tiesiogiai, o naudojant naujai sukurtą standžiojo disko vedinį.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium
 </comment>
         <translation type="obsolete">Kai kurių laikmenų neavyksta rasti standžiajame diske. Virtualių laikmenų tvarkytuvėje pasirinkę &lt;b&gt;rodyti diskų vedinius&lt;/b&gt;, galite pamatytio tas laikmenas.</translation>
@@ -11458,17 +11458,17 @@ IPv6.</translation>
         <translation>&lt;i&gt;Tikrinamas prieinamumas...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Nepavyko patikrinti laikmenų prieinamumo.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Laikmena nepasirinkta&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Laikmenų nėra&lt;/b&gt;</translation>
     </message>
@@ -11483,7 +11483,7 @@ IPv6.</translation>
         <translation>Neprieinama</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Kai kurių laikmenų neavyksta rasti standžiajame diske. Tas laimenas pamatysite, jei virtualių laikmenų tvarkytuvėje pasirinksite &lt;b&gt;rodyti diskų vedinius&lt;/b&gt;.</translation>
     </message>
@@ -12885,19 +12885,19 @@ IPv6.</translation>
         <translation type="obsolete">Sukurti naują virtualų standųjį diską</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Pridėti esamą laikmeną</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Pašalinti pasirinktą laikmeną</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Atlaisvinus pasirinktą laikmeną, ji nebebus susieta su mašinomis</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Atnaujinti laikmenų sąrašą</translation>
     </message>
     <message>
@@ -12945,7 +12945,7 @@ IPv6.</translation>
         <translation type="obsolete">Diskelių atvaizdžiai (*.img);;Visos rinkmenos (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Pasirinkite diskelio atvaizdžio rinkmeną</translation>
     </message>
     <message>
@@ -13073,11 +13073,11 @@ IPv6.</translation>
         <translation>&amp;Keisti...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Kopijuoti esamą laikmeną</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifikuoti pasirinktos laikmenos atributus</translation>
     </message>
     <message>

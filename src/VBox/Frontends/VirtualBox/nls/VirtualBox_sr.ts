@@ -471,11 +471,11 @@
         <translation>Пребаци нормални/нтегрисан мод</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Пређи на зумиран мод</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Пребаци нормални/зумиран мод</translation>
     </message>
     <message>
@@ -6451,11 +6451,11 @@ p, li { white-space: pre-wrap; }
         <translation>Промени атрибуте медија</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Спремате се да промените атрибуте диска &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Одаберите један тип и стусните &lt;b&gt;%2&lt;/b&gt; за наст@вак или &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Тип медија:</translation>
     </message>
 </context>
@@ -6973,7 +6973,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ослободи</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Сигурно уклонити %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; са листе познатих медија?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7048,7 +7048,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Неуспешно затварање %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Неуспешно налажење статуса доступност медијума &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7060,7 +7060,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Немогуће добијање верзије због ове грешке:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Један или више виртуелних хард диска, ЦД/ДВД или флопи нису доступни. Као резултат, нећете моћи да радите са машинама које користе те медије док не буду поново доступни.&lt;/p&gt;&lt;p&gt;Стиснути &lt;b&gt;Провери&lt;/b&gt; за отварање менаджера да би се видело који медиј није доступан, или одабрати &lt;b&gt;Игнориши&lt;/b&gt; за игнорисање ове поруке.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7567,7 +7567,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Прозор ће сада пречи на &lt;b&gt;интегрисаном&lt;/b&gt; моду. Можете да се рватите у моду прозора ако стиснете &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Актуелно је &lt;i&gt;Хост&lt;/i&gt; кључ дефинисан као &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Главна трака је сакривена. Можете да је покажете стискајући &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Прозор ће сада пречи на &lt;b&gt;зумираном&lt;/b&gt; моду. Можете да се рватите у моду прозора ако стиснете &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Актуелно је &lt;i&gt;Хост&lt;/i&gt; кључ дефинисан као &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Главна трака је сакривена. Можете да је покажете стискајући &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7664,7 +7664,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Сигурно вратити снимак &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Грешка промена типа медијума од &lt;b&gt;%1&lt;/b&gt; у &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7917,7 +7917,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7925,11 +7925,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10358,7 +10358,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Демонтирај флопи</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Демонтирај актуелну флопи слику</translation>
     </message>
     <message>
@@ -10509,7 +10509,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Прећи на моду интегрисаног бироа површине</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Показује активност флопи медије:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11623,7 +11623,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Провера доступност...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Погрешна провера доступност медија.&lt;br&gt;%1.</translation>
     </message>
@@ -11643,7 +11643,7 @@ p, li { white-space: pre-wrap; }
         <translation>Недоступно</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Неки медији из диска нису доступни. Користити Виртуелни Менаджер Медија у &lt;b&gt;Покажи разликовнох дискови&lt;/b&gt; за инспекцију тих медија.</translation>
     </message>
     <message>
@@ -11951,12 +11951,12 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;i&gt;Провера доступност...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Погрешна провера доступност медија.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Медијум није одабран&lt;/b&gt;</translation>
     </message>
@@ -11965,12 +11965,12 @@ p, li { white-space: pre-wrap; }
         <translation>Можете исто ово променити док машина ради.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Медиј није доступан&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Можете да креирате медијске слике са виртуелним менаџером.</translation>
     </message>
     <message>
@@ -11979,7 +11979,7 @@ p, li { white-space: pre-wrap; }
         <translation>Привезивање овог хард диска ће бити индиректан користечи новог креираног различитог хард диска.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Меки медиј из хард диска није доступан. Користити витуелни менаџер медија у &lt;b&gt;Покажи различит хард диск&lt;/b&gt; за проверу овог медија.</translation>
     </message>
@@ -12734,7 +12734,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Медиј недоступан. Користити виртуелни менаджер медија за додавање одговарајучег типа.</translation>
     </message>
     <message>
@@ -12773,19 +12773,19 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Креирај нови виртуелни хард диск</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Додај постојећи медиј</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Уклони одабран медиј</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Ослободи одабран медиј преко одкачивања из мажине</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Освежи списак медија</translation>
     </message>
     <message>
@@ -12833,7 +12833,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Флопи слике (*.img);;Све (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Одабрати флопи слику</translation>
     </message>
     <message>
@@ -12937,11 +12937,11 @@ p, li { white-space: pre-wrap; }
         <translation>Промени...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Копирај постојећи медиј</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Промени поставке одабраног медија</translation>
     </message>
     <message>

@@ -422,11 +422,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5581,11 +5581,11 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6063,7 +6063,7 @@ network adapter name</comment>
         <translation>ចេញផ្សាយ</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​យក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ចេញ​ពី​មេឌៀ​ដែលបាន​ស្គាល់​ដែរឬទេ ?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6118,7 +6118,7 @@ network adapter name</comment>
         <translation type="obsolete">បានបរាជ័យ​ក្នុងកា​របិទ %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ។</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>បានបរាជ័យ​ក្នុងកា​រ​ចូលដំណើរការ​ស្ថានភាព​របស់​ឧបករណ៍​ផ្ទុក &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ។</translation>
     </message>
     <message>
@@ -6130,7 +6130,7 @@ network adapter name</comment>
         <translation type="obsolete">&lt;p&gt;មិនអាច​ទទួល​យក​ព័ត៌មានកំណែ​ថ្មី​បាន​ទេ ដោយ​សារ​តែ​កំហុស​ដូច​ខាងក្រោម ៖&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;ថាសរឹង​និម្មិត​មួយ ឬ​ច្រើន ស៊ីឌី/ឌីវីឌី ឬ​មេឌៀ​ថាសទន់​បច្ចុប្បន្ន​មិនអាច​ចូលដំណើរការ​បានទេ ។ ជា​លទ្ធផល អ្នកនឹង​មិនអាច​ប្រតិបត្តិ​ម៉ាស៊ីន​និម្មិត​ ដែល​ប្រើ​មេឌៀ​នេះ​បាន​ទេ រហូត​ដល់​ពួកវា​អាច​ចូលដំណើរការ​បាននៅពេល​ក្រោយ ។&lt;/p&gt;&lt;p&gt;ចុច &lt;b&gt;ពិនិត្យ​មើល&lt;/b&gt; ដើម្បី​ប្រើ​បង្អួច​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ហើយ​មើល​អ្វី​ដែល​មេឌៀ​មិនអាច​ចូលដំណើរការ​បាន ឬ​ចុច &lt;b&gt;មិនអើពើ&lt;/b&gt; ដើម្បី​មិនអើពើ​នឹង​សារ​នេះ ។&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6638,7 +6638,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6723,7 +6723,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6955,7 +6955,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6963,11 +6963,11 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10607,7 +10607,7 @@ medium</comment>
         <translation type="obsolete">&lt;i&gt;កំពុង​ពិនិត្យមើល​​​មធ្យោបាយ​ងាយ​ស្រួល​​...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>
 
 
@@ -10616,7 +10616,7 @@ medium</comment>
         <translation type="obsolete">បានបរាជ័យ​ក្នុងកា​រ​ពិនិត្យ​មើល​មធ្យោ​បាយ​ងាយ​ស្រួល​​របស់​មេឌៀ ។​</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>
 
 
@@ -10629,7 +10629,7 @@ medium</comment>
         <translation>អ្នក​ក៏អាច​ផ្លាស់ប្ដូរ​វា ខណៈពេល​ដែល​ម៉ាស៊ីន​កំពុង​រត់ ។</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>
 
 
@@ -10638,7 +10638,7 @@ medium</comment>
         <translation type="obsolete">&lt;b&gt;មិនមាន​មេឌៀ​ទេ&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>អ្នក​អាច​បង្កើត​រូបភាព​មេឌៀ ដោយ​ប្រើ​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត ។</translation>
     </message>
     <message>
@@ -10652,7 +10652,7 @@ medium</comment>
         <translation type="obsolete">ការ​ភ្ជាប់​ជា​មួយ​នឹង​ថាស​រឹង​នេះ នឹង​ត្រូវ​បាន​អនុវត្ត​ដោយ​ប្រយោល​ ដោយ​ប្រើ​ថាសរឹង​ផ្សេង​ដែលបានបង្កើត​ថ្មីៗ ។</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>
 
 
@@ -10753,17 +10753,17 @@ medium</comment>
         <translation type="unfinished">&lt;i&gt;កំពុង​ពិនិត្យមើល​​​មធ្យោបាយ​ងាយ​ស្រួល​​...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation type="unfinished">បានបរាជ័យ​ក្នុងកា​រ​ពិនិត្យ​មើល​មធ្យោ​បាយ​ងាយ​ស្រួល​​របស់​មេឌៀ ។​</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation type="unfinished">&lt;b&gt;គ្មាន​ឧបករណ៍​ត្រូវ​បាន​ជ្រើស​ទេ&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation type="unfinished">&lt;b&gt;មិនមាន​មេឌៀ​ទេ&lt;/b&gt;</translation>
     </message>
@@ -10773,7 +10773,7 @@ medium</comment>
         <translation type="unfinished">ការ​ភ្ជាប់​ជា​មួយ​នឹង​ថាស​រឹង​នេះ នឹង​ត្រូវ​បាន​អនុវត្ត​ដោយ​ប្រយោល​ ដោយ​ប្រើ​ថាសរឹង​ផ្សេង​ដែលបានបង្កើត​ថ្មីៗ ។</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation type="unfinished">មេឌៀ​មួយ​ចំនួន​នៅ​ក្នុង​ស្រឡាយ​ផ្នែក​រឹង​នេះ​មិនអាច​ចូល​ដំណើរការ​បាន​ទេ ។ សូម​ប្រើ​កម្មវិធី​គ្រប់គ្រង​មេឌៀ​និម្មិត​នៅ​ក្នុង​របៀប &lt;b&gt;បង្ហាញ​ថាសរឹង​ផ្សេងៗ​គ្នា&lt;/b&gt; ដើម្បី​ពិនិត្យមើល​មេឌៀ​ទាំង​នេះ ។</translation>
     </message>
@@ -11645,19 +11645,19 @@ medium</comment>
         <translation type="obsolete">បង្កើត​ថាសរឹង​និម្មិត​ថ្មី</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">បន្ថែម​ឧបករណ៍​ដែល​មាន​ស្រាប់</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>យក​ឧបករណ៍​ផ្ទុក​ដែល​បាន​ជ្រើស</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>ចេញផ្សាយ​ឧបករណ៍​ផ្ទុក​ដែល​បានជ្រើស ដោយ​ផ្ដាច់​វា​ពី​ម៉ាស៊ីន</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>ធ្វើ​ឲ្យ​បញ្ជី​មេឌៀ​ស្រស់</translation>
     </message>
     <message>
@@ -11705,7 +11705,7 @@ medium</comment>
         <translation type="obsolete">រូបភាព​ថាស​ទន់ (*.img);; ឯកសារ​ទាំង​អស់ (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">ជ្រើស​ឯកសារ​រូបភាព​ថាស​ទន់</translation>
     </message>
     <message>
@@ -11809,11 +11809,11 @@ VMM: Floppy Image</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

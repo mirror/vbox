@@ -359,11 +359,11 @@
         <translation>在標準和無縫桌面整合模式之間切換</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>切換為縮放模式(&amp;S)</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>在標準和縮放模式之間切換</translation>
     </message>
     <message>
@@ -4572,11 +4572,11 @@
         <translation>修改媒體屬性</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您即將變更位於 &lt;b&gt;%1&lt;/b&gt; 的虛擬磁碟屬性。&lt;/p&gt;&lt;p&gt;請選擇以下一種媒體類型並按下 [&lt;b&gt;%2&lt;/b&gt;] 進行否則按下 [&lt;b&gt;%3&lt;/b&gt;]。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>選擇媒體類型：</translation>
     </message>
 </context>
@@ -4931,7 +4931,7 @@
         <translation>釋放</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;您確定要從未知媒體的清單移除 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 嗎？&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4982,7 +4982,7 @@
         <translation type="obsolete">關閉 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; 失敗。</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>判斷媒體 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; 的可存取性狀態失敗。</translation>
     </message>
     <message>
@@ -4990,7 +4990,7 @@
         <translation type="obsolete">&lt;p&gt;由於以下錯誤，連線到 VirtualBox 線上註冊服務失敗：&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;一或多個虛擬硬碟、CD/DVD 或軟碟媒體目前不可存取。 因此您將無法操作使用這些媒體的虛擬機器，直至它們稍後成為可存取。&lt;/p&gt;&lt;p&gt;按下 [&lt;b&gt;檢查&lt;/b&gt;] 來開啟虛擬媒體管理員視窗並查看哪些媒體不可存取或按下 [&lt;b&gt;忽略&lt;/b&gt;] 以忽略這個訊息。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5345,7 +5345,7 @@
         <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;無縫&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;主功能表列在無縫模式中是隱藏的。 您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;現在將切換虛擬機器視窗到&lt;b&gt;縮放&lt;/b&gt;模式。 您可以隨時按下 [&lt;b&gt;%1&lt;/b&gt;] 回到視窗模式。&lt;/p&gt;&lt;p&gt;請注意，&lt;i&gt;Host&lt;/i&gt; 鍵目前定義為 &lt;b&gt;%2&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;請注意，主功能表列在縮放模式中是隱藏的。您可以按下 [&lt;b&gt;Host+Home&lt;/b&gt;] 來存取。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5434,7 +5434,7 @@
         <translation>建立目前機器狀態的快照</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;變更媒體類型從 &lt;b&gt;%1&lt;/b&gt; 到 &lt;b&gt;%2&lt;/b&gt;錯誤。&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5690,7 +5690,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5698,11 +5698,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7907,12 +7907,12 @@
         <translation>&lt;i&gt;正在檢查可存取性...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>檢查媒體的可存取性失敗。</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;沒有選取媒體&lt;/b&gt;</translation>
     </message>
@@ -7921,12 +7921,12 @@
         <translation>您也可以在機器正在執行時變更。</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;沒有可用媒體&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>您可以使用虛擬媒體管理員建立媒體映像。</translation>
     </message>
     <message>
@@ -7935,7 +7935,7 @@
         <translation>附加這個硬碟將使用新建立的差異硬碟間接地執行。</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>在這個硬碟鏈結中某些媒體無法存取。 請使用虛擬媒體管理員在&lt;b&gt;顯示差異硬碟&lt;/b&gt;模式來檢查這些媒體。</translation>
     </message>
@@ -8550,19 +8550,19 @@
         <translation>重新整理(&amp;F)</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">加入現有的媒體</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>移除選取的媒體</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>從機器分離以釋放選取的媒體</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>重新整理媒體清單</translation>
     </message>
     <message>
@@ -8631,11 +8631,11 @@
         <translation>修改(&amp;M)...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>複製現有的媒體</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>修改選取媒體的屬性</translation>
     </message>
     <message>

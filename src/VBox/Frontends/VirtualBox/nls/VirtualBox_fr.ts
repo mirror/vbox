@@ -472,11 +472,11 @@
         <translation>Permuter entre mode normal et bureau intégré</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Passer en mode &amp;redimensionné</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Permuter entre mode normal et redimensionné</translation>
     </message>
     <message>
@@ -5888,11 +5888,11 @@
         <translation>Modifier les attributs du média</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Vous êtes sur le point de modifier les attributs du disque virtuel correspondant au fichier &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Choisissez un des types de média suivants et utilisez le bouton &lt;b&gt;%2&lt;/b&gt; pour continuer ou bien &lt;b&gt;%3&lt;/b&gt; pour annuler.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Choisissez le type de média :</translation>
     </message>
 </context>
@@ -6373,7 +6373,7 @@
         <translation>Libérer</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Voulez-vous vraiment supprimer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; de la liste des médias connus ?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6428,7 +6428,7 @@
         <translation type="obsolete">Impossible de fermer %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>L&apos;accessibilité du média &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; n&apos;a pas pu être testée.</translation>
     </message>
     <message>
@@ -6440,7 +6440,7 @@
         <translation type="obsolete">&lt;p&gt;Les informations sur les nouvelles versions n&apos;ont pas pu être obtenues à cause de l&apos;erreur suivante : &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Un ou plusieurs disques durs virtuels, CD, DVD, ou disquettes ne sont pas pas accessibles pour l&apos;instant. Vous ne pourrez démarrer de machines virtuelles qui les utilisent tant qu&apos;ils ne seront pas accessibles.&lt;/p&gt;&lt;p&gt;Cliquez sur &lt;b&gt;Ouvrir&lt;/b&gt; pour ouvrir le Gestionnaire de médias virtuels et voir quels médias sont inaccessibles, ou bien sur &lt;b&gt;Ignorer&lt;/b&gt; pour ignorer ce message.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6892,7 +6892,7 @@
         <translation>&lt;p&gt;La fenêtre de la machine virtuelle va passer en mode &lt;b&gt;intégré&lt;/b&gt;. Vous pouvez toujours revenir au mode fenêtré avec &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Attention, la barre de menu n&apos;est pas affichée en mode intégré. Vous pouvez toutefois y accéder avec la combinaison &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;La fenêtre de la machine virtuelle va passer en mode &lt;b&gt;redimensionné&lt;/b&gt;. Vous pouvez toujours revenir au mode fenêtré avec &lt;b&gt;%1&lt;/b&gt;. La &lt;i&gt;touche hôte&lt;/i&gt; est actuellement &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Attention, la barre de menu n&apos;est pas affichée en mode intégré. Vous pouvez toutefois y accéder avec la combinaison &lt;b&gt;Hôte+Début&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7017,7 +7017,7 @@
         <translation type="obsolete">&lt;p&gt;Êtes-vous sûre de vouloir réstaurer l&apos;instantané &lt;b&gt;%1&lt;/b&gt; ?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Le type de média n&apos;a pas pu être changé de &lt;b&gt;%1&lt;/b&gt; en &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7255,7 +7255,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7263,11 +7263,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10356,12 +10356,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>&lt;i&gt;Actualisation...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Échec du test de l&apos;accessibilité.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Aucun média n&apos;est sélectionné&lt;/b&gt;</translation>
     </message>
@@ -10370,12 +10370,12 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Vous pouvez aussi changer ceci pendant que la machine tourne.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Aucun média disponible&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Vous pouvez créer des fichiers de médias avec le gestionnaire de médias virtuels.</translation>
     </message>
     <message>
@@ -10384,7 +10384,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>Ce disque sera connecté indirectement, en créant un nouveau disque dur différentiel.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Certains des médias dans cette chaîne de disques durs sont inaccessibles. Utilisez le gestionnaire de médias virtuels en mode &lt;b&gt;Montrer les disques durs différentiels&lt;/b&gt; pour voir ces médias.</translation>
     </message>
@@ -11172,19 +11172,19 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="obsolete">Créer un nouveau disque dur virtuel</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Ajouter un média existant</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Supprimer le média sélectionné</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Libérer le média sélectionné en le détachant des machines</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Actualiser la liste des médias</translation>
     </message>
     <message>
@@ -11233,7 +11233,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation type="obsolete">Images disquettes (*.img);;Tous les fichiers (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Choisissez un fichier disquette virtuel</translation>
     </message>
     <message>
@@ -11340,11 +11340,11 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
         <translation>&amp;Modifier...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Copier un média existant</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Modifier les attributs du média sélectionné</translation>
     </message>
     <message>

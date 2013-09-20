@@ -491,7 +491,7 @@ void UIMessageCenter::cannotOpenSession(const CProgress &progress, const QString
 void UIMessageCenter::cannotGetMediaAccessibility(const UIMedium &medium) const
 {
     error(0, MessageType_Error,
-          tr("Failed to determine the accessibility state of the medium <nobr><b>%1</b></nobr>.")
+          tr("Failed to access the disk image file <nobr><b>%1</b></nobr>.")
              .arg(medium.location()),
           formatErrorInfo(medium.result()));
 }
@@ -663,11 +663,11 @@ bool UIMessageCenter::warnAboutInaccessibleMedia() const
 {
     return questionBinary(0, MessageType_Warning,
                           tr("<p>One or more virtual hard disks, CD/DVD or "
-                             "floppy media are not currently accessible. As a result, you will "
-                             "not be able to operate virtual machines that use these media until "
+                             "floppy disk image files are not currently accessible. As a result, you will "
+                             "not be able to operate virtual machines that use these files until "
                              "they become accessible later.</p>"
                              "<p>Press <b>Check</b> to open the Virtual Media Manager window and "
-                             "see what media are inaccessible, or press <b>Ignore</b> to "
+                             "see which files are inaccessible, or press <b>Ignore</b> to "
                              "ignore this message.</p>"),
                           "warnAboutInaccessibleMedia",
                           tr("Ignore"), tr("Check", "inaccessible media message box"));
@@ -1158,7 +1158,7 @@ void UIMessageCenter::cannotSaveMachineSettings(const CMachine &machine, QWidget
 void UIMessageCenter::cannotChangeMediumType(const CMedium &medium, KMediumType oldMediumType, KMediumType newMediumType, QWidget *pParent /* = 0*/) const
 {
     error(pParent, MessageType_Error,
-          tr("<p>Error changing medium type from <b>%1</b> to <b>%2</b>.</p>")
+          tr("<p>Error changing disk image mode from <b>%1</b> to <b>%2</b>.</p>")
              .arg(gpConverter->toString(oldMediumType)).arg(gpConverter->toString(newMediumType)),
           formatErrorInfo(medium));
 }
@@ -1206,7 +1206,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
         case UIMediumType_HardDisk:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual hard disk "
-                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+                            "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
             /* Compose capabilities flag: */
             qulonglong caps = 0;
             QVector<KMediumFormatCapabilities> capabilities;
@@ -1225,7 +1225,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
         case UIMediumType_DVD:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual optical disk "
-                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+                            "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
             strMessage += tr("<p>Note that the storage unit of this medium will not be "
                              "deleted and that it will be possible to use it later again.</p>");
             break;
@@ -1233,7 +1233,7 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
         case UIMediumType_Floppy:
         {
             strMessage = tr("<p>Are you sure you want to remove the virtual floppy disk "
-                            "<nobr><b>%1</b></nobr> from the list of known media?</p>");
+                            "<nobr><b>%1</b></nobr> from the list of known disk image files?</p>");
             strMessage += tr("<p>Note that the storage unit of this medium will not be "
                              "deleted and that it will be possible to use it later again.</p>");
             break;
@@ -1852,7 +1852,7 @@ bool UIMessageCenter::confirmGoingScale(const QString &strHotKey) const
                           tr("<p>The virtual machine window will be now switched to <b>Scale</b> mode. "
                              "You can go back to windowed mode at any time by pressing <b>%1</b>.</p>"
                              "<p>Note that the <i>Host</i> key is currently defined as <b>%2</b>.</p>"
-                             "<p>Note that the main menu bar is hidden in scale mode. "
+                             "<p>Note that the main menu bar is hidden in scaled mode. "
                              "You can access it by pressing <b>Host+Home</b>.</p>")
                              .arg(strHotKey, UIHostCombo::toReadableString(vboxGlobal().settings().hostCombo())),
                           "confirmGoingScale",

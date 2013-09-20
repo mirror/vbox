@@ -527,11 +527,11 @@
         <translation>Přepíná mezi klasickým a bezešvým režimem</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Přepnout do &amp;přizpůsobivého režimu</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Přepíná mezi klasickým a přizpůsobivým režimem</translation>
     </message>
     <message>
@@ -6799,11 +6799,11 @@ p, li { white-space: pre-wrap; }
         <translation>Změna atributů média</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;b&gt;Chystáte se změnit atributy virtuálního disku umístěného v &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zvolte prosím jeden z následujících typů média a klepněte na &lt;b&gt;%2&lt;/b&gt; pro pokračování nebo &lt;b&gt;%3&lt;/b&gt; v jiném případě.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Zvolte typ média:</translation>
     </message>
 </context>
@@ -7048,7 +7048,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Virtuální počítač je právě v &lt;b&gt;pozastaveném&lt;/b&gt; stavu, proto nepřijímá žádné vstupy z klávesnice nebo myši. Pokud chcete pokračovat s prací ve virtuálním počítači, musíte ji obnovit vybráním odpovídající akce z panelu nabídek.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7333,7 +7333,7 @@ p, li { white-space: pre-wrap; }
         <translation>Zachytávat</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more of the registered virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Disk Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních disků a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7553,7 +7553,7 @@ p, li { white-space: pre-wrap; }
         <translation>Uvolnit</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Opravdu chcete odstranit %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ze seznamu známých médií?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7641,7 +7641,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nelze zavřít %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Nelze získat status dostupnosti pro médium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7661,7 +7661,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Nelze získat informace o nové verzi z důvodu následující chyby: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Jeden nebo více virtuálních pevných disků, CD/DVD mechanik nebo disket jsou momentálně nedostupné. Nebudete tak moci použít virtuální počítače, které je používají, dokud nebudou opět dostupné.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;Zkontrolovat&lt;/b&gt; pro otevření okna Správce virtuálních médií a podívejte se, která média jsou nedostupná, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt; a ignorujte tuto zprávu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8070,7 +8070,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;bezešvého&lt;/b&gt; režimu. Zpět do režimu okna můžete přejít stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v režimu celé obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Okno virtuálního počítače bude přepnuto do &lt;b&gt;přizpůsobivého&lt;/b&gt; režimu. Zpět do režimu okna můžete přejít stiskem &lt;b&gt;%1&lt;/b&gt;. Upozorňujeme, že &lt;i&gt;Host&lt;/i&gt; klávesa je právě nastavena na &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že panel hlavní nabídky je v přizpůsobivém režimu obrazovky skrytý. Můžete ho zpřístupnit stiskem &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8167,7 +8167,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Opravdu chcete obnovit snímek &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Při změně typu média z &lt;b&gt;%1&lt;/b&gt; na &lt;b&gt;%2&lt;/b&gt; se vyskytla chyba.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8453,7 +8453,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8461,11 +8461,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11295,7 +11295,7 @@ Verze %1</translation>
         <translation type="obsolete">Odpojit dis&amp;ketu</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Odpojí soubor s obrazem diskety</translation>
     </message>
     <message>
@@ -11569,7 +11569,7 @@ Verze %1</translation>
         <translation type="obsolete">Přepne do bezešvého režimu integrace plochy</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indikuje aktivitu diskety:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11997,7 +11997,7 @@ Verze %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Snímek:&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Chyba při kontrole přístupnosti</translation>
     </message>
@@ -12012,7 +12012,7 @@ Verze %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Připojen k:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Chyba při kontrole přístupnosti</translation>
     </message>
@@ -12038,7 +12038,7 @@ Verze %1</translation>
         <translation type="obsolete">Vyberte CD/DVD obraz</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Vyberte obraz diskety</translation>
     </message>
     <message>
@@ -12058,7 +12058,7 @@ Verze %1</translation>
         <translation type="obsolete">Uvolní vybrané médium odpojením od počítače</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation type="obsolete">Aktualizuje seznam médií</translation>
     </message>
     <message>
@@ -13103,7 +13103,7 @@ Verze %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Checking dostupnost...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Selhala kontrola dostupnosti média.&lt;br&gt;%1.</translation>
     </message>
@@ -13338,12 +13338,12 @@ Verze %1</translation>
         <translation>&lt;br&gt;&lt;i&gt;Kontroluji dostupnost...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Kontrola dostupnosti média selhala.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Není vybráno žádné médium&lt;/b&gt;</translation>
     </message>
@@ -13352,12 +13352,12 @@ Verze %1</translation>
         <translation>Můžete to také změnit pokud počítač již běží.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;nejsou dostupná žádná média&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Obrazy můžete vytvořit pomocí správce virtuální medií.</translation>
     </message>
     <message>
@@ -13366,7 +13366,7 @@ Verze %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Některé části souboru s diskem jsou nedostupné. Použijte prosím Správce virtuálních medií v režimu &lt;b&gt;Zobrazení rozdílových disků&lt;/b&gt; pro zjištění souvislostí.</translation>
     </message>
@@ -14394,7 +14394,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Žádný pevný disk</translation>
     </message>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Nejsou dostupná žádná média. Použijte Správce virtuálních médií pro přidání médií odpovídajících typů.</translation>
     </message>
     <message>
@@ -14433,19 +14433,19 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Vytvoří nový virtuální pevný disk</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Přidá existující médium</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Odebere vybrané médium</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Uvolní vybrané médium odpojením od počítače</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Aktualizuje seznam médií</translation>
     </message>
     <message>
@@ -14493,7 +14493,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Obrazy disket (*.img);;Všechny soubory (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Vyberte soubor s obrazem diskety</translation>
     </message>
     <message>
@@ -14597,11 +14597,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation>&amp;Změnit...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Zkopíruje existující médium</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Změní atributy vybraného média</translation>
     </message>
     <message>

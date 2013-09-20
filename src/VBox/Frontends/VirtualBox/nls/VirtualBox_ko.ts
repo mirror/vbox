@@ -479,11 +479,11 @@
         <translation>창 모드와 끊김 없는 데스크톱 통합 모드를 전환합니다</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>크기 조정 모드로 전환(&amp;S)</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>창 모드와 크기 조절 모드를 전환합니다</translation>
     </message>
     <message>
@@ -6703,11 +6703,11 @@ p, li { white-space: pre-wrap; }
         <translation>미디어 속성 수정</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;의 가상 디스크 속성을 수정할 것입니다.&lt;/p&gt;&lt;p&gt;미디어 종류 중 하나를 선택하시고, 계속 진행하려면 &lt;b&gt;%2&lt;/b&gt;, 취소하려면 &lt;b&gt;%3&lt;/b&gt;을(를) 누르십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>미디어 종류 선택:</translation>
     </message>
 </context>
@@ -7212,7 +7212,7 @@ p, li { white-space: pre-wrap; }
         <translation>연결 해제</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;미디어 목록에서 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7287,7 +7287,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;을(를) 닫는 데 실패했습니다.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>미디어 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;의 접근성을 검사하는 데 실패했습니다.</translation>
     </message>
     <message>
@@ -7303,7 +7303,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;다음 오류로 인하여 새 버전 정보를 찾을 수 없습니다:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;하나 이상의 등록된 가상 하드 디스크나, CD/DVD 또는 플로피 미디어에 접근할 수 없습니다. 접근할 수 있게 될 때까지 이들 미디어를 사용하는 가상 머신을 작동할 수 없습니다.&lt;/p&gt;&lt;p&gt;&lt;b&gt;검사하기&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자를 연 다음 어떤 미디어에 접근할 수 없는가 확인하거나, &lt;b&gt;무시&lt;/b&gt; 단추를 눌러서 이 메시지를 무시할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7820,7 +7820,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;가상 머신을 &lt;b&gt;심리스&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;심리스 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;가상 머신을 &lt;b&gt;스케일&lt;/b&gt; 모드로 전환합니다. &lt;b&gt;%1&lt;/b&gt; 키를 눌러서 창 모드로 되돌아갈 수 있습니다. 현재의 &lt;i&gt;호스트&lt;/i&gt; 키는 &lt;b&gt;%2&lt;/b&gt; 입니다.&lt;/p&gt;&lt;p&gt;스케일 모드에서는 메뉴 표시줄이 숨겨집니다. &lt;b&gt;호스트 키+Home&lt;/b&gt; 키를 눌러서 볼 수 있습니다.&lt;/b&gt;</translation>
     </message>
     <message>
@@ -7925,7 +7925,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;스냅샷 &lt;b&gt;%1&lt;/b&gt;을(를) 복원하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;미디어 종류를 &lt;b&gt;%1&lt;/b&gt;에서 &lt;b&gt;%2&lt;/b&gt;(으)로 변경하는 데 실패하였습니다.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8177,7 +8177,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8185,11 +8185,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10593,7 +10593,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">플로피 장치 마운트 해제(&amp;L)</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">현재 마운트된 플로피 미디어를 마운트 해제합니다</translation>
     </message>
     <message>
@@ -10744,7 +10744,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">끊김 없는 데스크톱 통합 모드로 전환합니다</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;플로피 미디어의 활동 상태를 표시합니다:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11864,7 +11864,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;접근 가능성 검사 중...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;미디어 접근 가능성을 검사하는 데 실패했습니다.&lt;br&gt;%1.</translation>
     </message>
@@ -11884,7 +11884,7 @@ p, li { white-space: pre-wrap; }
         <translation>접근할 수 없음</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;이 하드 디스크의 미디어 중 일부에 접근할 수 없습니다. 가상 미디어 관리자의 &lt;b&gt;변경 사항을 저장하는 하드 디스크 보이기&lt;/b&gt; 모드를 사용하셔서 이 미디어를 찾아 보십시오.</translation>
     </message>
     <message>
@@ -12212,12 +12212,12 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;i&gt;접근 가능성 검사 중...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>미디어 접근 가능성 검사에 실패했습니다.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;미디어가 선택되지 않음&lt;/b&gt;</translation>
     </message>
@@ -12226,12 +12226,12 @@ p, li { white-space: pre-wrap; }
         <translation>머신 실행 중에 이 설정을 변경할 수 있습니다.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;사용 가능한 미디어 없음&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>가상 미디어 관리자로 미디어 이미지를 만들 수 있습니다.</translation>
     </message>
     <message>
@@ -12240,7 +12240,7 @@ p, li { white-space: pre-wrap; }
         <translation>이 하드 디스크를 추가하면 차이만 기록하는 새 하드 디스크를 추가할 것입니다.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>이 하드 디스크의 미디어 중 일부에 접근할 수 없습니다. 가상 미디어 관리자의 &lt;b&gt;변경 사항을 저장하는 하드 디스크 보이기&lt;/b&gt; 모드를 사용하셔서 이 미디어를 찾아 보십시오.</translation>
     </message>
@@ -12998,7 +12998,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">사용할 수 있는 미디어가 없습니다. 해당하는 미디어를 추가하려면 가상 미디어 관리자를 사용하십시오.</translation>
     </message>
     <message>
@@ -13037,19 +13037,19 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">새 가상 하드 디스크 만들기</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">이미 존재하는 미디어 추가하기</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>선택한 미디어 삭제하기</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>선택한 미디어를 가상 머신에서 연결 해제하여 등록 해제하기</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>미디어 목록 새로 고치기</translation>
     </message>
     <message>
@@ -13097,7 +13097,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">플로피 이미지 (*.img);;모든 파일 (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">플로피 디스크 이미지 파일 선택</translation>
     </message>
     <message>
@@ -13201,11 +13201,11 @@ p, li { white-space: pre-wrap; }
         <translation>수정(&amp;M)...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>존재하는 미디어 복사</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>선택한 미디어 속성 수정</translation>
     </message>
     <message>
