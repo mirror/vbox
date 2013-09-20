@@ -25,7 +25,10 @@
  %define VMX_SKIP_GDTR
  %ifndef RT_OS_DARWIN
   ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always. See @bugref{6875}.
-  %define VMX_SKIP_IDTR
+  %ifndef RT_OS_WINDOWS
+   ; Windows 8.1 RTM experiment.
+   %define VMX_SKIP_IDTR
+  %endif
  %endif
  %define VMX_SKIP_TR
 %endif
