@@ -297,7 +297,7 @@
              </sizepolicy>
            </property>
            <property name="whatsThis" >
-            <string>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</string>
+            <string>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</string>
            </property>
           </widget>
          </item>
@@ -329,10 +329,10 @@
        <item row="6" column="1" colspan="3">
         <widget class="QCheckBox" name="m_pCheckBoxApic">
          <property name="whatsThis">
-          <string>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
+          <string>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don't disable this feature after having installed a Windows guest operating system!</string>
          </property>
          <property name="text">
-          <string>Enable &amp;IO APIC</string>
+          <string>Enable &amp;I/O APIC</string>
          </property>
         </widget>
        </item>

@@ -366,7 +366,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         if (m_pSliderCPUCount->value() > 1 && !m_pCheckBoxApic->isChecked())
         {
             message.second << tr(
-                "The IO APIC feature is not currently enabled in the Motherboard section of the System page. "
+                "The I/O APIC feature is not currently enabled in the Motherboard section of the System page. "
                 "This is needed in order to support more than one virtual processor. "
                 "It will be done automatically if you confirm your changes.");
         }

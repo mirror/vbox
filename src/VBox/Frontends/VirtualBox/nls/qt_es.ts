@@ -592,7 +592,7 @@ a
         <translation>Cierra la ventana</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Muestra el nombre de la ventana y contiene controles para manipularla</translation>
     </message>
 </context>

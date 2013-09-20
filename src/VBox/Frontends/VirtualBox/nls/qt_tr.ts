@@ -588,7 +588,7 @@ to
         <translation>Pencereyi kapatır</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Pencerenin adını gösterir ve pencereyi değiştiren kontrolleri içerir</translation>
     </message>
 </context>

@@ -817,7 +817,7 @@ na
     </message>
     <message>
         <location line="+36"/>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Zobrazí název okna a obsahuje příkazy pro zacházení s ním</translation>
     </message>
     <message>

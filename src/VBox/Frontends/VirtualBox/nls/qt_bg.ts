@@ -590,7 +590,7 @@ to
         <translation>Затваря прозореца</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Показва името на прозореца и съдържа контроли за управлението му</translation>
     </message>
 </context>

@@ -77,7 +77,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the host IPv4 address for this adapter.</string>
+          <string>Holds the host IPv4 address for this adapter.</string>
          </property>
         </widget>
        </item>
@@ -103,7 +103,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the host IPv4 network mask for this adapter.</string>
+          <string>Holds the host IPv4 network mask for this adapter.</string>
          </property>
         </widget>
        </item>
@@ -129,7 +129,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the host IPv6 address for this adapter if IPv6 is supported.</string>
+          <string>Holds the host IPv6 address for this adapter if IPv6 is supported.</string>
          </property>
         </widget>
        </item>
@@ -155,7 +155,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</string>
+          <string>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</string>
          </property>
         </widget>
        </item>
@@ -211,7 +211,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</string>
+          <string>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -237,7 +237,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</string>
+          <string>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -263,7 +263,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
+          <string>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>
@@ -289,7 +289,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
+          <string>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</string>
          </property>
         </widget>
        </item>

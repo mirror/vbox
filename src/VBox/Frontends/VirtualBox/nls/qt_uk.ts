@@ -585,7 +585,7 @@ to
         <translation>Закриває вікно</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Показує ім&apos;я вікна та містить елементи керування ним</translation>
     </message>
 </context>

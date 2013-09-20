@@ -705,7 +705,7 @@ to
     </message>
     <message>
         <location filename="" line="326436454"/>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>ウィンドウの名前を表示し、ウィンドウを操作するコントロールを含みます</translation>
     </message>
 </context>

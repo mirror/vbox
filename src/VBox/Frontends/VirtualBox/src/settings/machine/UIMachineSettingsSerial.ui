@@ -83,7 +83,7 @@
       <item row="0" column="1" >
        <widget class="QComboBox" name="mCbNumber" >
         <property name="whatsThis" >
-         <string>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b>User-defined&lt;/b> and specify port parameters manually.</string>
+         <string>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b>User-defined&lt;/b> and specify port parameters manually.</string>
         </property>
        </widget>
       </item>
@@ -100,7 +100,7 @@
       <item row="0" column="3" >
        <widget class="QLineEdit" name="mLeIRQ" >
         <property name="whatsThis" >
-         <string>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt>0&lt;/tt> and &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may only be used if the &lt;b>IO APIC&lt;/b> setting is enabled for this virtual machine.</string>
+         <string>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt>0&lt;/tt> and &lt;tt>255&lt;/tt>. Values greater than &lt;tt>15&lt;/tt> may only be used if the &lt;b>I/O APIC&lt;/b> setting is enabled for this virtual machine.</string>
         </property>
        </widget>
       </item>
@@ -117,7 +117,7 @@
       <item row="0" column="5" >
        <widget class="QLineEdit" name="mLeIOPort" >
         <property name="whatsThis" >
-         <string>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>0xFFFF&lt;/tt>.</string>
+         <string>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt>0&lt;/tt> to &lt;tt>0xFFFF&lt;/tt>.</string>
         </property>
        </widget>
       </item>
@@ -199,7 +199,7 @@
       <item row="3" column="1" colspan="6" >
        <widget class="QLineEdit" name="mLePath" >
         <property name="whatsThis" >
-         <string>Displays the path to the serial port's pipe on the host when the port is working in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port is working in &lt;b>Host Device&lt;/b> mode.</string>
+         <string>Holds the path to the serial port's pipe on the host when the port is working in &lt;b>Host Pipe&lt;/b> mode, or the host serial device name when the port is working in &lt;b>Host Device&lt;/b> mode.</string>
         </property>
        </widget>
       </item>

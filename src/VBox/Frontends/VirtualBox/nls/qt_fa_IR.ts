@@ -589,7 +589,7 @@ to
       <translation>پنجره را می‌بندد</translation>
     </message>
     <message>
-      <source>Displays the name of the window and contains controls to manipulate it</source>
+      <source>Holds the name of the window and contains controls to manipulate it</source>
       <translation>نام پنجره را نمایش می‌دهد و حاوی کنترل‌هایی برای دستکاری آن است</translation>
     </message>
   </context>

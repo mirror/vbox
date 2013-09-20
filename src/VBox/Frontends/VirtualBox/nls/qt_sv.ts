@@ -1227,7 +1227,7 @@ till
     </message>
     <message>
         <location line="+2"/>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Visar namnet på fönstret och innehåller kontroller för att manipulera det</translation>
     </message>
 </context>

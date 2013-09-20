@@ -597,7 +597,7 @@ to
         <translation>关闭窗口</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>显示窗口名称并且包含维护它的控件</translation>
     </message>
 </context>

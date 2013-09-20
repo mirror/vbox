@@ -1274,9 +1274,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1491,9 +1491,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -2462,6 +2462,11 @@
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2838,11 +2843,11 @@
         <translation type="obsolete">Uždrausti pagr. kompiuterio &amp;ekrano užsklandą</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Rodo kelią iki numatytojo virtualios mašinos aplanko. Šis aplankas naudojamas, jei kuriant naują virtualią mašiną nenurodomas joks kitas.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Rodo kelią iki bibliotekos, kuri pateikia nuotolinio ekrano (VRDP) klientų atpažinimo funkciją.</translation>
     </message>
     <message>
@@ -2877,7 +2882,7 @@
         <translation type="obsolete">Pagr. kompiuterio &amp;klavišas:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Rodo klavišą, naudojamą kaip pagrindinio kompiuterio klavišą VM lange. Aktyvuokite įvedimo laukelį ir nuspauskite būsimą pagrindinį klavišą. Atminkite, kad negalima priskirti raidžių, skaičių, žymeklio perkėlimo, redagavimo klavišų.</translation>
     </message>
     <message>
@@ -3203,35 +3208,35 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3275,7 +3280,7 @@
         <translation type="obsolete">&amp;IPv4 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei.</translation>
     </message>
     <message>
@@ -3283,7 +3288,7 @@
         <translation type="obsolete">IPv4 tinklo &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukę šiai plokštei.</translation>
     </message>
     <message>
@@ -3291,7 +3296,7 @@
         <translation type="obsolete">&amp;IPv6 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -3299,7 +3304,7 @@
         <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -3319,7 +3324,7 @@
         <translation type="obsolete">Serve&amp;rio adresas:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adresą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3327,7 +3332,7 @@
         <translation type="obsolete">Serverio &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo tinklo kaukę to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3335,7 +3340,7 @@
         <translation type="obsolete">Adreso &amp;apatinė riba:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso apatinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3343,7 +3348,7 @@
         <translation type="obsolete">Adreso &amp;viršutinė riba:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
 </context>
@@ -3370,7 +3375,7 @@
         <translation type="unfinished">&amp;IPv4 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei.</translation>
     </message>
     <message>
@@ -3378,7 +3383,7 @@
         <translation type="unfinished">IPv4 tinklo &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukę šiai plokštei.</translation>
     </message>
     <message>
@@ -3386,7 +3391,7 @@
         <translation type="unfinished">&amp;IPv6 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3394,7 +3399,7 @@
         <translation type="unfinished">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -3414,7 +3419,7 @@
         <translation type="unfinished">Serve&amp;rio adresas:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Rodo adresą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3422,7 +3427,7 @@
         <translation type="unfinished">Serverio &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Rodo tinklo kaukę to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3430,7 +3435,7 @@
         <translation type="unfinished">Adreso &amp;apatinė riba:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Rodo adreso apatinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -3438,7 +3443,7 @@
         <translation type="unfinished">Adreso &amp;viršutinė riba:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
 </context>
@@ -3461,7 +3466,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3469,7 +3474,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3497,7 +3502,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3507,6 +3512,21 @@
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">&amp;Prievadų persiuntimas</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">Prievadų persiuntimo taisyklės</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4165,12 +4185,12 @@
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1 :&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Rodo įvairias virtualios mašinos funkcijas:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4182,7 +4202,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -4411,7 +4431,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4447,7 +4467,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4455,11 +4475,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4467,7 +4487,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4479,11 +4499,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4545,7 +4565,7 @@
         <translation type="obsolete">&amp;Pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Parodo virtualios mašinos pavadinimą.</translation>
     </message>
     <message>
@@ -4601,11 +4621,11 @@
         <translation>&amp;Aprašas</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Rodo virtualios mašinos aprašą. Aprašo laukelis naudingas komentuojant įdiegtos svečio OS konfigūracijos niuansus.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Rodo kelią, kur bus saugomos šios virtualios mašinos momentinių būvių kopijos. Atminkite, kad būvių kopijos gali užimti daug vietos.</translation>
     </message>
     <message>
@@ -4676,7 +4696,7 @@
         <translation type="obsolete">&amp;MAC adresas:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Rodo šios plokštės MAC adresą. Jis susideda iš 12 rašmenų {0-9,A-F}. Atminkite, antrasis rašmuo turi būti lyginis skaičius.</translation>
     </message>
     <message>
@@ -4737,7 +4757,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4776,6 +4796,14 @@
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsParallel</name>
@@ -4792,7 +4820,7 @@
         <translation>Prievado &amp;numeris: </translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Roro lygiagrečiojo prievado numerį. Galite pasirinkti kurį nors standartinį lygiagretųjį prievadą arba galite rankiniu būdu parinkti prievado parametrus nuspaudę mygtuką &lt;b&gt;Naudotojo apibrėžtas&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -4800,15 +4828,15 @@
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Rodo šio lygiagrečiojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Rodo šio lygiagrečiojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;I/O APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>I/O p&amp;rievadas: </translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Rodo pagrindinį įvesties/išvesties prievado adresą šiam lygiagrečiam prievadui. Galimos reikšmės yra sveikieji skaičiai nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -4816,7 +4844,7 @@
         <translation>&amp;Prievado kelias: </translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Rodo pagrindinio kopiuterio lygiagrečiųjų įtaisų vardus.</translation>
     </message>
     <message>
@@ -4977,7 +5005,7 @@
         <translation>Aplanko pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Rodo bendrųjų aplankų pavadinimus (kaip jie matomi iš svečio OS).</translation>
     </message>
     <message>
@@ -5028,7 +5056,7 @@
         <translation>Prievado &amp;numeris: </translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Roro nuosekliojo prievado numerį. Galite pasirinkti kurį nors standartinį lygiagretųjį prievadą arba galite rankiniu būdu parinkti prievado parametrus nuspaudę mygtuką &lt;b&gt;Naudotojo apibrėžtas&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5036,15 +5064,15 @@
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Rodo šio nuosekliojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Rodo šio nuosekliojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;I/O APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>I/O p&amp;rievadas: </translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Rodo pagrindinį įvesties/išvesties prievado adresą šiam nuosekliam prievadui. Galimos reikšmės yra sveikieji skaičiai nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5068,7 +5096,7 @@
         <translation>&amp;Prievado/rinkmenos kelias:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Rodo kelią iki nuosekliojo prievado kanalo pagrindiniame kompiuteryje, kai dirbama &lt;b&gt;Pagrindinio kompiuterio kanalo&lt;/b&gt; veiksenoje, arba pagrindinio kompiuterio nuosekliojo įtaiso vardą, kai dirbama &lt;b&gt;Pagrindinio kompiuterio įtaiso&lt;/b&gt; veiksenoje.</translation>
     </message>
     <message>
@@ -5504,12 +5532,12 @@
         <translation>Papildomos savybės:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Pažymėjus, virtuali mašina palaikys įvesties/išvesties APIC (IO APIC), kuris gali šiek tiek sumažinti našumą. &lt;b&gt;Atminkite:&lt;/b&gt; neuždrauskite šios parinkties, jei įdiegėte Windows kaip svečio operacinę sistemą!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>Pažymėjus, virtuali mašina palaikys įvesties/išvesties APIC (I/O APIC), kuris gali šiek tiek sumažinti našumą. &lt;b&gt;Atminkite:&lt;/b&gt; neuždrauskite šios parinkties, jei įdiegėte Windows kaip svečio operacinę sistemą!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>Įgalinti &amp;IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>Įgalinti &amp;I/O APIC</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
@@ -5652,7 +5680,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5680,7 +5708,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5839,7 +5867,7 @@
         <translation>&amp;Pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Rodo filtro pavadinimą.</translation>
     </message>
     <message>
@@ -7768,7 +7796,7 @@
         <translation type="unfinished">&amp;Pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7776,7 +7804,7 @@
         <translation type="unfinished">&amp;Tipas:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="unfinished">Rodo šeimą operacinių sistemų, kurią ketinate įdiegti virtualioje mašinoje.</translation>
     </message>
     <message>
@@ -7784,7 +7812,7 @@
         <translation type="unfinished">&amp;Versija:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="unfinished">Rodo operacinės sistemos tipą, kurį ketinate įdiegti šioje virtualioje mašinoje (pastaroji dar vadinama svečio operacine sistema).</translation>
     </message>
 </context>
@@ -9732,11 +9760,11 @@
 <context>
     <name>VBoxGLSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Rodo kelią iki numatytojo virtualios mašinos aplanko. Šis aplankas naudojamas, jei kuriant naują virtualią mašiną nenurodomas joks kitas.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Rodo kelią iki bibliotekos, kuri pateikia nuotolinio ekrano (VRDP) klientų atpažinimo funkciją.</translation>
     </message>
     <message>
@@ -9752,7 +9780,7 @@
         <translation type="obsolete">V&amp;RDP atpažinimo biblioteka:</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Rodo kelią iki numatytojo standžiųjų diskų aplanko. Šis aplankas naudojamas, jei kuriant naują ar pridedant esantį virtualų diską nenurodomas joks kitas.</translation>
     </message>
     <message>
@@ -9775,7 +9803,7 @@
         <translation type="obsolete">Pagrindinis &amp;klavišas:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Rodo klavišą, naudojamą kaip pagrindinio kompiuterio klavišą virtualioje mašinoje. Nuspauskite įvesties laukelį ir nuspauskite būsimą „pagrindinį“ klavišą. Atminkite, kad negalima priskirti raidių, skaičių, žymeklio perkėlimo, redagavimo klavišų.</translation>
     </message>
     <message>
@@ -10032,7 +10060,7 @@
         <translation type="obsolete">&amp;IPv4 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei.</translation>
     </message>
     <message>
@@ -10040,7 +10068,7 @@
         <translation type="obsolete">IPv4 tinklo &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukę šiai plokštei.</translation>
     </message>
     <message>
@@ -10048,7 +10076,7 @@
         <translation type="obsolete">&amp;IPv6 adresas:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 adresą šiai plokštei, jei palaikomas 
 IPv6.</translation>
     </message>
@@ -10057,7 +10085,7 @@ IPv6.</translation>
         <translation type="obsolete">IPv6 tinklo kaukės i&amp;lgis:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Rodo šio pagrindinio kompiuterio IPv4 tinklo kaukės prefikso ilgį šiai plokštei, jei palaikomas IPv6.</translation>
     </message>
     <message>
@@ -10077,7 +10105,7 @@ IPv6.</translation>
         <translation type="obsolete">Serve&amp;rio adresas:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adresą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -10085,7 +10113,7 @@ IPv6.</translation>
         <translation type="obsolete">Serverio &amp;kaukė:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo tinklo kaukę to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -10093,7 +10121,7 @@ IPv6.</translation>
         <translation type="obsolete">Adreso &amp;apatinė riba:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso apatinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
     <message>
@@ -10101,7 +10129,7 @@ IPv6.</translation>
         <translation type="obsolete">Adreso &amp;viršutinė riba:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Rodo adreso viršutinę ribą to DHCP serverio, kuris aptarnauja tinklą, susijusį su plokšte, kuri gali prisijungti tik prie pagrindinio kompiuterio.</translation>
     </message>
 </context>
@@ -10225,10 +10253,10 @@ IPv6.</translation>
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report
 </comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -10244,13 +10272,13 @@ IPv6.</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)
+        <comment>details report (I/O APIC)
 </comment>
         <translation type="obsolete">Įgalinta</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)
+        <comment>details report (I/O APIC)
 </comment>
         <translation type="obsolete">Uždrausta</translation>
     </message>
@@ -11581,12 +11609,12 @@ IPv6.</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Įgalinta</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Uždrausta</translation>
     </message>
     <message>
@@ -11630,9 +11658,9 @@ IPv6.</translation>
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>PAE/NX</source>
@@ -12703,17 +12731,7 @@ IPv6.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -12729,6 +12747,26 @@ IPv6.</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13080,11 +13118,11 @@ IPv6.</translation>
         <translation type="obsolete">&amp;Operacinė sistema:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Rodo šeimą operacinių sistemų, kurią ketinate įdiegti virtualioje mašinoje.</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Rodo operacinės sistemos tipą, kurį ketinate įdiegti šioje virtualioje mašinoje (pastaroji dar vadinama svečio operacine sistema).</translation>
     </message>
     <message>
@@ -14112,7 +14150,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
 <context>
     <name>VBoxVMSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Rodo kelią, kur bus saugomos šios virtualios mašinos momentinių būvių kopijos. Atminkite, kad būvių kopijos gali užimti daug vietos.</translation>
     </message>
     <message>
@@ -14124,7 +14162,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;Pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Pateikia virtualios mašinos pavadinimą.</translation>
     </message>
     <message>
@@ -14148,7 +14186,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;Aprašymas</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Rodo virtualios mašinos aprašymą. Aprašymo laukelis naudingas komentuojant įdiegtos svečio OS konfigūracijos niuansus.</translation>
     </message>
     <message>
@@ -14488,7 +14526,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;MAC adresas:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Rodo šios plokštės MAC adresą. Jis susideda iš 12 rašmenų {0-9,A-F}. Atminkite, antrasis rašmuo turi būti lyginis skaičius.</translation>
     </message>
     <message>
@@ -14525,7 +14563,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Prievado &amp;numeris: </translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Roro lygiagrečiojo prievado numerį. Galite pasirinkti kurį nors standartinį lygiagretųjį prievadą arba galite rankiniu būdu parinkti prievado parametrus nuspaudę mygtuką &lt;b&gt;Naudotojo apibrėžtas&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -14541,15 +14579,15 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;Prievado kelias: </translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation type="obsolete">Rodo pagrindinio kopiuterio lygiagrečiųjų įtaisų vardus.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="obsolete">Rodo šio lygiagrečiojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="obsolete">Rodo šio lygiagrečiojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;I/O APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Rodo pagrindinį įvesties/išvesties prievado adresą šiam lygiagrečiam prievadui. Galimos reikšmės yra sveikieji skaičiai nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -14658,7 +14696,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Aplanko pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Rodo bendrųjų aplankų pavadinimus (kaip jie matomi iš svečio OS).</translation>
     </message>
     <message>
@@ -14695,7 +14733,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Prievado &amp;numeris: </translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Roro nuosekliojo prievado numerį. Galite pasirinkti kurį nors standartinį lygiagretųjį prievadą arba galite rankiniu būdu parinkti prievado parametrus nuspaudę mygtuką &lt;b&gt;Naudotojo apibrėžtas&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -14723,7 +14761,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Sukurti &amp;kanalą</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Rodo kelią iki nuosekliojo prievado kanalo pagrindiniame kompiuteryje, kai dirbama &lt;b&gt;Pagrindinio kompiuterio kanalo&lt;/b&gt; veiksenoje, arba pagrindinio kompiuterio nuosekliojo įtaiso vardą, kai dirbama &lt;b&gt;Pagrindinio kompiuterio įtaiso&lt;/b&gt; veiksenoje.</translation>
     </message>
     <message>
@@ -14731,11 +14769,11 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;Prievado/rinkmenos kelias:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation type="obsolete">Rodo šio nuosekliojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;IO APIC&lt;/b&gt; nuostata.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation type="obsolete">Rodo šio nuosekliojo prievado IRQ numerį. Tai turi būti sveikasis skaičius iš intervalo nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;255&lt;/tt&gt;. Reikšmes, didesnes kaip &lt;tt&gt;15&lt;/tt&gt;, galima naudoti tik jei šiai virtualiai mašinai įgalinta &lt;b&gt;I/O APIC&lt;/b&gt; nuostata.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Rodo pagrindinį įvesties/išvesties prievado adresą šiam nuosekliam prievadui. Galimos reikšmės yra sveikieji skaičiai nuo &lt;tt&gt;0&lt;/tt&gt; iki &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -14835,12 +14873,12 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">Papildomos savybės:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Pažymėjus, virtuali mašina palaikys įvesties/išvesties APIC (IO APIC), kuris gali šiek tiek sumažinti našumą. &lt;b&gt;Atminkite:&lt;/b&gt; neuždrauskite šios parinkties, jei įdiegėte Windows kaip svečio operacinę sistemą!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Pažymėjus, virtuali mašina palaikys įvesties/išvesties APIC (I/O APIC), kuris gali šiek tiek sumažinti našumą. &lt;b&gt;Atminkite:&lt;/b&gt; neuždrauskite šios parinkties, jei įdiegėte Windows kaip svečio operacinę sistemą!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation type="obsolete">Įgalinti &amp;IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation type="obsolete">Įgalinti &amp;I/O APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -15007,7 +15045,7 @@ konkrečių nuostatų, matysite paaiškinimus&lt;i&gt;.</translation>
         <translation type="obsolete">&amp;Pavadinimas:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation type="obsolete">Rodo filtro pavadinimą.</translation>
     </message>
     <message>

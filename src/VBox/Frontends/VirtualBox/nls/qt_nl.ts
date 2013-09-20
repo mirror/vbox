@@ -599,7 +599,7 @@ niet hernoemen naar
         <translation>Sluit het venster</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Geeft de naam van venster weer en bevat knoppen om deze te bewerken</translation>
     </message>
 </context>

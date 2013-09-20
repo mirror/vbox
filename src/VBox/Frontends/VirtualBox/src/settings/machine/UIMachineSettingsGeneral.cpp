@@ -279,7 +279,7 @@ void UIMachineSettingsGeneral::retranslateUi()
     Ui::UIMachineSettingsGeneral::retranslateUi (this);
 
     /* Path selector */
-    mPsSnapshot->setWhatsThis (tr ("Displays the path where snapshots of this "
+    mPsSnapshot->setWhatsThis (tr ("Holds the path where snapshots of this "
                                    "virtual machine will be stored. Be aware that "
                                    "snapshots can take quite a lot of disk "
                                    "space."));

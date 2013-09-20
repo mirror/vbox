@@ -589,7 +589,7 @@ to
         <translation>關閉視窗</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>顯示視窗的名稱並包含對其進行操作的控制項</translation>
     </message>
 </context>

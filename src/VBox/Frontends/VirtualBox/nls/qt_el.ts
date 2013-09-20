@@ -583,7 +583,7 @@ to
         <translation type="unfinished">Κλείνει το παράθυρο</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation type="unfinished">Εμφανίζει το όνομα του παραθύρου και περιέχει εντολές για τον έλεγχο του</translation>
     </message>
 </context>

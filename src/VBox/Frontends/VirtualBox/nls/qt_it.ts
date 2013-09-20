@@ -589,7 +589,7 @@ in
         <translation>Chiude la finestra</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Visualizza il nome della finestra e contiene i controlli per manipolarla</translation>
     </message>
 </context>

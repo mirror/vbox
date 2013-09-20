@@ -48,7 +48,7 @@
    <item row="0" column="1" >
     <widget class="QLineEdit" name="mLeName" >
      <property name="toolTip" >
-      <string>Displays the filter name.</string>
+      <string>Holds the filter name.</string>
      </property>
     </widget>
    </item>

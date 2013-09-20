@@ -502,7 +502,7 @@ to
       <translation>បិទ​បង្អួច</translation>
     </message>
     <message>
-      <source>Displays the name of the window and contains controls to manipulate it</source>
+      <source>Holds the name of the window and contains controls to manipulate it</source>
       <translation>បង្ហាញ​ឈ្មោះបង្អួច​ និង​មាន​វត្ថុ​បញ្ជា​ដើម្បី​គណនា​វា​ផងដែរ</translation>
     </message>
   </context>

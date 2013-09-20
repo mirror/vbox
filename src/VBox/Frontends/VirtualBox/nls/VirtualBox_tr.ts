@@ -1123,9 +1123,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1330,9 +1330,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -2141,6 +2141,11 @@
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2421,15 +2426,15 @@
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Varsayılan VDI klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse, yeni sanal makineler oluşturulurken, bu klasör kullanılır.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Uzak Ekran (VRDP) istemcileri için kimlik doğrulaması sağlayan kütüphaneye yolu gösterir.</translation>
     </message>
     <message>
@@ -2445,7 +2450,7 @@
         <translation>V&amp;RDP Kimlik Doğrulaması Kütüphanesi:</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu dizin kullanılır.</translation>
     </message>
     <message>
@@ -2500,7 +2505,7 @@
         <translation type="obsolete">Anamakine &amp;Tuşu:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">VM penceresinde Anamakine Tuşu olarak kullanılan tuşu gösterir. Giriş alanını etkinleştirmek için yeni bir Anamakine Tuşuna basın. Alfanümerik, imleç haraketi ve düzenleme tuşları kullanılamaz unutmayın.</translation>
     </message>
     <message>
@@ -2818,35 +2823,35 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2890,7 +2895,7 @@
         <translation type="obsolete">&amp;IPv4 Adresi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için anamakine IPv4 adresini gösterir.</translation>
     </message>
     <message>
@@ -2898,7 +2903,7 @@
         <translation type="obsolete">IPv4 Ağ &amp;Maskesi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için anamakine IPv4 ağ maskesini gösterir.</translation>
     </message>
     <message>
@@ -2906,7 +2911,7 @@
         <translation type="obsolete">I&amp;Pv6 Adresi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Eğer IPv6 destekleniyorsa bu bağdaştırıcı için anamakine IPv6 adresini gösterir.</translation>
     </message>
     <message>
@@ -2914,7 +2919,7 @@
         <translation type="obsolete">IPv6 Ağ Maskesi &amp;Uzunluğu:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Eğer IPv6 destekleniyorsa bu bağdaştırıcı için anamakine IPv6 ağ maskesi ön ek uzunluğunu gösterir.</translation>
     </message>
     <message>
@@ -2934,7 +2939,7 @@
         <translation type="obsolete">Sunucu Ad&amp;resi:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusunun adresini gösterir.</translation>
     </message>
     <message>
@@ -2942,7 +2947,7 @@
         <translation type="obsolete">Sunucu &amp;Maskesi:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusunun ağ maskesini gösterir.</translation>
     </message>
     <message>
@@ -2950,7 +2955,7 @@
         <translation type="obsolete">A&amp;lt Adres Sınırı:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusu tarafından sunulmuş alt adres sınırını gösterir.</translation>
     </message>
     <message>
@@ -2958,7 +2963,7 @@
         <translation type="obsolete">Ü&amp;st Adres Sınırı:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusu tarafından sunulmuş üst adres sınırını gösterir.</translation>
     </message>
 </context>
@@ -2985,7 +2990,7 @@
         <translation type="unfinished">&amp;IPv4 Adresi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Bu bağdaştırıcı için anamakine IPv4 adresini gösterir.</translation>
     </message>
     <message>
@@ -2993,7 +2998,7 @@
         <translation type="unfinished">IPv4 Ağ &amp;Maskesi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Bu bağdaştırıcı için anamakine IPv4 ağ maskesini gösterir.</translation>
     </message>
     <message>
@@ -3001,7 +3006,7 @@
         <translation type="unfinished">I&amp;Pv6 Adresi:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Eğer IPv6 destekleniyorsa bu bağdaştırıcı için anamakine IPv6 adresini gösterir.</translation>
     </message>
     <message>
@@ -3009,7 +3014,7 @@
         <translation type="unfinished">IPv6 Ağ Maskesi &amp;Uzunluğu:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Eğer IPv6 destekleniyorsa bu bağdaştırıcı için anamakine IPv6 ağ maskesi ön ek uzunluğunu gösterir.</translation>
     </message>
     <message>
@@ -3029,7 +3034,7 @@
         <translation type="unfinished">Sunucu Ad&amp;resi:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusunun adresini gösterir.</translation>
     </message>
     <message>
@@ -3037,7 +3042,7 @@
         <translation type="unfinished">Sunucu &amp;Maskesi:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusunun ağ maskesini gösterir.</translation>
     </message>
     <message>
@@ -3045,7 +3050,7 @@
         <translation type="unfinished">A&amp;lt Adres Sınırı:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusu tarafından sunulmuş alt adres sınırını gösterir.</translation>
     </message>
     <message>
@@ -3053,7 +3058,7 @@
         <translation type="unfinished">Ü&amp;st Adres Sınırı:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Bu sadece-anamakine bağdaştırıcısı ile ilişkilendirilmiş ağa hizmet eden DHCP sunucusu tarafından sunulmuş üst adres sınırını gösterir.</translation>
     </message>
 </context>
@@ -3076,7 +3081,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3084,7 +3089,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3112,7 +3117,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3122,6 +3127,21 @@
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">B.Noktası Y&amp;önlendirme</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">B.Noktası Yönlendirme Kuralları</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3657,12 +3677,12 @@
         <translation type="obsolete">&lt;hr&gt;Uzak Masaüstü Sunucusu, %1 nolu b.noktasında dinleniyor</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Bu sanal makine tarafından kullanılan farklı özelliklerin durumunu gösterir:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3674,7 +3694,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -3811,7 +3831,7 @@
         <translation>Sunucu &amp;B.Noktası:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">&lt;qt&gt;VRDP Sunucusunun port numarasını gösterir. Portu öntanımlı değerine döndürmek için &lt;tt&gt;0&lt;/tt&gt; (sıfır) belirtebilirsiniz.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -3883,7 +3903,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3919,7 +3939,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3927,11 +3947,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3939,7 +3959,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3951,11 +3971,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4013,7 +4033,7 @@
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Bu sanal makinenin anlık görüntülerinin saklanacağı yeri gösterir. Anlık görüntülerin oldukça disk alanı kaplayabileceğinden haberiniz olsun.</translation>
     </message>
     <message>
@@ -4029,11 +4049,11 @@
         <translation type="obsolete">&amp;İsim:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Sanal makinenin adını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Sanak makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
     </message>
     <message>
@@ -4137,7 +4157,7 @@
         <translation>&amp;Açıklama</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Sanal makinenin tanımını gösterir. Açıklama alanı yüklü misafir İS&apos;nin yapılandırma ayrıntılarında yorum yapmak için faydalıdır.</translation>
     </message>
     <message>
@@ -4244,7 +4264,7 @@
         <translation>Bu sanal bağdaştırıcının Anamakine İS&apos;nin gerçek ağına nasıl takıldığını denetler.</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için seçilen iç ağ adını gösterir.</translation>
     </message>
     <message>
@@ -4252,7 +4272,7 @@
         <translation>&amp;MAC Adresi:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Bu bağdaştırıcının MAC adresini gösterir. Bu, {0-9,A-F} grubundan seçilen tam olarak 12 karakteri içerir. İkinci karakterin her zaman bir çift rakam olmak zorunda olduğunu unutmayın.</translation>
     </message>
     <message>
@@ -4276,7 +4296,7 @@
         <translation type="obsolete">Aray&amp;üz Adı:</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">TAP arayüzünün adını gösterir.</translation>
     </message>
     <message>
@@ -4284,7 +4304,7 @@
         <translation type="obsolete">&amp;Uygulamayı Ayarla:</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü ayarlamak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
@@ -4296,7 +4316,7 @@
         <translation type="obsolete">&amp;Sonlandırma Uygulaması:</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü sonlandırmak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
@@ -4387,7 +4407,7 @@
         <translation>Bu ağ kartından ve ağ kartına geçecek trafiğin anamakine sistemindeki ağ bağdaştırıcısını seçer.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>Bağlanacak olan bu ağ kartının dahili ağ adını girin. Bu sanal makinede ya da diğerlerinde kullanılmayan herhangi bir diğer ağ kartının adını seçerek yeni bir dahili ağ oluşturabilirsiniz.</translation>
     </message>
     <message>
@@ -4430,15 +4450,23 @@
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için seçilen iç ağ adını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Bu bağdaştırıcının MAC adresini gösterir. Bu ifade {0-9,A-F} kümesinden seçilen 12 karakterden oluşur. İkinci karakterin her zaman bir rakam olması gerektiğini unutmayın.</translation>
     </message>
     <message>
@@ -4481,7 +4509,7 @@
         <translation>B.Noktası &amp;Numarası:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Paralel bağlantı noktası numarasını gösterir. Standart paralel bağlantı noktalarından birini seçebilir ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; seçebilirsiniz ve bağlantı noktası parametrelerini el ile belirleyebilirsiniz.</translation>
     </message>
     <message>
@@ -4497,15 +4525,15 @@
         <translation>B.Noktası &amp;Yolu:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Anamakine paralel aygıt adını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Bu paralel bağlantı.noktasının IRQ numarasını gösterir. Bu &lt;tt&gt;0&lt;/tt&gt; ve &lt;tt&gt;255&lt;/tt&gt; arasında bütün bir numara olmalıdır. Eğer bu sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; ayarı etkinleştirilmişse sadece &lt;tt&gt;15&lt;/tt&gt;&apos;ten büyük değerler kullanılabilir.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Bu paralel bağlantı.noktasının IRQ numarasını gösterir. Bu &lt;tt&gt;0&lt;/tt&gt; ve &lt;tt&gt;255&lt;/tt&gt; arasında bütün bir numara olmalıdır. Eğer bu sanal makine için &lt;b&gt;I/O APIC&lt;/b&gt; ayarı etkinleştirilmişse sadece &lt;tt&gt;15&lt;/tt&gt;&apos;ten büyük değerler kullanılabilir.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Bu paralel bağlantı.noktasının temel G/Ç bağlantı noktası adresini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt;&apos;dan&lt;tt&gt;0xFFFF&lt;/tt&gt; değerine kadar aralıktaki tam sayı numaralarıdır.</translation>
     </message>
 </context>
@@ -4681,7 +4709,7 @@
         <translation>Klasör Adı:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Paylaşılan klasörün adını gösterir (misafir İS tarafından görüldüğü şekilde olacaktır).</translation>
     </message>
     <message>
@@ -4729,7 +4757,7 @@
         <translation>B.Noktası &amp;Numarası:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Seri bağlantı noktası numarasını gösterir. Standart seri bağlantı noktalarından birini seçebilir ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; seçebilirsiniz  ve bağlantı noktası parametrelerini el ile belirleyebilirsiniz.</translation>
     </message>
     <message>
@@ -4737,15 +4765,15 @@
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;I/O APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>G/Ç B.&amp;Noktası:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
@@ -4769,7 +4797,7 @@
         <translation type="obsolete">Port &amp;Yolu:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Bağlantı noktası &lt;b&gt;Anamakine Hattı&lt;/b&gt; kipinde çalışıyorken anamakine üzerindeki seri bağlantı noktasının hattına olan yolu gösterir ya da bağlantı noktası &lt;b&gt;Anamakine Aygıtı&lt;/b&gt; kipinde çalışıyorken anamakine seri aygıt adını gösterir.</translation>
     </message>
     <message>
@@ -4777,11 +4805,11 @@
         <translation>B.Noktası/Dosya &amp;Yolu:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Bu seri bağlantı noktasının IRQ numarasını gösterir. Bu &lt;tt&gt;0&lt;/tt&gt; ve &lt;tt&gt;255&lt;/tt&gt; arasında bütün bir numara olmalıdır. Eğer bu sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; ayarı etkinleştirilmişse sadece &lt;tt&gt;15&lt;/tt&gt;&apos;ten büyük değerler kullanılabilir.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Bu seri bağlantı noktasının IRQ numarasını gösterir. Bu &lt;tt&gt;0&lt;/tt&gt; ve &lt;tt&gt;255&lt;/tt&gt; arasında bütün bir numara olmalıdır. Eğer bu sanal makine için &lt;b&gt;I/O APIC&lt;/b&gt; ayarı etkinleştirilmişse sadece &lt;tt&gt;15&lt;/tt&gt;&apos;ten büyük değerler kullanılabilir.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Bu seri bağlantı.noktasının temel G/Ç bağlantı noktası adresini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt;&apos;dan&lt;tt&gt;0xFFFF&lt;/tt&gt; değerine kadar aralıktaki tam sayı numaralarıdır.</translation>
     </message>
 </context>
@@ -5265,12 +5293,12 @@
         <translation>Genişletilmiş Özellikler:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>İşaretlendiğinde, sanal makine hafif performansı düşüren Girdi Çıktı APIC (IO APIC) destekleyecek. &lt;b&gt;Not:&lt;/b&gt; bu özelliği Windows misafir işletim sistemi kurulduktan sonra etkisizleştirmeyin!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>İşaretlendiğinde, sanal makine hafif performansı düşüren Girdi Çıktı APIC (I/O APIC) destekleyecek. &lt;b&gt;Not:&lt;/b&gt; bu özelliği Windows misafir işletim sistemi kurulduktan sonra etkisizleştirmeyin!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>&amp;IO APIC etkin</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>&amp;I/O APIC etkin</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -5388,7 +5416,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5416,7 +5444,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5582,7 +5610,7 @@
         <translation>&amp;Adı:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Süzgeç adını gösterir.</translation>
     </message>
     <message>
@@ -7343,7 +7371,7 @@
         <translation>&amp;Adı:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>Sanal makinenin adını gösterir.</translation>
     </message>
     <message>
@@ -7351,7 +7379,7 @@
         <translation>&amp;Türü:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>Bu sanal makine içerisine kurmayı planladığınız işletim sistemi ailesini gösterir.</translation>
     </message>
     <message>
@@ -7359,7 +7387,7 @@
         <translation>&amp;Sürüm:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Bu sanal makine içerisine kurmayı planladığınız işletim sistemi türünü gösterir (misafir işletim sistemi olarak adlandırılır).</translation>
     </message>
 </context>
@@ -9305,11 +9333,11 @@ Version %1</source>
         <translation type="obsolete">Dizin Adı</translation>
     </message>
     <message>
-        <source>Displays the path to an existing folder on the host PC.</source>
+        <source>Holds the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Sunucu bilgisayar üzerindeki dizinin yolunu gösterir.</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Paylaşılan dizinlerin isimlerini gösterir (misafir İşletim Sistemi tarafından görüldüğü şekilde).</translation>
     </message>
     <message>
@@ -10236,7 +10264,7 @@ Version %1</source>
         <translation type="obsolete">Makine &amp;Anahtarı:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. Alfa numeriklerin, imleç hareketlerinin ve anahtar düzenlemelerinin makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>
@@ -10321,7 +10349,7 @@ Version %1</source>
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
         <translation>GÇ APIC</translation>
     </message>
@@ -10347,12 +10375,12 @@ Version %1</source>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Etkisizleştirildi</translation>
     </message>
     <message>
@@ -11879,17 +11907,7 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -11905,6 +11923,26 @@ Version %1</source>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -12078,7 +12116,7 @@ Version %1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Diyalog yardımını gösterir.</translation>
     </message>
     <message>
@@ -12106,7 +12144,7 @@ Version %1</source>
         <translation type="obsolete">VirtualBox Tercihleri</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">VM penceresinde, kullanılan anahtarı, makine anahtarı olarak gösterir. Girdi alanını aktif hale getirin ve yeni bir makine anahtarına basın. alfa numerik... işaretci hareketi ve anahtar düzenlemesinin, makine anahtarı olarak kullanılamayacağını unutmayın.</translation>
     </message>
     <message>
@@ -12175,7 +12213,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Öntanımlı</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Varsayılan VDI klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
@@ -12187,7 +12225,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">VDI dizinini ön tanımlı değerlerine tekrar döndürür. Şu anki ön tanımlı yol, değişiklikler onaylandıktan ve bu diyaloğu tekrar açtıktan sonra görüntülenecektir.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
@@ -12219,7 +12257,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">V&amp;RDP Kimlik Doğrulama Kütüphanesi</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Uzak Masaüstü (VRDP) istemcileri için kimlik doğrulamayı sağlayan kütüphanenin yolunu gösterir.</translation>
     </message>
     <message>
@@ -12764,7 +12802,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">İşletim Siste&amp;mi:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Sanal makine içerisine kurmak istediğiniz işletim sistemi tipini gösterir.</translation>
     </message>
     <message>
@@ -12772,7 +12810,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">&amp;Sürüm:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Sanal makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
     </message>
 </context>
@@ -13642,7 +13680,7 @@ Bu özellik Misafir Eklentilerinin yüklü olmasını gerektirir.&lt;/qt&gt;</tr
         <translation type="obsolete">&amp;İsim</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation type="obsolete">Filtre adını gösterir.</translation>
     </message>
     <message>
@@ -14069,15 +14107,15 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Sanal ağ kablosunun başlangıçta makineye takılı olup olmadığını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the name of the host interface selected for this adapter.</source>
+        <source>Holds the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Bu bağdaştırıcı için seçilen sunucu arayüzünün adını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">TAP arayüzünün adını gösterir.</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü ayarlamak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
@@ -14085,7 +14123,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ayarlama uygulamasını seçer.</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAP arayüzünü sonlandırmak için çalıştırılacak komutu gösterir.</translation>
     </message>
     <message>
@@ -14093,7 +14131,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Sonlandırma uygulamasını seçer.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Bu bağdaştırıcının MAC adresini gösterir. Bu ifade {0-9,A-F} kümesinden seçilen 12 karakterden oluşur. İkinci karakterin her zaman bir rakam olması gerektiğini unutmayın.</translation>
     </message>
     <message>
@@ -14132,7 +14170,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Port &amp;Yolu</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation type="obsolete">Sunucunun paralel aygıt adını gösterir.</translation>
     </message>
 </context>
@@ -14155,7 +14193,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Port &amp;Numarası</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Seri port numarasını gösterir. Standart seri portlardan birini seçebilirsiniz. Ya da &lt;b&gt;Kullanıcı-tanımlı&lt;/b&gt; ögesini seçerek port parametrelerini el ile belirleyebilirsiniz.</translation>
     </message>
     <message>
@@ -14163,15 +14201,15 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;IO APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Seri portun IRQ numaralarını gösterir.  Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;255&lt;/tt&gt; arasındaki tüm sayılardır. &lt;tt&gt;15&lt;/tt&gt;&apos;ten daha büyük sayılar sadece sanal makine için &lt;b&gt;I/O APIC&lt;/b&gt; etkinleştirildiyse kullanılabilir.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/O Po&amp;rtu</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Seri portun temel I/O adreslerini gösterir. Geçerli değerler &lt;tt&gt;0&lt;/tt&gt; ile &lt;tt&gt;0xFFFF&lt;/tt&gt; arasındaki tüm sayılardır.</translation>
     </message>
     <message>
@@ -14195,7 +14233,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Port &amp;Yolu</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Eğer seri port &lt;b&gt;Sunucu Borusu&lt;/b&gt; kipinde çalışıyorsa seri portun sunucu üzerindeki borusunun yolunu gösterir ya da &lt;b&gt;Sunucu Aygıtı&lt;/b&gt; kipinde çalışıyorsa sunucunun seri portunun adını gösterir.</translation>
     </message>
 </context>
@@ -14238,7 +14276,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;ISO Kalıp Dosyası</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal CD/DVD sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
@@ -14393,7 +14431,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;İsim</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Sanal makinenin adını gösterir.</translation>
     </message>
     <message>
@@ -14617,7 +14655,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Pencere yardımını gösterir.</translation>
     </message>
     <message>
@@ -14653,11 +14691,11 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Seçildiğinde belirtilen sanal sabit diski İkincil (Secondary) IDE denetleyicisinin İkincil (Slave) yivine (slot) ekler.</translation>
     </message>
     <message>
-        <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
+        <source>Holds the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Bu IDE yivine elemek için sanal sabit diskleri gösterir ve hızlıca başka bir sabit seçmenize izin verir.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal CD/DVD sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
@@ -14665,7 +14703,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Seçildiğinde belirtilen ortamı sanal makinenin Disket sürücüsüne bağlar.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal Disket sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
@@ -14699,7 +14737,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">A&amp;nlık Görüntü Dizini</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Sanak makine içerisine kurmak istediğiniz şiletim sistemi tipini gösterir (misafir işletim sistemi olarak da adlandırılır).</translation>
     </message>
     <message>
@@ -14712,9 +14750,9 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Seçildiğinde sanal makine Girdi Çıktı APIC (IO APIC)
+        <translation type="obsolete">&lt;qt&gt;Seçildiğinde sanal makine Girdi Çıktı APIC (I/O APIC)
 destekleyecektir ki bu sanal makine başarımını biraz düşürür. &lt;b&gt;Not:&lt;/b&gt; Bir misafir Windows
 işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translation>
     </message>
@@ -14723,7 +14761,7 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
         <translation type="obsolete">Misafir işletim sistemi ile sunucu işletim sistemi arasındaki pano paylaşımını tanımlar. Bu özelliğin Misafir Eklentileri gerektirdiğini unutmatın.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Bu sanal makinenin anlık görüntülerinin nereye kaydedileceğini tanımlar. Anlık görüntülerin çok yer kaplayabileceğini unutmayın.</translation>
     </message>
     <message>
@@ -14731,7 +14769,7 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
         <translation type="obsolete">Anlık görüntü dizinini öntanımlı ayarlarına döndürür. Güncel öntanımlı yol bu ayarlar kabul edildikten sonra bu pencere yeniden açılarak gösterilecektir.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Sanal makinenin tanımını gösterir. Tanımlama alanı misafir işletim sisteminin yapılandırma detaylarını yorum olarak eklemek için kullanışlıdır.</translation>
     </message>
     <message>
@@ -14865,7 +14903,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Kimlik Doğrulama &amp;Zaman Aşımı </translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VRDP Sunucusunun port numarasını gösterir. Portu öntanımlı değerine döndürmek için &lt;tt&gt;0&lt;/tt&gt; (sıfır) belirtebilirsiniz.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -15118,7 +15156,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Kal&amp;ıp Dosyası</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Sanal Disket sürücüsüne bağlanacak kalıp dosyasını gösterir ve hızlıca başka bir kalıp seçmenize izin verir.</translation>
     </message>
     <message>
@@ -15145,7 +15183,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">&amp;Sunucu Portu:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">&lt;qt&gt;VRDP Sunucusunun port numarasını gösterir. Portu öntanımlı değerine döndürmek için &lt;tt&gt;0&lt;/tt&gt; (sıfır) belirtebilirsiniz.&lt;/qt&gt;</translation>
     </message>
     <message>

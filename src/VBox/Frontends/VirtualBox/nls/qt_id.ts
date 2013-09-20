@@ -589,7 +589,7 @@ menjadi
         <translation>Menutup window</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Menampilkan nama window dan mewadahi kendali untuk memanipulasikannya</translation>
     </message>
 </context>

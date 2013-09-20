@@ -605,7 +605,7 @@ nepavyksta pervadinti į
         <translation>Užveria langą</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translatorcomment>Affiche le nom de la fenêtre et contient des contrôles pour la manipuler</translatorcomment>
         <translation>Rodo lango pavadinimą ir turi jo tvarkymo priemones</translation>
     </message>
