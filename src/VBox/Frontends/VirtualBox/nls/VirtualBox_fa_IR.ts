@@ -415,7 +415,7 @@
         <translation>درباره &amp;برنامه...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>پنجره اطلاعات محصول را نشان میدهد</translation>
     </message>
     <message>
@@ -449,7 +449,7 @@
         <translation>مدیر رسانه مجاز&amp;ی...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>نمایش پنجره مدیر رسانه مجازی</translation>
     </message>
     <message>
@@ -474,7 +474,7 @@
         <translation>اولو&amp;یت ها...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>پنجره تنظیمات سراسری را نشان میدهد</translation>
     </message>
     <message>
@@ -2622,7 +2622,7 @@
         <translation>کابل متصل ش&amp;ده است</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>پنجره را برای مدیریت دستورات اِرسال پورت باز میکند.</translation>
     </message>
     <message>
@@ -3974,11 +3974,11 @@
         <translation>Callee&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;قادر به یافتن فایل زبان برای زبان &lt;b&gt;%1&lt;/b&gt; در دایرکتوری زیر نیست:&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; &lt;/p&gt;&lt;p&gt; زبان موقتا به زبان پیش فرض سیستم ریست خواهد شد. لطفا به پنجره &lt;b&gt;اولویت ها&lt;/b&gt; بروید که آن را میتوان از منوی &lt;b&gt;فایل&lt;/b&gt; در پنجره اصلی برنامه یافت، و یکی از زبان های موجود در صفحه &lt;b&gt;زبان&lt;/b&gt; را انتخاب کنید.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;قادر به بارگیری فایل زبان &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; نیست. &lt;p&gt;زبان موقتا به زبان توکار برنامه یعنی انگلیسی ریست میشود. لطفا به پنجره &lt;b&gt;اولویت ها&lt;/b&gt; بروید که میتوانید آن را از منوی &lt;b&gt;فایل&lt;/b&gt; از پنجره اصلی برنامه باز کنید، و یکی از زبان های موجود را از صفحه &lt;b&gt;زبان&lt;/b&gt; انتخاب کنید.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -4329,7 +4329,7 @@
         <translation>تخلیه اجباری</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;نمیتوان ایمیج سی دی نصب کننده افزونه مهمان ویرچوال باکس را داخل ماشین مجازی &lt;b&gt;%1&lt;/b&gt;قرار داد، چونکه ماشین درایو سی دی/دی وی دی ندارد. لطفا یک درایو توسط صفحه ذخیره ساز در پنجره تنظیمات ماشین مجازی اضافه کنید.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5989,7 +5989,7 @@
         <translation>ریست</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>بازکردن یک پنجره برای انتخاب پوشه متفاوت.</translation>
     </message>
     <message>
@@ -5997,7 +5997,7 @@
         <translation>ریست مسیر پوشه به مقدار پیش فرض.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>بازکردن یک پنجره برای انتخاب فایل متفاوت.</translation>
     </message>
     <message>

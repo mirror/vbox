@@ -73,7 +73,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Virtual Media Manager..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the Virtual Media Manager dialog"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the Virtual Media Manager window"));
     }
 };
 
@@ -167,7 +167,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "&Preferences...", "global settings"));
-        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings dialog"));
+        setStatusTip(QApplication::translate("UIActionPool", "Display the global settings window"));
     }
 };
 

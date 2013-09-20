@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * Header with definitions and functions related to settings dialog
+ * Header with definitions and functions related to settings window
  */
 
 /*

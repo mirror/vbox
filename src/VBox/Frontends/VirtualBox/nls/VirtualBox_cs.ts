@@ -560,7 +560,7 @@
         <translation>&amp;Předvolby...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Zobrazí globalní nastavení</translation>
     </message>
     <message>
@@ -640,7 +640,7 @@
         <translation>Správce virtuálních &amp;medií...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Zobrazí dialog Správce virtuálních médií</translation>
     </message>
     <message>
@@ -794,7 +794,7 @@
         <translation>O &amp;aplikaci VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Zobrazí dialog s informacemi pro produktu</translation>
     </message>
     <message>
@@ -2315,7 +2315,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Typ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Zdroj:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Poprvé jste spustili nově vytvořený virtuální počítač. Tento průvodce vám pomůže provést kroky nezbytné pro nabootování vámi zvoleného operačního systému z virtuálního počítače.&lt;/p&gt;&lt;p&gt;Upozorňujeme, že právě teď nebudete schopni nainstalovat operační systém na virtuální počítač, protože do něj nemáte připojený žádný disk. Pokud to nechcete, můžete průvodce zrušit, vybrat &lt;b&gt;Nastavení&lt;/b&gt; z nabídky &lt;b&gt;Počítač&lt;/b&gt; hlavního okna VirtualBoxu pro přístup k dialogu nastavení tohoto počítače a změnit nastavení pevného disku.&lt;/p&gt;&lt;p&gt;Použíjte tlačítko &lt;b&gt;Další&lt;/b&gt; pro posun na další stránku průvodce a tlačítko &lt;b&gt;Zpět&lt;/b&gt; pro návrat na předchozí stránku. Také můžete stisknout tlačítko &lt;b&gt;Zrušit&lt;/b&gt;, pokud chcete průvodce ukončit.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2385,7 +2385,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Spustili jste poprvé nově vytvořený virtuální počítač. Tento průvodce vám pomůže provést kroky potřebné pro instalaci vybraného operačního systému do tohoto virtuálního počítače.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Spustili jste poprvé nově vytvořený virtuální počítač. Tento průvodce vám pomůže provést kroky potřebné pro spuštění operačního systému v tomto virtuálním počítači.&lt;/p&gt;&lt;p&gt;Poznámka: není možné spustit instalaci operačního systému do virtuálního počítače, protože jste k němu nepřipojili žádný pevný disk. Pokud je to nechtěný krok, zrušte průvodce spuštěním, vyberte &lt;b&gt;Nastavení&lt;/b&gt; z nabídky &lt;b&gt;Počítač&lt;/b&gt; v hlavním okně aplikace VirtualBox a změňte nastavení pro pevný disk.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3893,7 +3893,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Otevře dialog pro správu pravidel předávaných portů.</translation>
     </message>
     <message>
@@ -5163,7 +5163,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Zvolte název síťového rozhraní pokud je připojení typu &lt;b&gt;Síťový most&lt;/b&gt; nebo &lt;b&gt;Síť pouze s hostitelem&lt;/b&gt; a název vnitřní sítě pokud je typ připojení &lt;b&gt;Vnitřní síť&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">Otevře dialog pro rozšířená nastavení pro aktuální typ.</translation>
     </message>
     <message>
@@ -5251,7 +5251,7 @@ p, li { white-space: pre-wrap; }
         <translation>Ka&amp;bel připojen</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Otevře dialog pro správu pravidel předávaných portů.</translation>
     </message>
     <message>
@@ -7150,11 +7150,11 @@ p, li { white-space: pre-wrap; }
         <translation>Volaný&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nelze najít jazykový soubor pro jazyk &lt;b&gt;%1&lt;/b&gt; ve složce &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Jazyk bude dočasně nastaven na výchozí jazyk systému. Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nelze načíst jazykový soubor&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;Jazyk bude dočasně nastaven na angličtinu (vestavěnou). Přejděte, prosím, do &lt;b&gt;Nastavení&lt;/b&gt;, které najdete v menu &lt;b&gt;Soubor&lt;/b&gt; hlavního okna VirtualBoxu, a vyberte existující jazyk na stránce &lt;b&gt;Jazyk&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7214,7 +7214,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Při běhu virtuálního počítače se vyskytla kritická chyba a provádění počítače bylo zastaveno.&lt;/p&gt;&lt;p&gt;Pro pomoc se prosím podívejte do sekce Community na &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; nebo na smlouvu o podpoře. Prosím poskytněte obsah log souboru &lt;tt&gt;VBox.log&lt;/tt&gt; a obrázek &lt;tt&gt;VBox.png&lt;/tt&gt;, který najdete v adresáři &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;, společně s popisem, co jste dělali, když chyba nastala. Předchozí soubory také zobrazíte vybráním &lt;b&gt;Zobrazit logy&lt;/b&gt; z menu &lt;b&gt;Počitač&lt;/b&gt; hlavního okna VirtualBoxu.&lt;/p&gt;&lt;p&gt;Stiskněte &lt;b&gt;OK&lt;/b&gt;, pokud chcete vypnout počítač, nebo stiskněte &lt;b&gt;Ignorovat&lt;/b&gt;, pokud jej chcete ponechat v současném stavu pro debugování. Upozorňujeme, že debugování vyžaduje zvláštní znalosti a nástroje, takže doporučujeme stisknout &lt;b&gt;OK&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepřipojili jste pevný disk k novému virtuálnímu počítači. Počítač nebude schopen bootovat, dokud nepřipojíte pevný disk s hostovaným operačním systémem nebo nějaké jiné bootovatelné médium pomocí dialogu nastavení počítače nebo Průvodce prvním spuštěním.&lt;/p&gt;&lt;p&gt;Chcete pokračovat?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7488,7 +7488,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">O &amp;aplikaci VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Zobrazí dialog s informacemi pro produktu</translation>
     </message>
     <message>
@@ -7825,7 +7825,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Selhalo vysunutí disku z virtuálního počítače. Disk může být být zablokován hostovaným operačním systémem. Zkontrolujte to prosím a zkuste znovu.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nepodařilo se připojit obraz CD disku s instalací přídavků pro aplikaci VirtualBox do virtuálního počítače &lt;b&gt;%1&lt;/b&gt; protože nemá CD/DVD-ROM zařízení. Přidejte prosím zařízení na záložce uložiště ve vlastnostech virtuálního počítače.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8385,15 +8385,15 @@ p, li { white-space: pre-wrap; }
         <translation>Vytvoření skupiny pro virtuální počítač &lt;b&gt;%1&lt;/b&gt; selhalo.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8570,7 +8570,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9399,7 +9399,7 @@ Bude použito dalšími komponentami VirtualBoxu pro identifikaci vašeho virtu�
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, který bude použit
@@ -9501,7 +9501,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">&lt;p&gt;Zadejte název nového virtuálního počítače a vyberte typ hostovaného operačního systému, který do něj hodláte instalovat.&lt;/p&gt;&lt;p&gt;Název virtuálního počítače většinou indikuje jeho softwarovou a hardwarovou konfiguraci.Bude použito dalšími komponentami VirtualBoxu pro identifikaci vašeho virtuálního počítače&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, který bude použit jako bootovací pevný disk virtuálního počítače. Můžete buď vytvořit nový pevný disk použitím tlačítka &lt;b&gt;Nový&lt;/b&gt;, nebo vybrat již existující obraz pevného disku z nabídkového  seznamu nebo stiskem tlačítka &lt;b&gt;Existující&lt;/b&gt; (spustí se Správce virtuálních disků)&lt;/p&gt;&lt;p&gt;Pokud potřebujete detailnější nastavení pevného disku, můžete přeskočit tento krok a připojit pevné disky později použitím dialogu Nastavení virtuálního počítače.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9541,7 +9541,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
         <translation type="obsolete">Zrušit</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, který bude použit jako bootovací pevný disk virtuálního počítače. Můžete buď vytvořit nový pevný disk použitím tlačítka &lt;b&gt;Nový&lt;/b&gt;, nebo vybrat již existující obraz pevného disku z vysouvacího seznamu nebo stiskem tlačítka &lt;b&gt;Existující&lt;/b&gt; (pro vyvolání dialogu Správce virtuálních medií).&lt;/p&gt;&lt;p&gt;Pokud potřebujete detailnější nastavení pevného disku, můžete tento krok přeskočit a připojit pevné disky později použitím dialogu Nastavení pro virtuální počítač.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9614,7 +9614,7 @@ krok a připojit pevné disky později použitím dialogu Nastavení VM.&lt;/p&g
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vyberte obraz pevného disku, který bude použit jako bootovací pevný disk virtuálního počítače. Můžete buď vytvořit nový pevný disk použitím tlačítka &lt;b&gt;Nový&lt;/b&gt;, nebo vybrat již existující obraz pevného disku z vysouvacího seznamu nebo stiskem tlačítka &lt;b&gt;Existující&lt;/b&gt; (pro vyvolání dialogu Správce virtuálních medií).&lt;/p&gt;&lt;p&gt;Pokud potřebujete detailnější nastavení pevného disku, můžete tento krok přeskočit a připojit pevné disky později použitím dialogu Nastavení pro virtuální počítač.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11368,7 +11368,7 @@ Verze %1</translation>
         <translation type="obsolete">&amp;O VirtualBoxu...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Zobrazí dialog s informacemi o produktu</translation>
     </message>
     <message>
@@ -12136,7 +12136,7 @@ Verze %1</translation>
         <translation>Resetovat</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Otevře dialog pro výběr jiné složky.</translation>
     </message>
     <message>
@@ -12144,7 +12144,7 @@ Verze %1</translation>
         <translation>Nastaví cestu ke složce na výchozí hodnotu.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Otevře dialog pro výběr jiného souboru.</translation>
     </message>
     <message>
@@ -14255,11 +14255,11 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Ukazuje cestu k výchozímu adresáři virtuálního počítače. Tento adresář je použit, pokud se neurčí jinak, když se vytváří nový virtuální počítač.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Otevře dialog pro výběr výchozího VDI adresáře.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Otevře dialog pro výběr výchozího adresáře virtuálního počítače.</translation>
     </message>
     <message>
@@ -14287,7 +14287,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Ukáže cestu ke knihovně, která poskytuje autentizaci pro klienty Vzdálené plochy (VRDP).</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">Otevře dialog pro výběr souboru autentizační knihovny VRDP.</translation>
     </message>
     <message>
@@ -14861,7 +14861,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Správce virtuálních &amp;disků...</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Zobrazí Správce virtuálních disků</translation>
     </message>
     <message>
@@ -14925,7 +14925,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">&amp;O Virtualboxu...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Zobrazí informace o produktu</translation>
     </message>
     <message>
@@ -15031,7 +15031,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Správce virtuálních &amp;medií...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Zobrazí dialog Správce virtuálních médií</translation>
     </message>
     <message>
@@ -15056,7 +15056,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">&amp;Předvolby...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Zobrazí globalní nastavení</translation>
     </message>
     <message>

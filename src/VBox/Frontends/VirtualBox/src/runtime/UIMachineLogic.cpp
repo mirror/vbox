@@ -1390,12 +1390,12 @@ void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QSt
     if (!isMachineWindowsCreated())
         return;
 
-    /* Create VM settings dialog on the heap!
+    /* Create VM settings window on the heap!
      * Its necessary to allow QObject hierarchy cleanup to delete this dialog if necessary: */
     QPointer<UISettingsDialogMachine> pDialog = new UISettingsDialogMachine(activeMachineWindow(),
                                                                             session().GetMachine().GetId(),
                                                                             strCategory, strControl);
-    /* Executing VM settings dialog.
+    /* Executing VM settings window.
      * This blocking function calls for the internal event-loop to process all further events,
      * including event which can delete the dialog itself. */
     pDialog->execute();

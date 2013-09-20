@@ -543,7 +543,7 @@
         <translation>VirtualBox 정보(&amp;A)...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>제품 정보 대화상자를 표시합니다</translation>
     </message>
     <message>
@@ -577,7 +577,7 @@
         <translation>가상 미디어 관리자(&amp;V)...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>가상 미디어 관리자 대화상자를 표시합니다</translation>
     </message>
     <message>
@@ -602,7 +602,7 @@
         <translation>환경 설정(&amp;P)...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>전역 환경 설정 대화 상자를 표시합니다</translation>
     </message>
     <message>
@@ -2215,7 +2215,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">호스트 드라이브 %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;새 가상 머신을 처음으로 시작했습니다. 이 마법사는 선택한 가상 머신에서 운영 체제를 시작하기 위한 단계를 도와 줍니다.&lt;/p&gt;&lt;p&gt;아직까지 하드 디스크가 연결되어 있지 않기 때문에 이 가상 머신에 운영 체제를 즉시 설치할 수는 없습니다. 이것을 원하지 않으신다면 이 마법사의 실행을 취소한 다음 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴의 &lt;b&gt;설정&lt;/b&gt; 항목에서 하드 디스크 설정을 편집하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;다음&lt;/b&gt; 단추를 누르면 이 마법사의 다음 쪽으로 진행하며 &lt;b&gt;이전&lt;/b&gt; 단추를 누르면 이전 쪽으로 돌아갑니다. &lt;b&gt;취소&lt;/b&gt; 단추를 눌러서 언제든지 마법사를 끝낼 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2290,7 +2290,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 운영 체제를 설치하는 과정을 도와 줍니다.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;새 가상 머신을 처음으로 시작합니다. 이 마법사는 가상 머신에 선택한 운영 체제를 사용하기 위한 작업을 도와 줍니다.&lt;/p&gt;&lt;p&gt;가상 머신에 하드 디스크를 연결하지 않았기 때문에 운영 체제를 설치할 수 없습니다. 이 마법사를 원하지 않는다면 VirtualBox 주 창의 &lt;b&gt;머신&lt;/b&gt; 메뉴에서 &lt;b&gt;설정&lt;/b&gt; 항목을 선택하여 가상 머신 설정 창을 연 다음 하드 디스크 설정을 바꾸십시오.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3768,7 +3768,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">포트 포워딩 규칙을 편집하는 대화 상자를 엽니다.</translation>
     </message>
     <message>
@@ -5105,7 +5105,7 @@ p, li { white-space: pre-wrap; }
         <translation>어댑터 종류(&amp;T):</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">현재 연결 종류의 고급 설정 대화 상자를 표시합니다.</translation>
     </message>
     <message>
@@ -5166,7 +5166,7 @@ p, li { white-space: pre-wrap; }
         <translation>케이블 연결됨(&amp;C)</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>포트 포워딩 규칙을 편집하는 대화 상자를 엽니다.</translation>
     </message>
     <message>
@@ -6938,11 +6938,11 @@ p, li { white-space: pre-wrap; }
         <translation>호출자&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;디렉터리 &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;에서 &lt;b&gt;%1&lt;/b&gt;을(를) 위한 파일을 찾을 수 없습니다.&lt;/p&gt;&lt;p&gt;언어를 시스템 기본값으로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;언어 파일 &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;을(를) 불러올 수 없습니다.&lt;p&gt;언어를 내장되어 있는 영어로 초기화합니다. VirtualBox 주 창의 &lt;b&gt;파일&lt;/b&gt; 메뉴의 &lt;b&gt;환경 설정&lt;/b&gt; 대화상자를 연 다음, &lt;b&gt;언어&lt;/b&gt; 페이지에 있는 언어 중 하나를 선택하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6986,7 +6986,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;가상 머신 창은 &lt;b&gt;%1&amp;nbsp;비트&lt;/b&gt; 모드에 최적화되어 있지만 현재 가상 디스플레이의 색 설정은 &lt;b&gt;%2&amp;nbsp;비트&lt;/b&gt;입니다.&lt;/p&gt;&lt;p&gt;게스트 운영 체제의 성능을 향상시키려면 게스트 운영 체제의 디스플레이 속성을 여시고 사용 가능한 경우 &lt;b&gt;%3&amp;nbsp;비트&lt;/b&gt; 모드를 선택하십시오.&lt;/p&gt;&lt;p&gt;&lt;b&gt;메모&lt;/b&gt;: OS/2 같은 일부 운영 체제는 실제로 32&amp;nbsp;비트 모드에서 작동하지만 24&amp;nbsp;비트 모드를 사용한다고 보고합니다. 만약 이 메시지가 나타나면 다른 색 품질을 선택하거나 게스트 운영 체제에서 필요한 색 품질(%4&amp;nbsp;비트)을 지원하지 않으면 이 메시지를 비활성화 시킬 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;새 가상 머신에 하드 디스크를 연결하지 않았습니다. 게스트 운영 체제가 설치되어 있는 하드 디스크나 또 다른 부팅 가능한 미디어를 연결하지 않는 한 머신은 부팅되지 않을 것입니다.&lt;/p&gt;&lt;p&gt;계속 진행하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7199,7 +7199,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">VirtualBox 정보(&amp;A)...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">제품 정보 대화상자를 표시합니다</translation>
     </message>
     <message>
@@ -7564,7 +7564,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">가상 드라이브에서 디스크를 꺼낼 수 없습니다. 게스트 운영 체제에서 잠갔을 수도 있습니다. 확인한 다음 다시 시도하십시오.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;가상 머신 &lt;b&gt;%1&lt;/b&gt;에는 CD/DVD-ROM 드라이브가 없기 때문에 VirtualBox 게스트 확장 CD 이미지를 마운트할 수 없습니다. 가상 머신 설정 대화상자에서 드라이브를 추가해 주십시오.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8109,15 +8109,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">가상 머신 닫기</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8292,7 +8292,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9014,7 +9014,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">취소</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;가상 머신을 부팅하기 위한 하드 디스크를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드 디스크를 만들 수 있으며, 또한 &lt;b&gt;기존 디스크 사용&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자에서 존재하는 하드 디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드 디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드 디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9095,7 +9095,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;가상 머신을 부팅하기 위한 하드 디스크를 선택하십시오. &lt;b&gt;새로 만들기&lt;/b&gt; 단추를 눌러서 새로운 하드 디스크를 만들 수 있으며, 또한 &lt;b&gt;기존 디스크 사용&lt;/b&gt; 단추를 눌러서 가상 미디어 관리자에서 존재하는 하드 디스크를 선택할 수 있습니다.&lt;/p&gt;&lt;p&gt;자세한 하드 디스크 설정을 원하신다면 이 단계를 건너뛰고 가상 머신 설정 대화 상자에서 하드 디스크를 연결하십시오.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11077,7 +11077,7 @@ p, li { white-space: pre-wrap; }
         <translation>초기화</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>다른 폴더를 선택하기 위한 대화 상자를 엽니다.</translation>
     </message>
     <message>
@@ -11085,7 +11085,7 @@ p, li { white-space: pre-wrap; }
         <translation>폴더 경로를 기본값으로 초기화합니다.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>다른 파일을 선택하기 위한 대화 상자를 엽니다.</translation>
     </message>
     <message>
@@ -13411,7 +13411,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">환경 설정(&amp;P)...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">전역 환경 설정 대화 상자를 표시합니다</translation>
     </message>
     <message>
@@ -13531,7 +13531,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">가상 미디어 관리자(&amp;V)...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">가상 미디어 관리자 대화상자를 표시합니다</translation>
     </message>
     <message>

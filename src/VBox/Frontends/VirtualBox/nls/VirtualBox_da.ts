@@ -595,7 +595,7 @@
         <translation>Om Virtu&amp;alBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Vis vindue med produktinformation</translation>
     </message>
     <message>
@@ -629,7 +629,7 @@
         <translation>&amp;Virtuel diskhåndtering...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Åbner Virtual diskhåndtering</translation>
     </message>
     <message>
@@ -654,7 +654,7 @@
         <translation>Indstillinger...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Vis globale indstillinger</translation>
     </message>
     <message>
@@ -2234,7 +2234,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Værtsdrev %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at starte et operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du ikke kan installere et operativsystem i denne virtuelle maskine endnu, da du ikke har tilsluttet en harddisk til den. Hvis du ønsker at tilføje en harddisk, så skal du afbryde denne guide og vælge &lt;b&gt;Indstillinger&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt;&lt;/p&gt;&lt;p&gt;Klik &lt;b&gt;Næste&lt;/b&gt; for at gå til næste side af guiden og &lt;b&gt;Tilbage&lt;/b&gt; for at gå til den forrige side. Du kan også vælge &lt;b&gt;Annullér&lt;/b&gt;, hvis du vil afbryde denne guide.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2313,7 +2313,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at installere et operativsystem efter eget valg i denne virtuelle maskine.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du har startet en nyoprettet virtuel maskine for første gang. Denne guide hjælper dig med at udføre de trin, der er nødvendige for at starte et operativsystem i den virtuelle maskine.&lt;/p&gt;&lt;p&gt;Bemærk at du ikke kan installere et operativsystem i denne virtuelle maskine endnu, da du ikke har tilsluttet en harddisk til den. Hvis du ønsker at tilføje en harddisk, så skal du afbryde denne guide og vælge &lt;b&gt;Indstillinger&lt;/b&gt; fra menuen &lt;b&gt;Maskine&lt;/b&gt; i VirtualBox&apos; hovedvindue for at ændre konfigurationen af harddiske.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3759,7 +3759,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Opsæt regler for viderestilling af porte.</translation>
     </message>
     <message>
@@ -4961,7 +4961,7 @@ p, li { white-space: pre-wrap; }
         <translation>Kabel tilsluttet</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Opsæt regler for viderestilling af porte.</translation>
     </message>
     <message>
@@ -6665,11 +6665,11 @@ p, li { white-space: pre-wrap; }
         <translation>Kald til&amp;nbsp;returkode: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunne ikke finde en fil indeholdende sproget &lt;b&gt;%1&lt;/b&gt; i kataloget &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Applikationen vil i stedet bruge systemets standardsprog. Vælg et eksisterende sprog i afsnittet &lt;b&gt;Sprog&lt;/b&gt; tilgængelig via menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i menuen &lt;b&gt;Fil&lt;/b&gt; i VirtualBox&apos; hovedvindue.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunne ikke åbne sprogfilen &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;VirtualBox vil derfor midlertidigt bruge engelsk. Du kan vælge det rigtige sprog i afsnittet &lt;b&gt;Sprog&lt;/b&gt; tilgængelig via menupunktet &lt;b&gt;Indstillinger&lt;/b&gt; i menuen &lt;b&gt;Fil&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6713,7 +6713,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Visning af virtuelle maskiner fungerer bedst ved &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; farver men den virtuelle maskines skærm er sat til &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Åbn egenskaber for skærm i gæsteoperativsystemet og vælg &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; farver (hvis tilgængelig) for at opnå bedst mulig grafikydelse.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Bemærk&lt;/b&gt;. Nogle operativsystemer, såsom OS/2, arbejder muligvis med 32&amp;nbsp;bit farver, men rapporterer dette som 24&amp;nbsp;bit (16 millioner farver). Du kan prøve at vælge en anden bit pr. farve-indstilling for at se om denne besked forsvinder eller du kan vælge helt at deaktivere denne besked, hvis den krævede indstilling (%4&amp;nbsp;bit) ikke er tilgængelig i gæsteoperativsystemet.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Du har ikke tilsluttet en harddisk til den nye virtuelle maskine. Maskinen vil ikke kunne starte, medmindre du tilslutter en harddisk indeholdende et gæsteoperativsystem eller andet opstartsprogram enten via Maskin-indstillinger eller Første gang-guiden.&lt;/p&gt;&lt;p&gt;Vil du fortsætte?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6922,7 +6922,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Om Virtu&amp;alBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Vis vindue med produktinformation</translation>
     </message>
     <message>
@@ -7280,7 +7280,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kunne ikke skubbe disken ud af det virtuelle drev. Drevet er muligvis låst af gæsteoperativsystemet. Venligst kontroller dette og prøv så igen.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Kunne ikke indsætte installationsmediet til VirtualBox&apos; Gæstetilføjelser i den virtuelle maskine &lt;b&gt;%1&lt;/b&gt;, da maskinen ikke har et CD/DVD-drev. Tilføj et drev på siden Lagringsmedier i indstillinger for den virtuelle maskine.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7832,15 +7832,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Stop virtuel maskine</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8016,7 +8016,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8761,7 +8761,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Annullér</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8842,7 +8842,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Vælg det harddisk-aftryk, som den virtuelle maskine skal starte op fra. Du kan enten oprette en ny harddisk ved hjælp af knappen &lt;b&gt;Ny&lt;/b&gt; eller vælge et eksisterende harddisk-aftryk fra rullegardinmenuen eller ved at klikke på knappen &lt;b&gt;Eksisterende&lt;/b&gt; (starter Virtuel diskhåndtering).&lt;/p&gt;&lt;p&gt;Har du brug for en mere avanceret harddisk-opsætning, kan du springe dette trin over og montere dine harddiske senere i &lt;i&gt;Indstillinger for VM&lt;/i&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10846,7 +10846,7 @@ p, li { white-space: pre-wrap; }
         <translation>Nulstil</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Lader dig vælge en anden mappe.</translation>
     </message>
     <message>
@@ -10854,7 +10854,7 @@ p, li { white-space: pre-wrap; }
         <translation>Nulstil mappens sti til standardværdi.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Lader dig vælge en anden fil.</translation>
     </message>
     <message>
@@ -13106,7 +13106,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indstillinger...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Vis globale indstillinger</translation>
     </message>
     <message>
@@ -13226,7 +13226,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Virtuel diskhåndtering...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Åbner Virtual diskhåndtering</translation>
     </message>
     <message>

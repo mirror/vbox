@@ -568,7 +568,7 @@
         <translation>VirtualBox &amp;Hakkında...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Ürün bilgisinin olduğu bir ileti göster</translation>
     </message>
     <message>
@@ -602,7 +602,7 @@
         <translation>Sanal &amp;Ortam Yöneticisi...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Sanal Ortam Yöneticisi iletisini göster</translation>
     </message>
     <message>
@@ -627,7 +627,7 @@
         <translation>&amp;Tercihler...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Genel ayarlar iletisini göster</translation>
     </message>
     <message>
@@ -1709,7 +1709,7 @@
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;Tip:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Kaynak:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Yeni oluşturduğunuz bir sanal makineyi ilk defa çalıştırdınız. Bu sihirbaz bu sanal makine üzerinde tercih ettiğiniz işletim sistemini başlatmanızı (boot) sağlayacak aşamalarda size yardım edecek.&lt;/p&gt;&lt;p&gt;Bu sanal makineye bir sabit disk eklemediğiniz için şu anda bir işletim sistemi kuramayacağınızı unutmayın. Eğer istediğiniz bu değilse, bu sihirbazı iptal edip &lt;b&gt;Makine&lt;/b&gt; menüsünden &lt;b&gt;Ayarlar&lt;/b&gt; yolunu takip ederek sabit disk yapılandırmanızı değiştirin.&lt;/p&gt;&lt;p&gt;Sonraki sayfaya gitmek için &lt;b&gt;İleri&lt;/b&gt;, önceki sayfaya dönmek için &lt;b&gt;Geri&lt;/b&gt; düğmelerini kullanın. Bu sihirbazı kapatmak için &lt;b&gt;İptal&lt;/b&gt; düğmesine basabilirsiniz.&lt;/p&gt;.</translation>
     </message>
     <message>
@@ -3121,7 +3121,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Bağlantı noktası yönlendirme kurallarını yönetmek için ileti açar.</translation>
     </message>
     <message>
@@ -4375,7 +4375,7 @@
         <translation>&amp;Kablo bağlandı</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Bağlantı noktası yönlendirme kurallarını yönetmek için ileti açar.</translation>
     </message>
     <message>
@@ -6046,11 +6046,11 @@
         <translation>Çağrılan&amp;nbsp;RC: </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt; dizininde &lt;b&gt;%1&lt;/b&gt; dili için bir dil dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Dil geçici olarak varsayılan sistem diline sıfırlanacak. Lütfen VirtualBox ana penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; iletisine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasındaki mecut dillerden birini seçin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt; dil dosyası yüklenemedi.&lt;/p&gt;&lt;p&gt;Dil geçici olarak varsayılan İngilizce (bütünleşik) diline sıfırlanacak. Lütfen VirtualBox ana penceresinin &lt;b&gt;Dosya&lt;/b&gt; menüsünden açabileceğiniz &lt;b&gt;Tercihler&lt;/b&gt; iletisine gidin ve &lt;b&gt;Dil&lt;/b&gt; sayfasındaki mecut dillerden birini seçin.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6328,7 +6328,7 @@
         <translation type="obsolete">VirtualBox H&amp;akkında...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Ürün bilgilerini gösteren bir pencere aç</translation>
     </message>
     <message>
@@ -6608,7 +6608,7 @@
         <translation>Zorla Sök</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesine VirtualBox Guest Additions installer CD kalıbı eklenemedi, makine CD/DVD-ROM sürücülere sahip değil gibi. Lütfen sanal makine ayarları iletisinin depolama sayfasını kullanarak bir sürücü ekleyin.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7097,15 +7097,15 @@
         <translation type="obsolete">Sanal Makineyi Kapat</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7280,7 +7280,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7831,7 +7831,7 @@ Bu isim tüm VirtualBox bileşenleri tarafından sanal makinenizi tanımak için
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal makineyi başlatmak için (boot)  kullanılacak bir sabit disk kalıbı seçin. &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayarak Yeni bir sabit disk oluşturabilirsiniz ya da açılabilir listeden bir &lt;b&gt;Varolan sabit disk&lt;/b&gt; seçebilirsiniz.&lt;/p&gt;
@@ -7969,7 +7969,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal makineyi başlatmak için (boot)  kullanılacak bir sabit disk kalıbı seçin. &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayarak Yeni bir sabit disk oluşturabilirsiniz ya da açılabilir listeden bir &lt;b&gt;Varolan sabit disk&lt;/b&gt; seçebilirsiniz.&lt;/p&gt;&lt;p&gt;Eğer daha karmaşık bir sabit disk ayarlamasına gereksinim duyuyorsanız bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekleyebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8030,7 +8030,7 @@ bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekle
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sanal makineyi başlatmak için (boot)  kullanılacak bir sabit disk kalıbı seçin. &lt;b&gt;Yeni&lt;/b&gt; düğmesine tıklayarak Yeni bir sabit disk oluşturabilirsiniz ya da açılabilir listeden bir &lt;b&gt;Varolan sabit disk&lt;/b&gt; seçebilirsiniz.&lt;/p&gt;&lt;p&gt;Eğer daha karmaşık bir sabit disk ayarlamasına gereksinim duyuyorsanız bu basamağı atlayarak sabit diskleri Sanal Makine Ayarları penceresinden ekleyebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9624,7 +9624,7 @@ Version %1</source>
         <translation type="obsolete">VirtualBox H&amp;akkında...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Pencereyi ürün bilgisi ile aç</translation>
     </message>
     <message>
@@ -10198,7 +10198,7 @@ Version %1</source>
         <translation>Sıfırla</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Farklı bir klasör seçmek için bir ileti açar.</translation>
     </message>
     <message>
@@ -10206,7 +10206,7 @@ Version %1</source>
         <translation>Klasör yolunu varsayılan değere sıfırlar.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Farklı bir dosya seçmek için bir ileti açar.</translation>
     </message>
     <message>
@@ -12229,11 +12229,11 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Varsayılan sanal makine klasörüne yolu gösterir. Eğer açıkça aksi hali belirtilmemişse daha önceden var olan ya da yeni oluşturulmuş sabit diskleri eklemek için bu klasör kullanılır.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Öntanımlı VDI dizinini seçmek için diyaloğu açar.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Ön tanımlı sanal makine dizini seçmek için bir diyalog açar.</translation>
     </message>
     <message>
@@ -12261,7 +12261,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Uzak Masaüstü (VRDP) istemcileri için kimlik doğrulamayı sağlayan kütüphanenin yolunu gösterir.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">VRDP kimlik doğrulama kütüphanesi dosyasını seçmek için bir pencere açar.</translation>
     </message>
     <message>
@@ -12942,7 +12942,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+D</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Sanal Disk Yöneticisi Penceresini Göster</translation>
     </message>
     <message>
@@ -12955,7 +12955,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Ctrl+G</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Genel ayarlar diyaloğunu göster</translation>
     </message>
     <message>
@@ -13067,7 +13067,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">VirtualBox H&amp;akkında...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Ürün bilgilerini gösteren bir pencere aç</translation>
     </message>
     <message>
@@ -13187,7 +13187,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Sanal &amp;Ortam Yöneticisi...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Sanal Ortam Yöneticisi Penceresini Göster</translation>
     </message>
     <message>

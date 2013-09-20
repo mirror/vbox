@@ -640,7 +640,7 @@
         <translation>&amp;Quant al VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation>Mostra un diàleg amb la informació del producte</translation>
     </message>
     <message>
@@ -674,7 +674,7 @@
         <translation>Gestor de suports &amp;virtuals...</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation>Mostra el diàleg del gestor de suports virtuals</translation>
     </message>
     <message>
@@ -699,7 +699,7 @@
         <translation>&amp;Preferències...</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation>Mostra el diàleg de paràmetres globals</translation>
     </message>
     <message>
@@ -2308,7 +2308,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Heu seleccionat el següent suport per iniciar des de:&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Heu iniciat un nova màquina virtual per primera vegada. Este assistent vos ajudarà a dur a terme els passos necessaris per iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que no podeu instal·lar un sistema operatiu a dins d&apos;esta màquina virtual en este moment perquè encara no heu seleccionat un disc. Si això no és el que voleu, podeu cancel·lar l&apos;execució d&apos;este assistent, seleccioneu &lt;b&gt;Paràmetres&lt;/b&gt; des del menú &lt;b&gt;Màquina&lt;/b&gt; de la finestra principal del VirtualBox per accedir al diàleg de configuració d&apos;este màquina i canviar la configuració de disc.&lt;/p&gt;&lt;p&gt;Feu servir el botó &lt;b&gt;Següent&lt;/b&gt; per continuar amb la següent pàgina de l&apos;assistent i el botó &lt;b&gt;Arrere&lt;/b&gt; per tornar a la pàgina anterior. Podeu prémer també &lt;b&gt;Cancel·la&lt;/b&gt; si voleu cancel·lar l&apos;execució d&apos;este assistent.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -2386,7 +2386,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Heu iniciat una màquina virtual nova per primera vegada. Este auxiliar vos ajudarà a dur a terme els passos necessaris per instal·lar un sistema operatiu de la vostra elecció en esta màquina virtual.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
+        <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings window of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Heu iniciat una màquina virtual nova per primera vegada. Este auxiliar vos ajudarà a dur a terme els passos necessaris per a iniciar un sistema operatiu de la vostra elecció a la màquina virtual.&lt;/p&gt;&lt;p&gt;Tingueu en compte que no podreu instal·lar un sistema operatiu en esta màquina virtual ara mateix ja que no teniu cap disc dur adjuntat. Si això no és el que voleu, podeu cancel·lar l&apos;execució d&apos;este auxiliar, seleccioneu &lt;b&gt;Paràmetres&lt;/b&gt; al menú &lt;b&gt;Màquina&lt;/b&gt; de la finestra principal del Virtualbox per accedir al diàleg de preferències d&apos;esta màquina i canviar la configuració del disc dur.&lt;/p&gt;&lt;p&gt;%1&lt;/p&gt;</translation>
     </message>
 </context>
@@ -3827,7 +3827,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation type="unfinished">Obri el diàleg per gestionar les regles de reenviament de ports.</translation>
     </message>
     <message>
@@ -5217,7 +5217,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Selecciona el nom de l&apos;adaptador de xarxa si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Adaptador en pont&lt;/b&gt; o &lt;b&gt;Adaptador de només l&apos;amfitrió&lt;/b&gt; i el nom de la xarxa interna si el tipus d&apos;adjunció és equivalent a &lt;b&gt;Xarxa interna&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Open extended settings dialog for current attachment type.</source>
+        <source>Open extended settings window for current attachment type.</source>
         <translation type="obsolete">Obri el diàleg de configuració ampliat per a l&apos;actual tipus d&apos;adjunció.</translation>
     </message>
     <message>
@@ -5305,7 +5305,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Cable connectat</translation>
     </message>
     <message>
-        <source>Opens dialog to manage port forwarding rules.</source>
+        <source>Opens a window to manage port forwarding rules.</source>
         <translation>Obri el diàleg per gestionar les regles de reenviament de ports.</translation>
     </message>
     <message>
@@ -7117,7 +7117,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;No es pot entrar al mode fluid degut a que no hi ha suficient memòria de vídeo.&lt;/p&gt;&lt;p&gt;Heu de configurar la màquina virtual per tal que tinga almenys &lt;b&gt;%1&lt;/b&gt; de memòria de vídeo.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No es pot trobar el fitxer de llengua per a l&apos;idioma &lt;b&gt;%1&lt;/b&gt; al directori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglés (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la secció d&apos;&lt;b&gt;Idioma&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
@@ -7125,7 +7125,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;No es pot trobar el fitxer d&apos;imatge del VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu baixar-la des d&apos;internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the main VirtualBox window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No es pot trobar el fitxer de llengua per a l&apos;idioma&lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglés (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la pàgina de &lt;b&gt;Llengües&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7221,7 +7221,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;b&gt;El programa VirtualBox Guest Additions instal·lat al sistema client és més recent que la versió suportada: la versió instal·lada és %1 i la més nova és la %2. No es pot fer servir una versió més nova de les Guest Additions amb una versió més antiga del VirtualBox.&lt;/p&gt;&lt;p&gt;Es recomana instal·lar la versió de Guest Additions a la versió actual triant &lt;b&gt;Instal·lar Guest Additions&lt;/b&gt; des del menú &lt;b&gt;Dispositius&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings dialog or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
+        <source>&lt;p&gt;You didn&apos;t attach a hard disk to the new virtual machine. The machine will not be able to boot unless you attach a hard disk with a guest operating system or some other bootable media to it later using the machine settings window or the First Run Wizard.&lt;/p&gt;&lt;p&gt;Do you wish to continue?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No heu afegit cap disc dur a la nova màquina virtual. La màquina no podrà iniciar-se fins que no afegiu un disc dur amb un sistema operatiu client o qualsevol altre suport arrencable.&lt;/p&gt;&lt;p&gt;Voleu continuar?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7510,7 +7510,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Quant a VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Mostra un diàleg amb la informació del producte</translation>
     </message>
     <message>
@@ -7876,7 +7876,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">No s&apos;ha pogut extreure el disc del dispositiu virtual. Probablement estiga bloquejat pel sistema operatiu client. Comproveu-ho i proveu novament.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No es pot inserir la imatge del cd instal·lador de les Guest Additions a la màquina virtual &lt;b&gt;%1&lt;/b&gt; si la màquina no té dispositius CD/DVD. Afegiu un dispositiu fent servir la pestanya de discos durs als paràmetres de la màquina.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8425,15 +8425,15 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Tanca la màquina virtual</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Cannot start VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; dialog which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8610,7 +8610,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9410,7 +9410,7 @@ Tots els components del VirtualBox el faran servir per a identificar la màquina
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
 image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt;
-button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;
+button (to invoke the Virtual Disk Manager window).&lt;/p&gt;
 &lt;p&gt;If you need a more complicated hard disk setup, you can also skip this
 step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir
@@ -9524,7 +9524,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
         <translation type="obsolete">&amp;Fes servir un disc existent</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt; &lt;p&gt;Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9569,7 +9569,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
         <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals). Si vos cal una configuració de disc dur més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9642,7 +9642,7 @@ pas i connectar discos durs més avant, fent servir el diàleg de configuració 
 <context>
     <name>UINewVMWzdPage4</name>
     <message>
-        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager window).&lt;/p&gt;&lt;p&gt;If you need a more complex virtual disk setup you can skip this step and make the changes to the machine settings once the machine is created.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Seleccioneu la imatge de disc dur que es farà servir com a disc dur d&apos;arrrencada de la màquina virtual. Podeu crear un disc dur nou usant el botó &lt;b&gt;Nou&lt;/b&gt; o seleccionar una imatge de disc dur existent de la llista desplegable o prement el botó &lt;b&gt;Existents&lt;/b&gt; (per a invocar el diàleg del gestor de discos virtuals).&lt;/p&gt;&lt;p&gt;Si vos cal una configuració més complexa, podeu també saltar-vos este pas i connectar discos durs més avant, fent servir el diàleg de configuració de la màquina virtual.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11385,7 +11385,7 @@ Versió %1</translation>
         <translation type="obsolete">&amp;Quant a VirtualBox...</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Mostra un diàleg amb la informació del producte</translation>
     </message>
     <message>
@@ -12150,7 +12150,7 @@ Versió %1</translation>
         <translation>Reinicialitza</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different folder.</source>
+        <source>Opens a window to select a different folder.</source>
         <translation>Obri un quadre de diàleg per a seleccionar una carpeta diferent.</translation>
     </message>
     <message>
@@ -12158,7 +12158,7 @@ Versió %1</translation>
         <translation>Reinicialitza el camí de la carpeta al valor predeterminat.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select a different file.</source>
+        <source>Opens a window to select a different file.</source>
         <translation>Obri un quadre de diàleg per a seleccionar un fitxer diferent.</translation>
     </message>
     <message>
@@ -14380,11 +14380,11 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
         <translation type="obsolete">Mostra la ruta cap a la carpeta de màquines virtuals predeterminada. S&apos;usa esta carpeta, si no se n&apos;especifica explícitament una altra, quan es crea una màquina virtual.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default VDI folder.</source>
+        <source>Opens a window to select the default VDI folder.</source>
         <translation type="obsolete">Obri un diàleg per seleccionar la carpeta de fitxers VDI predeterminada.</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the default virtual machine folder.</source>
+        <source>Opens a window to select the default virtual machine folder.</source>
         <translation type="obsolete">Obri un diàleg per seleccionar la carpeta de màquines virtuals predeterminada.</translation>
     </message>
     <message>
@@ -14412,7 +14412,7 @@ a l&apos;idioma predeterminat del sistema.&lt;/qt&gt;
         <translation type="obsolete">Mostra la ruta cap a la biblioteca que proveeix l&apos;autenticació per a clients de la pantalla remota (VRDP).</translation>
     </message>
     <message>
-        <source>Opens a dialog to select the VRDP authentication library file.</source>
+        <source>Opens a window to select the VRDP authentication library file.</source>
         <translation type="obsolete">Obri un diàleg per seleccionar el fitxer de la biblioteca d&apos;autenticació VRDP .</translation>
     </message>
     <message>
@@ -15287,11 +15287,11 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Descarta l&apos;estat alçat de la màquina virtual seleccionada</translation>
     </message>
     <message>
-        <source>Display the global settings dialog</source>
+        <source>Display the global settings window</source>
         <translation type="obsolete">Mostra el diàleg de paràmetres globals</translation>
     </message>
     <message>
-        <source>Display the Virtual Disk Manager dialog</source>
+        <source>Display the Virtual Disk Manager window</source>
         <translation type="obsolete">Mostra el diàleg del gestor de discos virtuals</translation>
     </message>
     <message>
@@ -15376,7 +15376,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Mostra</translation>
     </message>
     <message>
-        <source>Show a dialog with product information</source>
+        <source>Show a window with product information</source>
         <translation type="obsolete">Mostra un diàleg amb la informació del producte</translation>
     </message>
     <message>
@@ -15468,7 +15468,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Sun VirtualBox</translation>
     </message>
     <message>
-        <source>Display the Virtual Media Manager dialog</source>
+        <source>Display the Virtual Media Manager window</source>
         <translation type="obsolete">Mostra el diàleg del gestor de suports virtuals</translation>
     </message>
     <message>

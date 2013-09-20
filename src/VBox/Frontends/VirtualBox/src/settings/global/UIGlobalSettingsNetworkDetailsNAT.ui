@@ -130,7 +130,7 @@
       <item row="5" column="2">
        <widget class="QPushButton" name="m_pButtonPortForwarding">
         <property name="whatsThis">
-         <string>Opens dialog to manage port forwarding rules.</string>
+         <string>Opens a window to manage port forwarding rules.</string>
         </property>
         <property name="text">
          <string>&amp;Port Forwarding</string>
