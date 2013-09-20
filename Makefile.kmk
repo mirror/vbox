@@ -26,6 +26,17 @@ if defined(VBOX_WITH_DOCS) && (!defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_DO
 endif
 include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 
+#
+# Below we might need TOOL_ZIP_UNPACK (for the additions/docs/efifw packages
+# from the build server), and it's not really worth the effort of dragging in
+#q this tool only if absolutely needed.
+#
+## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
+include $(KBUILD_PATH)/tools/ZIP.kmk
+ifndef TOOL_ZIP_PACK
+ TOOL_ZIP_PACK = zip
+endif
+
 
 ## @todo split up this file!
 
@@ -157,12 +168,6 @@ else
 endif
 
 
-# Below we might need TOOL_ZIP_UNPACK (for the additions/docs/efifw packages
-# from the build server), and it's not really worth the effort of dragging in
-# this tool only if absolutely needed.
-## @todo Hack to get at TOOL_ZIP_UNPACK; see if this can be integrated somehow...
-include $(KBUILD_PATH)/tools/ZIP.kmk
-
 #
 # For building the combined package, just get the additions .ISO
 # once for amd64 to prevent version inconsistences. In all other
@@ -271,22 +276,25 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    buildserver-efifw_INST = $(INST_BIN)
    buildserver-efifw_MODE = 0644
    buildserver-efifw_SOURCES = \
-   	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd=>VBoxEFI32.fd \
-           $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd=>VBoxEFI64.fd
+   	$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
+   	$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd
    buildserver-efifw_CLEANS = \
    	$(buildserver-efifw_0_OUTDIR)/unpacked.ts \
+   	$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
+   	$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd \
    	$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
-           $(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd \
+   	$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip \
    	$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip.tmp
-   ## @todo rainy day: cleanup the output directory (zip contains lots more)
 
    $$(buildserver-efifw_0_OUTDIR)/unpacked.ts \
-   +| $$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd \
-      $$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd: \
+   +| $$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd \
+      $$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd: \
    		$$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
 	$(call MSG_L1,Unpacking EFI firmware)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
+	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd"   -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd" "$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd"
+	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd" -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd" "$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd"
 	$(APPEND) -t $@ "done"
 
    $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: \
@@ -1459,14 +1467,18 @@ testsuite-packing:
 #
 # Build the EFI firmware, all of it.
 #
-# Mainly hooks right now, maybe we need them later.
-#
 efi-fetch:
+	+ $(KMK) -C tools fetch VBOX_ONLY_EXTPACKS=1
 
 efi-build: $(VBOX_VERSION_HEADER)
-	$(PATH_ROOT)/webtools/tinderbox/client/efi-build.sh
+	+ $(KMK) -C src/VBox/Devices/EFI/Firmware
 
 efi-packing:
+	$(REDIRECT) -C "$(PATH_STAGE_BIN)" -- $(TOOL_ZIP_PACK) $(TOOL_ZIP_PACKFLAGS) -9X \
+		../VBoxEfiFirmware.zip \
+		VBoxEFI32.fd \
+		VBoxEFI64.fd
+## @todo zip up debug info as well!
 
 #
 # Generate VirtualBox-x.x.x.tar.bz2 (OSE) tarballs for distribution
