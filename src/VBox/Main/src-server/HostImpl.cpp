@@ -31,6 +31,7 @@
 #endif // VBOX_WITH_USB
 
 #include "HostNetworkInterfaceImpl.h"
+#include "HostVideoCaptureDeviceImpl.h"
 #include "MachineImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -1723,6 +1724,34 @@ STDMETHODIMP Host::GenerateMACAddress(BSTR *aAddress)
     generateMACAddress(mac);
     Bstr(mac).cloneTo(aAddress);
     return S_OK;
+}
+
+/**
+ * Returns a list of host video capture devices (webcams, etc).
+ *
+ * @returns COM status code
+ * @param aVideoCaptureDevices Array of interface pointers to be filled.
+ */
+STDMETHODIMP Host::COMGETTER(VideoCaptureDevices)(ComSafeArrayOut(IHostVideoCaptureDevice*, aVideoCaptureDevices))
+{
+    if (ComSafeArrayOutIsNull(aVideoCaptureDevices))
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    HostVideoCaptureDeviceList list;
+
+    HRESULT hr = HostVideoCaptureDevice::queryHostDevices(&list);
+
+    if (SUCCEEDED(hr))
+    {
+        SafeIfaceArray<IHostVideoCaptureDevice> devices(list);
+        devices.detachTo(ComSafeArrayOutArg(aVideoCaptureDevices));
+    }
+
+    return hr;
 }
 
 // public methods only for internal purposes
