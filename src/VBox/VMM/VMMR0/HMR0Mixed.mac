@@ -27,7 +27,7 @@
  ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always.
  ; See @bugref{6875}.
  %elifdef RT_OS_WINDOWS
- ; Windows 8.1 RTM also seems to be using the IDTR for something. See @bugref{6956}.
+ ; Windows 8.1 RTM also seems to be using the IDTR limit for something. See @bugref{6956}.
  ;; @todo figure out what exactly it does and try and restrict it more.
  %else
   %define VMX_SKIP_IDTR
