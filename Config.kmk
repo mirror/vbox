@@ -2396,14 +2396,20 @@ endif
 	$(QUIET)$(APPEND) '$@' 'VBOX_YASM_Wno-segreg-in-64bit  ?= $(call VBOX_YASM_CHECK,-Wno-segreg-in-64bit,)'
 
 ifdef VBOX_PATH_PREFIX_MINGW32
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CC                  ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)gcc -m32)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_VERSION_CXX                 ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW32)g++ -m32)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_Wno-array-bounds            ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW32)g++ -m32,-Wno-array-bounds,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_Wno-unused-but-set-variable ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW32)g++ -m32,-Wno-unused-but-set-variable,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_Wno-maybe-uninitialized     ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW32)g++ -m32,-Wno-maybe-uninitialized,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW32_USER_LABEL_PREFIX           ?= $(shell echo "__USER_LABEL_PREFIX__" | $(VBOX_PATH_PREFIX_MINGW32)g++ -m32 -E -xc++ - | $(SED) -e "/^$(HASH)/d")'
 endif
 ifdef VBOX_PATH_PREFIX_MINGW64
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_VERSION_CC                  ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW64)gcc -m64)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_VERSION_CXX                 ?= $(call VBOX_GCC_VERSION,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-array-bounds            ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-array-bounds,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-unused-but-set-variable ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-unused-but-set-variable,)'
 	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_Wno-maybe-uninitialized     ?= $(call VBOX_GCC_CHECK_EX_CXX,$(VBOX_PATH_PREFIX_MINGW64)g++ -m64,-Wno-maybe-uninitialized,)'
+	$(QUIET)$(APPEND) '$@' 'VBOX_MINGW64_USER_LABEL_PREFIX           ?= $(shell echo "__USER_LABEL_PREFIX__" | $(VBOX_PATH_PREFIX_MINGW64)g++ -m64 -E -xc++ - | $(SED) -e "/^$(HASH)/d")'
 endif
 	$(QUIET)$(ECHO) '========= START OF $@ ========='
 	$(QUIET)$(CAT) $@
