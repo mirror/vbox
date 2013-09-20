@@ -373,7 +373,7 @@
              <bool>false</bool>
             </property>
             <property name="whatsThis">
-             <string>When checked, VirtualBox will use video recording to record the virtual machine session.</string>
+             <string>When checked, VirtualBox will record the virtual machine session as a video file.</string>
             </property>
             <property name="text">
              <string>&amp;Enable Video Capture</string>

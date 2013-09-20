@@ -887,11 +887,11 @@ bool UIMessageCenter::confirmNATNetworkRemoval(const QString &strName, QWidget *
 {
     return questionBinary(pParent, MessageType_Question,
                           tr("<p>Do you want to remove the NAT network <nobr><b>%1</b>?</nobr></p>"
-                             "<p><b>Note:</b> this network may be in use by one or more "
-                             "virtual network adapters belonging to one of your VMs. "
-                             "After it is removed, these adapters will no longer be usable until "
-                             "you correct their settings by either choosing a different network "
-                             "name or a different adapter attachment type.</p>")
+                             "<p>If this network is in use by one or more virtual "
+                             "machine network adapters these adapters will no longer be "
+                             "usable until you correct their settings by either choosing "
+                             "a different network name or a different adapter attachment "
+                             "type.</p>")
                              .arg(strName),
                           0 /* auto-confirm id */,
                           tr("Remove"));
@@ -1217,8 +1217,8 @@ bool UIMessageCenter::confirmMediumRemoval(const UIMedium &medium, QWidget *pPar
             if (caps & MediumFormatCapabilities_File)
             {
                 if (medium.state() == KMediumState_Inaccessible)
-                    strMessage += tr("<p>Note that as this hard disk is inaccessible its "
-                                     "storage unit cannot be deleted right now.</p>");
+                    strMessage += tr("<p>As this hard disk is inaccessible its image file"
+                                     " can not be deleted.</p>");
             }
             break;
         }

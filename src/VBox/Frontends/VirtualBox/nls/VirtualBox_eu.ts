@@ -3346,7 +3346,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
+        <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6029,10 +6029,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to create NAT network.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6085,7 +6081,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6223,6 +6219,10 @@
         <source>Do not show this message again</source>
         <translation type="unfinished">Ez erakutsi mezu hau berriz</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -6345,7 +6345,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The network operation failed with the error: %1.</source>
+        <source>The network operation failed with the following error: %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7664,7 +7664,7 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please choose a file to export virtual appliance</source>
+        <source>Please choose a file to export the virtual appliance to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7711,14 +7711,14 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIWizardExportAppPageExpert</name>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

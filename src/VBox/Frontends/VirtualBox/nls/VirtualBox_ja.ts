@@ -5224,7 +5224,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="376"/>
-        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
+        <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7729,6 +7729,11 @@ p, li { white-space: pre-wrap; }
         <translation>VirtualBox - 重大なエラー</translation>
     </message>
     <message>
+        <location filename="../src/globals/UIMessageCenter.cpp" line="889"/>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1940"/>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
@@ -8144,11 +8149,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">無視</translation>
     </message>
     <message>
-        <location filename="../src/globals/UIMessageCenter.cpp" line="889"/>
-        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="919"/>
         <source>Failed to create NAT network.</source>
         <translation type="unfinished"></translation>
@@ -8223,7 +8223,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1220"/>
-        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8829,7 +8829,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;メディアのリストから&quot;%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&quot;を除去しますか？&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <source>As this hard disk is inaccessible its image file can not be deleted.</source>
         <translation type="obsolete">注：このハードディスクにアクセスできないため、現在ストレージ装置を削除できません。</translation>
     </message>
     <message>
@@ -9883,7 +9883,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/net/UINetworkRequestWidget.cpp" line="179"/>
-        <source>The network operation failed with the error: %1.</source>
+        <source>The network operation failed with the following error: %1.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11783,7 +11783,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="309"/>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="231"/>
-        <source>Please choose a file to export virtual appliance</source>
+        <source>Please choose a file to export the virtual appliance to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11895,7 +11895,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIWizardExportAppPageBasic3</name>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageBasic3.cpp" line="308"/>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -11918,7 +11918,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
     <name>UIWizardExportAppPageExpert</name>
     <message>
         <location filename="../src/wizards/exportappliance/UIWizardExportAppPageExpert.cpp" line="230"/>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

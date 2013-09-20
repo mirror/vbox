@@ -4126,7 +4126,7 @@
         <translation>&lt;p&gt;آیا میخواهید %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; را از لیست رسانه شناخته شده حذف کنید؟&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <source>As this hard disk is inaccessible its image file can not be deleted.</source>
         <translation>توجه کنید که این دیسک سخت غیرقابل دسترسی میباشد،واحد ذخیره ساز آن درحال حاضر قابل حذف نمیباشد.</translation>
     </message>
     <message>
