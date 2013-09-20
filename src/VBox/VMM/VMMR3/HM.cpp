@@ -1271,22 +1271,17 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
         CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-#if 0 /** @todo r=bird: This ain't making any sense whatsoever. */
-#if RT_ARCH_X86
-        if (   !CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE)
-            || !(pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE))
-            LogRel(("NX is only supported for 64-bit guests!\n"));
-#endif
-#endif
     }
     /* Turn on NXE if PAE has been enabled *and* the host has turned on NXE
        (we reuse the host EFER in the switcher). */
     /** @todo this needs to be fixed properly!! */
-    else if (   CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE)
-             && (pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE))
-        CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
-    else
-        LogRel(("HM: NX not supported by the host.\n"));
+    else if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
+    {
+        if (pVM->hm.s.vmx.u64HostEfer & MSR_K6_EFER_NXE)
+            CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NX);
+        else
+            LogRel(("HM: NX not enabled on the host, unavailable to PAE guest.\n"));
+    }
 
     /*
      * Log configuration details.
