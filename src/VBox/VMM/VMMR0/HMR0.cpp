@@ -1432,7 +1432,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
     PCPUMCTX         pCtx  = CPUMQueryGuestCtxPtr(pVCpu);
     Assert(pCpu);
     Assert(pCtx);
-    Assert(VMCPU_HMCF_IS_PENDING(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
+    Assert(VMCPU_HMCF_IS_SET(pVCpu, HM_CHANGED_HOST_CONTEXT | HM_CHANGED_HOST_GUEST_SHARED_STATE));
 
     rc = g_HvmR0.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertMsgRCReturn(rc, ("pfnEnterSession failed. rc=%Rrc pVCpu=%p HostCpuId=%u\n", rc, pVCpu, idCpu), rc);
