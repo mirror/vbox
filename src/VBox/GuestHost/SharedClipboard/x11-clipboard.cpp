@@ -312,7 +312,7 @@ void clipQueueToEventThread(CLIPBACKEND *pCtx,
 #ifndef TESTCASE
     XtAppAddTimeOut(pCtx->appContext, 0, (XtTimerCallbackProc)proc,
                     (XtPointer)client_data);
-    write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
+    (void)write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
 #else
     testQueueToEventThread(proc, client_data);
 #endif
