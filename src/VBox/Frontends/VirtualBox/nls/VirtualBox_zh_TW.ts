@@ -7927,7 +7927,7 @@
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>您可以使用虛擬媒體管理員建立媒體映像。</translation>
+        <translation type="obsolete">您可以使用虛擬媒體管理員建立媒體映像。</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -8490,6 +8490,10 @@
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

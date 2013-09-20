@@ -15352,8 +15352,12 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="397"/>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>仮想メディアマネージャーを使ってメディアのイメージを作成できます。</translation>
+        <translation type="obsolete">仮想メディアマネージャーを使ってメディアのイメージを作成できます。</translation>
     </message>
     <message>
         <location filename="../src/medium/UIMedium.cpp" line="407"/>

@@ -12362,7 +12362,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>Вы можете добавить необходимое устройство, используя менеджер виртуальных носителей.</translation>
+        <translation type="obsolete">Вы можете добавить необходимое устройство, используя менеджер виртуальных носителей.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -13050,6 +13050,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
