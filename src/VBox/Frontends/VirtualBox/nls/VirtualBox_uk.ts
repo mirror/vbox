@@ -1307,7 +1307,7 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
         <translation type="obsolete">APIC В/В</translation>
     </message>
@@ -1524,7 +1524,7 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
         <translation type="obsolete">APIC В/В</translation>
     </message>
@@ -2723,6 +2723,11 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGMachinePreview</name>
@@ -2855,11 +2860,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Показує шлях до типової теки віртуальної машини. Ця тека використовується, якщо вона не задана іншим чином під час створення нової віртуальної машини.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Показує шлях до бібліотеки, котра забезпечує розпізнавання клієнтів віддаленого термінала (VRDP).</translation>
     </message>
     <message>
@@ -2875,7 +2880,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Бібліотека засвідчення VRDP:</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Показує шлях до типової теки жорстких дисків. Ця тека використовується, якщо вона не задана іншим чином під час додання існуючих або створення нових віртуальних жорстких дисків.</translation>
     </message>
     <message>
@@ -2938,7 +2943,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Головна клавіша:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Показує клавішу, яка використовується як головна клавіша у вікні віртуальної машини. Перейдіть до поля введення і натисніть нову головну клавішу. Майте на увазі, рух курсора і клавіші, що редагують, не можуть використовуватись як головні клавіші.</translation>
     </message>
     <message>
@@ -3278,35 +3283,35 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3350,7 +3355,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Адреса IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Показує головну адресу IPv4 для цього адаптера.</translation>
     </message>
     <message>
@@ -3358,7 +3363,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Маска мережі IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Показує маску головної мережі IPv4 для цього адаптера.</translation>
     </message>
     <message>
@@ -3366,7 +3371,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Адреса IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Показує головну адресу IPv6 для цього адаптера, якщо IPv6 підтримується.</translation>
     </message>
     <message>
@@ -3374,7 +3379,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Відрізок маски мережі IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Показує відрізок головної маски мережі IPv6 для цього адаптера, якщо IPv6 підтримується.</translation>
     </message>
     <message>
@@ -3394,7 +3399,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">А&amp;дреса сервера:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Показує адресу сервера DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3402,7 +3407,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Мас&amp;ка сервера:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Показує маску мережі сервера DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3410,7 +3415,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Нижня межа адреси:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Показує нижню межу адреси, яка пропонується сервером DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3418,7 +3423,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Верхня межа адреси:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Показує верхню межу адреси, яка пропонується сервером DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
 </context>
@@ -3445,7 +3450,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Адреса IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Показує головну адресу IPv4 для цього адаптера.</translation>
     </message>
     <message>
@@ -3453,7 +3458,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Маска мережі IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Показує маску головної мережі IPv4 для цього адаптера.</translation>
     </message>
     <message>
@@ -3461,7 +3466,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Адреса IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Показує головну адресу IPv6 для цього адаптера, якщо IPv6 підтримується.</translation>
     </message>
     <message>
@@ -3469,7 +3474,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Відрізок маски мережі IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Показує відрізок головної маски мережі IPv6 для цього адаптера, якщо IPv6 підтримується.</translation>
     </message>
     <message>
@@ -3489,7 +3494,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">А&amp;дреса сервера:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Показує адресу сервера DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3497,7 +3502,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Мас&amp;ка сервера:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Показує маску мережі сервера DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3505,7 +3510,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Нижня межа адреси:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Показує нижню межу адреси, яка пропонується сервером DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
     <message>
@@ -3513,7 +3518,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Верхня межа адреси:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Показує верхню межу адреси, яка пропонується сервером DHCP, забезпечуючи мережу, яка пов&apos;язана з лише головним адаптером.</translation>
     </message>
 </context>
@@ -3536,7 +3541,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3544,7 +3549,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3572,7 +3577,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3582,6 +3587,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">&amp;Переадресування порту</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">Правила переадресування порту</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4208,12 +4228,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;hr&gt;Сервер віддаленої стільниці очікується на порті %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Описує стан різних можливостей віртуальної машини:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4225,7 +4245,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -4382,7 +4402,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Порт сервера:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Показує номер порту сервера VRDP. Ви можете вказати &lt;tt&gt;0&lt;/tt&gt; (нуль), щоб скинути порт до типових значень.</translation>
     </message>
     <message>
@@ -4458,7 +4478,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4494,7 +4514,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4502,11 +4522,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4514,7 +4534,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4526,11 +4546,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4588,7 +4608,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;МБ&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Показує шлях, де будуть зберігатися зрізи цієї машини. Майте на увазі, зрізи можуть займати доволі чимало дискового простору.</translation>
     </message>
     <message>
@@ -4604,7 +4624,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Назва:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Показує назву віртуальної машини.</translation>
     </message>
     <message>
@@ -4680,8 +4700,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ввімкн&amp;ути ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (I/O APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -4728,7 +4748,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Опис</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Показує характеристику віртуальної машини. Поля опису є корисні для коментування деталей налаштування гостьової операційної системи, котра встановлена.</translation>
     </message>
     <message>
@@ -4855,7 +4875,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Назва мережі:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Показує назву внутрішньої мережі, вибраної для цього адаптера.</translation>
     </message>
     <message>
@@ -4863,7 +4883,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Адреса MAC:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Показує адресу MAC цього адаптера. Вона містить 12 символів вибраних з діапазону {0-9,A-F}. Майте на увазі, другий символ повинен бути лише числом.</translation>
     </message>
     <message>
@@ -4887,7 +4907,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Назва &amp;інтерфейсу:</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Показує назву інтерфейсу TAP.</translation>
     </message>
     <message>
@@ -4895,7 +4915,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Програма вс&amp;тановлення:</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Показує команду, яку буде виконано для встановлення інтерфейсу TAP.</translation>
     </message>
     <message>
@@ -4907,7 +4927,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Програма &amp;завершення:</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Показує команду, яку буде виконано для завершення роботи інтерфейсу TAP.</translation>
     </message>
     <message>
@@ -5004,7 +5024,7 @@ p, li { white-space: pre-wrap; }
         <translation>Вибирає мережевий адаптер на головній системі, через мережеву плату якої буде проходити весь трафік.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>Введіть назву внутрішньої мережі, до котрої буде під&apos;єднано мережеву плату. Можете створити нову віртуальну мережу, вибравши назву, яка не використовується будь-якою іншою мережевою платою у цій віртуальній машині або інших.</translation>
     </message>
     <message>
@@ -5047,6 +5067,14 @@ p, li { white-space: pre-wrap; }
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -5059,7 +5087,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Гостьова адреса MAC:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Показує адресу MAC цього адаптера. Вона містить 12 символів вибраних з діапозону {0-9,A-F}. Майте на увазі, другий символ повиннен бути лише числом.</translation>
     </message>
     <message>
@@ -5106,7 +5134,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Номер порту:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Показує номер паралельного порту. Ви можете вибрати один із стандартних портів або &lt;b&gt;Встановлений користувачем&lt;/b&gt; і вибрати параметри порту вручну.</translation>
     </message>
     <message>
@@ -5114,15 +5142,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Запит на переривання (IRQ):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;I/O APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>По&amp;рт В/В:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Показує базову адресу порту В/В цього паралельного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5130,15 +5158,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Шлях порту:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Показує назву головного паралельного пристрою.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення понад &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише тоді, коли ввімкнено &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Показує номер запиту на переривання (IRQ) цього паралельно порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення понад &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише тоді, коли ввімкнено &lt;b&gt;I/O APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Показує базову адресу порту В/В цього паралельного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -5318,7 +5346,7 @@ p, li { white-space: pre-wrap; }
         <translation>Назва теки:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Показує назву спільної теки (як вона буде в гостьовій операційній системі).</translation>
     </message>
     <message>
@@ -5366,7 +5394,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Номер порту:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Показує номер послідовного порту. Ви можете вибрати один із стандартних портів або &lt;b&gt;Встановлений користувачем&lt;/b&gt; і вибрати параметри порту вручну.</translation>
     </message>
     <message>
@@ -5374,15 +5402,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Запит на переривання (IRQ):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Показує номер запиту на переривання (IRQ) цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;IO APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Показує номер запиту на переривання (IRQ) цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;255&lt;/tt&gt;. Значення більше ніж &lt;tt&gt;15&lt;/tt&gt; може використовуватись лише якщо ввімкнутий &lt;b&gt;I/O APIC&lt;/b&gt; для цієї віртуальної машини.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>По&amp;рт В/В:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Показує базову адресу порту В/В цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5406,7 +5434,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Шлях порту:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Показує шлях до головного каналу послідовного порту, коли порт працює в режимі &lt;b&gt;Головний канал&lt;/b&gt;, або назву головного пристрою послідовного порту, коли порт працює в режимі &lt;b&gt;Головний пристрій&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5414,11 +5442,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Шлях порту/файла:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Показує номер запиту на переривання (IRQ) цього послідовного порту. Це має бути проміжок між &lt;tt&gt;0&lt;/tt&gt; і &lt;tt&gt;255&lt;/tt&gt;. Значення, які більші за &lt;tt&gt;15&lt;/tt&gt;, можна використовувати лише тоді, коли налаштування &lt;b&gt;IO APIC&lt;/b&gt; увімкнуто для цієї віртуальної машини.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Показує номер запиту на переривання (IRQ) цього послідовного порту. Це має бути проміжок між &lt;tt&gt;0&lt;/tt&gt; і &lt;tt&gt;255&lt;/tt&gt;. Значення, які більші за &lt;tt&gt;15&lt;/tt&gt;, можна використовувати лише тоді, коли налаштування &lt;b&gt;I/O APIC&lt;/b&gt; увімкнуто для цієї віртуальної машини.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Показує базову адресу порту В/В цього послідовного порту. Правильне значення — ціле число від &lt;tt&gt;0&lt;/tt&gt; до &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -5995,12 +6023,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Увімкнути ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (IO APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>Якщо це позначено, віртуальна машина буде підтримувати покращений програмовний контролер переривань В/В (I/O APIC), який може трохи понизити продуктивність віртуальної машини.&lt;b&gt;Майте на увазі:&lt;/b&gt; не блокуйте цю властивість після встановлення Windows гостьовою операційною системою!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>&amp;Ввімкнути IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>&amp;Ввімкнути I/O APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -6126,7 +6154,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6154,7 +6182,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6324,7 +6352,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Назва:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Показує назву фільтра.</translation>
     </message>
     <message>
@@ -8204,7 +8232,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Назва:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>Показує назву віртуальної машини.</translation>
     </message>
     <message>
@@ -8212,7 +8240,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Тип:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>Показує сімейство операційних систем, котру ви плануєте встановити на цю віртуальну машину.</translation>
     </message>
     <message>
@@ -8220,7 +8248,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Версія:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Показує тип операційної системи, котру ви плануєте встановити на цю віртуальну машину, тобто гостьова операційна система.</translation>
     </message>
 </context>
@@ -11004,7 +11032,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Головна клавіша:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Показує клавішу, яка використовується як головна клавіша у вікні віртуальної машини. Перейдіть до поля введення і натисніть нову головну клавішу. Майте на увазі, рух курсора і клавіші, що редагують, не можуть використовуватись як головні клавіші.</translation>
     </message>
     <message>
@@ -11092,7 +11120,7 @@ p, li { white-space: pre-wrap; }
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
         <translation>APIC В/В</translation>
     </message>
@@ -11118,12 +11146,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Ввімкнутий</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Вимкнений</translation>
     </message>
     <message>
@@ -12764,17 +12792,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -12790,6 +12808,26 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13167,7 +13205,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Операційна &amp;система:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Показує сімейство операційних систем, котру ви плануєте встановити на цю віртуальну машину.</translation>
     </message>
     <message>
@@ -13175,7 +13213,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Версія:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Показує тип операційної системи, котру ви плануєте встановити на цю віртуальну машину, тобто гостьова операційна система.</translation>
     </message>
     <message>
@@ -14159,7 +14197,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Файл образу ISO</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Показує файл образу для монтування до віртуальної машини носій CD/DVD і дозволяє швидко вибрати інший образ.</translation>
     </message>
     <message>
@@ -14293,7 +14331,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Файл образу</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Показує файл образу для монтування до віртуальної машини носій дискет і дозволяє швидко вибрати інший образ.</translation>
     </message>
     <message>
@@ -14316,7 +14354,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Порт сервера:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Показує номер порту сервера VRDP. Ви можете вказати &lt;tt&gt;0&lt;/tt&gt; (нуль), щоб скинути порт до типових значень.</translation>
     </message>
     <message>

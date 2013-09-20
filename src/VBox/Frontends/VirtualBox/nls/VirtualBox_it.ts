@@ -1451,9 +1451,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1668,9 +1668,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -3009,6 +3009,11 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -3456,11 +3461,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Visualizza il percorso della cartella predefinita per le macchine virtuali. Questa cartella è utilizzata, se non diversamente specificato, quando vengono aggiunti o creati dischi fissi virtuali.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Visualizza il percorso della libreria per l&apos;autenticazione dei client VRDP (schermo remoto).</translation>
     </message>
     <message>
@@ -3492,7 +3497,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Disabilita il &amp;salvaschermo dell&apos;host</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visualizza il percorso della cartella predefinita per le VDI. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
@@ -3500,7 +3505,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Cartella predefinita &amp;dischi fissi:</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visualizza il percorso alla cartella predefinita dei dischi fissi. Questa cartella è utilizzata, se non specificato altrimenti esplicitamente, quando si aggiungono o creano nuovi dischi virtuali.</translation>
     </message>
     <message>
@@ -3543,7 +3548,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Tasto &amp;host:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Visualizza il tasto usato come tasto Host nella finestra della MV. Attiva il campo e premi un nuovo tasto Host. Nota che tasti alfanumerici, movimenti del cursore e tasti di modifica non possono essere utilizzati.</translation>
     </message>
     <message>
@@ -3883,35 +3888,35 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3955,7 +3960,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo &amp;IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo host IPv4 per questa scheda.</translation>
     </message>
     <message>
@@ -3963,7 +3968,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Maschera di rete IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Visualizza la maschera di rete host IPv4 per questa scheda.</translation>
     </message>
     <message>
@@ -3971,7 +3976,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo I&amp;Pv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo host IPv6 per questa scheda se l&apos;IPv6 è supportato.</translation>
     </message>
     <message>
@@ -3979,7 +3984,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Lunghezza maschera di rete IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Visualizza la lunghezza del prefisso della maschera di rete host IPv6 per questa scheda se l&apos;IPv6 è supportato.</translation>
     </message>
     <message>
@@ -3999,7 +4004,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indi&amp;rizzo del server:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo del server DHCP che gestisce la rete associata alla scheda solo-host.</translation>
     </message>
     <message>
@@ -4007,7 +4012,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Maschera del server:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visualizza la maschera di rete del server DHCP che gestisce la rete associata alla scheda solo-host.</translation>
     </message>
     <message>
@@ -4015,7 +4020,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo &amp;limite inferiore:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo limite inferiore offerto dal server DHCP che gestisce la rete associata a questa scheda solo-host.</translation>
     </message>
     <message>
@@ -4023,7 +4028,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo limite s&amp;uperiore:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo limite superiore offerto dal server DHCP che gestisce la rete associata a questa scheda solo-host.</translation>
     </message>
 </context>
@@ -4050,7 +4055,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Indirizzo &amp;IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Visualizza l&apos;indirizzo host IPv4 per questa scheda.</translation>
     </message>
     <message>
@@ -4058,7 +4063,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Maschera di rete IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Visualizza la maschera di rete host IPv4 per questa scheda.</translation>
     </message>
     <message>
@@ -4066,7 +4071,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Indirizzo I&amp;Pv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Visualizza l&apos;indirizzo host IPv6 per questa scheda se l&apos;IPv6 è supportato.</translation>
     </message>
     <message>
@@ -4074,7 +4079,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Lunghezza maschera di rete IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Visualizza la lunghezza del prefisso della maschera di rete host IPv6 per questa scheda se l&apos;IPv6 è supportato.</translation>
     </message>
     <message>
@@ -4094,7 +4099,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Indi&amp;rizzo del server:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visualizza l&apos;indirizzo del server DHCP che gestisce la rete associata alla scheda solo-host.</translation>
     </message>
     <message>
@@ -4102,7 +4107,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Maschera del server:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visualizza la maschera di rete del server DHCP che gestisce la rete associata alla scheda solo-host.</translation>
     </message>
     <message>
@@ -4110,7 +4115,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Indirizzo &amp;limite inferiore:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visualizza l&apos;indirizzo limite inferiore offerto dal server DHCP che gestisce la rete associata a questa scheda solo-host.</translation>
     </message>
     <message>
@@ -4118,7 +4123,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Indirizzo limite s&amp;uperiore:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visualizza l&apos;indirizzo limite superiore offerto dal server DHCP che gestisce la rete associata a questa scheda solo-host.</translation>
     </message>
 </context>
@@ -4141,7 +4146,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4149,7 +4154,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4177,7 +4182,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4187,6 +4192,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">Inoltro delle &amp;porte</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">Regole di inoltro delle porte</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4800,7 +4820,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;hr&gt;Il server di desktop remoto è in ascolto sulla porta %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Indica lo stato di diverse funzionalità utilizzate dalla macchina virtuale:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
@@ -4814,7 +4834,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indica lo stato delle funzionalità di virtualizzazione hardware utilizzate da questa macchina virtuale:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4826,7 +4846,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -5043,7 +5063,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">hai abilitato l&apos;accelerazione 3D. In ogni caso, l&apos;accelerazione non funziona con la configurazione attuale dell&apos;host per cui non potrai avviare la MV.</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Visualizza il numero di porta del server VRDP. Puoi specificare &lt;tt&gt;0&lt;/tt&gt; (zero) per ripristinare il numero di porta al valore predefinito.</translation>
     </message>
     <message>
@@ -5055,7 +5075,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5091,7 +5111,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5099,11 +5119,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5111,7 +5131,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5123,11 +5143,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5181,7 +5201,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Visualizza il percorso dove saranno archiviate le istantanee di questa macchina virtuale. Nota che le istantanee possono occupare molto spazio.</translation>
     </message>
     <message>
@@ -5193,7 +5213,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Nome:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Mostra il nome della macchina virtuale.</translation>
     </message>
     <message>
@@ -5217,7 +5237,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Descrizione</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Visualizza la descrizione della macchina virtuale. Il campo descrizione è utile per commentare dettagli di configurazione del sistema guest installato.</translation>
     </message>
     <message>
@@ -5265,7 +5285,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Identificazione</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visualizza il tipo di sistema operativo che intendi installare in questa macchina virtuale (chiamato sistema operativo Guest).</translation>
     </message>
     <message>
@@ -5337,8 +5357,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Abilita A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Se marcata, la macchina virtuale supporterà l&apos;Input Output APIC (IO APIC), che potrebbe leggermente ridurre le prestazioni della macchina virtuale. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare questa funzionalità dopo aver installato un sistema operativo guest Windows!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Se marcata, la macchina virtuale supporterà l&apos;Input Output APIC (I/O APIC), che potrebbe leggermente ridurre le prestazioni della macchina virtuale. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare questa funzionalità dopo aver installato un sistema operativo guest Windows!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -5497,7 +5517,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo &amp;MAC:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Visualizza l&apos;indirizzo MAC di questa scheda. Contiene esattamente 12 caratteri scelti tra {0-9,A-F}. Nota che il secondo carattere deve essere una cifra pari.</translation>
     </message>
     <message>
@@ -5545,7 +5565,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleziona la scheda di rete sul sistema host sulla quale transiterà il traffico verso e da questa scheda di rete.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>Inserisci il nome della rete interna alla quale questa scheda di rete sarà collegata. Puoi creare una nuova rete interna scegliendo un nome che non è utilizzato da un&apos;altra scheda di rete in questa macchina virtuale o in altre.</translation>
     </message>
     <message>
@@ -5573,7 +5593,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Nome della rete:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Visualizza il nome della rete interna selezionata per questa scheda.</translation>
     </message>
     <message>
@@ -5593,7 +5613,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nome dell&apos;&amp;interfaccia:</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Visualizza il nome dell&apos;interfaccia TAP.</translation>
     </message>
     <message>
@@ -5601,7 +5621,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Applicazione d&apos;in&amp;stallazione:</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Visualizza il comando eseguito per installare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
@@ -5613,7 +5633,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Applicazione di ri&amp;mozione:</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Visualizza il comando eseguito per rimuovere l&apos;interfaccia TAP.</translation>
     </message>
     <message>
@@ -5711,6 +5731,14 @@ p, li { white-space: pre-wrap; }
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsNetworkDetails</name>
@@ -5755,7 +5783,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Scheda di rete con &amp;bridge:</translation>
     </message>
     <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <source>Holds the name of the host network adapter selected for bridged networking.</source>
         <translation type="obsolete">Visualizza il nome della scheda di rete dell&apos;host selezionata per la rete con bridge.</translation>
     </message>
     <message>
@@ -5763,7 +5791,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Rete i&amp;nterna:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Visualizza il nome della rete interna selezionata per questa scheda.</translation>
     </message>
     <message>
@@ -5771,7 +5799,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Sche&amp;da di rete solo-host:</translation>
     </message>
     <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <source>Holds the name of the VirtualBox network adapter selected for host-only networking.</source>
         <translation type="obsolete">Visualizza il nome della scheda di rete di VirtualBox selezionata per la rete solo-host.</translation>
     </message>
     <message>
@@ -5783,7 +5811,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Indirizzo &amp;MAC guest:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo MAC della scheda. Contiene precisamente 12 caratteri scelti tra {0-9,A-F}. Nota che il secondo carattere deve essere una cifra pari.</translation>
     </message>
     <message>
@@ -5834,7 +5862,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Numero di porta:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Visualizza il numero della porta parallela. Puoi scegliere una delle porte parallele standard o selezionare &lt;b&gt;Definito dall&apos;utente&lt;/b&gt; e specificare manualmente i parametri della porta.</translation>
     </message>
     <message>
@@ -5850,23 +5878,23 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Percorso porta:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Visualizza il nome della periferica parallela dell&apos;host.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visualizza il numero di IRQ della porta parallela. Dovrebbe essere un numero intero compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori maggiori di &lt;tt&gt;15&lt;/tt&gt; dovrebbero essere usati solo se l&apos;impostazione &lt;b&gt;IO APIC&lt;/b&gt; è abilitata per la macchina virtuale.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visualizza il numero di IRQ della porta parallela. Dovrebbe essere un numero intero compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori maggiori di &lt;tt&gt;15&lt;/tt&gt; dovrebbero essere usati solo se l&apos;impostazione &lt;b&gt;I/O APIC&lt;/b&gt; è abilitata per la macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visualizza l&apos;indirizzo base della porta di I/O della porta parallela. Valori validi sono numeri interi nell&apos;intervallo compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visualizza il numero IRQ di questa porta parallela. Valori validi sono numeri interi nell&apos;intervallo &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere usati solo se è abilitato &lt;b&gt;IO APIC&lt;/b&gt; su questa macchina virtuale.</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visualizza il numero IRQ di questa porta parallela. Valori validi sono numeri interi nell&apos;intervallo &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere usati solo se è abilitato &lt;b&gt;I/O APIC&lt;/b&gt; su questa macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo I/O base di questa porta parallela. Valori validi sono numeri interi nell&apos;intervallo &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -6046,7 +6074,7 @@ p, li { white-space: pre-wrap; }
         <translation>Nome della cartella:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Visualizza il nome della cartella condivisa (come sarà vista dal sistema guest).</translation>
     </message>
     <message>
@@ -6094,7 +6122,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Numero di porta:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Visualizza il numero della porta seriale. È possibile scegliere una delle porte seriali standard oppure selezionare &lt;b&gt;Definita dall&apos;utente&lt;/b&gt; e specificare i parametri della porta manualmente.</translation>
     </message>
     <message>
@@ -6122,7 +6150,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Crea pipe</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Visualizza il percorso della pipe per la porta seriale nel sistema host quando la porta lavora in modalità &lt;b&gt;Pipe host&lt;/b&gt;, o il nome del dispositivo seriale dell&apos;host quando la porta è in modalità &lt;b&gt;Dispositivo host&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -6130,19 +6158,19 @@ p, li { white-space: pre-wrap; }
         <translation>Porta/&amp;Percorso file:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visualizza il numero di IRQ della porta seriale. Dovrebbe essere un numero intero compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori maggiori di &lt;tt&gt;15&lt;/tt&gt; dovrebbero essere usati solo se l&apos;impostazione &lt;b&gt;IO APIC&lt;/b&gt; è abilitata per la macchina virtuale.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visualizza il numero di IRQ della porta seriale. Dovrebbe essere un numero intero compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori maggiori di &lt;tt&gt;15&lt;/tt&gt; dovrebbero essere usati solo se l&apos;impostazione &lt;b&gt;I/O APIC&lt;/b&gt; è abilitata per la macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visualizza l&apos;indirizzo base della porta di I/O della porta seriale. Valori validi sono numeri interi nell&apos;intervallo compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visualizza il numero IRQ di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere utilizzati solo se è abilitato &lt;b&gt;IO APIC&lt;/b&gt; per questa macchina virtuale.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visualizza il numero IRQ di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere utilizzati solo se è abilitato &lt;b&gt;I/O APIC&lt;/b&gt; per questa macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo base della porta I/O di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo compreso tra &lt;tt&gt;0&lt;/tt&gt; e &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -6710,12 +6738,12 @@ p, li { white-space: pre-wrap; }
         <translation>Funzionalità estese:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Se marcata, la macchina virtuale supporterà l&apos;Input Output APIC (IO APIC), che potrebbe leggermente ridurre le prestazioni della macchina virtuale. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare questa funzionalità dopo aver installato un sistema operativo guest Windows!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>Se marcata, la macchina virtuale supporterà l&apos;Input Output APIC (I/O APIC), che potrebbe leggermente ridurre le prestazioni della macchina virtuale. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare questa funzionalità dopo aver installato un sistema operativo guest Windows!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>Abilita &amp;IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>Abilita &amp;I/O APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -6858,7 +6886,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6886,7 +6914,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7056,7 +7084,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Nome:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Mostra il nome del filtro.</translation>
     </message>
     <message>
@@ -9087,7 +9115,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Nome:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>Visualizza il nome della macchina virtuale.</translation>
     </message>
     <message>
@@ -9095,7 +9123,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Tipo:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>Visualizza la famiglia del sistema operativo che intendi installare nella macchina virtuale.</translation>
     </message>
     <message>
@@ -9103,7 +9131,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Versione:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Visualizza il tipo di sistema operativo che intendi installare nella macchina virtuale (chiamato sistema operativo Guest).</translation>
     </message>
 </context>
@@ -11495,11 +11523,11 @@ Versione %1</translation>
         <translation type="obsolete">Nome cartella</translation>
     </message>
     <message>
-        <source>Displays the path to an existing folder on the host PC.</source>
+        <source>Holds the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Visualizza il percorso di una cartella esistente nel PC Host.</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Visualizza il nome della cartella condivisa (come sarà vista dal sistema Guest).</translation>
     </message>
     <message>
@@ -12689,7 +12717,7 @@ Versione %1</translation>
         <translation type="obsolete">Tasto &amp;host:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Visualizza la combinazione di tasti usata come tasto Host nella finestra della MV. Attiva il campo e premi un nuovo tasto Host. Nota che tasti alfanumerici, movimenti del cursore e tasti di modifica non possono essere usati come tasto Host.</translation>
     </message>
     <message>
@@ -12767,9 +12795,9 @@ Versione %1</translation>
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -12783,12 +12811,12 @@ Versione %1</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Abilitato</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Disabilitato</translation>
     </message>
     <message>
@@ -14528,17 +14556,7 @@ Versione %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -14554,6 +14572,26 @@ Versione %1</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14719,7 +14757,7 @@ Versione %1</translation>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Mostra la finestra di aiuto.</translation>
     </message>
     <message>
@@ -14751,7 +14789,7 @@ Versione %1</translation>
         <translation type="obsolete">Impostazioni di VirtualBox</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Visualizza la combinazione di tasti usata come Host Key nella finestra della MV. Attiva il campo e premi una nuova Host Key. Nota che tasti alfanumerici, movimenti del cursore e tasti di modifica non possono essere usati come Host Key.</translation>
     </message>
     <message>
@@ -14816,7 +14854,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Predefinita</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visualizza il percorso della cartella predefinita per le VDI. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
@@ -14828,7 +14866,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Reimposta il percorso della cartella predefinita per le VDI al valore di default. Il valore di default effettivo verrà visualizzato dopo aver accettato le modifiche ed aperto nuovamente questa finestra.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Visualizza il percorso della cartella predefinita per le macchine virtuali. Questa cartella viene utilizzata, se non diversamente specificato, quando vengono aggiunti o creati hard disk virtuali.</translation>
     </message>
     <message>
@@ -14860,7 +14898,7 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Libreria di autenticazione V&amp;RDP</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Visualizza il percorso della libreria per l&apos;autenticazione dei client VRDP (Display Remoto).</translation>
     </message>
     <message>
@@ -15500,11 +15538,11 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">&amp;Sistema operativo:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Visualizza la famiglia del sistema operativo che si vuole installare nella macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visualizza il tipo di sistema operativo che intendi installare in questa macchina virtuale (chiamato sistema operativo guest).</translation>
     </message>
     <message>
@@ -16623,7 +16661,7 @@ per accedervi da un sistema Linux. Questa funzionalità richiede Guest Additions
         <translation type="obsolete">&amp;Nome</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation type="obsolete">Mostra il nome del filtro.</translation>
     </message>
     <message>
@@ -17147,7 +17185,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Controlla la modalità secondo la quale questa scheda di rete virtuale è collegata alla rete reale del sistema Host.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo MAC di questa scheda. Contiene esattamente 12 caratteri scelti da {0-9,A-F}.</translation>
     </message>
     <message>
@@ -17155,15 +17193,15 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Indica se il cavo di rete virtuale è collegato all&apos;avvio della macchina o meno.</translation>
     </message>
     <message>
-        <source>Displays the name of the host interface selected for this adapter.</source>
+        <source>Holds the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Visualizza il nome dell&apos;interfaccia host selezionata per questa scheda.</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Visualizza il nome dell&apos;interfaccia TAP.</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Visualizza il comando lanciato per impostare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
@@ -17171,7 +17209,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Seleziona l&apos;applicazione d&apos;installazione.</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Visualizza il comando lanciato per deimpostare l&apos;interfaccia TAP.</translation>
     </message>
     <message>
@@ -17179,7 +17217,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Seleziona l&apos;applicazione di terminazione.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo MAC di questa scheda di rete. Contiene esattamente 12 caratteri scelti nel range {0-9,A-F}. Nota che il secondo carattere dev&apos;essere un numero pari.</translation>
     </message>
     <message>
@@ -17195,7 +17233,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Seleziona il tipo della scheda di rete virtuale. A seconda di questo valore, VirtualBox offrirà hardware diverso alla macchina virtuale.</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Visualizza il nome della rete interna selezionata per questa scheda.</translation>
     </message>
 </context>
@@ -17218,7 +17256,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Numero porta</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Visualizza il numero della porta parallela. Puoi scegliere una delle porte parallele standard o scegliere &lt;b&gt;Definito dall&apos;utente&lt;/b&gt; e specificare manualmente i parametri della porta.</translation>
     </message>
     <message>
@@ -17226,15 +17264,15 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visualizza il numero IRQ di questa porta parallela. Valori validi sono numeri interi nel range &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere usati solo se è abilitato &lt;b&gt;IO APIC&lt;/b&gt; su questa macchina virtuale.</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visualizza il numero IRQ di questa porta parallela. Valori validi sono numeri interi nel range &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere usati solo se è abilitato &lt;b&gt;I/O APIC&lt;/b&gt; su questa macchina virtuale.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">Po&amp;rta I/O</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo I/O base di questa porta parallela. Valori validi sono numeri interi nell&apos;intervallo &lt;tt&gt;0&lt;/tt&gt;-&lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -17242,7 +17280,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Percorso porta</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation type="obsolete">Visualizza il nome della periferica parallela dell&apos;host.</translation>
     </message>
 </context>
@@ -17265,7 +17303,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Numero porta</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Visualizza il numero della porta seriale. È possibile scegliere una delle porte seriali standard oppure selezionare &lt;b&gt;Definita dall&apos;utente&lt;/b&gt; e specificare i parametri della porta manualmente.</translation>
     </message>
     <message>
@@ -17273,15 +17311,15 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;IRQ</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visualizza il numero IRQ di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo da &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere utilizzati solo se è abilitato &lt;b&gt;IO APIC&lt;/b&gt; per questa macchina virtuale.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visualizza il numero IRQ di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo da &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;255&lt;/tt&gt;. Valori più grandi di &lt;tt&gt;15&lt;/tt&gt; possono essere utilizzati solo se è abilitato &lt;b&gt;I/O APIC&lt;/b&gt; per questa macchina virtuale.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">Po&amp;rta I/O</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visualizza l&apos;indirizzo base della porta I/O di questa porta seriale. Valori validi sono numeri interi nell&apos;intervallo da &lt;tt&gt;0&lt;/tt&gt; a &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -17309,7 +17347,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Percorso porta</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Visualizza il percorso della pipe per la porta seriale nel sistema Host quando la porta lavora in modalità &lt;b&gt;Pipe Host&lt;/b&gt;, o il nome del dispositivo seriale dell&apos;Host quando la porta è in modalità &lt;b&gt;Dispositivo Host&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -17360,7 +17398,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">File immagine &amp;ISO</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Mostra il file immagine da montare nel lettore CD/DVD virtuale e permette di selezionare velocemente un&apos;immagine differente.</translation>
     </message>
     <message>
@@ -17479,7 +17517,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Nome</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Mostra il nome della macchina virtuale.</translation>
     </message>
     <message>
@@ -17719,7 +17757,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Timeout per l&apos;autenticazione </translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port.</source>
+        <source>Holds the VRDP Server port.</source>
         <translation type="obsolete">Mostra la porta del server VRDP.</translation>
     </message>
     <message>
@@ -17739,7 +17777,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Mostra la finestra di aiuto.</translation>
     </message>
     <message>
@@ -17779,7 +17817,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Se selezionato, collega l&apos;hard disk virtuale specificato allo slot Slave del controller IDE secondario.</translation>
     </message>
     <message>
-        <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
+        <source>Holds the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Mostra l&apos;hard disk virtuale da collegare a questo slot IDE e permette di selezionare velocemente un hard disk diverso.</translation>
     </message>
     <message>
@@ -17787,7 +17825,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Se selezionato, monta il media specificato nel lettore CD/DVD della macchina virtuale. Nota che il lettore CD/DVD è sempre connesso al controller IDE Master secondario della macchina.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Mostra il file immagine da montare nel lettore CD/DVD virtuale e permette di selezionare velocemente un&apos;immagine diversa.</translation>
     </message>
     <message>
@@ -17795,7 +17833,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Se selezionato, monta il media specificato nel lettore floppy virtuale della macchina.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Mostra il file immagine da montare nel lettore floppy virtuale, e permette di selezionare velocemente un&apos;immagine diversa.</translation>
     </message>
     <message>
@@ -17873,7 +17911,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Cartella degli s&amp;napshot</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visualizza il tipo di sistema operativo che intendi installare in questa macchina virtuale (chiamato sistema operativo Guest).</translation>
     </message>
     <message>
@@ -17886,10 +17924,10 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Se selezionato, la macchina virtuale supporterà
-l&apos;Input Output (IO APIC), che potrebbe peggiorare leggermente le prestazioni della MV. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare
+l&apos;Input Output (I/O APIC), che potrebbe peggiorare leggermente le prestazioni della MV. &lt;b&gt;Nota:&lt;/b&gt; non disabilitare
 questa caratteristica dopo aver installato un sistema operativo guest Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -17897,7 +17935,7 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
         <translation type="obsolete">Definisce la modalità di condivisione degli appunti tra il sistema Guest e quello Host. Nota che questa caratteristica richiede le Guest Additions installate nel sistema Guest.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Visualizza il percorso dove verranno archiviati gli snapshot di questa macchina virtuale. Nota che gli snapshot possono occupare diverso spazio.</translation>
     </message>
     <message>
@@ -17905,7 +17943,7 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
         <translation type="obsolete">Reimposta il percorso alla cartella per gli snapshot al valore predefinito. Il valore predefinito effettivo verrà visualizzato dopo aver accettato la modifica e aperto nuovamente questa finestra.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Visualizza la descrizione della macchina virtuale. Il campo descrizione è utile per commentare dettagli di configurazione del sistema Guest installato.</translation>
     </message>
     <message>
@@ -18060,7 +18098,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">&amp;Timeout di autenticazione </translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Visualizza il numero di porta del server VRDP. Si può specificare &lt;tt&gt;0&lt;/tt&gt; (zero) per reimpostare la porta al valore di default.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -18456,7 +18494,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">File &amp;immagine</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Mostra il file immagine da montare nel lettore floppy virtuale e permette di selezionare velocemente un&apos;immagine diversa.</translation>
     </message>
     <message>
@@ -18483,7 +18521,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">&amp;Porta del server:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Visualizza il numero di porta del server VRDP. Puoi specificare &lt;tt&gt;0&lt;/tt&gt; (zero) per ripristinare il numero di porta al valore predefinito.</translation>
     </message>
     <message>

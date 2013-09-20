@@ -317,7 +317,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* 3D acceleration test: */
         if (m_pCheckbox3D->isChecked() && !vboxGlobal().is3DAvailable())
         {
-            message.second << tr("The virtual machine is set to use hardware graphics acceleration. "
+            message.second << tr("The virtual machine is set up to use hardware graphics acceleration. "
                                  "However the host system does not currently provide this, "
                                  "so you will not be able to start the machine.");
         }
@@ -358,7 +358,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                 uNeedBytes = qMin(uNeedBytes, 256 * _1M);
                 if ((quint64)m_pEditorVideoMemorySize->value() * _1M < uNeedBytes)
                 {
-                    message.second << tr("The virtual machine is set to use hardware graphics acceleration "
+                    message.second << tr("The virtual machine is set up to use hardware graphics acceleration "
                                          "and the operating system hint is set to Windows Vista or later. "
                                          "For best performance you should set the machine's video memory to at least b>%1</b>.")
                                          .arg(vboxGlobal().formatSize(uNeedBytes, 0, FormatSize_RoundUp));
@@ -372,7 +372,7 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
         /* 2D video acceleration is available for Windows guests only: */
         if (m_pCheckbox2DVideo->isChecked() && !m_f2DVideoAccelerationSupported)
         {
-            message.second << tr("The virtual machine is set to use Video Stream Acceleration. "
+            message.second << tr("The virtual machine is set up to use Video Stream Acceleration. "
                                  "As this feature only works with Windows guest systems it will be disabled.");
         }
 #endif /* VBOX_WITH_VIDEOHWACCEL */

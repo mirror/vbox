@@ -4,31 +4,31 @@
 <context>
     <name>@@@</name>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1869"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1872"/>
         <source>English</source>
         <comment>Native language name</comment>
         <translation>日本語</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1880"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1883"/>
         <source>--</source>
         <comment>Native language country name (empty if this language is for all countries)</comment>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1893"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1896"/>
         <source>English</source>
         <comment>Language name, in English</comment>
         <translation>Japanese</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1904"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1907"/>
         <source>--</source>
         <comment>Language country name, in English (empty if native country name is empty)</comment>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1917"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1920"/>
         <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Toshimitsu Tanaka,Ikuya Awashiro,Shushi Kurose</translation>
@@ -1432,9 +1432,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1649,9 +1649,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -2754,12 +2754,12 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="440"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="528"/>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="591"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="693"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="778"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="843"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="913"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="968"/>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="1023"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="699"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="784"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="849"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="919"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="974"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="1029"/>
         <source>Information Inaccessible</source>
         <comment>details</comment>
         <translation>取得不可能な情報</translation>
@@ -2879,79 +2879,85 @@ p, li { white-space: pre-wrap; }
         <translation>汎用ドライバー, &apos;%1&apos; {&amp;nbsp;%2&amp;nbsp;} </translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="685"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="681"/>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="691"/>
         <source>Adapter %1</source>
         <comment>details (network)</comment>
         <translation>アダプター %1</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="690"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="696"/>
         <source>Disabled</source>
         <comment>details (network/adapter)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="770"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="776"/>
         <source>Port %1</source>
         <comment>details (serial)</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="775"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="781"/>
         <source>Disabled</source>
         <comment>details (serial)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="835"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="841"/>
         <source>Port %1</source>
         <comment>details (parallel)</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="840"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="846"/>
         <source>Disabled</source>
         <comment>details (parallel)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="903"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="909"/>
         <source>Device Filters</source>
         <comment>details (usb)</comment>
         <translation>デバイスフィルター</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="910"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="916"/>
         <source>USB Controller Inaccessible</source>
         <comment>details (usb)</comment>
         <translation>USB コントローラーにアクセスできません</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="963"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="969"/>
         <source>Shared Folders</source>
         <comment>details (shared folders)</comment>
         <translation>共有フォルダー</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="904"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="910"/>
         <source>%1 (%2 active)</source>
         <comment>details (usb)</comment>
         <translation>%1 (%2 アクティブ)</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="907"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="913"/>
         <source>Disabled</source>
         <comment>details (usb)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="965"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="971"/>
         <source>None</source>
         <comment>details (shared folders)</comment>
         <translation>なし</translation>
     </message>
     <message>
-        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="1020"/>
+        <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="1026"/>
         <source>None</source>
         <comment>details (description)</comment>
         <translation>なし</translation>
@@ -3323,17 +3329,17 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">デフォルトのVDIフォルダーのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="43"/>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>デフォルトの仮想マシンフォルダーのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsGeneral.ui" line="69"/>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
@@ -3389,7 +3395,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ホストのスクリーンセーバーを無効化(&amp;S)</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">デフォルトのハードディスクフォルダーのパスを表示します。既存ディスクを追加するか、または新規仮想ハードディスク作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
@@ -3420,7 +3426,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ホストキー(&amp;K):</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
@@ -3675,37 +3681,37 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="244"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="251"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="260"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="272"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="278"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="284"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="290"/>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3812,7 +3818,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetwork.cpp" line="589"/>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3920,7 +3926,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv4 アドレス(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">このアダプターのホスト IPv4 アドレスを表示します。</translation>
     </message>
     <message>
@@ -3928,7 +3934,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv4 ネットマスク(&amp;M):</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">このアダプターのホスト IPv4 ネットマスクを表示します。</translation>
     </message>
     <message>
@@ -3936,7 +3942,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv6 アドレス(＆&amp;P):</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを表示します。</translation>
     </message>
     <message>
@@ -3944,7 +3950,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv6 ネットマスク長(&amp;L):</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を表示します。</translation>
     </message>
     <message>
@@ -3964,7 +3970,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">サーバー アドレス(&amp;R):</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを表示します。</translation>
     </message>
     <message>
@@ -3972,7 +3978,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">サーバー マスク(&amp;M):</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">ホストオンリーアダプターにDHCP サーバーによって割り当てられるネットマスクを表示します。</translation>
     </message>
     <message>
@@ -3980,7 +3986,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">アドレス下限(&amp;L):</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの下限値を表示します。</translation>
     </message>
     <message>
@@ -3988,7 +3994,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">アドレス上限(&amp;U):</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの上限値を表示します。</translation>
     </message>
 </context>
@@ -4021,7 +4027,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="80"/>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">このアダプターのホスト IPv4 アドレスを表示します。</translation>
     </message>
     <message>
@@ -4031,7 +4037,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="106"/>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">このアダプターのホスト IPv4 ネットマスクを表示します。</translation>
     </message>
     <message>
@@ -4041,7 +4047,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="132"/>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 アドレスを表示します。</translation>
     </message>
     <message>
@@ -4051,7 +4057,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="158"/>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">IPv6がサポートされるとき、このアダプターのホスト IPv6 ネットマスクのプレフィックス長を表示します。</translation>
     </message>
     <message>
@@ -4076,7 +4082,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="214"/>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるIPアドレスを表示します。</translation>
     </message>
     <message>
@@ -4086,7 +4092,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="240"/>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるネットマスクを表示します。</translation>
     </message>
     <message>
@@ -4096,7 +4102,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="266"/>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの下限値を表示します。</translation>
     </message>
     <message>
@@ -4106,7 +4112,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsHost.ui" line="292"/>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">ホストオンリーアダプターにDHCP サーバーによって割り当てられるアドレスの上限値を表示します。</translation>
     </message>
 </context>
@@ -4134,7 +4140,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="66"/>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4144,7 +4150,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="86"/>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4179,7 +4185,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="126"/>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4191,6 +4197,24 @@ p, li { white-space: pre-wrap; }
         <location filename="../src/settings/global/UIGlobalSettingsNetworkDetailsNAT.ui" line="136"/>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">ポートフォワーディング(&amp;P)</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp" line="103"/>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">ポートフォワーディング ルール</translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp" line="105"/>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/global/UIGlobalSettingsPortForwardingDlg.cpp" line="106"/>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4839,7 +4863,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="547"/>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4854,7 +4878,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/runtime/UIIndicatorsPool.cpp" line="680"/>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -4867,7 +4891,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;hr&gt;リモートデスクトップサーバーはポート %1 を待ち受けしています</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">仮想マシンで使用されてるさまざまな機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
@@ -4881,18 +4905,18 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想マシンで使用される仮想化支援機能の状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="695"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="694"/>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="728"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="727"/>
         <source>Indicates whether the host mouse pointer is captured by the guest OS:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is not captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;mouse integration (MI) is On&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is captured&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;MI is Off, pointer is not captured&lt;/nobr&gt;&lt;br&gt;Note that the mouse integration feature requires Guest Additions to be installed in the guest OS.</source>
         <translation>ホストマウスポインターのキャプチャー状態を表示:&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_disabled_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされていません&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_16px.png/&gt;&amp;nbsp;&amp;nbsp;キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は有効です&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされています&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;img src=:/mouse_can_seamless_uncaptured_16px.png/&gt;&amp;nbsp;&amp;nbsp;マウス統合は無効、キャプチャーされていません&lt;/nobr&gt;&lt;br&gt; 注：マウス統合機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="778"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="777"/>
         <source>Indicates whether the keyboard is captured by the guest OS (&lt;img src=:/hostkey_captured_16px.png/&gt;) or not (&lt;img src=:/hostkey_16px.png/&gt;).</source>
         <translation>キーボードがゲストOSにキャプチャーされているとき(&lt;img src=:/hostkey_captured_16px.png/&gt;を、無効なとき(&lt;img src=:/hostkey_16px.png/&gt;)を表示します。</translation>
     </message>
@@ -5030,7 +5054,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="320"/>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5045,12 +5069,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="361"/>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.cpp" line="375"/>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5200,7 +5224,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="376"/>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5246,7 +5270,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="487"/>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="519"/>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5256,12 +5280,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="548"/>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsDisplay.ui" line="596"/>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5270,7 +5294,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">VRDP サーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>
@@ -5345,7 +5369,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.cpp" line="282"/>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
@@ -5362,7 +5386,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">名前(&amp;N):</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">仮想マシンの名前を表示します。</translation>
     </message>
     <message>
@@ -5370,7 +5394,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">OSタイプ(&amp;T):</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
@@ -5447,12 +5471,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ACPIを有効化(&amp;C)</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">仮想マシンでI/O APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">IO APICを有効化(&amp;P)</translation>
+        <translation type="obsolete">I/O APICを有効化(&amp;P)</translation>
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
@@ -5510,7 +5534,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="278"/>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>仮想マシンの説明を表示します。これインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
@@ -5650,7 +5674,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ネットワーク名(&amp;N):</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
@@ -5660,7 +5684,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsNetwork.ui" line="211"/>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
@@ -5686,7 +5710,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">インターフェース名(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">TAPインターフェース名を表示します。</translation>
     </message>
     <message>
@@ -5694,7 +5718,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">設定アプリケーション(&amp;S):</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>
@@ -5706,7 +5730,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">終了アプリケーション(&amp;T):</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース終了時に実行するコマンドを表示します。</translation>
     </message>
     <message>
@@ -5794,58 +5818,68 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ユニキャストアドレスのみ許可されているため、MAC アドレスの2番目の数字は奇数にできません。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="185"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="190"/>
         <source>No bridged network adapter is currently selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="194"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="199"/>
         <source>No internal network name is currently specified.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="203"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="208"/>
         <source>No host-only network adapter is currently selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="212"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="217"/>
         <source>No generic driver is currently selected.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="224"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="226"/>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="238"/>
         <source>The MAC address must be 12 hexadecimal digits long.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="234"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="248"/>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="393"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="410"/>
         <source>Selects the network adapter on the host system that traffic to and from this network card will go through.</source>
         <translation>このネットワークカードに入出力するトラフィックが通過する、ホストシステムのネットワークアダプターを選択してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="400"/>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="417"/>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>このネットワークカードの接続先の内部ネットワーク名を入力してください。この仮想マシンまたは他に存在する、他のすべてのネットワークカードで使われていない名前を選択すると、内部ネットワークを作成することができます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="409"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="426"/>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
         <translation>このネットワークカードに入出力するトラフィックが通過する、ホストシステムの仮想ネットワークアダプターを選択してください。仮想マシンマネージャーウィンドウでグローバルネットワーク設定を利用すると、アダプターを作成/削除できます。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="418"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="435"/>
         <source>Selects the driver to be used with this network card.</source>
         <translation>このネットワークカードで使用するドライバーを選択してください。</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="676"/>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="678"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="441"/>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="718"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="720"/>
         <source>Not selected</source>
         <comment>network adapter name</comment>
         <translation>未選択</translation>
@@ -5956,7 +5990,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ブリッジネットワークアダプター(&amp;B):</translation>
     </message>
     <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <source>Holds the name of the host network adapter selected for bridged networking.</source>
         <translation type="obsolete">ブリッジネットワーク用に選択したホストネットワークアダプター名を表示します。</translation>
     </message>
     <message>
@@ -5964,7 +5998,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">内部ネットワーク(&amp;N):</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
     <message>
@@ -5972,7 +6006,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ホストオンリーネットワークアダプター(&amp;N):</translation>
     </message>
     <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <source>Holds the name of the VirtualBox network adapter selected for host-only networking.</source>
         <translation type="obsolete">ホストオンリーネットワーク用に選択したVirtualBox ネットワークアダプター名を表示します。</translation>
     </message>
     <message>
@@ -5984,7 +6018,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ゲストMACアドレス:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
@@ -6040,7 +6074,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="86"/>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>パラレルポート番号を表示します。 標準のパラレルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメーターを指定することができます。</translation>
     </message>
     <message>
@@ -6049,8 +6083,8 @@ p, li { white-space: pre-wrap; }
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="116"/>
@@ -6058,7 +6092,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
@@ -6068,17 +6102,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="152"/>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>ホストのパラレル デバイス名を表示します。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="109"/>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>このパラレルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>このパラレルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsParallel.ui" line="132"/>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
 </context>
@@ -6130,32 +6164,32 @@ p, li { white-space: pre-wrap; }
         <translation>ポートフォワーディング ルール</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="675"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="741"/>
         <source>This table contains a list of port forwarding rules.</source>
         <translation>ポートフォワーディング ルールをリスト表示します。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="678"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="744"/>
         <source>Insert new rule</source>
         <translation>新規ルールを追加</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="679"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="745"/>
         <source>Copy selected rule</source>
         <translation>選択したルールをコピー</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="680"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="746"/>
         <source>Delete selected rule</source>
         <translation>選択したルールを削除</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="681"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="747"/>
         <source>This button adds new port forwarding rule.</source>
         <translation>新規ポートフォワーディング ルールを追加します。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="682"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="748"/>
         <source>This button deletes selected port forwarding rule.</source>
         <translation>選択したポートフォワーディング ルールを削除します。</translation>
     </message>
@@ -6293,7 +6327,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSFDetails.ui" line="55"/>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>ゲストOSで使用される共有フォルダー名を表示します。</translation>
     </message>
     <message>
@@ -6352,7 +6386,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="86"/>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>シリアルポート番号を表示します。 標準のシリアルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
@@ -6361,8 +6395,8 @@ p, li { white-space: pre-wrap; }
         <translation>IRQ(&amp;I):</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="110"/>
@@ -6370,7 +6404,7 @@ p, li { white-space: pre-wrap; }
         <translation>I/Oポート(&amp;R):</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
@@ -6399,7 +6433,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="202"/>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>ポートが&lt;b&gt;[ホストパイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホストデバイス]&lt;/b&gt;モードで動作しているとき、ホストシリアルデバイス名を表示します。</translation>
     </message>
     <message>
@@ -6409,12 +6443,12 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="103"/>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>このシリアルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>このシリアルポートのIRQ番号を表示します。この値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;の範囲の整数でなければなりません。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSerial.ui" line="120"/>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
 </context>
@@ -7010,7 +7044,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">2個以上のCPUが仮想マシンに割り当てられました。IO APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にIO APICが有効化されます。</translation>
+        <translation type="obsolete">2個以上のCPUが仮想マシンに割り当てられました。I/O APICが無効な場合、これは動作しません。[OK]ボタンを押すと自動的にI/O APICが有効化されます。</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -7022,7 +7056,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned ICH9 chipset type to this VM. It will not work properly unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">このVMにICH9チップセットを割り当てました。IO APIC機能も有効にしないと正しく動作しません。OKボタンを押してVMの設定を有効にすると、自動的にこの設定を行います。</translation>
+        <translation type="obsolete">このVMにICH9チップセットを割り当てました。I/O APIC機能も有効にしないと正しく動作しません。OKボタンを押してVMの設定を有効にすると、自動的にこの設定を行います。</translation>
     </message>
     <message>
         <source>you have selected emulation of an ICH9 chipset in this machine. This requires the IO-APIC feature to be enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -7064,7 +7098,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.cpp" line="368"/>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7199,7 +7233,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="300"/>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7218,13 +7252,13 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="332"/>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>仮想マシンでI/O APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="335"/>
-        <source>Enable &amp;IO APIC</source>
-        <translation>IO APICを有効化(&amp;I)</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>I/O APICを有効化(&amp;I)</translation>
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="352"/>
@@ -7499,7 +7533,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsUSBFilterDetails.ui" line="51"/>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>フィルター名を表示します。</translation>
     </message>
     <message>
@@ -9797,7 +9831,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="160"/>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>仮想マシンの名前を表示します。</translation>
     </message>
     <message>
@@ -9807,7 +9841,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="162"/>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>仮想マシンにインストールしようとしているOSファミリーを表示します。</translation>
     </message>
     <message>
@@ -9817,7 +9851,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/widgets/UINameAndSystemEditor.cpp" line="165"/>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
 </context>
@@ -10630,32 +10664,32 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 <context>
     <name>UIPortForwardingModel</name>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="313"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="370"/>
         <source>Name</source>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="314"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="371"/>
         <source>Protocol</source>
         <translation>プロトコル</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="315"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="372"/>
         <source>Host IP</source>
         <translation>ホスト IP</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="316"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="373"/>
         <source>Host Port</source>
         <translation>ホスト ポート</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="317"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="374"/>
         <source>Guest IP</source>
         <translation>ゲスト IP</translation>
     </message>
     <message>
-        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="318"/>
+        <location filename="../src/widgets/UIPortForwardingTable.cpp" line="375"/>
         <source>Guest Port</source>
         <translation>ゲスト ポート</translation>
     </message>
@@ -12285,11 +12319,11 @@ Version %1</source>
         <translation type="obsolete">フォルダー名</translation>
     </message>
     <message>
-        <source>Displays the path to an existing folder on the host PC.</source>
+        <source>Holds the path to an existing folder on the host PC.</source>
         <translation type="obsolete">ホストマシン上の既存のフォルダーのパスを表示します。</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">ゲストOSで使用される共有フォルダー名を表示します。</translation>
     </message>
     <message>
@@ -13398,7 +13432,7 @@ Version %1</source>
         <translation type="obsolete">ホストキー(&amp;K):</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
@@ -13503,9 +13537,9 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1194"/>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -13532,13 +13566,13 @@ Version %1</source>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1155"/>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>有効</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1156"/>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>無効</translation>
     </message>
     <message>
@@ -13595,37 +13629,37 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="695"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1403"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1406"/>
         <source>Adapter %1</source>
         <comment>details report (network)</comment>
         <translation>アダプター %1</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1412"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1415"/>
         <source>Disabled</source>
         <comment>details report (network)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1420"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1423"/>
         <source>Network</source>
         <comment>details report</comment>
         <translation>ネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1529"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1532"/>
         <source>Device Filters</source>
         <comment>details report (USB)</comment>
         <translation>デバイスフィルター</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1530"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1533"/>
         <source>%1 (%2 active)</source>
         <comment>details report (USB)</comment>
         <translation>%1 (%2 アクティブ)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1535"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1538"/>
         <source>Disabled</source>
         <comment>details report (USB)</comment>
         <translation>無効</translation>
@@ -13820,43 +13854,43 @@ Version %1</source>
         <translation type="obsolete">保持</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="379"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="543"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="380"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="544"/>
         <source>Null Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>Null Audio Driver</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="380"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="544"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="381"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="545"/>
         <source>Windows Multimedia</source>
         <comment>AudioDriverType</comment>
         <translation>Windows マルチメディア</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="381"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="545"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="382"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="546"/>
         <source>OSS Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>OSS オーディオドライバー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="382"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="546"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="383"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="547"/>
         <source>ALSA Audio Driver</source>
         <comment>AudioDriverType</comment>
         <translation>ALSA オーディオドライバー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="383"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="547"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="384"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="548"/>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
         <translation>Windows DirectSound</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="384"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="548"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="385"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="549"/>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
         <translation>CoreAudio</translation>
@@ -13891,44 +13925,56 @@ Version %1</source>
         <translation>汎用ドライバー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="446"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="598"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="447"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="599"/>
         <source>LsiLogic SAS</source>
         <comment>StorageControllerType</comment>
         <translation>LsiLogic SAS</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="351"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="352"/>
         <source>Not supported</source>
         <comment>USBDeviceState</comment>
         <translation>未サポート</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="352"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="225"/>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="227"/>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="353"/>
         <source>Unavailable</source>
         <comment>USBDeviceState</comment>
         <translation>利用不可</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="353"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="354"/>
         <source>Busy</source>
         <comment>USBDeviceState</comment>
         <translation>ビジー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="354"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="355"/>
         <source>Available</source>
         <comment>USBDeviceState</comment>
         <translation>利用可能</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="355"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="356"/>
         <source>Held</source>
         <comment>USBDeviceState</comment>
         <translation>保持</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="356"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="357"/>
         <source>Captured</source>
         <comment>USBDeviceState</comment>
         <translation>キャプチャー</translation>
@@ -13976,31 +14022,31 @@ Version %1</source>
         <translation type="obsolete">ファイルを選択</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1448"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1451"/>
         <source>Port %1</source>
         <comment>details report (serial ports)</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1457"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1460"/>
         <source>Disabled</source>
         <comment>details report (serial ports)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1465"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1468"/>
         <source>Serial Ports</source>
         <comment>details report</comment>
         <translation>シリアルポート</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1541"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1544"/>
         <source>USB</source>
         <comment>details report</comment>
         <translation>USB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1554"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1557"/>
         <source>Shared Folders</source>
         <comment>details report (shared folders)</comment>
         <translation>共有フォルダー</translation>
@@ -14011,13 +14057,13 @@ Version %1</source>
         <translation type="obsolete">%1</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1559"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1562"/>
         <source>None</source>
         <comment>details report (shared folders)</comment>
         <translation>なし</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1565"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1568"/>
         <source>Shared Folders</source>
         <comment>details report</comment>
         <translation>共有フォルダー</translation>
@@ -14028,40 +14074,40 @@ Version %1</source>
         <translation type="obsolete">スタック</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="337"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="515"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="338"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="516"/>
         <source>Disconnected</source>
         <comment>PortMode</comment>
         <translation>切断</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="338"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="516"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="339"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="517"/>
         <source>Host Pipe</source>
         <comment>PortMode</comment>
         <translation>ホストにパイプ</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="339"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="517"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="340"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="518"/>
         <source>Host Device</source>
         <comment>PortMode</comment>
         <translation>ホストデバイス</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="457"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="458"/>
         <source>PIIX3</source>
         <comment>ChipsetType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="458"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="459"/>
         <source>ICH9</source>
         <comment>ChipsetType</comment>
         <translation>ICH9</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1929"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1932"/>
         <source>User-defined</source>
         <comment>serial port</comment>
         <translation>ユーザー定義</translation>
@@ -14074,7 +14120,7 @@ Version %1</source>
     <message>
         <location filename="../src/VBoxVMInformationDlg.cpp" line="526"/>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1200"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="688"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="687"/>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
         <translation>VT-x/AMD-V</translation>
@@ -14140,7 +14186,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1188"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="691"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="690"/>
         <source>Execution Cap</source>
         <comment>details report</comment>
         <translation>使用率制限</translation>
@@ -14170,80 +14216,86 @@ Version %1</source>
         <translation>一般, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1486"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1400"/>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1489"/>
         <source>Port %1</source>
         <comment>details report (parallel ports)</comment>
         <translation>ポート %1</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1495"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1498"/>
         <source>Disabled</source>
         <comment>details report (parallel ports)</comment>
         <translation>無効</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1504"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1507"/>
         <source>Parallel Ports</source>
         <comment>details report</comment>
         <translation>パラレルポート</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1697"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1700"/>
         <source>Please choose a virtual hard drive file</source>
         <translation>仮想ハードドライブファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1698"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1701"/>
         <source>All virtual hard drive files (%1)</source>
         <translation>すべての仮想ハードドライブファイル (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1709"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1712"/>
         <source>Please choose a virtual optical disk file</source>
         <translation>仮想光学ディスクファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1710"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1713"/>
         <source>All virtual optical disk files (%1)</source>
         <translation>すべての仮想光学ディスクファイル (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1721"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1724"/>
         <source>Please choose a virtual floppy disk file</source>
         <translation>仮想フロッピーディスクファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1722"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1725"/>
         <source>All virtual floppy disk files (%1)</source>
         <translation>すべての仮想フロッピーディスクファイル (%1)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3310"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3313"/>
         <source>VDI (VirtualBox Disk Image)</source>
         <translation>VDI (VirtualBox Disk Image)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3312"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3315"/>
         <source>VMDK (Virtual Machine Disk)</source>
         <translation>VMDK (Virtual Machine Disk)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3314"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3317"/>
         <source>VHD (Virtual Hard Disk)</source>
         <translation>VHD (Virtual Hard Disk)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3316"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3319"/>
         <source>HDD (Parallels Hard Disk)</source>
         <translation>HDD (Parallels Hard Disk)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3318"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3321"/>
         <source>QED (QEMU enhanced disk)</source>
         <translation>QED (QEMU enhanced disk)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="3320"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="3323"/>
         <source>QCOW (QEMU Copy-On-Write)</source>
         <translation>QCOW (QEMU Copy-On-Write)</translation>
     </message>
@@ -14260,13 +14312,13 @@ Version %1</source>
         <translation>共有フォルダー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="424"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="425"/>
         <source>IDE</source>
         <comment>StorageBus</comment>
         <translation>IDE</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="425"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="426"/>
         <source>SATA</source>
         <comment>StorageBus</comment>
         <translation>SATA</translation>
@@ -14302,47 +14354,47 @@ Version %1</source>
         <translation type="obsolete">VHD イメージ</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="387"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="551"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="388"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="552"/>
         <source>Solaris Audio</source>
         <comment>AudioDriverType</comment>
         <translation>Solaris オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="386"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="550"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="387"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="551"/>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
         <translation>PulseAudio</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="398"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="563"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="399"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="564"/>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
         <translation>ICH AC97</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="399"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="564"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="400"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="565"/>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
         <translation>SoundBlaster 16</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="302"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="303"/>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="303"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="304"/>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
         <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="304"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="305"/>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
@@ -14358,7 +14410,7 @@ Version %1</source>
         <translation type="obsolete">PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="305"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="306"/>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 T Server (82543GC)</translation>
@@ -14502,7 +14554,7 @@ Version %1</source>
         <translation>セットアップ</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1927"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1930"/>
         <source>Differencing</source>
         <comment>DiskType</comment>
         <translation>差分</translation>
@@ -14545,7 +14597,7 @@ Version %1</source>
         <translation type="obsolete">ホストオンリーネットワーク, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="426"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="427"/>
         <source>SCSI</source>
         <comment>StorageBus</comment>
         <translation>SCSI</translation>
@@ -14561,43 +14613,43 @@ Version %1</source>
         <translation type="obsolete">ホストオンリーネットワーク</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="442"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="594"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="443"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="595"/>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX3</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="443"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="595"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="444"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="596"/>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
         <translation>PIIX4</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="444"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="596"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="445"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="597"/>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
         <translation>ICH6</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="441"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="593"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="442"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="594"/>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
         <translation>AHCI</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="439"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="591"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="440"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="592"/>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
         <translation>Lsilogic</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="440"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="592"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="441"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="593"/>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
         <translation>BusLogic</translation>
@@ -14615,7 +14667,7 @@ Version %1</source>
         <translation>ホストオンリーアダプター, &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="306"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="307"/>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
         <translation>Intel PRO/1000 MT Server (82545EM)</translation>
@@ -14641,7 +14693,7 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1185"/>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="696"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="695"/>
         <source>Processor(s)</source>
         <comment>details report</comment>
         <translation>プロセッサー数</translation>
@@ -14680,8 +14732,8 @@ Version %1</source>
         <translation>ディスプレイ</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="340"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="518"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="341"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="519"/>
         <source>Raw File</source>
         <comment>PortMode</comment>
         <translation>Rawファイル</translation>
@@ -14779,7 +14831,7 @@ Version %1</source>
         <translation type="obsolete">すべての%1イメージ(%2)</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="1748"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="1751"/>
         <source>All files (*)</source>
         <translation>すべてのファイル(*)</translation>
     </message>
@@ -14889,20 +14941,8 @@ Version %1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="225"/>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="226"/>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="227"/>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -15003,57 +15043,63 @@ Version %1</source>
         <translation>固定サイズのrawディスク</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="321"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="292"/>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="322"/>
         <source>Deny</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
         <translation>拒否</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="323"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="324"/>
         <source>Allow VMs</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
         <translation>許可したVM</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="325"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="326"/>
         <source>Allow All</source>
         <comment>NetworkAdapterPromiscModePolicy</comment>
         <translation>すべて許可</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="367"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="530"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="368"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="531"/>
         <source>Ignore</source>
         <comment>USBDeviceFilterAction</comment>
         <translation>無視</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="368"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="531"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="369"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="532"/>
         <source>Hold</source>
         <comment>USBDeviceFilterAction</comment>
         <translation>保持</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="427"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="428"/>
         <source>Floppy</source>
         <comment>StorageBus</comment>
         <translation>フロッピー</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="428"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="429"/>
         <source>SAS</source>
         <comment>StorageBus</comment>
         <translation>SAS</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="469"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="470"/>
         <source>UDP</source>
         <comment>NATProtocol</comment>
         <translation>UDP</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="470"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="471"/>
         <source>TCP</source>
         <comment>NATProtocol</comment>
         <translation>TCP</translation>
@@ -15119,35 +15165,35 @@ Version %1</source>
         <translation type="obsolete">複数割り当て</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="411"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="577"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="412"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="578"/>
         <source>Null</source>
         <comment>AuthType</comment>
         <translation>Null</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="412"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="578"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="413"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="579"/>
         <source>External</source>
         <comment>AuthType</comment>
         <translation>外部</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="413"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="579"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="414"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="580"/>
         <source>Guest</source>
         <comment>AuthType</comment>
         <translation>ゲスト</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="400"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="565"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="401"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="566"/>
         <source>Intel HD Audio</source>
         <comment>AudioControllerType</comment>
         <translation>Intel HD オーディオ</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="308"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="309"/>
         <source>Paravirtualized Network (virtio-net)</source>
         <comment>NetworkAdapterType</comment>
         <translation>準仮想化ネットワーク (virtio-net)</translation>
@@ -15168,8 +15214,8 @@ Version %1</source>
         <translation type="obsolete">TCP</translation>
     </message>
     <message>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="445"/>
-        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="597"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="446"/>
+        <location filename="../src/converter/UIConverterBackendCOM.cpp" line="598"/>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
         <translation>I82078</translation>
@@ -15184,25 +15230,25 @@ Version %1</source>
         <translation type="obsolete">^(?:(?:(\d+)(?:\s?(B|KB|MB|GB|TB|PB))?)|(?:(\d*)%1(\d{1,2})(?:\s?(KB|MB|GB|TB|PB))))$</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2505"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2537"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2597"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2508"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2540"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2600"/>
         <source>B</source>
         <comment>size suffix Bytes</comment>
         <translation>B</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2506"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2539"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2598"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2509"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2542"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2601"/>
         <source>KB</source>
         <comment>size suffix KBytes=1024 Bytes</comment>
         <translation>KB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2507"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2541"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2599"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2510"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2544"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2602"/>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="241"/>
         <location filename="../src/widgets/UIApplianceEditorWidget.cpp" line="432"/>
         <location filename="../src/wizards/newvm/UIWizardNewVMPageBasic2.cpp" line="136"/>
@@ -15216,25 +15262,25 @@ Version %1</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2508"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2543"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2600"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2511"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2546"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2603"/>
         <source>GB</source>
         <comment>size suffix GBytes=1024 MBytes</comment>
         <translation>GB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2509"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2545"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2601"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2512"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2548"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2604"/>
         <source>TB</source>
         <comment>size suffix TBytes=1024 GBytes</comment>
         <translation>TB</translation>
     </message>
     <message>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2510"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2547"/>
-        <location filename="../src/globals/VBoxGlobal.cpp" line="2602"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2513"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2550"/>
+        <location filename="../src/globals/VBoxGlobal.cpp" line="2605"/>
         <source>PB</source>
         <comment>size suffix PBytes=1024 TBytes</comment>
         <translation>PB</translation>
@@ -15394,12 +15440,12 @@ Version %1</source>
         <translation type="unfinished">無効</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="689"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="688"/>
         <source>Nested Paging</source>
         <translation>ネステッドページング</translation>
     </message>
     <message>
-        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="690"/>
+        <location filename="../src/runtime/UIIndicatorsPool.cpp" line="689"/>
         <source>Unrestricted Execution</source>
         <translation type="unfinished"></translation>
     </message>
@@ -15409,7 +15455,7 @@ Version %1</source>
         <translation type="obsolete">MB</translation>
     </message>
     <message>
-        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="265"/>
+        <location filename="../src/settings/machine/UIMachineSettingsNetwork.cpp" line="279"/>
         <source>Adapter %1</source>
         <translation>アダプター %1</translation>
     </message>
@@ -15688,7 +15734,7 @@ Version %1</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">ダイアログのヘルプを表示します。</translation>
     </message>
     <message>
@@ -15716,7 +15762,7 @@ Version %1</source>
         <translation type="obsolete">VirtualBox 環境設定</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">仮想マシンのウィンドウでホストキーとして使用するキーを表示します。変更するには入力フィールドをアクティブにして新しいホストキーを押してください。注：英数字、カーソルキー、編集キーはホストキーとして使用できません。</translation>
     </message>
     <message>
@@ -15778,7 +15824,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">デフォルト</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">デフォルトのVDIフォルダーのパスを表示します。新規仮想ハードディスクの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
@@ -15790,7 +15836,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">VDIフォルダーのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトパスが表示されます。</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">デフォルトの仮想マシンフォルダーのパスを表示します。新規仮想マシンの作成時に保存先を明示的に指定しない場合、このフォルダーが使用されます。</translation>
     </message>
     <message>
@@ -15810,7 +15856,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">VRDP 認証ライブラリー(&amp;R)</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">リモートディスプレイ(VRDP)クライアントに認証を提供するライブラリーのパスを表示します。</translation>
     </message>
     <message>
@@ -16433,7 +16479,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">オペレーティング システム(&amp;S):</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">仮想マシンにインストールするOSの種類を表示します。</translation>
     </message>
     <message>
@@ -16441,7 +16487,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">バージョン(&amp;E):</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンにインストールするOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
@@ -17499,7 +17545,7 @@ DOS系ゲストOSからアクセスする場合は &lt;tt&gt;net use x:¥¥vboxs
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation type="obsolete">フィルター名を表示します。</translation>
     </message>
     <message>
@@ -17999,15 +18045,15 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">仮想マシンの起動時に仮想ネットワークケーブルが接続されるかどうかを示します。</translation>
     </message>
     <message>
-        <source>Displays the name of the host interface selected for this adapter.</source>
+        <source>Holds the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">このアダプター用に選択したホストインターフェース名を表示します。</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">TAPインターフェース名を表示します。</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース設定時に実行するコマンドを表示します。</translation>
     </message>
     <message>
@@ -18015,7 +18061,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">設定アプリケーションを選択します。</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">TAPインターフェース終了時に実行するコマンドを表示します。</translation>
     </message>
     <message>
@@ -18023,7 +18069,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">終了アプリケーションを選択します。</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">このアダプターのMACアドレスを表示します。MACアドレスは{0-9,A-F}から選択された12文字で構成されます。注：2番目の文字は偶数でなければなりません。</translation>
     </message>
     <message>
@@ -18039,7 +18085,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">仮想ネットワークアダプターのタイプを選択します。 この値により、VirtualBoxは異なったネットワーク ハードウェアを仮想マシンに提供します。</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">このアダプター用に選択した内部ネットワーク名を表示します。</translation>
     </message>
 </context>
@@ -18062,7 +18108,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ポート番号(&amp;N)</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">パラレルポート番号を表示します。 標準のパラレルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
@@ -18070,15 +18116,15 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">IRQ(&amp;I)</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">このパラレルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/Oポート(&amp;R)</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このパラレルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
@@ -18086,7 +18132,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ポートパス(&amp;P)</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation type="obsolete">ホストのパラレル デバイス名を表示します。</translation>
     </message>
 </context>
@@ -18109,7 +18155,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ポート番号(&amp;N)</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">シリアルポート番号を表示します。 標準のシリアルポートか&lt;b&gt;[ユーザー定義]&lt;/b&gt;を選択し、手動でポートパラメタを指定することができます。</translation>
     </message>
     <message>
@@ -18117,15 +18163,15 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">IRQ(&amp;I)</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;IO APIC&lt;/b&gt;が有効なとき使用されます。</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">このシリアルポートのIRQ番号を表示します。有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;255&lt;/tt&gt;までの範囲の整数です。&lt;tt&gt;15&lt;/tt&gt;以上の値はこの仮想マシンで&lt;b&gt;I/O APIC&lt;/b&gt;が有効なとき使用されます。</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt</source>
         <translation type="obsolete">I/Oポート(&amp;R)</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">このシリアルポートのベースI/Oポートアドレスを表示します。 有効値は&lt;tt&gt;0&lt;/tt&gt;から&lt;tt&gt;0xFFFF&lt;/tt&gt;の範囲の整数です。</translation>
     </message>
     <message>
@@ -18149,7 +18195,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ポートパス(&amp;P)</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">ポートが&lt;b&gt;[ホストパイプ]&lt;/b&gt;モードで動作しているとき、シリアルポートのパイプのパスを表示します。ポートが&lt;b&gt;[ホストデバイス]&lt;/b&gt;モードで動作しているとき、ホストシリアルデバイス名を表示します。</translation>
     </message>
 </context>
@@ -18200,7 +18246,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ISO イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
@@ -18283,7 +18329,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">名前(&amp;N)</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">仮想マシンの名前を表示します。</translation>
     </message>
     <message>
@@ -18348,7 +18394,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
-        <translation type="obsolete">IO APICを有効化(&amp;P)</translation>
+        <translation type="obsolete">I/O APICを有効化(&amp;P)</translation>
     </message>
     <message>
         <source>Boo&amp;t Order</source>
@@ -18459,7 +18505,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">F1</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">ダイアログのヘルプを表示します。</translation>
     </message>
     <message>
@@ -18487,7 +18533,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">指定したメディアを仮想マシンのCD/DVDドライブにマウントします。注：CD/DVDドライブは常に仮想マシンのセカンダリIDE コントローラーのマスタースロットに割り当てられます。</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想CD/DVDドライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
@@ -18495,7 +18541,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">指定したメディアを仮想マシンのフロッピードライブにマウントします。</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
@@ -18533,7 +18579,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">スナップショットの保存先(&amp;N)</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">仮想マシンで実行するOS(ゲストOSと呼びます)のタイプを表示します。</translation>
     </message>
     <message>
@@ -18544,16 +18590,16 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;仮想マシンでIO APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;仮想マシンでI/O APIC(Input Output APIC)サポートを有効にします。これは仮想マシンの性能をわずかに低下させるかもしれません。&lt;b&gt;注：&lt;/b&gt;Windows ゲストOSをインストールした後で本機能を無効にしないでください！&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Selects which clipboard data will be copied between the guest and the host OS. This feature requires Guest Additions to be installed in the guest OS.</source>
         <translation type="obsolete">ゲストOSとホストOSの間でクリップボードを共有するモードを定義します。注：本機能の利用にはゲストOSに Guest Additions のインストールが必要です。</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">この仮想マシンのスナップショットの保存先パスを表示します。注：スナップショットは多くのディスク容量を消費します。</translation>
     </message>
     <message>
@@ -18561,7 +18607,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <translation type="obsolete">スナップショットの保存先フォルダーのパスをデフォルト値に戻します。変更後、再度このダイアログを開くとデフォルトのパスが表示されます。</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
@@ -18683,7 +18729,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">認証タイムアウト値(&amp;T)</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;VRDP サーバーポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -19034,7 +19080,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">仮想フロッピードライブにマウントされたイメージファイルを表示します。また、他のイメージを素早く選択できます。</translation>
     </message>
     <message>
@@ -19061,7 +19107,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">サーバーのポート番号(&amp;P):</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">VRDP サーバーのポート番号を表示します。ポートをデフォルト値にリセットするには&lt;tt&gt;0&lt;/tt&gt;(ゼロ)を指定します。</translation>
     </message>
     <message>

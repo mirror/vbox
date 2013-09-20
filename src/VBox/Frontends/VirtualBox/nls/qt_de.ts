@@ -588,7 +588,7 @@ nach
         <translation>Schließt das Fenster</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Zeigt den Namen des Fensters und enthält Befehle zum Ändern</translation>
     </message>
 </context>

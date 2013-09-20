@@ -1004,9 +1004,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -1126,9 +1126,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>VT-x/AMD-V</source>
@@ -2141,6 +2141,11 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -2382,11 +2387,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ម៉ាស៊ីន​និម្មិត​លំនាំដើម ។ ថត​នេះ​ត្រូវ​បាន​ប្រើ ប្រសិនបើ​មិន​បានបញ្ជាក់ជាក់លាក់​ទេ នៅពេល​បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី ។</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>បង្ហាញ​ផ្លូវ​ទៅ​បណ្ណាល័យ ដែល​ផ្ដល់​នូវ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​សម្រាប់​ម៉ាស៊ីន​ភ្ញៀវ​បង្ហាញ​ពី​ចម្ងាយ (​VRDP) ។</translation>
     </message>
     <message>
@@ -2402,7 +2407,7 @@ p, li { white-space: pre-wrap; }
         <translation>បណ្ណាល័យ​ការ​ផ្ទៀងផ្ទាត់​ភាព​ត្រឹមត្រូវ​របស់ VRDP ៖</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">បង្ហាញ​ផ្លូវ​ទៅ​កាន់​ថត​ថាសរឹង​លំនាំដើម ។ ថត​នេះ​ត្រូ​វបានប្រើ ប្រសិនបើ​គ្មាន​ការ​កំណត់​ជាក់លាក់ នៅពេលបន្ថែម​ថាសរឹង​និម្មិត​ថ្មី​ ឬ​មាន​ស្រាប់ ។</translation>
     </message>
     <message>
@@ -2457,7 +2462,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
     </message>
     <message>
@@ -2866,35 +2871,35 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2938,7 +2943,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">អា​សយ​ដ្ឋាន​ IPv4 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">បង្ហាញ​អា​សយ​ដ្ឋាន​​ម៉ាស៊ីន​ IPv4 សម្រាប់​​អាដាប់​ទ័រ​​នេះ​ ។</translation>
     </message>
     <message>
@@ -2946,7 +2951,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">របាំង​បណ្តាញ​ IPv4 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">បង្ហាញ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv4 សម្រាប់​អាដាប់​ទ័រ​នេះ​ ។</translation>
     </message>
     <message>
@@ -2954,7 +2959,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">អាសយដ្ឋាន​ IPv6 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">បង្ហាញ​​អា​សយដ្ឋាន​ម៉ាស៊ីន​ IPv6 សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ ។</translation>
     </message>
     <message>
@@ -2962,7 +2967,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">ប្រ​វែង​របាំង​បណ្តាញ​ IPv6 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">បង្ហាញ​ប្រ​វែង​​បុព្វបទ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv6​ សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ​ ។</translation>
     </message>
     <message>
@@ -2982,7 +2987,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ​ ៖</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">បង្ហាញ​អាសយដ្ឋាន​បម្រើ​ម៉ាស៊ីន​​របស់​ DHCP ដែល​ភ្ជាប់​​បណ្តាញ​ជាមួយ​កម្ម​វិធី​សម្រួល​​ម៉ាស៊ីន​​-តែ​មួយនេះ​​ ។</translation>
     </message>
     <message>
@@ -2990,7 +2995,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">របាំង​ម៉ា​ស៊ីនបម្រើ​ ៖</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">បង្ហាញ​របាំង​បណ្តាញ​​សេវា​​បម្រើ​ម៉ា​ស៊ីន​របស់​ DHCP ដែល​ភ្ជាប់​​​ជា​មួយ​កម្ម​វិធី​សម្រួល​ម៉ា​ស៊ីន​​-​តែ​មួយ​នេះ​ ។</translation>
     </message>
     <message>
@@ -2998,7 +3003,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">ព្រំ​ដែន​អា​សយ​ដ្ឋាន​ទាប​ ៖</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">បង្ហាញ​ព្រំដែន​អាសយដ្ឋានទាប​ដែល​បានផ្ដល់ដោយ​សេវា​ម៉ាស៊ីន​បម្រើ DHCP ដែល​បានភ្ជាប់​ជា​មួយនឹងកម្មវិធី​សម្រួល​ម៉ាស៊ីន​ ។</translation>
     </message>
     <message>
@@ -3006,7 +3011,7 @@ creating/removing host-only network</comment>
         <translation type="obsolete">ព្រំដែន​អា​សយដ្ឋានខ្ពស់​ ៖</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">បង្ហាញ​ព្រំដែន​អាសយដ្ឋាន​ខ្ពស់​ដែលបានផ្ដល់​ដោយ​ម៉ាស៊ីន​បម្រើ DHCP ដោយ​ផ្ដល់​សេវា​បណ្ដាញ​ភ្ជាប់​ជា​មួយ​នឹង​អាដាប់ទ័រ​ម៉ាស៊ីន​ ។</translation>
     </message>
 </context>
@@ -3033,7 +3038,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">អា​សយ​ដ្ឋាន​ IPv4 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">បង្ហាញ​អា​សយ​ដ្ឋាន​​ម៉ាស៊ីន​ IPv4 សម្រាប់​​អាដាប់​ទ័រ​​នេះ​ ។</translation>
     </message>
     <message>
@@ -3041,7 +3046,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">របាំង​បណ្តាញ​ IPv4 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">បង្ហាញ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv4 សម្រាប់​អាដាប់​ទ័រ​នេះ​ ។</translation>
     </message>
     <message>
@@ -3049,7 +3054,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">អាសយដ្ឋាន​ IPv6 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">បង្ហាញ​​អា​សយដ្ឋាន​ម៉ាស៊ីន​ IPv6 សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ ។</translation>
     </message>
     <message>
@@ -3057,7 +3062,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">ប្រ​វែង​របាំង​បណ្តាញ​ IPv6 ៖</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">បង្ហាញ​ប្រ​វែង​​បុព្វបទ​របាំង​បណ្តាញ​ម៉ាស៊ីន​ IPv6​ សម្រាប់​​អាដាប់​ទ័រ​​នេះ ​ប្រ​សិន​បើ​ IPv6 ត្រូវ​បាន​គាំ​ទ្រ​ ។</translation>
     </message>
     <message>
@@ -3077,7 +3082,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">អាសយដ្ឋាន​ម៉ាស៊ីន​បម្រើ​ ៖</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">បង្ហាញ​អាសយដ្ឋាន​បម្រើ​ម៉ាស៊ីន​​របស់​ DHCP ដែល​ភ្ជាប់​​បណ្តាញ​ជាមួយ​កម្ម​វិធី​សម្រួល​​ម៉ាស៊ីន​​-តែ​មួយនេះ​​ ។</translation>
     </message>
     <message>
@@ -3085,7 +3090,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">របាំង​ម៉ា​ស៊ីនបម្រើ​ ៖</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">បង្ហាញ​របាំង​បណ្តាញ​​សេវា​​បម្រើ​ម៉ា​ស៊ីន​របស់​ DHCP ដែល​ភ្ជាប់​​​ជា​មួយ​កម្ម​វិធី​សម្រួល​ម៉ា​ស៊ីន​​-​តែ​មួយ​នេះ​ ។</translation>
     </message>
     <message>
@@ -3093,7 +3098,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">ព្រំ​ដែន​អា​សយ​ដ្ឋាន​ទាប​ ៖</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">បង្ហាញ​ព្រំដែន​អាសយដ្ឋានទាប​ដែល​បានផ្ដល់ដោយ​សេវា​ម៉ាស៊ីន​បម្រើ DHCP ដែល​បានភ្ជាប់​ជា​មួយនឹងកម្មវិធី​សម្រួល​ម៉ាស៊ីន​ ។</translation>
     </message>
     <message>
@@ -3101,7 +3106,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished">ព្រំដែន​អា​សយដ្ឋានខ្ពស់​ ៖</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">បង្ហាញ​ព្រំដែន​អាសយដ្ឋាន​ខ្ពស់​ដែលបានផ្ដល់​ដោយ​ម៉ាស៊ីន​បម្រើ DHCP ដោយ​ផ្ដល់​សេវា​បណ្ដាញ​ភ្ជាប់​ជា​មួយ​នឹង​អាដាប់ទ័រ​ម៉ាស៊ីន​ ។</translation>
     </message>
 </context>
@@ -3124,7 +3129,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3132,7 +3137,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3160,7 +3165,7 @@ creating/removing host-only network</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3169,6 +3174,21 @@ creating/removing host-only network</comment>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3756,7 +3776,7 @@ p, li { white-space: pre-wrap; }
         <translation>បង្ហាញ​ថាតើ​ក្ដារចុច​ត្រូវ​បានចាប់យក​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ (&lt;img src=:/hostkey_captured_16px.png/&gt;) ឬ​មិនមែន (&lt;img src=:/hostkey_16px.png/&gt;) ។</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3768,7 +3788,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -3977,7 +3997,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4013,7 +4033,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4021,11 +4041,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4033,7 +4053,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4045,11 +4065,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4103,7 +4123,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>បង្ហាញ​ផ្លូវ​ដែល​រូបថត​របស់ម៉ាស៊ីន​និម្មិត​នេះ​នឹង​ត្រូ​វបានផ្ទុក ។ ចំណាំ​ថា រូបថត​អាចចាប់យក​​ទំហំ​ថាស​ជា​ច្រើន​​យ៉ាង​ស្ងៀវស្ងាត់​ ។</translation>
     </message>
     <message>
@@ -4115,7 +4135,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">ឈ្មោះ ៖</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">បង្ហាញ​ឈ្មោះ​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
@@ -4139,7 +4159,7 @@ p, li { white-space: pre-wrap; }
         <translation>សេចក្ដី​ពិពណ៌នា</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>បង្ហាញ​សេចក្ដីពិពណ៌នា​របស់ម៉ាស៊ីន​និម្មិត ។ វាល​សេចក្ដី​ពិពន៌នា​មានប្រយោជន៍​សម្រាប់​ផ្ដល់​យោបល់​អំពី​សេចក្ដី​លម្អិត​កំណត់​រចនាសម្ព័ន្ធ​របស់​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​ដែល​បាន​ដំឡើង ។</translation>
     </message>
     <message>
@@ -4214,7 +4234,7 @@ p, li { white-space: pre-wrap; }
         <translation>បាន​ភ្ជាប់​ទៅ ៖</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>បង្ហាញ​អាសយដ្ឋាន MAC របស់​អាដាប់ទ័រ​នេះ ។ វា​មាន​តួអក្សរ​យ៉ាង​ជាក់លាក់​ចំនួន​ ១២ ដែល​បាន​ជ្រើស​ពី {0-9,A-F} ។ ចំណាំ​ថា​តួអក្សរ​ទីពីរ​ត្រូវ​តែ​ជា​​តួលេខ​គូ ។</translation>
     </message>
     <message>
@@ -4310,7 +4330,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4349,6 +4369,14 @@ network adapter name</comment>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsParallel</name>
@@ -4370,7 +4398,7 @@ network adapter name</comment>
         <translation>លេខ​ច្រក ៖</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>បង្ហាញលេចច្រក​ប៉ារ៉ាឡែល ។ អ្នកអាចជ្រើស​ច្រក​មួយ​ក្នុងចំណោម​ច្រក​ប៉ារ៉ាឡែល​ជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ញាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយ​ដៃ ។</translation>
     </message>
     <message>
@@ -4378,15 +4406,15 @@ network adapter name</comment>
         <translation>IRQ ៖</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>បង្ហាញលេខ IRQ របស​ច្រក​ប៉ារ៉ាឡែល​នេះ ។ តម្លៃ​ត្រឹមត្រូវ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​ក្នុងជួរពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូវ​បានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូ​វបានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត​នេះ​ប៉ុណ្ណោះ ។</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>បង្ហាញលេខ IRQ របស​ច្រក​ប៉ារ៉ាឡែល​នេះ ។ តម្លៃ​ត្រឹមត្រូវ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​ក្នុងជួរពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូវ​បានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;I/O APIC&lt;/b&gt; ត្រូ​វបានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត​នេះ​ប៉ុណ្ណោះ ។</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>ច្រក I/O ៖</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>បង្ហាញអាសយដ្ឋាន​ច្រក​ I/O មូលដ្ឋាន ។ តម្លៃដែល​ត្រឹមត្រូវ​គឺ​ធំជាង​ចំនួន​ដែល​ស្ថិត​ក្នុងជួរ​ពី &lt;tt&gt;0&lt;/tt&gt;ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
     </message>
     <message>
@@ -4394,7 +4422,7 @@ network adapter name</comment>
         <translation>ផ្លូវ​ច្រក ៖</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>បង្ហាញ​ឈ្មោះ​ឧបករណ៍​ស្រប​គ្នា​​របស់​ម៉ាស៊ីន ។</translation>
     </message>
 </context>
@@ -4562,7 +4590,7 @@ network adapter name</comment>
         <translation>ឈ្មោះ​ថត ៖</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>បង្ហាញ​ឈ្មោះ​របស់​ថត​ដែលបានចែករំលែក (ព្រោះថា​វា​នឹង​ត្រូវ​បានឃើញ​ដោយ​ប្រព័ន្ធ​ប្រតិបត្តិការ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
     </message>
     <message>
@@ -4610,7 +4638,7 @@ network adapter name</comment>
         <translation>លេខ​ច្រក ៖</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>បង្ហាញលេខ​ច្រក​ស៊េរៀល ។ អ្នកអាច​ជ្រើ​ស​ច្រក​ស៊េរៀល​ស្តង់ដារ​មួយ​ក្នុងចំណោម​ច្រកជា​ច្រើន ឬ​ជ្រើស &lt;b&gt;កំណត់​ដោយ​អ្នក​ប្រើ&lt;/b&gt; ហើយ​បញ្ជាក់​ប៉ារ៉ាម៉ែត្រ​ច្រក​ដោយដៃ ។</translation>
     </message>
     <message>
@@ -4618,15 +4646,15 @@ network adapter name</comment>
         <translation>IRQ ៖</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>បង្ហាញ​លេខ IRQ របស់​ច្រក​ស៊េរៀល​នេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​នៅ​ក្នុង​ចន្លោះ​ពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង​ &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូ​វបានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;IO APIC&lt;/b&gt; ត្រូវ​បានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត ។</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>បង្ហាញ​លេខ IRQ របស់​ច្រក​ស៊េរៀល​នេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​គត់​ដែល​ស្ថិត​នៅ​ក្នុង​ចន្លោះ​ពី &lt;tt&gt;0&lt;/tt&gt; ដល់ &lt;tt&gt;២៥៥&lt;/tt&gt; ។ តម្លៃ​ធំជាង​ &lt;tt&gt;១៥&lt;/tt&gt; អាច​ត្រូ​វបានប្រើ​តែ​ក្នុងករណី​ដែល &lt;b&gt;I/O APIC&lt;/b&gt; ត្រូវ​បានបើក​សម្រាប់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>ច្រក​ I/O ៖</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>បង្ហាញ​អាសយដ្ឋាន​ច្រក I/O មូលដ្ឋាន​របស់​ច្រក​ស៊េរៀលនេះ ។ តម្លៃ​ដែល​ត្រឹមត្រូវ​គឺ​ជា​ចំនួន​ដែល​ស្ថិត​ក្នុង​ចន្លោះពី &lt;tt&gt;0&lt;/tt&gt; ដល់&lt;tt&gt;0xFFFF&lt;/tt&gt; ។</translation>
     </message>
     <message>
@@ -4646,7 +4674,7 @@ network adapter name</comment>
         <translation>បង្កើត​បំពង់</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>បង្ហាញ​ផ្លូវ​ទៅកាន់​ច្រក​ស៊េរៀល​នៅ​លើ​ម៉ាស៊ីន នៅពេល​ច្រក​ដំណើការ​ក្នុង​របៀប &lt;b&gt;បំពង់​ម៉ាស៊ីន&lt;/b&gt; ឬ​ឈ្មោះ​ឧបករណ៍​ស៊េរៀល​នៅពេល​ច្រក​ដំណើរការ​ក្នុង​របៀប &lt;b&gt;ឧបករណ៍​ម៉ាស៊ីន&lt;/b&gt; ។</translation>
     </message>
     <message>
@@ -5127,12 +5155,12 @@ network adapter name</comment>
         <translation>លក្ខណៈ​ពិសេស​ដែល​បានពង្រីក ៖</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>នៅ​ពេល​បានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (IO APIC) ដែលអាច​បន្ថយ​ការ​អនុវត្ត​បន្តិចបន្តួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ បន្ទាប់​ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​វីនដូ !</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>នៅ​ពេល​បានគូស​ធីក ម៉ាស៊ីន​និម្មិត​នឹង​គាំទ្រ​ Input Output APIC (I/O APIC) ដែលអាច​បន្ថយ​ការ​អនុវត្ត​បន្តិចបន្តួច ។ &lt;b&gt;ចំណាំ ៖&lt;/b&gt; កុំ​បិទ​លក្ខណៈពិសេស​នេះ បន្ទាប់​ពី​ដំឡើង​ប្រព័ន្ធ​ប្រតិបត្តិការ​ម៉ាស៊ីន​ភ្ញៀវ​វីនដូ !</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>បើក IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>បើក I/O APIC</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
@@ -5239,7 +5267,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5267,7 +5295,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5429,7 +5457,7 @@ network adapter name</comment>
         <translation>ឈ្មោះ ៖</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>បង្ហាញឈ្មោះ​តម្រង ។</translation>
     </message>
     <message>
@@ -7133,7 +7161,7 @@ medium</comment>
         <translation type="unfinished">ឈ្មោះ ៖</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="unfinished">បង្ហាញ​ឈ្មោះ​របស់​ម៉ាស៊ីន​និម្មិត ។</translation>
     </message>
     <message>
@@ -7141,7 +7169,7 @@ medium</comment>
         <translation type="unfinished">ប្រភេទ ៖</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="unfinished">បង្ហាញ​ក្រុមគ្រួសារ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ដែល​អ្នក​មានគម្រោង​ដំឡើង​ក្នុង​ម៉ាស៊ីន​និម្មិត​នេះ ។</translation>
     </message>
     <message>
@@ -7149,7 +7177,7 @@ medium</comment>
         <translation type="unfinished">កំណែ ៖</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="unfinished">បង្ហាញ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ដែល​អ្នក​​មាន​​គម្រោង​ដំឡើង​ម៉ាស៊ីន​និម្មិត​នេះ (បាន​ហៅ​ប្រព័ន្ធ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
     </message>
 </context>
@@ -9449,7 +9477,7 @@ Virtualization Stuff LED</comment>
         <translation type="obsolete">គ្រាប់ចុច​ម៉ាស៊ីន ៖</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">បង្ហាញគ្រាប់ចុច​ដែល​បាន​ប្រើ​ជា​គ្រាប់​ចុច​ម៉ាស៊ីន​នៅ​ក្នុង​បង្អួច VM ។ ធ្វើ​ឲ្យ​វាល​ធាតុ​សកម្ម ហើយ​ចុច​គ្រាប់ចុច​ម៉ាស៊ីន​ថ្មី ។ ចំណាំថា​លេខ ចលនា​ទស្សន៍ទ្រនិច និង​គ្រាប់ចុចកែសម្រួល​មិនអាច​ត្រូវ​បាន​ប្រើ​ជា​គ្រាប់ចុច​ម៉ាស៊ីន​ទេ ។</translation>
     </message>
     <message>
@@ -9519,9 +9547,9 @@ Virtualization Stuff LED</comment>
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -9535,12 +9563,12 @@ Virtualization Stuff LED</comment>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>បានបើក</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>បាន​បិទ</translation>
     </message>
     <message>
@@ -11463,17 +11491,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -11489,6 +11507,26 @@ medium</comment>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11760,7 +11798,7 @@ VMM: Floppy Image</comment>
     </message>
     <message>
         <source>Attached to:</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">បាន​​ភ្ជាប់ទៅកាន់ ៖</translation>
     </message>
     <message>
         <source>&amp;Copy...</source>
@@ -11808,11 +11846,11 @@ VMM: Floppy Image</comment>
         <translation type="obsolete">ប្រព័ន្ធ​ប្រតិបត្តិការ ៖</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">បង្ហាញ​ក្រុមគ្រួសារ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ដែល​អ្នក​មានគម្រោង​ដំឡើង​ក្នុង​ម៉ាស៊ីន​និម្មិត​នេះ ។</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">បង្ហាញ​ប្រភេទ​ប្រព័ន្ធ​ប្រតិបត្តិការ​ដែល​អ្នក​​មាន​​គម្រោង​ដំឡើង​ម៉ាស៊ីន​និម្មិត​នេះ (បាន​ហៅ​ប្រព័ន្ធ​ប្រតិបត្តិ​របស់​ម៉ាស៊ីន​ភ្ញៀវ) ។</translation>
     </message>
     <message>

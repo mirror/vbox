@@ -590,7 +590,7 @@ a
         <translation>Pecha a xanela</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Mostra o nome da xanela e contén controis para manipulala</translation>
     </message>
 </context>

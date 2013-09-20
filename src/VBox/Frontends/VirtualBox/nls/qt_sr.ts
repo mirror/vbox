@@ -609,7 +609,7 @@ to
     </message>
     <message>
         <location filename="../src/plugins/accessible/compat/q3complexwidgets.cpp" line="256"/>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Показује име прозора и контроле за његово руковање</translation>
     </message>
 </context>

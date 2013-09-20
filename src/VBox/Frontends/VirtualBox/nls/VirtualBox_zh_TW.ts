@@ -957,9 +957,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1570,6 +1570,11 @@
         <comment>details (display/video capture)</comment>
         <translation type="unfinished">停用</translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGMachinePreview</name>
@@ -1702,11 +1707,11 @@
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>顯示預設虛擬機器資料夾的路徑。 當加入現有或新建虛擬機器時，如果沒有特別指定，就會使用這個資料夾。</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>顯示提供遠端顯示 (VRDP) 用戶端驗證的程式庫路徑。</translation>
     </message>
     <message>
@@ -1769,7 +1774,7 @@
         <translation type="obsolete">Host 鍵(&amp;K)：</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">顯示於虛擬機器視窗中使用的 Host 鍵。 啟用項目欄位並按下新的 Host 鍵。 請注意，不能使用字母數字、游標移動與編輯鍵。</translation>
     </message>
     <message>
@@ -2087,35 +2092,35 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2159,7 +2164,7 @@
         <translation type="obsolete">IPv4 位址(&amp;I)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">顯示這個介面卡的主機 IPv4 位址。</translation>
     </message>
     <message>
@@ -2167,7 +2172,7 @@
         <translation type="obsolete">IPv4 網路遮罩(&amp;M)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">顯示這個介面卡的主機 IPv4 網路遮罩。</translation>
     </message>
     <message>
@@ -2175,7 +2180,7 @@
         <translation type="obsolete">IPv6 位址(&amp;P)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">顯示這個介面卡的主機 IPv6 位址若支援 IPv6。</translation>
     </message>
     <message>
@@ -2183,7 +2188,7 @@
         <translation type="obsolete">IPv6 網路遮罩長度(&amp;L)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">顯示這個介面卡的主機 IPv6 網路遮罩前置長度若支援 IPv6。</translation>
     </message>
     <message>
@@ -2203,7 +2208,7 @@
         <translation type="obsolete">伺服器位址(&amp;R)：</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務位址。</translation>
     </message>
     <message>
@@ -2211,7 +2216,7 @@
         <translation type="obsolete">伺服器遮罩(&amp;M)：</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務網路遮罩。</translation>
     </message>
     <message>
@@ -2219,7 +2224,7 @@
         <translation type="obsolete">位址下限(&amp;L)：</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址下限。</translation>
     </message>
     <message>
@@ -2227,7 +2232,7 @@
         <translation type="obsolete">位址上限(&amp;U)：</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址上限。</translation>
     </message>
 </context>
@@ -2254,7 +2259,7 @@
         <translation type="unfinished">IPv4 位址(&amp;I)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">顯示這個介面卡的主機 IPv4 位址。</translation>
     </message>
     <message>
@@ -2262,7 +2267,7 @@
         <translation type="unfinished">IPv4 網路遮罩(&amp;M)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">顯示這個介面卡的主機 IPv4 網路遮罩。</translation>
     </message>
     <message>
@@ -2270,7 +2275,7 @@
         <translation type="unfinished">IPv6 位址(&amp;P)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">顯示這個介面卡的主機 IPv6 位址若支援 IPv6。</translation>
     </message>
     <message>
@@ -2278,7 +2283,7 @@
         <translation type="unfinished">IPv6 網路遮罩長度(&amp;L)：</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">顯示這個介面卡的主機 IPv6 網路遮罩前置長度若支援 IPv6。</translation>
     </message>
     <message>
@@ -2298,7 +2303,7 @@
         <translation type="unfinished">伺服器位址(&amp;R)：</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務位址。</translation>
     </message>
     <message>
@@ -2306,7 +2311,7 @@
         <translation type="unfinished">伺服器遮罩(&amp;M)：</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">顯示與這個「僅限主機」介面卡關聯的網路之 DHCP 伺服器服務網路遮罩。</translation>
     </message>
     <message>
@@ -2314,7 +2319,7 @@
         <translation type="unfinished">位址下限(&amp;L)：</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址下限。</translation>
     </message>
     <message>
@@ -2322,7 +2327,7 @@
         <translation type="unfinished">位址上限(&amp;U)：</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">顯示由 DHCP 伺服器服務提供與這個「僅限主機」介面卡關聯的網路之位址上限。</translation>
     </message>
 </context>
@@ -2345,7 +2350,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2353,7 +2358,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2381,7 +2386,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2391,6 +2396,21 @@
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">連接埠轉送(&amp;P)</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">連接埠轉送規則</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2791,12 +2811,12 @@
         <translation type="obsolete">&lt;hr&gt;遠端桌面伺服器正在監聽連接埠 %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">指示這部虛擬機器所使用不同功能的狀態：&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1：&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3：&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5：&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2808,7 +2828,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -3009,7 +3029,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3045,7 +3065,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3053,11 +3073,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3065,7 +3085,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3077,11 +3097,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3135,7 +3155,7 @@
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>顯示將儲存這部虛擬機器快照的路徑。 注意，快照可能需要相當多的磁碟空間。</translation>
     </message>
     <message>
@@ -3163,7 +3183,7 @@
         <translation>描述(&amp;D)</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>顯示虛擬機器的描述。 描述欄位對於註解已安裝的客體作業系統之組態詳細資料是有用的。</translation>
     </message>
     <message>
@@ -3275,7 +3295,7 @@
         <translation>顯示或隱藏額外網路卡選項。</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>顯示這個介面卡的 MAC 位址。 它包含確切地 12 個字元從 {0-9,A-F} 選擇。 請注意第二個字元必須是一個偶數數位。</translation>
     </message>
     <message>
@@ -3323,7 +3343,7 @@
         <translation>選取主機系統中網路卡，流量將透過此網路卡傳入傳出。</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>輸入此網路卡將連接的內部網路名稱。 您可以選擇名稱以建立新的內部網路，其名稱未在此虛擬機器或其它中由任何其他網路卡所使用。</translation>
     </message>
     <message>
@@ -3370,6 +3390,14 @@
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsParallel</name>
@@ -3391,7 +3419,7 @@
         <translation>連接埠號(&amp;N)：</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>顯示並列埠號。您可以選擇標準並列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
     </message>
     <message>
@@ -3407,15 +3435,15 @@
         <translation>連接埠路徑(&amp;P)：</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>顯示主機並列裝置名稱。</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個並列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>顯示這個並列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;I/O APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>顯示這個並列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
     </message>
 </context>
@@ -3579,7 +3607,7 @@
         <translation>資料夾名稱：</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>顯示共用資料夾的名稱（客體作業系統將看到的）。</translation>
     </message>
     <message>
@@ -3627,7 +3655,7 @@
         <translation>連接埠號(&amp;N)：</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>顯示序列埠號。您可以選擇標準序列埠之一，或是選擇&lt;b&gt;使用者定義&lt;/b&gt;並手動指定連接埠參數。</translation>
     </message>
     <message>
@@ -3655,7 +3683,7 @@
         <translation>建立管線(&amp;C)</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>當連接埠工作在&lt;b&gt;主機管線&lt;/b&gt;模式時顯示主機中序列埠管線的路徑，或者當連接埠工作在&lt;b&gt;主機裝置&lt;/b&gt;模式時顯示主機序列裝置名稱。</translation>
     </message>
     <message>
@@ -3663,11 +3691,11 @@
         <translation>連接埠/檔案路徑(&amp;P)：</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;IO APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>顯示這個序列埠的 IRQ 號碼。這應該是介於 &lt;tt&gt;0&lt;/tt&gt; 與 &lt;tt&gt;255&lt;/tt&gt; 之間的整數。 只有當這部虛擬機器啟用 &lt;b&gt;I/O APIC&lt;/b&gt; 時，才能使用大於 &lt;tt&gt;15&lt;/tt&gt; 的值。</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>顯示這個序列埠的基礎 I/O 連接埠位址。有效值為從 &lt;tt&gt;0&lt;/tt&gt; 到 &lt;tt&gt;0xFFFF&lt;/tt&gt; 的整數。</translation>
     </message>
 </context>
@@ -4103,12 +4131,12 @@
         <translation>延伸功能：</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>勾選時，虛擬機器將支援 Input Output APIC (IO APIC)，這可能略微降低性能。 &lt;b&gt;注意：&lt;/b&gt; 安裝 Windows 客體作業系統後不要停用這個功能！</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>勾選時，虛擬機器將支援 Input Output APIC (I/O APIC)，這可能略微降低性能。 &lt;b&gt;注意：&lt;/b&gt; 安裝 Windows 客體作業系統後不要停用這個功能！</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>啟用 IO APIC (&amp;I)</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>啟用 I/O APIC (&amp;I)</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -4226,7 +4254,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4254,7 +4282,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4420,7 +4448,7 @@
         <translation>名稱(&amp;N)：</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>顯示篩選器名稱。</translation>
     </message>
     <message>
@@ -5846,7 +5874,7 @@
         <translation>名稱(&amp;N)：</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>顯示虛擬機器的名稱。</translation>
     </message>
     <message>
@@ -5854,7 +5882,7 @@
         <translation>類型(&amp;T)：</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>顯示計畫安裝到此虛擬機器的作業系統家族。</translation>
     </message>
     <message>
@@ -5862,7 +5890,7 @@
         <translation>版本(&amp;V)：</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>顯示計畫安裝到此虛擬機器的作業系統類型（稱為客體作業系統）。</translation>
     </message>
 </context>
@@ -7179,9 +7207,9 @@
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -7195,12 +7223,12 @@
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>停用</translation>
     </message>
     <message>
@@ -8426,17 +8454,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -8452,6 +8470,26 @@
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

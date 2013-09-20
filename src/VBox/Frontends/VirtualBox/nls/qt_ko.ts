@@ -589,7 +589,7 @@ to
         <translation>창을 닫습니다</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>창의 이름을 보여주고 조작하기 위한 컨트롤을 포함합니다</translation>
     </message>
 </context>

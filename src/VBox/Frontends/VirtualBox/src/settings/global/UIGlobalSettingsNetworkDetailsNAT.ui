@@ -63,7 +63,7 @@
       <item row="0" column="2" colspan="2">
        <widget class="QLineEdit" name="m_pEditorNetworkName">
         <property name="toolTip">
-         <string>Displays the name for this network.</string>
+         <string>Holds the name for this network.</string>
         </property>
        </widget>
       </item>
@@ -83,7 +83,7 @@
       <item row="1" column="2" colspan="2">
        <widget class="QLineEdit" name="m_pEditorNetworkCIDR">
         <property name="toolTip">
-         <string>Displays the CIDR for this network.</string>
+         <string>Holds the CIDR for this network.</string>
         </property>
        </widget>
       </item>
@@ -123,7 +123,7 @@
          <string>Advertise Default IPv6 &amp;Route</string>
         </property>
         <property name="toolTip">
-         <string>Determines whether default IPv6 route should be advertised for this network.</string>
+         <string>Determines whether this network should be advertised as the default IPv6 route.</string>
         </property>
        </widget>
       </item>

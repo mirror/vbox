@@ -591,7 +591,7 @@ a
         <translation>Tanca la finestra</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Mostra el nom de la finestra i conté controls per a manipular-la</translation>
     </message>
 </context>

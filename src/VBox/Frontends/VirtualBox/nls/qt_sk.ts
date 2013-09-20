@@ -584,7 +584,7 @@ na
         <translation>Zavrie okno</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Zobrazí meno okna a obsahuje riadiace prvky na manipuláciu s ním</translation>
     </message>
 </context>

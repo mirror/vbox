@@ -52,7 +52,7 @@
    <item row="1" column="1" >
     <widget class="QLineEdit" name="mLeName" >
      <property name="toolTip" >
-      <string>Displays the name of the shared folder (as it will be seen by the guest OS).</string>
+      <string>Holds the name of the shared folder (as it will be seen by the guest OS).</string>
      </property>
     </widget>
    </item>

@@ -1334,9 +1334,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1551,9 +1551,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -2819,6 +2819,11 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -3182,15 +3187,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visar sökvägen till standard-VDI-mappen. Den här mappen används, om inte uttryckligen angiven, när befintliga eller nya virtuella hårddiskar läggs till eller skapas.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Visar sökvägen till standardmappen för virtuella maskiner. Den här mappen används, om inte uttryckligen angiven, när nya virtuella maskiner skapas.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Visar sökvägen till biblioteket som tillhandahåller autentisering för fjärrskrivbordsklienter (VRDP).</translation>
     </message>
     <message>
@@ -3206,7 +3211,7 @@ p, li { white-space: pre-wrap; }
         <translation>V&amp;RDP-autentiseringsbibliotek:</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Visar sökvägen till standardmappen för hårddiskar. Denna mapp används, om inte uttryckligen angiven någon annanstans, när befintliga eller nya virtuella hårddiskar läggs till.</translation>
     </message>
     <message>
@@ -3269,7 +3274,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Värd&amp;tangent:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Visar tangenten som används som en värdtangent i virtuella maskinfönstret. Aktivera inmatningsfältet och tryck på en ny värdtangent. Observera att alfanumeriska värden, markörflyttning och redigering av tangenter inte kan användas som en värdtangent.</translation>
     </message>
     <message>
@@ -3609,35 +3614,35 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3681,7 +3686,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IPv4-adress:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Visar värdens IPv4-adress för detta kort.</translation>
     </message>
     <message>
@@ -3689,7 +3694,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Mask för IPv4-nätverk:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Visar värdens IPv4-nätverksmask för detta kort.</translation>
     </message>
     <message>
@@ -3697,7 +3702,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I&amp;Pv6-adress:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Visar värdens IPv6-adress för detta kort om IPv6 stöds.</translation>
     </message>
     <message>
@@ -3705,7 +3710,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mask&amp;längd för IPv6-nätverk:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Visar prefixlängd för värdens IPv6-nätverksmask för detta kort om IPv6 stöds.</translation>
     </message>
     <message>
@@ -3725,7 +3730,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Serverad&amp;ress:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visar adressen för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3733,7 +3738,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Server&amp;mask:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visar nätverksmasken för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3741,7 +3746,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Nedre adressgräns:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visar den nedre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3749,7 +3754,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Övre adressgräns:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Visar den övre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
 </context>
@@ -3776,7 +3781,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;IPv4-adress:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Visar värdens IPv4-adress för detta kort.</translation>
     </message>
     <message>
@@ -3784,7 +3789,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Mask för IPv4-nätverk:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Visar värdens IPv4-nätverksmask för detta kort.</translation>
     </message>
     <message>
@@ -3792,7 +3797,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">I&amp;Pv6-adress:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Visar värdens IPv6-adress för detta kort om IPv6 stöds.</translation>
     </message>
     <message>
@@ -3800,7 +3805,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Mask&amp;längd för IPv6-nätverk:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Visar prefixlängd för värdens IPv6-nätverksmask för detta kort om IPv6 stöds.</translation>
     </message>
     <message>
@@ -3820,7 +3825,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Serverad&amp;ress:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visar adressen för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3828,7 +3833,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Server&amp;mask:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visar nätverksmasken för DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3836,7 +3841,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Nedre adressgräns:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visar den nedre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
     <message>
@@ -3844,7 +3849,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Övre adressgräns:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Visar den övre adressgränsen som erbjuds av DHCP-servern som är verksam på nätverket som är associerat med detta endast-värd-kort.</translation>
     </message>
 </context>
@@ -3867,7 +3872,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3875,7 +3880,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3903,7 +3908,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3913,6 +3918,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">Omdirigering av &amp;portar</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">Regler för omdirigering av portar</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4539,12 +4559,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;hr&gt;Fjärrskrivbordsservern lyssnar på port %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Indikerar status för olika funktioner som används av denna virtuella maskin:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4556,7 +4576,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -4705,7 +4725,7 @@ p, li { white-space: pre-wrap; }
         <translation>Server&amp;port:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Visar VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att återställa porten till standardvärdet.</translation>
     </message>
     <message>
@@ -4781,7 +4801,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4817,7 +4837,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4825,11 +4845,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4837,7 +4857,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4849,11 +4869,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4911,7 +4931,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Visar sökvägen där ögonblicksbilder av den virtuella maskinen lagras. Observera att ögonblicksbilder kan ta upp en hel del diskutrymme.</translation>
     </message>
     <message>
@@ -4927,7 +4947,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Namn:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Visar namnet på den virtuella maskinen.</translation>
     </message>
     <message>
@@ -4935,7 +4955,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Operativsystems&amp;typ:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visar operativsystemet som du planerar att installera i den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
     </message>
     <message>
@@ -5011,8 +5031,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Aktivera A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (I/O APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -5059,7 +5079,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Beskrivning</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Visar beskrivningen för den virtuella maskinen. Beskrivningsfältet är användbart för att kommentera konfigurationsdetaljer för det installerade gästoperativsystemet.</translation>
     </message>
     <message>
@@ -5206,7 +5226,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Nätverksnamn:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Visar namnet på det interna nätverket som har valts för denna adapter.</translation>
     </message>
     <message>
@@ -5214,7 +5234,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Maski&amp;nvaruadress:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Visar maskinvaruadressen för denna adapter. Den kan innehålla exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
     </message>
     <message>
@@ -5238,7 +5258,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Gränssn&amp;ittsnamn:</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Visar TAP-gränssnittets namn.</translation>
     </message>
     <message>
@@ -5246,7 +5266,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Konfigurations&amp;program:</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Visar kommandot som körs för att konfigurera TAP-gränssnittet.</translation>
     </message>
     <message>
@@ -5258,7 +5278,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">A&amp;vstängningsprogram:</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Visar kommandot som körs för att stänga av TAP-gränssnittet.</translation>
     </message>
     <message>
@@ -5398,7 +5418,7 @@ p, li { white-space: pre-wrap; }
         <translation>Väljer nätverksadaptern på värdsystemet som trafik till och från detta nätverkskort kommer att gå igenom.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>Ange namnet för det interna nätverket som detta nätverkskort kommer att vara anslutet till. Du kan skapa ett nytt internt nätverk genom att välja ett namn som inte används av något annat nätverkskort i denna virtuella maskin eller andra maskiner.</translation>
     </message>
     <message>
@@ -5431,6 +5451,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5477,7 +5505,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kort för &amp;bryggat nätverk:</translation>
     </message>
     <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <source>Holds the name of the host network adapter selected for bridged networking.</source>
         <translation type="obsolete">Visar namnet på värdens nätverkskort som valts för bryggat nätverk.</translation>
     </message>
     <message>
@@ -5485,7 +5513,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Internt &amp;nätverk:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Visar namnet på det interna nätverket som har valts för detta kort.</translation>
     </message>
     <message>
@@ -5493,7 +5521,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kort för endast-värd-&amp;nätverk:</translation>
     </message>
     <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <source>Holds the name of the VirtualBox network adapter selected for host-only networking.</source>
         <translation type="obsolete">Visar namnet på VirtualBox nätverkskort som valts för endast-värd-nätverk.</translation>
     </message>
     <message>
@@ -5505,7 +5533,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;MAC-adress för gäst:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Visar maskinvaruadressen för detta kort. Den innehåller exakt 12 tecken valda från {0-9,A-F}. Observera att det andra tecknet måste vara en jämn siffra.</translation>
     </message>
     <message>
@@ -5557,7 +5585,7 @@ parallel ports</comment>
         <translation>Port&amp;nummer:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Visar parallellportsnumret. Du kan välj en av standardportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och ange portparametrarna manuellt.</translation>
     </message>
     <message>
@@ -5565,15 +5593,15 @@ parallel ports</comment>
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visar IRQ-numret för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; har aktiverats för denna virtuella maskin.</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visar IRQ-numret för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;I/O APIC&lt;/b&gt; har aktiverats för denna virtuella maskin.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>In/Ut-po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visar basadressen för In/Ut-porten för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5581,7 +5609,7 @@ parallel ports</comment>
         <translation>Portsökvä&amp;g:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Visar värdmaskinens enhetsnamn för parallellporten.</translation>
     </message>
     <message>
@@ -5590,11 +5618,11 @@ parallel ports</comment>
         <translation>Port %1</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visar IRQ-numret för denna parallellport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visar IRQ-numret för denna parallellport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;I/O APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visar I/O-basportadressen för denna parallellport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -5774,7 +5802,7 @@ parallel ports</comment>
         <translation>Mappnamn:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Visar namnet på den delade mappen (som den ser ut från gästoperativsystemet).</translation>
     </message>
     <message>
@@ -5823,7 +5851,7 @@ serial ports</comment>
         <translation>Port&amp;nummer:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Visar serieportens nummer. Du kan välja någon av standardserieportarna eller välja &lt;b&gt;Användardefinierad&lt;/b&gt; och manuellt ange parametrar för porten.</translation>
     </message>
     <message>
@@ -5831,15 +5859,15 @@ serial ports</comment>
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Visar IRQ-numret för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;IO APIC&lt;/b&gt; är aktiverat för den här virtuella maskinen.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Visar IRQ-numret för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; kan endast användas om &lt;b&gt;I/O APIC&lt;/b&gt; är aktiverat för den här virtuella maskinen.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>I/O-po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Visar I/O-basportadressen för den här serieporten. Giltiga värden är heltal i ett intervall från &lt;tt&gt;0&lt;/tt&gt; upp till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5863,7 +5891,7 @@ serial ports</comment>
         <translation type="obsolete">Portsö&amp;kväg:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Visar sökvägen till serieportens rör på värden när porten arbetar i läget &lt;b&gt;Värdrör&lt;/b&gt;, eller värdmaskinens serieenhetsnamn när porten arbetar i läget &lt;b&gt;Värdenhet&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5876,11 +5904,11 @@ serial ports</comment>
         <translation>Port/Filsökvä&amp;g:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Visar IRQ-numret för denna serieport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;IO APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Visar IRQ-numret för denna serieport. Detta bör vara ett heltal mellan &lt;tt&gt;0&lt;/tt&gt; och &lt;tt&gt;255&lt;/tt&gt;. Värden större än &lt;tt&gt;15&lt;/tt&gt; får endast användas om  &lt;b&gt;I/O APIC&lt;/b&gt;-inställningen är aktiverad för den virtuella maskinen.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Visar I/O-basportadressen för denna serieport. Giltiga värden är heltal inom intervallet &lt;tt&gt;0&lt;/tt&gt; till &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -6396,7 +6424,7 @@ serial ports</comment>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless the IO-APIC feature is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation type="obsolete">det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att funktionen IO APIC aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
+        <translation type="obsolete">det finns fler än en virtuell processor tilldelad till denna virtuella maskin som också kräver att funktionen I/O APIC aktiveras. Om inte kommer SMP inte att fungera så att denna funktion kommer automatiskt att aktiveras när du godkänner inställningarna genom att trycka på knappen OK.</translation>
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
@@ -6469,12 +6497,12 @@ serial ports</comment>
         <translation type="obsolete">Aktivera &amp;ACPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (IO APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>När kryssad kommer den virtuella maskinen att ha stöd för Input Output APIC (I/O APIC), som till viss del kan minska prestandan för den virtuella maskinen. &lt;b&gt;Observera:&lt;/b&gt; inaktivera inte denna funktion efter att ett Windows-gästoperativsystem har installerats!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>Aktivera &amp;IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>Aktivera &amp;I/O APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -6600,7 +6628,7 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6628,7 +6656,7 @@ serial ports</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6798,7 +6826,7 @@ serial ports</comment>
         <translation>&amp;Namn:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Visar filternamnet.</translation>
     </message>
     <message>
@@ -8772,7 +8800,7 @@ serial ports</comment>
         <translation type="unfinished">&amp;Namn:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="unfinished">Visar namnet på den virtuella maskinen.</translation>
     </message>
     <message>
@@ -8780,7 +8808,7 @@ serial ports</comment>
         <translation type="unfinished">&amp;Typ:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="unfinished">Visar operativsystemsfamiljen som du planerar att installera på denna virtuella maskin.</translation>
     </message>
     <message>
@@ -8788,7 +8816,7 @@ serial ports</comment>
         <translation type="unfinished">&amp;Version:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11863,7 +11891,7 @@ Version %1</translation>
         <translation type="obsolete">Värd&amp;tangent:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Visar tangenten som används som en värdtangent i virtuella maskinfönstret. Aktivera inmatningsfältet och tryck på en ny värdtangent. Observera att alfanumeriska värden, markörflyttning och redigering av tangenter inte kan användas som en värdtangent.</translation>
     </message>
     <message>
@@ -11956,9 +11984,9 @@ Version %1</translation>
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Not Attached</source>
@@ -11982,12 +12010,12 @@ Version %1</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Aktiverat</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Inaktiverat</translation>
     </message>
     <message>
@@ -13677,17 +13705,7 @@ Version %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -13703,6 +13721,26 @@ Version %1</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14080,7 +14118,7 @@ Version %1</translation>
         <translation type="obsolete">Operativ&amp;system:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Visar operativsystemsfamiljen som du planerar att installera på denna virtuella maskin.</translation>
     </message>
     <message>
@@ -14088,7 +14126,7 @@ Version %1</translation>
         <translation type="obsolete">V&amp;ersion:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Visar operativsystemstypen som du planerar att installera på den här virtuella maskinen (kallat ett gästoperativsystem).</translation>
     </message>
     <message>
@@ -15075,7 +15113,7 @@ Version %1</translation>
         <translation type="obsolete">&amp;ISO-avbildningsfil</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Visar avbildningsfilen att montera på den virtuella CD/DVD-enheten och tillåter att snabbt välja en annan avbildning.</translation>
     </message>
     <message>
@@ -15217,7 +15255,7 @@ Version %1</translation>
         <translation type="obsolete">Avb&amp;ildningsfil</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Visar avbildningsfilen att montera på den virtuella diskettenheten och tillåter att snabbt välja en annan avbildning.</translation>
     </message>
     <message>
@@ -15244,7 +15282,7 @@ Version %1</translation>
         <translation type="obsolete">Server&amp;port:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Visar VRDP-serverns portnummer. Du kan ange &lt;tt&gt;0&lt;/tt&gt; (noll) för att återställa porten till standardvärdet.</translation>
     </message>
     <message>

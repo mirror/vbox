@@ -575,7 +575,7 @@ to
         <translation>Sulkee ikkunan</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Näyttää ikkunan nimen ja sisältää ohjaimia ikkunan käsittelyyn</translation>
     </message>
 </context>

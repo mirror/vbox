@@ -901,9 +901,9 @@
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1622,11 +1622,11 @@
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>مسیر را به پوشه پیش فرض ماشین مجازی را نشان میدهد. این پوشه ،اگر صریحا مشخص نشده در غیر اینصورت، هنگام ایجاد ماشین مجازی جدید بکاررفته است.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>مسیری به کتابخانه ای که تایید اعتبار برای نمایش ریموت کلاینت  (VRDP) ارائه میکند،را نشان میدهد.</translation>
     </message>
     <message>
@@ -1665,7 +1665,7 @@
         <translation>کلید میزب&amp;ان:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation>کلید بکاررفته بعنوان یک کلیدمیزبان در پنجره ماشین مجازی را نشان میدهد.فیلد ورودی را فعال کرده و کلید میزبان جدید را فشاردهید.توجه کنید که آن الفبایی است،حرکت های نشانگر و کلیدهای ویرایش نمیتواند استفاده شود.</translation>
     </message>
     <message>
@@ -1902,7 +1902,7 @@
         <translation>آد&amp;رس IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation>آدرس میزبان IPv4 برای این آداپتور نشان میدهد.</translation>
     </message>
     <message>
@@ -1910,7 +1910,7 @@
         <translation>ماسک ش&amp;بکه IPv4:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation>ماسک شبکه میزبان IPv4 برای این آداپتور نشان میدهد.</translation>
     </message>
     <message>
@@ -1918,7 +1918,7 @@
         <translation>آدرس I&amp;Pv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation>آدرس میزبان IPv6 برای این آداپتور اگر IPv6 پشتیبانی شده باشد را نشان میدهد.</translation>
     </message>
     <message>
@@ -1926,7 +1926,7 @@
         <translation>طول ماسک ش&amp;بکه IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation>طول پیشوند ماسک شبکه میزبان IPv6 برای این آداپتور اگر  IPv6 پشتیبانی شده باشد را نشان میدهد.</translation>
     </message>
     <message>
@@ -1946,7 +1946,7 @@
         <translation>آدرس سرور&amp;:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>آدرس سرور دی اِچ سی پی خدماتی شبکه وابسته سازی شده با آداپتور فقط-میزبان را نشان میدهد.</translation>
     </message>
     <message>
@@ -1954,7 +1954,7 @@
         <translation>ماسک &amp;سرور:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>ماسک شبکه سرور دی اِچ سی پی خدماتی شبکه وابسته سازی شده با این اداپتور فقط-میزبان را نشان میدهد.</translation>
     </message>
     <message>
@@ -1962,7 +1962,7 @@
         <translation>محدوده آدر&amp;س پایین تر:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>محدوده آدرس پایین تر ارائه شده توسط سرور دی اِچ سی پی خدماتی شبکه وابسته سازی شده با این آداپتور فقط-میزبان را نشان میدهد.</translation>
     </message>
     <message>
@@ -1970,7 +1970,7 @@
         <translation>محدوده آ&amp;درس بالاتر:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation>محدوده آدرس پایین تر ارائه شده توسط سرور دی اِچ سی پی خدماتی شبکه وابسته سازی شده با این اداپتور فقط-میزبان را نشان میدهد.</translation>
     </message>
 </context>
@@ -2274,7 +2274,7 @@
         <translation>&lt;hr&gt;سرور ریموت دسکتاپ گوش میکند به پورت %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation>وضعیت ویزگی های مختلف بکاررفته در این ماشین مجازی را نشان میدهد:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
@@ -2474,7 +2474,7 @@
 <context>
     <name>UIMachineSettingsGeneral</name>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>مسیری که ضبط وضعیت ماشین مجازی در آن ذخیره شده را نشان میدهد.آگاه باشید که ضبط وضعیت فضای دیسک بسیاری استفاده می کند.</translation>
     </message>
     <message>
@@ -2502,7 +2502,7 @@
         <translation>تو&amp;ضیحات</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>توضیحات ماشین مجازی را نشان میدهد.فیلد توضیحات برای نوشتن توضیح در جزئیات پیکربندی سیستم عامل مهمان نصب شده سودمند است.</translation>
     </message>
     <message>
@@ -2606,7 +2606,7 @@
         <translation>نمایش یا عدم نمایش گزینه های اضافی آداپتور شبکه.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>آدرس مک این آداپتور را نشان میدهد. آن دقیقا شامل 12 کاراکتر از {0-9,A-F} هست. توجه کنید که کاراکتر دوم باید یک عدد زوج باشد.</translation>
     </message>
     <message>
@@ -2654,7 +2654,7 @@
         <translation>آداپتور شبکه ای را که در سیستم میزبان در آن ترافیک به و از این کارت شبکه انجام میشود را انتخاب کنید.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>نام شبکه داخلی که این کارت شبکه به آن متصل شده است را وارد کنید.میتوانید یک شبکه داخلی جدید با انتخاب نامی که توسط کارت شبکه دیگری در این ماشین مجازی یا سایر آنها بکارنرفته است ایجاد کنید.</translation>
     </message>
     <message>
@@ -2698,7 +2698,7 @@
         <translation>شماره &amp;پورت:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>شماره پورت پارالل را نشان میدهد. میتوانید یکی از پورت های استاندارد پارالل را انتخاب کنید یا &lt;b&gt;توسط کاربر تعریف شده&lt;/b&gt; را انتخاب کنید و پارامترهای پورت را دستی تعیین کنید.</translation>
     </message>
     <message>
@@ -2714,15 +2714,15 @@
         <translation>مسیر &amp;پورت:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>نام دستگاه پارالل میزبان را نشان میدهد.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>شماره IRQ این پورت پارالل را نشان میدهد. این باید یک عدد کامل بین &lt;tt&gt;0&lt;/tt&gt; و &lt;tt&gt;255&lt;/tt&gt; باشد. مقادیر بزرگتر از &lt;tt&gt;15&lt;/tt&gt; فقط میتواند استفاده شود اگر تنظیمات &lt;b&gt;IO APIC&lt;/b&gt; برای این ماشین مجازی فعال شده باشد.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>شماره IRQ این پورت پارالل را نشان میدهد. این باید یک عدد کامل بین &lt;tt&gt;0&lt;/tt&gt; و &lt;tt&gt;255&lt;/tt&gt; باشد. مقادیر بزرگتر از &lt;tt&gt;15&lt;/tt&gt; فقط میتواند استفاده شود اگر تنظیمات &lt;b&gt;I/O APIC&lt;/b&gt; برای این ماشین مجازی فعال شده باشد.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>آدرس پورت ورودی/خروجی پایه این پورت پارالل را نشان میدهد. مقادیر معتبر اعداد صحیحی در محدوده &lt;tt&gt;0&lt;/tt&gt; به &lt;tt&gt;0xFFFF&lt;/tt&gt; هستند.</translation>
     </message>
 </context>
@@ -2866,7 +2866,7 @@
         <translation>نام پوشه:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>نام پوشه اشتراکی را نشان میدهد (طوریکه در سیستم عامل مهمان نشان داده میشود).</translation>
     </message>
     <message>
@@ -2914,7 +2914,7 @@
         <translation>شماره &amp;پورت:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>شماره پورت سریال را نشان میدهد. میتوانید یکی از پورت های سریال استاندارد را انتخاب کنید یا از &lt;b&gt;توسط کاربر تعریف شده&lt;/b&gt; انتخاب و پارامترهای پورت را دستی وارد کنید.</translation>
     </message>
     <message>
@@ -2942,7 +2942,7 @@
         <translation>ایجاد &amp;میله</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>مسیر را به میله پورت سریال در میزبان را وقتیکه پورت در حالت &lt;b&gt;میله میزبان&lt;/b&gt; کار میکند را نشان میدهد، یا نام دستگاه سریال میزبان را وقتیکه پورت در حالت &lt;b&gt;دستگاه میزبان&lt;/b&gt; در حال کار است را نشان میدهد.</translation>
     </message>
     <message>
@@ -2950,11 +2950,11 @@
         <translation>مسیر پور&amp;ت/فایل:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>شماره IRQ این پورت سریال را نشان میدهد. این باید یک عدد کامل بین &lt;tt&gt;0&lt;/tt&gt; و &lt;tt&gt;255&lt;/tt&gt; باشد. مقادیر بزرگتر از &lt;tt&gt;15&lt;/tt&gt; فقط میتواند استفاده شود اگر تنظیمات &lt;b&gt;IO APIC&lt;/b&gt; برای این ماشین مجازی فعال شده باشد.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>شماره IRQ این پورت سریال را نشان میدهد. این باید یک عدد کامل بین &lt;tt&gt;0&lt;/tt&gt; و &lt;tt&gt;255&lt;/tt&gt; باشد. مقادیر بزرگتر از &lt;tt&gt;15&lt;/tt&gt; فقط میتواند استفاده شود اگر تنظیمات &lt;b&gt;I/O APIC&lt;/b&gt; برای این ماشین مجازی فعال شده باشد.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>آدرس پورت ورودی/خروجی پایه را برای این پورت سریال را نشان میدهد. مقادیر معتبر اعداد صحیح در محدوده ای از &lt;tt&gt;0&lt;/tt&gt; به &lt;tt&gt;0xFFFF&lt;/tt&gt; هستند.</translation>
     </message>
 </context>
@@ -3370,12 +3370,12 @@
         <translation>ویژگی تمدید یافته:</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>وقتیکه انتخاب شده، ماشین مجازی از ورودی خروجیAPIC (IO APIC) پشتیبانی میکند، که ممکن است اندکی کارایی را کاهش دهد. &lt;b&gt;توجه:&lt;/b&gt;این ویزگی را بعد از نصب ویندوز سیستم عامل مهمان غیرفعال نکنید!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>وقتیکه انتخاب شده، ماشین مجازی از ورودی خروجیAPIC (I/O APIC) پشتیبانی میکند، که ممکن است اندکی کارایی را کاهش دهد. &lt;b&gt;توجه:&lt;/b&gt;این ویزگی را بعد از نصب ویندوز سیستم عامل مهمان غیرفعال نکنید!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
-        <translation>فعالسازی &amp;IO APIC</translation>
+        <source>Enable &amp;I/O APIC</source>
+        <translation>فعالسازی &amp;I/O APIC</translation>
     </message>
     <message>
         <source>&amp;Processor</source>
@@ -3639,7 +3639,7 @@
         <translation>نا&amp;م:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>نام فیلتر را نمایش می دهد.</translation>
     </message>
     <message>
@@ -4831,7 +4831,7 @@
         <translation>نا&amp;م:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>نام ماشین مجازی را نشان میدهد.</translation>
     </message>
     <message>
@@ -4839,7 +4839,7 @@
         <translation>نو&amp;ع:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>خانواده سیستم عاملی را که شما قصد نصب آن را در ماشین مجازی دارید نشان میدهد.</translation>
     </message>
     <message>
@@ -4847,7 +4847,7 @@
         <translation>&amp;نسخه:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>نوع سیستم عاملی که شما قصد دارید داخل ماشین مجازی را نصب کنید نشان میدهد،که بعنوان سیستم عامل مهمان شناخته میشود.</translation>
     </message>
 </context>
@@ -6075,9 +6075,9 @@
         <translation>ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation>IO APIC</translation>
+        <translation>I/O APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -6091,12 +6091,12 @@
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>فعال شده</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>غیرفعال شده</translation>
     </message>
     <message>

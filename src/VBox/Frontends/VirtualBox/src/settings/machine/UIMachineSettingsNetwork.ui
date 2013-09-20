@@ -208,7 +208,7 @@
          </sizepolicy>
         </property>
         <property name="whatsThis">
-         <string>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
+         <string>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</string>
         </property>
        </widget>
       </item>

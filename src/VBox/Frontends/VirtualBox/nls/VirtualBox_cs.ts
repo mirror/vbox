@@ -1314,9 +1314,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -1531,9 +1531,9 @@
         <translation type="obsolete">ACPI</translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
-        <translation type="obsolete">IO APIC</translation>
+        <translation type="obsolete">I/O APIC</translation>
     </message>
     <message>
         <source>BIOS</source>
@@ -2800,6 +2800,11 @@ p, li { white-space: pre-wrap; }
         <comment>details (display/video capture)</comment>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>NAT Network, &apos;%1&apos;</source>
+        <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIGDetailsUpdateThreadAudio</name>
@@ -3163,15 +3168,15 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIGlobalSettingsGeneral</name>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Zobrazuje cestu k výchozí složce pro VDI. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation>Zobrazuje cestu k výchozí složce pro virtuální počítače. Pokud se neurčí jinak, je tato složka použita při vytváření nového virtuálního počítače.</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation>Zobrazuje cestu ke knihovně, která poskytuje autentizaci pro klienty Vzdálené plochy (VRDP).</translation>
     </message>
     <message>
@@ -3195,7 +3200,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Ikona s náhledem v reálném čase</translation>
     </message>
     <message>
-        <source>Displays the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default hard disk folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Zobrazuje cestu k výchozí složce pro obrazy pevných disků. Pokud se neurčí jinak, je tato složka použita v případě přidání existujícího nebo vytvoření nového virtuálního pevného disku.</translation>
     </message>
     <message>
@@ -3250,7 +3255,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Klávesa hostitele:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Zobrazuje klávesu použitou jako Klávesu hostitele v okně virtuálního počítače. Aktivujte zadávací pole a stiskněte novou Klávesu hostitele. Alfanumerické klávesy, šipky a funkční klávesy nelze použít jako Klávesu hostitele.</translation>
     </message>
     <message>
@@ -3590,35 +3595,35 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
+        <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The name &lt;b&gt;%1&lt;/b&gt; for NAT network on position &lt;b&gt;%2&lt;/b&gt; is already in use.</source>
+        <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3662,7 +3667,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;IPv4 adresa:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="obsolete">Zobrazí IPv4 adresu hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3670,7 +3675,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">IPv4 síťová &amp;maska:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="obsolete">Zobrazí IPv4 síťovou masku hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3678,7 +3683,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">I&amp;Pv6 adresa:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Pokud je IPv6 podporováno, zobrazí adresu hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3686,7 +3691,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Délka masky pro IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="obsolete">Pokud je IPv6 podporováno, zobrazí délku prefixu IPv6 masky hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3706,7 +3711,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Adresa serveru:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Zobrazuje adresu DHCP serveru, který bude obsluhovat toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3714,7 +3719,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Maska s&amp;erveru:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Zobrazuje síťovou masku DHCP serveru, který bude obsluhovat toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3722,7 +3727,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Spodní hranice:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Zobrazuje spodní hranici rozsahu adres, které bude DHCP server nabízet pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3730,7 +3735,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Horní hranice:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="obsolete">Zobrazuje horní hranici rozsahu adres, které bude DHCP server nabízet pro toto síťové rozhraní.</translation>
     </message>
 </context>
@@ -3757,7 +3762,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;IPv4 adresa:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 address for this adapter.</source>
+        <source>Holds the host IPv4 address for this adapter.</source>
         <translation type="unfinished">Zobrazí IPv4 adresu hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3765,7 +3770,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">IPv4 síťová &amp;maska:</translation>
     </message>
     <message>
-        <source>Displays the host IPv4 network mask for this adapter.</source>
+        <source>Holds the host IPv4 network mask for this adapter.</source>
         <translation type="unfinished">Zobrazí IPv4 síťovou masku hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3773,7 +3778,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">I&amp;Pv6 adresa:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 address for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Pokud je IPv6 podporováno, zobrazí adresu hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3781,7 +3786,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Délka masky pro IPv6:</translation>
     </message>
     <message>
-        <source>Displays the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
+        <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
         <translation type="unfinished">Pokud je IPv6 podporováno, zobrazí délku prefixu IPv6 masky hosta pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3801,7 +3806,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Adresa serveru:</translation>
     </message>
     <message>
-        <source>Displays the address of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Zobrazuje adresu DHCP serveru, který bude obsluhovat toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3809,7 +3814,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Maska s&amp;erveru:</translation>
     </message>
     <message>
-        <source>Displays the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Zobrazuje síťovou masku DHCP serveru, který bude obsluhovat toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3817,7 +3822,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Spodní hranice:</translation>
     </message>
     <message>
-        <source>Displays the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Zobrazuje spodní hranici rozsahu adres, které bude DHCP server nabízet pro toto síťové rozhraní.</translation>
     </message>
     <message>
@@ -3825,7 +3830,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">&amp;Horní hranice:</translation>
     </message>
     <message>
-        <source>Displays the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
+        <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
         <translation type="unfinished">Zobrazuje horní hranici rozsahu adres, které bude DHCP server nabízet pro toto síťové rozhraní.</translation>
     </message>
 </context>
@@ -3848,7 +3853,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the name for this network.</source>
+        <source>Holds the name for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3856,7 +3861,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Displays the CIDR for this network.</source>
+        <source>Holds the CIDR for this network.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3884,7 +3889,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines whether default IPv6 route should be advertised for this network.</source>
+        <source>Determines whether this network should be advertised as the default IPv6 route.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -3894,6 +3899,21 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&amp;Port Forwarding</source>
         <translation type="unfinished">&amp;Předávání portů</translation>
+    </message>
+</context>
+<context>
+    <name>UIGlobalSettingsPortForwardingDlg</name>
+    <message>
+        <source>Port Forwarding Rules</source>
+        <translation type="unfinished">Pravidla pro přesměrování portů</translation>
+    </message>
+    <message>
+        <source>IPv4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>IPv6</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4396,12 +4416,12 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;hr&gt;Vzdálená plocha serveru poslouchá na portu  %1</translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="obsolete">Indikuje stav virtualizačních rozšíření použitých tímto virtuálním počítačem:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6%&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;Indicates the activity of the video capture:&lt;/nobr&gt;&lt;br&gt;%1</source>
+        <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4413,7 +4433,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Indicates the status of different features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
+        <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -4570,7 +4590,7 @@ p, li { white-space: pre-wrap; }
         <translation>Po&amp;rt serveru:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Zobrazuje číslo portu pro VRDP server. Můžete uvést &lt;tt&gt;0&lt;/tt&gt; (nulu) pro nastavení čísla portu na standardní hodnotu.</translation>
     </message>
     <message>
@@ -4646,7 +4666,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox uses video recording to record VM session.</source>
+        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4682,7 +4702,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Frames with a higher frequency will be skipped. Reducing this value increses the number of skipped frames but reduces the file size.</source>
+        <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4690,11 +4710,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value makes the video look better for the cost of an increased file size.</source>
+        <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4702,7 +4722,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4714,11 +4734,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
+        <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The virtual machine is set to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
+        <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4788,7 +4808,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation>Zobrazuje cestu, kam jsou ukládány snímky virtuálního počítače. Snímky můžou zabrat velké množství diskového prostoru.</translation>
     </message>
     <message>
@@ -4804,7 +4824,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Název:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Zobrazuje název virtuálního počítače.</translation>
     </message>
     <message>
@@ -4812,7 +4832,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Typ OS:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Zobrazuje typ operačního systému, který se chystáte instalovat na tento virtuální počítač (nazývaný hostovaný operační systém).</translation>
     </message>
     <message>
@@ -4888,8 +4908,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Povolit A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation type="obsolete">Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (IO APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation type="obsolete">Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (I/O APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
     </message>
     <message>
         <source>Enable IO A&amp;PIC</source>
@@ -4944,7 +4964,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pop&amp;is</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation>Zobrazuje popis virtuálního počítače. Pole popisu je užitečné pro komentář k detailům konfigurace instalovaného hostovaného OS.</translation>
     </message>
     <message>
@@ -5151,7 +5171,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Název &amp;sítě:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Zobrazuje název vnitřní síťe vybraného síťového adaptéru.</translation>
     </message>
     <message>
@@ -5159,7 +5179,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;MAC adresa:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation>Zobrazuje MAC adresu karty. Obsahuj 12 znaků vybraných z {0-9,A-F}. Pozor, druhý znak musí být sudá číslice.</translation>
     </message>
     <message>
@@ -5183,7 +5203,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Název ro&amp;zhraní:</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Zobrazuje název TAP rozhraní.</translation>
     </message>
     <message>
@@ -5191,7 +5211,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Příkaz pro &amp;nastavení:</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Zobrazuje příkaz prováděný pro nastavení TAP rozhraní.</translation>
     </message>
     <message>
@@ -5203,7 +5223,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Příkaz pro &amp;ukončení:</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Zobrazuje příkaz prováděný pro ukončení TAP rozhraní.</translation>
     </message>
     <message>
@@ -5263,7 +5283,7 @@ p, li { white-space: pre-wrap; }
         <translation>Zvolte síťovou kartu, přes kterou bude probíhat komunikace na hostitelském systému.</translation>
     </message>
     <message>
-        <source>Enter the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
+        <source>Holds the name of the internal network that this network card will be connected to. You can create a new internal network by choosing a name which is not used by any other network cards in this virtual machine or others.</source>
         <translation>Zadejte název interní sítě, ke které je tato síťová karta připojena. Novou interní síť můžete vytvořit zadáním názvu, který není použit žádnou jinou síťovou kartou v tomto virtuálním počítači.</translation>
     </message>
     <message>
@@ -5304,6 +5324,14 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No NAT network name is currently specified.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -5350,7 +5378,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Rozhraní pro síťové pře&amp;mostění:</translation>
     </message>
     <message>
-        <source>Displays the name of the host network adapter selected for bridged networking.</source>
+        <source>Holds the name of the host network adapter selected for bridged networking.</source>
         <translation type="obsolete">Zobrazuje název vybraného rozhraní pro síťové přemostění.</translation>
     </message>
     <message>
@@ -5358,7 +5386,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Vn&amp;itřní síť:</translation>
     </message>
     <message>
-        <source>Displays the name of the internal network selected for this adapter.</source>
+        <source>Holds the name of the internal network selected for this adapter.</source>
         <translation type="obsolete">Zobrazuje název vnitřní síťe vybraného síťového rozhraní.</translation>
     </message>
     <message>
@@ -5366,7 +5394,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Ro&amp;zhraní pro síť mezi hostitelem:</translation>
     </message>
     <message>
-        <source>Displays the name of the VirtualBox network adapter selected for host-only networking.</source>
+        <source>Holds the name of the VirtualBox network adapter selected for host-only networking.</source>
         <translation type="obsolete">Zobrazuje název vybraného rozhraní pro síť mezi hostitelem.</translation>
     </message>
     <message>
@@ -5382,7 +5410,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;MAC adresa hosta:</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Zobrazuje MAC adresu karty. Obsahuje 12 znaků vybraných z {0-9,A-F}. Pozor, druhý znak musí být sudá číslice.</translation>
     </message>
     <message>
@@ -5429,7 +5457,7 @@ p, li { white-space: pre-wrap; }
         <translation>Čís&amp;lo portu:</translation>
     </message>
     <message>
-        <source>Displays the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Holds the parallel port number. You can choose one of the standard parallel ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Zobrazuje číslo paralelního portu. Můžete zvolit jeden ze standardních sériových portů nebo vybrat &lt;b&gt;Uživatelem definováno&lt;/b&gt; a nastavit parametry portu ručně.</translation>
     </message>
     <message>
@@ -5437,15 +5465,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Zobrazuje IRQ číslo tohoto paralelního portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je pro tento virtuální počítač povoleno &lt;b&gt;IO APIC&lt;/b&gt;.</translation>
+        <source>Holds the IRQ number of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Zobrazuje IRQ číslo tohoto paralelního portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je pro tento virtuální počítač povoleno &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>I/O po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Zobrazuje základní adresu I/O portu tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5453,15 +5481,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Cesta k portu:</translation>
     </message>
     <message>
-        <source>Displays the host parallel device name.</source>
+        <source>Holds the host parallel device name.</source>
         <translation>Zobrazuje název zařízení paralelního portu hostitele.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Ukazuje hodnotu IRQ tohoto paralelního portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;IO APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
+        <source>Holds the IRQ number of this parallel port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Ukazuje hodnotu IRQ tohoto paralelního portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;I/O APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this parallel port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Zobrazuje základní adresu I/O portu tohoto paralelního portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -5641,7 +5669,7 @@ p, li { white-space: pre-wrap; }
         <translation>Název složky:</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation>Zobrazuje název sdílené složky (jak bude zobrazen v hostovaném OS).</translation>
     </message>
     <message>
@@ -5689,7 +5717,7 @@ p, li { white-space: pre-wrap; }
         <translation>Čís&amp;lo portu:</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation>Zobrazuje číslo sériového portu. Můžete zvolit jeden ze standardních sériových portů nebo vybrat &lt;b&gt;Uživatelem definováno&lt;/b&gt; a nastavit parametry portu ručně.</translation>
     </message>
     <message>
@@ -5697,15 +5725,15 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;IRQ:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Zobrazuje IRQ číslo tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je tomuto virtuálnímu počítači povoleno &lt;b&gt;IO APIC&lt;/b&gt;.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Zobrazuje IRQ číslo tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je tomuto virtuálnímu počítači povoleno &lt;b&gt;I/O APIC&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
         <translation>I/O po&amp;rt:</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Zobrazuje základní adresu I/O portu tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -5729,7 +5757,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Cesta portu:</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation>Zobrazuje cestu k rouře sériového portu na hostitelovi, když port pracuje v režimu &lt;b&gt;Roura hostitele&lt;/b&gt;, nebo název sériového zařízení, když port pracuje v režimnu &lt;b&gt;Hostitelovo zařízení&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -5737,11 +5765,11 @@ p, li { white-space: pre-wrap; }
         <translation>Port/Cesta k sou&amp;boru:</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
-        <translation>Ukazuje hodnotu IRQ tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;IO APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
+        <source>Holds the IRQ number of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; setting is enabled for this virtual machine.</source>
+        <translation>Ukazuje hodnotu IRQ tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;I/O APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation>Zobrazuje základní adresu I/O portu tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
 </context>
@@ -6322,11 +6350,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Povolit A&amp;CPI</translation>
     </message>
     <message>
-        <source>When checked, the virtual machine will support the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
-        <translation>Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (IO APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
+        <source>When checked, the virtual machine will support the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable this feature after having installed a Windows guest operating system!</source>
+        <translation>Je-li zatrženo, virtuální počítač bude podporovat Input Output APIC (I/O APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte tuto možnost po nainstalování hostovaného operačního systému Windows!</translation>
     </message>
     <message>
-        <source>Enable &amp;IO APIC</source>
+        <source>Enable &amp;I/O APIC</source>
         <translation>Povolit IO A&amp;PIC</translation>
     </message>
     <message>
@@ -6453,7 +6481,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Determines pointing device type. Whether standard PS/2 mouse, USB mouse/tablet or USB multi-touch mouse/tablet will be emulated.</source>
+        <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6481,7 +6509,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The IO APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
+        <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6647,7 +6675,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Název:</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation>Zobrazí název filtru.</translation>
     </message>
     <message>
@@ -8667,7 +8695,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Název:</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation>Zobrazuje název virtuálního počítače.</translation>
     </message>
     <message>
@@ -8675,7 +8703,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Typ:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation>Ukazuje skupinu operačních systémů, které se chystáte instalovat na tento virtuální počítač.</translation>
     </message>
     <message>
@@ -8683,7 +8711,7 @@ p, li { white-space: pre-wrap; }
         <translation>V&amp;erze:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation>Zobrazuje typ operačního systému, který se chystáte instalovat na tento virtuální počítač (nazývaný hostovaný operační systém).</translation>
     </message>
 </context>
@@ -11050,11 +11078,11 @@ Verze %1</translation>
         <translation type="obsolete">Název adresáře</translation>
     </message>
     <message>
-        <source>Displays the path to an existing folder on the host PC.</source>
+        <source>Holds the path to an existing folder on the host PC.</source>
         <translation type="obsolete">Zobrazovat cestu k existujícímu adresáři na hostitelském PC.</translation>
     </message>
     <message>
-        <source>Displays the name of the shared folder (as it will be seen by the guest OS).</source>
+        <source>Holds the name of the shared folder (as it will be seen by the guest OS).</source>
         <translation type="obsolete">Zobrazuje název sdíleného adresáře (jak bude zobrazen v hostovaném OS).</translation>
     </message>
     <message>
@@ -12170,7 +12198,7 @@ Verze %1</translation>
         <translation type="obsolete">&amp;Klávesa hostitele:</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Zobrazuje klávesu použitou jako Klávesu hostitele v okně virtuálního počítače. Aktivujte zadávací pole a stiskněte novou Klávesu hostitele. Alfanumerické klávesy, šipky a funkční klávesy nelze použít jako Klávesu hostitele.</translation>
     </message>
     <message>
@@ -12263,7 +12291,7 @@ Verze %1</translation>
         <translation></translation>
     </message>
     <message>
-        <source>IO APIC</source>
+        <source>I/O APIC</source>
         <comment>details report</comment>
         <translation></translation>
     </message>
@@ -12294,12 +12322,12 @@ Verze %1</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Povoleno</translation>
     </message>
     <message>
         <source>Disabled</source>
-        <comment>details report (IO APIC)</comment>
+        <comment>details report (I/O APIC)</comment>
         <translation>Zakázáno</translation>
     </message>
     <message>
@@ -13977,17 +14005,7 @@ Verze %1</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>USB Mouse/Tablet</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>PS/2 and USB Mouse</source>
-        <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>USB Multi-Touch Mouse/Tablet</source>
         <comment>PointingHIDType</comment>
         <translation type="unfinished"></translation>
     </message>
@@ -14003,6 +14021,26 @@ Verze %1</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>USB Multi-Touch Tablet</source>
+        <comment>PointingHIDType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT Network</source>
+        <comment>NetworkAttachmentType</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NAT network, &apos;%1&apos;</source>
+        <comment>details report (network)</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -14116,7 +14154,7 @@ Verze %1</translation>
         <translation type="obsolete">Nápověda</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Zobrazí nápovědu k dialogu.</translation>
     </message>
     <message>
@@ -14140,7 +14178,7 @@ Verze %1</translation>
         <translation type="obsolete">Nastavení VirtualBoxu</translation>
     </message>
     <message>
-        <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
+        <source>Holds the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
         <translation type="obsolete">Zobrazuje klávesu použitou jako Klávesu hostitele v okně virtuálního počítače. Aktivujte zadávací pole a stiskněte novou Klávesu hostitele. Alfanumerické, šipky a funkční klávesy nelze použít jako Klávesu hosta.</translation>
     </message>
     <message>
@@ -14201,7 +14239,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Výchozí</translation>
     </message>
     <message>
-        <source>Displays the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
+        <source>Holds the path to the default VDI folder. This folder is used, if not explicitly specified otherwise, when adding existing or creating new virtual hard disks.</source>
         <translation type="obsolete">Ukazuje cestu k výchozímu VDI adresáři. Tento adresář je použit, pokud se neurčí jinak, když se přidává existující nebo vytváří nový virtuální pevný disk.</translation>
     </message>
     <message>
@@ -14213,7 +14251,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Restartuje cestu k VDI adresáři na výchozí hodnotu. Skutečná výchozí cesta bude zobrazena po potvrzení změn a znovuotevření toho dialogu.</translation>
     </message>
     <message>
-        <source>Displays the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
+        <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
         <translation type="obsolete">Ukazuje cestu k výchozímu adresáři virtuálního počítače. Tento adresář je použit, pokud se neurčí jinak, když se vytváří nový virtuální počítač.</translation>
     </message>
     <message>
@@ -14245,7 +14283,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Autentizační knihovna V&amp;RDP</translation>
     </message>
     <message>
-        <source>Displays the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
+        <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
         <translation type="obsolete">Ukáže cestu ke knihovně, která poskytuje autentizaci pro klienty Vzdálené plochy (VRDP).</translation>
     </message>
     <message>
@@ -14643,7 +14681,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">Operační &amp;systém:</translation>
     </message>
     <message>
-        <source>Displays the operating system family that you plan to install into this virtual machine.</source>
+        <source>Selects the operating system family that you plan to install into this virtual machine.</source>
         <translation type="obsolete">Ukazuje skupinu operačních systémů, které se chystáte instalovat na tento virtuální počítač.</translation>
     </message>
     <message>
@@ -14651,7 +14689,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
         <translation type="obsolete">V&amp;erze:</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Ukazuje typ operačního systému, který se chystáte instalovat na tento virtuální počítač (nazývaný hostovaný operační systém).</translation>
     </message>
     <message>
@@ -15587,7 +15625,7 @@ pro přístup z Linuxových OS. Tato funkce vyžaduje Přídavky pro hosta.&lt;/
         <translation type="obsolete">&amp;Jméno</translation>
     </message>
     <message>
-        <source>Displays the filter name.</source>
+        <source>Holds the filter name.</source>
         <translation type="obsolete">Zobrazí jméno filtru.</translation>
     </message>
     <message>
@@ -16035,7 +16073,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Ovládá způsob, jakým bude virtuální karta připojena k reálné síti hostitelského OS.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}.</source>
         <translation type="obsolete">Ukazuje MAC adresu této karty. Skládá se přesně z 12 znaků vybraných z {0-9,A-F}.</translation>
     </message>
     <message>
@@ -16043,15 +16081,15 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Indikuje, zda je virtuální síťový kabel připojen k počítači při startu či nikoliv.</translation>
     </message>
     <message>
-        <source>Displays the name of the host interface selected for this adapter.</source>
+        <source>Holds the name of the host interface selected for this adapter.</source>
         <translation type="obsolete">Ukazuje jméno hostitelského rozhraní připojeného k této kartě.</translation>
     </message>
     <message>
-        <source>Displays the TAP interface name.</source>
+        <source>Holds the TAP interface name.</source>
         <translation type="obsolete">Ukazuje jméno TAP rozhraní.</translation>
     </message>
     <message>
-        <source>Displays the command executed to set up the TAP interface.</source>
+        <source>Holds the command executed to set up the TAP interface.</source>
         <translation type="obsolete">Zobrazuje příkaz prováděný pro nastavení TAP rozhraní.</translation>
     </message>
     <message>
@@ -16059,7 +16097,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Vybírá aplikaci nastavení.</translation>
     </message>
     <message>
-        <source>Displays the command executed to terminate the TAP interface.</source>
+        <source>Holds the command executed to terminate the TAP interface.</source>
         <translation type="obsolete">Zobrazuje příkaz prováděný pro ukončení TAP rozhraní.</translation>
     </message>
     <message>
@@ -16067,7 +16105,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Vybírá aplikaci pro ukončení.</translation>
     </message>
     <message>
-        <source>Displays the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
+        <source>Holds the MAC address of this adapter. It contains exactly 12 characters chosen from {0-9,A-F}. Note that the second character must be an even digit.</source>
         <translation type="obsolete">Ukazuje MAC adresu karty. Obsahuj 12 znaků vybraných z {0-9,A-F}. Pozor, druhý znak musí být sudá číslice.</translation>
     </message>
 </context>
@@ -16097,15 +16135,15 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Čí&amp;slo portu</translation>
     </message>
     <message>
-        <source>Displays the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
+        <source>Selects the serial port number. You can choose one of the standard serial ports or select &lt;b&gt;User-defined&lt;/b&gt; and specify port parameters manually.</source>
         <translation type="obsolete">Ukazuje číslo sériového portu. Můžete zvolit jeden ze standardních sériových portů nebo vybrat &lt;b&gt;Uživatelem definováno&lt;/b&gt; a nastavit parametry portu ručně.</translation>
     </message>
     <message>
-        <source>Displays the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;IO APIC&lt;/b&gt; is enabled for this virtual machine.</source>
-        <translation type="obsolete">Ukazuje IRQ číslo tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;IO APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
+        <source>Holds the IRQ number of this serial port. Valid values are integer numbers in range from &lt;tt&gt;0&lt;/tt&gt; to &lt;tt&gt;255&lt;/tt&gt;. Values greater than &lt;tt&gt;15&lt;/tt&gt; may only be used if the &lt;b&gt;I/O APIC&lt;/b&gt; is enabled for this virtual machine.</source>
+        <translation type="obsolete">Ukazuje IRQ číslo tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;255&lt;/tt&gt;. Hodnoty větší než &lt;tt&gt;15&lt;/tt&gt; mohou být použity jen v případě, že je &lt;b&gt;I/O APIC&lt;/b&gt; povoleno tomuto virtuálnímu počítači.</translation>
     </message>
     <message>
-        <source>Displays the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
+        <source>Holds the base I/O port address of this serial port. This should be a whole number between &lt;tt&gt;0&lt;/tt&gt; and &lt;tt&gt;0xFFFF&lt;/tt&gt;.</source>
         <translation type="obsolete">Ukazuje základní adresu I/O portu tohoto sériového portu. Platné hodnoty jsou celá čísla v rozsahu od &lt;tt&gt;0&lt;/tt&gt; do &lt;tt&gt;0xFFFF&lt;/tt&gt;.</translation>
     </message>
     <message>
@@ -16129,7 +16167,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Cesta &amp;portu</translation>
     </message>
     <message>
-        <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
+        <source>Holds the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
         <translation type="obsolete">Ukazuje cestu k rouře sériového portu na hostitelovi, když port pracuje v režimu &lt;b&gt;Roura hostitele&lt;/b&gt;, nebo název sériového zařízení, když port pracuje v režimnu &lt;b&gt;Hostitelovo zařízení&lt;/b&gt;.</translation>
     </message>
 </context>
@@ -16180,7 +16218,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Soubor &amp;ISO obrazu</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Zobrazuje soubor obrazu pro připojení k virtuální CD/DVD mechanice a umožňuje rychle vybrat jiný obraz.</translation>
     </message>
     <message>
@@ -16247,7 +16285,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Jméno</translation>
     </message>
     <message>
-        <source>Displays the name of the virtual machine.</source>
+        <source>Holds the name of the virtual machine.</source>
         <translation type="obsolete">Ukazuje jméno virtuálního počítače.</translation>
     </message>
     <message>
@@ -16427,7 +16465,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Vypršení autentizace </translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port.</source>
+        <source>Holds the VRDP Server port.</source>
         <translation type="obsolete">Ukazuje port VRDP serveru.</translation>
     </message>
     <message>
@@ -16443,7 +16481,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Nápověda</translation>
     </message>
     <message>
-        <source>Displays the dialog help.</source>
+        <source>Holds the dialog help.</source>
         <translation type="obsolete">Zobrazí nápovědu k dialogu.</translation>
     </message>
     <message>
@@ -16475,7 +16513,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Je-li zatrženo, připojí určený virtuální pevný disk na slave slot sekundárního IDE ovladače.</translation>
     </message>
     <message>
-        <source>Displays the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
+        <source>Holds the virtual hard disk to attach to this IDE slot and allows to quickly select a different hard disk.</source>
         <translation type="obsolete">Ukazuje virtuální pevný disk pro připojení k tomuto IDE slotu a umožňuje rychle vybrat jiný pevný disk.</translation>
     </message>
     <message>
@@ -16483,7 +16521,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Je-li zatrženo, připojí určené médium k CD/DVD mechanice virtuálního počítače. Uvědomte si, že CD/DVD mechanika je vždy připojena k sekundárnímu master IDE ovladači počítače.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual CD/DVD drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Ukazuje soubor obrazu pro připojení k virtuální CD/DVD mechanice a umožňuje rychle vybrat jiný obraz.</translation>
     </message>
     <message>
@@ -16491,7 +16529,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Je-li zatrženo, připojí určené médium k disketové mechanice virtuálního počítače.</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Ukazuje soubor obrazu pro připojení k virtuální disketové mechanice a umožňuje rychle vybrat jiný obraz.</translation>
     </message>
     <message>
@@ -16565,7 +16603,7 @@ hodnotu.&lt;/qt&gt;</translation>
         <translation type="obsolete">Adresář s&amp;nímků</translation>
     </message>
     <message>
-        <source>Displays the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
+        <source>Selects the operating system type that you plan to install into this virtual machine (called a guest operating system).</source>
         <translation type="obsolete">Ukazuje typ operačního systému, který se chystáte instalovat na tento virtuální počítač (nazývaný hostovaný operační systém).</translation>
     </message>
     <message>
@@ -16578,10 +16616,10 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
     </message>
     <message>
         <source>&lt;qt&gt;When checked, the virtual machine will support
-the Input Output APIC (IO APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
+the Input Output APIC (I/O APIC), which may slightly decrease performance. &lt;b&gt;Note:&lt;/b&gt; don&apos;t disable
 this feature after having installed a Windows guest operating system!&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Je-li zatrženo, virtuální počítač bude podporovat
-Input Output APIC (IO APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte
+Input Output APIC (I/O APIC), což může mírně snížit výkon virtuálního počítače. &lt;b&gt;Poznámka:&lt;/b&gt; nevypínejte
 tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -16589,7 +16627,7 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
         <translation type="obsolete">Určuje mód sdílení schránky mezi hostovaným a hostitelským OS. Tato funkce vyžaduje Přídavky pro hosta nainstalované v hostovaném OS.</translation>
     </message>
     <message>
-        <source>Displays the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
+        <source>Holds the path where snapshots of this virtual machine will be stored. Be aware that snapshots can take quite a lot of disk space.</source>
         <translation type="obsolete">Ukazuje cestu, kam jsou ukládány snímky virtuálního počítače. Snímky můžou zabrat velké množství diskového prostor.</translation>
     </message>
     <message>
@@ -16597,7 +16635,7 @@ tuto možnost po nainstalování hostovaného operačního systému Windows!&lt;
         <translation type="obsolete">Přenastaví cestu k adresáři snímků na výchozí hodnotu. Skutečná výchozí cesta bude zobrazena po potvrzení změn a znovuotevření toho dialogu.</translation>
     </message>
     <message>
-        <source>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
+        <source>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</source>
         <translation type="obsolete">Ukazuje popis virtuálního počítače. Pole popisu je užitečné pro komentář k detailům konfigurace instalovaného hostovaného OS.</translation>
     </message>
     <message>
@@ -16732,7 +16770,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">Vypršení au&amp;tentizace </translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;Ukazuje číslo portu VRDP. Můžete uvést &lt;tt&gt;0&lt;/tt&gt; (nulu) pro restart portu na standardní hodnotu.&lt;/qt&gt;</translation>
     </message>
     <message>
@@ -16903,7 +16941,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">&amp;Souboru obrazu</translation>
     </message>
     <message>
-        <source>Displays the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
+        <source>Holds the image file to mount to the virtual Floppy drive and allows to quickly select a different image.</source>
         <translation type="obsolete">Zobrazuje soubor obrazu pro připojení k virtuální disketové mechanice a umožňuje rychle vybrat jiný obraz.</translation>
     </message>
     <message>
@@ -16930,7 +16968,7 @@ ukáže hostovanému OS zvukovou kartu, ale každý přístup bude ignorován.&l
         <translation type="obsolete">Po&amp;rt serveru:</translation>
     </message>
     <message>
-        <source>Displays the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
+        <source>Holds the VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero) to reset the port to the default value.</source>
         <translation type="obsolete">Zobrazuje číslo portu pro VRDP server. Můžete uvést &lt;tt&gt;0&lt;/tt&gt; (nulu) pro nastavení čísla portu na standardní hodnotu.</translation>
     </message>
     <message>

@@ -275,7 +275,7 @@
        <item>
         <widget class="QTextEdit" name="mTeDescription" >
          <property name="whatsThis" >
-          <string>Displays the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</string>
+          <string>Holds the description of the virtual machine. The description field is useful for commenting on configuration details of the installed guest OS.</string>
          </property>
          <property name="acceptRichText" >
           <bool>false</bool>

@@ -596,7 +596,7 @@ erre:
         <translation>Bezárja az ablakot</translation>
     </message>
     <message>
-        <source>Displays the name of the window and contains controls to manipulate it</source>
+        <source>Holds the name of the window and contains controls to manipulate it</source>
         <translation>Megjeleníti az ablak nevét, és kezelőket a megváltoztatásukhoz</translation>
     </message>
 </context>
