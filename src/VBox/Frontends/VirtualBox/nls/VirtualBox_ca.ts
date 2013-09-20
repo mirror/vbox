@@ -1801,11 +1801,11 @@
         <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">S&apos;està baixant la imatge del CD de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Cancel·la la descàrrega de la imatge del CD de les Guest Additions del VirtualBox</translation>
     </message>
     <message>
@@ -1848,11 +1848,11 @@
         <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">S&apos;està baixant la imatge de les Guest Additions del VirtualBox des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Cancel·la la baixada de la imatge de les Guest Additions del VirtualBox</translation>
     </message>
     <message>
@@ -2236,11 +2236,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIFirstRunWzd</name>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
+        <source>&amp;CD/DVD Device</source>
         <translation type="obsolete">Dispositiu &amp;CD/DVD</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
+        <source>CD/DVD Device</source>
         <translation type="obsolete">Dispositiu CD/DVD</translation>
     </message>
     <message>
@@ -2432,7 +2432,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Resum</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
+        <source>CD/DVD Device</source>
         <translation type="obsolete">Dispositiu CD/DVD</translation>
     </message>
     <message>
@@ -5026,7 +5026,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Al&amp;tre</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Si està marcat, qualsevol canvi al CD/DVD o disquet muntat es desarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
@@ -7093,7 +7093,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Segur que voleu descartar l&apos;estat desat de la màquina virtual&lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;&lt;p&gt;Aquesta operació és equivalent a reiniciar o tancar la màquina virtual de forma no adequada.&lt;/p&gt; </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Segur que voleu baixar la imatge del VirtualBox Guest Additions des de  &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mida %3 bytes)?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7121,7 +7121,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;No es pot trobar el fitxer de llengua per a l&apos;idioma &lt;b&gt;%1&lt;/b&gt; al directori &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Es farà servir l&apos;anglès (llengua per defecte). Aneu al diàleg de &lt;b&gt;Preferències&lt;/b&gt; que podeu obrir des del menú &lt;b&gt;Fitxer&lt;/b&gt; de la finestra principal del VirtualBox. Allà podreu triar entre les diferents llengües a la secció d&apos;&lt;b&gt;Idioma&lt;/b&gt;.&lt;/p&gt; </translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No es pot trobar el fitxer d&apos;imatge del VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu baixar-la des d&apos;internet?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7145,7 +7145,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;No s&apos;ha pogut crear l&apos;objecte VirtualBox COM.&lt;/p&gt;&lt;p&gt;Ara es tancarà l&apos;aplicació.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No s&apos;ha pogut baixar la imatge de les VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7181,7 +7181,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;El fitxer d&apos;imatge &lt;b&gt;%1&lt;/b&gt; ja existeix. No podeu crear un nou disc dur virtual que faça servir aquest fitxer ja que pot ser utilitzat per un altre disc dur virtual.&lt;/p&gt;&lt;p&gt;Especifiqueu un nom diferent per a la imatge.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;S&apos;ha baixat la imatge del VirtualBox Guest Additions des de &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; i s&apos;ha desat localment com a &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu registrar aquesta imatge de CD i montar-la a la unitat virtual de CD/DVD?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7852,7 +7852,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">No es pot desconnectar %1 de la ranura &lt;i&gt;%2&lt;/i&gt; de la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">No es pot muntar el %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a la màquina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -7876,7 +7876,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">No s&apos;ha pogut extreure el disc del dispositiu virtual. Probablement estigui bloquejat pel sistema operatiu client. Comproveu-ho i proveu novament.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No es pot inserir la imatge del cd instal·lador de les Guest Additions a la màquina virtual &lt;b&gt;%1&lt;/b&gt; si la màquina no té dispositius CD/DVD. Afegiu un dispositiu fent servir la pestanya de discos durs als paràmetres de la màquina.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7929,7 +7929,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">disquetera</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
         <translation>&lt;p&gt;Segur que voleu eliminar el dispositiu de CD/DVD?&lt;/p&gt;&lt;p&gt;No podreu muntar cap CD o imatges iso ni tampoc instal·lar les Guest Additions sense ell.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8074,7 +8074,7 @@ p, li { white-space: pre-wrap; }
         </translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>No s&apos;ha pogut actualitzar les Guest Additions. Es muntarà la imatge de les Guest Additions per poder fer una instal·lació manual.</translation>
     </message>
     <message>
@@ -8369,7 +8369,7 @@ p, li { white-space: pre-wrap; }
         <translation>No s&apos;han pogut eliminar les dades.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;No s&apos;ha pogut trobar el fitxer d&apos;imatge de les VirtualBox Guest Additions.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Voleu baixar la imatge de cd des de la xarxa?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8437,7 +8437,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8513,27 +8513,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8582,15 +8582,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8598,19 +8598,19 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Baixa</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8649,11 +8649,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Cancel·la</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Cancel·la la baixada de la imatge de CD de les VirtualBox Guest Additions</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">S&apos;està baixat la imatge de CD de les VirtualBox Guest Additions des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -8679,11 +8679,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Cancel·la la baixada del CD del VirtualBox Guest Additions</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">S&apos;està baixant la imatge de CD del VirtualBox Guest Additions des de &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -11320,11 +11320,11 @@ Versió %1</translation>
         <translation type="obsolete">Desmunta el suport que està muntat actualment en el disquet</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
+        <source>&amp;CD/DVD Image...</source>
         <translation type="obsolete">Imatge de &amp;CD/DVD...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
+        <source>Mount a CD/DVD image file</source>
         <translation type="obsolete">Munta un fitxer d&apos;imatge de CD/DVD</translation>
     </message>
     <message>
@@ -11332,7 +11332,7 @@ Versió %1</translation>
         <translation type="obsolete">Desmunta el C&amp;D/DVD</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
+        <source>Unmount the currently mounted CD/DVD media</source>
         <translation type="obsolete">Desmunta el suport que està muntat actualment en el CD/DVD</translation>
     </message>
     <message>
@@ -11401,7 +11401,7 @@ Versió %1</translation>
         <translation type="obsolete">Munta el &amp;disquet</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
+        <source>Mount &amp;CD/DVD</source>
         <translation type="obsolete">Munta el &amp;CD/DVD</translation>
     </message>
     <message>
@@ -11540,7 +11540,7 @@ Versió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;No hi ha cap suport muntat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indica l&apos;activitat del CD/DVD:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -12048,8 +12048,8 @@ Versió %1</translation>
         <translation type="obsolete">Seleccioneu un fitxer d&apos;imatge de disc dur</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Seleccioneu un fitxer d&apos;imatge de disc CD/DVD-ROM</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Seleccioneu un fitxer d&apos;imatge de disc CD/DVD</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -12076,8 +12076,8 @@ Versió %1</translation>
         <translation type="obsolete">Refresca la llista de suports</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imatges de CD/DVD-ROM (*.iso);;Tots els fitxers (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imatges de CD/DVD (*.iso);;Tots els fitxers (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -12399,7 +12399,7 @@ Versió %1</translation>
         <translation type="obsolete">Unitat de l&apos;ordinador amfitrió</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
         <translation type="obsolete">CD/DVD</translation>
     </message>
@@ -12563,7 +12563,7 @@ Versió %1</translation>
         <translation>Disquet</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
         <translation>CD/DVD</translation>
     </message>
@@ -13600,8 +13600,8 @@ Versió %1</translation>
         <translation type="obsolete">Selecciona un fitxer de CD/DVD virtual</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">Disc CD/DVD-ROM</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">Disc CD/DVD</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -14819,11 +14819,11 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Seleccioneu un fitxer d&apos;imatge de disc dur</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
         <translation type="obsolete">Imatges de CD/DVD (*.iso);;Tots els fitxers (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
+        <source>Select a CD/DVD disk image file</source>
         <translation type="obsolete">Seleccioneu un fitxer d&apos;imatge de disc CD/DVD</translation>
     </message>
     <message>
@@ -14891,8 +14891,8 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
         <translation type="obsolete">Connectat a</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">Disc CD/DVD-ROM</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">Disc CD/DVD</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -16340,7 +16340,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">Virtualització per Maquinari</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
+        <source>CD/DVD Statistics</source>
         <translation type="obsolete">Estadístiques CD/DVD</translation>
     </message>
     <message>
@@ -16800,7 +16800,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">Controla&amp;dor de CD/DVD de l&apos;amfitrió</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Mostra els dispositius de CD/DVD disponibles per muntar a la màquina virtual.</translation>
     </message>
     <message>
@@ -16976,8 +16976,8 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">No s&apos;ha seleccionat cap imatge de CD/DVD</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Controls the amount of memory provided to the virtual machine. If you assign too much, the machine might not start.</source>
@@ -17132,7 +17132,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Identificació</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">Si està marcat, qualsevol canvi al CD/DVD o disquet muntat es desarà al fitxer de configuració per tal de preservar la configuració dels suports muntats entre cada execució de la màquina virtual.</translation>
     </message>
     <message>
@@ -17184,11 +17184,11 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
         <translation type="obsolete">Mostra tots els filtres USB d&apos;aquesta màquina. La casella de selecció de l&apos;esquerra defineix si un filtre concret és habilitat o no.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Mostra els dispositius de CD/DVD disponibles per muntar a la màquina virtual.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Mostra els dispositius de disquet disponibles per muntar a la màquina virtual.</translation>
     </message>
     <message>
@@ -17705,7 +17705,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">Discos durs</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
@@ -17804,7 +17804,7 @@ al sistema amfitrió.&lt;/qt&gt;</translation>
         <translation type="obsolete">&amp;Disquet de l&apos;amfitrió</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Mostra els dispositius de disquet disponibles per muntar a la màquina virtual.</translation>
     </message>
     <message>

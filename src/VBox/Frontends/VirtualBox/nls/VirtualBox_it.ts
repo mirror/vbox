@@ -1942,11 +1942,11 @@
         <translation type="obsolete">Annulla</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Sto scaricando l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Annulla il download dell&apos;immagine CD di VirtualBox Guest Additions</translation>
     </message>
     <message>
@@ -2005,11 +2005,11 @@
         <translation type="obsolete">Annulla</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Scaricamento in corso dell&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
     </message>
     <message>
@@ -2385,8 +2385,8 @@
         <translation type="obsolete">Tipo di media</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispositivo &amp;CD/DVD-ROM</translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">Dispositivo &amp;CD/DVD</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -2445,8 +2445,8 @@
         <translation type="obsolete">Riassunto</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispositivo CD/DVD-ROM</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">Dispositivo CD/DVD</translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -2578,8 +2578,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Riepilogo</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispositivo CD/DVD-ROM</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">Dispositivo CD/DVD</translation>
     </message>
     <message>
         <source>Type</source>
@@ -5241,7 +5241,7 @@ p, li { white-space: pre-wrap; }
         <translation>Visualizza la descrizione della macchina virtuale. Il campo descrizione è utile per commentare dettagli di configurazione del sistema guest installato.</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Se marcata, ogni modifica ai supporti CD/DVD o floppy montati effettuata durante l&apos;esecuzione della macchina sarà salvata nel file delle impostazioni per preservare la configurazione dei supporti tra i diversi avvii della macchina.</translation>
     </message>
     <message>
@@ -7435,19 +7435,19 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Impossibile rimuovere la cartella condivisa &lt;b&gt;%1&lt;/b&gt; (che punta a &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) dalla macchina virtuale &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Chiudere tutti i programmi nel sistema Guest che potrebbero utilizzare la cartella condivisa e provare nuovamente.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Impossibile trovare il file immagine per VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; o &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole scaricare quest&apos;immagine CD da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Impossibile scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Siete sicuri di voler scaricare l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensione %3 byte)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;L&apos;immagine CD di VirtualBox Guest Additions è stata scaricata con successo da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; e salvata localmente come &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Si vuole registrare quest&apos;immagine CD e montarla nel drive CD/DVD virtuale?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7826,7 +7826,7 @@ p, li { white-space: pre-wrap; }
         <translation>Eliminazione dell&apos;istantanea &lt;b&gt;%1&lt;/b&gt; della macchina virtuale &lt;b&gt;%2&lt;/b&gt; non riuscita.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Impossibile montare il %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; sulla macchina &lt;b&gt;%3&lt;/b&gt;.</translation>
     </message>
     <message>
@@ -7846,8 +7846,8 @@ p, li { white-space: pre-wrap; }
         <translation>Forza la rimozione</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;Impossibile inserire l&apos;immagine del CD di installazione delle Guest Additions di VirtualBox nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore CD/DVD-ROM. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;Impossibile inserire l&apos;immagine del CD di installazione delle Guest Additions di VirtualBox nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore CD/DVD. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -7884,8 +7884,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">immagine floppy</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sei sicuro di voler eliminare il dispositivo CD/DVD-ROM?&lt;/p&gt;&lt;p&gt;Senza non potrai montare alcun CD o immagine ISO o installare le Guest Additions!&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Sei sicuro di voler eliminare il dispositivo CD/DVD?&lt;/p&gt;&lt;p&gt;Senza non potrai montare alcun CD o immagine ISO o installare le Guest Additions!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -8024,7 +8024,7 @@ p, li { white-space: pre-wrap; }
         </translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Aggiornamento delle Guest Additions non riuscito. L&apos;immagine di installazione delle Guest Additions sarà montata per fornire un&apos;installazione manuale.</translation>
     </message>
     <message>
@@ -8750,7 +8750,7 @@ p, li { white-space: pre-wrap; }
         <translation>Stai creando una nuova macchina virtuale senza un disco fisso. Non potrai installare un sistema operativo sulla macchina fino a quando non ne aggiungi uno. Nel frattempo, potrai avviare una macchina utilizzando un disco ottico virtuale o dalla rete.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Impossibile trovare il file immagine del CD delle Guest Additions di VirtualBox.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vuoi scaricare l&apos;immagine del CD da Internet?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8818,7 +8818,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8894,27 +8894,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8962,15 +8962,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8978,19 +8978,19 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Scarica</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9029,11 +9029,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Annulla</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Annulla lo scaricamento dell&apos;immagine CD di VirtualBox Guest Additions</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Sto scaricando l&apos;immagine CD di VirtualBox Guest Additions da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -9059,11 +9059,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Annulla lo scaricamento dell&apos;immagine del CD delle Guest Additions di VirtualBox</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Scaricamento dell&apos;immagine del CD delle Guest Additions di VirtualBox da &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -11792,20 +11792,20 @@ Versione %1</translation>
         <translation type="obsolete">Smonta il floppy attualmente montato</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">Immagine &amp;CD/DVD-ROM...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">Immagine &amp;CD/DVD...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
-        <translation type="obsolete">Monta un file immagine CD/DVD-ROM</translation>
+        <source>Mount a CD/DVD image file</source>
+        <translation type="obsolete">Monta un file immagine CD/DVD</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation type="obsolete">Smonta C&amp;D/DVD-ROM</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation type="obsolete">Smonta l&apos;immagine CD/DVD-ROM attualmente montata</translation>
+        <source>Unmount the currently mounted CD/DVD media</source>
+        <translation type="obsolete">Smonta l&apos;immagine CD/DVD attualmente montata</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -11877,7 +11877,7 @@ Versione %1</translation>
         <translation type="obsolete">Monta &amp;floppy</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
+        <source>Mount &amp;CD/DVD</source>
         <translation type="obsolete">Monta &amp;CD-DVD-ROM</translation>
     </message>
     <message>
@@ -11919,8 +11919,8 @@ Versione %1</translation>
         <translation type="obsolete">non&amp;nbsp;montato</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Indica&amp;nbsp;l&apos;attività&amp;nbsp;del&amp;nbsp;CD/DVD-ROM&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;Indica&amp;nbsp;l&apos;attività&amp;nbsp;del&amp;nbsp;CD/DVD&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
@@ -11982,7 +11982,7 @@ Versione %1</translation>
         <translation type="obsolete">Istantanea %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Non è stato possibile trovare l&apos;immagine CD di VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -12074,9 +12074,9 @@ Versione %1</translation>
         <translation type="obsolete">&lt;b&gt;&lt;nobr&gt;&lt;b&gt;Nessun media montato&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indica l&apos;attività del CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indica l&apos;attività del CD/DVD:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -12577,8 +12577,8 @@ Versione %1</translation>
         <translation type="obsolete">Seleziona un file immagine di hard disk</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Seleziona un file immagine di CD/DVD-ROM</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Seleziona un file immagine di CD/DVD</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -12605,8 +12605,8 @@ Versione %1</translation>
         <translation type="obsolete">Aggiorna la lista dei media</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Immagini CD/DVD-ROM (*.iso);;Tutti i file (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Immagini CD/DVD (*.iso);;Tutti i file (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -12920,9 +12920,9 @@ Versione %1</translation>
         <translation>Floppy</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -13770,8 +13770,8 @@ Versione %1</translation>
         <translation type="obsolete">Scegli un file di CD/DVD virtuale</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">disco CD/DVD-ROM</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">disco CD/DVD</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -13974,9 +13974,9 @@ Versione %1</translation>
         <translation type="obsolete">Lettore dell&apos;host</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -15322,8 +15322,8 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Seleziona un file immagine di disco fisso</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Seleziona un file immagine di CD/DVD-ROM</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Seleziona un file immagine di CD/DVD</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -15371,8 +15371,8 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Immagini &amp;floppy</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">disco CD/DVD-ROM</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">disco CD/DVD</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -15443,8 +15443,8 @@ la lingua a quella predefinita di sistema.&lt;/qt&gt;
         <translation type="obsolete">Tutte le immagini di dischi fissi (%1)</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Immagini CD/DVD-ROM (*.iso);;Tutti i file (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Immagini CD/DVD (*.iso);;Tutti i file (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -16953,8 +16953,8 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Statistiche su dischi rigidi IDE</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">Statistiche su CD/DVD-ROM</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">Statistiche su CD/DVD</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -17378,7 +17378,7 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">Lettore C&amp;D/DVD dell&apos;host</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Elenca i lettori CD/DVD disponibili per essere montati nella macchina virtuale.</translation>
     </message>
     <message>
@@ -17461,8 +17461,8 @@ qualsiasi valore.&lt;/qt&gt;</translation>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete"> CD/DVD </translation>
     </message>
     <message>
         <source>3</source>
@@ -17951,7 +17951,7 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
         <translation type="obsolete">Invoca il Gestore di dischi virtuali per creare un nuovo disco o scegliere un disco esistente da collegare.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Elenca i lettori floppy disponibili per essere montati in una macchina virtuale.</translation>
     </message>
     <message>
@@ -17959,7 +17959,7 @@ questa caratteristica dopo aver installato un sistema operativo guest Windows!&l
         <translation type="obsolete">Invoca il Gestore di dischi virtuali per scegliere un&apos;immagine floppy da montare.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Elenca i lettori CD/DVD disponibili per essere montati nella macchina virtuale.</translation>
     </message>
     <message>
@@ -18066,7 +18066,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">Se selezionato, ogni modifica ai media CD/DVD o Floppy effettuata durante l&apos;esecuzione della macchina sarà salvata nel file di impostazioni per preservare la configurazione dei media montati tra diversi avvii della macchina.</translation>
     </message>
     <message>
@@ -18383,8 +18383,8 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">Dischi fissi</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -18482,7 +18482,7 @@ fa vedere al sistema Guest una scheda sonora, ignorando qualsiasi accesso ad ess
         <translation type="obsolete">Lettore floppy &amp;dell&apos;host</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Elenca i lettori floppy dell&apos;host disponibili per essere montati nella macchina virtuale.</translation>
     </message>
     <message>

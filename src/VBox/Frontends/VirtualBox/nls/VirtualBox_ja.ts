@@ -1906,11 +1906,11 @@
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
@@ -1955,11 +1955,11 @@
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
@@ -2363,8 +2363,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">メディア種別</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROMデバイス(&amp;C)</translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">CD/DVDデバイス(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
@@ -2407,8 +2407,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">概要</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROMデバイス</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVDデバイス</translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -2536,8 +2536,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">概要</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROMデバイス</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVDデバイス</translation>
     </message>
     <message>
         <source>Type</source>
@@ -5543,7 +5543,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="191"/>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
@@ -7740,17 +7740,17 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1951"/>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1952"/>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2000"/>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7765,22 +7765,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2009"/>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2019"/>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2029"/>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2041"/>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8086,7 +8086,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="2050"/>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Guest Additionsの更新に失敗しました。Guest Additionsのインストールイメージは手動インストールのためマウントされます。</translation>
     </message>
     <message>
@@ -8132,7 +8132,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="463"/>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8238,34 +8238,34 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1326"/>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1328"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1344"/>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1332"/>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1334"/>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1350"/>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1342"/>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1348"/>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8436,19 +8436,19 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;仮想マシン&lt;b&gt;%3&lt;/b&gt;の共有フォルダー&lt;b&gt;%1&lt;/b&gt;(参照先:&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;)の削除に失敗しました。&lt;/p&gt;&lt;p&gt;この共有フォルダーを使用しているゲストOSのすべてのプログラムを終了し、再実行してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CDイメージファイル&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;または&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;が見つかりません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;インターネットからCDイメージをダウンロードしますか？&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;からVirtualBox Guest Additions CDイメージをダウンロードできません。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;本当にVirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; からダウンロードしますか？ (サイズ %3バイト)&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt;からダウンロードし、&lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;に保存しました。&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;CDイメージを登録し、仮想CD/DVDドライブにマウントしますか？&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9276,7 +9276,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;VirtualBox Guest Additionsがインストールされていないため、共有フォルダーは利用できません。共有フォルダーを使用するには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから&lt;b&gt;[Guest Additions のインストール]&lt;/b&gt;を選びGuest Additionsをインストールまたは再インストールしてください。インストール後、仮想マシンを再起動すると共有フォルダーが利用できます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CDイメージファイルが見つかりません。&lt;/p&gt;&lt;p&gt;インターネットからCDイメージをダウンロードしますか？&lt;/p&gt;</translation>
     </message>
     <message>
@@ -9420,8 +9420,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1057"/>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;CD/DVD-ROM デバイスを削除しますか？&lt;/p&gt;&lt;p&gt;デバイスがない場合、CD/DVDメディアやISOイメージファイルのマウントおよびGuest Additions のインストールはできません！&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;CD/DVD デバイスを削除しますか？&lt;/p&gt;&lt;p&gt;デバイスがない場合、CD/DVDメディアやISOイメージファイルのマウントおよびGuest Additions のインストールはできません！&lt;/p&gt;</translation>
     </message>
     <message>
         <location filename="../src/globals/UIMessageCenter.cpp" line="1061"/>
@@ -9438,7 +9438,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&quot;%1&quot;の仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;のスロット&lt;i&gt;&quot;%2&quot;&lt;/i&gt;への割り当て解除に失敗しました。</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;を仮想マシン&lt;b&gt;&quot;%3&quot;&lt;/b&gt;にマウントできません。</translation>
     </message>
     <message>
@@ -9463,8 +9463,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">仮想ドライブのディスクの取り出しに失敗しました。このドライブはゲストOSによってロックされています。確認後、再実行してください。</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;がCD/DVD-ROMドライブを持たないため、VirtualBox Guest AdditionsのインストールCDイメージを仮想マシンに挿入できません。 仮想マシン設定ダイアログの[ストレージ]ページでドライブを追加してください。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;p&gt;仮想マシン&lt;b&gt;&quot;%1&quot;&lt;/b&gt;がCD/DVDドライブを持たないため、VirtualBox Guest AdditionsのインストールCDイメージを仮想マシンに挿入できません。 仮想マシン設定ダイアログの[ストレージ]ページでドライブを追加してください。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to save the downloaded file as &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;</source>
@@ -9748,11 +9748,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">キャンセル</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -9778,11 +9778,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージのダウンロードをキャンセル</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CDイメージを&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;からダウンロード...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -12550,19 +12550,19 @@ Version %1</source>
         <translation type="obsolete">マウント中のフロッピーメディアをマウント解除する</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">CD/DVD-ROMイメージ(&amp;C)...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">CD/DVDイメージ(&amp;C)...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
-        <translation type="obsolete">CD/DVD-ROMイメージファイルをマウントする</translation>
+        <source>Mount a CD/DVD image file</source>
+        <translation type="obsolete">CD/DVDイメージファイルをマウントする</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROMのマウント解除(&amp;D)</translation>
+        <translation type="obsolete">CD/DVDのマウント解除(&amp;D)</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
+        <source>Unmount the currently mounted CD/DVD media</source>
         <translation type="obsolete">マウント中のCD/DVDメディアをマウント解除する</translation>
     </message>
     <message>
@@ -12623,8 +12623,8 @@ Version %1</source>
         <translation type="obsolete">フロッピーのマウント(&amp;F)</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROMのマウント(&amp;C)</translation>
+        <source>Mount &amp;CD/DVD</source>
+        <translation type="obsolete">CD/DVDのマウント(&amp;C)</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -12750,9 +12750,9 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;メディアがマウントされていない&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;CD/DVD-ROMメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;CD/DVDメディアの状態を表示:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -13250,8 +13250,8 @@ Version %1</source>
         <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">CD/DVD-ROMディスクイメージファイルを選択</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -13278,8 +13278,8 @@ Version %1</source>
         <translation type="obsolete">メディアリストを最新の情報に更新</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROMイメージ(*.iso);;すべてのファイル(*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -13611,9 +13611,9 @@ Version %1</source>
         <translation type="obsolete">ホストドライブ</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="1360"/>
@@ -13782,9 +13782,9 @@ Version %1</source>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="180"/>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <location filename="../src/converter/UIConverterBackendCOM.cpp" line="181"/>
@@ -14815,8 +14815,8 @@ Version %1</source>
         <translation type="obsolete">仮想CD/DVDディスクファイルの選択</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">CD/DVD-ROMディスク</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVDディスク</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -16251,8 +16251,8 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation>メディアリストを最新の情報に更新</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">CD/DVD-ROMディスク</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVDディスク</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -16292,12 +16292,12 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">ハードディスクイメージファイルを選択</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROMイメージ(*.iso);;すべてのファイル(*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVDイメージ(*.iso);;すべてのファイル(*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">CD/DVD-ROMディスクイメージファイルを選択</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVDディスクイメージファイルを選択</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -17790,8 +17790,8 @@ value.&lt;/qt&gt;</source>
         <translation>画面解像度</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">CD/DVD-ROM 統計</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">CD/DVD 統計</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -18226,7 +18226,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">ホスト CD/DVDドライブ(&amp;D)</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
@@ -18297,8 +18297,8 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">フロッピー</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source> Audio </source>
@@ -18611,7 +18611,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <translation type="obsolete">仮想マシンのコメントを表示します。コメントはインストールされたゲストOSの詳細な構成に関する注釈として役立ちます。</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストフロッピードライブをリスト表示します。</translation>
     </message>
     <message>
@@ -18619,7 +18619,7 @@ this feature after having installed a Windows guest operating system!&lt;/qt&gt;
         <translation type="obsolete">仮想ディスクマネージャーを起動し、選択したフロッピーイメージをマウントします。</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストのCD/DVDドライブをリスト表示します。</translation>
     </message>
     <message>
@@ -18701,7 +18701,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">実行中にマウントしたメディアを記録(&amp;R)</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">仮想マシン実行中に変更したCD/DVDまたはフロッピーメディアの構成を設定ファイルに保存します。</translation>
     </message>
     <message>
@@ -18969,8 +18969,8 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">ハードディスク</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -19068,7 +19068,7 @@ USB フィルターを追加または除去するにはコンテキストメニ�
         <translation type="obsolete">ホストフロッピードライブ(&amp;D)</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">仮想マシンにマウントするために利用可能なホストフロッピードライブをリスト表示します。</translation>
     </message>
     <message>

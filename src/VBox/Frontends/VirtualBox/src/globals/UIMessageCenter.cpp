@@ -460,7 +460,7 @@ void UIMessageCenter::cannotFindMachineByName(const CVirtualBox &vbox, const QSt
 void UIMessageCenter::cannotFindMachineById(const CVirtualBox &vbox, const QString &strId) const
 {
     error(0, MessageType_Error,
-          tr("There is no virtual machine with id <b>%1</b>.")
+          tr("There is no virtual machine with the identifier <b>%1</b>.")
              .arg(strId),
           formatErrorInfo(vbox));
 }
@@ -1054,8 +1054,8 @@ int UIMessageCenter::confirmFloppyAttachmentCreation(const QString &strControlle
 int UIMessageCenter::confirmRemovingOfLastDVDDevice(QWidget *pParent /* = 0*/) const
 {
     return questionBinary(pParent, MessageType_Info,
-                          tr("<p>Are you sure you want to delete the CD/DVD-ROM device?</p>"
-                             "<p>You will not be able to mount any CDs or ISO images "
+                          tr("<p>Are you sure you want to delete the CD/DVD device?</p>"
+                             "<p>You will not be able to insert any CDs or ISO images "
                              "or install the Guest Additions without it!</p>"),
                           0 /* auto-confirm id */,
                           tr("&Remove", "medium"));
@@ -1323,15 +1323,15 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
         {
             if (fMount)
             {
-                strMessage = tr("<p>Unable to mount the virtual optical disk <nobr><b>%1</b></nobr> on the machine <b>%2</b>.</p>");
+                strMessage = tr("<p>Unable to insert the virtual optical disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
                 if (fRetry)
-                    strMessage += tr("<p>Would you like to try force mounting of this medium?</p>");
+                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
             }
             else
             {
-                strMessage = tr("<p>Unable to unmount the virtual optical disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                strMessage = tr("<p>Unable to eject the virtual optical disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
                 if (fRetry)
-                    strMessage += tr("<p>Would you like to try force unmounting of this medium?</p>");
+                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
             }
             break;
         }
@@ -1339,15 +1339,15 @@ bool UIMessageCenter::cannotRemountMedium(const CMachine &machine, const UIMediu
         {
             if (fMount)
             {
-                strMessage = tr("<p>Unable to mount the virtual floppy disk <nobr><b>%1</b></nobr> on the machine <b>%2</b>.</p>");
+                strMessage = tr("<p>Unable to insert the virtual floppy disk <nobr><b>%1</b></nobr> into the machine <b>%2</b>.</p>");
                 if (fRetry)
-                    strMessage += tr("<p>Would you like to try force mounting of this medium?</p>");
+                    strMessage += tr("<p>Would you like to try to force insertion of this disk?</p>");
             }
             else
             {
-                strMessage = tr("<p>Unable to unmount the virtual floppy disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
+                strMessage = tr("<p>Unable to eject the virtual floppy disk <nobr><b>%1</b></nobr> from the machine <b>%2</b>.</p>");
                 if (fRetry)
-                    strMessage += tr("<p>Would you like to try force unmounting of this medium?</p>");
+                    strMessage += tr("<p>Would you like to try to force ejection of this disk?</p>");
             }
             break;
         }
@@ -1948,8 +1948,8 @@ void UIMessageCenter::cannotToggleVideoCapture(const CMachine &machine, bool fEn
     QString strMachineName(CMachine(machine).GetName());
     error(0, MessageType_Error,
           fEnable ?
-              tr("Failed to enable the video capture for the virtual machine <b>%1</b>.").arg(strMachineName) :
-              tr("Failed to disable the video capture for the virtual machine <b>%1</b>.").arg(strMachineName),
+              tr("Failed to enable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName) :
+              tr("Failed to disable video capturing for the virtual machine <b>%1</b>.").arg(strMachineName),
           formatErrorInfo(machine));
 }
 
@@ -1997,8 +1997,8 @@ void UIMessageCenter::askUserToDownloadExtensionPack(const QString &strExtPackNa
 bool UIMessageCenter::cannotFindGuestAdditions() const
 {
     return questionBinary(0, MessageType_Question,
-                          tr("<p>Could not find the <b>VirtualBox Guest Additions</b> CD image.</p>"
-                             "<p>Do you wish to download this CD image from the Internet?</p>"),
+                          tr("<p>Could not find the <b>VirtualBox Guest Additions</b> disk image file.</p>"
+                             "<p>Do you wish to download this disk image file from the Internet?</p>"),
                           0 /* auto-confirm id */,
                           tr("Download"));
 }
@@ -2006,7 +2006,7 @@ bool UIMessageCenter::cannotFindGuestAdditions() const
 bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulonglong uSize) const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
-                          tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> CD image "
+                          tr("<p>Are you sure you want to download the <b>VirtualBox Guest Additions</b> disk image file "
                              "from <nobr><a href=\"%1\">%1</a></nobr> (size %2 bytes)?</p>")
                              .arg(strUrl, QLocale(VBoxGlobal::languageId()).toString(uSize)),
                           0 /* auto-confirm id */,
@@ -2016,7 +2016,7 @@ bool UIMessageCenter::confirmDownloadGuestAdditions(const QString &strUrl, qulon
 void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QString &strTarget) const
 {
     alert(windowManager().networkManagerOrMainWindowShown(), MessageType_Error,
-          tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
+          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
              "from <nobr><a href=\"%1\">%1</a></nobr> "
              "but can't be saved locally as <nobr><b>%2</b>.</nobr></p>"
              "<p>Please choose another location for that file.</p>")
@@ -2026,10 +2026,10 @@ void UIMessageCenter::cannotSaveGuestAdditions(const QString &strURL, const QStr
 bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QString &strSrc) const
 {
     return questionBinary(windowManager().networkManagerOrMainWindowShown(), MessageType_Question,
-                          tr("<p>The <b>VirtualBox Guest Additions</b> CD image has been successfully downloaded "
+                          tr("<p>The <b>VirtualBox Guest Additions</b> disk image file has been successfully downloaded "
                              "from <nobr><a href=\"%1\">%1</a></nobr> "
                              "and saved locally as <nobr><b>%2</b>.</nobr></p>"
-                             "<p>Do you wish to register this CD image and mount it on the virtual CD/DVD drive?</p>")
+                             "<p>Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?</p>")
                              .arg(strUrl, strSrc),
                           0 /* auto-confirm id */,
                           tr("Mount", "additions"));
@@ -2038,8 +2038,8 @@ bool UIMessageCenter::proposeMountGuestAdditions(const QString &strUrl, const QS
 void UIMessageCenter::cannotMountGuestAdditions(const QString &strMachineName) const
 {
     alert(0, MessageType_Error,
-          tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> CD image into the virtual machine <b>%1</b>, "
-             "as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the "
+          tr("<p>Could not insert the <b>VirtualBox Guest Additions</b> disk image file into the virtual machine <b>%1</b>, "
+             "as the machine has no CD/DVD drives. Please add a drive using the storage page of the "
              "virtual machine settings window.</p>")
              .arg(strMachineName));
 }
@@ -2048,7 +2048,7 @@ void UIMessageCenter::cannotUpdateGuestAdditions(const CProgress &progress) cons
 {
     error(0, MessageType_Error,
           tr("Failed to update Guest Additions. "
-             "The Guest Additions installation image will be mounted to provide a manual installation."),
+             "The Guest Additions disk image file will be inserted for user installation."),
           formatErrorInfo(progress));
 }
 

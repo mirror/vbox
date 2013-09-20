@@ -1840,11 +1840,11 @@
         <translation type="obsolete">Mégsem</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltésének megszakítása</translation>
     </message>
     <message>
@@ -1887,11 +1887,11 @@
         <translation type="obsolete">Mégsem</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">A VirtualBox integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">A VirtualBox integrációs szolgáltatások CD letöltésének megszakítása</translation>
     </message>
     <message>
@@ -2297,8 +2297,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Média típusa</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM</translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">&amp;CD/DVD</translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -2345,8 +2345,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Összegzés</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -2482,8 +2482,8 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Összegzés</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Type</source>
@@ -5029,7 +5029,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">T&amp;ovábbi</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
     </message>
     <message>
@@ -7049,19 +7049,19 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;A(z) &lt;b&gt;%1&lt;/b&gt;megosztott mappa (ami ide mutat: &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) eltávolítása sikertelen a virtuáis gépről: &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Zárj be minden programot a vendég OS-en belül, mely a mappát használhatja és próbáld újra.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem található a VirtualBox Integrációs szolgáltatások CD fájl: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd a CD-t az internetről?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD letöltése sikertelen innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Biztos le akarod tölteni a VirtualBox Integrációs szolgáltatások CD-t innen: &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (mérete %3 bájt)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;A VirtualBox Integrációs szolgáltatások CD sikeresen letöltődött a &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; helyről és el lett mentve: &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Szeretnéd regisztrálni a CD képet és berakni a virtuális CD/DVD meghajtóba?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7648,7 +7648,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">A(z) %1 leválasztása a(z) &lt;b&gt;%3&lt;/b&gt; virtuális gép &lt;i&gt;%2&lt;/i&gt; csatlakozójáról nem sikerült.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">Nem sikerült felcsatolni a(z) %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; a(z) &lt;b&gt;%3&lt;/b&gt; gépre.</translation>
     </message>
     <message>
@@ -7672,7 +7672,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Nem sikerült kidobni a lemezt a virtuális eszközből. Az eszközt valószínűleg zárolta a vendég rendszer. Ellenőrizd ezt, és próbáld újra.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem lehet a VirtualBox integrációs szolgáltatások telepítőlemezét felcsatolni a(z) &lt;b&gt;%1&lt;/b&gt; virtuálus gépre, mert a gép nem rendelkezik CD/DVD meghajtóval. Adj egyet a hozzá a virtuális gép beállításainál a Tároló fülön.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7725,7 +7725,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">floppy</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
         <translation>&lt;p&gt;Biztos, hogy törlöd ezt a CD/DVD eszközt?&lt;/p&gt;&lt;p&gt;Enélkül nem leszel képes CD-t vagy ISO képmást csatolni, illetve az integrációs szolgáltatásokat telepíteni!&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7868,7 +7868,7 @@ p, li { white-space: pre-wrap; }
         </translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Az Integrációs szolgáltatások telepítése sikertelen. Az Integrációs szolgáltatások telepítési képe fel lesz csatolva a manuális etlepítés biztosításához.</translation>
     </message>
     <message>
@@ -8166,7 +8166,7 @@ p, li { white-space: pre-wrap; }
         <translation>Az adatok fogadása sikertelen.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem található a VirtualBox Integrációs szolgáltatások CD fájl. &lt;nobr&gt;&lt;/p&gt;&lt;p&gt;Letöltöd a CD-t az internetről?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -8234,7 +8234,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8310,27 +8310,27 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8377,15 +8377,15 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8393,19 +8393,19 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">Letöltés</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8444,11 +8444,11 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Mégsem</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltésének megszakítása</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">A VirtualBox integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -8474,11 +8474,11 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltésének megszakítása</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">A VirtualBox Integrációs szolgáltatások CD letöltése innen: &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -11098,20 +11098,20 @@ Verzió %1</translation>
         <translation type="obsolete">Lecsatolja az aktuális floppy eszközt</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM képfájl...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">&amp;CD/DVD képfájl...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
-        <translation type="obsolete">CD/DVD-ROM képfájl csatolása</translation>
+        <source>Mount a CD/DVD image file</source>
+        <translation type="obsolete">CD/DVD képfájl csatolása</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation type="obsolete">C&amp;D/DVD-ROM lecsatolása</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation type="obsolete">Lecsatolja az aktuális CD/DVD-ROM eszközt</translation>
+        <source>Unmount the currently mounted CD/DVD media</source>
+        <translation type="obsolete">Lecsatolja az aktuális CD/DVD eszközt</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -11183,8 +11183,8 @@ Verzió %1</translation>
         <translation type="obsolete">&amp;Floppy csatolása</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM csatolása</translation>
+        <source>Mount &amp;CD/DVD</source>
+        <translation type="obsolete">&amp;CD/DVD csatolása</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -11229,8 +11229,8 @@ Verzió %1</translation>
         <translation type="obsolete">nincs&amp;nbsp;csatolva</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;CD/DVD-ROM&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;Jelzi&amp;nbsp;a&amp;nbsp;CD/DVD&amp;nbsp;aktivítását&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
@@ -11300,7 +11300,7 @@ Verzió %1</translation>
         <translation type="obsolete">Pillanatkép %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtulalBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nem találom a VirtualBox Integrációs szolgáltatások CD képet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; vagy &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -11367,9 +11367,9 @@ Verzió %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nincs lemez&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Jelzi a CD/DVD-ROM meghajtón az aktivitást:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Jelzi a CD/DVD meghajtón az aktivitást:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -11851,12 +11851,12 @@ Verzió %1</translation>
         <translation type="obsolete">Válaszd ki az új merevlemezkép fájlját</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso)</source>
-        <translation type="obsolete">CD/DVD-ROM képek (*.iso)</translation>
+        <source>CD/DVD images (*.iso)</source>
+        <translation type="obsolete">CD/DVD képek (*.iso)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">CD/DVD-ROM képfájl kiválasztása</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVD képfájl kiválasztása</translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
@@ -11887,8 +11887,8 @@ Verzió %1</translation>
         <translation type="obsolete">Média lista frissítése</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROM képfájl (*.iso);;Minden fájl (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD képfájl (*.iso);;Minden fájl (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -12190,9 +12190,9 @@ Verzió %1</translation>
         <translation type="obsolete">Gazda eszköz</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -12349,9 +12349,9 @@ Verzió %1</translation>
         <translation>Floppy</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -13391,8 +13391,8 @@ Verzió %1</translation>
         <translation type="obsolete">Virtuális CD/DVD lemez választása</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">CD/DVD-ROM lemez</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD lemez</translation>
     </message>
     <message>
         <source>Choose a virtual floppy disk file</source>
@@ -14416,12 +14416,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Válaszd ki az új merevlemezkép fájlját</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROM képfájl (*.iso);;Minden fájl (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD képfájl (*.iso);;Minden fájl (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">CD/DVD-ROM képfájl kiválasztása</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">CD/DVD képfájl kiválasztása</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -14488,8 +14488,8 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Ide csatlakoztatva</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM disk</source>
-        <translation type="obsolete">CD/DVD-ROM lemez</translation>
+        <source>CD/DVD disk</source>
+        <translation type="obsolete">CD/DVD lemez</translation>
     </message>
     <message>
         <source>hard disk</source>
@@ -15852,8 +15852,8 @@ value.&lt;/qt&gt;</source>
         <translation>Felbontás</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">CD/DVD-ROM statisztika</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">CD/DVD statisztika</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -16265,7 +16265,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM csatolása</translation>
+        <translation type="obsolete">&amp;CD/DVD csatolása</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
@@ -16276,7 +16276,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&amp;Gazda CD/DVD eszköz </translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">A gazda CD/DVD meghajtóinak megjelenítése.</translation>
     </message>
     <message>
@@ -16359,8 +16359,8 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete"> CD/DVD </translation>
     </message>
     <message>
         <source>3</source>
@@ -16548,7 +16548,7 @@ value.&lt;/qt&gt;</source>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM csatolása</translation>
+        <translation type="obsolete">&amp;CD/DVD csatolása</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
@@ -16821,7 +16821,7 @@ Input Output APIC (I/O APIC), amely egy picit visszafogja a virtuális gép telj
         <translation type="obsolete">Elindítja a Virtuális lemezkezelőt, hogy új merevlemezt készíthess, vagy egy meglevőt jelölj ki csatolásra.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">A gazda floppy meghajtóinak megjelenítése.</translation>
     </message>
     <message>
@@ -16829,7 +16829,7 @@ Input Output APIC (I/O APIC), amely egy picit visszafogja a virtuális gép telj
         <translation type="obsolete">Elindítja a Virtuális lemezkezelőt, hogy kiválaszthass egy floppy képfájlt csatolásra.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">A gazda CD/DVD meghajtóinak megjelenítése.</translation>
     </message>
     <message>
@@ -16928,7 +16928,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">Ha engedélyezed, minden lemezcsere után az új beállítások elmentődnek a beállítófájlba, így megőrződnek két indítás között.</translation>
     </message>
     <message>
@@ -17070,8 +17070,8 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">Merevlemezek</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -17169,7 +17169,7 @@ hatására a virtuális gép látni fogja a hangkártyát, de nem szólal meg a 
         <translation type="obsolete">&amp;Gazda floppy eszköz </translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">A gazda floppy meghajtóinak megjelenítése.</translation>
     </message>
     <message>

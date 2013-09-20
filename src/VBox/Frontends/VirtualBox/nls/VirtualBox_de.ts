@@ -2715,7 +2715,7 @@
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
         <comment>CD/DVD tooltip</comment>
-        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zeigt die Aktivität der CD/DVD-ROM-Laufwerke:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
+        <translation>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Zeigt die Aktivität der CD/DVD-Laufwerke:&lt;/nobr&gt;%1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p style=&apos;white-space:pre&apos;&gt;&lt;nobr&gt;Indicates the activity of the floppy devices:&lt;/nobr&gt;%1&lt;/p&gt;</source>
@@ -3170,7 +3170,7 @@
         <translation>Zeigt die Beschreibung für diese virtuelle Maschine. Das Beschreibungsfeld kann für Kommentare über die Konfiguration des installierten Gastsystems verwendet werden.</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
     </message>
     <message>
@@ -3937,11 +3937,11 @@
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk or a physical drive to use with the virtual drive. The virtual machine will see a disk inserted into the drive with the data in the file or on the disk in the physical drive as its contents.</source>
-        <translation>Wählen Sie ein virtuelles CD/DVD-ROM-Abbild oder ein physisches Laufwerk am Host aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
+        <translation>Wählen Sie ein virtuelles CD/DVD-Abbild oder ein physisches Laufwerk am Host aus. Der Gast kann auf diese Daten als Medium im virtuellen Laufwerk zugreifen.</translation>
     </message>
     <message>
         <source>Set up the virtual CD/DVD drive</source>
-        <translation>Virtuelles CD/DVD-ROM-Laufwerk aufsetzen</translation>
+        <translation>Virtuelles CD/DVD-Laufwerk aufsetzen</translation>
     </message>
     <message>
         <source>Floppy &amp;Drive:</source>
@@ -3965,7 +3965,7 @@
     </message>
     <message>
         <source>Choose a virtual CD/DVD disk file...</source>
-        <translation>Datei für virtuelles CD/DVD-ROM-Medium auswählen...</translation>
+        <translation>Datei für virtuelles CD/DVD-Medium auswählen...</translation>
     </message>
     <message>
         <source>Remove disk from virtual drive</source>
@@ -4822,11 +4822,11 @@
         <translation>Der gemeinsame Ordner &lt;b&gt;%1&lt;/b&gt; (mit Verweis auf &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) konnte nicht aus der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; entfernt werden.&lt;/p&gt;&lt;p&gt;Bitte schließen Sie alle Programme im Gast, die diesen gemeinsamen Ordner benutzen, und versuchen Sie die Aktion erneut.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sind Sie sicher, dass Sie ein CDROM-Abbild mit den VirtualBox Gasterweiterungen von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (Größe %3 Byte) herunterladen wollen?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Das CDROM-Abbild mit den VirtualBox Gasterweiterungen wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und lokal als &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie das CDROM-Abbild registrieren und als virtuelle CD/DVD einbinden?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5018,7 +5018,7 @@
     </message>
     <message>
         <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Eine oder mehrere virtuelle Festplatten, CD/DVD-ROMs oder Diskettenmedien sind momentan nicht zugreifbar. Virtuelle Maschinen, die diese Medien benutzen, können so lange nicht benutzt werden, bis die Medien wieder zugreifbar werden.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Überprüfen&lt;/b&gt; um den Manager für virtuelle Medien zu öffnen oder wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt;, um dieses Problem zu ignorieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Eine oder mehrere virtuelle Festplatten, CD/DVDs oder Diskettenmedien sind momentan nicht zugreifbar. Virtuelle Maschinen, die diese Medien benutzen, können so lange nicht benutzt werden, bis die Medien wieder zugreifbar werden.&lt;/p&gt;&lt;p&gt;Wählen Sie &lt;b&gt;Überprüfen&lt;/b&gt; um den Manager für virtuelle Medien zu öffnen oder wählen Sie &lt;b&gt;Ignorieren&lt;/b&gt;, um dieses Problem zu ignorieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;A critical error has occurred while running the virtual machine and the machine execution has been stopped.&lt;/p&gt;&lt;p&gt;For help, please see the Community section on &lt;a href=http://www.virtualbox.org&gt;http://www.virtualbox.org&lt;/a&gt; or your support contract. Please provide the contents of the log file &lt;tt&gt;VBox.log&lt;/tt&gt; and the image file &lt;tt&gt;VBox.png&lt;/tt&gt;, which you can find in the &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; directory, as well as a description of what you were doing when this error happened. Note that you can also access the above files by selecting &lt;b&gt;Show Log&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;OK&lt;/b&gt; if you want to power off the machine or press &lt;b&gt;Ignore&lt;/b&gt; if you want to leave it as is for debugging. Please note that debugging requires special knowledge and tools, so it is recommended to press &lt;b&gt;OK&lt;/b&gt; now.&lt;/p&gt;</source>
@@ -5125,7 +5125,7 @@
         <translation>Fehler beim Löschen des Sicherungspunktes &lt;b&gt;%1&lt;/b&gt; der virtuellen Maschine &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht an die Maschine &lt;b&gt;%3&lt;/b&gt; gebunden werden.</translation>
     </message>
     <message>
@@ -5145,7 +5145,7 @@
         <translation>Auswurf erzwingen</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Das CD-Abbild mit den Gast-Erweiterungen konnte nicht an die Maschine &lt;b&gt;%1&lt;/b&gt; gebunden werden, da diese Maschine kein CD/DVD-Laufwerk besitzt. Bitte fügen Sie ein solches auf der Seite Massenspeicher der Einstellungen für die virtuelle Maschine hinzu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5183,8 +5183,8 @@
         <translation type="obsolete">Das Diskettenabbild</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie wirklich das CD/DVD-ROM-Laufwerk löschen?&lt;/p&gt;&lt;p&gt;Ohne CD/DVD-ROM-Laufwerk können Sie keine CDs oder CD-Abbilder einbinden und die Gast-Erweiterungen nicht installieren!&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Möchten Sie wirklich das CD/DVD-Laufwerk löschen?&lt;/p&gt;&lt;p&gt;Ohne CD/DVD-Laufwerk können Sie keine CDs oder CD-Abbilder einbinden und die Gast-Erweiterungen nicht installieren!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -5279,7 +5279,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are about to add a new CD/DVD drive to controller &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Would you like to choose a virtual CD/DVD disk to put in the drive or to leave it empty for now?&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Sie sind dabei, ein neues CD/DVD-ROM-Gerät an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein Medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Sie sind dabei, ein neues CD/DVD-Gerät an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein Medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Choose disk</source>
@@ -5296,7 +5296,7 @@
         <translation>&lt;p&gt;Sie sind dabei, ein neues virtuelles Diskettenlaufwerk an den Controller &lt;b&gt;%1&lt;/b&gt; anzuschließen.&lt;/p&gt;&lt;p&gt;Möchten Sie ein existierendes Medium an das Laufwerk binden oder soll das Laufwerk jetzt kein Medium enthalten?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Die Gasterweiterungen konnten nicht aktualisiert werden. Das ISO-Abbild mit den Erweiterungen wird jetzt für eine manuelle gemountet.</translation>
     </message>
     <message>
@@ -5569,7 +5569,7 @@
         <translation>Daten konnten nicht kopiert werden.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Ein CDROM-Abbild mit den VirtualBox-Gasterweiterungen wurde nicht gefunden &lt;nobr&gt;&lt;b&gt;Möchten Sie diese Datei nun aus dem Internet herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -5637,7 +5637,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5713,27 +5713,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5781,15 +5781,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5797,19 +5797,19 @@
         <translation type="unfinished">Herunterladen</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7371,9 +7371,9 @@
         <translation>Diskette</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Hard Disk</source>

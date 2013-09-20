@@ -1530,11 +1530,11 @@
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
@@ -1573,11 +1573,11 @@
         <translation type="obsolete">İptal</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
@@ -1649,8 +1649,8 @@
         <translation type="obsolete">Ortam Tipi</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM Sürücü</translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">&amp;CD/DVD Sürücü</translation>
     </message>
     <message>
         <source>&amp;Floppy Device</source>
@@ -1693,8 +1693,8 @@
         <translation type="obsolete">Özet</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM Sürücü</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD Sürücü</translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -1808,8 +1808,8 @@
         <translation type="obsolete">Özet</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">CD/DVD-ROM Sürücü</translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">CD/DVD Sürücü</translation>
     </message>
     <message>
         <source>Type</source>
@@ -4165,7 +4165,7 @@
         <translation type="obsolete">D&amp;iğer</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Eğer işaretlenmişse, makinenin çalıştırılması sırasında CD/DVD ya da Disket ortamını bağlamada yapılan herhangi bir değişiklik çalıştırmalar arasında bağlanmış ortamın yapılandırmasını korumak için ayarlar dosyasına kaydedilecektir.</translation>
     </message>
     <message>
@@ -6078,19 +6078,19 @@
         <translation>&lt;p&gt;&lt;b&gt;%3&lt;/b&gt;sanal makinesinden &lt;b&gt;%1&lt;/b&gt; paylaşılan klasörünü (&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; klasörünü işaret eden) kaldırma başarısız.&lt;/p&gt;&lt;p&gt;Lütfen misafir İS içerisinde bu paylaşılan klasörü kullanabilen tüm programları kapatın ve tekrar deneyin.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CD kalıbı dosyası &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ya da &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt; bulunamadı.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;BU CD kalıp dosyasını Internet&apos;ten indirmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CD kalıbı dosyası &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt; adresinden indirilemedi.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; adresinden (boyut %3 bayt) VirtualBox Guest Additions CD kalıbını indirmek istediğinize emin misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CD kalıbı dosyası &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; adresinden başarılı olarak indirildi ve yerel diskinize &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;&lt;/nobr&gt; olarak kaydedildi.&lt;/p&gt;&lt;p&gt;Bu CD kalıp dosyasını kayıt ettirmek ve sanal CD/DVD sürücüsüne bağlamak ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6588,7 +6588,7 @@
         <translation type="obsolete">&amp;Seç</translation>
     </message>
     <message>
-        <source>Unable to mount the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%3&lt;/b&gt;.</source>
+        <source>Unable to insert the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%3&lt;/b&gt;.</source>
         <translation type="obsolete">&lt;b&gt;%3&lt;/b&gt; makinesine %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; bağlanamaz.</translation>
     </message>
     <message>
@@ -6608,8 +6608,8 @@
         <translation>Zorla Sök</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesine VirtualBox Guest Additions installer CD kalıbı eklenemedi, makine CD/DVD-ROM sürücülere sahip değil gibi. Lütfen sanal makine ayarları iletisinin depolama sayfasını kullanarak bir sürücü ekleyin.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <translation type="obsolete">&lt;b&gt;%1&lt;/b&gt; sanal makinesine VirtualBox Guest Additions installer CD kalıbı eklenemedi, makine CD/DVD sürücülere sahip değil gibi. Lütfen sanal makine ayarları iletisinin depolama sayfasını kullanarak bir sürücü ekleyin.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -6651,8 +6651,8 @@
         <translation type="obsolete">sabit disk</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
-        <translation>&lt;p&gt;CD/DVD-ROM aygıtını silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Herhangi bir CD veya ISO kalıbını bağlayamayacaksınız ya da onsuz Misafir Eklentilerini yükleyemeyeceksiniz!&lt;/p&gt;</translation>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <translation>&lt;p&gt;CD/DVD aygıtını silmek istediğinize emin misiniz?&lt;/p&gt;&lt;p&gt;Herhangi bir CD veya ISO kalıbını bağlayamayacaksınız ya da onsuz Misafir Eklentilerini yükleyemeyeceksiniz!&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Remove</source>
@@ -6768,7 +6768,7 @@
         <translation>&lt;b&gt;%3&lt;/b&gt; makinesinin &lt;i&gt;%2&lt;/i&gt; yuvasından disket aygıtını (&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;) çıkartma başarısız.</translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation>Misafir Eklentilerini güncelleme başarısız. Misafir Eklentileri kurulum kalıbı elle kurulum sağlamak için bağlanacak.</translation>
     </message>
     <message>
@@ -7041,7 +7041,7 @@
         <translation>Veriyi kaldırma başarısız.</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions CD kalıbı dosyası bulunamadı.&lt;/p&gt;&lt;p&gt;Bu CD kalıbını Internet&apos;ten indirmek ister misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7109,7 +7109,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7185,27 +7185,27 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7252,15 +7252,15 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7268,19 +7268,19 @@
         <translation type="unfinished">İndir</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7315,22 +7315,22 @@
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
     <name>UIMiniProgressWidgetAdditions</name>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı indirme işlemini iptal et</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">VirtualBox Guest Additions CD kalıbı &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; adresinden indiriliyor...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -9559,20 +9559,20 @@ Version %1</source>
         <translation type="obsolete">Bağlı olan disketi ortamını ayır</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM Kalıbı...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">&amp;CD/DVD Kalıbı...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
-        <translation type="obsolete">CD/DVD-ROM kalıp dosyasını bağla</translation>
+        <source>Mount a CD/DVD image file</source>
+        <translation type="obsolete">CD/DVD kalıp dosyasını bağla</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation type="obsolete">C&amp;D/DVD-ROM ortamını ayır</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation type="obsolete">Bağlı olan CD/DVD-ROM ortamını ayır</translation>
+        <source>Unmount the currently mounted CD/DVD media</source>
+        <translation type="obsolete">Bağlı olan CD/DVD ortamını ayır</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -9640,8 +9640,8 @@ Version %1</source>
         <translation type="obsolete">&amp;Disketi Bağla</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM&apos;u Bağla</translation>
+        <source>Mount &amp;CD/DVD</source>
+        <translation type="obsolete">&amp;CD/DVD&apos;u Bağla</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -9767,9 +9767,9 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Bağlanmış ortam yok&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;CD/DVD-ROM sürücüsü için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;CD/DVD sürücüsü için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -10124,8 +10124,8 @@ Version %1</source>
         <translation type="obsolete">Bir sabit disk kalıbı seçin</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Bir CD/DVD-ROM kalıbı seç</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Bir CD/DVD kalıbı seç</translation>
     </message>
     <message>
         <source>Select a floppy disk image file</source>
@@ -10152,8 +10152,8 @@ Version %1</source>
         <translation type="obsolete">Ortam listesini yenile</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROM kalıpları (*.iso);;Tüm dosyalar (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD kalıpları (*.iso);;Tüm dosyalar (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -10419,9 +10419,9 @@ Version %1</source>
         <translation type="obsolete">Sunucu Sürücüsü</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -10573,9 +10573,9 @@ Version %1</source>
         <translation>Disket</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -12625,12 +12625,12 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Bir sabit disk kalıbı seçin</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">CD/DVD-ROM kalıpları (*.iso);;Tüm dosyalar (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">CD/DVD kalıpları (*.iso);;Tüm dosyalar (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Bir CD/DVD-ROM kalıbı seç</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Bir CD/DVD kalıbı seç</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -13869,8 +13869,8 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation>Ekran Çözünürlüğü</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">CD/DVD-ROM İstatistikleri</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">CD/DVD İstatistikleri</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -14249,7 +14249,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM Sürücüsünü Bağla</translation>
+        <translation type="obsolete">&amp;CD/DVD Sürücüsünü Bağla</translation>
     </message>
     <message>
         <source>Mounts the specified CD/DVD drive to the virtual CD/DVD drive.</source>
@@ -14260,7 +14260,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">Sunucu C&amp;D/DVD Sürücüsü</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Sunucudaki sanal makineye bağlanabilecek olan CD/DVD sürücülerini listeler.</translation>
     </message>
     <message>
@@ -14351,8 +14351,8 @@ eşleşebilir.&lt;/qt&gt;</translation>
         <translation type="obsolete">#disket</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete"> CD/DVD </translation>
     </message>
     <message>
         <source>3</source>
@@ -14548,7 +14548,7 @@ eşleşebilir.&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Mount CD/DVD Drive</source>
-        <translation type="obsolete">&amp;CD/DVD-ROM Sürücüsünü Bağla</translation>
+        <translation type="obsolete">&amp;CD/DVD Sürücüsünü Bağla</translation>
     </message>
     <message>
         <source>Host CD/DVD &amp;Drive</source>
@@ -14777,7 +14777,7 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
         <translation type="obsolete">Var olan bir sanal diski seçmek ya da yeni bir sanal disk oluşturmak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Sanal makineye bağlanabilecek olan, sunucu üzerindeki Disket sürücüleri listeler.</translation>
     </message>
     <message>
@@ -14785,7 +14785,7 @@ işletim sistemi yükledikten sonra bunu pasifleştirmeyin!&lt;/qt&gt;</translat
         <translation type="obsolete">Bir Disket kalıbı seçerek bağlamak için Sanal Disk Yöneticisini çalıştırır.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Sunucudaki sanal makineye bağlanabilecek olan CD/DVD sürücülerini listeler.</translation>
     </message>
     <message>
@@ -15069,8 +15069,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Sabit Diskler</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -15144,7 +15144,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Sunucu &amp;Disket Sürücüsü</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Sanal makineye bağlanabilecek olan, sunucu üzerindeki Disket sürücüleri listeler.</translation>
     </message>
     <message>

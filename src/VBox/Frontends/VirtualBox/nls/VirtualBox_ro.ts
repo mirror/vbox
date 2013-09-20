@@ -1399,11 +1399,11 @@
         <translation type="obsolete">Renunță</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Descarc imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Revocă descărcarea imaginii VirtualBox Guest Additions</translation>
     </message>
     <message>
@@ -1458,11 +1458,11 @@
         <translation type="obsolete">Renunță</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Descarc imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Oprește descărcarea imaginii VirtualBox Guest Additions</translation>
     </message>
     <message>
@@ -1786,8 +1786,8 @@
         <translation type="obsolete">Tip media</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispozitiv &amp;CD/DVD-ROM </translation>
+        <source>&amp;CD/DVD Device</source>
+        <translation type="obsolete">Dispozitiv &amp;CD/DVD </translation>
     </message>
     <message>
         <source>Alt+C</source>
@@ -1846,8 +1846,8 @@
         <translation type="obsolete">Rezumat</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispozitiv CD/DVD-ROM </translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">Dispozitiv CD/DVD </translation>
     </message>
     <message>
         <source>Floppy Device</source>
@@ -1977,8 +1977,8 @@
         <translation type="obsolete">Rezumat</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Device</source>
-        <translation type="obsolete">Dispozitiv CD/DVD-ROM </translation>
+        <source>CD/DVD Device</source>
+        <translation type="obsolete">Dispozitiv CD/DVD </translation>
     </message>
     <message>
         <source>Type</source>
@@ -4300,7 +4300,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Timp &amp;rulare:</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation>Dacă este bifat, orice schimbare la CD/DVD-ul montat sau mediul dischetă efectuată în timpul execuției mașinii va fi salvată în fișierul de setări pentru a păstra configurația mediilor monate de la o rulare la alta.</translation>
     </message>
     <message>
@@ -6263,19 +6263,19 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
 &lt;p&gt;Vă rugăm închideți toate programele din SO musafir care poate utilizează acum acest dosar partajat și încercați din nou.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions CD image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the VirtualBox Guest Additions disk image file file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut găsi fișierul de imagine al CD-ului cu VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriți să descărcați această imagine de CD de pe Internet?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am putut descărca imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;%3&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (size %3 bytes)?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Sunteți sigur că doriți să descărcați imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; (dimensiune %3 octeți)?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The VirtualBox Guest Additions CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The VirtualBox Guest Additions disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Imaginea de CD a VirtualBox Guest Additions a fost descărcată cu succes de la &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%2&lt;/a&gt;&lt;/nobr&gt; și salvată local ca &lt;nobr&gt;&lt;b&gt;%3&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Doriți să înregistrați această imagine de CD și să o montați în unitatea de CD/DVD virtuală?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6823,7 +6823,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">dispozitiv dischetă</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD-ROM device?&lt;/p&gt;&lt;p&gt;You will not be able to mount any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to delete the CD/DVD device?&lt;/p&gt;&lt;p&gt;You will not be able to insert any CDs or ISO images or install the Guest Additions without it!&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6896,7 +6896,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to update Guest Additions. The Guest Additions installation image will be mounted to provide a manual installation.</source>
+        <source>Failed to update Guest Additions. The Guest Additions disk image file will be inserted for user installation.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7205,7 +7205,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>There is no virtual machine with id &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7281,27 +7281,27 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force mounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Would you like to try force unmounting of this medium?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to mount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; on the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Unable to unmount the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7350,15 +7350,15 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to enable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Failed to disable the video capture for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
+        <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image.&lt;/p&gt;&lt;p&gt;Do you wish to download this CD image from the Internet?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7366,19 +7366,19 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="unfinished">Descarcă</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this CD image and mount it on the virtual CD/DVD drive?&lt;/p&gt;</source>
+        <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7417,11 +7417,11 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation type="obsolete">Renunță</translation>
     </message>
     <message>
-        <source>Cancel the VirtualBox Guest Additions CD image download</source>
+        <source>Cancel the VirtualBox Guest Additions disk image file download</source>
         <translation type="obsolete">Anulează descărcarea imaginii CD VirtualBox Guest Additions</translation>
     </message>
     <message>
-        <source>Downloading the VirtualBox Guest Additions CD image from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
+        <source>Downloading the VirtualBox Guest Additions disk image file from &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</source>
         <translation type="obsolete">Se descarcă imaginea de CD a VirtualBox Guest Additions de la &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;...&lt;/nobr&gt;</translation>
     </message>
 </context>
@@ -9864,20 +9864,20 @@ Versiunea %1</translation>
         <translation type="obsolete">Demontează mediul dischetă montat în prezent</translation>
     </message>
     <message>
-        <source>&amp;CD/DVD-ROM Image...</source>
-        <translation type="obsolete">Imagine &amp;CD/DVD-ROM...</translation>
+        <source>&amp;CD/DVD Image...</source>
+        <translation type="obsolete">Imagine &amp;CD/DVD...</translation>
     </message>
     <message>
-        <source>Mount a CD/DVD-ROM image file</source>
-        <translation type="obsolete">Montează fișier imagine CD/DVD-ROM</translation>
+        <source>Mount a CD/DVD image file</source>
+        <translation type="obsolete">Montează fișier imagine CD/DVD</translation>
     </message>
     <message>
         <source>Unmount C&amp;D/DVD-ROM</source>
         <translation type="obsolete">Demontează C&amp;D/DVD-ROM</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted CD/DVD-ROM media</source>
-        <translation type="obsolete">Demontează mediul CD/DVD-ROM montat în prezent</translation>
+        <source>Unmount the currently mounted CD/DVD media</source>
+        <translation type="obsolete">Demontează mediul CD/DVD montat în prezent</translation>
     </message>
     <message>
         <source>Remote Desktop (RDP) Server</source>
@@ -9949,8 +9949,8 @@ Versiunea %1</translation>
         <translation type="obsolete">Montează &amp;dischetă</translation>
     </message>
     <message>
-        <source>Mount &amp;CD/DVD-ROM</source>
-        <translation type="obsolete">Montează &amp;CD/DVD-ROM</translation>
+        <source>Mount &amp;CD/DVD</source>
+        <translation type="obsolete">Montează &amp;CD/DVD</translation>
     </message>
     <message>
         <source>&amp;USB Devices</source>
@@ -9999,8 +9999,8 @@ Versiunea %1</translation>
         <translation type="obsolete">nu&amp;nbsp;este&amp;nbsp;montat</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD-ROM&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
-        <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;CD/DVD-ROM&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
+        <source>&lt;qt&gt;Indicates&amp;nbsp;the&amp;nbsp;activity&amp;nbsp;of&amp;nbsp;the&amp;nbsp;CD/DVD&amp;nbsp;media&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</source>
+        <translation type="obsolete">&lt;qt&gt;Indică&amp;nbsp;activitatea&amp;nbsp;mediului&amp;nbsp;CD/DVD&lt;br&gt;[&lt;b&gt;%1&lt;/b&gt;]&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>Host&amp;nbsp;Drive&amp;nbsp;</source>
@@ -10070,7 +10070,7 @@ Versiunea %1</translation>
         <translation type="obsolete">Instantaneu %1</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions CD image &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
+        <source>&lt;p&gt;Failed to find the VirtualBox Guest Additions disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; or &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Nu am găsit imaginea CD a VirtualBox Guest Additions &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; sau &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;&lt;/p&gt;</translation>
     </message>
     <message>
@@ -10174,9 +10174,9 @@ Versiunea %1</translation>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Nici un mediu montat&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD-ROM media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the CD/DVD media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>DVD-ROM tooltip</comment>
-        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indică activitatea mediului CD/DVD-ROM:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
+        <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Indică activitatea mediului CD/DVD:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;Host Drive&lt;/b&gt;: %1&lt;/nobr&gt;</source>
@@ -10642,12 +10642,12 @@ Versiunea %1</translation>
         <translation type="obsolete">Selectați un fișier imagine hard disc</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso)</source>
-        <translation type="obsolete">Imagine CD/DVD-ROM (*.iso)</translation>
+        <source>CD/DVD images (*.iso)</source>
+        <translation type="obsolete">Imagine CD/DVD (*.iso)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine CD/DVD-ROM</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
     </message>
     <message>
         <source>Floppy images (*.img)</source>
@@ -10682,8 +10682,8 @@ Versiunea %1</translation>
         <translation type="obsolete">Selectați un fișier imagine dischetă</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imagini CD/DVD-ROM (*.iso);;Toate fișierele (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -10993,9 +10993,9 @@ Versiunea %1</translation>
         <translation type="obsolete">Unitate gazdă</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>details report</comment>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Adapter</source>
@@ -11152,9 +11152,9 @@ Versiunea %1</translation>
         <translation>Dischetă</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
+        <source>CD/DVD</source>
         <comment>DeviceType</comment>
-        <translation>CD/DVD-ROM</translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -13325,12 +13325,12 @@ Folosiți meniul contextual sau butaonele din dreapta pentru a adâuga sau șter
         <translation type="obsolete">Selectați un fișier imagine disc fix</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM images (*.iso);;All files (*)</source>
-        <translation type="obsolete">Imagini CD/DVD-ROM (*.iso);;Toate fișierele (*)</translation>
+        <source>CD/DVD images (*.iso);;All files (*)</source>
+        <translation type="obsolete">Imagini CD/DVD (*.iso);;Toate fișierele (*)</translation>
     </message>
     <message>
-        <source>Select a CD/DVD-ROM disk image file</source>
-        <translation type="obsolete">Selectați un fișier imagine CD/DVD-ROM</translation>
+        <source>Select a CD/DVD disk image file</source>
+        <translation type="obsolete">Selectați un fișier imagine CD/DVD</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -14825,8 +14825,8 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">Statistici disc hard ID</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM Statistics</source>
-        <translation type="obsolete">Statistici CD/DVD-ROM</translation>
+        <source>CD/DVD Statistics</source>
+        <translation type="obsolete">Statistici CD/DVD</translation>
     </message>
     <message>
         <source>Network Adapter Statistics</source>
@@ -15413,7 +15413,7 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">&amp;Unitate CD/DVD gazdă</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Listează unitățile CD/DVD disponibile pentru montare la mașina virtuală.</translation>
     </message>
     <message>
@@ -15492,8 +15492,8 @@ value.&lt;/qt&gt;</source>
         <translation type="obsolete">2</translation>
     </message>
     <message>
-        <source> CD/DVD-ROM </source>
-        <translation type="obsolete"> CD/DVD-ROM </translation>
+        <source> CD/DVD </source>
+        <translation type="obsolete"> CD/DVD </translation>
     </message>
     <message>
         <source>3</source>
@@ -15719,7 +15719,7 @@ sau a selecta un disc hard virtual existent.</translation>
         <translation type="obsolete">Montează unitatea de dischetă specificată a gazdei la unitatea de dischetă virtuală.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to
+        <source>Lists host Floppy drives available to insert to
 the virtual machine.</source>
         <translation type="obsolete">Listează driveuri dischetă disponibile pentru montare
 la mașina virtuală.</translation>
@@ -15755,7 +15755,7 @@ o imagine de dischetă pentru montare.</translation>
         <translation type="obsolete">Montează unitatea CD/DVD specificată a gazdei la unitatea virtuală CD/DVD.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to
+        <source>Lists host CD/DVD drives available to insert to
 the virtual machine.</source>
         <translation type="obsolete">Listează driveuri CD/DVD disponibile pentru montare
 la mașina virtuală.</translation>
@@ -16099,7 +16099,7 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
         <translation type="obsolete">Invocă dialogul Manager discuri virtuale pentru a crea o nouă imagine disc sau a selecta un disc hard virtual existent.</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Listează unitățile de dischetă de pe gazdă disponibile pentru montarea pe mașina virtuală.</translation>
     </message>
     <message>
@@ -16108,7 +16108,7 @@ această opțiune după ce ați instalat un sistem de operare musafir Microsoft!
 o imagine de dischetă pentru montare.</translation>
     </message>
     <message>
-        <source>Lists host CD/DVD drives available to mount to the virtual machine.</source>
+        <source>Lists host CD/DVD drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Listează unități CD/DVD disponibile pentru montare
 la mașina virtuală.</translation>
     </message>
@@ -16215,7 +16215,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Alt+R</translation>
     </message>
     <message>
-        <source>If checked, any change to mounted CD/DVD or Floppy media performed during machine execution will be saved in the settings file in order to preserve the configuration of mounted media between runs.</source>
+        <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
         <translation type="obsolete">Dacă este bifat, orice schimbare la CD/DVD-ul montat sau mediul dischetă efectuată în timpul execuției mașinii va fi salvată în fișierul de setări pentru a păstra configurația mediilor monate de la o rulare la alta.</translation>
     </message>
     <message>
@@ -16501,8 +16501,8 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Discuri fixe</translation>
     </message>
     <message>
-        <source>CD/DVD-ROM</source>
-        <translation type="obsolete">CD/DVD-ROM</translation>
+        <source>CD/DVD</source>
+        <translation type="obsolete">CD/DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -16580,7 +16580,7 @@ makes the guest see an audio card, however every access to it will be ignored.&l
         <translation type="obsolete">Unitate &amp;dischetă gazdă</translation>
     </message>
     <message>
-        <source>Lists host Floppy drives available to mount to the virtual machine.</source>
+        <source>Lists host Floppy drives available to insert to the virtual machine.</source>
         <translation type="obsolete">Listează unitățile de dischetă de pe gazdă disponibile pentru montarea pe mașina virtuală.</translation>
     </message>
     <message>
