@@ -17,23 +17,23 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef HOSTVIDEOCAPTUREDEVICE_IMPL_H_
-#define HOSTVIDEOCAPTUREDEVICE_IMPL_H_
+#ifndef HOSTVIDEOINPUTDEVICE_IMPL_H_
+#define HOSTVIDEOINPUTDEVICE_IMPL_H_
 
-#include "HostVideoCaptureDeviceWrap.h"
+#include "HostVideoInputDeviceWrap.h"
 
 #include <list>
 
-class HostVideoCaptureDevice;
+class HostVideoInputDevice;
 
-typedef std::list<ComObjPtr<HostVideoCaptureDevice> > HostVideoCaptureDeviceList;
+typedef std::list<ComObjPtr<HostVideoInputDevice> > HostVideoInputDeviceList;
 
-class ATL_NO_VTABLE HostVideoCaptureDevice :
-    public HostVideoCaptureDeviceWrap
+class ATL_NO_VTABLE HostVideoInputDevice :
+    public HostVideoInputDeviceWrap
 {
 public:
 
-    DECLARE_EMPTY_CTOR_DTOR(HostVideoCaptureDevice)
+    DECLARE_EMPTY_CTOR_DTOR(HostVideoInputDevice)
 
     HRESULT FinalConstruct();
     void FinalRelease();
@@ -42,11 +42,11 @@ public:
     HRESULT init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias);
     void uninit();
 
-    static HRESULT queryHostDevices(HostVideoCaptureDeviceList *pList);
+    static HRESULT queryHostDevices(HostVideoInputDeviceList *pList);
 
 private:
 
-    // wrapped IHostVideoCaptureDevice properties
+    // wrapped IHostVideoInputDevice properties
     virtual HRESULT getName(com::Utf8Str &aName) { aName = m.name; return S_OK; }
     virtual HRESULT getPath(com::Utf8Str &aPath) { aPath = m.path; return S_OK; }
     virtual HRESULT getAlias(com::Utf8Str &aAlias) { aAlias = m.alias; return S_OK; }
@@ -66,6 +66,6 @@ private:
     Data m;
 };
 
-#endif // HOSTVIDEOCAPTUREDEVICE_IMPL_H_
+#endif // HOSTVIDEOINPUTDEVICE_IMPL_H_
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
