@@ -43,7 +43,7 @@ static PRTLOGGER            g_pLogger = NULL;
 
 static VBOXCLIENTSERVICE    g_aServices[] =
 {
-    { g_ClipboardService },
+    g_ClipboardService
 };
 
 
