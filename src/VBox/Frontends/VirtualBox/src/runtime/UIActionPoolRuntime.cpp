@@ -577,8 +577,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "Switch to &Scale Mode"));
-        setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and scale mode"));
+        setName(QApplication::translate("UIActionPool", "Switch to &Scaled Mode"));
+        setStatusTip(QApplication::translate("UIActionPool", "Switch between normal and scaled mode"));
     }
 };
 

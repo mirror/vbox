@@ -113,15 +113,15 @@ void UIMediumTypeChangeDialog::retranslateUi()
     setWindowTitle(tr("Modify medium attributes"));
 
     /* Translate description: */
-    m_pLabel->setText(tr("<p>You are about to change the attributes of the virtual disk located in <b>%1</b>.</p>"
-                         "<p>Please choose one of the following medium types and press <b>%2</b> "
+    m_pLabel->setText(tr("<p>You are about to change the settings of the disk image file <b>%1</b>.</p>"
+                         "<p>Please choose one of the following modes and press <b>%2</b> "
                          "to proceed or <b>%3</b> otherwise.</p>")
                       .arg(m_medium.GetLocation())
                       .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Ok)->text()))
                       .arg(VBoxGlobal::removeAccelMark(m_pButtonBox->button(QDialogButtonBox::Cancel)->text())));
 
     /* Translate group-box: */
-    m_pGroupBox->setTitle(tr("Choose medium type:"));
+    m_pGroupBox->setTitle(tr("Choose mode:"));
 
     /* Translate radio-buttons: */
     QList<QRadioButton*> buttons = findChildren<QRadioButton*>();

@@ -508,11 +508,11 @@
         <translation>Normal ve özgün masaüstü bütünleştirme kipi arasında değiştir</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Küçültme Ki&amp;pine değiştir</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Normal ve küçültme kipi arasında değiştir</translation>
     </message>
     <message>
@@ -5734,11 +5734,11 @@
         <translation>Ortam özniteliklerini değiştir</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;%1&lt;/b&gt; içinde bulunan sanal diskin özniteliklerini değiştirmek üzeresiniz.&lt;/p&gt;&lt;p&gt;Lütfen aşağıdaki ortam türlerinden birini seçin ve ilerlemek için &lt;b&gt;%2&lt;/b&gt; düğmesine ya da aksi takdirde &lt;b&gt;%3&lt;/b&gt; düğmesine basın.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Ortam türünü seçin:</translation>
     </message>
 </context>
@@ -6345,7 +6345,7 @@
         <translation>Bırak</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; %1 öğesini bilinen ortam listesinden kaldırmak istediğinize emin misiniz?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6404,7 +6404,7 @@
         <translation type="obsolete">%1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; kapatma başarısız.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; ortamının erişebilirlik durumunu belirleme başarısız.</translation>
     </message>
     <message>
@@ -6412,7 +6412,7 @@
         <translation type="obsolete">&lt;p&gt;VirtualBox çevrimiçi kayıt olma hizmetine aşağıdaki hatadan dolayı bağlanma başarısız: &lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Bir ya da daha fazla sanal sabit disk, CD/DVD veya disket ortamı şu anda erişilebilir değil. Sonuç olarak, daha sonra erişilebilir olana kadar bu ortamları kullanan sanal makineleri işletemeyceksiniz.&lt;/p&gt;&lt;p&gt;Sanal Ortam Yöneticisi penceresini açmak için &lt;b&gt;Kontrol et&lt;/b&gt; düğmesine basın ve hangi ortamın erişilemez olduğunu görün, ya da bu mesajı yoksaymak için &lt;b&gt;Yoksay&lt;/b&gt; düğmesine basın.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6820,7 +6820,7 @@
         <translation>&lt;p&gt;Sanal makine penceresi şimdi &lt;b&gt;Özgün&lt;/b&gt; kipine değiştirilecektir. Her zaman &lt;b&gt;%1&lt;/b&gt; tuşuna basarak pencereli kipe geri dönebilirsiniz.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Anamakine&lt;/i&gt; tuşu şu an &lt;b&gt;%2&lt;/b&gt; olarak tanımlıdır unutmayın.&lt;/p&gt;&lt;p&gt;Özgün kipinde ana menü çubuğu gizlenir unutmayın. &lt;b&gt;Anamakine+Home&lt;/b&gt; tuş birleşimine basarak erişebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Sanal makine penceresi şimdi &lt;b&gt;Küçültme&lt;/b&gt; kipine değiştirilecektir. Her zaman &lt;b&gt;%1&lt;/b&gt; tuşuna basarak pencereli kipe geri dönebilirsiniz.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Anamakine&lt;/i&gt; tuşu şu an &lt;b&gt;%2&lt;/b&gt; olarak tanımlıdır unutmayın.&lt;/p&gt;&lt;p&gt;Küçültme kipinde ana menü çubuğu gizlenir unutmayın. &lt;b&gt;Anamakine+Home&lt;/b&gt; tuş birleşimine basarak erişebilirsiniz.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -6909,7 +6909,7 @@
         <translation>Şu anki makine durumunun anlık bir görüntüsünü oluştur</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Ortam türü &lt;b&gt;%1&lt;/b&gt; öğesinden &lt;b&gt;%2&lt;/b&gt; öğesine değiştirilirken hata oldu.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7165,7 +7165,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7173,11 +7173,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -9555,7 +9555,7 @@ Version %1</source>
         <translation type="obsolete">&amp;Disketi Ayır</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Bağlı olan disketi ortamını ayır</translation>
     </message>
     <message>
@@ -9747,7 +9747,7 @@ Version %1</source>
         <translation type="obsolete">Tam masaüstü uyumu kipine geç</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Disket sürücüsü için etkinlikleri gösterir:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -10073,7 +10073,7 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Anlık Görüntü&amp;nbsp;&amp;nbsp;%5&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>HDD</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Ortam erişilebilirliği kontrolünde hata oluştu</translation>
     </message>
@@ -10098,7 +10098,7 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;nobr&gt;Şuraya eklendi:&amp;nbsp;&amp;nbsp;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking media accessibility</source>
+        <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Error checking accessibility of disk image files</source>
         <comment>CD/DVD/Floppy</comment>
         <translation type="obsolete">&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;&lt;br&gt;Ortam erişilebilirlik kontrolu hatası</translation>
     </message>
@@ -10128,7 +10128,7 @@ Version %1</source>
         <translation type="obsolete">Bir CD/DVD kalıbı seç</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Bir Disket kalıbı seç</translation>
     </message>
     <message>
@@ -10148,7 +10148,7 @@ Version %1</source>
         <translation type="obsolete">Seçili ortamı makineden ayırarak bırak</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation type="obsolete">Ortam listesini yenile</translation>
     </message>
     <message>
@@ -11086,7 +11086,7 @@ Version %1</source>
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Erişilebilirlik kontrol ediliyor...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Ortam erişilebilirliği kontrol edilemedi.&lt;br&gt;%1.</translation>
     </message>
@@ -11351,12 +11351,12 @@ Version %1</source>
         <translation>&lt;i&gt;Erişebilirlik kontrol ediliyor...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Ortam erişebilirliği kontrolü başarısız.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Seçilen ortam yok&lt;/b&gt;</translation>
     </message>
@@ -11365,12 +11365,12 @@ Version %1</source>
         <translation>Aynı zamanda bunu makine çalışıyorken değiştirebilirsiniz.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Mevcut ortam yok&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Sanal ortam yöneticisini kullanarak ortam kalıpları oluşturabilirsiniz.</translation>
     </message>
     <message>
@@ -11379,7 +11379,7 @@ Version %1</source>
         <translation>Takılan bu sabit disk yeni olarak oluşturulmuş ayrımlanan sabit disk kullanımını dolaylı olarak gerçekleştirecektir.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Bu sabit disk zincirindeki ortamın bazısı erişilemez. Lütfen bu ortamı incelemek için &lt;b&gt;Ayrımlanan Sabit Diskleri Göster&lt;/b&gt; içindeki Sanal Ortam Yönetcisini kullanın.</translation>
     </message>
@@ -12538,7 +12538,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Sabit disk yok</translation>
     </message>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Kullanılabilir ortam yok. İstediğiniz ortamı eklemek için Sanal Ortam Yöneticisi&apos;ni kullanın.</translation>
     </message>
     <message>
@@ -12577,19 +12577,19 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Yeni sanal sabit disk oluştur</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Mevcut bir ortam ekle</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Seçilen ortamı kaldır</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Seçilen ortamı makinelerden çıkartarak serbest bırak</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Ortam listesini yenile</translation>
     </message>
     <message>
@@ -12637,7 +12637,7 @@ to the system default language.&lt;/qt&gt;
         <translation type="obsolete">Disket kalıpları (*.img);;Tüm dosyalar (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Bir Disket kalıbı seç</translation>
     </message>
     <message>
@@ -12729,11 +12729,11 @@ to the system default language.&lt;/qt&gt;
         <translation>&amp;Değiştir...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Mevcut ortamı kopyala</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Seçilen ortamın özniteliklerini değiştir</translation>
     </message>
     <message>

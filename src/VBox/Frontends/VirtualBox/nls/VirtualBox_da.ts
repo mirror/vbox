@@ -531,11 +531,11 @@
         <translation>Skift mellem normalt vindue og vindue integreret med skrivebordet</translation>
     </message>
     <message>
-        <source>Switch to &amp;Scale Mode</source>
+        <source>Switch to &amp;Scaled Mode</source>
         <translation>Skift til &amp;skaleret tilstand</translation>
     </message>
     <message>
-        <source>Switch between normal and scale mode</source>
+        <source>Switch between normal and scaled mode</source>
         <translation>Skift mellem normalt vindue og skaleret tilstand</translation>
     </message>
     <message>
@@ -6429,11 +6429,11 @@ p, li { white-space: pre-wrap; }
         <translation>Ret mediets egenskaber</translation>
     </message>
     <message>
-        <source>&lt;p&gt;You are about to change the attributes of the virtual disk located in &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following medium types and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
+        <source>&lt;p&gt;You are about to change the settings of the disk image file &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please choose one of the following modes and press &lt;b&gt;%2&lt;/b&gt; to proceed or &lt;b&gt;%3&lt;/b&gt; otherwise.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Du er ved at ændre egenskaber for den virtuelle disk indsat i &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Vælg en af følgende medie-typer og tryk &lt;b&gt;%2&lt;/b&gt; for at fortsætte eller &lt;b&gt;%3&lt;/b&gt; hvis ikke.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Choose medium type:</source>
+        <source>Choose mode:</source>
         <translation>Vælg medie-type:</translation>
     </message>
 </context>
@@ -6939,7 +6939,7 @@ p, li { white-space: pre-wrap; }
         <translation>Fjern</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;Er du sikker på at du vil fjerne %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; fra listen over kendte medier?&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7014,7 +7014,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Kunne ikke lukke %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
-        <source>Failed to determine the accessibility state of the medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
+        <source>Failed to access the disk image file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
         <translation>Kunne ikke bestemme tilgængeligheden af mediet &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</translation>
     </message>
     <message>
@@ -7026,7 +7026,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Kunne ikke hente information om nye versioner på grund af følgende fejl:&lt;/p&gt;&lt;p&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy media are not currently accessible. As a result, you will not be able to operate virtual machines that use these media until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see what media are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
+        <source>&lt;p&gt;One or more virtual hard disks, CD/DVD or floppy disk image files are not currently accessible. As a result, you will not be able to operate virtual machines that use these files until they become accessible later.&lt;/p&gt;&lt;p&gt;Press &lt;b&gt;Check&lt;/b&gt; to open the Virtual Media Manager window and see which files are inaccessible, or press &lt;b&gt;Ignore&lt;/b&gt; to ignore this message.&lt;/p&gt;</source>
         <translation>&lt;p&gt;En eller flere virtuelle harddiske, CD/DVD- eller diskette-drev er ikke tilgængelige for øjeblikket. Du vil ikke kunne starte virtuelle maskiner, som benytter disse enheder indtil de bliver gjort tilgængelige&lt;/p&gt;&lt;p&gt;Tryk &lt;b&gt;Undersøg&lt;/b&gt; for at åbne Virtuel diskhåndtering og se hvilke enheder der er utilgængelige eller tryk &lt;b&gt;Ignorer&lt;/b&gt; for at ignorere denne meddelelse.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7538,7 +7538,7 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;p&gt;Den virtuelle maskines vindue vil nu skifte til &lt;b&gt;rammefri tilstand&lt;/b&gt;. Du kan skifte tilbage til vinduestilstand ved at trykke &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Værtstasten&lt;/i&gt; er for øjeblikket sat til &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bemærk at menulinjen er skjult i rammefri tilstand, men du kan åbne den ved at trykke &lt;b&gt;Værtstast+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scale mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;Scale&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in scaled mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Den virtuelle maskines vindue vil nu skifte til &lt;b&gt;Skaleret tilstand&lt;/b&gt;. Du kan skifte tilbage til vinduestilstand ved at trykke &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;&lt;i&gt;Værtstasten&lt;/i&gt; er for øjeblikket sat til &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Bemærk at menulinjen er skjult i skaleret tilstand, men du kan åbne den ved at trykke &lt;b&gt;Værtstast+Home&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7643,7 +7643,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;Bekræft at du vil indlæse øjebliksbillede &lt;b&gt;%1&lt;/b&gt;?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Error changing medium type from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
+        <source>&lt;p&gt;Error changing disk image mode from &lt;b&gt;%1&lt;/b&gt; to &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Fejl ved skift af medie-type fra&lt;b&gt;%1&lt;/b&gt; til &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
@@ -7900,7 +7900,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7908,11 +7908,11 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known media?&lt;/p&gt;</source>
+        <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10361,7 +10361,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&amp;Luk disketteaftryk</translation>
     </message>
     <message>
-        <source>Unmount the currently mounted floppy media</source>
+        <source>Unmount the currently mounted floppy disk image files</source>
         <translation type="obsolete">Fjerner det tilføjede disketteaftryk</translation>
     </message>
     <message>
@@ -10513,7 +10513,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Skift til rammefri integration med skrivebordet</translation>
     </message>
     <message>
-        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy media:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
+        <source>&lt;qt&gt;&lt;nobr&gt;Indicates the activity of the floppy disk image files:&lt;/nobr&gt;%1&lt;/qt&gt;</source>
         <comment>Floppy tooltip</comment>
         <translation type="obsolete">&lt;qt&gt;&lt;nobr&gt;Viser aktivitet på diskettedrevet:&lt;/nobr&gt;%1&lt;/qt&gt;</translation>
     </message>
@@ -11605,7 +11605,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;br&gt;&lt;i&gt;Kontrollerer tilgængelighed...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Failed to check media accessibility.&lt;br&gt;%1.</source>
+        <source>&lt;hr&gt;Failed to check accessibility of disk image files.&lt;br&gt;%1.</source>
         <comment>medium</comment>
         <translation type="obsolete">&lt;hr&gt;Kunne ikke kontrollere mediets tilgængelighed.&lt;br&gt;%1.</translation>
     </message>
@@ -11625,7 +11625,7 @@ p, li { white-space: pre-wrap; }
         <translation>Utilgængelig</translation>
     </message>
     <message>
-        <source>&lt;hr&gt;Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>&lt;hr&gt;Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <translation type="obsolete">&lt;hr&gt;Nogle af enhederne i harddisk-kæden er utilgængelige. Brug funktionen &lt;b&gt;Vis ændrings-harddiske&lt;/b&gt; i Virtuel diskhåndtering for at undersøge problemet nærmere.</translation>
     </message>
     <message>
@@ -11933,12 +11933,12 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;i&gt;Kontrollerer tilgængelighed...&lt;/i&gt;</translation>
     </message>
     <message>
-        <source>Failed to check media accessibility.</source>
+        <source>Failed to check accessibility of disk image files.</source>
         <comment>medium</comment>
         <translation>Kunne ikke kontrollere mediets tilgængelighed.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No medium selected&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image file selected&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Intet aftryk valgt&lt;/b&gt;</translation>
     </message>
@@ -11947,12 +11947,12 @@ p, li { white-space: pre-wrap; }
         <translation>Du kan også ændre dette, mens maskinen kører.</translation>
     </message>
     <message>
-        <source>&lt;b&gt;No media available&lt;/b&gt;</source>
+        <source>&lt;b&gt;No disk image files available&lt;/b&gt;</source>
         <comment>medium</comment>
         <translation>&lt;b&gt;Intet medie tilgængeligt&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>You can create media images using the virtual media manager.</source>
+        <source>You can create disk image files using the virtual media manager.</source>
         <translation>Du kan oprette medie-aftryk i Virtuel diskhåndtering.</translation>
     </message>
     <message>
@@ -11961,7 +11961,7 @@ p, li { white-space: pre-wrap; }
         <translation>Tilslutning af denne harddisk vil blive gjort indirekte via en nyoprettet Ændrings-harddisk.</translation>
     </message>
     <message>
-        <source>Some of the media in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these media.</source>
+        <source>Some of the files in this hard disk chain are inaccessible. Please use the Virtual Media Manager in &lt;b&gt;Show Differencing Hard Disks&lt;/b&gt; mode to inspect these files.</source>
         <comment>medium</comment>
         <translation>Nogle af enhederne i harddisk-kæden er utilgængelige. Brug funktionen &lt;b&gt;Vis ændrings-harddiske&lt;/b&gt; i Virtuel diskhåndtering for at undersøge problemet nærmere.</translation>
     </message>
@@ -12721,7 +12721,7 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxMediaComboBox</name>
     <message>
-        <source>No media available. Use the Virtual Media Manager to add media of the corresponding type.</source>
+        <source>No disk image files available. Use the Virtual Media Manager to add media of the corresponding type.</source>
         <translation type="obsolete">Intet medie tilgængeligt. Brug Virtuel diskhåndtering for at tilføje medier af den rigtige type.</translation>
     </message>
     <message>
@@ -12760,19 +12760,19 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Opret en ny virtuel harddisk</translation>
     </message>
     <message>
-        <source>Add an existing medium</source>
+        <source>Add an existing disk image file</source>
         <translation type="obsolete">Tilføj et eksisterende medie</translation>
     </message>
     <message>
-        <source>Remove the selected medium</source>
+        <source>Remove the selected disk image file</source>
         <translation>Fjern det valgte medie</translation>
     </message>
     <message>
-        <source>Release the selected medium by detaching it from the machines</source>
+        <source>Release the selected disk image file by detaching it from the machines</source>
         <translation>Frigiv det valgte medie ved at afmontere det fra maskiner, hvor det bruges</translation>
     </message>
     <message>
-        <source>Refresh the media list</source>
+        <source>Refresh the list of disk image files</source>
         <translation>Opdater medie-listen</translation>
     </message>
     <message>
@@ -12820,7 +12820,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">Diskette-aftryk (*.img);;Alle filer (*)</translation>
     </message>
     <message>
-        <source>Select a floppy disk image file</source>
+        <source>Select a floppy disk image files</source>
         <translation type="obsolete">Vælg et diskette-aftryk</translation>
     </message>
     <message>
@@ -12924,11 +12924,11 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Tilret...</translation>
     </message>
     <message>
-        <source>Copy an existing medium</source>
+        <source>Copy an existing disk image file</source>
         <translation>Kopier et eksisterende medie</translation>
     </message>
     <message>
-        <source>Modify the attributes of the selected medium</source>
+        <source>Modify the attributes of the selected disk image file</source>
         <translation>Tilpas egenskaberne for det valgte medie</translation>
     </message>
     <message>

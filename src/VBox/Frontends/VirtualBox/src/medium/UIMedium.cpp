@@ -347,7 +347,7 @@ void UIMedium::refresh()
                 else
                 {
                     /* Accessibility check (eg GetState()) itself failed: */
-                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(VBoxGlobal::tr("Failed to check media accessibility.", "medium")) +
+                    m_strToolTip += m_sstrRow.arg("<hr>") + m_sstrRow.arg(VBoxGlobal::tr("Failed to check accessibility of disk image files.", "medium")) +
                                     m_sstrRow.arg(UIMessageCenter::formatErrorInfo(m_result) + ".");
                 }
                 break;
@@ -391,10 +391,10 @@ QString UIMedium::toolTip (bool fNoDiffs /* = false */, bool fCheckRO /* = false
 
     if (m_medium.isNull())
     {
-        strTip = fNullAllowed ? m_sstrRow.arg(VBoxGlobal::tr("<b>No medium selected</b>", "medium")) +
+        strTip = fNullAllowed ? m_sstrRow.arg(VBoxGlobal::tr("<b>No disk image file selected</b>", "medium")) +
                                 m_sstrRow.arg(VBoxGlobal::tr("You can also change this while the machine is running.")) :
-                                m_sstrRow.arg(VBoxGlobal::tr("<b>No media available</b>", "medium")) +
-                                m_sstrRow.arg(VBoxGlobal::tr("You can create media images using the virtual media manager."));
+                                m_sstrRow.arg(VBoxGlobal::tr("<b>No disk image files available</b>", "medium")) +
+                                m_sstrRow.arg(VBoxGlobal::tr("You can create disk image files using the virtual media manager."));
     }
     else
     {
@@ -564,10 +564,10 @@ void UIMedium::checkNoDiffs(bool fNoDiffs)
             m_noDiffs.state = parentMedium.m_state;
 
             if (m_noDiffs.toolTip.isNull())
-                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the media in this hard disk chain "
+                m_noDiffs.toolTip = m_sstrRow.arg(VBoxGlobal::tr("Some of the files in this hard disk chain "
                                                                  "are inaccessible. Please use the Virtual Media "
                                                                  "Manager in <b>Show Differencing Hard Disks</b> "
-                                                                 "mode to inspect these media.", "medium"));
+                                                                 "mode to inspect these files.", "medium"));
 
             if (!parentMedium.m_result.isOk())
             {
