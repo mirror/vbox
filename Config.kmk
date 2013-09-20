@@ -2279,7 +2279,6 @@ ifdef VBOX_WITH_EFI
    else if !defined(VBOX_PATH_PREFIX_MINGW64)
     VBOX_PATH_PREFIX_MINGW64 = $(VBOX_PATH_PREFIX_MINGW32)
    endif
-   VBOX_EFI_TOOL_CHAIN := UNIXGCC
   endif
  endif # !win
 endif # VBOX_WITH_EFI
