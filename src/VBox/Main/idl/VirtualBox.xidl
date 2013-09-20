@@ -8308,8 +8308,8 @@
   </interface>
 
   <interface
-    name="IHostVideoCaptureDevice" extends="$unknown"
-    uuid="b3979ea4-bf32-4a03-8158-44d64a59487d"
+    name="IHostVideoInputDevice" extends="$unknown"
+    uuid="a1ceae44-d65e-4156-9359-d390f93ee9a0"
     wsmap="managed"
     >
     <desc>
@@ -8331,7 +8331,7 @@
 
   <interface
     name="IHost" extends="$unknown"
-    uuid="e1e3150d-1764-4819-b53a-c09a75a8b8f0"
+    uuid="93269330-48ca-4096-b4a2-1189df336267"
     wsmap="managed"
     >
     <desc>
@@ -8787,7 +8787,7 @@
       </param>
     </method>
 
-    <attribute name="videoCaptureDevices" type="IHostVideoCaptureDevice" safearray="yes" readonly="yes">
+    <attribute name="videoInputDevices" type="IHostVideoInputDevice" safearray="yes" readonly="yes">
       <desc>List of currently available host video capture devices.</desc>
     </attribute>
 

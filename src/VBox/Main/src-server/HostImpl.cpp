@@ -31,7 +31,7 @@
 #endif // VBOX_WITH_USB
 
 #include "HostNetworkInterfaceImpl.h"
-#include "HostVideoCaptureDeviceImpl.h"
+#include "HostVideoInputDeviceImpl.h"
 #include "MachineImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -1730,25 +1730,25 @@ STDMETHODIMP Host::GenerateMACAddress(BSTR *aAddress)
  * Returns a list of host video capture devices (webcams, etc).
  *
  * @returns COM status code
- * @param aVideoCaptureDevices Array of interface pointers to be filled.
+ * @param aVideoInputDevices Array of interface pointers to be filled.
  */
-STDMETHODIMP Host::COMGETTER(VideoCaptureDevices)(ComSafeArrayOut(IHostVideoCaptureDevice*, aVideoCaptureDevices))
+STDMETHODIMP Host::COMGETTER(VideoInputDevices)(ComSafeArrayOut(IHostVideoInputDevice*, aVideoInputDevices))
 {
-    if (ComSafeArrayOutIsNull(aVideoCaptureDevices))
+    if (ComSafeArrayOutIsNull(aVideoInputDevices))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    HostVideoCaptureDeviceList list;
+    HostVideoInputDeviceList list;
 
-    HRESULT hr = HostVideoCaptureDevice::queryHostDevices(&list);
+    HRESULT hr = HostVideoInputDevice::queryHostDevices(&list);
 
     if (SUCCEEDED(hr))
     {
-        SafeIfaceArray<IHostVideoCaptureDevice> devices(list);
-        devices.detachTo(ComSafeArrayOutArg(aVideoCaptureDevices));
+        SafeIfaceArray<IHostVideoInputDevice> devices(list);
+        devices.detachTo(ComSafeArrayOutArg(aVideoInputDevices));
     }
 
     return hr;

@@ -16,7 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#include "HostVideoCaptureDeviceImpl.h"
+#include "HostVideoInputDeviceImpl.h"
 #include "Logging.h"
 
 #ifdef RT_OS_WINDOWS
@@ -24,16 +24,16 @@
 #endif
 
 /*
- * HostVideoCaptureDevice implementation.
+ * HostVideoInputDevice implementation.
  */
-DEFINE_EMPTY_CTOR_DTOR(HostVideoCaptureDevice)
+DEFINE_EMPTY_CTOR_DTOR(HostVideoInputDevice)
 
-HRESULT HostVideoCaptureDevice::FinalConstruct()
+HRESULT HostVideoInputDevice::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
 
-void HostVideoCaptureDevice::FinalRelease()
+void HostVideoInputDevice::FinalRelease()
 {
     uninit();
 
@@ -43,7 +43,7 @@ void HostVideoCaptureDevice::FinalRelease()
 /*
  * Initializes the instance.
  */
-HRESULT HostVideoCaptureDevice::init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias)
+HRESULT HostVideoInputDevice::init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias)
 {
     LogFlowThisFunc(("\n"));
 
@@ -65,7 +65,7 @@ HRESULT HostVideoCaptureDevice::init(const com::Utf8Str &name, const com::Utf8St
  * Uninitializes the instance.
  * Called either from FinalRelease() or by the parent when it gets destroyed.
  */
-void HostVideoCaptureDevice::uninit()
+void HostVideoInputDevice::uninit()
 {
     LogFlowThisFunc(("\n"));
 
@@ -79,12 +79,12 @@ void HostVideoCaptureDevice::uninit()
         return;
 }
 
-static HRESULT hostVideoCaptureDeviceAdd(HostVideoCaptureDeviceList *pList,
-                                         const com::Utf8Str &name,
-                                         const com::Utf8Str &path,
-                                         const com::Utf8Str &alias)
+static HRESULT hostVideoInputDeviceAdd(HostVideoInputDeviceList *pList,
+                                       const com::Utf8Str &name,
+                                       const com::Utf8Str &path,
+                                       const com::Utf8Str &alias)
 {
-    ComObjPtr<HostVideoCaptureDevice> obj;
+    ComObjPtr<HostVideoInputDevice> obj;
     HRESULT hr = obj.createObject();
     if (SUCCEEDED(hr))
     {
@@ -109,7 +109,7 @@ static HRESULT hvcdCreateEnumerator(IEnumMoniker **ppEnumMoniker)
     return hr;
 }
 
-static HRESULT hvcdFillList(HostVideoCaptureDeviceList *pList, IEnumMoniker *pEnumMoniker)
+static HRESULT hvcdFillList(HostVideoInputDeviceList *pList, IEnumMoniker *pEnumMoniker)
 {
     int iDevice = 0;
     IMoniker *pMoniker = NULL;
@@ -158,7 +158,7 @@ static HRESULT hvcdFillList(HostVideoCaptureDeviceList *pList, IEnumMoniker *pEn
 
         com::Utf8Str alias = com::Utf8StrFmt(".%d", iDevice);
 
-        hr = hostVideoCaptureDeviceAdd(pList, name, path, alias);
+        hr = hostVideoInputDeviceAdd(pList, name, path, alias);
 
         pPropBag->Release();
         pMoniker->Release();
@@ -170,7 +170,7 @@ static HRESULT hvcdFillList(HostVideoCaptureDeviceList *pList, IEnumMoniker *pEn
     return S_OK;
 }
 
-static HRESULT fillDeviceList(HostVideoCaptureDeviceList *pList)
+static HRESULT fillDeviceList(HostVideoInputDeviceList *pList)
 {
     IEnumMoniker *pEnumMoniker = NULL;
     HRESULT hr = hvcdCreateEnumerator(&pEnumMoniker);
@@ -190,14 +190,14 @@ static HRESULT fillDeviceList(HostVideoCaptureDeviceList *pList)
     return hr;
 }
 #else
-static HRESULT fillDeviceList(HostVideoCaptureDeviceList *pList)
+static HRESULT fillDeviceList(HostVideoInputDeviceList *pList)
 {
     NOREF(pList);
     return E_NOTIMPL;
 }
 #endif /* RT_OS_WINDOWS */
 
-/* static */ HRESULT HostVideoCaptureDevice::queryHostDevices(HostVideoCaptureDeviceList *pList)
+/* static */ HRESULT HostVideoInputDevice::queryHostDevices(HostVideoInputDeviceList *pList)
 {
     HRESULT hr = fillDeviceList(pList);
 
