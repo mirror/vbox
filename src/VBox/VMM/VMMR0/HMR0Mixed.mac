@@ -23,10 +23,11 @@
  ; Keep these macro definitions in this file as it gets included and compiled
  ; with RT_ARCH_AMD64 once and RT_ARCH_X86 once.
  %define VMX_SKIP_GDTR
- %ifndef RT_OS_DARWIN
   ; Darwin (Mavericks) uses IDTR limit to store the CPUID so we need to restore it always. See @bugref{6875}.
+ %ifndef RT_OS_DARWIN
+   ; Windows 8.1 RTM also seems to be using the IDTR for something. See @bugref{6956}.
+   ;; @todo figure out what exactly it does and try and restrict it more.
   %ifndef RT_OS_WINDOWS
-   ; Windows 8.1 RTM experiment.
    %define VMX_SKIP_IDTR
   %endif
  %endif
