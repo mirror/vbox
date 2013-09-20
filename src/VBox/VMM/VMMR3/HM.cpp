@@ -772,7 +772,7 @@ static int hmR3InitCPU(PVM pVM)
 
         pVCpu->hm.s.paStatExitReason = NULL;
 
-        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT*sizeof(*pVCpu->hm.s.paStatExitReason), 0, MM_TAG_HM,
+        rc = MMHyperAlloc(pVM, MAX_EXITREASON_STAT * sizeof(*pVCpu->hm.s.paStatExitReason), 0 /* uAlignment */, MM_TAG_HM,
                           (void **)&pVCpu->hm.s.paStatExitReason);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -1241,7 +1241,7 @@ static int hmR3InitFinalizeR0Intel(PVM pVM)
     /*
      * Call ring-0 to set up the VM.
      */
-    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /*idCpu*/, VMMR0_DO_HM_SETUP_VM, 0, NULL);
+    rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0 /* idCpu */, VMMR0_DO_HM_SETUP_VM, 0 /* u64Arg */, NULL /* pReqHdr */);
     if (rc != VINF_SUCCESS)
     {
         AssertMsgFailed(("%Rrc\n", rc));
@@ -2016,7 +2016,7 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
      * We're racing other VCPUs here, so don't try patch the instruction twice
      * and make sure there is still room for our patch record.
      */
-    PCPUMCTX        pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
+    PCPUMCTX    pCtx   = CPUMQueryGuestCtxPtr(pVCpu);
     PHMTPRPATCH pPatch = (PHMTPRPATCH)RTAvloU32Get(&pVM->hm.s.PatchTree, (AVLOU32KEY)pCtx->eip);
     if (pPatch)
     {
@@ -2057,23 +2057,23 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
         if (pDis->Param1.fUse == DISUSE_DISPLACEMENT32)
         {
             /*
-                * TPR write:
-                *
-                * push ECX                      [51]
-                * push EDX                      [52]
-                * push EAX                      [50]
-                * xor EDX,EDX                   [31 D2]
-                * mov EAX,EAX                   [89 C0]
-                *  or
-                * mov EAX,0000000CCh            [B8 CC 00 00 00]
-                * mov ECX,0C0000082h            [B9 82 00 00 C0]
-                * wrmsr                         [0F 30]
-                * pop EAX                       [58]
-                * pop EDX                       [5A]
-                * pop ECX                       [59]
-                * jmp return_address            [E9 return_address]
-                *
-                */
+             * TPR write:
+             *
+             * push ECX                      [51]
+             * push EDX                      [52]
+             * push EAX                      [50]
+             * xor EDX,EDX                   [31 D2]
+             * mov EAX,EAX                   [89 C0]
+             *  or
+             * mov EAX,0000000CCh            [B8 CC 00 00 00]
+             * mov ECX,0C0000082h            [B9 82 00 00 C0]
+             * wrmsr                         [0F 30]
+             * pop EAX                       [58]
+             * pop EDX                       [5A]
+             * pop ECX                       [59]
+             * jmp return_address            [E9 return_address]
+             *
+             */
             bool fUsesEax = (pDis->Param2.fUse == DISUSE_REG_GEN32 && pDis->Param2.Base.idxGenReg == DISGREG_EAX);
 
             aPatch[off++] = 0x51;    /* push ecx */
@@ -2111,20 +2111,20 @@ DECLCALLBACK(VBOXSTRICTRC) hmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pvUser
         else
         {
             /*
-                * TPR read:
-                *
-                * push ECX                      [51]
-                * push EDX                      [52]
-                * push EAX                      [50]
-                * mov ECX,0C0000082h            [B9 82 00 00 C0]
-                * rdmsr                         [0F 32]
-                * mov EAX,EAX                   [89 C0]
-                * pop EAX                       [58]
-                * pop EDX                       [5A]
-                * pop ECX                       [59]
-                * jmp return_address            [E9 return_address]
-                *
-                */
+             * TPR read:
+             *
+             * push ECX                      [51]
+             * push EDX                      [52]
+             * push EAX                      [50]
+             * mov ECX,0C0000082h            [B9 82 00 00 C0]
+             * rdmsr                         [0F 32]
+             * mov EAX,EAX                   [89 C0]
+             * pop EAX                       [58]
+             * pop EDX                       [5A]
+             * pop ECX                       [59]
+             * jmp return_address            [E9 return_address]
+             *
+             */
             Assert(pDis->Param1.fUse == DISUSE_REG_GEN32);
 
             if (pDis->Param1.Base.idxGenReg != DISGREG_ECX)
