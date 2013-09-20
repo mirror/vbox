@@ -33,6 +33,8 @@
 
 #ifdef VBOX_WITH_CRDUMPER
 
+static uint32_t g_CrDbgDumpRecTexInfo = 0;
+
 /* dump stuff */
 #pragma pack(1)
 typedef struct VBOX_BITMAPFILEHEADER {
@@ -339,6 +341,7 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
     GLint hwBuf = 0, hwDrawBuf = 0;
     GLint hwTex = 0, hwObjType = 0, hwTexLevel = 0, hwCubeFace = 0;
     GLint width = 0, height = 0, depth = 0;
+    GLint id = 0;
     CR_BLITTER_IMG Img = {0};
     VBOXVR_TEXTURE Tex;
     int rc;
@@ -382,6 +385,8 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
         GLuint iColor = (hwDrawBuf - GL_COLOR_ATTACHMENT0_EXT);
         CRTextureObj *pTobj = (CRTextureObj *)crHashtableSearch(ctx->shared->textureTable, ctx->framebufferobject.drawFB->color[iColor].name);
         CRTextureLevel *pTl = NULL;
+
+        id = pTobj->id;
 
         Assert(iColor < RT_ELEMENTS(ctx->framebufferobject.drawFB->color));
 
@@ -456,7 +461,7 @@ void crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCur
     rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
     if (RT_SUCCESS(rc))
     {
-        crDmpImg(pRec->pDumper, &Img, "buffer_data");
+        crDmpImgF(pRec->pDumper, &Img, "ctx(%d), BUFFER: id(%d) hwid(%d), width(%d), height(%d)", ctx, id, Tex.hwid, width, height);
         CrBltImgFree(pRec->pBlitter, &Img);
     }
     else
@@ -1314,9 +1319,12 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                 Tex.target = GL_TEXTURE_2D;
                 Tex.hwid = hwTex;
 
-                crRecDumpTexParam(pRec, ctx, GL_TEXTURE_2D);
-                crRecDumpTexEnv(pRec, ctx);
-                crRecDumpTexGen(pRec, ctx);
+                if (g_CrDbgDumpRecTexInfo)
+                {
+                    crRecDumpTexParam(pRec, ctx, GL_TEXTURE_2D);
+                    crRecDumpTexEnv(pRec, ctx);
+                    crRecDumpTexGen(pRec, ctx);
+                }
 
                 rc = CrBltEnter(pRec->pBlitter, pCurCtx, pCurWin);
                 if (RT_SUCCESS(rc))
