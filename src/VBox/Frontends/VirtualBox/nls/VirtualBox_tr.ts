@@ -4197,7 +4197,7 @@
         <translation>Eğer işaretlenmişse, Tam Ekran ve Özgün kiplerinde Küçük Araç Çubuğunu gösterir.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>&amp;Tam Ekran/Özgün İçinde Göster</translation>
     </message>
     <message>
@@ -4205,7 +4205,7 @@
         <translation>Eğer işaretlenmişse, ekranın en altındaki varsayılan konumu yerine, ekranın en üstünde Küçük Araç Çubuğunu gösterir.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Ekranın En Üstünde &amp;Göster</translation>
     </message>
     <message>
@@ -4678,7 +4678,7 @@
         <translation>Klasörlerin &amp;Listesi</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Otomatik-Bağla</translation>
     </message>
     <message>
@@ -5059,7 +5059,7 @@
         <translation>Anamakine G/Ç önbellekleme yeteneklerini kullanmaya izin verir.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Anamakine G/Ç önbelleği kullan</translation>
     </message>
     <message>
@@ -5147,7 +5147,7 @@
         <translation>İşaretlendiğinde, misafir sistem sanal diski katı hal sürücüsü (SSD) gibi görecek.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Katı-hal-sürücüsü (SSD)</translation>
     </message>
     <message>
@@ -5358,7 +5358,7 @@
         <translation>Eğer işaretlenmişse, RTC aygıtı UTC olarak zamanı, aksi takdirde yerel (anamakine) zamanı bildirecek. Unix genellikle donanım saatinin UTC&apos;ye ayarlanmasını bekler.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>&amp;UTC zamanı olarak donanım saati</translation>
     </message>
     <message>

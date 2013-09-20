@@ -5261,7 +5261,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se marcata, mostra la barra degli strumenti piccola nelle modalità a schermo intero e trasparente.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Mostra a scher&amp;mo intero/trasparente</translation>
     </message>
     <message>
@@ -5269,7 +5269,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se selezionata, mostra la barra degli strumenti piccola nella parte superiore dello schermo, invece che nella posizione predefinita (in basso).</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Most&amp;ra nella parte alta dello schermo</translation>
     </message>
     <message>
@@ -6027,7 +6027,7 @@ p, li { white-space: pre-wrap; }
         <translation>E&amp;lenco delle cartelle</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Montaggio automatico</translation>
     </message>
     <message>
@@ -6396,7 +6396,7 @@ p, li { white-space: pre-wrap; }
         <translation>Consente l&apos;utilizzo delle capacità di gestione della cache I/O dell&apos;host.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Usa cache I/O dell&apos;host</translation>
     </message>
     <message>
@@ -6484,7 +6484,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se marcata, il sistema guest vedrà il disco virtuale come un dispositivo a stato solido.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>Di&amp;sco a stato solido</translation>
     </message>
     <message>
@@ -6803,7 +6803,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se marcata, il dispositivo RTC riporterà l&apos;ora in UTC, altrimenti in ora locale (host). I sistemi UNIX di solito si aspettano che l&apos;orologio hardware sia impostato in UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Orologio hardware in ora &amp;UTC</translation>
     </message>
     <message>

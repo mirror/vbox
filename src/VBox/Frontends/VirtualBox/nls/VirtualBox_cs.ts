@@ -5020,7 +5020,7 @@ p, li { white-space: pre-wrap; }
         <translation>Je-li zatrženo, bude se v celoobrazovkovém a bezešvém režimu zobrazovat malá nástrojová lišta.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Zobrazit v &amp;celoobrazovkovém/bezešvém režimu</translation>
     </message>
     <message>
@@ -5028,7 +5028,7 @@ p, li { white-space: pre-wrap; }
         <translation>Je-li zatrženo, bude se mini nabídková lišta zobrazovat nahoře na obrazovce místo na výchozí pozici dole na obrazovce.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Zobrazit na&amp;hoře na obrazovce</translation>
     </message>
     <message>
@@ -5638,7 +5638,7 @@ p, li { white-space: pre-wrap; }
         <translation>Se&amp;znam složek</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Automatické připojení</translation>
     </message>
     <message>
@@ -6099,7 +6099,7 @@ p, li { white-space: pre-wrap; }
         <translation>Dovoluje využít možnosti I/O cache pro hostitele.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Použít I/O cache hostitele</translation>
     </message>
     <message>
@@ -6195,7 +6195,7 @@ p, li { white-space: pre-wrap; }
         <translation>Je-li zatrženo, bude virtuální disk v hostitelském operačním systému vidět jako solid state disk.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Solid-state disk</translation>
     </message>
     <message>
@@ -6419,7 +6419,7 @@ p, li { white-space: pre-wrap; }
         <translation>Pokud je zatrženo, bude RTC zařízení ukazovat čas v UTC, jinak bude v lokálním formátu. Operační systém Unix obvykle očekává čas ve formátu UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Hardwarový čas v &amp;UTC</translation>
     </message>
     <message>

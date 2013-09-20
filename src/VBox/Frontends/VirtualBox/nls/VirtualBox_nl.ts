@@ -4101,7 +4101,7 @@
         <translation>Als dit is ingesteld wordt de miniwerkbalk getoont in schermvullende en naadloze modi.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Toon in &amp;Schermvullend/Naadloos</translation>
     </message>
     <message>
@@ -4109,7 +4109,7 @@
         <translation>Als dit is ingesteld wordt de miniwerkbalk boven in het scherm weergegeven in plaats van de standaardpositie onder aan het scherm.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Geef &amp;boven in het scherm weer</translation>
     </message>
     <message>
@@ -4474,7 +4474,7 @@
         <translation>&amp;Lijst met mappen</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Automatisch koppelen</translation>
     </message>
     <message>
@@ -4818,7 +4818,7 @@
         <translation>Staat toe host I/O-cachingsmogelijkheden te gebruiken.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Gebruik host I/O cache</translation>
     </message>
     <message>
@@ -4906,7 +4906,7 @@
         <translation>Als dit is ingesteld zal het gastsysteem de virtuele disk beschouwen als een solid-state apparaat.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Solid-state station</translation>
     </message>
     <message>
@@ -5118,7 +5118,7 @@
         <translation>Als dit is ingesteld zal het RTC apparaat de tijd in UTC formaat rapporteren; anders in locale (host) tijd. Unix verwacht normaal gesproken dat de klok op UTC staat.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Hardware klok in &amp;UTC tijd</translation>
     </message>
     <message>

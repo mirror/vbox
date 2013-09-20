@@ -5616,7 +5616,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="223"/>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>フルスクリーン/シームレスモード時に表示(&amp;F)</translation>
     </message>
     <message>
@@ -5626,7 +5626,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsGeneral.ui" line="242"/>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>画面の上部に表示(&amp;T)</translation>
     </message>
 </context>
@@ -6265,7 +6265,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSF.ui" line="89"/>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>自動マウント</translation>
     </message>
     <message>
@@ -6909,7 +6909,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="243"/>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>ホストのI/O キャッシュを使う</translation>
     </message>
     <message>
@@ -6964,7 +6964,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsStorage.ui" line="379"/>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>SSD(Solid-state drive)(&amp;S)</translation>
     </message>
     <message>
@@ -7267,7 +7267,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/machine/UIMachineSettingsSystem.ui" line="355"/>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>ハードウェアクロックをUTCにする(&amp;U)</translation>
     </message>
     <message>

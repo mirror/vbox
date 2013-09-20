@@ -4804,7 +4804,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо це позначено, показувати зменшену панель інструментів в повноекранному і ціловикроєному режимі.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>&amp;Показувати в повноекранному/ціловикроєному</translation>
     </message>
     <message>
@@ -4812,7 +4812,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо це позначено, показувати зменшену панель інструментів зверху екрана, а не, як типово, знизу.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Показувати &amp;зверху екрана</translation>
     </message>
     <message>
@@ -5315,7 +5315,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Список тек</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Автоматичне змонтування</translation>
     </message>
     <message>
@@ -5772,7 +5772,7 @@ p, li { white-space: pre-wrap; }
         <translation>Дозволяє використовувати можливості кешування головного В/В.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Використати кеш головного В/В</translation>
     </message>
     <message>
@@ -5868,7 +5868,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо позначено, гостьова система бачитиме віртуальні диск як твердотільний пристрій.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Ьвердотіловий пристрій</translation>
     </message>
     <message>
@@ -6092,7 +6092,7 @@ p, li { white-space: pre-wrap; }
         <translation>Якщо це позначено, пристрій RTC буде доповідати про час в UTC, якщо ні, то в локальному часі головної машини. Unix переважно використовує апаратний годинник для встановлення UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>&amp;Апаратний годинник в UTC</translation>
     </message>
     <message>

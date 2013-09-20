@@ -4183,7 +4183,7 @@ p, li { white-space: pre-wrap; }
         <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារ​ឧបករណ៍​តូច​ក្នុងរបៀប​​អេ​​ក្រង់​ពេញ​ និង​​​ព​ង្រីក​ ។</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>​បង្ហាញ​អេ​ក្រង់​ពេញ​​/​ពង្រីក​</translation>
     </message>
     <message>
@@ -4191,7 +4191,7 @@ p, li { white-space: pre-wrap; }
         <translation>ប្រ​សិន​បើ​ធីក​ បង្ហាញ​របារឧបករណ៍​តូច​​នៅ​ផ្នែកខាង​លើ​​អេក្រង់​ ជា​ជាង​ក្នុង​ទី​តាំង​លំនាំ​ដើម​នៃ​ប៊ូតុង​របស់​អេក្រង់​ ។</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>បង្ហាញ​កំពូល​​អេក្រង់​</translation>
     </message>
     <message>
@@ -4559,7 +4559,7 @@ network adapter name</comment>
         <translation>បញ្ជី​ថត​</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -4936,7 +4936,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5020,7 +5020,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -5219,7 +5219,7 @@ network adapter name</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

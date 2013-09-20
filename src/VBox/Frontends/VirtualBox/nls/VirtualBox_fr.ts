@@ -4440,11 +4440,11 @@
         <translation>Si cette case est cochée la barre d&apos;outils compacte sera affichée en modes plein écran et intégré.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>A&amp;fficher en plein écran/mode intégré</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Afficher en hau&amp;t de l&apos;écran</translation>
     </message>
     <message>
@@ -4821,7 +4821,7 @@
         <translation>&amp;Liste des dossiers</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Montage automatique</translation>
     </message>
     <message>
@@ -5199,7 +5199,7 @@
         <translation>Autorise l&apos;utilisation du cache E/S de la machine hôte.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Utiliser le cache E/S de l&apos;hôte</translation>
     </message>
     <message>
@@ -5296,7 +5296,7 @@
         <translation>Si cette case est cochée l&apos;invité verra le média comme un stockage solid-state.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Solid-state drive</translation>
     </message>
     <message>
@@ -5503,7 +5503,7 @@
         <translation>Si cette case est cochée l&apos;horloge HTR de la machine virtuelle retournera le temps universel coordonné (UTC) et sinon le temps local de l&apos;hôte. Les systèmes Unix s&apos;attendent en général à de l&apos;UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Horloge interne en &amp;UTC</translation>
     </message>
     <message>

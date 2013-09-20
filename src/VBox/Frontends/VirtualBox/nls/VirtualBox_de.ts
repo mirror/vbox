@@ -3190,11 +3190,11 @@
         <translation>Falls aktiviert wird die Mini-Toolbar im Vollbildmodus und im nahtlosen Modus gezeigt.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>am &amp;oberen Bildschirmrand zeigen</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>im &amp;Vollbild-/Seamless-Modus zeigen</translation>
     </message>
     <message>
@@ -3563,7 +3563,7 @@
         <translation>Ja</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>automatisch einbinden</translation>
     </message>
 </context>
@@ -3908,7 +3908,7 @@
         <translation>Benutze den Host-I/O-Cache.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Host I/O-Cache verwenden</translation>
     </message>
     <message>
@@ -4000,7 +4000,7 @@
         <translation>Markiert das Medium als nicht rotierbaren Speicher (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;SSD-Laufwerk</translation>
     </message>
     <message>
@@ -4199,7 +4199,7 @@
         <translation>Durch Aktivierung wird die virtuelle Echtzeituhr die Uhrzeit in UTC bereitstellen, anderenfalls in lokaler (Host-)Zeit. Unix-Gäste erwarten die Zeit normalerweise in UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Hardware-Uhr in UTC</translation>
     </message>
     <message>

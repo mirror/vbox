@@ -352,7 +352,7 @@
           <string>If checked, the RTC device will report the time in UTC, otherwise in local (host) time. Unix usually expects the hardware clock to be set to UTC.</string>
          </property>
          <property name="text" >
-          <string>Hardware clock in &amp;UTC time</string>
+          <string>Hardware Clock in &amp;UTC Time</string>
          </property>
         </widget>
        </item>

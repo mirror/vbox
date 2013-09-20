@@ -3207,7 +3207,7 @@
         <translation>如果勾選，在全螢幕及無縫模式顯示迷你工具列。</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>在全螢幕/無縫模式顯示(&amp;F)</translation>
     </message>
     <message>
@@ -3215,7 +3215,7 @@
         <translation>如果勾選，在螢幕上方顯示迷你工具列，而不是它的預設位置在螢幕的下方。</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>顯示在螢幕上方(&amp;T)</translation>
     </message>
     <message>
@@ -3576,7 +3576,7 @@
         <translation>資料夾清單(&amp;F)</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>自動掛載</translation>
     </message>
     <message>
@@ -3901,7 +3901,7 @@
         <translation>允許使用主機 I/O 快取能力。</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>使用主機 I/O 快取</translation>
     </message>
     <message>
@@ -3985,7 +3985,7 @@
         <translation>勾選時，客體系統會將虛擬磁碟視為固態裝置。</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>固態硬碟(&amp;S)</translation>
     </message>
     <message>
@@ -4196,7 +4196,7 @@
         <translation>如果勾選，RTC 裝置將報告 UTC 的時間，否則是本機（主機）時間。 Unix 通常要求硬體時鐘設定為 UTC。</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>硬體時鐘以 UTC 時間(&amp;U)</translation>
     </message>
     <message>

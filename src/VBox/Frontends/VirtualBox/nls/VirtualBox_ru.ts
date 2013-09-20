@@ -4971,7 +4971,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, в полноэкранных режимах работы будет использоваться мини тулбар.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>&amp;Использовать в полноэкранных режимах</translation>
     </message>
     <message>
@@ -4979,7 +4979,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, мини тулбар будет расположен сверху, в отличие от своей позиции по-умолчанию - снизу.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>&amp;Расположить сверху экрана</translation>
     </message>
     <message>
@@ -5589,7 +5589,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Список общих папок</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Авто-подключение</translation>
     </message>
     <message>
@@ -6046,7 +6046,7 @@ p, li { white-space: pre-wrap; }
         <translation>Позволяет использовать функции кеширования операций ввода/вывода данного хоста.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Кеширование операций ввода/вывода</translation>
     </message>
     <message>
@@ -6142,7 +6142,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, VirtualBox будет считать данное устройство твердотельным накопителем (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;Твердотельный накопитель</translation>
     </message>
     <message>
@@ -6366,7 +6366,7 @@ p, li { white-space: pre-wrap; }
         <translation>Если стоит галочка, часы Вашего хоста отобразят время по шкале всемирного координированного времени (UTC), иначе будет отображено локальное время хоста. Unix-подобные системы обычно придерживаются системы UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Часы в системе &amp;UTC</translation>
     </message>
     <message>

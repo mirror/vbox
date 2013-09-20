@@ -5068,7 +5068,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionado, muestra la mini barra de herramientas en los modos pantalla completa y fuído.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>Mostrar a pantalla &amp;completa y fluído</translation>
     </message>
     <message>
@@ -5076,7 +5076,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionado, muestra la mini barra de herramientas en la parte superior de la pantalla, en vez de en su posición predeterminada en la parte inferior de la pantalla.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>Mostrar en la parte &amp;superior de la pantalla</translation>
     </message>
     <message>
@@ -5565,7 +5565,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Lista de carpetas</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>Automontar</translation>
     </message>
     <message>
@@ -6014,7 +6014,7 @@ p, li { white-space: pre-wrap; }
         <translation>Permite usar al anfitrión las capacidades de cacheo de E/S.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>Usar la cache anfitrión de E/S</translation>
     </message>
     <message>
@@ -6110,7 +6110,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionado, el sistema operativo invitado reconocerá al disco virtual como un disco de estado solido (SSD).</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>Disco duro de estado &amp;sólido</translation>
     </message>
     <message>
@@ -6334,7 +6334,7 @@ p, li { white-space: pre-wrap; }
         <translation>Seleccionado, el dispositivo RTC informará del tiempo en UTC, en caso contrario en tiempo local (anfitrión). Unix normalmente espera que el reloj esté establecido en UTC.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>Reloj hardware en tiempo &amp;UTC</translation>
     </message>
     <message>

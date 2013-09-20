@@ -2526,7 +2526,7 @@
         <translation>اگر انتخاب شده،نوار ابزار کوچک را در حالت تمام صفحه یا یکپارچه نشان میدهد.</translation>
     </message>
     <message>
-        <source>Show In &amp;Fullscreen/Seamless</source>
+        <source>Show in &amp;Fullscreen/Seamless</source>
         <translation>نمایش &amp;در تمام صفحه/یکپارچه</translation>
     </message>
     <message>
@@ -2534,7 +2534,7 @@
         <translation>اگر انتخاب شده، نوارابزار کوچک را در بالای صفحه نشان میدهد،بجای موقعیت پیش فرض آن در پایین صفحه.</translation>
     </message>
     <message>
-        <source>Show At &amp;Top Of Screen</source>
+        <source>Show at &amp;Top of Screen</source>
         <translation>نمایش در &amp;بالای صفحه</translation>
     </message>
     <message>
@@ -2835,7 +2835,7 @@
         <translation>&amp;لیست پوشه ها</translation>
     </message>
     <message>
-        <source>Auto-Mount</source>
+        <source>Auto-mount</source>
         <translation>بارگیری-خودکار</translation>
     </message>
     <message>
@@ -3156,7 +3156,7 @@
         <translation>اجازه استفاده از قابلیت کَش ورودی/خروجی میزبان را میدهد.</translation>
     </message>
     <message>
-        <source>Use host I/O cache</source>
+        <source>Use Host I/O Cache</source>
         <translation>استفاده از کَش ورودی/خروجی میزبان</translation>
     </message>
     <message>
@@ -3244,7 +3244,7 @@
         <translation>وقتیکه انتخاب شده،سیستم مهمان دیسک مجازی را بعنوان یک دستگاه حالت جامد خواهد دید.</translation>
     </message>
     <message>
-        <source>&amp;Solid-state drive</source>
+        <source>&amp;Solid-state Drive</source>
         <translation>&amp;درایو حالت جامد</translation>
     </message>
     <message>
@@ -3435,7 +3435,7 @@
         <translation>اگر انتخاب شده، دستگاه RTC زمان را در یو تی سی گزارش میدهد، در غیراینصورت دز زمان (میزبان) محلی گزارش میدهد. یونیکس معمولا انتظار دارد ساعت سخت افزاری در یو تی سی تنظیم شده باشد.</translation>
     </message>
     <message>
-        <source>Hardware clock in &amp;UTC time</source>
+        <source>Hardware Clock in &amp;UTC Time</source>
         <translation>ساعت &amp;سخت افزاری در زمان یو تی سی&amp;</translation>
     </message>
     <message>
