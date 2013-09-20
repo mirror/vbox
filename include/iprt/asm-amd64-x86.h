@@ -68,6 +68,10 @@
 #  pragma intrinsic(__readcr8)
 #  pragma intrinsic(__writecr8)
 # endif
+# if RT_INLINE_ASM_USES_INTRIN >= 15
+#  pragma intrinsic(__readeflags)
+#  pragma intrinsic(__writeeflags)
+# endif
 #endif
 
 
@@ -377,7 +381,7 @@ DECLINLINE(RTSEL) ASMGetLDTR(void)
  * Get the [RE]FLAGS register.
  * @returns [RE]FLAGS.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
 DECLASM(RTCCUINTREG) ASMGetFlags(void);
 #else
 DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
@@ -393,6 +397,8 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
                          "popl  %0\n\t"
                          : "=r" (uFlags));
 #  endif
+# elif RT_INLINE_ASM_USES_INTRIN >= 15
+    uFlags = __readeflags();
 # else
     __asm
     {
@@ -414,7 +420,7 @@ DECLINLINE(RTCCUINTREG) ASMGetFlags(void)
  * Set the [RE]FLAGS register.
  * @param   uFlags      The new [RE]FLAGS value.
  */
-#if RT_INLINE_ASM_EXTERNAL
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 15
 DECLASM(void) ASMSetFlags(RTCCUINTREG uFlags);
 #else
 DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
@@ -429,6 +435,8 @@ DECLINLINE(void) ASMSetFlags(RTCCUINTREG uFlags)
                          "popfl\n\t"
                          : : "g" (uFlags));
 #  endif
+# elif RT_INLINE_ASM_USES_INTRIN >= 15
+    __writeeflags(uFlags);
 # else
     __asm
     {
