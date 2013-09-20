@@ -732,6 +732,35 @@ static HRESULT listGroups(const ComPtr<IVirtualBox> &pVirtualBox)
 
 
 /**
+ * List video capture devices.
+ *
+ * @returns See produceList.
+ * @param   pVirtualBox         Reference to the IVirtualBox pointer.
+ */
+static HRESULT listVideoCaptureDevices(const ComPtr<IVirtualBox> pVirtualBox)
+{
+    HRESULT rc;
+    ComPtr<IHost> host;
+    CHECK_ERROR(pVirtualBox, COMGETTER(Host)(host.asOutParam()));
+    com::SafeIfaceArray<IHostVideoCaptureDevice> hostVideoCaptureDevices;
+    CHECK_ERROR(host, COMGETTER(VideoCaptureDevices)(ComSafeArrayAsOutParam(hostVideoCaptureDevices)));
+    RTPrintf("Video Capture Devices: %u\n", hostVideoCaptureDevices.size());
+    for (size_t i = 0; i < hostVideoCaptureDevices.size(); ++i)
+    {
+        ComPtr<IHostVideoCaptureDevice> p = hostVideoCaptureDevices[i];
+        Bstr name;
+        p->COMGETTER(Name)(name.asOutParam());
+        Bstr path;
+        p->COMGETTER(Path)(path.asOutParam());
+        Bstr alias;
+        p->COMGETTER(Alias)(alias.asOutParam());
+        RTPrintf("%ls \"%ls\"\n%ls\n", alias.raw(), name.raw(), path.raw());
+    }
+    return rc;
+}
+
+
+/**
  * The type of lists we can produce.
  */
 enum enmListType
@@ -759,7 +788,8 @@ enum enmListType
     kListDhcpServers,
     kListExtPacks,
     kListGroups,
-    kListNatNetworks
+    kListNatNetworks,
+    kListVideoCaptureDevices
 };
 
 
@@ -1093,6 +1123,10 @@ static HRESULT produceList(enum enmListType enmCommand, bool fOptLong, const Com
             break;
         }
 
+        case kListVideoCaptureDevices:
+            rc = listVideoCaptureDevices(pVirtualBox);
+            break;
+
         /* No default here, want gcc warnings. */
 
     } /* end switch */
@@ -1141,6 +1175,7 @@ int handleList(HandlerArg *a)
         { "dhcpservers",        kListDhcpServers,        RTGETOPT_REQ_NOTHING },
         { "extpacks",           kListExtPacks,           RTGETOPT_REQ_NOTHING },
         { "groups",             kListGroups,             RTGETOPT_REQ_NOTHING },
+        { "webcams",            kListVideoCaptureDevices, RTGETOPT_REQ_NOTHING },
     };
 
     int                 ch;
@@ -1186,6 +1221,7 @@ int handleList(HandlerArg *a)
             case kListExtPacks:
             case kListGroups:
             case kListNatNetworks:
+            case kListVideoCaptureDevices:
                 enmOptCommand = (enum enmListType)ch;
                 if (fOptMultiple)
                 {

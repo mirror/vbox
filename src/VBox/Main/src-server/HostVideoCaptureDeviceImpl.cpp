@@ -19,6 +19,10 @@
 #include "HostVideoCaptureDeviceImpl.h"
 #include "Logging.h"
 
+#ifdef RT_OS_WINDOWS
+#include <dshow.h>
+#endif
+
 /*
  * HostVideoCaptureDevice implementation.
  */
@@ -39,7 +43,7 @@ void HostVideoCaptureDevice::FinalRelease()
 /*
  * Initializes the instance.
  */
-HRESULT HostVideoCaptureDevice::init(com::Utf8Str name, com::Utf8Str path, com::Utf8Str alias)
+HRESULT HostVideoCaptureDevice::init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias)
 {
     LogFlowThisFunc(("\n"));
 
@@ -75,24 +79,133 @@ void HostVideoCaptureDevice::uninit()
         return;
 }
 
+static HRESULT hostVideoCaptureDeviceAdd(HostVideoCaptureDeviceList *pList,
+                                         const com::Utf8Str &name,
+                                         const com::Utf8Str &path,
+                                         const com::Utf8Str &alias)
+{
+    ComObjPtr<HostVideoCaptureDevice> obj;
+    HRESULT hr = obj.createObject();
+    if (SUCCEEDED(hr))
+    {
+        hr = obj->init(name, path, alias);
+        if (SUCCEEDED(hr))
+            pList->push_back(obj);
+    }
+    return hr;
+}
+
+#ifdef RT_OS_WINDOWS
+static HRESULT hvcdCreateEnumerator(IEnumMoniker **ppEnumMoniker)
+{
+    ICreateDevEnum *pCreateDevEnum = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+                                  IID_PPV_ARGS(&pCreateDevEnum));
+    if (SUCCEEDED(hr))
+    {
+        hr = pCreateDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, ppEnumMoniker, 0);
+        pCreateDevEnum->Release();
+    }
+    return hr;
+}
+
+static HRESULT hvcdFillList(HostVideoCaptureDeviceList *pList, IEnumMoniker *pEnumMoniker)
+{
+    int iDevice = 0;
+    IMoniker *pMoniker = NULL;
+    while (pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK)
+    {
+        IPropertyBag *pPropBag = NULL;
+        HRESULT hr = pMoniker->BindToStorage(0, 0, IID_PPV_ARGS(&pPropBag));
+        if (FAILED(hr))
+        {
+            pMoniker->Release();
+            continue;
+        }
+
+        VARIANT var;
+        VariantInit(&var);
+
+        hr = pPropBag->Read(L"DevicePath", &var, 0);
+        if (FAILED(hr))
+        {
+            /* Can't use a device without path. */
+            pMoniker->Release();
+            continue;
+        }
+
+        ++iDevice;
+
+        com::Utf8Str path = var.bstrVal;
+        VariantClear(&var);
+
+        hr = pPropBag->Read(L"FriendlyName", &var, 0);
+        if (FAILED(hr))
+        {
+            hr = pPropBag->Read(L"Description", &var, 0);
+        }
+
+        com::Utf8Str name;
+        if (SUCCEEDED(hr))
+        {
+            name = var.bstrVal;
+            VariantClear(&var);
+        }
+        else
+        {
+            name = com::Utf8StrFmt("Video Input Device #%d", iDevice);
+        }
+
+        com::Utf8Str alias = com::Utf8StrFmt(".%d", iDevice);
+
+        hr = hostVideoCaptureDeviceAdd(pList, name, path, alias);
+
+        pPropBag->Release();
+        pMoniker->Release();
+
+        if (FAILED(hr))
+            return hr;
+    }
+
+    return S_OK;
+}
+
+static HRESULT fillDeviceList(HostVideoCaptureDeviceList *pList)
+{
+    IEnumMoniker *pEnumMoniker = NULL;
+    HRESULT hr = hvcdCreateEnumerator(&pEnumMoniker);
+    if (SUCCEEDED(hr))
+    {
+        if (hr != S_FALSE)
+        {
+            /* List not empty */
+            hr = hvcdFillList(pList, pEnumMoniker);
+            pEnumMoniker->Release();
+        }
+        else
+        {
+            hr = S_OK; /* Return empty list. */
+        }
+    }
+    return hr;
+}
+#else
+static HRESULT fillDeviceList(HostVideoCaptureDeviceList *pList)
+{
+    NOREF(pList);
+    return E_NOTIMPL;
+}
+#endif /* RT_OS_WINDOWS */
+
 /* static */ HRESULT HostVideoCaptureDevice::queryHostDevices(HostVideoCaptureDeviceList *pList)
 {
-    HRESULT hr = S_OK;
-#if 0
-    PDARWINETHERNIC pEtherNICs = DarwinGetEthernetControllers();
-    while (pEtherNICs)
-    {
-        ComObjPtr<HostNetworkInterface> IfObj;
-        IfObj.createObject();
-        if (SUCCEEDED(IfObj->init(Bstr(pEtherNICs->szName), Guid(pEtherNICs->Uuid), HostNetworkInterfaceType_Bridged)))
-            list.push_back(IfObj);
+    HRESULT hr = fillDeviceList(pList);
 
-        /* next, free current */
-        void *pvFree = pEtherNICs;
-        pEtherNICs = pEtherNICs->pNext;
-        RTMemFree(pvFree);
+    if (FAILED(hr))
+    {
+        pList->clear();
     }
-#endif
+
     return hr;
 }
 

@@ -39,7 +39,7 @@ public:
     void FinalRelease();
 
     /* Public initializer/uninitializer for internal purposes only. */
-    HRESULT init(com::Utf8Str name, com::Utf8Str path, com::Utf8Str alias);
+    HRESULT init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias);
     void uninit();
 
     static HRESULT queryHostDevices(HostVideoCaptureDeviceList *pList);
