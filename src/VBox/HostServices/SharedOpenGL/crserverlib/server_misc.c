@@ -1395,7 +1395,8 @@ void crServerInitTmpCtxDispatch()
  * 0x03 - dump buffer on enter and exit
  * 0x22 - dump texture and buffer on exit */
 
-unsigned long g_CrDbgDumpEnabled = 1;
+int64_t g_CrDbgDumpPid = 0;
+unsigned long g_CrDbgDumpEnabled = 0;
 unsigned long g_CrDbgDumpDraw = CR_SERVER_DUMP_F_COMPILE_SHADER
         | CR_SERVER_DUMP_F_LINK_PROGRAM
         | CR_SERVER_DUMP_F_DRAW_BUFF_ENTER
