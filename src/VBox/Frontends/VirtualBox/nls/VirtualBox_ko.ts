@@ -4665,7 +4665,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
+        <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7216,7 +7216,7 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;p&gt;미디어 목록에서 %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;을(를)&lt;/nobr&gt; 삭제하시겠습니까?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <source>As this hard disk is inaccessible its image file can not be deleted.</source>
         <translation type="obsolete">이 하드 디스크에 접근할 수 없기 때문에 저장소 유닛을 삭제할 수 없습니다.</translation>
     </message>
     <message>
@@ -8129,10 +8129,6 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished">무시</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to create NAT network.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -8185,7 +8181,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8322,6 +8318,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Do not show this message again</source>
         <translation type="unfinished">이 메시지를 다시 표시하지 않기</translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -8461,7 +8461,7 @@ p, li { white-space: pre-wrap; }
         <translation>네트워크 작업 취소</translation>
     </message>
     <message>
-        <source>The network operation failed with the error: %1.</source>
+        <source>The network operation failed with the following error: %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10093,7 +10093,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please choose a file to export virtual appliance</source>
+        <source>Please choose a file to export the virtual appliance to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -10140,14 +10140,14 @@ p, li { white-space: pre-wrap; }
         <translation>사용자 이름, 암호, 호스트 이름, 저장소 정보와 같은 추가 정보를 입력해 주십시오. 그 다음 OVF 파일 이름을 지정하십시오.</translation>
     </message>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIWizardExportAppPageExpert</name>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -3997,7 +3997,7 @@ p, li { white-space: pre-wrap; }
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>When checked, VirtualBox will use video recording to record the virtual machine session.</source>
+        <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -6067,7 +6067,7 @@ network adapter name</comment>
         <translation type="obsolete">&lt;p&gt;តើអ្នក​ប្រាកដ​ជា​ចង់​យក %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; ចេញ​ពី​មេឌៀ​ដែលបាន​ស្គាល់​ដែរឬទេ ?&lt;/p&gt;</translation>
     </message>
     <message>
-        <source>Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.</source>
+        <source>As this hard disk is inaccessible its image file can not be deleted.</source>
         <translation type="obsolete">ចំណាំថា ថាសរឹង​នេះ​មិនអាច​ចូលដំណើរការ​បានទេ ដូច្នេះ​ឯកតា​ផ្ទុក​របស់វា​មិនអាច​ត្រូវ​បានលុប​ឥឡូវ​ទេ ។</translation>
     </message>
     <message>
@@ -6907,10 +6907,6 @@ medium</comment>
         <translation type="unfinished">មិនអើពើ</translation>
     </message>
     <message>
-        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note:&lt;/b&gt; this network may be in use by one or more virtual network adapters belonging to one of your VMs. After it is removed, these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Failed to create NAT network.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6963,7 +6959,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;p&gt;Note that as this hard disk is inaccessible its storage unit cannot be deleted right now.&lt;/p&gt;</source>
+        <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -7101,6 +7097,10 @@ medium</comment>
         <source>Do not show this message again</source>
         <translation type="unfinished">កុំ​បង្ហាញ​សារ​នេះ​ម្ដង​ទៀត</translation>
     </message>
+    <message>
+        <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMiniProcessWidgetAdditions</name>
@@ -7212,7 +7212,7 @@ medium</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The network operation failed with the error: %1.</source>
+        <source>The network operation failed with the following error: %1.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -8587,7 +8587,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Please choose a file to export virtual appliance</source>
+        <source>Please choose a file to export the virtual appliance to</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -8634,14 +8634,14 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
         <translation type="unfinished">សូម​បំពេញ​វាល​ដែល​បន្ថែម ​ដូចជា​​ឈ្មោះ​អ្នក​ប្រើ​ ពាក្យ​សម្ងាត់​ ឈ្មោះ​ម៉ាស៊ីន​ និង​សញ្ញា​សម្គាល់​ ហើយ​​​ផ្តល់​ឈ្មោះ​ឯកសារ​សម្រាប់​គោល​ដៅ​ OVF ។</translation>
     </message>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>UIWizardExportAppPageExpert</name>
     <message>
-        <source>Choose a file to export virtual appliance...</source>
+        <source>Choose a file to export the virtual appliance to...</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
