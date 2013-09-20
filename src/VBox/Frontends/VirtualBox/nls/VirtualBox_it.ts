@@ -13605,7 +13605,7 @@ Versione %1</translation>
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>Puoi creare immagini del supporto utilizzando il gestore supporti virtuali.</translation>
+        <translation type="obsolete">Puoi creare immagini del supporto utilizzando il gestore supporti virtuali.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -14592,6 +14592,10 @@ Versione %1</translation>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

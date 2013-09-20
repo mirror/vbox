@@ -12232,7 +12232,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>가상 미디어 관리자로 미디어 이미지를 만들 수 있습니다.</translation>
+        <translation type="obsolete">가상 미디어 관리자로 미디어 이미지를 만들 수 있습니다.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -12908,6 +12908,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

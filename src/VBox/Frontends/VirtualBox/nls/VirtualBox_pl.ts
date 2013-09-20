@@ -12555,7 +12555,7 @@ Wersja %1</translation>
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>Obrazy nośników można utworzyć używając Menedżera nośników wirtualnych.</translation>
+        <translation type="obsolete">Obrazy nośników można utworzyć używając Menedżera nośników wirtualnych.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -13160,6 +13160,10 @@ Wersja %1</translation>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -13059,7 +13059,7 @@ Version %1</translation>
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>Du kan skapa mediaavbildningar med Hanterare för virtuella media.</translation>
+        <translation type="obsolete">Du kan skapa mediaavbildningar med Hanterare för virtuella media.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -13741,6 +13741,10 @@ Version %1</translation>
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -10376,7 +10376,7 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     </message>
     <message>
         <source>You can create disk image files using the virtual media manager.</source>
-        <translation>Vous pouvez créer des fichiers de médias avec le gestionnaire de médias virtuels.</translation>
+        <translation type="obsolete">Vous pouvez créer des fichiers de médias avec le gestionnaire de médias virtuels.</translation>
     </message>
     <message>
         <source>Attaching this hard disk will be performed indirectly using a newly created differencing hard disk.</source>
@@ -11058,6 +11058,10 @@ And the size is not necessarily &quot;in megabytes&quot;, the slider chooses the
     <message>
         <source>NAT network, &apos;%1&apos;</source>
         <comment>details report (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

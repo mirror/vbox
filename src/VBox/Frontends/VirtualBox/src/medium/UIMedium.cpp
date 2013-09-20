@@ -394,7 +394,7 @@ QString UIMedium::toolTip (bool fNoDiffs /* = false */, bool fCheckRO /* = false
         strTip = fNullAllowed ? m_sstrRow.arg(VBoxGlobal::tr("<b>No disk image file selected</b>", "medium")) +
                                 m_sstrRow.arg(VBoxGlobal::tr("You can also change this while the machine is running.")) :
                                 m_sstrRow.arg(VBoxGlobal::tr("<b>No disk image files available</b>", "medium")) +
-                                m_sstrRow.arg(VBoxGlobal::tr("You can create disk image files using the virtual media manager."));
+                                m_sstrRow.arg(VBoxGlobal::tr("You can create or add disk image files in the virtual machine settings."));
     }
     else
     {
