@@ -293,8 +293,8 @@ endif # VBOX_WITH_DOCS_FROM_BUILD_SERVER
    		$$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip
 	$(call MSG_L1,Unpacking EFI firmware)
 	$(QUIET)$(TOOL_ZIP_UNPACK) $(TOOL_ZIP_UNPACKFLAGS) -o $< -d $(buildserver-efifw_0_OUTDIR)
-	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd"   -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd" "$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd"
-	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd" -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd" "$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd"
+	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd"   -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX.fd"   "$(buildserver-efifw_0_OUTDIR)/VBoxEFI32.fd"
+	$(TEST_EXT) -f "$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd" -- $(MV_EXT) -f -- "$(buildserver-efifw_0_OUTDIR)/FV/VBOX64.fd" "$(buildserver-efifw_0_OUTDIR)/VBoxEFI64.fd"
 	$(APPEND) -t $@ "done"
 
    $$(buildserver-efifw_0_OUTDIR)/VBoxEfiFirmware.zip: \
