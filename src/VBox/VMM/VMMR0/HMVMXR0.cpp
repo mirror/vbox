@@ -739,6 +739,9 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
         *(uint32_t *)pvCpuPage = MSR_IA32_VMX_BASIC_INFO_VMCS_ID(pVM->hm.s.vmx.Msrs.u64BasicInfo);
     }
 
+    /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with CR4. */
+    RTCCUINTREG uEflags = ASMIntDisableFlags();
+
     /* Enable the VMX bit in CR4 if necessary. */
     RTCCUINTREG uCr4 = ASMGetCR4();
     if (!(uCr4 & X86_CR4_VMXE))
@@ -749,6 +752,8 @@ static int hmR0VmxEnterRootMode(PVM pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage
     if (RT_FAILURE(rc))
         ASMSetCR4(uCr4);
 
+    /* Restore interrupts. */
+    ASMSetFlags(uEflags);
     return rc;
 }
 
@@ -762,17 +767,26 @@ static int hmR0VmxLeaveRootMode(void)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
+    /* Paranoid: Disable interrupts as, in theory, interrupts handlers might mess with CR4. */
+    RTCCUINTREG uEflags = ASMIntDisableFlags();
+
     /* If we're for some reason not in VMX root mode, then don't leave it. */
     RTCCUINTREG uHostCR4 = ASMGetCR4();
+
+    int rc;
     if (uHostCR4 & X86_CR4_VMXE)
     {
         /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
         ASMSetCR4(uHostCR4 & ~X86_CR4_VMXE);
-        return VINF_SUCCESS;
+        rc = VINF_SUCCESS;
     }
+    else
+        rc = VERR_VMX_NOT_IN_VMX_ROOT_MODE;
 
-    return VERR_VMX_NOT_IN_VMX_ROOT_MODE;
+    /* Restore interrupts. */
+    ASMSetFlags(uEflags);
+    return rc;
 }
 
 
