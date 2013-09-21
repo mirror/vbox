@@ -1283,12 +1283,7 @@ VMMR0_INT_DECL(int) HMR0InitVM(PVM pVM)
     /*
      * Call the hardware specific initialization method.
      */
-    RTCCUINTREG      fFlags = ASMIntDisableFlags();
-    PHMGLOBALCPUINFO pCpu   = HMR0GetCurrentCpu();
-    ASMSetFlags(fFlags);
-
-    int rc = g_HvmR0.pfnInitVM(pVM);
-    return rc;
+    return g_HvmR0.pfnInitVM(pVM);
 }
 
 
@@ -1303,22 +1298,13 @@ VMMR0_INT_DECL(int) HMR0TermVM(PVM pVM)
     Log(("HMR0TermVM: %p\n", pVM));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
 
-    /* Make sure we don't touch HM after we've disabled HM in preparation
-       of a suspend. */
-    /** @todo r=bird: This cannot be right, the termination functions are
-     *        just freeing memory and resetting pVM/pVCpu members...
-     *  ==> memory leak. */
-    AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
-
     /*
      * Call the hardware specific method.
+     *
+     * Note! We might be preparing for a suspend, so the pfnTermVM() functions should probably not
+     * mess with VT-x/AMD-V features on the CPU, currently all they do is free memory so this is safe.
      */
-    RTCCUINTREG      fFlags = ASMIntDisableFlags();
-    PHMGLOBALCPUINFO pCpu   = HMR0GetCurrentCpu();
-    ASMSetFlags(fFlags);
-
-    int rc = g_HvmR0.pfnTermVM(pVM);
-    return rc;
+    return g_HvmR0.pfnTermVM(pVM);
 }
 
 
@@ -1339,24 +1325,25 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
        preparation of a suspend. */
     AssertReturn(!ASMAtomicReadBool(&g_HvmR0.fSuspended), VERR_HM_SUSPEND_PENDING);
 
-    /*
-     * Call the hardware specific setup VM method.  This requires the CPU to be
-     * enabled for AMD-V/VT-x and preemption to be prevented.
-     */
-    RTCCUINTREG      fFlags = ASMIntDisableFlags();
-    RTCPUID          idCpu  = RTMpCpuId();
-    PHMGLOBALCPUINFO pCpu   = &g_HvmR0.aCpuInfo[idCpu];
-
     /* On first entry we'll sync everything. */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
         VMCPU_HMCF_RESET_TO(&pVM->aCpus[i], HM_CHANGED_HOST_CONTEXT | HM_CHANGED_ALL_GUEST);
+
+    /*
+     * Call the hardware specific setup VM method. This requires the CPU to be
+     * enabled for AMD-V/VT-x and preemption to be prevented.
+     */
+    RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
+    RTThreadPreemptDisable(&PreemptState);
+    RTCPUID          idCpu  = RTMpCpuId();
+    PHMGLOBALCPUINFO pCpu   = &g_HvmR0.aCpuInfo[idCpu];
 
     /* Enable VT-x or AMD-V if local init is required. */
     int rc;
     if (!g_HvmR0.fGlobalInit)
     {
         rc = hmR0EnableCpu(pVM, idCpu);
-        AssertReturnStmt(RT_SUCCESS_NP(rc), ASMSetFlags(fFlags), rc);
+        AssertRCReturnStmt(rc, RTThreadPreemptRestore(&PreemptState), rc);
     }
 
     /* Setup VT-x or AMD-V. */
@@ -1369,7 +1356,7 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
         AssertRC(rc2);
     }
 
-    ASMSetFlags(fFlags);
+    RTThreadPreemptRestore(&PreemptState);
     return rc;
 }
 

@@ -320,12 +320,16 @@ R0PTRTYPE(void *)           g_pvIOBitmap      = NULL;
 VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage, bool fEnabledByHost,
                               void *pvArg)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertReturn(!fEnabledByHost, VERR_INVALID_PARAMETER);
     AssertReturn(   HCPhysCpuPage
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
     NOREF(pvArg);
     NOREF(fEnabledByHost);
+
+    /* Paranoid: Disable interrupt as, in theory, interrupt handlers might mess with EFER. */
+    RTCCUINTREG uEflags = ASMIntDisableFlags();
 
     /*
      * We must turn on AMD-V and setup the host state physical address, as those MSRs are per CPU.
@@ -341,7 +345,10 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
         }
 
         if (!pCpu->fIgnoreAMDVInUseError)
+        {
+            ASMSetFlags(uEflags);
             return VERR_SVM_IN_USE;
+        }
     }
 
     /* Turn on AMD-V in the EFER MSR. */
@@ -349,6 +356,9 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
 
     /* Write the physical page address where the CPU will store the host state while executing the VM. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, HCPhysCpuPage);
+
+    /* Restore interrupts. */
+    ASMSetFlags(uEflags);
 
     /*
      * Theoretically, other hypervisors may have used ASIDs, ideally we should flush all non-zero ASIDs
@@ -377,10 +387,14 @@ VMMR0DECL(int) SVMR0EnableCpu(PHMGLOBALCPUINFO pCpu, PVM pVM, void *pvCpuPage, R
  */
 VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertReturn(   HCPhysCpuPage
                  && HCPhysCpuPage != NIL_RTHCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(pvCpuPage, VERR_INVALID_PARAMETER);
     NOREF(pCpu);
+
+    /* Paranoid: Disable interrupts as, in theory, interrupt handlers might mess with EFER. */
+    RTCCUINTREG uEflags = ASMIntDisableFlags();
 
     /* Turn off AMD-V in the EFER MSR. */
     uint64_t u64HostEfer = ASMRdMsr(MSR_K6_EFER);
@@ -388,6 +402,9 @@ VMMR0DECL(int) SVMR0DisableCpu(PHMGLOBALCPUINFO pCpu, void *pvCpuPage, RTHCPHYS 
 
     /* Invalidate host state physical address. */
     ASMWrMsr(MSR_K8_VM_HSAVE_PA, 0);
+
+    /* Restore interrupts. */
+    ASMSetFlags(uEflags);
 
     return VINF_SUCCESS;
 }
@@ -640,8 +657,7 @@ static void hmR0SvmSetMsrPermission(PVMCPU pVCpu, unsigned uMsr, SVMMSREXITREAD 
  */
 VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
 {
-    int rc = VINF_SUCCESS;
-
+    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     AssertReturn(pVM, VERR_INVALID_PARAMETER);
     Assert(pVM->hm.s.svm.fSupported);
 
@@ -650,7 +666,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         PVMCPU   pVCpu = &pVM->aCpus[i];
         PSVMVMCB pVmcb = (PSVMVMCB)pVM->aCpus[i].hm.s.svm.pvVmcb;
 
-        AssertMsgReturn(pVmcb, ("Invalid pVmcb\n"), VERR_SVM_INVALID_PVMCB);
+        AssertMsgReturn(pVmcb, ("Invalid pVmcb for vcpu[%u]\n", i), VERR_SVM_INVALID_PVMCB);
 
         /* Trap exceptions unconditionally (debug purposes). */
 #ifdef HMSVM_ALWAYS_TRAP_PF
@@ -769,7 +785,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
         hmR0SvmSetMsrPermission(pVCpu, MSR_IA32_SYSENTER_EIP, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
