@@ -172,6 +172,9 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
      * but not for Fullscreen and Scale.  However for Scale it is a no op.,
      * so it would not hurt.  Would it hurt for Fullscreen? */
 
+    /* Set a preliminary maximum size: */
+    pMachineView->setMaxGuestSize();
+
     return pMachineView;
 }
 

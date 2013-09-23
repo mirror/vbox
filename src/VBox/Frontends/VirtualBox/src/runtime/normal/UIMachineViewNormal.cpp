@@ -256,6 +256,11 @@ QSize UIMachineViewNormal::calculateMaxGuestSize() const
     QSize maximumSize = workingArea().size().expandedTo(windowSize);
     /* The current size of the machine display. */
     QSize centralWidgetSize = machineWindow()->centralWidget()->size();
+    /* The calculation below is not reliable on some (X11) platforms until we
+     * have been visible for a fraction of a second, so so the best we can
+     * otherwise. */
+    if (!isVisible())
+        return workingArea().size() * 0.95;
     /* To work out how big the guest display can get without the window going
      * over the maximum size we calculated above, we work out how much space
      * the other parts of the window (frame, menu bar, status bar and so on)
