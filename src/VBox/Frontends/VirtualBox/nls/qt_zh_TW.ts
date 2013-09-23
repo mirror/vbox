@@ -369,7 +369,7 @@ have libgstreamer-plugins-base installed.</source>
     </message>
     <message>
         <source>&lt;qt&gt;Are you sure you wish to delete %1 &quot;%2&quot;?&lt;/qt&gt;</source>
-        <translation>&lt;qt&gt;您確定要刪除 %1 &quot;%2&quot; 嗎?&lt;/qt&gt;</translation>
+        <translation>&lt;qt&gt;您確定要刪除 %1 「%2」嗎?&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Yes</source>
@@ -570,7 +570,7 @@ to
     </message>
     <message>
         <source>Puts a minimized back to normal</source>
-        <translation>將最小化恢復標準</translation>
+        <translation>將最小化恢復成標準</translation>
     </message>
     <message>
         <source>Moves the window out of the way</source>
@@ -578,7 +578,7 @@ to
     </message>
     <message>
         <source>Puts a maximized window back to normal</source>
-        <translation>將最大化的視窗恢復標準</translation>
+        <translation>將最大化的視窗恢復成標準</translation>
     </message>
     <message>
         <source>Makes the window full screen</source>
@@ -590,7 +590,7 @@ to
     </message>
     <message>
         <source>Holds the name of the window and contains controls to manipulate it</source>
-        <translation>顯示視窗的名稱並包含對其進行操作的控制項</translation>
+        <translation>視窗所使用的名稱並包含對其進行操作的控制項</translation>
     </message>
 </context>
 <context>
@@ -928,7 +928,7 @@ to
     <name>QDialog</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>這是?</translation>
+        <translation>這是? </translation>
     </message>
     <message>
         <source>Done</source>
@@ -1122,7 +1122,7 @@ to
         <source>%1 already exists.
 Do you want to replace it?</source>
         <translation>%1 已經存在。
-您要取代它嗎?</translation>
+您要取代它嗎? </translation>
     </message>
     <message>
         <source>%1
@@ -1184,11 +1184,11 @@ Please verify the correct directory name was given.</source>
         <source>&apos;%1&apos; is write protected.
 Do you want to delete it anyway?</source>
         <translation>「%1」有寫入保護。
-您仍然要刪除嗎?</translation>
+您仍然要刪除嗎? </translation>
     </message>
     <message>
         <source>Are sure you want to delete &apos;%1&apos;?</source>
-        <translation>您確定要刪除「%1」嗎?</translation>
+        <translation>您確定要刪除「%1」嗎? </translation>
     </message>
     <message>
         <source>Could not delete directory.</source>
@@ -1895,7 +1895,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>QLibrary::resolve_sys: Symbol &quot;%1&quot; undefined in %2 (%3)</source>
-        <translation>QLibrary::resolve_sys: Symbol &quot;%1&quot; 於 %2 (%3) 未定義</translation>
+        <translation>QLibrary::resolve_sys: 符號「%1」於 %2 (%3) 未定義</translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
@@ -2101,7 +2101,7 @@ Do you want to delete it anyway?</source>
     <name>QMdiArea</name>
     <message>
         <source>(Untitled)</source>
-        <translation>(未命名)</translation>
+        <translation> (未命名) </translation>
     </message>
 </context>
 <context>
@@ -2222,7 +2222,7 @@ Do you want to delete it anyway?</source>
     </message>
     <message>
         <source>&lt;p&gt;This program uses Qt Open Source Edition version %1.&lt;/p&gt;&lt;p&gt;Qt Open Source Edition is intended for the development of Open Source applications. You need a commercial Qt license for development of proprietary (closed source) applications.&lt;/p&gt;&lt;p&gt;Please see &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; for an overview of Qt licensing.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;這個程式使用 Qt Open Source Edition 版本 %1 。&lt;/p&gt;&lt;p&gt;Qt Open Source Edition 是供開發的開放原始程式碼應用程式。 開發專有的 (關閉原始) 應用程式您需要商業 Qt 授權。&lt;/p&gt;&lt;p&gt;有關 Qt 授權的概述請參閱 &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;這個程式使用 Qt Open Source Edition 版本 %1 。&lt;/p&gt;&lt;p&gt;Qt Open Source Edition 是供開發的開放原始程式碼應用程式。 開發專有的 (封閉原始碼) 應用程式您需要商業 Qt 授權。&lt;/p&gt;&lt;p&gt;有關 Qt 授權的概述請參閱 &lt;a href=&quot;http://www.trolltech.com/company/model/&quot;&gt;www.trolltech.com/company/model/&lt;/a&gt; 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
@@ -2504,7 +2504,7 @@ Do you want to delete it anyway?</source>
     <name>QODBCResult</name>
     <message>
         <source>QODBCResult::reset: Unable to set &apos;SQL_CURSOR_STATIC&apos; as statement attribute. Please check your ODBC driver configuration</source>
-        <translation>QODBCResult::reset: 無法重設 &apos;SQL_CURSOR_STATIC&apos; 為陳述式屬性。 請檢查您的 ODBC 驅動程式組態</translation>
+        <translation>QODBCResult::reset: 無法重設「SQL_CURSOR_STATIC」為陳述式屬性。 請檢查 ODBC 驅動程式組態</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -2741,7 +2741,7 @@ Please choose a different file name.</source>
         <source>%1 already exists.
 Do you want to overwrite it?</source>
         <translation>%1 已經存在。
-您要覆寫它嗎?</translation>
+您要覆寫它嗎? </translation>
     </message>
     <message>
         <source>%1 is a directory.
@@ -2847,7 +2847,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Folio</source>
-        <translation>對折</translation>
+        <translation>Folio</translation>
     </message>
     <message>
         <source>Ledger</source>
@@ -3432,7 +3432,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Home</source>
-        <translation>Home</translation>
+        <translation>首頁</translation>
     </message>
     <message>
         <source>End</source>
@@ -3716,7 +3716,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Hangup</source>
-        <translation>Hangup</translation>
+        <translation>掛斷</translation>
     </message>
     <message>
         <source>Flip</source>
@@ -3804,7 +3804,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Delete this record?</source>
-        <translation>刪除這個紀錄嗎?</translation>
+        <translation>刪除這個紀錄嗎? </translation>
     </message>
     <message>
         <source>Yes</source>
@@ -3824,7 +3824,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Save edits?</source>
-        <translation>儲存編輯嗎?</translation>
+        <translation>儲存編輯嗎? </translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -3836,7 +3836,7 @@ Please choose a different file name.</source>
     </message>
     <message>
         <source>Cancel your edits?</source>
-        <translation>取消您的編輯嗎?</translation>
+        <translation>取消您的編輯嗎? </translation>
     </message>
 </context>
 <context>
@@ -4319,7 +4319,7 @@ Please choose a different file name.</source>
     <name>QWhatsThisAction</name>
     <message>
         <source>What&apos;s This?</source>
-        <translation>這是?</translation>
+        <translation>這是? </translation>
     </message>
 </context>
 <context>

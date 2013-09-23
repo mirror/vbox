@@ -1899,7 +1899,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not mmap &apos;%1&apos;: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>mmap di &apos;%1&apos; non possibile: %2</translation>
     </message>
     <message>
         <source>Plugin verification data mismatch in &apos;%1&apos;</source>
@@ -1907,7 +1907,7 @@ Vuoi eliminarlo comunque?</translation>
     </message>
     <message>
         <source>Could not unmap &apos;%1&apos;: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>unmap di &apos;%1&apos; non possibile: %2</translation>
     </message>
     <message>
         <source>The plugin &apos;%1&apos; uses incompatible Qt library. (%2.%3.%4) [%5]</source>
@@ -4578,7 +4578,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Standalone accepts only yes or no.</source>
-        <translation type="unfinished"></translation>
+        <translation>Standalone accetta solo yes o no.</translation>
     </message>
     <message>
         <source>Invalid attribute in XML declaration.</source>
@@ -4745,7 +4745,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The second operand in a division, %1, cannot be zero (%2).</source>
-        <translation type="unfinished"></translation>
+        <translation>Il secondo operando in una divisione, %1, non può essere zero (%2).</translation>
     </message>
     <message>
         <source>%1 is not a valid value of type %2.</source>
@@ -4841,7 +4841,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>It&apos;s not possible to cast the value %1 of type %2 to %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Impossibile effettuare il cast di un valore %1 del tipo %2 in %3</translation>
     </message>
     <message>
         <source>Failure when casting from %1 to %2: %3</source>
@@ -4861,7 +4861,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>Operator %1 is not available between atomic values of type %2 and %3.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;operatore %1 non è disponibile tra i valori atomici di tipo %2 e %3.</translation>
     </message>
     <message>
         <source>An attribute node cannot be a child of a document node. Therefore, the attribute %1 is out of place.</source>
@@ -4937,7 +4937,7 @@ Scegli un nome diverso.</translation>
     </message>
     <message>
         <source>The first argument to %1 cannot be of type %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il primo argomento di %1 non può essere di tipo %2.</translation>
     </message>
     <message>
         <source>If both values have zone offsets, they must have the same zone offset. %1 and %2 are not the same.</source>
