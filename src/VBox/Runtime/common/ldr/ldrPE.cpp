@@ -1515,12 +1515,6 @@ static DECLCALLBACK(int) rtldrPEClose(PRTLDRMODINTERNAL pMod)
         RTMemFree(pModPe->pvBits);
         pModPe->pvBits = NULL;
     }
-    if (pModPe->Core.pReader)
-    {
-        int rc = pModPe->Core.pReader->pfnDestroy(pModPe->Core.pReader);
-        AssertRC(rc);
-        pModPe->Core.pReader = NULL;
-    }
     return VINF_SUCCESS;
 }
 

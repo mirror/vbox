@@ -158,6 +158,12 @@ RTDECL(int) RTLdrClose(RTLDRMOD hLdrMod)
     AssertRC(rc);
     pMod->eState = LDR_STATE_INVALID;
     pMod->u32Magic++;
+    if (pMod->pReader)
+    {
+        rc = pMod->pReader->pfnDestroy(pMod->pReader);
+        AssertRC(rc);
+        pMod->pReader = NULL;
+    }
     RTMemFree(pMod);
 
     LogFlow(("RTLdrClose: returns VINF_SUCCESS\n"));
