@@ -195,6 +195,13 @@ QRect UIMachineViewScale::workingArea() const
 
 QSize UIMachineViewScale::calculateMaxGuestSize() const
 {
+    /* 1) The calculation below is not reliable on some (X11) platforms until we
+     *    have been visible for a fraction of a second, so so the best we can
+     *    otherwise.
+     * 2) We also get called early before "machineWindow" has been fully
+     *    initialised, at which time we can't perform the calculation. */
+    if (!isVisible())
+        return workingArea().size() * 0.95;
     /* The area taken up by the machine window on the desktop, including window
      * frame, title, menu bar and status bar. */
     QSize windowSize = machineWindow()->frameGeometry().size();
@@ -204,11 +211,6 @@ QSize UIMachineViewScale::calculateMaxGuestSize() const
     QSize maximumSize = workingArea().size().expandedTo(windowSize);
     /* The current size of the machine display. */
     QSize centralWidgetSize = machineWindow()->centralWidget()->size();
-    /* The calculation below is not reliable on some (X11) platforms until we
-     * have been visible for a fraction of a second, so so the best we can
-     * otherwise. */
-    if (!isVisible())
-        return workingArea().size() * 0.95;
     /* To work out how big the guest display can get without the window going
      * over the maximum size we calculated above, we work out how much space
      * the other parts of the window (frame, menu bar, status bar and so on)
