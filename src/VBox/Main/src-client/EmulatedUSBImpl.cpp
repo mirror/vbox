@@ -16,6 +16,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#define LOG_GROUP_MAIN_OVERRIDE LOG_GROUP_MAIN_EMULATEDUSB
+
 #include "EmulatedUSBImpl.h"
 #include "ConsoleImpl.h"
 #include "Logging.h"
@@ -40,7 +42,10 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
     private:
         int32_t volatile mcRefs;
 
+        EmulatedUSB *mpEmulatedUSB;
+
         RTUUID mUuid;
+        char mszUuid[RTUUID_STR_LENGTH];
 
         Utf8Str mPath;
         Utf8Str mSettings;
@@ -61,9 +66,11 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         EUSBWEBCAM()
             :
             mcRefs(1),
+            mpEmulatedUSB(NULL),
             enmStatus(EUSBDEVICE_CREATED)
         {
             RT_ZERO(mUuid);
+            RT_ZERO(mszUuid);
         }
 
         int32_t AddRef(void)
@@ -81,12 +88,15 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         }
 
         HRESULT Initialize(Console *pConsole,
+                           EmulatedUSB *pEmulatedUSB,
                            const com::Utf8Str *aPath,
                            const com::Utf8Str *aSettings);
         HRESULT Attach(Console *pConsole,
                        PUVM pUVM);
         HRESULT Detach(Console *pConsole,
                        PUVM pUVM);
+
+        bool HasId(const char *pszId) { return RTStrCmp(pszId, mszUuid) == 0;}
 
         EUSBDEVICESTATUS enmStatus;
 };
@@ -101,6 +111,11 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
     CFGMR3InsertNode(pInstance,   "Config", &pConfig);
     for (it = pThis->mDevSettings.begin(); it != pThis->mDevSettings.end(); ++it)
         CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
+    PCFGMNODE pEUSB;
+    CFGMR3InsertNode(pConfig,       "EmulatedUSB", &pEUSB);
+    CFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
+    CFGMR3InsertInteger(pEUSB,        "pfnCallback", (uintptr_t)EmulatedUSB::eusbCallback);
+    CFGMR3InsertInteger(pEUSB,        "pvCallback", (uintptr_t)pThis->mpEmulatedUSB);
 
     PCFGMNODE pLunL0;
     CFGMR3InsertNode(pInstance,   "LUN#0", &pLunL0);
@@ -111,7 +126,7 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
 
     int rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid);
-    LogRel(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
+    LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
     if (RT_FAILURE(rc) && pInstance)
         CFGMR3RemoveNode(pInstance);
     return rc;
@@ -123,6 +138,7 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
 }
 
 HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
+                               EmulatedUSB *pEmulatedUSB,
                                const com::Utf8Str *aPath,
                                const com::Utf8Str *aSettings)
 {
@@ -131,6 +147,7 @@ HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
     int vrc = RTUuidCreate(&mUuid);
     if (RT_SUCCESS(vrc))
     {
+        RTStrPrintf(mszUuid, sizeof(mszUuid), "%RTuuid", &mUuid);
         hrc = mPath.assignEx(*aPath);
         if (SUCCEEDED(hrc))
         {
@@ -140,6 +157,11 @@ HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
         if (SUCCEEDED(hrc))
         {
             hrc = settingsParse();
+
+            if (SUCCEEDED(hrc))
+            {
+                mpEmulatedUSB = pEmulatedUSB;
+            }
         }
     }
 
@@ -310,7 +332,7 @@ HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
         EUSBWEBCAM *p = new EUSBWEBCAM();
         if (p)
         {
-            hrc = p->Initialize(m.pConsole, &path, &aSettings);
+            hrc = p->Initialize(m.pConsole, this, &path, &aSettings);
             if (SUCCEEDED(hrc))
             {
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -411,6 +433,128 @@ HRESULT EmulatedUSB::webcamDetach(const com::Utf8Str &aPath)
     }
 
     return hrc;
+}
+
+/* static */ DECLCALLBACK(int) EmulatedUSB::eusbCallbackEMT(EmulatedUSB *pThis, char *pszId, uint32_t iEvent,
+                                                            void *pvData, uint32_t cbData)
+{
+    LogRelFlowFunc(("id %s event %d, data %p %d\n", pszId, iEvent, pvData, cbData));
+
+    NOREF(cbData);
+
+    int rc = VINF_SUCCESS;
+    if (iEvent == 0)
+    {
+        com::Utf8Str path;
+        HRESULT hr = pThis->webcamPathFromId(&path, pszId);
+        if (SUCCEEDED(hr))
+        {
+            hr = pThis->webcamDetach(path);
+            if (FAILED(hr))
+            {
+                rc = VERR_INVALID_STATE;
+            }
+        }
+        else
+        {
+            rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    RTMemFree(pszId);
+    RTMemFree(pvData);
+
+    LogRelFlowFunc(("rc %Rrc\n", rc));
+    return rc;
+}
+
+/* static */ DECLCALLBACK(int) EmulatedUSB::eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
+                                                         const void *pvData, uint32_t cbData)
+{
+    /* Make a copy of parameters, forward to EMT and leave the callback to not hold any lock in the device. */
+    int rc = VINF_SUCCESS;
+
+    void *pvIdCopy = NULL;
+    void *pvDataCopy = NULL;
+    if (cbData > 0)
+    {
+       pvDataCopy = RTMemDup(pvData, cbData);
+       if (!pvDataCopy)
+       {
+           rc = VERR_NO_MEMORY;
+       }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        pvIdCopy = RTMemDup(pszId, strlen(pszId) + 1);
+        if (!pvIdCopy)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        EmulatedUSB *pThis = (EmulatedUSB *)pv;
+        Console::SafeVMPtr ptrVM(pThis->m.pConsole);
+        if (ptrVM.isOk())
+        {
+            /* No wait. */
+            rc = VMR3ReqCallNoWaitU(ptrVM.rawUVM(), 0 /* idDstCpu */,
+                                    (PFNRT)EmulatedUSB::eusbCallbackEMT, 5,
+                                    pThis, pvIdCopy, iEvent, pvDataCopy, cbData);
+        }
+        else
+        {
+            rc = VERR_INVALID_STATE;
+        }
+    }
+
+    if (RT_FAILURE(rc))
+    {
+        RTMemFree(pvIdCopy);
+        RTMemFree(pvDataCopy);
+    }
+
+    return rc;
+}
+
+HRESULT EmulatedUSB::webcamPathFromId(com::Utf8Str *pPath, const char *pszId)
+{
+    HRESULT hr = S_OK;
+
+    Console::SafeVMPtr ptrVM(m.pConsole);
+    if (ptrVM.isOk())
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        WebcamsMap::const_iterator it;
+        for (it = m.webcams.begin(); it != m.webcams.end(); ++it)
+        {
+            EUSBWEBCAM *p = it->second;
+            if (p->HasId(pszId))
+            {
+                *pPath = it->first;
+                break;
+            }
+        }
+
+        if (it == m.webcams.end())
+        {
+            hr = E_FAIL;
+        }
+        alock.release();
+    }
+    else
+    {
+        hr = VBOX_E_INVALID_VM_STATE;
+    }
+
+    return hr;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
