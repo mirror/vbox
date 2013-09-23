@@ -27,6 +27,7 @@
 #endif
 #include <iprt/assert.h>
 #include <VBox/err.h>
+#include <VBox/log.h>
 
 #ifdef VBOXCR_LOGFPS
 #include <iprt/timer.h>
@@ -3111,7 +3112,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     {
         case SHCRGL_GUEST_FN_WRITE:
         {
-            crDebug(("svcCall: SHCRGL_GUEST_FN_WRITE\n"));
+            Log(("svcCall: SHCRGL_GUEST_FN_WRITE\n"));
 
             /* @todo: Verify  */
             if (cParams == 1)
@@ -3165,7 +3166,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
         case SHCRGL_GUEST_FN_INJECT:
         {
-            crDebug(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
+            Log(("svcCall: SHCRGL_GUEST_FN_INJECT\n"));
 
             /* @todo: Verify  */
             if (cParams == 1)
@@ -3217,7 +3218,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
         case SHCRGL_GUEST_FN_READ:
         {
-            crDebug(("svcCall: SHCRGL_GUEST_FN_READ\n"));
+            Log(("svcCall: SHCRGL_GUEST_FN_READ\n"));
 
             /* @todo: Verify  */
             if (cParams == 1)
@@ -3271,7 +3272,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
         case SHCRGL_GUEST_FN_WRITE_READ:
         {
-            crDebug(("svcCall: SHCRGL_GUEST_FN_WRITE_READ\n"));
+            Log(("svcCall: SHCRGL_GUEST_FN_WRITE_READ\n"));
 
             /* @todo: Verify  */
             if (cParams == 2)
