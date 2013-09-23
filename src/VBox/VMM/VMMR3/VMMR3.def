@@ -342,6 +342,7 @@ EXPORTS
     VMR3PowerOff
     VMR3PowerOn
     VMR3ReleaseUVM
+    VMR3ReqCallNoWaitU
     VMR3ReqCallU
     VMR3ReqCallVoidWaitU
     VMR3ReqCallWaitU
