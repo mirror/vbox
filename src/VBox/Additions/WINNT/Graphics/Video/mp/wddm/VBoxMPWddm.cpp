@@ -327,6 +327,9 @@ bool vboxWddmGhDisplaySetInfoFromSourceTarget(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_
     if (!g_VBoxDisplayOnly)
 # endif
     {
+        if (!pRealFbAlloc)
+            return false;
+
         if (!pFbAlloc)
         {
             pFbAlloc = VBOXWDDM_NONFB_ALLOCATION(pDevExt, pSource);
