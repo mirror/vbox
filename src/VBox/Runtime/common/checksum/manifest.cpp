@@ -438,6 +438,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
             pszDigestEnd = rtManifestPosOfCharInBuf(pcBuf, cch, '\n');
         if (!pszDigestEnd)
         {
+            RTMemTmpFree(pszName);
             rc = VERR_MANIFEST_WRONG_FILE_FORMAT;
             break;
         }
@@ -446,6 +447,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
         char *pszDigest = (char *)RTMemTmpAlloc(cchDigest + 1);
         if (!pszDigest)
         {
+            RTMemTmpFree(pszName);
             rc = VERR_NO_MEMORY;
             break;
         }
