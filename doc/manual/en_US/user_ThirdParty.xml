@@ -283,7 +283,7 @@
 
       <listitem>
         <para>VirtualBox contains portions of PCRE which is governed by the
-          license in <xref linkend="licPcre" xrefstyle="template :%n" /> and</para>
+          license in <xref linkend="licPcre" xrefstyle="template: %n" /> and</para>
         <para>Copyright (c) 1997-2012 University of Cambridge;
           Copyright(c) 2009-2012 Zoltan Herczeg;
           Copyright (c) 2007-2012, Google Inc.
@@ -292,7 +292,7 @@
 
       <listitem>
         <para>VirtualBox contains portions of libffi which is governed by the
-          license in <xref linkend="licLibffi" xrefstyle="template :%n" /> and</para>
+          license in <xref linkend="licLibffi" xrefstyle="template: %n" /> and</para>
         <para>
           Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc and others.
           See source files for details.
@@ -301,8 +301,8 @@
 
       <listitem>
         <para>VirtualBox contains portions of FLTK which is governed by the
-          licenses in <xref linkend="licFltk" xrefstyle="template :%n" /> and
-          <xref linkend="licLGPL" xrefstyle="template :%n"/> and  </para>
+          licenses in <xref linkend="licFltk" xrefstyle="template: %n" /> and
+          <xref linkend="licLGPL" xrefstyle="template: %n"/> and  </para>
         <para>
           Copyright (C) 1991-2012  The FLTK team
         </para>
@@ -310,7 +310,7 @@
 
       <listitem>
         <para>VirtualBox contains portions of Expat which is governed by the
-          license in <xref linkend="licExpat" xrefstyle="template :%n" /> and</para>
+          license in <xref linkend="licExpat" xrefstyle="template: %n" /> and</para>
         <para>
           Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
           and Clark Cooper; Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Expat
@@ -320,7 +320,7 @@
 
       <listitem>
         <para>VirtualBox contains portions of Fontconfig which is governed by the
-          license in <xref linkend="licFontconfig" xrefstyle="template :%n" />
+          license in <xref linkend="licFontconfig" xrefstyle="template: %n" />
           and</para>
         <para>
           Copyright (C) 2001, 2003 Keith Packard
@@ -329,7 +329,7 @@
 
       <listitem>
         <para>VirtualBox contains portions of Freetype which is governed by the
-          license in <xref linkend="licFreetype" xrefstyle="template :%n" />
+          license in <xref linkend="licFreetype" xrefstyle="template: %n" />
           and</para>
         <para>
           Copyright 2012 The FreeType Project (www.freetype.org). All rights reserved.
@@ -338,7 +338,7 @@
 
       <listitem>
         <para>VirtualBox may contain code from the WebM VP8 Codec SDK which
-          is governed by the license in <xref linkend="licVPX" xrefstyle="template :%n" />
+          is governed by the license in <xref linkend="licVPX" xrefstyle="template: %n" />
           and </para>
         <para>
           Copyright (c) 2010, The WebM Project authors. All rights reserved.
