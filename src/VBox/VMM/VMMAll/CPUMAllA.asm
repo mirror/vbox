@@ -160,13 +160,15 @@ hlfpua_switch_fpu_ctx:
 %ifdef RT_ARCH_AMD64
     ; Use explicit REX prefix. See @bugref{6398}.
     o64 fxsave  [xDX + CPUMCPU.Host.fpu]
-    o64 fxrstor [xDX + CPUMCPU.Guest.fpu]
 %else
     fxsave  [xDX + CPUMCPU.Host.fpu]
+%endif
+    or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
+%ifdef RT_ARCH_AMD64
+    o64 fxrstor [xDX + CPUMCPU.Guest.fpu]
+%else
     fxrstor [xDX + CPUMCPU.Guest.fpu]
 %endif
-    ; We've loaded the guest FPU now
-    or      dword [xDX + CPUMCPU.fUseFlags], (CPUM_USED_FPU | CPUM_USED_FPU_SINCE_REM)
 hlfpua_finished_switch:
 %ifndef IN_RING3 ; IN_RC or IN_RING0
     mov     cr0, xCX                            ; load the new cr0 flags.
