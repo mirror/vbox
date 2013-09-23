@@ -3579,7 +3579,7 @@ VMMR3DECL(int) PGMR3ChangeMode(PVM pVM, PVMCPU pVCpu, PGMMODE enmGuestMode)
             CPUMGetGuestCpuId(pVCpu, 1, &u32Dummy, &u32Dummy, &u32Dummy, &u32Features);
             if (!(u32Features & X86_CPUID_FEATURE_EDX_PAE))
                 return VMSetRuntimeError(pVM, VMSETRTERR_FLAGS_FATAL, "PAEmode",
-                                         N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (General/Advanced)"));
+                                         N_("The guest is trying to switch to the PAE mode which is currently disabled by default in VirtualBox. PAE support can be enabled using the VM settings (System/Processor)"));
 
             GCPhysCR3 = CPUMGetGuestCR3(pVCpu) & X86_CR3_PAE_PAGE_MASK;
             rc = PGM_GST_NAME_PAE(Enter)(pVCpu, GCPhysCR3);
