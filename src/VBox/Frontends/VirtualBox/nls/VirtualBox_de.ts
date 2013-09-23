@@ -727,7 +727,7 @@
     </message>
     <message>
         <source>Toggle remote desktop (RDP) connections to this machine</source>
-        <translation>Fernsteuerung (RDP) ein- oder ausschalten.</translation>
+        <translation>Fernsteuerung (RDP) ein- oder ausschalten</translation>
     </message>
     <message>
         <source>&amp;Video Capture</source>
@@ -1229,7 +1229,7 @@
     <name>UIDownloaderUserManual</name>
     <message>
         <source>Select folder to save User Manual to</source>
-        <translation>Wählen Sie den Ordner aus, in dem das Benutzerhandbuch gespeichert werden soll.</translation>
+        <translation>Wählen Sie den Ordner aus, in dem das Benutzerhandbuch gespeichert werden soll</translation>
     </message>
     <message>
         <source>VirtualBox User Manual</source>
@@ -2076,31 +2076,31 @@
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige IPv4-Adresse.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige IPv4-Netzmaske.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige IPv6-Adresse.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige DHCP-Server-Adresse.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Netzinterface &lt;b&gt;%1&lt;/b&gt; hat keine gültige DHCP-Server-Netzmaske.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Interface &lt;b&gt;%1&lt;/b&gt; hat keine gültige kleinste Adresse für den Bereich gültiger DHCP-Adressen.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Das Host-Interface &lt;b&gt;%1&lt;/b&gt; hat keine gültige größte Adresse für den Bereich gültiger DHCP-Adressen.</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
@@ -2366,7 +2366,7 @@
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished"></translation>
+        <translation>Verwende als voreingestellte IPv6-&amp;Route</translation>
     </message>
     <message>
         <source>Determines whether this network should be advertised as the default IPv6 route.</source>
@@ -3033,15 +3033,15 @@
     </message>
     <message>
         <source>This setting determines the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Einstellung legt die Auflösung (Größe eines Bildes) der Videoaufzeichnung fest.</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Einstellung bestimmt die &lt;b&gt;waagerechte&lt;/b&gt; Auflösung (Bildbreite) der Videoaufzeichnung.</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Einstellung bestimmt die &lt;b&gt;senkrechte&lt;/b&gt; Auflösung (Bildbreite) der Videoaufzeichnung.</translation>
     </message>
     <message>
         <source>&amp;Frame Rate:</source>
@@ -3049,7 +3049,7 @@
     </message>
     <message>
         <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Diese Einstellung legt die maximale Anzahl an &lt;b&gt;Bildern pro Sekunde&lt;/b&gt; fest. Wird dieser Wert vermindert, so reduziert sich die Dateigröße, aber es werden mehr Bilder übersprungen.</translation>
     </message>
     <message>
         <source>&amp;Quality:</source>
@@ -3069,7 +3069,7 @@
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die virtuelle Maschine soll mit Hardware-Beschleunigung ausgeführt werden. Allerdings kann der Host dieses Feature nicht bereitstellen. Daher können Sie diese Maschine nicht starten.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to fullscreen or seamless mode.</source>
@@ -3089,11 +3089,11 @@
     </message>
     <message>
         <source>The VRDE server port value is not currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein VRDE-Server-Port angegeben.</translation>
     </message>
     <message>
         <source>The VRDE authentication timeout value is not currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Zeitüberschreitung für die VRDE-Authentisierung wurde nicht angegeben.</translation>
     </message>
     <message>
         <source>User Defined</source>
@@ -3355,27 +3355,27 @@
     </message>
     <message>
         <source>No internal network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein Name für das interne Netzwerk angegeben.</translation>
     </message>
     <message>
         <source>No host-only network adapter is currently selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein Host-Netzinterface-Adapter ausgewählt.</translation>
     </message>
     <message>
         <source>No generic driver is currently selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein generischer Treiber ausgewählt.</translation>
     </message>
     <message>
         <source>The MAC address must be 12 hexadecimal digits long.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die MAC-Adresse muss aus 12 Hexadezimalzahlen bestehen.</translation>
     </message>
     <message>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die zweite Stelle der MAC-Adresse darf nicht ungerade sein, da nur Unicast-Adressen erlaubt sind.</translation>
     </message>
     <message>
         <source>No NAT network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein NAT-Netzwerk-Name angegeben.</translation>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
@@ -3458,7 +3458,7 @@
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein Pfad für den Port angegeben.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
@@ -3698,11 +3698,11 @@
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein IRQ angegeben.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde kein I/O-Port angegeben.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
@@ -4043,7 +4043,7 @@
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es wurde keine Festplatte für &lt;i&gt;%1&lt;/i&gt; ausgewählt.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -4282,7 +4282,7 @@
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Anzahl der virtuellen CPUs einer virtuellen Maschine darf nicht größer sein als die doppelte Anzahl der physichen CPU-Kerne auf dem Host (&lt;b&gt;%1&lt;/b&gt;). Bitte verringern Sie die Anzahl der virtuellen CPUs.</translation>
     </message>
     <message>
         <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
@@ -5626,7 +5626,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Cannot start the VirtualBox Manager due to local restrictions.&lt;/p&gt;&lt;p&gt;The application will now terminate.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Der VirtualBox-Manager kann aufgrund einer Einstellung nicht gestartet werden.&lt;/p&gt;&lt;p&gt;Die Anwendung wird nun beended.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
@@ -5682,7 +5682,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie die virtuelle Festplatte &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; wirklich freigeben?&lt;/p&gt;&lt;p&gt;Damit wird sie von folgenden virtuellen Maschinen freigegeben:&lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -6320,7 +6320,7 @@
     </message>
     <message>
         <source>Restore the machine state stored in the current snapshot</source>
-        <translation>Der Ausführungszustand wird auf den aktuellen Sicherungspunkt zurückgesetzt.</translation>
+        <translation>Der Ausführungszustand wird auf den aktuellen Sicherungspunkt zurückgesetzt</translation>
     </message>
     <message>
         <source>&lt;p&gt;When checked, the machine will be returned to the state stored in the current snapshot after it is turned off. This is useful if you are sure that you want to discard the results of your last sessions and start again at that snapshot.&lt;/p&gt;</source>
@@ -6795,7 +6795,7 @@
     </message>
     <message>
         <source>Storage settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Massenspeicher</translation>
     </message>
     <message>
         <source>Please choose a file to export the virtual appliance to</source>
@@ -6827,7 +6827,7 @@
     </message>
     <message>
         <source>&amp;Storage settings</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Massenspeicher</translation>
     </message>
 </context>
 <context>
@@ -8259,12 +8259,12 @@
     <message>
         <source>Fixed size ESX storage</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>ESX-Storage mit fester Größe</translation>
     </message>
     <message>
         <source>Fixed size storage on raw disk</source>
         <comment>MediumVariant</comment>
-        <translation type="unfinished"></translation>
+        <translation>feste Größe auf Festplatte</translation>
     </message>
     <message>
         <source>Deny</source>
@@ -8471,7 +8471,7 @@
     <message>
         <source>Unrestricted Execution</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>Unrestricted Execution</translation>
     </message>
     <message>
         <source>PS/2 Mouse</source>
@@ -8500,7 +8500,7 @@
     </message>
     <message>
         <source>Unrestricted Execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Unrestricted Execution</translation>
     </message>
     <message>
         <source>USB Tablet</source>
