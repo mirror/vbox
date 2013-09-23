@@ -128,7 +128,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            hostinfo|hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                      "                            usbhost|usbfilters|systemproperties|extpacks|\n"
-                     "                            groups\n"
+                     "                            groups|webcams\n"
                      "\n", SEP);
 
     if (u64Cmd & USAGE_SHOWVMINFO)
