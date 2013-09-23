@@ -4648,7 +4648,7 @@ AuthResult AUTHCALL AuthEntry(
 
         <listitem>
           <para>Reading the <xref linkend="IMedium__state"
-          xreflabel="IMedium::state" xrefstyle="" /> attribute no longer
+          xreflabel="IMedium::state" /> attribute no longer
           automatically performs an accessibility check; a new method <xref
           linkend="IMedium__refreshState"
           xreflabel="IMedium::refreshState()" /> does this. The attribute only
