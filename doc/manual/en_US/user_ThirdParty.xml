@@ -154,14 +154,14 @@
 
       <listitem>
         <para>VirtualBox contains libxml which is governed by the license in
-        <xref linkend="licLibXML" /> and</para>
+        <xref linkend="licLibXML" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 1998-2003 Daniel Veillard.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contains libxslt which is governed by the license in
-        <xref linkend="licLibXSLT" /> and</para>
+        <xref linkend="licLibXSLT" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 2001-2002 Daniel Veillard and Copyright (C)
         2001-2002 Thomas Broyer, Charlie Bozeman and Daniel Veillard.</para>
@@ -170,7 +170,7 @@
       <listitem>
         <para>VirtualBox contains code from the gSOAP XML web services
         tools, which are licensed under the license in <xref
-        linkend="licgSOAP" /> and</para>
+        linkend="licgSOAP" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 2000-2007, Robert van Engelen, Genivia Inc., and
         others.</para>
@@ -188,7 +188,7 @@
       <listitem>
         <para>VirtualBox contains code from Chromium, an OpenGL
         implementation, which is goverened by the licenses in <xref
-        linkend="licChromium" /> and</para>
+        linkend="licChromium" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) Stanford University, The Regents of the University
         of California, Red Hat, and others.</para>
@@ -196,28 +196,28 @@
 
       <listitem>
         <para>VirtualBox contains libcurl which is governed by the license in
-        <xref linkend="licLibCurl" /> and</para>
+        <xref linkend="licLibCurl" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 1996-2009, Daniel Stenberg.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contains dnsproxy which is governed by the license in
-        <xref linkend="licMIT" /> and</para>
+        <xref linkend="licMIT" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (c) 2003, 2004, 2005 Armin Wolfermann.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox may contain iniparser which is governed by the
-        license in <xref linkend="licMIT" /> and</para>
+        license in <xref linkend="licMIT" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (c) 2000-2008 by Nicolas Devillard.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contains some code from libgd which is governed by
-        the license in <xref linkend="licLibgd" /> and</para>
+        the license in <xref linkend="licLibgd" xrefstyle="template: %n"/> and</para>
 
         <para>Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
         Pierre-Alain Joye (pierre@libgd.org).</para>
@@ -226,21 +226,22 @@
       <listitem>
         <para>VirtualBox contains code from the EFI Development Kit II
           which is governed by the license in
-          <xref linkend="licBsdIntel" /> and</para>
+          <xref linkend="licBsdIntel" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (c) 2004-2008, Intel Corporation.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contains libjpeg which is governed by the
-        license in <xref linkend="licJPEG" /> and</para>
+        license in <xref linkend="licJPEG" xrefstyle="template: %n" /> and</para>
 
         <para>Copyright (C) 1991-2010, Thomas G. Lane, Guido Vollbeding.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox may contain x86 SIMD extension for IJG JPEG library
-        which is governed by the license in <xref linkend="licJPEGSIMD" /> and</para>
+        which is governed by the license in <xref linkend="licJPEGSIMD"
+        xrefstyle="template: %n" /> and</para>
 
         <para>Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; for Cendio AB;
         Copyright 2010 D. R. Commander; Copyright (C) 1999-2006, MIYASAKA Masaru.
@@ -257,13 +258,13 @@
 
       <listitem>
         <para>VirtualBox contains parts of the FreeBSD kernel which is governed by
-          the license in <xref linkend="licFreeBsd" />.
+          the license in <xref linkend="licFreeBsd" xrefstyle="template: %n" />.
         </para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contains parts of the NetBSD kernel which is governed by
-          the license in <xref linkend="licNetBsd" />.
+          the license in <xref linkend="licNetBsd" xrefstyle="template: %n" />.
         </para>
       </listitem>
       
