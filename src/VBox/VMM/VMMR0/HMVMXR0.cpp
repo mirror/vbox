@@ -4553,7 +4553,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     pCache->pSwitcher = (uint64_t)pVM->hm.s.pfnHost32ToGuest64R0;
 #endif
 
-#ifdef VBOX_STRICT
+#if defined(DEBUG) && defined(VMX_USE_CACHED_VMCS_ACCESSES)
     pCache->TestIn.HCPhysCpuPage = 0;
     pCache->TestIn.HCPhysVmcs    = 0;
     pCache->TestIn.pCache        = 0;
@@ -4582,7 +4582,7 @@ DECLASM(int) VMXR0SwitcherStartVM64(RTHCUINT fResume, PCPUMCTX pCtx, PVMCSCACHE 
     *(uint32_t *)(pVM->hm.s.vmx.pScratch + 16 + 8) = 0xff;
 #endif
 
-#ifdef VBOX_STRICT
+#if defined(DEBUG) && defined(VMX_USE_CACHED_VMCS_ACCESSES)
     AssertMsg(pCache->TestIn.HCPhysCpuPage == HCPhysCpuPage, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysCpuPage, HCPhysCpuPage));
     AssertMsg(pCache->TestIn.HCPhysVmcs    == pVCpu->hm.s.vmx.HCPhysVmcs, ("%RHp vs %RHp\n", pCache->TestIn.HCPhysVmcs,
                                                                            pVCpu->hm.s.vmx.HCPhysVmcs));
