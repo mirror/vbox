@@ -114,6 +114,8 @@ AssertCompileSize(VMXRESTOREHOST, 56);
 /** MSR storage capacity of the VMCS autoload/store area is not sufficient
  *  for storing guest MSRs. */
 #define VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE                  6
+/** Invalid VMCS size. */
+#define VMX_UFC_INVALID_VMCS_SIZE                               7
 /** @} */
 
 /** @name VMX HM-error codes for VERR_VMX_INVALID_GUEST_STATE.
@@ -1078,7 +1080,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** VMCS revision identifier used by the processor. */
 #define MSR_IA32_VMX_BASIC_INFO_VMCS_ID(a)                      ((a) & 0x7FFFFFFF)
 /** Size of the VMCS. */
-#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    (((a) >> 32) & 0xFFF)
+#define MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(a)                    (((a) >> 32) & 0x1FFF)
 /** Width of physical address used for the VMCS.
  *  0 -> limited to the available amount of physical ram
  *  1 -> within the first 4 GB
