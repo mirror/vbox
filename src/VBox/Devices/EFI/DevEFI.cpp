@@ -45,7 +45,7 @@
 # define DEVEFI_WITH_VBOXDBG_SCRIPT
 #endif
 
-#include "Firmware2/VBoxPkg/Include/DevEFI.h"
+#include "DevEFI.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 #include "../PC/DevFwCommon.h"
