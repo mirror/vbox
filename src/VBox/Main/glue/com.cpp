@@ -66,7 +66,7 @@ char szXdgConfigHome[RTPATH_MAX] = "";
  * create a folder corresponding to the last in the list (the least
  * legacy) if none do.
  */
-const char *const apcszUserHome[] = 
+const char *const apcszUserHome[] =
 #ifdef RT_OS_DARWIN
 { "Library/VirtualBox" };
 #elif defined RT_OS_WINDOWS
@@ -296,6 +296,7 @@ static void vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE enmPhase, PFNR
                    g_pszLogEntity, VBOX_VERSION_STRING, RTBldCfgRevision(),
                    RTBldCfgTargetDotArch(), __DATE__, __TIME__, szTmp);
 
+            pfnLog(pReleaseLogger, "Build Type: %s\n", KBUILD_TYPE);
             int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
             if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
                 pfnLog(pReleaseLogger, "OS Product: %s\n", szTmp);
