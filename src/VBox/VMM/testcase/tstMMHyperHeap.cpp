@@ -85,6 +85,13 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    rc = CFGMR3Init(pVM, NULL, NULL);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("FAILURE: CFGMR3Init failed. rc=%Rrc\n", rc);
+        return 1;
+    }
+
     rc = MMR3Init(pVM);
     if (RT_FAILURE(rc))
     {
