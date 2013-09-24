@@ -915,6 +915,11 @@ static int hmR0VmxStructsAlloc(PVM pVM)
 #undef VMXLOCAL_INIT_VMCPU_MEMOBJ
 #undef VMXLOCAL_INIT_VM_MEMOBJ
 
+    /* The VMCS size cannot be more than 4096 bytes. See Intel spec. Appendix A.1 "Basic VMX Information". */
+    AssertReturnStmt(MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo) <= PAGE_SIZE,
+                     (&pVM->aCpus[0])->hm.s.u32HMError = VMX_UFC_INVALID_VMCS_SIZE,
+                     VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO);
+
     /*
      * Allocate all the VT-x structures.
      */
@@ -943,11 +948,6 @@ static int hmR0VmxStructsAlloc(PVM pVM)
     {
         PVMCPU pVCpu = &pVM->aCpus[i];
         AssertPtr(pVCpu);
-
-        /* The VMCS size cannot be more than 4096 bytes. See Intel spec. Appendix A.1 "Basic VMX Information". */
-        AssertReturnStmt(MSR_IA32_VMX_BASIC_INFO_VMCS_SIZE(pVM->hm.s.vmx.Msrs.u64BasicInfo) <= PAGE_SIZE,
-                         pVCpu->hm.s.u32HMError = VMX_UFC_INVALID_VMCS_SIZE,
-                         VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO);
 
         /* Allocate the VM control structure (VMCS). */
         rc = hmR0VmxPageAllocZ(&pVCpu->hm.s.vmx.hMemObjVmcs, &pVCpu->hm.s.vmx.pvVmcs, &pVCpu->hm.s.vmx.HCPhysVmcs);
