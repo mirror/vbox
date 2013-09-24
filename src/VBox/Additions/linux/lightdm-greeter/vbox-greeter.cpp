@@ -1456,7 +1456,7 @@ int main(int argc, char **argv)
         g_main_context_iteration(pMainCtx,
                                  FALSE /* No blocking */);
         Fl::check();
-        RTThreadYield();
+        RTThreadSleep(10); /* Wait a bit, don't hog the CPU too much. */
     }
 
     g_main_context_unref(pMainCtx);
