@@ -249,6 +249,7 @@ static const SSMFIELD g_aCpumCtxFields[] =
     SSMFIELD_ENTRY(         CPUMCTX, msrCSTAR),
     SSMFIELD_ENTRY(         CPUMCTX, msrSFMASK),
     SSMFIELD_ENTRY(         CPUMCTX, msrKERNELGSBASE),
+    /* msrApicBase is not included here, it resides in the APIC device state. */
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.Sel),
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.ValidSel),
     SSMFIELD_ENTRY(         CPUMCTX, ldtr.fFlags),
