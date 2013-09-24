@@ -43,6 +43,7 @@
 # include <CoreFoundation/CoreFoundation.h>
 #endif
 #include <IOKit/hid/IOHIDLib.h>
+#include <IOKit/hidsystem/IOHIDLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
 
@@ -1454,6 +1455,55 @@ void * DarwinHidDevicesKeepLedsState(void)
 #endif
 }
 
+/** Call VBoxKeyboardService to sync keyboard controls and LEDs. */
+static void darwinVBoxKeyboardSync(void)
+{
+    CFDictionaryRef matchingDictionaryRef = IOServiceMatching("org_virtualbox_VBoxKeyboard");
+    if (matchingDictionaryRef)
+    {
+        io_service_t service;
+        service = IOServiceGetMatchingService(kIOMasterPortDefault, matchingDictionaryRef);
+        if (service)
+        {
+            kern_return_t rc;
+            io_connect_t  connection;
+            rc = IOServiceOpen(service, mach_task_self(), 0, &connection);
+            if (rc == 0)
+            {
+                Log2(("VBoxKeyboard IOService opened!\n"));
+
+                rc = IOConnectCallScalarMethod(connection, 0, NULL, 0, NULL, 0);
+                Log2(("VBoxKeyboard IOService IOCTL: 0x%X!\n", rc));
+
+                rc = IOServiceClose(connection);
+                if (rc == 0)
+                {
+                    Log2(("VBoxKeyboard IOService closed!\n"));
+                }
+                else
+                {
+                    Log2(("Unable to close VBoxKeyboard IOService: 0x%X\n", rc));
+                }
+            }
+            else
+            {
+                Log2(("Unable to open VBoxKeyboard IOService: 0x%X\n", rc));
+            }
+
+            IOObjectRelease(service);
+        }
+        else
+        {
+            Log2(("Unable to find VBoxKeyboard IOService\n"));
+        }
+
+    }
+    else
+    {
+        Log2(("Unable to construct VBoxKeyboard IOService matching dictionary\n"));
+    }
+}
+
 /**
  * Apply LEDs state stored in *pState and release resources aquired by *pState.
  *
@@ -1487,7 +1537,10 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                     Log2(("Unable to restore led states for device (%d)!\n", (int)i));
                     rc2 = kIOReturnError;
                 }
+
             }
+
+            darwinVBoxKeyboardSync();
         }
 
         /* Free resources */

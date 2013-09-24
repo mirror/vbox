@@ -1017,6 +1017,12 @@ void UIKeyboardHandler::darwinGrabKeyboardEvents(bool fGrab)
         ::CGSetLocalEventsSuppressionInterval(0.0);
         ::darwinSetMouseCoalescingEnabled(false);
 
+        /* Bring the caps lock state up to date, otherwise e.g. a later Shift
+         * key press will accidentally inject a CapsLock key press and release,
+         * see UIKeyboardHandler::darwinKeyboardEvent for the code handling
+         * modifier key state changes */
+        m_darwinKeyModifiers ^= (m_darwinKeyModifiers ^ ::GetCurrentEventKeyModifiers()) & alphaLock;
+
         /* Register the event callback/hook and grab the keyboard. */
         UICocoaApplication::instance()->registerForNativeEvents(RT_BIT_32(10) | RT_BIT_32(11) | RT_BIT_32(12) /* NSKeyDown  | NSKeyUp | | NSFlagsChanged */,
                                                                 UIKeyboardHandler::darwinEventHandlerProc, this);
