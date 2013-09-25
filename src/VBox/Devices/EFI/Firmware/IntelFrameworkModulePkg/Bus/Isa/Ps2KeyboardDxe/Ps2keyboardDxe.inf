@@ -1,0 +1,80 @@
+## @file
+# Ps2 Keyboard UEFI Driver which produce gEfiSimpleTextInProtocolGuid and gEfiSimpleTextInputExProtocolGuid
+# protocol. 
+# The keyboard type implemented follows IBM compatible PS2 protocol, with Scan Codes Set 1.
+#
+# This dirver directly uses IsaIo protocol service to support KeyBoard work.
+# Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+#
+# This program and the accompanying materials
+# are licensed and made available under the terms and conditions of the BSD License
+# which accompanies this distribution.  The full text of the license may be found at
+# http://opensource.org/licenses/bsd-license.php
+#
+# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = Ps2KeyboardDxe
+  FILE_GUID                      = 3DC82376-637B-40a6-A8FC-A565417F2C38
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = InitializePs2Keyboard
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#  DRIVER_BINDING                = gKeyboardControllerDriver;
+#  COMPONENT_NAME                = gPs2KeyboardComponentName;
+#  COMPONENT_NAME2               = gPs2KeyboardComponentName2;
+#
+
+[Sources]
+  ComponentName.c
+  Ps2Keyboard.h
+  Ps2KbdCtrller.c
+  Ps2KbdTextIn.c
+  Ps2Keyboard.c
+
+
+[Packages]
+  MdePkg/MdePkg.dec
+  IntelFrameworkPkg/IntelFrameworkPkg.dec
+  IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
+
+[LibraryClasses]
+  MemoryAllocationLib
+  UefiRuntimeServicesTableLib
+  DebugLib
+  ReportStatusCodeLib
+  UefiBootServicesTableLib
+  UefiLib
+  UefiDriverEntryPoint
+  BaseLib
+  BaseMemoryLib
+  TimerLib
+  PcdLib
+  
+[Protocols]
+  gEfiPs2PolicyProtocolGuid                     # PROTOCOL TO_START
+  gEfiIsaIoProtocolGuid                         # PROTOCOL TO_START
+  gEfiSimpleTextInProtocolGuid                  # PROTOCOL BY_START
+  gEfiSimpleTextInputExProtocolGuid             # PROTOCOL BY_START
+  gEfiDevicePathProtocolGuid                    # PROTOCOL TO_START
+
+[FeaturePcd]
+  gEfiIntelFrameworkModulePkgTokenSpaceGuid.PcdPs2KbdExtendedVerification
+
+# [Event]
+#   ##
+#   # Event will be signaled for WaitForKey event.
+#   #
+#   EVT_NOTIFY_WAIT                             ## PRODUCES
+#
+#   ##
+#   # Event will be used to poll mouse state.
+#   #
+#   EVT_NOTIFY_SIGNAL                           ## PRODUCES
