@@ -1,0 +1,83 @@
+## @file
+#  Component description file for the entry point to a EFIDXE Drivers
+#
+#  Library to abstract Framework extensions that conflict with UEFI 2.0 Specification.
+#  Help Port Framework/Tinao code that has conflicts with UEFI 2.0 by hiding the oldconflicts 
+#  with library functions and supporting implementations of the old (EDK/EFI 1.10) and new 
+#  (EDK II/UEFI 2.0) way. This module is a DXE driver as it contains DXE enum extensions for 
+#  EFI event services.
+#
+#  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = FrameworkUefiLib
+  FILE_GUID                      = B2F0D71A-A39F-4094-854B-0C6BA6910CCE
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = UefiLib|DXE_CORE DXE_DRIVER DXE_RUNTIME_DRIVER DXE_SAL_DRIVER DXE_SMM_DRIVER UEFI_APPLICATION UEFI_DRIVER
+
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+
+[Sources]
+  UefiLibPrint.c
+  UefiNotTiano.c
+  UefiDriverModel.c
+  Console.c
+  UefiLib.c
+  UefiLibInternal.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  IntelFrameworkPkg/IntelFrameworkPkg.dec
+
+[LibraryClasses]
+  PrintLib
+  PcdLib
+  MemoryAllocationLib
+  DebugLib
+  BaseMemoryLib
+  BaseLib
+  UefiBootServicesTableLib
+  DevicePathLib
+  
+[Guids]
+  gEfiEventReadyToBootGuid                      # ALWAYS_CONSUMED
+  gEfiEventLegacyBootGuid                       # ALWAYS_CONSUMED
+
+[Protocols]
+  gEfiDriverBindingProtocolGuid                 # ALWAYS_CONSUMED
+  gEfiSimpleTextOutProtocolGuid                 # ALWAYS_CONSUMED
+  gEfiGraphicsOutputProtocolGuid                # ALWAYS_CONSUMED
+  gEfiHiiFontProtocolGuid                       # ALWAYS_CONSUMED
+  gEfiComponentNameProtocolGuid                 # SOMETIMES_CONSUMED
+  gEfiComponentName2ProtocolGuid                # SOMETIMES_CONSUMED
+  gEfiDriverConfigurationProtocolGuid           # SOMETIMES_CONSUMED
+  gEfiDriverConfiguration2ProtocolGuid          # SOMETIMES_CONSUMED
+  gEfiDriverDiagnosticsProtocolGuid             # SOMETIMES_CONSUMED
+  gEfiDriverDiagnostics2ProtocolGuid            # SOMETIMES_CONSUMED
+  gEfiUgaDrawProtocolGuid                       # SOMETIMES_CONSUMED
+
+
+[Pcd]
+  gEfiMdePkgTokenSpaceGuid.PcdUefiLibMaxPrintBufferSize
+
+[FeaturePcd]
+  gEfiMdePkgTokenSpaceGuid.PcdDriverDiagnosticsDisable
+  gEfiMdePkgTokenSpaceGuid.PcdComponentNameDisable
+  gEfiMdePkgTokenSpaceGuid.PcdDriverDiagnostics2Disable
+  gEfiMdePkgTokenSpaceGuid.PcdComponentName2Disable
+  gEfiMdePkgTokenSpaceGuid.PcdUgaConsumeSupport
+

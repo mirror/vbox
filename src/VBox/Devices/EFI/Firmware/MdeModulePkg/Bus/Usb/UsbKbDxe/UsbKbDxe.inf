@@ -1,0 +1,112 @@
+## @file
+# USB Keyboard Driver that manages USB keyboard and produces Simple Text Input
+# Protocol and Simple Text Input Ex Protocol.
+#
+# USB Keyboard Driver consumes USB I/O Protocol and Device Path Protocol, and produces
+# Simple Text Input Protocol and Simple Text Input Ex Protocol on USB keyboard devices.
+# It initializes the keyboard layout according to info retrieved from HII database.
+# If HII cannot provide the info, this module uses its carried default one if PCD allows.
+# It manages the USB keyboard device via Asynchronous Interrupt Transfer of USB I/O Protocol,
+# and parses the data according to USB HID documents.
+# This module refers to following specifications:
+# 1. Universal Serial Bus HID Firmware Specification, ver 1.11
+# 2. Universal Serial Bus HID Usage Tables, ver 1.12
+# 3. UEFI Specification, v2.1
+#
+# Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+#
+#  This program and the accompanying materials
+#  are licensed and made available under the terms and conditions of the BSD License
+#  which accompanies this distribution. The full text of the license may be found at
+#  http://opensource.org/licenses/bsd-license.php
+#
+#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = UsbKbDxe
+  FILE_GUID                      = 2D2E62CF-9ECF-43b7-8219-94E7FC713DFE
+  MODULE_TYPE                    = UEFI_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = USBKeyboardDriverBindingEntryPoint
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+#  DRIVER_BINDING                =  gUsbKeyboardDriverBinding                        
+#  COMPONENT_NAME                =  gUsbKeyboardComponentName
+#  COMPONENT_NAME2               =  gUsbKeyboardComponentName2
+#
+
+[Sources]
+  EfiKey.c
+  EfiKey.h
+  KeyBoard.c
+  ComponentName.c
+  KeyBoard.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  MemoryAllocationLib
+  UefiLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  UefiRuntimeServicesTableLib
+  BaseMemoryLib
+  ReportStatusCodeLib
+  DebugLib
+  PcdLib
+  UefiUsbLib
+  HiiLib
+
+[Guids]
+  ##
+  # Event registered to EFI_HII_SET_KEYBOARD_LAYOUT_EVENT_GUID group,
+  # which will be triggered by EFI_HII_DATABASE_PROTOCOL.SetKeyboardLayout().
+  #
+  gEfiHiiKeyBoardLayoutGuid                     ## SOMETIME_CONSUMES  ## Event
+  gUsbKeyboardLayoutPackageGuid
+  gUsbKeyboardLayoutKeyGuid
+
+[Protocols]
+  gEfiUsbIoProtocolGuid                         ## TO_START
+  gEfiDevicePathProtocolGuid                    ## TO_START
+  gEfiSimpleTextInProtocolGuid                  ## BY_START
+  gEfiSimpleTextInputExProtocolGuid             ## BY_START
+  ##
+  # If HII Database Protocol exists, then keyboard layout from HII database is used.
+  # Otherwise, USB keyboard module tries to use its carried default layout.
+  #
+  gEfiHiiDatabaseProtocolGuid                   ## SOMETIMES_CONSUMES (Default value is used if it's absent.)
+  
+[FeaturePcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdDisableDefaultKeyboardLayoutInUsbKbDriver ## SOMETIME_CONSUMES (Checked when no layout is provided by HII.) 
+
+# [Event]
+#   ##
+#   # Periodic timer event for generation of repeat key
+#   #
+#   EVENT_TYPE_PERIODIC_TIMER                   ## PRODUCES
+#   ##
+#   # Periodic timer event for delayed recovery, which deals with device error.
+#   #
+#   EVENT_TYPE_PERIODIC_TIMER                   ## PRODUCES
+#   ##
+#   # Event for EFI_SIMPLE_TEXT_INPUT_PROTOCOL.WaitForKey
+#   #
+#   EVENT_TYPE_NOTIFY_WAIT                      ## PRODUCES
+#   ##
+#   # Event for EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL.WaitForKeyEx
+#   #
+#   EVENT_TYPE_NOTIFY_WAIT                      ## PRODUCES
+#
+#
