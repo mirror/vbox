@@ -442,7 +442,7 @@ VMMR0DECL(void) SVMR0GlobalTerm(void)
 {
     if (g_hMemObjIOBitmap != NIL_RTR0MEMOBJ)
     {
-        RTR0MemObjFree(g_hMemObjIOBitmap, false /* fFreeMappings */);
+        RTR0MemObjFree(g_hMemObjIOBitmap, true /* fFreeMappings */);
         g_pvIOBitmap      = NULL;
         g_HCPhysIOBitmap  = 0;
         g_hMemObjIOBitmap = NIL_RTR0MEMOBJ;
