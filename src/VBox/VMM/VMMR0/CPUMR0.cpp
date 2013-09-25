@@ -203,9 +203,9 @@ VMMR0_INT_DECL(int) CPUMR0InitVM(PVM pVM)
         uint32_t u32Dummy;
         uint32_t fFeatures;
         ASMCpuId(1, &u32CpuVersion, &u32Dummy, &u32Dummy, &fFeatures);
-        uint32_t u32Family   = u32CpuVersion >> 8;
-        uint32_t u32Model    = (u32CpuVersion >> 4) & 0xF;
-        uint32_t u32Stepping = u32CpuVersion & 0xF;
+        uint32_t const u32Family   = u32CpuVersion >> 8;
+        uint32_t const u32Model    = (u32CpuVersion >> 4) & 0xF;
+        uint32_t const u32Stepping = u32CpuVersion & 0xF;
         if (    (fFeatures & X86_CPUID_FEATURE_EDX_SEP)
             &&  (   u32Family   != 6    /* (> pentium pro) */
                  || u32Model    >= 3
