@@ -4184,6 +4184,10 @@ static void load_numbered_arrays(struct wined3d_context *context,
             if (stream_info->elements[i].data.buffer_object)
             {
                 ptr += (ULONG_PTR)buffer_get_sysmem(stream->buffer, gl_info);
+#ifdef VBOX_WITH_WINE_FIX_CURVBO
+                /* we need to invalidate the curVBO state, since buffer_get_sysmem maay change the current buffer */
+                curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
+#endif
             }
 
             if (context->numbered_array_mask & (1 << i)) unload_numbered_array(context, i);
