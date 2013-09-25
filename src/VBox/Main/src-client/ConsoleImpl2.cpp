@@ -935,24 +935,24 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         if (fHMForced)
         {
             if (cbRam + cbRamHole > _4G)
-                LogRel(("fHMForced=TRUE - Lots of RAM\n"));
+                LogRel(("fHMForced=true - Lots of RAM\n"));
             if (cCpus > 1)
-                LogRel(("fHMForced=TRUE - SMP\n"));
+                LogRel(("fHMForced=true - SMP\n"));
             if (fIsGuest64Bit)
-                LogRel(("fHMForced=TRUE - 64-bit guest\n"));
+                LogRel(("fHMForced=true - 64-bit guest\n"));
 # ifdef RT_OS_DARWIN
-            LogRel(("fHMForced=TRUE - Darwin host\n"));
+            LogRel(("fHMForced=true - Darwin host\n"));
 # endif
         }
 #else  /* !VBOX_WITH_RAW_MODE */
         fHMEnabled = fHMForced = TRUE;
-        LogRel(("fHMForced=TRUE - No raw-mode support in this build!\n"));
+        LogRel(("fHMForced=true - No raw-mode support in this build!\n"));
 #endif /* !VBOX_WITH_RAW_MODE */
         if (!fHMForced) /* No need to query if already forced above. */
         {
             hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Force, &fHMForced); H();
             if (fHMForced)
-                LogRel(("fHMForced=TRUE - HWVirtExPropertyType_Force\n"));
+                LogRel(("fHMForced=true - HWVirtExPropertyType_Force\n"));
         }
         InsertConfigInteger(pRoot, "HMEnabled", fHMEnabled);
 
