@@ -85,6 +85,10 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(OS[/|!-]{,1}2.*e)|(eCS.*)", Qt::CaseInsensitive), "OS2eCS" },
     { QRegExp("OS[/|!-]{,1}2", Qt::CaseInsensitive), "OS2" },
 
+    /* Other: must come before Ubuntu/Maverick and before Linux */
+    { QRegExp("Lion", Qt::CaseInsensitive), "MacOS107_64" },
+    { QRegExp("Mavericks", Qt::CaseInsensitive), "MacOS109_64" },
+
     /* Code names for Linux distributions: */
     { QRegExp("((edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)|(quantal)|(raring)).*64", Qt::CaseInsensitive), "Ubuntu_64" },
     { QRegExp("(edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)|(maverick)|(natty)|(oneiric)|(precise)|(quantal)|(raring)", Qt::CaseInsensitive), "Ubuntu" },
@@ -92,7 +96,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(sarge)|(etch)|(lenny)|(squeeze)|(wheezy)|(jessie)|(sid)", Qt::CaseInsensitive), "Debian" },
     { QRegExp("((moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)|(beefy)|(spherical)).*64", Qt::CaseInsensitive), "Fedora_64" },
     { QRegExp("(moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)|(beefy)|(spherical)", Qt::CaseInsensitive), "Fedora" },
-
+    
     /* Regular names of Linux distributions: */
     { QRegExp("Arc.*64", Qt::CaseInsensitive), "ArchLinux_64" },
     { QRegExp("Arc", Qt::CaseInsensitive), "ArchLinux" },
@@ -118,13 +122,13 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(Or)|(oel)", Qt::CaseInsensitive), "Oracle" },
     { QRegExp("Knoppix", Qt::CaseInsensitive), "Linux26" },
     { QRegExp("Dsl", Qt::CaseInsensitive), "Linux24" },
-    { QRegExp("((Li)|(lnx)).*2.?2", Qt::CaseInsensitive), "Linux22" },
-    { QRegExp("((Li)|(lnx)).*2.?4.*64", Qt::CaseInsensitive), "Linux24_64" },
-    { QRegExp("((Li)|(lnx)).*2.?4", Qt::CaseInsensitive), "Linux24" },
-    { QRegExp("((((Li)|(lnx)).*2.?6)|(LFS)).*64", Qt::CaseInsensitive), "Linux26_64" },
-    { QRegExp("(((Li)|(lnx)).*2.?6)|(LFS)", Qt::CaseInsensitive), "Linux26" },
-    { QRegExp("((Li)|(lnx)).*64", Qt::CaseInsensitive), "Linux26_64" },
-    { QRegExp("(Li)|(lnx)", Qt::CaseInsensitive), "Linux26" },
+    { QRegExp("((Lin)|(lnx)).*2.?2", Qt::CaseInsensitive), "Linux22" },
+    { QRegExp("((Lin)|(lnx)).*2.?4.*64", Qt::CaseInsensitive), "Linux24_64" },
+    { QRegExp("((Lin)|(lnx)).*2.?4", Qt::CaseInsensitive), "Linux24" },
+    { QRegExp("((((Lin)|(lnx)).*2.?6)|(LFS)).*64", Qt::CaseInsensitive), "Linux26_64" },
+    { QRegExp("(((Lin)|(lnx)).*2.?6)|(LFS)", Qt::CaseInsensitive), "Linux26" },
+    { QRegExp("((Lin)|(lnx)).*64", Qt::CaseInsensitive), "Linux26_64" },
+    { QRegExp("(Lin)|(lnx)", Qt::CaseInsensitive), "Linux26" },
 
     /* Other: */
     { QRegExp("L4", Qt::CaseInsensitive), "L4" },
@@ -135,6 +139,9 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ne.*B.*64", Qt::CaseInsensitive), "NetBSD_64" },
     { QRegExp("Ne.*B", Qt::CaseInsensitive), "NetBSD" },
     { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
+    { QRegExp("Snow L.*64", Qt::CaseInsensitive), "MacOS106_64" },
+    { QRegExp("Snow L", Qt::CaseInsensitive), "MacOS106" },
+    { QRegExp("Mount", Qt::CaseInsensitive), "MacOS108_64" },
     { QRegExp("((Mac)|(Tig)|(Leop)|(osx)).*64", Qt::CaseInsensitive), "MacOS_64" },
     { QRegExp("(Mac)|(Tig)|(Leop)|(osx)", Qt::CaseInsensitive), "MacOS" },
     { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
