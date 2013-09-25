@@ -38,7 +38,6 @@
 
 BEGINCODE
 
-
 ;;
 ; Handles lazy FPU saving and restoring.
 ;
@@ -170,7 +169,12 @@ hlfpua_switch_fpu_ctx:
     fxrstor [xDX + CPUMCPU.Guest.fpu]
 %endif
 hlfpua_finished_switch:
-%ifndef IN_RING3 ; IN_RC or IN_RING0
+
+    ; Load new CR0 value.
+    ; IN_RING0 the caller saves/restores CR0 anyway, so avoid the extra CR0 write.
+    ; Currently the only caller in ring-0 is CPUMR0LoadGuestFPU()->CPUMHandleLazyFPU().
+    ;; @todo Optimize the many unconditional CR0 writes.
+%ifdef IN_RC
     mov     cr0, xCX                            ; load the new cr0 flags.
 %endif
     ; return continue execution.
