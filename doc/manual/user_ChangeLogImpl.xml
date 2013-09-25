@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
   <sect1>
-    <title>Version 4.3.0 Beta 3 (2013-09-20)</title>
+    <title>Version 4.3.0 Beta X (2013-XX-XX)</title>
 
     <para>This is a major update. The following major new features
       were added:</para>
@@ -236,6 +236,11 @@
       <listitem>
         <para>Windows Additions: fixed misbehavior with guest display
           power management (WDDM driver only; bug #11170)</para>
+      </listitem>
+
+      <listitem>
+        <para>Windows Additions: fixed memory leak caused by WTSQuerySessionInformation()
+          on Windows 2000 guests (bug #12072)</para>
       </listitem>
 
       <listitem>
