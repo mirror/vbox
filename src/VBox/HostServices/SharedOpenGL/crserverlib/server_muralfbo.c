@@ -1023,7 +1023,8 @@ static void crServerVBoxCompositionReenable(CRMuralInfo *mural)
 
 static void crServerVBoxCompositionDisable(CRMuralInfo *mural)
 {
-    if ((mural->fPresentMode & (CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY)) != (CR_SERVER_REDIR_F_FBO | CR_SERVER_REDIR_F_DISPLAY)
+    if (!(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY)
+            || (mural->fUseDefaultDEntry && !(mural->fPresentMode & CR_SERVER_REDIR_F_FBO))
             || !mural->fDataPresented)
         return;
     cr_server.head_spu->dispatch_table.VBoxPresentComposition(mural->spuWindow, NULL, NULL);
