@@ -21,8 +21,11 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <dirent.h>
+extern "C"
+{
 #define private privatekw
 #include <libdevmapper.h>
+}
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
