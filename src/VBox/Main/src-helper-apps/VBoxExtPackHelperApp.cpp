@@ -1767,7 +1767,11 @@ int main(int argc, char **argv)
     /*
      * Initialize IPRT and check that we're correctly installed.
      */
+#ifdef RT_OS_WINDOWS
+    int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_UTF8_ARGV); /* WinMain gives us UTF-8, see below. */
+#else
     int rc = RTR3InitExe(argc, &argv, 0);
+#endif
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 

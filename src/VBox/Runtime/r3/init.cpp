@@ -277,62 +277,74 @@ static int rtR3InitArgv(uint32_t fFlags, int cArgs, char ***ppapszArgs)
             return VINF_SUCCESS;
         }
 
-        /*
-         * Convert the arguments.
-         */
-        char **papszArgs = (char **)RTMemAllocZ((cArgs + 1) * sizeof(char *));
-        if (!papszArgs)
-            return VERR_NO_MEMORY;
+        if (!(fFlags & RTR3INIT_FLAGS_UTF8_ARGV))
+        {
+            /*
+             * Convert the arguments.
+             */
+            char **papszArgs = (char **)RTMemAllocZ((cArgs + 1) * sizeof(char *));
+            if (!papszArgs)
+                return VERR_NO_MEMORY;
 
 #ifdef RT_OS_WINDOWS
-        /* HACK ALERT! Try convert from unicode versions if possible.
-           Unfortunately for us, __wargv is only initialized if we have a
-           unicode main function.  So, we have to use CommandLineToArgvW to get
-           something similar. It should do the same conversion... :-) */
-        int    cArgsW     = -1;
-        PWSTR *papwszArgs = NULL;
-        if (   papszOrgArgs == __argv
-            && cArgs        == __argc
-            && (papwszArgs = CommandLineToArgvW(GetCommandLineW(), &cArgsW)) != NULL )
-        {
-            AssertMsg(cArgsW == cArgs, ("%d vs %d\n", cArgsW, cArgs));
-            for (int i = 0; i < cArgs; i++)
+            /* HACK ALERT! Try convert from unicode versions if possible.
+               Unfortunately for us, __wargv is only initialized if we have a
+               unicode main function.  So, we have to use CommandLineToArgvW to get
+               something similar. It should do the same conversion... :-) */
+            int    cArgsW     = -1;
+            PWSTR *papwszArgs = NULL;
+            if (   papszOrgArgs == __argv
+                && cArgs        == __argc
+                && (papwszArgs = CommandLineToArgvW(GetCommandLineW(), &cArgsW)) != NULL )
             {
-                int rc = RTUtf16ToUtf8(papwszArgs[i], &papszArgs[i]);
-                if (RT_FAILURE(rc))
+                AssertMsg(cArgsW == cArgs, ("%d vs %d\n", cArgsW, cArgs));
+                for (int i = 0; i < cArgs; i++)
                 {
-                    while (i--)
-                        RTStrFree(papszArgs[i]);
-                    RTMemFree(papszArgs);
-                    LocalFree(papwszArgs);
-                    return rc;
+                    int rc = RTUtf16ToUtf8(papwszArgs[i], &papszArgs[i]);
+                    if (RT_FAILURE(rc))
+                    {
+                        while (i--)
+                            RTStrFree(papszArgs[i]);
+                        RTMemFree(papszArgs);
+                        LocalFree(papwszArgs);
+                        return rc;
+                    }
+                }
+                LocalFree(papwszArgs);
+            }
+            else
+#endif
+            {
+                for (int i = 0; i < cArgs; i++)
+                {
+                    int rc = RTStrCurrentCPToUtf8(&papszArgs[i], papszOrgArgs[i]);
+                    if (RT_FAILURE(rc))
+                    {
+                        while (i--)
+                            RTStrFree(papszArgs[i]);
+                        RTMemFree(papszArgs);
+                        return rc;
+                    }
                 }
             }
-            LocalFree(papwszArgs);
+
+            papszArgs[cArgs] = NULL;
+
+            g_papszrtOrgArgs = papszOrgArgs;
+            g_papszrtArgs    = papszArgs;
+            g_crtArgs        = cArgs;
+
+            *ppapszArgs = papszArgs;
         }
         else
-#endif
         {
-            for (int i = 0; i < cArgs; i++)
-            {
-                int rc = RTStrCurrentCPToUtf8(&papszArgs[i], papszOrgArgs[i]);
-                if (RT_FAILURE(rc))
-                {
-                    while (i--)
-                        RTStrFree(papszArgs[i]);
-                    RTMemFree(papszArgs);
-                    return rc;
-                }
-            }
+            /*
+             * The arguments are already UTF-8, no conversion needed.
+             */
+            g_papszrtOrgArgs = papszOrgArgs;
+            g_papszrtArgs    = papszOrgArgs;
+            g_crtArgs        = cArgs;
         }
-
-        papszArgs[cArgs] = NULL;
-
-        g_papszrtOrgArgs = papszOrgArgs;
-        g_papszrtArgs    = papszArgs;
-        g_crtArgs        = cArgs;
-
-        *ppapszArgs = papszArgs;
     }
 
     return VINF_SUCCESS;
@@ -542,7 +554,8 @@ static int rtR3Init(uint32_t fFlags, int cArgs, char ***papszArgs, const char *p
     /* no entry log flow, because prefixes and thread may freak out. */
     Assert(!(fFlags & ~(  RTR3INIT_FLAGS_DLL
                         | RTR3INIT_FLAGS_SUPLIB
-                        | RTR3INIT_FLAGS_UNOBTRUSIVE)));
+                        | RTR3INIT_FLAGS_UNOBTRUSIVE
+                        | RTR3INIT_FLAGS_UTF8_ARGV)));
     Assert(!(fFlags & RTR3INIT_FLAGS_DLL) || cArgs == 0);
 
     /*

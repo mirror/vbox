@@ -48,6 +48,8 @@ RT_C_DECLS_BEGIN
 #define RTR3INIT_FLAGS_DLL          RT_BIT(1)
 /** We are sharing a process space, so we need to behave. */
 #define RTR3INIT_FLAGS_UNOBTRUSIVE  RT_BIT(2)
+/** The caller ensures that the argument bector is UTF-8. */
+#define RTR3INIT_FLAGS_UTF8_ARGV    RT_BIT(3)
 /** @} */
 
 /** @name RTR3InitEx version
