@@ -209,6 +209,11 @@
       </listitem>
 
       <listitem>
+        <para>Extpack Installer: make it work if the file is located in a folder with
+          special characters</para>
+      </listitem>
+
+      <listitem>
         <para>Keyboard: fix for reporting key sequences like Ctrl+Alt+Del
           for the USB keyboard emulation</para>
       </listitem>
