@@ -255,7 +255,7 @@ endif
 ifeq ($(DEBUG),)
 	mv $(current)/debian/$(verpkg)/usr/lib/debug $(current)/debian/$(verpkg)-dbg/usr/lib
 endif
-	$(if $(filter _Ubuntu_lucid,$(debrel),dh_pycentral,dh_python2))
+	$(if $(filter _Ubuntu_hardy _Ubuntu_lucid,$(debrel)),dh_pycentral,dh_python2)
 	dh_compress -X.pdf -X.chm -X LICENSE -X.py
 	dh_fixperms
 	dh_makeshlibs
