@@ -79,13 +79,9 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* We call this on every resize as:
-                 *   * Window frame geometry can change on resize.
-                 *   * On X11 we set information here which becomes available
-                 *     asynchronously at an unknown time after window
-                 *     creation.  As long as the information is not available
-                 *     we make a best guess.
-                 */
+                /* Recalculate max guest size: */
+                setMaxGuestSize();
+                /* And resize guest to current window size: */
                 setMaxGuestSize();
                 if (pEvent->spontaneous() && m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
@@ -248,7 +244,7 @@ QRect UIMachineViewNormal::workingArea() const
 QSize UIMachineViewNormal::calculateMaxGuestSize() const
 {
     /* 1) The calculation below is not reliable on some (X11) platforms until we
-     *    have been visible for a fraction of a second, so so the best we can
+     *    have been visible for a fraction of a second, so do the best we can
      *    otherwise.
      * 2) We also get called early before "machineWindow" has been fully
      *    initialised, at which time we can't perform the calculation. */
