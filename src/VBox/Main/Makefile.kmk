@@ -861,6 +861,15 @@ ifdef VBOX_WITH_EXTPACK
 	$(LIB_RUNTIME)
 endif # VBOX_WITH_EXTPACK
 
+#
+# VolInfo
+#
+ifdef VBOX_WITH_DEVMAPPER
+ PROGRAMS.linux      += VBoxVolInfo
+ VBoxVolInfo_TEMPLATE = VBoxR3SetUidToRoot
+ VBoxVolInfo_SOURCES  = src-helper-apps/VBoxVolInfo.cpp
+ VBoxVolInfo_LIBS     = devmapper
+endif
 
 endif # !VBOX_ONLY_SDK (the ifndef is far above)
 
