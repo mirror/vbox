@@ -82,6 +82,9 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
                 if (pResizeEvent->size() != workingArea().size())
                     break;
 
+                /* Recalculate max guest size: */
+                setMaxGuestSize();
+                /* And resize guest to that size: */
                 if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
                     QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
                 break;
