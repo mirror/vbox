@@ -670,9 +670,11 @@ VMMR3DECL(RTDBGAS)      DBGFR3AsResolveAndRetain(PUVM pUVM, RTDBGAS hAlias);
 VMMR3DECL(RTDBGAS)      DBGFR3AsQueryByName(PUVM pUVM, const char *pszName);
 VMMR3DECL(RTDBGAS)      DBGFR3AsQueryByPid(PUVM pUVM, RTPROCESS ProcId);
 
-VMMR3DECL(int)          DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
+VMMR3DECL(int)          DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName,
+                                          RTLDRARCH enmArch, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
 VMMR3DECL(int)          DBGFR3AsLoadMap(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, RTGCUINTPTR uSubtrahend, uint32_t fFlags);
 VMMR3DECL(int)          DBGFR3AsLinkModule(PUVM pUVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags);
+VMMR3DECL(int)          DBGFR3AsUnlinkModuleByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszModName);
 
 VMMR3DECL(int)          DBGFR3AsSymbolByAddr(PUVM pUVM, RTDBGAS hDbgAs, PCDBGFADDRESS pAddress, uint32_t fFlags,
                                              PRTGCINTPTR poffDisp, PRTDBGSYMBOL pSymbol, PRTDBGMOD phMod);
