@@ -256,21 +256,23 @@ typedef struct VMXTRANSIENT
 
     /** Mask of currently read VMCS fields; HMVMX_UPDATED_TRANSIENT_*. */
     uint32_t        fVmcsFieldsRead;
-    /** Whether TSC-offsetting should be setup before VM-entry. */
-    bool            fUpdateTscOffsettingAndPreemptTimer;
-    /** Whether the VM-exit was caused by a page-fault during delivery of a
-     *  contributory exception or a page-fault. */
-    bool            fVectoringPF;
+
     /** Whether the guest FPU was active at the time of VM-exit. */
     bool            fWasGuestFPUStateActive;
     /** Whether the guest debug state was active at the time of VM-exit. */
     bool            fWasGuestDebugStateActive;
     /** Whether the hyper debug state was active at the time of VM-exit. */
     bool            fWasHyperDebugStateActive;
+    /** Whether TSC-offsetting should be setup before VM-entry. */
+    bool            fUpdateTscOffsettingAndPreemptTimer;
+    /** Whether the VM-exit was caused by a page-fault during delivery of a
+     *  contributory exception or a page-fault. */
+    bool            fVectoringPF;
 } VMXTRANSIENT;
-AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,    sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntrInfo,  sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntrInfo, sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,             sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntrInfo,           sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntrInfo,          sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, fWasGuestFPUStateActive, sizeof(uint64_t));
 AssertCompileMemberSize(VMXTRANSIENT, ExitInstrInfo, sizeof(uint32_t));
 /** Pointer to VMX transient state. */
 typedef VMXTRANSIENT *PVMXTRANSIENT;
