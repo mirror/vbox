@@ -25,7 +25,7 @@
 #include "UIGlobalSettingsNetworkDetailsHost.gen.h"
 
 /* Forward decalrations: */
-class UIDataNetworkHost;
+struct UIDataNetworkHost;
 
 /* Global settings / Network page / Details sub-dialog: */
 class UIGlobalSettingsNetworkDetailsHost : public QIWithRetranslateUI2<QIDialog>, public Ui::UIGlobalSettingsNetworkDetailsHost
