@@ -198,11 +198,13 @@ CMachine UIMachineWindow::machine() const
     return session().GetMachine();
 }
 
+#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 void UIMachineWindow::setMask(const QRegion &region)
 {
     /* Call to base-class: */
     QMainWindow::setMask(region);
 }
+#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 void UIMachineWindow::retranslateUi()
 {
