@@ -939,12 +939,15 @@ static int dbgfR3AsSearchCfgPath(PUVM pUVM, const char *pszFilename, const char 
  * @param   pszFilename     The filename of the executable module.
  * @param   pszModName      The module name. If NULL, then then the file name
  *                          base is used (no extension or nothing).
+ * @param   enmArch         The desired architecture, use RTLDRARCH_WHATEVER if
+ *                          it's not relevant or known.
  * @param   pModAddress     The load address of the module.
  * @param   iModSeg         The segment to load, pass NIL_RTDBGSEGIDX to load
  *                          the whole image.
  * @param   fFlags          Flags reserved for future extensions, must be 0.
  */
-VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
+VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilename, const char *pszModName, RTLDRARCH enmArch,
+                                 PCDBGFADDRESS pModAddress, RTDBGSEGIDX iModSeg, uint32_t fFlags)
 {
     /*
      * Validate input
@@ -959,7 +962,7 @@ VMMR3DECL(int) DBGFR3AsLoadImage(PUVM pUVM, RTDBGAS hDbgAs, const char *pszFilen
         return VERR_INVALID_HANDLE;
 
     RTDBGMOD hDbgMod;
-    int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, RTLDRARCH_WHATEVER, pUVM->dbgf.s.hDbgCfg);
+    int rc = RTDbgModCreateFromImage(&hDbgMod, pszFilename, pszModName, enmArch, pUVM->dbgf.s.hDbgCfg);
     if (RT_SUCCESS(rc))
     {
         rc = DBGFR3AsLinkModule(pUVM, hRealAS, hDbgMod, pModAddress, iModSeg, 0);
@@ -1053,6 +1056,54 @@ VMMR3DECL(int) DBGFR3AsLinkModule(PUVM pUVM, RTDBGAS hDbgAs, RTDBGMOD hMod, PCDB
         rc = RTDbgAsModuleLink(hRealAS, hMod, pModAddress->FlatPtr, fFlags);
     else
         rc = RTDbgAsModuleLinkSeg(hRealAS, hMod, iModSeg, pModAddress->FlatPtr, fFlags);
+
+    RTDbgAsRelease(hRealAS);
+    return rc;
+}
+
+
+/**
+ * Wrapper around RTDbgAsModuleByName and RTDbgAsModuleUnlink.
+ *
+ * Unlinks all mappings matching the given module name.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   hDbgAs          The address space handle.
+ * @param   pszModName      The name of the module to unlink.
+ */
+VMMR3DECL(int) DBGFR3AsUnlinkModuleByName(PUVM pUVM, RTDBGAS hDbgAs, const char *pszModName)
+{
+    /*
+     * Input validation.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    RTDBGAS hRealAS = DBGFR3AsResolveAndRetain(pUVM, hDbgAs);
+    if (hRealAS == NIL_RTDBGAS)
+        return VERR_INVALID_HANDLE;
+
+    /*
+     * Do the job.
+     */
+    RTDBGMOD hMod;
+    int rc = RTDbgAsModuleByName(hRealAS, pszModName, 0, &hMod);
+    if (RT_SUCCESS(rc))
+    {
+        for (;;)
+        {
+            rc = RTDbgAsModuleUnlink(hRealAS, hMod);
+            RTDbgModRelease(hMod);
+            if (RT_FAILURE(rc))
+                break;
+            rc = RTDbgAsModuleByName(hRealAS, pszModName, 0, &hMod);
+            if (RT_FAILURE_NP(rc))
+            {
+                if (rc == VERR_NOT_FOUND)
+                    rc = VINF_SUCCESS;
+                break;
+            }
+        }
+    }
 
     RTDbgAsRelease(hRealAS);
     return rc;
