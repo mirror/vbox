@@ -949,7 +949,7 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Undocumented intel MSR for reporting thread and core counts.
  * Judging from the XNU sources, it seems to be introduced in Nehalem. The
  * first 16 bits is the thread count. The next 16 bits the core count, except
- * on westmer where it seems it's only the next 4 bits for some reason. */
+ * on Westmere where it seems it's only the next 4 bits for some reason. */
 #define MSR_CORE_THREAD_COUNT               0x35
 
 /** CPU Feature control. */
