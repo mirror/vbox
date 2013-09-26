@@ -249,13 +249,13 @@ void UIFrameBufferQImage::paintSeamless(QPaintEvent *pEvent)
         /* Paint required region, slowly, rectangle-by-rectangle: */
         foreach (const QRect &rect, regionToPaint.rects())
         {
-#ifdef Q_WS_WIN
+#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
             /* Replace translucent background with black one,
              * that is necessary for window with Qt::WA_TranslucentBackground: */
             painter.setCompositionMode(QPainter::CompositionMode_Source);
             painter.fillRect(rect, QColor(Qt::black));
             painter.setCompositionMode(QPainter::CompositionMode_SourceAtop);
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
             /* Draw image rectangle depending on rectangle width: */
             if ((ulong)rect.width() < m_width * 2 / 3)

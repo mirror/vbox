@@ -91,21 +91,22 @@ void UIMachineWindowSeamless::prepareVisualState()
      * until the first one paint-event: */
     setAttribute(Qt::WA_NoSystemBackground);
 
-#ifdef Q_WS_WIN
-    /* Using Qt API to enable translucent background for the Win host.
-     * - Under Mac host Qt doesn't allows to disable window-shadows
-     *   until version 4.8, but minimum supported version is 4.7.1 for now.
-     * - Under x11 host Qt 4.8.3 has it broken wih KDE 4.9 for now: */
-    setAttribute(Qt::WA_TranslucentBackground);
-#endif /* Q_WS_WIN */
-
-#ifdef Q_WS_MAC
+#ifdef VBOX_WITH_TRANSLUCENT_SEAMLESS
+# ifdef Q_WS_MAC
     /* Using native API to enable translucent background for the Mac host.
      * - We also want to disable window-shadows which is possible
      *   using Qt::WA_MacNoShadow only since Qt 4.8,
      *   while minimum supported version is 4.7.1 for now: */
     ::darwinSetShowsWindowTransparent(this, true);
-#endif /* Q_WS_MAC */
+# else /* Q_WS_MAC */
+    /* Using Qt API to enable translucent background:
+     * - Under Win host Qt conflicts with 3D stuff (black seamless regions).
+     * - Under Mac host Qt doesn't allows to disable window-shadows
+     *   until version 4.8, but minimum supported version is 4.7.1 for now.
+     * - Under x11 host Qt has it broken with KDE 4.9 (black background): */
+    setAttribute(Qt::WA_TranslucentBackground);
+# endif /* !Q_WS_MAC */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 #ifndef Q_WS_MAC
     /* Prepare mini-toolbar: */
@@ -257,7 +258,7 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 }
 #endif /* !Q_WS_MAC */
 
-#ifdef Q_WS_WIN
+#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
 void UIMachineWindowSeamless::showEvent(QShowEvent*)
 {
     /* Following workaround allows to fix the next Qt BUG:
@@ -267,9 +268,9 @@ void UIMachineWindowSeamless::showEvent(QShowEvent*)
      * stops repainting after minimizing/restoring, we have to call for single update. */
     QApplication::postEvent(this, new QEvent(QEvent::UpdateRequest), Qt::LowEventPriority);
 }
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 void UIMachineWindowSeamless::setMask(const QRegion &region)
 {
     /* Prepare mask-region: */
@@ -302,5 +303,5 @@ void UIMachineWindowSeamless::setMask(const QRegion &region)
         m_pMachineView->viewport()->update(toUpdate);
     }
 }
-#endif /* Q_WS_X11 */
+#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
