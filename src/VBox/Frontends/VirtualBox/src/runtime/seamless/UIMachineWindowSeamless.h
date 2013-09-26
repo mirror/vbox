@@ -73,15 +73,15 @@ private:
     void updateAppearanceOf(int iElement);
 #endif /* !Q_WS_MAC */
 
-#ifdef Q_WS_WIN
+#if defined(VBOX_WITH_TRANSLUCENT_SEAMLESS) && defined(Q_WS_WIN)
     /* Handler: Translucency stuff: */
     void showEvent(QShowEvent *pEvent);
-#endif /* Q_WS_WIN */
+#endif /* VBOX_WITH_TRANSLUCENT_SEAMLESS && Q_WS_WIN */
 
-#ifdef Q_WS_X11
+#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
     /* Helper: Masking stuff: */
     void setMask(const QRegion &region);
-#endif /* Q_WS_X11 */
+#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Widgets: */
     QMenu *m_pMainMenu;
@@ -89,10 +89,10 @@ private:
     UIRuntimeMiniToolBar *m_pMiniToolBar;
 #endif /* !Q_WS_MAC */
 
-#ifdef Q_WS_X11
+#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
     /* Variable: Masking stuff: */
     QRegion m_maskRegion;
-#endif /* Q_WS_X11 */
+#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
     /* Factory support: */
     friend class UIMachineWindow;

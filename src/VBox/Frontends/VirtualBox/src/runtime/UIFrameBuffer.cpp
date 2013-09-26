@@ -26,9 +26,9 @@
 # include "UIFrameBuffer.h"
 # include "UIMessageCenter.h"
 # include "VBoxGlobal.h"
-# ifdef Q_WS_X11
+# ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
 #  include "UIMachineWindow.h"
-# endif /* Q_WS_X11 */
+# endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 
 /* Other VBox includes: */
 # include <VBox/VBoxVideo3D.h>
@@ -374,12 +374,10 @@ void UIFrameBuffer::applyVisibleRegion(const QRegion &region)
     /* Remember last visible region: */
     m_asyncVisibleRegion = region;
 
-#ifdef Q_WS_X11
-    /* Qt 4.8.3 under X11 has Qt::WA_TranslucentBackground window attribute broken,
-     * so we are also have to use async visible-region to apply to [Q]Widget [set]Mask
-     * which internally wraps old one known (approved) Xshape extension: */
+#ifndef VBOX_WITH_TRANSLUCENT_SEAMLESS
+    /* We have to use async visible-region to apply to [Q]Widget [set]Mask: */
     m_pMachineView->machineWindow()->setMask(m_asyncVisibleRegion);
-#endif /* Q_WS_X11 */
+#endif /* !VBOX_WITH_TRANSLUCENT_SEAMLESS */
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL

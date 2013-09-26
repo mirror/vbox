@@ -79,7 +79,7 @@ VirtualBox_SDKS.win = ReorderCompilerIncs $(VBOX_WINPSDK) $(VBOX_WINDDK)
 
 VirtualBox_DEFS           =
 VirtualBox_DEFS.debug     = VBOX_CHECK_STATE # QT_FATAL_ASSERT
-VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_QUARTZ2D
+VirtualBox_DEFS.darwin    = VBOX_GUI_USE_QIMAGE VBOX_GUI_USE_QUARTZ2D VBOX_WITH_TRANSLUCENT_SEAMLESS
 VirtualBox_DEFS.freebsd   = VBOX_GUI_USE_QIMAGE
 VirtualBox_DEFS.linux     = VBOX_GUI_USE_QIMAGE
 VirtualBox_DEFS.netbsd    = VBOX_GUI_USE_QIMAGE
