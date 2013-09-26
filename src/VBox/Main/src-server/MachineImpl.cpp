@@ -12782,7 +12782,11 @@ HRESULT SessionMachine::init(Machine *aMachine)
             {
                 aMachine->lockHandle()->unlockWrite();
                 mParent->natNetworkRefInc(name.raw());
-                aMachine->lockHandle()->lockWrite(LOCKVAL_SRC_POS_DECL);
+#ifdef RT_LOCK_STRICT
+                aMachine->lockHandle()->lockWrite(RT_SRC_POS);
+#else
+                aMachine->lockHandle()->lockWrite();
+#endif
             }
         }
     }
