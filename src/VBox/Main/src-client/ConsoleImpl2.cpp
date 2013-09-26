@@ -880,7 +880,36 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         if (fOsXGuest)
-            InsertConfigInteger(pCPUM, "EnableHVP", 1);
+        {
+            if (   osTypeId == "MacOS"
+                || osTypeId == "MacOS_x64"
+                || osTypeId >= "MacOS107_x64")
+                InsertConfigInteger(pCPUM, "EnableHVP", 1);
+
+            /* Fake the CPU family/model so the guest works.  This is partly
+               because older mac releases really doesn't work on newer cpus,
+               and partly because mac os x expects more from systems with newer
+               cpus (MSRs, power features, whatever). */
+            uint32_t uMaxIntelFamilyModelStep = UINT32_MAX;
+            if (   osTypeId == "MacOS"
+                || osTypeId == "MacOS_x64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn. */
+            else if (   osTypeId == "MacOS106"
+                     || osTypeId == "MacOS106_x64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn */
+            else if (   osTypeId == "MacOS107"
+                     || osTypeId == "MacOS107_x64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn */ /** @todo figure out what is required here. */
+            else if (   osTypeId == "MacOS108"
+                     || osTypeId == "MacOS108_x64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn */ /** @todo figure out what is required here. */
+            else if (   osTypeId == "MacOS109"
+                     || osTypeId == "MacOS109_x64")
+                uMaxIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(1, 23, 6, 0); /* Penryn */ /** @todo figure out what is required here. */
+            if (uMaxIntelFamilyModelStep != UINT32_MAX)
+                InsertConfigInteger(pCPUM, "MaxIntelFamilyModelStep", uMaxIntelFamilyModelStep);
+        }
+
 
         /* Synthetic CPU */
         BOOL fSyntheticCpu = false;
@@ -2672,15 +2701,15 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         hrc = biosSettings->COMGETTER(ACPIEnabled)(&fACPI);                                 H();
         if (fACPI)
         {
-            BOOL fCpuHotPlug = false;
-            BOOL fShowCpu = fOsXGuest;
             /* Always show the CPU leafs when we have multiple VCPUs or when the IO-APIC is enabled.
              * The Windows SMP kernel needs a CPU leaf or else its idle loop will burn cpu cycles; the
              * intelppm driver refuses to register an idle state handler.
-             */
-            if ((cCpus > 1) || fIOAPIC)
+             * Always show CPU leafs for OS X guests. */
+            BOOL fShowCpu = fOsXGuest;
+            if (cCpus > 1 || fIOAPIC)
                 fShowCpu = true;
 
+            BOOL fCpuHotPlug;
             hrc = pMachine->COMGETTER(CPUHotPlugEnabled)(&fCpuHotPlug);                     H();
 
             InsertConfigNode(pDevices, "acpi", &pDev);
