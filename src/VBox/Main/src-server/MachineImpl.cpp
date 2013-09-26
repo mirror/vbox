@@ -12768,6 +12768,23 @@ HRESULT SessionMachine::init(Machine *aMachine)
     {
         unconst(mNetworkAdapters[slot]).createObject();
         mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
+
+        NetworkAttachmentType_T type;
+        HRESULT hrc;
+        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+        if (   SUCCEEDED(hrc)
+            && type == NetworkAttachmentType_NATNetwork)
+        {
+            Bstr name;
+            
+            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                aMachine->lockHandle()->unlockWrite();
+                mParent->natNetworkRefInc(name.raw());
+                aMachine->lockHandle()->lockWrite(RT_SRC_POS);
+            }
+        }
     }
 
     /* create another bandwidth control object that will be mutable */
@@ -12967,6 +12984,26 @@ void SessionMachine::uninit(Uninit::Reason aReason)
             ++it;
         }
         mData->mSession.mRemoteControls.clear();
+    }
+
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); slot++)
+    {
+        NetworkAttachmentType_T type;
+        HRESULT hrc;
+
+        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+        if (   SUCCEEDED(hrc)
+            && type == NetworkAttachmentType_NATNetwork)
+        {
+            Bstr name;
+            hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                multilock.release();
+                mParent->natNetworkRefDec(name.raw());
+                multilock.acquire();
+            }
+        }
     }
 
     /*
