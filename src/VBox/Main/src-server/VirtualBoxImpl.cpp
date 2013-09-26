@@ -112,6 +112,11 @@ Bstr VirtualBox::sPackageType;
 // static
 Bstr VirtualBox::sAPIVersion;
 
+// static
+std::map<Bstr, int> VirtualBox::sNatNetworkNameToRefCount;
+
+// static leaked (todo: find better place to free it.)
+RWLockHandle *VirtualBox::spMtxNatNetworkNameToRefCountLock;
 ////////////////////////////////////////////////////////////////////////////////
 //
 // CallbackEvent class
@@ -365,6 +370,9 @@ HRESULT VirtualBox::init()
         sPackageType = VBOX_PACKAGE_STRING;
     if (sAPIVersion.isEmpty())
         sAPIVersion = VBOX_API_VERSION_STRING;
+    if (!spMtxNatNetworkNameToRefCountLock)
+        spMtxNatNetworkNameToRefCountLock = new RWLockHandle(LOCKCLASS_VIRTUALBOXOBJECT);
+
     LogFlowThisFunc(("Version: %ls, Package: %ls, API Version: %ls\n", sVersion.raw(), sPackageType.raw(), sAPIVersion.raw()));
 
     /* Get the VirtualBox home directory. */
@@ -490,11 +498,13 @@ HRESULT VirtualBox::init()
 
             ComObjPtr<NATNetwork> pNATNetwork;
             if (SUCCEEDED(rc = pNATNetwork.createObject()))
+            {
                 rc = pNATNetwork->init(this, net);
-            if (FAILED(rc)) throw rc;
+                AssertComRCReturnRC(rc);
+            }
 
             rc = registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
-            if (FAILED(rc)) throw rc;
+            AssertComRCReturnRC(rc);
         }
 
         /* events */
@@ -3083,6 +3093,52 @@ void VirtualBox::onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL
                                    aGuestIp, aGuestPort);
 }
 
+
+int VirtualBox::natNetworkRefInc(IN_BSTR aNetworkName)
+{
+    AutoWriteLock safeLock(*spMtxNatNetworkNameToRefCountLock COMMA_LOCKVAL_SRC_POS);
+    Bstr name(aNetworkName);
+
+    if (!sNatNetworkNameToRefCount[name])
+    {
+        ComPtr<INATNetwork> nat;
+        HRESULT rc = FindNATNetworkByName(aNetworkName, nat.asOutParam());
+        AssertComRCReturn(rc, -1);
+
+        rc = nat->Start(Bstr("whatever").raw());
+        AssertComRCReturn(rc, -1);
+    }
+
+    sNatNetworkNameToRefCount[name]++;
+    
+    return sNatNetworkNameToRefCount[name];
+}
+
+
+int VirtualBox::natNetworkRefDec(IN_BSTR aNetworkName)
+{
+    AutoWriteLock safeLock(*spMtxNatNetworkNameToRefCountLock COMMA_LOCKVAL_SRC_POS);
+    Bstr name(aNetworkName);
+
+    if (!sNatNetworkNameToRefCount[name])
+        return 0;
+
+    sNatNetworkNameToRefCount[name]--;
+
+    if (!sNatNetworkNameToRefCount[name])
+    {
+        ComPtr<INATNetwork> nat;
+        HRESULT rc = FindNATNetworkByName(aNetworkName, nat.asOutParam());
+        AssertComRCReturn(rc, -1);
+
+        rc = nat->Stop();
+        AssertComRCReturn(rc, -1);
+    }
+
+    return sNatNetworkNameToRefCount[name];
+}
+
+
 /**
  *  @note Locks this object for reading.
  */
@@ -5125,22 +5181,26 @@ HRESULT VirtualBox::registerNATNetwork(NATNetwork *aNATNetwork,
     AssertReturn(aNATNetwork != NULL, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturnRC(autoCaller.rc());
 
     AutoCaller natNetworkCaller(aNATNetwork);
-    AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
+    AssertComRCReturnRC(natNetworkCaller.rc());
 
     Bstr name;
     HRESULT rc;
     rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
-    if (FAILED(rc)) return rc;
+    AssertComRCReturnRC(rc);
 
-    ComPtr<INATNetwork> existing;
-    rc = FindNATNetworkByName(name.raw(), existing.asOutParam());
-    if (SUCCEEDED(rc))
-        return E_INVALIDARG;
+    /* returned value isn't 0 and aSaveSettings is true 
+     * means that we create duplicate, otherwise we just load settings.
+     */
+    if (   sNatNetworkNameToRefCount[name] 
+        && aSaveSettings) 
+        AssertComRCReturnRC(E_INVALIDARG);
 
     rc = S_OK;
+
+    sNatNetworkNameToRefCount[name] = 0;
 
     m->allNATNetworks.addChild(aNATNetwork);
 
@@ -5186,10 +5246,14 @@ HRESULT VirtualBox::unregisterNATNetwork(NATNetwork *aNATNetwork,
 
     AutoCaller natNetworkCaller(aNATNetwork);
     AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
+    
+    Bstr name;
+    HRESULT rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
+    /* Hm, there're still running clients. */
+    if (FAILED(rc) || sNatNetworkNameToRefCount[name]) 
+        AssertComRCReturnRC(E_INVALIDARG);
 
     m->allNATNetworks.removeChild(aNATNetwork);
-
-    HRESULT rc = S_OK;
 
     if (aSaveSettings)
     {
