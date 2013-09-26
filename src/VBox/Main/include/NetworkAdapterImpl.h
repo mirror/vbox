@@ -154,6 +154,8 @@ private:
     void generateMACAddress();
     HRESULT updateMacAddress(Utf8Str aMacAddress);
     void updateBandwidthGroup(BandwidthGroup *aBwGroup);
+    HRESULT checkAndSwitchFromNatNetworking();
+    HRESULT switchToNatNetworking(IN_BSTR aNatNetworkName);
 
     Machine * const     mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
