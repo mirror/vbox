@@ -1176,7 +1176,7 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
                 {
                     /** @todo restrict this to nehalem.  */
                     PVM pVM = pVCpu->CTX_SUFF(pVM); /* Note! Not sweating the 4-bit core count limit on westmere. */
-                    *puValue = pVM->cCpus & 0xffff | ((pVM->cCpus & 0xffff) << 16);
+                    *puValue = (pVM->cCpus & 0xffff) | ((pVM->cCpus & 0xffff) << 16);
                     break;
                 }
 
