@@ -1043,7 +1043,9 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             break;
 
         case MSR_IA32_PERF_STATUS:
-            /** @todo could really be not exactly correct, maybe use host's values */
+            /** @todo could really be not exactly correct, maybe use host's values
+             * Apple code indicates that we should use CPU Hz / 1.333MHz here. */
+            /** @todo Where are the specs implemented here found? */
             *puValue = UINT64_C(1000)                 /* TSC increment by tick */
                      | ((uint64_t)u8Multiplier << 24) /* CPU multiplier (aka bus ratio) min */
                      | ((uint64_t)u8Multiplier << 40) /* CPU multiplier (aka bus ratio) max */;
@@ -1062,7 +1064,7 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
             break;
 
         case MSR_IA32_PLATFORM_INFO:
-            *puValue = (u8Multiplier << 8)            /* Flex ratio max */
+            *puValue = ((uint32_t)u8Multiplier << 8)  /* Flex ratio max */
                      | ((uint64_t)u8Multiplier << 40) /* Flex ratio min */;
             break;
 
@@ -1141,7 +1143,9 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         /*case MSR_IA32_BIOS_UPDT_TRIG: - write-only? */
         case MSR_RAPL_POWER_UNIT:
         case MSR_BBL_CR_CTL3:               /* ca. core arch? */
-        case MSR_PKG_CST_CONFIG_CONTROL:   /* Nahalem, Sandy Bridge */
+        case MSR_PKG_CST_CONFIG_CONTROL:    /* Nahalem, Sandy Bridge */
+        case MSR_CORE_THREAD_COUNT:         /* Apple queries this. */
+        case MSR_FLEX_RATIO:                /* Apple queries this. */
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_INTEL)
             {
@@ -1168,6 +1172,20 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
                 case MSR_PKG_CST_CONFIG_CONTROL:
                     *puValue = pVCpu->cpum.s.GuestMsrs.msr.PkgCStateCfgCtrl;
                     break;
+                case MSR_CORE_THREAD_COUNT:
+                {
+                    /** @todo restrict this to nehalem.  */
+                    PVM pVM = pVCpu->CTX_SUFF(pVM); /* Note! Not sweating the 4-bit core count limit on westmere. */
+                    *puValue = pVM->cCpus & 0xffff | ((pVM->cCpus & 0xffff) << 16);
+                    break;
+                }
+
+                case MSR_FLEX_RATIO:
+                {
+                    /** @todo Check for P4, it's different there. Try find accurate specs. */
+                    *puValue = (uint32_t)u8Multiplier << 8;
+                    break;
+                }
             }
             break;
 

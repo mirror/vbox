@@ -946,6 +946,12 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 # define MSR_IA32_APICBASE_BASE_MIN         UINT64_C(0x0000000ffffff000)
 #endif
 
+/** Undocumented intel MSR for reporting thread and core counts.
+ * Judging from the XNU sources, it seems to be introduced in Nehalem. The
+ * first 16 bits is the thread count. The next 16 bits the core count, except
+ * on westmer where it seems it's only the next 4 bits for some reason. */
+#define MSR_CORE_THREAD_COUNT               0x35
+
 /** CPU Feature control. */
 #define MSR_IA32_FEATURE_CONTROL            0x3A
 #define MSR_IA32_FEATURE_CONTROL_LOCK       RT_BIT(0)
@@ -1013,7 +1019,14 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 /** Performance counter MSRs. (Intel only) */
 #define MSR_IA32_PERFEVTSEL0                0x186
 #define MSR_IA32_PERFEVTSEL1                0x187
-#define MSR_IA32_FLEX_RATIO                 0x194
+/** Flexible ratio, seems to be undocumented, used by XNU (tsc.c).
+ * The 16th bit whether flex ratio is being used, in which case bits 15:8
+ * holds a ratio that Apple takes for TSC granularity.
+ *
+ * @note This MSR conflics the P4 MSR_MCG_R12 register. */
+#define MSR_FLEX_RATIO                      0x194
+/** Performance state value and starting with Intel core more.
+ * Apple uses the >=core features to determine TSC granularity on older CPUs. */
 #define MSR_IA32_PERF_STATUS                0x198
 #define MSR_IA32_PERF_CTL                   0x199
 #define MSR_IA32_THERM_STATUS               0x19c
