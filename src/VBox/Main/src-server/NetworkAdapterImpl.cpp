@@ -23,6 +23,7 @@
 #include "GuestOSTypeImpl.h"
 #include "HostImpl.h"
 #include "SystemPropertiesImpl.h"
+#include "VirtualBoxImpl.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -541,6 +542,14 @@ STDMETHODIMP NetworkAdapter::COMSETTER(BridgedInterface)(IN_BSTR aBridgedInterfa
                             tr("Empty or null bridged interface name is not valid"));
         }
 
+        alock.release();
+
+        HRESULT hrc = checkAndSwitchFromNatNetworking();
+        if (FAILED(hrc))
+            return hrc;
+
+        alock.acquire();
+
         mData.backup();
         mData->mBridgedInterface = aBridgedInterface;
 
@@ -601,6 +610,14 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostOnlyInterface)(IN_BSTR aHostOnlyInter
                             tr("Empty or null host only interface name is not valid"));
         }
 
+        alock.release();
+
+        HRESULT hrc = checkAndSwitchFromNatNetworking();
+        if (FAILED(hrc))
+            return hrc;
+
+        alock.acquire();
+
         mData.backup();
         mData->mHostOnlyInterface = aHostOnlyInterface;
 
@@ -657,6 +674,14 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork)(IN_BSTR aInternalNetwork
                             tr("Empty or null internal network name is not valid"));
         }
 
+        alock.release();
+
+        HRESULT hrc = checkAndSwitchFromNatNetworking();
+        if (FAILED(hrc))
+            return hrc;
+
+        alock.acquire();
+
         mData.backup();
         mData->mInternalNetwork = aInternalNetwork;
 
@@ -708,6 +733,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
 
     if (mData->mNATNetwork != aNATNetwork)
     {
+
+        HRESULT hrc;
         /* if an empty/null string is to be set, host only interface must be
          * turned off */
         if (   (aNATNetwork == NULL || *aNATNetwork == '\0')
@@ -718,6 +745,19 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
         }
 
         mData.backup();
+        
+        alock.release();
+
+        hrc = checkAndSwitchFromNatNetworking();
+        if (FAILED(hrc))
+            return hrc;
+
+        hrc = switchToNatNetworking(aNATNetwork);
+        if (FAILED(hrc))
+            return hrc;
+
+        alock.acquire();
+
         mData->mNATNetwork = aNATNetwork;
 
         m_fModified = true;
@@ -1548,5 +1588,50 @@ void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
     }
 
     LogFlowThisFuncLeave();
+}
+
+
+HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking()
+{
+    HRESULT hrc;
+    MachineState_T state;
+
+    hrc = mParent->COMGETTER(State)(&state);
+    if (FAILED(hrc))
+        return hrc;
+
+    if (   mData->mAttachmentType == NetworkAttachmentType_NATNetwork
+        && state == MachineState_Running)
+    {
+        int natCount;
+
+        natCount = mParent->getVirtualBox()->natNetworkRefDec(mData->mNATNetwork.raw());
+        if (natCount == -1)
+            return E_INVALIDARG; /* no such network */
+    }
+    
+    return S_OK;
+}
+
+
+HRESULT NetworkAdapter::switchToNatNetworking(IN_BSTR aNatNetworkName)
+{
+    HRESULT hrc;
+    MachineState_T state;
+
+    hrc = mParent->COMGETTER(State)(&state);
+    if (FAILED(hrc))
+        return hrc;
+
+    if (state == MachineState_Running)
+    {
+        int natCount;
+
+        natCount = mParent->getVirtualBox()->natNetworkRefInc(aNatNetworkName);
+        if (natCount == -1)
+            return E_INVALIDARG; /* not found */
+    }
+
+    return S_OK;
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
