@@ -856,6 +856,9 @@ static int cpumR3CpuIdInit(PVM pVM)
     bool fCmpXchg16b;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "CMPXCHG16B", &fCmpXchg16b, false); AssertRCReturn(rc, rc);
 
+    /** @cfgm{/CPUM/MONITOR, boolean, true}
+     * Expose MONITOR/MWAIT instructions to the guest.
+     */
     bool fMonitor;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "MONITOR", &fMonitor, true); AssertRCReturn(rc, rc);
 
@@ -1192,7 +1195,7 @@ static int cpumR3CpuIdInit(PVM pVM)
     if (fMWaitExtensions)
     {
         pCPUM->aGuestCpuIdStd[5].ecx = X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
-        /* @todo: for now we just expose host's MWAIT C-states, although conceptually
+        /** @todo: for now we just expose host's MWAIT C-states, although conceptually
            it shall be part of our power management virtualization model */
 #if 0
         /* MWAIT sub C-states */
@@ -1293,8 +1296,8 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     bool fNt4LeafLimit;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "NT4LeafLimit", &fNt4LeafLimit, false); AssertRCReturn(rc, rc);
-    if (fNt4LeafLimit)
-        pCPUM->aGuestCpuIdStd[0].eax = 3; /** @todo r=bird: shouldn't we check if pCPUM->aGuestCpuIdStd[0].eax > 3 before setting it 3 here? */
+    if (fNt4LeafLimit && pCPUM->aGuestCpuIdStd[0].eax > 3)
+        pCPUM->aGuestCpuIdStd[0].eax = 3;
 
     /*
      * Limit it the number of entries and fill the remaining with the defaults.
@@ -1352,6 +1355,39 @@ static int cpumR3CpuIdInit(PVM pVM)
     pCPUM->aGuestCpuIdHyper[1].eax = 0x656e6f6e;                            /* 'none' */
     pCPUM->aGuestCpuIdHyper[1].ebx = pCPUM->aGuestCpuIdHyper[1].ecx
                                    = pCPUM->aGuestCpuIdHyper[1].edx = 0;    /* Reserved */
+
+    /*
+     * Mini CPU selection support for making Mac OS X happy.
+     */
+    if (pCPUM->enmGuestCpuVendor == CPUMCPUVENDOR_INTEL)
+    {
+        /** @cfgm{/CPUM/MaxIntelFamilyModelStep, uint32_t, UINT32_MAX}
+         * Restrict the reported CPU family+model+stepping of intel CPUs.  This is
+         * probably going to be a temporary hack, so don't depend on this.
+         * The 1st byte of the value is the stepping, the 2nd byte value is the model
+         * number and the 3rd byte value is the family, and the 4th value must be zero.
+         */
+        uint32_t uMaxIntelFamilyModelStep;
+        rc = CFGMR3QueryU32Def(pCpumCfg, "MaxIntelFamilyModelStep", &uMaxIntelFamilyModelStep, UINT32_MAX);
+        AssertRCReturn(rc, rc);
+        uint32_t uCurIntelFamilyModelStep = RT_MAKE_U32_FROM_U8(ASMGetCpuStepping(pCPUM->aGuestCpuIdStd[1].eax),
+                                                                ASMGetCpuModelIntel(pCPUM->aGuestCpuIdStd[1].eax),
+                                                                ASMGetCpuFamily(pCPUM->aGuestCpuIdStd[1].eax),
+                                                                0);
+        if (uMaxIntelFamilyModelStep < uCurIntelFamilyModelStep)
+        {
+            uint32_t uNew = pCPUM->aGuestCpuIdStd[1].eax & UINT32_C(0xf0003000);
+            uNew |= RT_BYTE1(uMaxIntelFamilyModelStep) & 0xf; /* stepping */
+            uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) & 0xf) << 4; /* 4 low model bits */
+            uNew |= (RT_BYTE2(uMaxIntelFamilyModelStep) >> 4) << 16; /* 4 high model bits */
+            uNew |= (RT_BYTE3(uMaxIntelFamilyModelStep) & 0xf) << 8; /* 4 low family bits */
+            if (RT_BYTE3(uMaxIntelFamilyModelStep) > 0xf) /* 8 high family bits, using intel's suggested calculation. */
+                uNew |= ( (RT_BYTE3(uMaxIntelFamilyModelStep) - (RT_BYTE3(uMaxIntelFamilyModelStep) & 0xf)) & 0xff ) << 20;
+            LogRel(("CPU: CPUID(0).EAX %#x -> %#x (uMaxIntelFamilyModelStep=%#x, uCurIntelFamilyModelStep=%#x\n",
+                    pCPUM->aGuestCpuIdStd[1].eax, uNew, uMaxIntelFamilyModelStep, uCurIntelFamilyModelStep));
+            pCPUM->aGuestCpuIdStd[1].eax = uNew;
+        }
+    }
 
     /*
      * Load CPUID overrides from configuration.
