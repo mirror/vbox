@@ -1256,7 +1256,8 @@ static bool ataIdentifySS(ATADevState *s)
     p[67] = RT_H2LE_U16(120); /* minimum PIO cycle time without flow control */
     p[68] = RT_H2LE_U16(120); /* minimum PIO cycle time with IORDY flow control */
     if (   s->pDrvBlock->pfnDiscard
-        || s->cbSector != 512)
+        || s->cbSector != 512
+        || s->fNonRotational)
     {
         p[80] = RT_H2LE_U16(0x1f0); /* support everything up to ATA/ATAPI-8 ACS */
         p[81] = RT_H2LE_U16(0x28); /* conforms to ATA/ATAPI-8 ACS */
