@@ -48,8 +48,9 @@
  * 32-bit read returns the size of the info (in bytes).
  * 8-bit reads returns the info as a byte sequence. */
 #define EFI_INFO_PORT           (EFI_PORT_BASE+0x0)
-/** Information requests.
- * @todo Put this in DEVEFIINFO, that's much easier to access. */
+/**
+ * Information requests.
+ */
 typedef enum
 {
     EFI_INFO_INDEX_INVALID = 0,
@@ -154,45 +155,6 @@ typedef enum
     EFI_VM_VARIABLE_OP_32BIT_HACK = 0x7fffffff
 } EFIVAROP;
 
-/**
- * DevEFI Info stored at DEVEFI_INFO_PHYS_ADDR
- */
-typedef struct DEVEFIINFO
-{
-    /** 0x00 - The physical address of the firmware entry point. */
-    uint32_t    pfnFirmwareEP;
-    /** 0x04 - Spaced reserved for the high part of a 64-bit entrypoint address. */
-    uint32_t    HighEPAddress;
-    /** 0x08 - The address of the firmware volume. */
-    RTGCPHYS    PhysFwVol;
-    /** 0x10 - The size of the firmware volume. */
-    uint32_t    cbFwVol;
-    /** 0x14 - Amount of memory below 4GB (in bytes). */
-    uint32_t    cbBelow4GB;
-    /** 0x18 - Amount of memory above 4GB (in bytes). */
-    uint64_t    cbAbove4GB;
-    /** 0x20 - see flags values below */
-    uint32_t    fFlags;
-    /** 0x24 - The nubmer of Virtual CPUs. */
-    uint32_t    cCpus;
-    /** 0x28 - Reserved for future use, must be zero. */
-    uint32_t    pfnPeiEP;
-    /** 0x2c - Reserved for future use, must be zero. */
-    uint32_t    u32Reserved2;
-} DEVEFIINFO;
-AssertCompileSize(DEVEFIINFO, 0x30);
-/** Pointer to a DevEFI info structure. */
-typedef DEVEFIINFO *PDEVEFIINFO;
-/** Pointer to a const DevEFI info structure. */
-typedef DEVEFIINFO const *PCDEVEFIINFO;
-
-/** The physical address where DEVEFIINFO can be found. */
-#define DEVEFI_INFO_PHYS_ADDR   (0xfffff000)
-#define DEVEFI_INFO_FLAGS_AMD64   RT_BIT(0)
-
 /** @} */
-
-#define KB(x) ((x) * 1024)
-#define MB(x) ((KB(x)) * 1024)
 
 #endif
