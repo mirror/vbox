@@ -3208,7 +3208,7 @@
     </message>
     <message>
         <source>Choose or create a virtual hard disk file. The virtual machine will see the data in the file as the contents of the virtual hard disk.</source>
-        <translation>Wählen Sie ein virtuelles Festplattenabbild. Der Gast kann auf die Daten dieser Datei als Inhalt der virtuellen Festplatte zugreifen.</translation>
+        <translation>Wählen Sie ein virtuelles Festplattenabbild. Der Gast kann auf die Daten dieser Datei als virtuelle Festplatte zugreifen.</translation>
     </message>
     <message>
         <source>Set up the virtual hard disk</source>
@@ -3497,7 +3497,7 @@
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die USB-Controller-Emulation wurde nicht aktiviert. Ein USB-Controller wird für das USB-Zeigergerät benötigt. Diese Einstellung wird beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
@@ -4578,7 +4578,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Sprachdatei &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;b&gt; konnte nicht geladen werden.&lt;/p&gt;&lt;p&gt;Die Sprache wird auf die eingebaute Sprache (Englisch) zurückgesetzt. Bitte wählen Sie in den &lt;b&gt;globalen Einstellungen&lt;/b&gt; im Manager für virtuelle Maschinen eine andere Sprache.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -4634,23 +4634,23 @@
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to release the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;This will detach it from the following virtual machine(s): &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das Diskettenmedium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; freigeben?&lt;/p&gt;&lt;p&gt;Damit wird das Medium von folgenden virtuellen Maschinen freigegeben: &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das Festplattenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; von der Liste der bekannten Plattenabbilder löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das Plattenabbild ist nicht zugreifbar und kann daher nicht gelöscht werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das CD/DVD-Abbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; von der Liste der bekannten CD/DVD-Abbilder löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das Diskettenabbild &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; von der Liste der bekannten Diskettenabbilder löschen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4662,43 +4662,43 @@
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das optische Medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht von der virtuellen Maschine &lt;b&gt;%2&lt;/b&gt; entfernt werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das Aufwerfen des Mediums erzwingen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Diskettenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht in das virtuelle Laufwerk der VM &lt;b&gt;%2&lt;/b&gt; eingelegt werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Diskettenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht aus dem virtuellen Laufwerk der VM &lt;b&gt;%2&lt;/b&gt; entfernt werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the hard disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Plattenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht geöffnet werden.</translation>
     </message>
     <message>
         <source>Failed to open the optical disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die CD/DVD-Abbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht geöffnet werden.</translation>
     </message>
     <message>
         <source>Failed to open the floppy disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Diskettenabbilddatei &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht geöffnet werden.</translation>
     </message>
     <message>
         <source>Failed to close the hard disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Plattenabbilddatei &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht geschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to close the optical disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die CD/DVD-Abbilddatei &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht geschlossen werden.</translation>
     </message>
     <message>
         <source>Failed to close the floppy disk file &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Diskettenabbilddatei &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; konnte nicht geschlossen werden.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
@@ -4714,19 +4714,19 @@
     </message>
     <message>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die RDP-Fernsteuerung konnte für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; nicht aktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to disable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die RDP-Fernsteuerung konnte für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; nicht deaktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to enable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Videoaufzeichnung konnte für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; nicht aktiviert werden.</translation>
     </message>
     <message>
         <source>Failed to disable video capturing for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Videoaufzeichnung konnte für die virtuelle Maschine &lt;b&gt;%1&lt;/b&gt; nicht deaktiviert werden.</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
@@ -4742,11 +4742,11 @@
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das CD-Abbild mit den &lt;b&gt;VirtualBox-Gasterweiterungen&lt;/b&gt; wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; heruntergeladen, konnte aber nicht unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;gespeichert werden.&lt;/p&gt;&lt;p&gt;Bitte wählen Sie einen anderen Ordner für diese Datei.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das CD-Abbild mit den &lt;b&gt;VirtualBox-Gasterweiterungen&lt;/b&gt; wurde erfolgreich von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; heruntergeladen und auf der lokalen Festplatte unter &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;gespeichert.&lt;/p&gt;&lt;p&gt;Möchten Sie dieses Abbild in VirtualBox registrieren und in das virtuelle CD/DVD-Laufwerk einlegen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
@@ -4754,11 +4754,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das &lt;b&gt;VirtualBox-Benutzerhandbuch&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie es aus dem Internet herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to download the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (size %2 bytes)?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie wirklich das &lt;b&gt;VirtualBox-Benutzerhandbuch&lt;/b&gt; (in Englisch) von &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; (Größe %2 Byte) herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox User Manual has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
