@@ -3855,7 +3855,15 @@ static int rtDwarfInfo_SnoopSymbols(PRTDBGMODDWARF pThis, PRTDWARFDIE pDie)
                                 rc = RTDbgModSymbolAdd(pThis->hCnt,
                                                        rtDwarfInfo_SelectName(pSubProgram->pszName, pSubProgram->pszLinkageName),
                                                        iSeg, offSeg, cb, 0 /*fFlags*/, NULL /*piOrdinal*/);
-                                AssertMsg(RT_SUCCESS(rc) || rc == VERR_DBG_DUPLICATE_SYMBOL, ("%Rrc\n", rc));
+                                if (RT_FAILURE(rc))
+                                {
+                                    if (   rc == VERR_DBG_DUPLICATE_SYMBOL
+                                        || rc == VERR_DBG_ADDRESS_CONFLICT /** @todo figure why this happens with 10.6.8 mach_kernel, 32-bit. */
+                                        )
+                                        rc = VINF_SUCCESS;
+                                    else
+                                        AssertMsgFailed(("%Rrc\n", rc));
+                                }
                             }
                             else if (   pSubProgram->PcRange.uLowAddress  == 0 /* see with vmlinux */
                                      && pSubProgram->PcRange.uHighAddress == 0)
