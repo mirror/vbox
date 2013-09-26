@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -261,6 +261,8 @@ static void bench(unsigned long w, unsigned long h, unsigned long bpp)
         checkSDL("SDL_GL_SetAttribute", SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE,  Bsize));
         checkSDL("SDL_GL_SetAttribute", SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0));
     }
+#else
+    NOREF(Rsize); NOREF(Gsize); NOREF(Bsize);
 #endif
 
     RTPrintf("Testing "ESC_BOLD"%ldx%ld@%ld"ESC_NORM"\n", guGuestXRes, guGuestYRes, guGuestBpp);
