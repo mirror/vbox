@@ -1116,7 +1116,7 @@ PRBool PyXPCOM_InterfaceVariantHelper::Init(PyObject *obParams)
 	if (PySequence_Length(m_pyparams) != total_params_needed) {
 #ifdef VBOX
                 PyErr_Format(PyExc_ValueError, "The type descriptions indicate %d args are needed, but %ld were provided",
-			total_params_needed, PySequence_Length(m_pyparams));
+			total_params_needed, (long)PySequence_Length(m_pyparams));
 #else
 		PyErr_Format(PyExc_ValueError, "The type descriptions indicate %d args are needed, but %d were provided",
 			total_params_needed, PySequence_Length(m_pyparams));
