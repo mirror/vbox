@@ -174,9 +174,9 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
             {
                 Log(("Clipboard content is utf-16\n"));
 
-                PRTUTF16 pBytePtr = (PRTUTF16)CFDataGetBytePtr(outData);
-                if (pBytePtr)
-                    rc = RTUtf16DupEx(&pwszTmp, pBytePtr, 0);
+                PRTUTF16 pwszString = (PRTUTF16)CFDataGetBytePtr(outData);
+                if (pwszString)
+                    rc = RTUtf16DupEx(&pwszTmp, pwszString, 0);
                 else
                     rc = VERR_INVALID_PARAMETER;
             }
@@ -185,7 +185,11 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
                 if (!(err = PasteboardCopyItemFlavorData(pPasteboard, itemID, kUTTypeUTF8PlainText, &outData)))
                 {
                     Log(("readFromPasteboard: clipboard content is utf-8\n"));
-                    rc = RTStrToUtf16((const char*)CFDataGetBytePtr(outData), &pwszTmp);
+                    const char *pszString = (const char *)CFDataGetBytePtr(outData);
+                    if (pszString)
+                        rc = RTStrToUtf16(pszString, &pwszTmp);
+                    else
+                        rc = VERR_INVALID_PARAMETER;
                 }
             if (pwszTmp)
             {
