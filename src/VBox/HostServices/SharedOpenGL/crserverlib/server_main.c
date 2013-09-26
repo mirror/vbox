@@ -2831,7 +2831,7 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     return VINF_SUCCESS;
 }
 
-static int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
+int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
 {
     GLboolean fForcePresent;
 
@@ -2884,6 +2884,7 @@ static void crVBoxServerSetRootVisibleRegionCB(unsigned long key, void *data1, v
 DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT *pRects)
 {
     int32_t rc = VINF_SUCCESS;
+    int i;
 
     /* non-zero rects pointer indicate rects are present and switched on
      * i.e. cRects==0 and pRects!=NULL means root visible regioning is ON and there are no visible regions,
@@ -2911,7 +2912,16 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT 
     }
 
     crHashtableWalk(cr_server.muralTable, crVBoxServerSetRootVisibleRegionCB, NULL);
+#if 0
+    for (i = 0; i < cr_server.screenCount; ++i)
+    {
+        PCR_DISPLAY pDisplay = crServerDisplayGetInitialized((uint32_t)i);
+        if (!pDisplay)
+            continue;
 
+        CrDpRootUpdate(pDisplay);
+    }
+#endif
     return VINF_SUCCESS;
 }
 

@@ -315,6 +315,12 @@ void CrDpLeave(PCR_DISPLAY pDisplay)
     pDisplay->fForcePresent = GL_FALSE;
 }
 
+void CrDpRootUpdate(PCR_DISPLAY pDisplay)
+{
+    crVBoxServerUpdateMuralRootVisibleRegion(&pDisplay->Mural);
+}
+
+
 typedef struct CR_DEM_ENTRY_INFO
 {
     CRTextureObj *pTobj;
