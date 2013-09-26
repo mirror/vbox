@@ -61,6 +61,7 @@ static FNDBGCCMD dbgcCmdFormat;
 static FNDBGCCMD dbgcCmdLoadImage;
 static FNDBGCCMD dbgcCmdLoadMap;
 static FNDBGCCMD dbgcCmdLoadSeg;
+static FNDBGCCMD dbgcCmdUnload;
 static FNDBGCCMD dbgcCmdSet;
 static FNDBGCCMD dbgcCmdUnset;
 static FNDBGCCMD dbgcCmdLoadVars;
@@ -197,6 +198,13 @@ static const DBGCVARDESC    g_aArgSet[] =
     {  1,           1,          DBGCVAR_CAT_ANY,        0,                              "value",        "Value to assign to the variable." },
 };
 
+/** loadplugin, unloadplugin. */
+static const DBGCVARDESC    g_aArgUnload[] =
+{
+    /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
+    {  1,           ~0U,        DBGCVAR_CAT_STRING,     0,                              "modname",      "Unloads all mappings of the given modules in the active address space." },
+};
+
 /** 'unset' arguments */
 static const DBGCVARDESC    g_aArgUnset[] =
 {
@@ -229,6 +237,8 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "loadimage",  2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage), 0, dbgcCmdLoadImage, "<filename> <address> [name]",
                                                                                                                                                  "Loads the symbols of an executable image at the specified address. "
                                                                                                                                                  /*"Optionally giving the module a name other than the file name stem."*/ }, /** @todo implement line breaks */
+    { "loadimage32",2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage), 0, dbgcCmdLoadImage, "<filename> <address> [name]", "loadimage variant for selecting 32-bit images (mach-o)." },
+    { "loadimage64",2,        3,        &g_aArgLoadImage[0], RT_ELEMENTS(g_aArgLoadImage), 0, dbgcCmdLoadImage, "<filename> <address> [name]", "loadimage variant for selecting 64-bit images (mach-o)." },
     { "loadmap",    2,        5,        &g_aArgLoadMap[0],   RT_ELEMENTS(g_aArgLoadMap),   0, dbgcCmdLoadMap,   "<filename> <address> [name] [subtrahend] [seg]",
                                                                                                                                        "Loads the symbols from a map file, usually at a specified address. "
                                                                                                                                        /*"Optionally giving the module a name other than the file name stem "
@@ -249,6 +259,7 @@ const DBGCCMD    g_aDbgcCmds[] =
     { "showplugins",0,        0,        NULL,                0,                            0, dbgcCmdShowPlugIns,"",                     "List loaded plugins." },
     { "showvars",   0,        0,        NULL,                0,                            0, dbgcCmdShowVars,  "",                     "List all the defined variables." },
     { "stop",       0,        0,        NULL,                0,                            0, dbgcCmdStop,      "",                     "Stop execution." },
+    { "unload",     1,       ~0U,       &g_aArgUnload[0],    RT_ELEMENTS(g_aArgUnload),    0, dbgcCmdUnload,    "<modname1> [modname2..N]", "Unloads one or more modules in the current address space." },
     { "unloadplugin", 1,     ~0U,       &g_aArgPlugIn[0],    RT_ELEMENTS(g_aArgPlugIn),    0, dbgcCmdUnloadPlugIn, "<plugin1> [plugin2..N]", "Unloads one or more plugins." },
     { "unset",      1,       ~0U,       &g_aArgUnset[0],     RT_ELEMENTS(g_aArgUnset),     0, dbgcCmdUnset,     "<var1> [var1..[varN]]",  "Unsets (delete) one or more global variables." },
     { "writecore",  1,        1,        &g_aArgWriteCore[0], RT_ELEMENTS(g_aArgWriteCore), 0, dbgcCmdWriteCore,   "<filename>",           "Write core to file." },
@@ -1304,15 +1315,23 @@ static DECLCALLBACK(int) dbgcCmdLoadImage(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
     }
 
     /*
+     * Determine the desired image arch from the load command used.
+     */
+    RTLDRARCH enmArch = RTLDRARCH_WHATEVER;
+    if (pCmd->pszCmd[sizeof("loadimage") - 1] == '3')
+        enmArch = RTLDRARCH_X86_32;
+    else if (pCmd->pszCmd[sizeof("loadimage") - 1] == '6')
+        enmArch = RTLDRARCH_AMD64;
+
+    /*
      * Try create a module for it.
      */
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, &ModAddress, NIL_RTDBGSEGIDX, 0 /*fFlags*/);
+    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, enmArch, &ModAddress, NIL_RTDBGSEGIDX, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,)\n",
                                    pszFilename, pszModName, &paArgs[1]);
 
-    NOREF(pCmd);
     return VINF_SUCCESS;
 }
 
@@ -1416,10 +1435,38 @@ static DECLCALLBACK(int) dbgcCmdLoadSeg(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUV
      * Call the debug info manager about this loading.
      */
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, &ModAddress, iModSeg, 0 /*fFlags*/);
+    rc = DBGFR3AsLoadImage(pUVM, pDbgc->hDbgAs, pszFilename, pszModName, RTLDRARCH_WHATEVER, &ModAddress, iModSeg, 0 /*fFlags*/);
     if (RT_FAILURE(rc))
         return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3ModuleLoadImage(,,'%s','%s',%Dv,)\n",
                                    pszFilename, pszModName, &paArgs[1]);
+
+    NOREF(pCmd);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{FNDBCCMD, The 'unload' command.}
+ */
+static DECLCALLBACK(int) dbgcCmdUnload(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pUVM, PCDBGCVAR paArgs, unsigned cArgs)
+{
+    PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
+
+    /*
+     * Validate the parsing and make sense of the input.
+     * This is a mess as usual because we don't trust the parser yet.
+     */
+    AssertReturn(    cArgs >= 1
+                 &&  paArgs[0].enmType == DBGCVAR_TYPE_STRING,
+                 VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+    for (unsigned i = 0; i < cArgs; i++)
+    {
+        AssertReturn(paArgs[i].enmType == DBGCVAR_TYPE_STRING, VERR_DBGC_PARSE_INCORRECT_ARG_TYPE);
+
+        int rc = DBGFR3AsUnlinkModuleByName(pUVM, pDbgc->hDbgAs, paArgs[i].u.pszString);
+        if (RT_FAILURE(rc))
+            return DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3AsUnlinkModuleByName(,,'%s')\n", paArgs[i].u.pszString);
+    }
 
     NOREF(pCmd);
     return VINF_SUCCESS;
@@ -1445,13 +1492,15 @@ static DECLCALLBACK(int) dbgcCmdSet(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PUVM pU
     const char *pszVar = paArgs[0].u.pszString;
     if (!RT_C_IS_ALPHA(*pszVar) || *pszVar == '_')
         return DBGCCmdHlpPrintf(pCmdHlp,
-            "syntax error: Invalid variable name '%s'. Variable names must match regex '[_a-zA-Z][_a-zA-Z0-9*'!", paArgs[0].u.pszString);
+                                "syntax error: Invalid variable name '%s'. Variable names must match regex '[_a-zA-Z][_a-zA-Z0-9*'!",
+                                paArgs[0].u.pszString);
 
     while (RT_C_IS_ALNUM(*pszVar) || *pszVar == '_')
         *pszVar++;
     if (*pszVar)
         return DBGCCmdHlpPrintf(pCmdHlp,
-            "syntax error: Invalid variable name '%s'. Variable names must match regex '[_a-zA-Z][_a-zA-Z0-9*]'!", paArgs[0].u.pszString);
+                                "syntax error: Invalid variable name '%s'. Variable names must match regex '[_a-zA-Z][_a-zA-Z0-9*]'!",
+                                paArgs[0].u.pszString);
 
 
     /*
