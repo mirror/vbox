@@ -1431,10 +1431,10 @@
       </desc>
     </attribute>
     <attribute name="localMappings" type="wstring" readonly="yes" safearray="yes">
-      <desc>Array of mappings (address,offset),e.g. ("127.0.1.1=4") maps 127.0.1.1 to networkid + 4. 
+      <desc>Array of mappings (address,offset),e.g. ("127.0.1.1=4") maps 127.0.1.1 to networkid + 4.
       </desc>
     </attribute>
-    
+
     <method name="addLocalMapping">
       <desc>
       </desc>
@@ -1446,7 +1446,7 @@
       <desc>Offset in ipv6 network from network id for address mapped into loopback6 interface of the host.
       </desc>
     </attribute>
-    
+
     <attribute name="portForwardRules6" type="wstring" readonly="yes" safearray="yes">
       <desc>Array of NAT port-forwarding rules in string representation, in the
       following format: "name:protocolid:[host ip]:host port:[guest ip]:guest port".
@@ -6308,7 +6308,7 @@
         when there are no pending unsaved settings.
 
         <note>
-          Setting this property to @c null or to an empty string is forbidden. 
+          Setting this property to @c null or to an empty string is forbidden.
           When setting this property, the specified path must be absolute.
           The specified path may not exist, it will be created when necessary.
         </note>
@@ -10793,7 +10793,7 @@
       </param>
       <param name="sharingMode" type="wstring" dir="in">
         <desc>The file sharing mode on the guest. This parameter
-          is not implemented yet.</desc>
+          is not implemented yet. Pass an empty string here.</desc>
       </param>
       <param name="creationMode" type="unsigned long" dir="in">
         <desc>The mode to create the file with. Must be a three-digit octal number which
