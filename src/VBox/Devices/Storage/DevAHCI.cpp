@@ -3020,10 +3020,11 @@ static int ahciIdentifySS(PAHCIPort pAhciPort, void *pvBuf)
 
     if (pAhciPort->cbSector != 512)
     {
+        uint32_t cSectorSizeInWords = pAhciPort->cbSector / sizeof(uint16_t);
         /* Enable reporting of logical sector size. */
-        p[106] |= RT_H2LE_U16(RT_BIT(12));
-        p[117] = RT_H2LE_U16(pAhciPort->cbSector);
-        p[118] = RT_H2LE_U16(pAhciPort->cbSector >> 16);
+        p[106] |= RT_H2LE_U16(RT_BIT(12) | RT_BIT(14));
+        p[117] = RT_H2LE_U16(cSectorSizeInWords);
+        p[118] = RT_H2LE_U16(cSectorSizeInWords >> 16);
     }
 
     if (pAhciPort->fNonRotational)

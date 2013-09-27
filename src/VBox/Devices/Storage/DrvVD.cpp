@@ -1620,7 +1620,7 @@ static DECLCALLBACK(uint32_t) drvvdGetSectorSize(PPDMIMEDIA pInterface)
 {
     LogFlowFunc(("\n"));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    uint32_t cb = 512;
+    uint32_t cb = VDGetSectorSize(pThis->pDisk, VD_LAST_IMAGE);
     LogFlowFunc(("returns %u\n", cb));
     return cb;
 }
