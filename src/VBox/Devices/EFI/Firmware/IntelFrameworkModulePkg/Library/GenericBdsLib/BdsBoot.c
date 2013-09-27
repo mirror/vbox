@@ -137,6 +137,12 @@ IsBootOptionValidNVVarialbe (
     Valid = TRUE;
   }
 
+#ifdef VBOX
+  FreePool (BootOption->Description);
+  FreePool (BootOption->DevicePath);
+  FreePool (BootOption->LoadOptions);
+  FreePool (BootOption->OptionName);
+#endif
   FreePool (BootOption);
 
   return Valid;
