@@ -147,10 +147,9 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
                                         &uCreationMode,
                                         /* Offset. */
                                         &uOffset);
-#ifdef DEBUG
-    VBoxServiceVerbose(4, "[File %s]: szAccess=%s, szDisposition=%s, szSharing=%s, rc=%Rrc\n",
-                       szFile, szAccess, szDisposition, szSharing, rc);
-#endif
+    VBoxServiceVerbose(4, "[File %s]: szAccess=%s, szDisposition=%s, szSharing=%s, uOffset=%RU64, rc=%Rrc\n",
+                       szFile, szAccess, szDisposition, szSharing, uOffset, rc);
+
     if (RT_SUCCESS(rc))
     {
         PVBOXSERVICECTRLFILE pFile = (PVBOXSERVICECTRLFILE)RTMemAllocZ(sizeof(VBOXSERVICECTRLFILE));
@@ -168,7 +167,8 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
                 uint64_t fFlags;
                 rc = RTFileModeToFlagsEx(szAccess, szDisposition,
                                          NULL /* pszSharing, not used yet */, &fFlags);
-                VBoxServiceVerbose(4, "[File %s]: Opening flags=0x%x, rc=%Rrc\n", pFile->szName, fFlags, rc);
+                VBoxServiceVerbose(4, "[File %s]: Opening flags=0x%x, rc=%Rrc\n",
+                                   pFile->szName, fFlags, rc);
                 if (RT_SUCCESS(rc))
                     rc = RTFileOpen(&pFile->hFile, pFile->szName, fFlags);
                 if (   RT_SUCCESS(rc)
@@ -178,12 +178,12 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
                      * will fail if we don't succeed seeking to the wanted position. */
                     rc = RTFileSeek(pFile->hFile, (int64_t)uOffset, RTFILE_SEEK_BEGIN, NULL /* Current offset */);
                     if (RT_FAILURE(rc))
-                        VBoxServiceVerbose(3, "[File %s]: Seeking to offset %RU64 failed; rc=%Rrc\n",
-                                           pFile->szName, uOffset, rc);
+                        VBoxServiceError("[File %s]: Seeking to offset %RU64 failed; rc=%Rrc\n",
+                                         pFile->szName, uOffset, rc);
                 }
                 else if (RT_FAILURE(rc))
-                    VBoxServiceVerbose(3, "[File %s]: Opening failed; rc=%Rrc\n",
-                                       pFile->szName, rc);
+                    VBoxServiceError("[File %s]: Opening failed; rc=%Rrc\n",
+                                     pFile->szName, rc);
             }
 
             if (RT_SUCCESS(rc))
