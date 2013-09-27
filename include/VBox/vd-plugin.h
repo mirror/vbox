@@ -262,6 +262,14 @@ typedef struct VBOXHDDBACKEND
     DECLR3CALLBACKMEMBER(unsigned, pfnGetVersion, (void *pBackendData));
 
     /**
+     * Get the sector size of a disk image.
+     *
+     * @returns size of disk image in bytes.
+     * @param   pBackendData    Opaque state data for this image.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnGetSectorSize, (void *pBackendData));
+
+    /**
      * Get the capacity of a disk image.
      *
      * @returns size of disk image in bytes.

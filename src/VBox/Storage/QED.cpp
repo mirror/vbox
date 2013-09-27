@@ -2024,6 +2024,22 @@ static unsigned qedGetVersion(void *pBackendData)
         return 0;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+static uint32_t qedGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PQEDIMAGE pImage = (PQEDIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pImage);
+
+    if (pImage && pImage->pStorage)
+        cb = 512;
+
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t qedGetSize(void *pBackendData)
 {
@@ -2615,6 +2631,8 @@ VBOXHDDBACKEND g_QedBackend =
     NULL,
     /* pfnGetVersion */
     qedGetVersion,
+    /* pfnGetSectorSize */
+    qedGetSectorSize,
     /* pfnGetSize */
     qedGetSize,
     /* pfnGetFileSize */

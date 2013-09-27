@@ -1803,6 +1803,22 @@ static unsigned dmgGetVersion(void *pBackendData)
         return 0;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+static uint32_t dmgGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pThis);
+
+    if (pThis && pThis->pStorage)
+        cb = 2048;
+
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t dmgGetSize(void *pBackendData)
 {
@@ -2273,6 +2289,8 @@ VBOXHDDBACKEND g_DmgBackend =
     NULL,
     /* pfnGetVersion */
     dmgGetVersion,
+    /* pfnGetSectorSize */
+    dmgGetSectorSize,
     /* pfnGetSize */
     dmgGetSize,
     /* pfnGetFileSize */
