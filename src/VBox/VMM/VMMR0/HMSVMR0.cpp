@@ -2879,7 +2879,7 @@ static int hmR0SvmPreRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIEN
         STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
         return VINF_EM_RAW_TO_R3;
     }
-    else if (RTThreadPreemptIsPending(NIL_RTTHREAD))
+    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
     {
         ASMSetFlags(pSvmTransient->uEflags);
         VMMRZCallRing3Enable(pVCpu);
