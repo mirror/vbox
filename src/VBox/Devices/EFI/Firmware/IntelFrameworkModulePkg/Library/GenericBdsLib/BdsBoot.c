@@ -636,6 +636,9 @@ BdsLibBootViaBootOption (
   //
   PERF_END(NULL, "BDS", NULL, 0);
 
+  DEBUG((DEBUG_INFO, "BdsLibBootViaBootOption: BootCurrent=0x%x OptionName=%s Description=%s StatusString=%s Attribute=0x%x LoadOptionsSize=0x%x\n",
+         Option->BootCurrent, Option->OptionName, Option->Description, Option->StatusString, Option->Attribute, Option->LoadOptionsSize));
+
   *ExitDataSize = 0;
   *ExitData     = NULL;
 
