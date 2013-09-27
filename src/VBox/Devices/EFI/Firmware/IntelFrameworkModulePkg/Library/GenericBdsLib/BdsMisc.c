@@ -743,6 +743,13 @@ BdsLibVariableToOption (
   CopyMem (Option->LoadOptions, LoadOptions, LoadOptionsSize);
   Option->LoadOptionsSize = LoadOptionsSize;
 
+#ifdef VBOX  /* We need the OptionName later for Mac OS x related "Boot0080" hacks. */
+  TempSize = StrSize (VariableName);
+  Option->OptionName = AllocateZeroPool (TempSize);
+  ASSERT(Option->OptionName != NULL);
+  CopyMem (Option->OptionName, VariableName, TempSize);
+#endif
+
   //
   // Get the value from VariableName Unicode string
   // since the ISO standard assumes ASCII equivalent abbreviations, we can be safe in converting this
@@ -770,6 +777,9 @@ BdsLibVariableToOption (
   FreePool (Option->Description);
   FreePool (Option->DevicePath);
   FreePool (Option->LoadOptions);
+#ifdef VBOX
+  FreePool (Option->OptionName);
+#endif
   FreePool (Option);
   VBoxLogFlowFuncLeave();
   return NULL;
