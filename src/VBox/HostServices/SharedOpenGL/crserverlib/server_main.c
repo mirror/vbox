@@ -331,7 +331,7 @@ crServerInit(int argc, char *argv[])
     }
 #endif
 
-    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
+//    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -442,7 +442,7 @@ GLboolean crVBoxServerInit(void)
     }
 #endif
 
-    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
+//    cr_server.bUseMultipleContexts = (crGetenv( "CR_SERVER_ENABLE_MULTIPLE_CONTEXTS" ) != NULL);
 
     if (cr_server.bUseMultipleContexts)
     {
@@ -2848,7 +2848,7 @@ int crVBoxServerUpdateMuralRootVisibleRegion(CRMuralInfo *pMI)
             CrVrScrCompositorInit(&pMI->RootVrCompositor);
         }
 
-        rc = crServerMuralSynchRootVr(pMI);
+        rc = crServerMuralSynchRootVr(pMI, NULL);
         if (!RT_SUCCESS(rc))
         {
             crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
@@ -2912,7 +2912,7 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT 
     }
 
     crHashtableWalk(cr_server.muralTable, crVBoxServerSetRootVisibleRegionCB, NULL);
-#if 0
+
     for (i = 0; i < cr_server.screenCount; ++i)
     {
         PCR_DISPLAY pDisplay = crServerDisplayGetInitialized((uint32_t)i);
@@ -2921,7 +2921,7 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, const RTRECT 
 
         CrDpRootUpdate(pDisplay);
     }
-#endif
+
     return VINF_SUCCESS;
 }
 

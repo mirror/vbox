@@ -46,7 +46,9 @@ int CrDpInit(PCR_DISPLAY pDisplay)
         return VERR_GENERAL_FAILURE;
     }
 
-    crServerMuralVisibleRegion(&pDisplay->Mural, 0, NULL);
+    crServerWindowVisibleRegion(&pDisplay->Mural);
+    crServerDEntryAllVibleRegions(&pDisplay->Mural);
+
     crServerMuralShow(&pDisplay->Mural, GL_TRUE);
 
     pDisplay->fForcePresent = GL_FALSE;
@@ -225,20 +227,60 @@ int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RT
         {
             uint32_t cRects;
             const RTRECT *pRects;
-            rc = CrVrScrCompositorRegionsGet(&pDisplay->Mural.Compositor, &cRects, NULL, &pRects, NULL);
-            if (RT_SUCCESS(rc))
-                crServerMuralVisibleRegion(&pDisplay->Mural, cRects, (GLint *)pRects);
-            else
-                crWarning("CrVrScrCompositorRegionsGet failed, rc %d", rc);
+            bool fChanged = true;
+            if (pDisplay->Mural.fRootVrOn)
+            {
+                int rc = crServerMuralSynchRootVr(&pDisplay->Mural, &fChanged);
+                if (!RT_SUCCESS(rc))
+                {
+                    crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
+                    fChanged = false;
+                }
+            }
+
+            if (fChanged)
+                crServerWindowVisibleRegion(&pDisplay->Mural);
+
+            crServerDEntryAllVibleRegions(&pDisplay->Mural);
 
             Assert(!pReplacedScrEntry);
         }
-        else if (fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED)
+        else if (fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REGIONS_CHANGED)
         {
-            Assert(pReplacedScrEntry);
+            if (fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED)
+            {
+                Assert(pReplacedScrEntry);
+                Assert(pEntry);
+                if (pDisplay->Mural.fRootVrOn)
+                {
+                    CR_DISPLAY_ENTRY *pReplacedDEntry = CR_DENTRY_FROM_CENTRY(pReplacedScrEntry);
+                    Assert(CrVrScrCompositorEntryIsUsed(&pReplacedDEntry->RootVrCEntry));
+                    Assert(!CrVrScrCompositorEntryIsUsed(&pEntry->RootVrCEntry));
+                    CrVrScrCompositorEntryInit(&pEntry->RootVrCEntry, CrVrScrCompositorEntryTexGet(&pEntry->CEntry), NULL);
+                    CrVrScrCompositorEntryFlagsSet(&pEntry->RootVrCEntry, CrVrScrCompositorEntryFlagsGet(&pEntry->CEntry));
+                    CrVrScrCompositorEntryReplace(&pDisplay->Mural.RootVrCompositor, &pReplacedDEntry->RootVrCEntry, &pEntry->RootVrCEntry);
+                }
+            }
+            else
+            {
+                Assert(!pReplacedScrEntry);
+                if (pDisplay->Mural.fRootVrOn)
+                {
+                    bool fChanged = false;
+                    int rc = crServerMuralSynchRootVr(&pDisplay->Mural, &fChanged);
+                    if (RT_SUCCESS(rc))
+                    {
+                        if (fChanged)
+                            crServerWindowVisibleRegion(&pDisplay->Mural);
+                    }
+                    else
+                        crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
+                }
+            }
         }
         else
         {
+            Assert(!(fChangeFlags & VBOXVR_COMPOSITOR_CF_ENTRY_REPLACED));
             Assert(!pReplacedScrEntry);
         }
     }
