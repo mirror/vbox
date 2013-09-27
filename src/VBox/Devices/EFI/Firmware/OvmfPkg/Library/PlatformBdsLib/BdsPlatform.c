@@ -970,7 +970,7 @@ PlatformBdsRestoreNvVarsFromHardDisk ()
   EFI_STATUS Status;
   HandleCount = 0;
   HandleBuffer = NULL;
-  LogFlowFuncEnter();
+  VBoxLogFlowFuncEnter();
 
   VisitAllPciInstances (ConnectRecursivelyIfPciMassStorage);
 #ifndef VBOX
@@ -988,9 +988,9 @@ PlatformBdsRestoreNvVarsFromHardDisk ()
                   &HandleCount,
                   &HandleBuffer
                   );
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
 
-  LogFlowFuncLeave();
+  VBoxLogFlowFuncLeave();
 }
 
 
@@ -1170,7 +1170,7 @@ Returns:
   EFI_TPL                            OldTpl;
   EFI_BOOT_MODE                      BootMode;
 
-  LogFlowFuncEnter();
+  VBoxLogFlowFuncEnter();
 
   ConnectRootBridge ();
 
@@ -1259,8 +1259,8 @@ Returns:
                                           NULL,
                                           &cFileSystem,
                                           &phFileSystem);
-            LogFlowFuncMarkRC(rc);
-            LogFlowFuncMarkVar(cFileSystem, "%d");
+            VBoxLogFlowFuncMarkRC(rc);
+            VBoxLogFlowFuncMarkVar(cFileSystem, "%d");
             if (   rc == EFI_SUCCESS
                 && cFileSystem > 0)
             {
@@ -1279,35 +1279,35 @@ Returns:
                     rc = gBS->HandleProtocol (phFileSystem[iFileSystem],
                                               &gEfiSimpleFileSystemProtocolGuid,
                                               (VOID *) &pFSVolume);
-                    LogFlowFuncMarkVar(iFileSystem, "%d");
-                    LogFlowFuncMarkRC(rc);
+                    VBoxLogFlowFuncMarkVar(iFileSystem, "%d");
+                    VBoxLogFlowFuncMarkRC(rc);
                     if (EFI_ERROR(rc))
                         continue;
 
                     rc = pFSVolume->OpenVolume(pFSVolume, &hFSRoot);
-                    LogFlowFuncMarkRC(rc);
+                    VBoxLogFlowFuncMarkRC(rc);
                     if (EFI_ERROR(rc))
                         continue;
 
                     rc = hFSRoot->Open(hFSRoot, &hBootEfiFile, L"\\System\\Library\\CoreServices\\boot.efi", EFI_FILE_MODE_READ, 0);
-                    LogFlowFuncMarkRC(rc);
+                    VBoxLogFlowFuncMarkRC(rc);
                     if (EFI_ERROR(rc))
                         continue;
                     /* nice file is found and we have to register it */
                     pDevicePath = FileDevicePath(phFileSystem[iFileSystem], L"\\System\\Library\\CoreServices\\boot.efi");
-                    LogFlowFuncMarkVar(pDevicePath,"%p");
+                    VBoxLogFlowFuncMarkVar(pDevicePath,"%p");
                     if (!pDevicePath)
                         continue;
                     rc = BdsLibRegisterNewOption (BootOptionList, pDevicePath, L"Mac Boot", L"BootOrder");
-                    LogFlowFuncMarkRC(rc);
+                    VBoxLogFlowFuncMarkRC(rc);
                 }
             }
         }
         else
         {
-            LogFlowFuncMarkVar(BootOption0080->LoadOptionsSize, "%d");
+            VBoxLogFlowFuncMarkVar(BootOption0080->LoadOptionsSize, "%d");
             if (BootOption0080->LoadOptionsSize)
-                LogFlowFuncMarkVar(BootOption0080->LoadOptions, "%s");
+                VBoxLogFlowFuncMarkVar(BootOption0080->LoadOptions, "%s");
 #if 0
             /* Boot0080 option is found */
             UINT16                    *BootOrder;
@@ -1351,7 +1351,7 @@ Returns:
   // is always open. So the following code only do the ConnectAll and EnumerateAll at first boot.
   //
   Status = BdsLibBuildOptionFromVar (BootOptionList, L"BootOrder");
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR(Status)) {
     //
     // If cannot find "BootOrder" variable,  it may be first boot.
@@ -1406,7 +1406,7 @@ Returns:
     PlatformBdsEnterFrontPage (Timeout, FALSE);
   }
 
-  LogFlowFuncLeave();
+  VBoxLogFlowFuncLeave();
   return ;
 }
 
@@ -1699,7 +1699,7 @@ PciRomLoadEfiDriversFromRomImage (
   EFI_DECOMPRESS_PROTOCOL       *Decompress;
   UINT32                        InitializationSize;
 
-  LogFlowFuncEnter();
+  VBoxLogFlowFuncEnter();
   FileName = L"PciRomInMemory";
 
   //FileName = L"PciRom Addr=0000000000000000";
@@ -1840,7 +1840,7 @@ PciRomLoadEfiDriversFromRomImage (
   } while (((Pcir->Indicator & 0x80) == 0x00) && ((RomOffset - (UINTN) Rom) < RomSize));
 
 
-  LogFlowFuncLeaveRC(retStatus);
+  VBoxLogFlowFuncLeaveRC(retStatus);
   return retStatus;
 }
 #endif /* !VBOX */

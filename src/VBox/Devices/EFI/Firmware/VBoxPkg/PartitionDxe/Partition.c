@@ -102,7 +102,7 @@ PartitionDriverBindingSupported (
   EFI_DEVICE_PATH_PROTOCOL  *ParentDevicePath;
   EFI_DISK_IO_PROTOCOL      *DiskIo;
   EFI_DEV_PATH              *Node;
-  LogFlowFuncEnter();
+  VBoxLogFlowFuncEnter();
 
   //
   // Check RemainingDevicePath validation
@@ -112,7 +112,7 @@ PartitionDriverBindingSupported (
     // Check if RemainingDevicePath is the End of Device Path Node,
     // if yes, go on checking other conditions
     //
-    LogFlowFuncMarkDP(RemainingDevicePath);
+    VBoxLogFlowFuncMarkDP(RemainingDevicePath);
     if (!IsDevicePathEnd (RemainingDevicePath)) {
       //
       // If RemainingDevicePath isn't the End of Device Path Node,
@@ -124,7 +124,7 @@ PartitionDriverBindingSupported (
             || DevicePathNodeLength (&Node->DevPath) != sizeof (HARDDRIVE_DEVICE_PATH)
             || Node->DevPath.Type != MESSAGING_DEVICE_PATH
             || Node->DevPath.SubType != MSG_SATA_DP) {
-        LogFlowFuncLeaveRC(EFI_UNSUPPORTED);
+        VBoxLogFlowFuncLeaveRC(EFI_UNSUPPORTED);
         return EFI_UNSUPPORTED;
       }
     }
@@ -142,11 +142,11 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (Status == EFI_ALREADY_STARTED) {
-    LogFlowFuncLeaveRC(EFI_SUCCESS);
+    VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
     return EFI_SUCCESS;
   }
   if (EFI_ERROR (Status)) {
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
   }
   //
@@ -170,14 +170,14 @@ PartitionDriverBindingSupported (
                   ControllerHandle,
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
-  LogFlowFuncMarkDP(ParentDevicePath);
+  VBoxLogFlowFuncMarkDP(ParentDevicePath);
   if (Status == EFI_ALREADY_STARTED) {
-    LogFlowFuncLeaveRC(EFI_SUCCESS);
+    VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
     return EFI_SUCCESS;
   }
 
   if (EFI_ERROR (Status)) {
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
   }
 
@@ -203,11 +203,11 @@ PartitionDriverBindingSupported (
                   EFI_OPEN_PROTOCOL_TEST_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
   }
 
-  LogFlowFuncLeaveRC(EFI_SUCCESS);
+  VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
   return EFI_SUCCESS;
 }
 
@@ -245,7 +245,7 @@ PartitionDriverBindingStart (
   EFI_TPL                   OldTpl;
   int                       idxRoutine = 0;
 
-  LogFlowFuncEnter();
+  VBoxLogFlowFuncEnter();
   BlockIo2 = NULL;
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
   //
@@ -275,7 +275,7 @@ PartitionDriverBindingStart (
                   EFI_OPEN_PROTOCOL_GET_PROTOCOL
                   );
   if (EFI_ERROR (Status)) {
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Exit;
   }
 
@@ -300,7 +300,7 @@ PartitionDriverBindingStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   if (EFI_ERROR (Status) && Status != EFI_ALREADY_STARTED) {
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Exit;
   }
 
@@ -319,7 +319,7 @@ PartitionDriverBindingStart (
           This->DriverBindingHandle,
           ControllerHandle
           );
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Exit;
   }
 
@@ -347,9 +347,9 @@ PartitionDriverBindingStart (
                    BlockIo2,
                    ParentDevicePath
                    );
-      LogFlowFuncMarkRC(Status);
+      VBoxLogFlowFuncMarkRC(Status);
       if (!EFI_ERROR (Status) || Status == EFI_MEDIA_CHANGED || Status == EFI_NO_MEDIA) {
-        LogFlowFuncMarkVar(idxRoutine, "%d");
+        VBoxLogFlowFuncMarkVar(idxRoutine, "%d");
         break;
       }
       Routine++;
@@ -398,7 +398,7 @@ PartitionDriverBindingStart (
 
 Exit:
   gBS->RestoreTPL (OldTpl);
-  LogFlowFuncLeaveRC(Status);
+  VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
 

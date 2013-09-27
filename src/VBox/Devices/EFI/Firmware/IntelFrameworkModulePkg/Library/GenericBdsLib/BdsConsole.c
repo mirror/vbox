@@ -204,10 +204,10 @@ BdsLibUpdateConsoleVariable (
   EFI_DEVICE_PATH_PROTOCOL  *TempNewDevicePath;
   UINT32                    Attributes;
 
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(ConVarName, "%s");
-  LogFlowFuncMarkDP(CustomizedConDevicePath);
-  LogFlowFuncMarkDP(ExclusiveDevicePath);
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(ConVarName, "%s");
+  VBoxLogFlowFuncMarkDP(CustomizedConDevicePath);
+  VBoxLogFlowFuncMarkDP(ExclusiveDevicePath);
   VarConsole      = NULL;
   DevicePathSize  = 0;
 
@@ -216,19 +216,19 @@ BdsLibUpdateConsoleVariable (
   // with compare memory
   //
   if (CustomizedConDevicePath == ExclusiveDevicePath) {
-    LogFlowFuncLeaveRC(EFI_UNSUPPORTED);
+    VBoxLogFlowFuncLeaveRC(EFI_UNSUPPORTED);
     return EFI_UNSUPPORTED;
   }
   //
   // Delete the ExclusiveDevicePath from current default console
   //
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   VarConsole = BdsLibGetVariableAndSize (
                 ConVarName,
                 &gEfiGlobalVariableGuid,
                 &DevicePathSize
                 );
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
 
   //
   // Initialize NewDevicePath
@@ -239,30 +239,30 @@ BdsLibUpdateConsoleVariable (
   // If ExclusiveDevicePath is even the part of the instance in VarConsole, delete it.
   // In the end, NewDevicePath is the final device path.
   //
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   if (ExclusiveDevicePath != NULL && VarConsole != NULL) {
       NewDevicePath = BdsLibDelPartMatchInstance (VarConsole, ExclusiveDevicePath);
   }
   //
   // Try to append customized device path to NewDevicePath.
   //
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   if (CustomizedConDevicePath != NULL) {
-    LogFlowFuncMark();
+    VBoxLogFlowFuncMark();
     if (!BdsLibMatchDevicePaths (NewDevicePath, CustomizedConDevicePath)) {
       //
       // Check if there is part of CustomizedConDevicePath in NewDevicePath, delete it.
       //
-      LogFlowFuncMark();
+      VBoxLogFlowFuncMark();
       NewDevicePath = BdsLibDelPartMatchInstance (NewDevicePath, CustomizedConDevicePath);
       //
       // In the first check, the default console variable will be _ModuleEntryPoint,
       // just append current customized device path
       //
       TempNewDevicePath = NewDevicePath;
-      LogFlowFuncMark();
+      VBoxLogFlowFuncMark();
       NewDevicePath = AppendDevicePathInstance (NewDevicePath, CustomizedConDevicePath);
-      LogFlowFuncMark();
+      VBoxLogFlowFuncMark();
       if (TempNewDevicePath != NULL) {
         FreePool(TempNewDevicePath);
       }
@@ -272,27 +272,27 @@ BdsLibUpdateConsoleVariable (
   //
   // The attribute for ConInDev, ConOutDev and ErrOutDev does not include NV.
   //
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   if (IsNvNeed(ConVarName)) {
     //
     // ConVarName has NV attribute.
     //
-    LogFlowFuncMark();
+    VBoxLogFlowFuncMark();
     Attributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS | EFI_VARIABLE_NON_VOLATILE;
   } else {
     //
     // ConVarName does not have NV attribute.
     //
-    LogFlowFuncMark();
+    VBoxLogFlowFuncMark();
     Attributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
   }
 
   //
   // Finally, Update the variable of the default console by NewDevicePath
   //
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   DevicePathSize = GetDevicePathSize (NewDevicePath);
-  LogFlowFuncMark();
+  VBoxLogFlowFuncMark();
   Status = gRT->SetVariable (
                   ConVarName,
                   &gEfiGlobalVariableGuid,
@@ -300,7 +300,7 @@ BdsLibUpdateConsoleVariable (
                   DevicePathSize,
                   NewDevicePath
                   );
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if ((DevicePathSize == 0) && (Status == EFI_NOT_FOUND)) {
     Status = EFI_SUCCESS;
   }
@@ -319,7 +319,7 @@ BdsLibUpdateConsoleVariable (
     }
   }
 
-  LogFlowFuncLeaveRC(Status);
+  VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 
 }

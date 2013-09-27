@@ -220,7 +220,7 @@ PartitionInstallGptChildHandles (
   HARDDRIVE_DEVICE_PATH       HdDev;
   UINT32                      MediaId;
 
-  LogFlowFuncMarkDP(DevicePath);
+  VBoxLogFlowFuncMarkDP(DevicePath);
   ProtectiveMbr = NULL;
   PrimaryHeader = NULL;
   BackupHeader  = NULL;

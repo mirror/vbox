@@ -94,8 +94,8 @@ DECLINLINE(UINT32) VBoxWriteNVRAMGuidParam(const EFI_GUID *pGuid)
 static UINT32 VBoxWriteNVRAMDoOp(UINT32 u32Operation)
 {
     UINT32 u32Rc;
-    LogFlowFuncEnter();
-    LogFlowFuncMarkVar(u32Operation, "%x");
+    VBoxLogFlowFuncEnter();
+    VBoxLogFlowFuncMarkVar(u32Operation, "%x");
     VBoxWriteNVRAMU32Param(EFI_VM_VARIABLE_OP_START, u32Operation);
 
     while ((u32Rc = ASMInU32(EFI_PORT_VARIABLE_OP)) == EFI_VARIABLE_OP_STATUS_BSY)
@@ -105,8 +105,8 @@ static UINT32 VBoxWriteNVRAMDoOp(UINT32 u32Operation)
 #endif
         /* @todo: sleep here. bird: won't ever happen, so don't bother. */
     }
-    LogFlowFuncMarkVar(u32Rc, "%x");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(u32Rc, "%x");
+    VBoxLogFlowFuncLeave();
     return u32Rc;
 }
 #endif
@@ -151,7 +151,7 @@ RuntimeServiceGetVariable (
     EFI_STATUS rc;
     UINT32 u32Rc;
 
-    LogFlowFuncEnter();
+    VBoxLogFlowFuncEnter();
 
     /*
      * Tell DevEFI to look for the specified variable.
@@ -167,8 +167,8 @@ RuntimeServiceGetVariable (
         UINT32 VarLen;
         ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE_LENGTH);
         VarLen = ASMInU32(EFI_PORT_VARIABLE_OP);
-        LogFlowFuncMarkVar(*DataSize, "%d");
-        LogFlowFuncMarkVar(VarLen, "%d");
+        VBoxLogFlowFuncMarkVar(*DataSize, "%d");
+        VBoxLogFlowFuncMarkVar(VarLen, "%d");
         if (   VarLen <= *DataSize
             && Data)
         {
@@ -183,7 +183,7 @@ RuntimeServiceGetVariable (
             {
                 ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_ATTRIBUTE);
                 *Attributes = ASMInU32(EFI_PORT_VARIABLE_OP);
-                LogFlowFuncMarkVar(Attributes, "%x");
+                VBoxLogFlowFuncMarkVar(Attributes, "%x");
             }
 
             rc = EFI_SUCCESS;
@@ -199,7 +199,7 @@ RuntimeServiceGetVariable (
         rc = EFI_NOT_FOUND;
     }
 
-    LogFlowFuncLeaveRC(rc);
+    VBoxLogFlowFuncLeaveRC(rc);
     return rc;
 #endif
 }
@@ -236,14 +236,14 @@ RuntimeServiceGetNextVariableName (
 #else
     uint32_t    u32Rc;
     EFI_STATUS  rc;
-    LogFlowFuncEnter();
+    VBoxLogFlowFuncEnter();
 
     /*
      * Validate inputs.
      */
     if (!VariableNameSize || !VariableName || !VendorGuid)
     {
-        LogFlowFuncLeaveRC(EFI_INVALID_PARAMETER);
+        VBoxLogFlowFuncLeaveRC(EFI_INVALID_PARAMETER);
         return EFI_INVALID_PARAMETER;
     }
 
@@ -296,7 +296,7 @@ RuntimeServiceGetNextVariableName (
     else
         rc = EFI_NOT_FOUND; /* whatever */
 
-    LogFlowFuncLeaveRC(rc);
+    VBoxLogFlowFuncLeaveRC(rc);
     return rc;
 #endif
 }
@@ -342,10 +342,10 @@ RuntimeServiceSetVariable (
           );
 #else
     UINT32 u32Rc;
-    LogFlowFuncEnter();
-    LogFlowFuncMarkVar(VendorGuid, "%g");
-    LogFlowFuncMarkVar(VariableName, "%s");
-    LogFlowFuncMarkVar(DataSize, "%d");
+    VBoxLogFlowFuncEnter();
+    VBoxLogFlowFuncMarkVar(VendorGuid, "%g");
+    VBoxLogFlowFuncMarkVar(VariableName, "%s");
+    VBoxLogFlowFuncMarkVar(DataSize, "%d");
     /* set guid */
     VBoxWriteNVRAMGuidParam(VendorGuid);
     /* set name */
@@ -360,7 +360,7 @@ RuntimeServiceSetVariable (
     /* start fetch operation */
     u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_ADD);
     /* process errors */
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncLeave();
     switch (u32Rc)
     {
         case EFI_VARIABLE_OP_STATUS_OK:
@@ -531,7 +531,7 @@ VariableServiceInitialize (
             NULL,
             &size,
             (void *)szTestVariable);
-        LogFlowFuncMarkVar(szTestVariable, "%a");
+        VBoxLogFlowFuncMarkVar(szTestVariable, "%a");
 
         ASSERT(CompareMem(szTestVariable, pszVariable0, size) == 0);
 
@@ -550,7 +550,7 @@ VariableServiceInitialize (
             NULL,
             &size,
             (void *)szTestVariable);
-        LogFlowFuncMarkVar((CHAR16 *)szTestVariable, "%s");
+        VBoxLogFlowFuncMarkVar((CHAR16 *)szTestVariable, "%s");
         ASSERT(CompareMem(szTestVariable, pszVariable1, size) == 0);
     }
 
