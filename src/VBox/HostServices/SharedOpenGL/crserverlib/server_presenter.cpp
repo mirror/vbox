@@ -225,8 +225,6 @@ int CrDpEntryRegionsAdd(PCR_DISPLAY pDisplay, PCR_DISPLAY_ENTRY pEntry, const RT
     {
         if (fChangeFlags & VBOXVR_COMPOSITOR_CF_REGIONS_CHANGED)
         {
-            uint32_t cRects;
-            const RTRECT *pRects;
             bool fChanged = true;
             if (pDisplay->Mural.fRootVrOn)
             {
