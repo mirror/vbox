@@ -215,7 +215,7 @@ GLint crServerMuralInit(CRMuralInfo *mural, const char *dpyName, GLint visBits, 
     {
         uint32_t cRects;
         const RTRECT *pRects;
-        int rc = crServerMuralSynchRootVr(mural);
+        int rc = crServerMuralSynchRootVr(mural, NULL);
         if (RT_SUCCESS(rc))
         {
             rc = CrVrScrCompositorRegionsGet(&mural->RootVrCompositor, &cRects, NULL, &pRects, NULL);
@@ -503,10 +503,11 @@ static DECLCALLBACK(VBOXVR_SCR_COMPOSITOR_ENTRY*) crServerMuralGetRootVrCEntry(V
     CR_DISPLAY_ENTRY *pDEntry = CR_DENTRY_FROM_CENTRY(pEntry);
     Assert(!CrVrScrCompositorEntryIsUsed(&pDEntry->RootVrCEntry));
     CrVrScrCompositorEntryInit(&pDEntry->RootVrCEntry, CrVrScrCompositorEntryTexGet(pEntry), NULL);
+    CrVrScrCompositorEntryFlagsSet(&pDEntry->RootVrCEntry, CrVrScrCompositorEntryFlagsGet(pEntry));
     return &pDEntry->RootVrCEntry;
 }
 
-int crServerMuralSynchRootVr(CRMuralInfo *mural)
+int crServerMuralSynchRootVr(CRMuralInfo *mural, bool *pfChanged)
 {
     int rc;
 
@@ -516,7 +517,7 @@ int crServerMuralSynchRootVr(CRMuralInfo *mural)
      * i.e. cleanup all rootvr entries data */
     CrVrScrCompositorClear(&mural->RootVrCompositor);
 
-    rc = CrVrScrCompositorIntersectedList(&mural->Compositor, &cr_server.RootVr, &mural->RootVrCompositor, crServerMuralGetRootVrCEntry, NULL, NULL);
+    rc = CrVrScrCompositorIntersectedList(&mural->Compositor, &cr_server.RootVr, &mural->RootVrCompositor, crServerMuralGetRootVrCEntry, NULL, pfChanged);
     if (!RT_SUCCESS(rc))
     {
         crWarning("CrVrScrCompositorIntersectedList failed, rc %d", rc);
@@ -608,7 +609,7 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height)
 
     if (mural->fRootVrOn)
     {
-        rc = crServerMuralSynchRootVr(mural);
+        rc = crServerMuralSynchRootVr(mural, NULL);
         if (!RT_SUCCESS(rc))
         {
             crWarning("crServerMuralSynchRootVr failed, rc %d", rc);
@@ -692,7 +693,7 @@ void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkip
 
             if (mural->fRootVrOn)
             {
-                int rc = crServerMuralSynchRootVr(mural);
+                int rc = crServerMuralSynchRootVr(mural, NULL);
                 if (RT_SUCCESS(rc))
                 {
                     crServerWindowVisibleRegion(mural);
@@ -763,29 +764,23 @@ void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *
         crMemcpy(mural->pVisibleRects, pRects, 4*sizeof(GLint)*cRects);
     }
 
-    if (mural->fUseDefaultDEntry)
+    Assert(mural->fUseDefaultDEntry);
+    /* NOTE: we can do it even if !(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) to make sure the compositor data is always up to date */
+    /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
+    /* CrVrScrCompositorLock(&mural->Compositor); */
+    rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->DefaultDEntry.CEntry, NULL, cRects, (const RTRECT *)pRects, false, &fRegionsChanged);
+    /*CrVrScrCompositorUnlock(&mural->Compositor);*/
+    if (!RT_SUCCESS(rc))
     {
-        /* NOTE: we can do it even if !(mural->fPresentMode & CR_SERVER_REDIR_F_DISPLAY) to make sure the compositor data is always up to date */
-        /* the compositor lock is not needed actually since we have prevented renderspu from using the compositor */
-        /* CrVrScrCompositorLock(&mural->Compositor); */
-        rc = CrVrScrCompositorEntryRegionsSet(&mural->Compositor, &mural->DefaultDEntry.CEntry, NULL, cRects, (const RTRECT *)pRects, false, &fRegionsChanged);
-        /*CrVrScrCompositorUnlock(&mural->Compositor);*/
-        if (!RT_SUCCESS(rc))
-        {
-            crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
-            goto end;
-        }
-    }
-    else
-    {
-        fRegionsChanged = true;
+        crWarning("CrVrScrCompositorEntryRegionsSet failed, rc %d", rc);
+        goto end;
     }
 
     if (fRegionsChanged)
     {
         if (mural->fRootVrOn)
         {
-            rc = crServerMuralSynchRootVr(mural);
+            rc = crServerMuralSynchRootVr(mural, NULL);
             if (!RT_SUCCESS(rc))
             {
                 crWarning("crServerMuralSynchRootVr failed, rc %d", rc);

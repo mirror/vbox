@@ -697,17 +697,41 @@ renderspuWindowPosition( GLint win, GLint x, GLint y )
     }
 }
 
+#ifdef DEBUG_misha
+# define CR_DBG_DUMP_VISIBLE_REGIONS
+#endif
+
+#ifdef CR_DBG_DUMP_VISIBLE_REGIONS
+static void renderspuDbgDumpVisibleRegion(GLint win, GLint cRects, const GLint *pRects)
+{
+    GLint i;
+    const RTRECT *pRtRects = (const RTRECT *)((const void*)pRects);
+
+    crInfo("Window %d, Vidible Regions%d", win, cRects);
+    for (i = 0; i < cRects; ++i)
+    {
+        crInfo("%d: (%d,%d), (%d,%d)", i, pRtRects[i].xLeft, pRtRects[i].yTop, pRtRects[i].xRight, pRtRects[i].yBottom);
+    }
+    crInfo("======");
+}
+#endif
+
 static void RENDER_APIENTRY
 renderspuWindowVisibleRegion(GLint win, GLint cRects, const GLint *pRects)
 {
     WindowInfo *window;
     CRASSERT(win >= 0);
+
+#ifdef CR_DBG_DUMP_VISIBLE_REGIONS
+    renderspuDbgDumpVisibleRegion(win, cRects, pRects);
+#endif
+
     window = (WindowInfo *) crHashtableSearch(render_spu.windowTable, win);
     if (window) {
         renderspu_SystemWindowVisibleRegion( window, cRects, pRects );
     }
     else {
-        crDebug("Render SPU: Attempt to set VisibleRegion for invalid window (%d)", win);
+        crWarning("Render SPU: Attempt to set VisibleRegion for invalid window (%d)", win);
     }
 }
 

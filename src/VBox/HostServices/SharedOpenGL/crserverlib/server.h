@@ -118,7 +118,7 @@ GLboolean crServerMuralSize(CRMuralInfo *mural, GLint width, GLint height);
 void crServerMuralPosition(CRMuralInfo *mural, GLint x, GLint y, GLboolean fSkipCheckGeometry);
 void crServerMuralVisibleRegion( CRMuralInfo *mural, GLint cRects, const GLint *pRects );
 void crServerMuralShow( CRMuralInfo *mural, GLint state );
-int crServerMuralSynchRootVr(CRMuralInfo *mural);
+int crServerMuralSynchRootVr(CRMuralInfo *mural, bool *pfChanged);
 
 GLint crServerGenerateID(GLint *pCounter);
 

@@ -160,6 +160,15 @@ VBOXVREGDECL(void) VBoxVrListClear(PVBOXVR_LIST pList)
     VBoxVrListInit(pList);
 }
 
+/* moves list data to pDstList and empties the pList */
+VBOXVREGDECL(void) VBoxVrListMoveTo(PVBOXVR_LIST pList, PVBOXVR_LIST pDstList)
+{
+    *pDstList = *pList;
+    pDstList->ListHead.pNext->pPrev = &pDstList->ListHead;
+    pDstList->ListHead.pPrev->pNext = &pDstList->ListHead;
+    VBoxVrListInit(pList);
+}
+
 #define VBOXVR_MEMTAG 'vDBV'
 
 VBOXVREGDECL(int) VBoxVrInit()
@@ -1220,6 +1229,22 @@ DECLINLINE(void) vboxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVB
     vboxVrCompositorEntryRelease(pCompositor, pEntry, pReplacingEntry);
 }
 
+static void vboxVrCompositorEntryReplace(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, PVBOXVR_COMPOSITOR_ENTRY pReplacingEntry)
+{
+    VBoxVrListMoveTo(&pEntry->Vr, &pReplacingEntry->Vr);
+
+    pReplacingEntry->Node = pEntry->Node;
+    pReplacingEntry->Node.pNext->pPrev = &pReplacingEntry->Node;
+    pReplacingEntry->Node.pPrev->pNext = &pReplacingEntry->Node;
+    pEntry->Node.pNext = NULL;
+    pEntry->Node.pPrev = NULL;
+
+    vboxVrCompositorEntryAcquire(pReplacingEntry);
+    vboxVrCompositorEntryRelease(pCompositor, pEntry, pReplacingEntry);
+}
+
+
+
 VBOXVREGDECL(void) VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry)
 {
     VBoxVrListInit(&pEntry->Vr);
@@ -1228,16 +1253,24 @@ VBOXVREGDECL(void) VBoxVrCompositorEntryInit(PVBOXVR_COMPOSITOR_ENTRY pEntry)
 
 VBOXVREGDECL(bool) VBoxVrCompositorEntryRemove(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry)
 {
+    if (!VBoxVrCompositorEntryIsInList(pEntry))
+        return false;
+
     vboxVrCompositorEntryAcquire(pEntry);
 
-    if (!VBoxVrCompositorEntryIsInList(pEntry))
-    {
-        vboxVrCompositorEntryRelease(pCompositor, pEntry, NULL);
-        return false;
-    }
     VBoxVrListClear(&pEntry->Vr);
     vboxVrCompositorEntryRemove(pCompositor, pEntry, NULL);
     vboxVrCompositorEntryRelease(pCompositor, pEntry, NULL);
+    return true;
+}
+
+VBOXVREGDECL(bool) VBoxVrCompositorEntryReplace(PVBOXVR_COMPOSITOR pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, PVBOXVR_COMPOSITOR_ENTRY pNewEntry)
+{
+    if (!VBoxVrCompositorEntryIsInList(pEntry))
+        return false;
+
+    vboxVrCompositorEntryReplace(pCompositor, pEntry, pNewEntry);
+
     return true;
 }
 
@@ -2317,19 +2350,47 @@ VBOXVREGDECL(void) CrVrScrCompositorEntryFlagsSet(PVBOXVR_SCR_COMPOSITOR_ENTRY p
     CrVrScrCompositorEntrySetChanged(pEntry, true);
 }
 
+static void crVrScrCompositorEntryDataCleanup(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
+{
+    pEntry->cRects = 0;
+    pEntry->paSrcRects = NULL;
+    pEntry->paDstRects = NULL;
+    pEntry->paDstUnstretchedRects = NULL;
+}
+
+static void crVrScrCompositorEntryDataCopy(PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, PVBOXVR_SCR_COMPOSITOR_ENTRY pToEntry)
+{
+    pToEntry->cRects = pEntry->cRects;
+    pToEntry->paSrcRects = pEntry->paSrcRects;
+    pToEntry->paDstRects = pEntry->paDstRects;
+    pToEntry->paDstUnstretchedRects = pEntry->paDstUnstretchedRects;
+    crVrScrCompositorEntryDataCleanup(pEntry);
+}
+
 VBOXVREGDECL(int) CrVrScrCompositorEntryRemove(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry)
 {
     if (!VBoxVrCompositorEntryRemove(&pCompositor->Compositor, &pEntry->Ce))
         return VINF_SUCCESS;
 
     CrVrScrCompositorEntrySetChanged(pEntry, true);
-    pEntry->cRects = 0;
-    pEntry->paSrcRects = NULL;
-    pEntry->paDstRects = NULL;
-    pEntry->paDstUnstretchedRects = NULL;
+    crVrScrCompositorEntryDataCleanup(pEntry);
 
     crVrScrCompositorRectsInvalidate(pCompositor);
     return VINF_SUCCESS;
+}
+
+VBOXVREGDECL(bool) CrVrScrCompositorEntryReplace(PVBOXVR_SCR_COMPOSITOR pCompositor, PVBOXVR_SCR_COMPOSITOR_ENTRY pEntry, PVBOXVR_SCR_COMPOSITOR_ENTRY pNewEntry)
+{
+    Assert(!CrVrScrCompositorEntryIsUsed(pNewEntry));
+
+    if (!VBoxVrCompositorEntryReplace(&pCompositor->Compositor, &pEntry->Ce, &pNewEntry->Ce))
+        return false;
+
+    CrVrScrCompositorEntrySetChanged(pEntry, true);
+    crVrScrCompositorEntryDataCopy(pEntry, pNewEntry);
+    CrVrScrCompositorEntrySetChanged(pNewEntry, true);
+
+    return true;
 }
 
 static DECLCALLBACK(void) crVrScrCompositorEntryReleasedCB(const struct VBOXVR_COMPOSITOR *pCompositor, PVBOXVR_COMPOSITOR_ENTRY pEntry, PVBOXVR_COMPOSITOR_ENTRY pReplacingEntry)
