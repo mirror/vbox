@@ -1990,6 +1990,22 @@ static unsigned vhdxGetVersion(void *pBackendData)
         return 0;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+static uint32_t vhdxGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PVHDXIMAGE pImage = (PVHDXIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pImage);
+
+    if (pImage && pImage->pStorage)
+        cb = pImage->cbLogicalSector;
+
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t vhdxGetSize(void *pBackendData)
 {
@@ -2444,6 +2460,8 @@ VBOXHDDBACKEND g_VhdxBackend =
     NULL,
     /* pfnGetVersion */
     vhdxGetVersion,
+    /* pfnGetSectorSize */
+    vhdxGetSectorSize,
     /* pfnGetSize */
     vhdxGetSize,
     /* pfnGetFileSize */

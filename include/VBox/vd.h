@@ -900,6 +900,16 @@ VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk);
 VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk);
 
 /**
+ * Get sector size of an image in HDD container.
+ *
+ * @return  Virtual disk sector size in bytes.
+ * @return  0 if image with specified number was not opened.
+ * @param   pDisk           Pointer to HDD container.
+ * @param   nImage          Image number, counts from 0. 0 is always base image of container.
+ */
+VBOXDDU_DECL(uint32_t) VDGetSectorSize(PVBOXHDD pDisk, unsigned nImage);
+
+/**
  * Get total capacity of an image in HDD container.
  *
  * @return  Virtual disk size in bytes.

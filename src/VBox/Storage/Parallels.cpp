@@ -759,6 +759,22 @@ static unsigned parallelsGetVersion(void *pBackendData)
         return 0;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+static uint32_t parallelsGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PPARALLELSIMAGE pImage = (PPARALLELSIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pImage);
+
+    if (pImage && pImage->pStorage)
+        cb = 512;
+
+    LogFlowFunc(("returns %llu\n", cb));
+    return cb;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t parallelsGetSize(void *pBackendData)
 {
@@ -1220,6 +1236,8 @@ VBOXHDDBACKEND g_ParallelsBackend =
     NULL,
     /* pfnGetVersion */
     parallelsGetVersion,
+    /* pfnGetSectorSize */
+    parallelsGetSectorSize,
     /* pfnGetSize */
     parallelsGetSize,
     /* pfnGetFileSize */

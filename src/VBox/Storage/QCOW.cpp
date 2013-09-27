@@ -1936,6 +1936,22 @@ static unsigned qcowGetVersion(void *pBackendData)
         return 0;
 }
 
+/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+static uint32_t qcowGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PQCOWIMAGE pImage = (PQCOWIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pImage);
+
+    if (pImage && pImage->pStorage)
+        cb = 512;
+
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
+}
+
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
 static uint64_t qcowGetSize(void *pBackendData)
 {
@@ -2477,6 +2493,8 @@ VBOXHDDBACKEND g_QCowBackend =
     NULL,
     /* pfnGetVersion */
     qcowGetVersion,
+    /* pfnGetSectorSize */
+    qcowGetSectorSize,
     /* pfnGetSize */
     qcowGetSize,
     /* pfnGetFileSize */

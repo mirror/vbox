@@ -64,7 +64,8 @@ typedef struct RAWIMAGE
     VDGEOMETRY          PCHSGeometry;
     /** Logical geometry of this image. */
     VDGEOMETRY          LCHSGeometry;
-
+    /** Sector size of the image. */
+    uint32_t            cbSector;
 } RAWIMAGE, *PRAWIMAGE;
 
 
@@ -456,7 +457,13 @@ static int rawOpen(const char *pszFilename, unsigned uOpenFlags,
 
     rc = rawOpenImage(pImage, uOpenFlags);
     if (RT_SUCCESS(rc))
+    {
+        if (enmType == VDTYPE_DVD)
+            pImage->cbSector = 2048;
+        else
+            pImage->cbSector = 512;
         *ppBackendData = pImage;
+    }
     else
         RTMemFree(pImage);
 
@@ -662,6 +669,22 @@ static unsigned rawGetVersion(void *pBackendData)
         return 1;
     else
         return 0;
+}
+
+/** @copydoc VBOXHDDBACKEND::pfnGetSize */
+static uint32_t rawGetSectorSize(void *pBackendData)
+{
+    LogFlowFunc(("pBackendData=%#p\n", pBackendData));
+    PRAWIMAGE pImage = (PRAWIMAGE)pBackendData;
+    uint32_t cb = 0;
+
+    AssertPtr(pImage);
+
+    if (pImage && pImage->pStorage)
+        cb = pImage->cbSector;
+
+    LogFlowFunc(("returns %u\n", cb));
+    return cb;
 }
 
 /** @copydoc VBOXHDDBACKEND::pfnGetSize */
@@ -1137,6 +1160,8 @@ VBOXHDDBACKEND g_RawBackend =
     NULL,
     /* pfnGetVersion */
     rawGetVersion,
+    /* pfnGetSectorSize */
+    rawGetSectorSize,
     /* pfnGetSize */
     rawGetSize,
     /* pfnGetFileSize */
