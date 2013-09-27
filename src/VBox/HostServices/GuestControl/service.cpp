@@ -187,7 +187,7 @@ typedef struct HostCommand
                         break;
 
                     case VBOX_HGCM_SVC_PARM_64BIT:
-                        /* Not supported yet. */
+                        mpParms[i].u.uint64 = paParms[i].u.uint64;
                         break;
 
                     case VBOX_HGCM_SVC_PARM_PTR:
