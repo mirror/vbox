@@ -194,7 +194,7 @@ int handleStorageAttach(HandlerArg *a)
                 break;
             }
 
-            case 'u':   // nonrotational <on|off>
+            case 'u':   // discard <on|off>
             {
                 if (ValueUnion.psz)
                     pszDiscard = ValueUnion.psz;
