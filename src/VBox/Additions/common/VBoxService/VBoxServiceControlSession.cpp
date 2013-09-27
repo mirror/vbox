@@ -153,7 +153,7 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
 #endif
     if (RT_SUCCESS(rc))
     {
-        PVBOXSERVICECTRLFILE pFile = (PVBOXSERVICECTRLFILE)RTMemAlloc(sizeof(VBOXSERVICECTRLFILE));
+        PVBOXSERVICECTRLFILE pFile = (PVBOXSERVICECTRLFILE)RTMemAllocZ(sizeof(VBOXSERVICECTRLFILE));
         if (pFile)
         {
             if (!strlen(szFile))
@@ -198,7 +198,11 @@ static int gstcntlSessionHandleFileOpen(PVBOXSERVICECTRLSESSION pSession,
             }
 
             if (RT_FAILURE(rc))
+            {
+                if (pFile->hFile)
+                    RTFileClose(pFile->hFile);
                 RTMemFree(pFile);
+            }
         }
         else
             rc = VERR_NO_MEMORY;
