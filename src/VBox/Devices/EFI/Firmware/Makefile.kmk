@@ -185,6 +185,18 @@ VBoxEfiResetVector-amd64_SOURCES  = UefiCpuPkg/ResetVector/Vtf0/ResetVectorCode.
 #
 include $(FILE_KBUILD_SUB_FOOTER)
 
+#
+# Incomplete list of dependencies relative.
+#
+VBOX_EFI_DEPENDENCIES = \
+	$(VBOX_PATH_EFI_FIRMWARE)/../DevEFI.h \
+       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.c \
+       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf \
+       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.c \
+       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf \
+       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
+       \
+       $(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec \
 
 #
 # The common build.py invocation part.
@@ -269,7 +281,9 @@ else if ($(VBOX_EFI_TOOL_CHAIN),VS2010)
 	$(SED) \
 		-e 's,^DEFINE VS2010_BIN[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_BIN = $(PATH_TOOL_$(VBOX_VCC_TOOL))/bin,' \
 		-e 's,^DEFINE VS2010_DLL[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_DLL = DEF(VS2010_BIN),' \
+		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\)$(DOLLAR),\1 /Oy-,' \
 		--output $@ $<
+#		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\) /O1ib2 \(.*\)$(DOLLAR),\1 /Osi /GF /Gy \2 /Oy-,'
 else
  $(error Unexpected VBOX_EFI_TOOL_CHAIN value "$(VBOX_EFI_TOOL_CHAIN)")
 endif
@@ -279,7 +293,10 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg32_SOURCES): \
 		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt \
 		$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
-		$$(VBoxEfiResetVector-x86_1_TARGET)
+		$$(VBoxEfiResetVector-x86_1_TARGET) \
+		$(VBOX_EFI_DEPENDENCIES) \
+		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgIa32.dsc \
+		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgIa32.fdf
 	+ $(VBOX_EFI_BUILD_CMD) \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt" \
 		--arch IA32 \
@@ -325,7 +342,7 @@ else if ($(VBOX_EFI_TOOL_CHAIN),VS2010)
 	$(SED) \
 		-e 's,^DEFINE VS2010_BIN[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_BIN = $(PATH_TOOL_$(VBOX_VCC_TOOL))/bin,' \
 		-e 's,^DEFINE VS2010_DLL[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_DLL = DEF(VS2010_BIN),' \
-		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\) /X \(.*\)$(DOLLAR),\1 \2,' \
+		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\) /X \(.*\)$(DOLLAR),\1 \2 /Oy-,' \
 		--output $@ $<
 else
  $(error Unexpected VBOX_EFI_TOOL_CHAIN value "$(VBOX_EFI_TOOL_CHAIN)")
@@ -335,7 +352,10 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg64_SOURCES): \
 		$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt \
 		$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt \
-		$$(VBoxEfiResetVector-amd64_1_TARGET)
+		$$(VBoxEfiResetVector-amd64_1_TARGET) \
+		$(VBOX_EFI_DEPENDENCIES) \
+		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgX64.dsc \
+		$(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkgX64.fdf
 	+ $(VBOX_EFI_BUILD_CMD) \
 		--vbox-target-conf "$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt" \
 		--arch X64 \

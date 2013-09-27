@@ -40,7 +40,7 @@
 /** The base of the I/O ports used for interaction between the EFI firmware and DevEFI. */
 #define EFI_PORT_BASE           0xEF10
 /** The number of ports. */
-#define EFI_PORT_COUNT          0x0006
+#define EFI_PORT_COUNT          0x0008
 
 
 /** Information querying.
@@ -116,8 +116,8 @@ typedef enum
  *       SEC hands to PEI and the VBoxAutoScan PEIM reports. */
 #define VBOX_EFI_TOP_OF_STACK   0x300000
 
-#define EFI_VARIABLE_OP         (EFI_PORT_BASE+0x4)
-#define EFI_VARIABLE_PARAM      (EFI_PORT_BASE+0x5)
+#define EFI_PORT_VARIABLE_OP    (EFI_PORT_BASE+0x4)
+#define EFI_PORT_VARIABLE_PARAM (EFI_PORT_BASE+0x5)
 
 #define EFI_VARIABLE_OP_QUERY        0xdead0001
 #define EFI_VARIABLE_OP_QUERY_NEXT   0xdead0002
@@ -154,6 +154,95 @@ typedef enum
     EFI_VM_VARIABLE_OP_MAX,
     EFI_VM_VARIABLE_OP_32BIT_HACK = 0x7fffffff
 } EFIVAROP;
+
+
+/** Debug point. */
+#define EFI_PORT_DEBUG_POINT    (EFI_PORT_BASE + 0x6)
+
+/**
+ * EFI debug points.
+ */
+typedef enum EFIDBGPOINT
+{
+    /** Invalid. */
+    EFIDBGPOINT_INVALID = 0,
+    /** DEBUG_AGENT_INIT_PREMEM_SEC. */
+    EFIDBGPOINT_SEC_PREMEM = 1,
+    /** DEBUG_AGENT_INIT_POST_SEC. */
+    EFIDBGPOINT_SEC_POSTMEM,
+    /** DEBUG_AGENT_INIT_DXE_CORE. */
+    EFIDBGPOINT_DXE_CORE,
+    /** DEBUG_AGENT_INIT_. */
+    EFIDBGPOINT_SMM,
+    /** DEBUG_AGENT_INIT_ENTER_SMI. */
+    EFIDBGPOINT_SMI_ENTER,
+    /** DEBUG_AGENT_INIT_EXIT_SMI. */
+    EFIDBGPOINT_SMI_EXIT,
+    /** DEBUG_AGENT_INIT_S3. */
+    EFIDBGPOINT_GRAPHICS,
+    /** DEBUG_AGENT_INIT_DXE_AP. */
+    EFIDBGPOINT_DXE_AP,
+    /** End of valid points. */
+    EFIDBGPOINT_END,
+    /** Blow up the type to 32-bits. */
+    EFIDBGPOINT_32BIT_HACK = 0x7fffffff
+} EFIDBGPOINT;
+
+
+/** EFI image load or unload event. All writes are 32-bit writes. */
+#define EFI_PORT_IMAGE_EVENT    (EFI_PORT_BASE + 0x7)
+
+/** @defgroup grp_devefi_image_evt  EFI Image Events (EFI_PORT_IMAGE_EVENT).
+ *
+ * The lower 8-bit of the values written to EFI_PORT_IMAGE_EVENT can be seen as
+ * the command.  The start and complete commands does not have any additional
+ * payload.  The other commands uses bit 8 thru 23 or 8 thru 15 to pass a value.
+ *
+ * @{ */
+
+/** The command mask. */
+#define EFI_IMAGE_EVT_CMD_MASK                  UINT32_C(0x000000ff)
+/** Get the payload value. */
+#define EFI_IMAGE_EVT_GET_PAYLOAD(a_u32)        ((a_u32) >> 8)
+/** Get the payload value as unsigned 16-bit. */
+#define EFI_IMAGE_EVT_GET_PAYLOAD_U16(a_u32)    ( EFI_IMAGE_EVT_GET_PAYLOAD(a_u32) & UINT16_MAX )
+/** Get the payload value as unsigned 8-bit. */
+#define EFI_IMAGE_EVT_GET_PAYLOAD_U8(a_u32)     ( EFI_IMAGE_EVT_GET_PAYLOAD(a_u32) &  UINT8_MAX )
+/** Combines a command and a payload value. */
+#define EFI_IMAGE_EVT_MAKE(a_uCmd, a_uPayload)  ( ((a_uCmd) & UINT32_C(0xff)) | (uint32_t)((a_uPayload) << 8) )
+
+/** Invalid. */
+#define EFI_IMAGE_EVT_CMD_INVALID               UINT32_C(0x00000000)
+/** The event is complete. */
+#define EFI_IMAGE_EVT_CMD_COMPLETE              UINT32_C(0x00000001)
+/** Starts a 32-bit load event.  Requires name and address, size is optional. */
+#define EFI_IMAGE_EVT_CMD_START_LOAD32          UINT32_C(0x00000002)
+/** Starts a 64-bit load event.  Requires name and address, size is optional. */
+#define EFI_IMAGE_EVT_CMD_START_LOAD64          UINT32_C(0x00000003)
+/** Starts a 32-bit unload event. Requires name and address. */
+#define EFI_IMAGE_EVT_CMD_START_UNLOAD32        UINT32_C(0x00000004)
+/** Starts a 64-bit unload event. Requires name and address. */
+#define EFI_IMAGE_EVT_CMD_START_UNLOAD64        UINT32_C(0x00000005)
+
+/** The command for writing to the second address register (64-bit).
+ * Takes a 16-bit payload value.  The register value is shifted 16-bits
+ * to the left and then the payload is ORed in. */
+#define EFI_IMAGE_EVT_CMD_ADDR0                 UINT32_C(0x00000006)
+/** The command for writing to the second address register (64-bit).
+ * Takes a 16-bit payload value.  The register value is shifted 16-bits
+ * to the left and then the payload is ORed in. */
+#define EFI_IMAGE_EVT_CMD_ADDR1                 UINT32_C(0x00000007)
+/** The command for writing to the first size register (64-bit).
+ * Takes a 16-bit payload value.  The register value is shifted 16-bits
+ * to the left and then the payload is ORed in. */
+#define EFI_IMAGE_EVT_CMD_SIZE0                 UINT32_C(0x00000008)
+/** The command for appending a character to the module name.
+ * Takes a 7-bit payload value that.  The value is appended to the field if
+ * there is room. */
+#define EFI_IMAGE_EVT_CMD_NAME                  UINT32_C(0x00000009)
+
+/** @} */
+
 
 /** @} */
 

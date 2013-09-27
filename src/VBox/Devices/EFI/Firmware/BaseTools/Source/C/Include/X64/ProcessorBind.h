@@ -121,7 +121,9 @@
     #endif
   #endif
 
+  #if !defined(UINT8_MAX) || !defined(VBOX) /* collides with iprt/stdint.h */
   #define UINT8_MAX 0xff
+  #endif
 
 #else
   //

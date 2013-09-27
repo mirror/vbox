@@ -57,21 +57,21 @@ static UINT32 VBoxReadNVRAM(UINT8 *pu8Buffer, UINT32 cbBuffer)
 {
     UINT32 idxBuffer = 0;
     for (idxBuffer = 0; idxBuffer < cbBuffer; ++idxBuffer)
-        pu8Buffer[idxBuffer] = ASMInU8(EFI_VARIABLE_OP);
+        pu8Buffer[idxBuffer] = ASMInU8(EFI_PORT_VARIABLE_OP);
     return idxBuffer;
 }
 
 DECLINLINE(void) VBoxWriteNVRAMU32Param(UINT32 u32CodeParam, UINT32 u32Param)
 {
-    ASMOutU32(EFI_VARIABLE_OP, u32CodeParam);
-    ASMOutU32(EFI_VARIABLE_PARAM, u32Param);
+    ASMOutU32(EFI_PORT_VARIABLE_OP, u32CodeParam);
+    ASMOutU32(EFI_PORT_VARIABLE_PARAM, u32Param);
 }
 
 static UINT32 VBoxWriteNVRAMByteArrayParam(const UINT8 *pbParam, UINT32 cbParam)
 {
     UINT32 idxParam = 0;
     for (idxParam = 0; idxParam < cbParam; ++idxParam)
-        ASMOutU8(EFI_VARIABLE_PARAM, pbParam[idxParam]);
+        ASMOutU8(EFI_PORT_VARIABLE_PARAM, pbParam[idxParam]);
     return idxParam;
 }
 
@@ -80,14 +80,14 @@ static void VBoxWriteNVRAMNameParam(const CHAR16 *pwszName)
     UINTN i;
     UINTN cwcName = StrLen(pwszName);
 
-    ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_UTF16);
+    ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_UTF16);
     for (i = 0; i <= cwcName; i++)
-        ASMOutU16(EFI_VARIABLE_PARAM, pwszName[i]);
+        ASMOutU16(EFI_PORT_VARIABLE_PARAM, pwszName[i]);
 }
 
 DECLINLINE(UINT32) VBoxWriteNVRAMGuidParam(const EFI_GUID *pGuid)
 {
-    ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
+    ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
     return VBoxWriteNVRAMByteArrayParam((UINT8 *)pGuid, sizeof(EFI_GUID));
 }
 
@@ -98,7 +98,7 @@ static UINT32 VBoxWriteNVRAMDoOp(UINT32 u32Operation)
     LogFlowFuncMarkVar(u32Operation, "%x");
     VBoxWriteNVRAMU32Param(EFI_VM_VARIABLE_OP_START, u32Operation);
 
-    while ((u32Rc = ASMInU32(EFI_VARIABLE_OP)) == EFI_VARIABLE_OP_STATUS_BSY)
+    while ((u32Rc = ASMInU32(EFI_PORT_VARIABLE_OP)) == EFI_VARIABLE_OP_STATUS_BSY)
     {
 #if 0
         MicroSecondDelay (400);
@@ -165,8 +165,8 @@ RuntimeServiceGetVariable (
          * Check if we got enought space for the value.
          */
         UINT32 VarLen;
-        ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE_LENGTH);
-        VarLen = ASMInU32(EFI_VARIABLE_OP);
+        ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE_LENGTH);
+        VarLen = ASMInU32(EFI_PORT_VARIABLE_OP);
         LogFlowFuncMarkVar(*DataSize, "%d");
         LogFlowFuncMarkVar(VarLen, "%d");
         if (   VarLen <= *DataSize
@@ -176,13 +176,13 @@ RuntimeServiceGetVariable (
              * We do, then read it and, if requrest, the attribute.
              */
             *DataSize = VarLen;
-            ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE);
+            ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE);
             VBoxReadNVRAM((UINT8 *)Data, VarLen);
 
             if (Attributes)
             {
-                ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_ATTRIBUTE);
-                *Attributes = ASMInU32(EFI_VARIABLE_OP);
+                ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_ATTRIBUTE);
+                *Attributes = ASMInU32(EFI_PORT_VARIABLE_OP);
                 LogFlowFuncMarkVar(Attributes, "%x");
             }
 
@@ -270,8 +270,8 @@ RuntimeServiceGetNextVariableName (
          * Output buffer check.
          */
         UINT32      cwcName;
-        ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_LENGTH_UTF16);
-        cwcName = ASMInU32(EFI_VARIABLE_OP);
+        ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_LENGTH_UTF16);
+        cwcName = ASMInU32(EFI_PORT_VARIABLE_OP);
         if ((cwcName + 1) * 2 <= *VariableNameSize) /* ASSUMES byte size is specified */
         {
             UINT32 i;
@@ -279,12 +279,12 @@ RuntimeServiceGetNextVariableName (
             /* 
              * Read back the result.
              */
-            ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
+            ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);
             VBoxReadNVRAM((UINT8 *)VendorGuid, sizeof(EFI_GUID));
 
-            ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_UTF16);
+            ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_NAME_UTF16);
             for (i = 0; i < cwcName; i++)
-                VariableName[i] = ASMInU16(EFI_VARIABLE_OP);
+                VariableName[i] = ASMInU16(EFI_PORT_VARIABLE_OP);
             VariableName[i] = '\0';
 
             rc = EFI_SUCCESS;
@@ -355,7 +355,7 @@ RuntimeServiceSetVariable (
     /* set value length */
     VBoxWriteNVRAMU32Param(EFI_VM_VARIABLE_OP_VALUE_LENGTH, (UINT32)DataSize);
     /* fill value bytes */
-    ASMOutU32(EFI_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE);
+    ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_VALUE);
     VBoxWriteNVRAMByteArrayParam(Data, (UINT32)DataSize);
     /* start fetch operation */
     u32Rc = VBoxWriteNVRAMDoOp(EFI_VARIABLE_OP_ADD);
