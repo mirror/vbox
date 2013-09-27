@@ -255,7 +255,7 @@ static int dbgfR3StackWalk(PUVM pUVM, VMCPUID idCpu, RTDBGAS hAs, PDBGFSTACKFRAM
 
     pFrame->pSymReturnPC  = DBGFR3AsSymbolByAddrA(pUVM, hAs, &pFrame->AddrReturnPC, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL,
                                                   NULL /*poffDisp*/, NULL /*phMod*/);
-    pFrame->pLineReturnPC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrPC, NULL /*poffDisp*/, NULL /*phMod*/);
+    pFrame->pLineReturnPC = DBGFR3AsLineByAddrA(pUVM, hAs, &pFrame->AddrReturnPC, NULL /*poffDisp*/, NULL /*phMod*/);
 
     /*
      * Frame bitness flag.
