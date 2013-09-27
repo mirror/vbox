@@ -92,8 +92,10 @@ typedef struct VBOXDISPIF_SEAMLESS
         struct
         {
             VBOXDISPKMT_ADAPTER Adapter;
+# ifdef VBOX_DISPIF_WITH_OPCONTEXT
             VBOXDISPKMT_DEVICE Device;
             VBOXDISPKMT_CONTEXT Context;
+# endif
         } wddm;
 #endif
     } modeData;
