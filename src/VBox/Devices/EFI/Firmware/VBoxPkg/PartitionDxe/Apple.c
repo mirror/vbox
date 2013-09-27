@@ -105,7 +105,7 @@ PartitionInstallAppleChildHandles (
   UINT32                    SubBlockSize;
   UINT32                    BlkPerSec;
 
-  LogFlowFuncMarkDP(DevicePath);
+  VBoxLogFlowFuncMarkDP(DevicePath);
   Found         = EFI_NOT_FOUND;
   Media         = BlockIo->Media;
   VolSpaceSize  = 0;

@@ -227,9 +227,9 @@ BdsLibRegisterNewOption (
   UpdateDescription     = FALSE;
   Status                = EFI_SUCCESS;
   ZeroMem (OptionName, sizeof (OptionName));
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(VariableName, "%s");
-  LogFlowFuncMarkVar(String, "%s");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(VariableName, "%s");
+  VBoxLogFlowFuncMarkVar(String, "%s");
 
   TempOptionSize = 0;
   TempOptionPtr = BdsLibGetVariableAndSize (
@@ -251,14 +251,14 @@ BdsLibRegisterNewOption (
     } else {
       UnicodeSPrint (OptionName, sizeof (OptionName), L"Driver%04x", TempOptionPtr[Index]);
     }
-    LogFlowFuncMarkVar(OptionName, "%s");
+    VBoxLogFlowFuncMarkVar(OptionName, "%s");
 
     OptionPtr = BdsLibGetVariableAndSize (
                   OptionName,
                   &gEfiGlobalVariableGuid,
                   &OptionSize
                   );
-    LogFlowFuncMarkVar(OptionPtr, "%p");
+    VBoxLogFlowFuncMarkVar(OptionPtr, "%p");
     if (OptionPtr == NULL) {
       continue;
     }
@@ -286,7 +286,7 @@ BdsLibRegisterNewOption (
         //
         FreePool (OptionPtr);
         FreePool (TempOptionPtr);
-        LogFlowFuncLeaveRC(EFI_SUCCESS);
+        VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
         return EFI_SUCCESS;
       } else {
         //
@@ -350,7 +350,7 @@ BdsLibRegisterNewOption (
     if (TempOptionPtr != NULL) {
       FreePool (TempOptionPtr);
     }
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
   }
 
@@ -375,7 +375,7 @@ BdsLibRegisterNewOption (
     if (TempOptionPtr != NULL) {
       FreePool (TempOptionPtr);
     }
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
   }
 
@@ -403,7 +403,7 @@ BdsLibRegisterNewOption (
   FreePool (TempOptionPtr);
   FreePool (OptionOrderPtr);
 
-  LogFlowFuncLeaveRC(Status);
+  VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
 
@@ -519,9 +519,9 @@ ValidateOption (
   EFI_DEVICE_PATH_PROTOCOL  *TempPath;
   UINTN                     TempSize;
 
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(Variable, "%s");
-  LogFlowFuncMarkVar(VariableSize, "%d");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(Variable, "%s");
+  VBoxLogFlowFuncMarkVar(VariableSize, "%d");
   //
   // Skip the option attribute
   //
@@ -550,12 +550,12 @@ ValidateOption (
   // Validation boot option variable.
   //
   if ((FilePathSize == 0) || (TempSize == 0)) {
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncLeave();
     return FALSE;
   }
 
   if (TempSize + FilePathSize + sizeof (UINT16) + sizeof (UINT16) > VariableSize) {
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncLeave();
     return FALSE;
   }
 
@@ -563,14 +563,14 @@ ValidateOption (
   while (FilePathSize > 0) {
     TempSize = GetDevicePathSizeEx (TempPath, FilePathSize);
     if (TempSize == 0) {
-      LogFlowFuncLeave();
+      VBoxLogFlowFuncLeave();
       return FALSE;
     }
     FilePathSize = (UINT16) (FilePathSize - TempSize);
     TempPath    += TempSize;
   }
 
-  LogFlowFuncLeave();
+  VBoxLogFlowFuncLeave();
   return TRUE;
 }
 
@@ -634,16 +634,16 @@ BdsLibVariableToOption (
   //
   // Read the variable. We will never free this data.
   //
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(VariableName, "%s");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(VariableName, "%s");
   Variable = BdsLibGetVariableAndSize (
               VariableName,
               &gEfiGlobalVariableGuid,
               &VariableSize
               );
   if (Variable == NULL) {
-    LogFlowFuncMarkVar(Variable, "%p");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(Variable, "%p");
+    VBoxLogFlowFuncLeave();
     return NULL;
   }
 
@@ -651,8 +651,8 @@ BdsLibVariableToOption (
   // Validate Boot#### variable data.
   //
   if (!ValidateOption(Variable, VariableSize)) {
-    LogFlowFuncMarkVar(Variable, "%p");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(Variable, "%p");
+    VBoxLogFlowFuncLeave();
     return NULL;
   }
 
@@ -711,8 +711,8 @@ BdsLibVariableToOption (
   //
   LoadOptions     = TempPtr;
   if (VariableSize < (UINTN)(TempPtr - Variable)) {
-    LogFlowFuncMarkVar(Variable, "%p");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(Variable, "%p");
+    VBoxLogFlowFuncLeave();
     return NULL;
   }
   LoadOptionsSize = (UINT32) (VariableSize - (UINTN) (TempPtr - Variable));
@@ -723,8 +723,8 @@ BdsLibVariableToOption (
   //
   Option = AllocateZeroPool (sizeof (BDS_COMMON_OPTION));
   if (Option == NULL) {
-    LogFlowFuncMarkVar(Variable, "%p");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(Variable, "%p");
+    VBoxLogFlowFuncLeave();
     return NULL;
   }
 
@@ -761,8 +761,8 @@ BdsLibVariableToOption (
   if ((Option->Attribute & LOAD_OPTION_ACTIVE) == LOAD_OPTION_ACTIVE) {
     InsertTailList (BdsCommonOptionList, &Option->Link);
     FreePool (Variable);
-    LogFlowFuncMarkVar(Option, "%p");
-    LogFlowFuncLeave();
+    VBoxLogFlowFuncMarkVar(Option, "%p");
+    VBoxLogFlowFuncLeave();
     return Option;
   }
 
@@ -771,7 +771,7 @@ BdsLibVariableToOption (
   FreePool (Option->DevicePath);
   FreePool (Option->LoadOptions);
   FreePool (Option);
-  LogFlowFuncLeave();
+  VBoxLogFlowFuncLeave();
   return NULL;
 }
 
@@ -887,10 +887,10 @@ BdsLibGetVariableAndSize (
   // Pass in a zero size buffer to find the required buffer size.
   //
   BufferSize  = 0;
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(Name, "%s");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(Name, "%s");
   Status      = gRT->GetVariable (Name, VendorGuid, NULL, &BufferSize, Buffer);
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     //
     // Allocate the buffer to return
@@ -903,14 +903,14 @@ BdsLibGetVariableAndSize (
     // Read variable into the allocated buffer.
     //
     Status = gRT->GetVariable (Name, VendorGuid, NULL, &BufferSize, Buffer);
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     if (EFI_ERROR (Status)) {
       BufferSize = 0;
     }
   }
 
   *VariableSize = BufferSize;
-  LogFlowFuncLeave();
+  VBoxLogFlowFuncLeave();
   return Buffer;
 }
 
@@ -1249,8 +1249,8 @@ BdsLibGetImageHeader (
 
   Root     = NULL;
   ThisFile = NULL;
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(FileName, "%s");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(FileName, "%s");
   //
   // Handle the file system interface to the device
   //
@@ -1259,7 +1259,7 @@ BdsLibGetImageHeader (
                   &gEfiSimpleFileSystemProtocolGuid,
                   (VOID *) &Volume
                   );
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR (Status)) {
     goto Done;
   }
@@ -1268,14 +1268,14 @@ BdsLibGetImageHeader (
                      Volume,
                      &Root
                      );
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR (Status)) {
     Root = NULL;
     goto Done;
   }
   ASSERT (Root != NULL);
   Status = Root->Open (Root, &ThisFile, FileName, EFI_FILE_MODE_READ, 0);
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR (Status)) {
     goto Done;
   }
@@ -1288,7 +1288,7 @@ BdsLibGetImageHeader (
   do {
     Info   = NULL;
     Status = gBS->AllocatePool (EfiBootServicesData, BufferSize, (VOID **) &Info);
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     if (EFI_ERROR (Status)) {
       goto Done;
     }
@@ -1298,7 +1298,7 @@ BdsLibGetImageHeader (
                          &BufferSize,
                          Info
                          );
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     if (!EFI_ERROR (Status)) {
       break;
     }
@@ -1317,7 +1317,7 @@ BdsLibGetImageHeader (
   //
   BufferSize = sizeof (EFI_IMAGE_DOS_HEADER);
   Status = ThisFile->Read (ThisFile, &BufferSize, DosHeader);
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (
 #ifdef VBOX
        fAnalyzeDosHeader &&
@@ -1327,7 +1327,7 @@ BdsLibGetImageHeader (
           || FileSize <= DosHeader->e_lfanew
           || DosHeader->e_magic != EFI_IMAGE_DOS_SIGNATURE)) {
     Status = EFI_LOAD_ERROR;
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Done;
   }
 
@@ -1339,10 +1339,10 @@ BdsLibGetImageHeader (
   // Move to PE signature
   //
   Status = ThisFile->SetPosition (ThisFile, DosHeader->e_lfanew);
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR (Status)) {
     Status = EFI_LOAD_ERROR;
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Done;
   }
 
@@ -1351,12 +1351,12 @@ BdsLibGetImageHeader (
   //
   BufferSize = sizeof (EFI_IMAGE_OPTIONAL_HEADER_UNION);
   Status = ThisFile->Read (ThisFile, &BufferSize, Hdr.Pe32);
-  LogFlowFuncMarkRC(Status);
+  VBoxLogFlowFuncMarkRC(Status);
   if (EFI_ERROR (Status) ||
       BufferSize < sizeof (EFI_IMAGE_OPTIONAL_HEADER_UNION) ||
       Hdr.Pe32->Signature != EFI_IMAGE_NT_SIGNATURE) {
     Status = EFI_LOAD_ERROR;
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Done;
   }
 
@@ -1366,7 +1366,7 @@ BdsLibGetImageHeader (
   if (Hdr.Pe32->OptionalHeader.Magic != EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC &&
       Hdr.Pe32->OptionalHeader.Magic != EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
     Status = EFI_LOAD_ERROR;
-    LogFlowFuncMarkRC(Status);
+    VBoxLogFlowFuncMarkRC(Status);
     goto Done;
   }
 #ifdef VBOX
@@ -1380,7 +1380,7 @@ BdsLibGetImageHeader (
   if (Root != NULL) {
     Root->Close (Root);
   }
-  LogFlowFuncLeaveRC(Status);
+  VBoxLogFlowFuncLeaveRC(Status);
   return Status;
 }
 

@@ -89,10 +89,10 @@ EFI_ATA_COLLECTIVE_MODE  gEfiAtaCollectiveModeTemplate = {
 static EFI_STATUS GetPciIo(EFI_DRIVER_BINDING_PROTOCOL *This, EFI_HANDLE hController, EFI_PCI_IO_PROTOCOL **ppPciIo)
 {
     EFI_STATUS Status = EFI_INVALID_PARAMETER;
-    LogFlowFuncEnter();
+    VBoxLogFlowFuncEnter();
     if (!ppPciIo)
     {
-        LogFlowFuncLeaveRC(Status);
+        VBoxLogFlowFuncLeaveRC(Status);
         return Status;
     }
     Status = gBS->OpenProtocol (
@@ -103,7 +103,7 @@ static EFI_STATUS GetPciIo(EFI_DRIVER_BINDING_PROTOCOL *This, EFI_HANDLE hContro
                     hController,
                     EFI_OPEN_PROTOCOL_BY_DRIVER
                     );
-    LogFlowFuncLeaveRC(Status);
+    VBoxLogFlowFuncLeaveRC(Status);
     return Status;
 }
 
@@ -413,8 +413,8 @@ IdeInitGetChannelInfo (
   //
   // Channel number (0 based, either 0 or 1)
   //
-  LogFlowFuncEnter();
-  LogFlowFuncMarkVar(Channel, "%d");
+  VBoxLogFlowFuncEnter();
+  VBoxLogFlowFuncMarkVar(Channel, "%d");
   *MaxDevices = 0;
   *Enabled = FALSE;
   if (Channel < ICH_IDE_MAX_CHANNEL) {
@@ -429,14 +429,14 @@ IdeInitGetChannelInfo (
         UINT64  u64IoBase;
         UINT64  u8DH = 0;
         ASSERT(pPciIo);
-        LogFlowFuncMarkVar(u8Device, "%d");
+        VBoxLogFlowFuncMarkVar(u8Device, "%d");
         if (u8Device == 0)
             u8DH = 0xa0;
         else if (u8Device == 1)
             u8DH = 0xb0;
         else
         {
-            LogFlowFuncLeaveRC(EFI_INVALID_PARAMETER);
+            VBoxLogFlowFuncLeaveRC(EFI_INVALID_PARAMETER);
             return EFI_INVALID_PARAMETER;
         }
         switch (Channel)
@@ -451,8 +451,8 @@ IdeInitGetChannelInfo (
                 ASSERT(0);
                 return EFI_INVALID_PARAMETER;
         }
-        LogFlowFuncMarkVar(u8DH, "%x");
-        LogFlowFuncMarkVar(u64IoBase, "%llx");
+        VBoxLogFlowFuncMarkVar(u8DH, "%x");
+        VBoxLogFlowFuncMarkVar(u64IoBase, "%llx");
         pPciIo->Io.Write(pPciIo, EfiPciIoWidthUint8, EFI_PCI_IO_PASS_THROUGH_BAR, u64IoBase + 6, 1, (void *)&u8DH);
 
         u8CS = 0xaa; u8SN = 0x55;
@@ -472,8 +472,8 @@ IdeInitGetChannelInfo (
         pPciIo->Io.Read(pPciIo, EfiPciIoWidthUint8, EFI_PCI_IO_PASS_THROUGH_BAR, u64IoBase + 2, 1, (void *)&u8CS);
         pPciIo->Io.Read(pPciIo, EfiPciIoWidthUint8, EFI_PCI_IO_PASS_THROUGH_BAR, u64IoBase + 3, 1, (void *)&u8SN);
 
-        LogFlowFuncMarkVar(u8CS, "%x");
-        LogFlowFuncMarkVar(u8SN, "%x");
+        VBoxLogFlowFuncMarkVar(u8CS, "%x");
+        VBoxLogFlowFuncMarkVar(u8SN, "%x");
 
         fEnabled = (u8CS == 0xaa && u8SN == 0x55);
         *MaxDevices += (fEnabled ? 1 : 0);
@@ -487,9 +487,9 @@ IdeInitGetChannelInfo (
     *Enabled    = TRUE;
     *MaxDevices = ICH_IDE_MAX_DEVICES;
 #endif /* !VBOX */
-    LogFlowFuncMarkVar(*MaxDevices, "%d");
-    LogFlowFuncMarkVar(*Enabled, "%d");
-    LogFlowFuncLeaveRC(EFI_SUCCESS);
+    VBoxLogFlowFuncMarkVar(*MaxDevices, "%d");
+    VBoxLogFlowFuncMarkVar(*Enabled, "%d");
+    VBoxLogFlowFuncLeaveRC(EFI_SUCCESS);
     return EFI_SUCCESS;
   }
 
