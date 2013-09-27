@@ -1210,7 +1210,7 @@ static bool ataIdentifySS(ATADevState *s)
     p[1] = RT_H2LE_U16(RT_MIN(s->PCHSGeometry.cCylinders, 16383));
     p[3] = RT_H2LE_U16(s->PCHSGeometry.cHeads);
     /* Block size; obsolete, but required for the BIOS. */
-    p[5] = RT_H2LE_U16(512);
+    p[5] = RT_H2LE_U16(s->cbSector);
     p[6] = RT_H2LE_U16(s->PCHSGeometry.cSectors);
     ataPadString((uint8_t *)(p + 10), s->szSerialNumber, ATA_SERIAL_NUMBER_LENGTH); /* serial number */
     p[20] = RT_H2LE_U16(3); /* XXX: retired, cache type */
@@ -1291,10 +1291,11 @@ static bool ataIdentifySS(ATADevState *s)
 
     if (s->cbSector != 512)
     {
+        uint32_t cSectorSizeInWords = s->cbSector / sizeof(uint16_t);
         /* Enable reporting of logical sector size. */
-        p[106] |= RT_H2LE_U16(RT_BIT(12));
-        p[117] = RT_H2LE_U16(s->cbSector);
-        p[118] = RT_H2LE_U16(s->cbSector >> 16);
+        p[106] |= RT_H2LE_U16(RT_BIT(12) | RT_BIT(14));
+        p[117] = RT_H2LE_U16(cSectorSizeInWords);
+        p[118] = RT_H2LE_U16(cSectorSizeInWords >> 16);
     }
 
     if (s->pDrvBlock->pfnDiscard) /** @todo: Set bit 14 in word 69 too? (Deterministic read after TRIM). */
@@ -1632,7 +1633,7 @@ static bool ataReadSectorsSS(ATADevState *s)
     uint64_t iLBA;
     bool fRedo;
 
-    cSectors = s->cbElementaryTransfer / 512;
+    cSectors = s->cbElementaryTransfer / s->cbSector;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
@@ -1670,7 +1671,7 @@ static bool ataWriteSectorsSS(ATADevState *s)
     uint64_t iLBA;
     bool fRedo;
 
-    cSectors = s->cbElementaryTransfer / 512;
+    cSectors = s->cbElementaryTransfer / s->cbSector;
     Assert(cSectors);
     iLBA = ataGetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
@@ -3798,7 +3799,7 @@ static DECLCALLBACK(void) ataMountNotify(PPDMIMOUNTNOTIFY pInterface)
     if (pIf->fATAPI)
         pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 2048;
     else
-        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / 512;
+        pIf->cTotalSectors = pIf->pDrvBlock->pfnGetSize(pIf->pDrvBlock) / pIf->cbSector;
 
     LogRel(("PIIX3 ATA: LUN#%d: CD/DVD, total number of sectors %Ld, passthrough unchanged\n", pIf->iLUN, pIf->cTotalSectors));
 
@@ -4212,7 +4213,7 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
                 || (s->uATARegFeature & ~UINT8_C(0x01)))
                 goto abort_cmd;
             s->fDMA = true;
-            ataStartTransfer(s, (s->uATARegNSectorHOB << 8 | s->uATARegNSector) * 512, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_NULL, ATAFN_SS_TRIM, false);
+            ataStartTransfer(s, (s->uATARegNSectorHOB << 8 | s->uATARegNSector) * s->cbSector, PDMBLOCKTXDIR_TO_DEVICE, ATAFN_BT_NULL, ATAFN_SS_TRIM, false);
             break;
         default:
         abort_cmd:
