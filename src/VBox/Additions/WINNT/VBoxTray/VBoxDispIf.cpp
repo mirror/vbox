@@ -36,8 +36,10 @@ typedef struct VBOXDISPIF_OP
 {
     PCVBOXDISPIF pIf;
     VBOXDISPKMT_ADAPTER Adapter;
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     VBOXDISPKMT_DEVICE Device;
     VBOXDISPKMT_CONTEXT Context;
+#endif
 } VBOXDISPIF_OP;
 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
@@ -509,13 +511,16 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
     HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pOp->Adapter);
     if (SUCCEEDED(hr))
     {
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
         hr = vboxDispKmtCreateDevice(&pOp->Adapter, &pOp->Device);
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pOp->Device, &pOp->Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
                     0, 0, NULL, 0ULL);
             if (SUCCEEDED(hr))
+#endif
                 return ERROR_SUCCESS;
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
             else
                 WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
@@ -525,6 +530,7 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pOp->Adapter);
+#endif
     }
 
     return hr;
@@ -532,8 +538,10 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
 
 static VOID vboxDispIfOpEnd(VBOXDISPIF_OP *pOp)
 {
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     vboxDispKmtDestroyContext(&pOp->Context);
     vboxDispKmtDestroyDevice(&pOp->Device);
+#endif
     vboxDispKmtCloseAdapter(&pOp->Adapter);
 }
 
@@ -1303,7 +1311,7 @@ static DWORD vboxDispIfReninitModesWDDM(VBOXDISPIF_OP *pOp, const uint8_t *pScre
 
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
-#if 0
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
@@ -1694,7 +1702,7 @@ static DWORD vboxDispIfConfigureTargetsWDDM(VBOXDISPIF_OP *pOp, uint32_t *pcConn
 
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pOp->Adapter.hAdapter;
-#if 0
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     /* win8.1 does not allow context-based escapes for display-only mode */
     EscapeData.hDevice = pOp->Device.hDevice;
     EscapeData.hContext = pOp->Context.hContext;
@@ -1991,13 +1999,16 @@ static DWORD vboxDispIfSeamlesCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAM
     HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pSeamless->modeData.wddm.Adapter);
     if (SUCCEEDED(hr))
     {
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
         hr = vboxDispKmtCreateDevice(&pSeamless->modeData.wddm.Adapter, &pSeamless->modeData.wddm.Device);
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pSeamless->modeData.wddm.Device, &pSeamless->modeData.wddm.Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_SEAMLESS,
                     0, 0, hEvent, 0ULL);
             if (SUCCEEDED(hr))
+#endif
                 return ERROR_SUCCESS;
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
             else
                 WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
@@ -2007,6 +2018,7 @@ static DWORD vboxDispIfSeamlesCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAM
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
+#endif
     }
 
     return hr;
@@ -2014,8 +2026,10 @@ static DWORD vboxDispIfSeamlesCreateWDDM(PCVBOXDISPIF const pIf, VBOXDISPIF_SEAM
 
 static DWORD vboxDispIfSeamlesTermWDDM(VBOXDISPIF_SEAMLESS *pSeamless)
 {
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     vboxDispKmtDestroyContext(&pSeamless->modeData.wddm.Context);
     vboxDispKmtDestroyDevice(&pSeamless->modeData.wddm.Device);
+#endif
     vboxDispKmtCloseAdapter(&pSeamless->modeData.wddm.Adapter);
 
     return NO_ERROR;
@@ -2025,8 +2039,10 @@ static DWORD vboxDispIfSeamlesSubmitWDDM(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDIS
 {
     D3DKMT_ESCAPE EscapeData = {0};
     EscapeData.hAdapter = pSeamless->modeData.wddm.Adapter.hAdapter;
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     EscapeData.hDevice = pSeamless->modeData.wddm.Device.hDevice;
     EscapeData.hContext = pSeamless->modeData.wddm.Context.hContext;
+#endif
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
     EscapeData.Flags.HardwareAccess = 1;
     EscapeData.pPrivateDriverData = pData;

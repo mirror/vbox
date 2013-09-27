@@ -3690,6 +3690,7 @@ DxgkDdiEscape(
             case VBOXESC_SETVISIBLEREGION:
             {
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
                 if (!pContext)
                 {
                     WARN(("VBOXESC_SETVISIBLEREGION no context supplied!"));
@@ -3703,7 +3704,7 @@ DxgkDdiEscape(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
-
+#endif
                 /* visible regions for seamless */
                 LPRGNDATA lpRgnData = VBOXDISPIFESCAPE_DATA(pEscapeHdr, RGNDATA);
                 uint32_t cbData = VBOXDISPIFESCAPE_DATA_SIZE(pEscape->PrivateDriverDataSize);
@@ -3856,7 +3857,7 @@ DxgkDdiEscape(
                     break;
                 }
 
-#if 0
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
                 /* win8.1 does not allow context-based escapes for display-only mode */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
@@ -3888,7 +3889,7 @@ DxgkDdiEscape(
                     break;
                 }
 
-#if 0
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
                 /* win8.1 does not allow context-based escapes for display-only mode */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
@@ -3930,7 +3931,7 @@ DxgkDdiEscape(
                     break;
                 }
 
-#if 0
+#ifdef VBOX_DISPIF_WITH_OPCONTEXT
                 /* win8.1 does not allow context-based escapes for display-only mode */
                 PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pEscape->hContext;
                 if (!pContext)
