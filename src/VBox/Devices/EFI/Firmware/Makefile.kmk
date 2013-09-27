@@ -197,6 +197,17 @@ VBOX_EFI_DEPENDENCIES = \
        $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
        \
        $(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsBoot.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsConnect.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsConsole.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsMisc.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/DevicePath.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsStrings.uni \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/InternalBdsLib.h \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/Performance.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.c \
+	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.h \
 
 #
 # The common build.py invocation part.
