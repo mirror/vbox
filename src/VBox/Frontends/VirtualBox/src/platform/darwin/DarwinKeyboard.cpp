@@ -299,11 +299,16 @@ typedef struct VBoxHidLeds_t {
 
 /* HID LEDs synchronization data: IOKit specific data. */
 typedef struct VBoxHidsState_t {
-    IOHIDManagerRef  hidManagerRef;
-    IOHIDDeviceRef  *hidDevicesCollection;
-    VBoxHidLeds_t   *hidLedsCollection;
-    CFIndex          cDevices;
+    IOHIDManagerRef     hidManagerRef;
+    IOHIDDeviceRef     *hidDevicesCollection;
+    VBoxHidLeds_t      *hidLedsCollection;
+    CFIndex             cDevices;
+    CFMachPortRef       pTapRef;
+    CFRunLoopSourceRef  pLoopSourceRef;
 } VBoxHidsState_t;
+
+/* A *sync* between IOKit and Carbon callbacks. */
+static VBoxHidLeds_t *g_LastTouchedState;
 #endif // !VBOX_WITH_KBD_LEDS_SYNC
 
 /*******************************************************************************
@@ -1357,6 +1362,102 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 
     return rc2;
 }
+
+
+
+static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, IOHIDValueRef valueRef)
+{
+    (void)unused;
+    (void)unused1;
+
+    IOHIDElementRef pElementRef = IOHIDValueGetElement(valueRef);
+
+    if (IOHIDElementGetUsagePage(pElementRef) == kHIDPage_KeyboardOrKeypad)        /* Keyboard or keypad event */
+        if (IOHIDValueGetIntegerValue(valueRef) == 1)                              /* key has been pressed down */
+            if (IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeyboardCapsLock || /* CapsLock key has been pressed */
+                IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeypadNumLock)      /* ... or NumLock key has been pressed */
+            {
+                Log2(("A modifier key has been pressed\n"));
+                g_LastTouchedState = (VBoxHidLeds_t *)pData;
+            }
+}
+
+#define VBOX_BOOL_TO_STR_STATE(x) (x) ? "ON" : "OFF"
+static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGEventType type, CGEventRef pEventRef, void *unused1)
+{
+    (void)unused;
+    (void)unused1;
+
+    /* Skip events we are not interested in. */
+    if (type != kCGEventKeyDown && type != kCGEventFlagsChanged)
+        return pEventRef;
+
+    CGEventFlags fMask = CGEventGetFlags(pEventRef);
+    bool         fCaps = (bool)(fMask & NX_ALPHASHIFTMASK);
+    bool         fNum  = (bool)(fMask & NX_NUMERICPADMASK);
+    CGKeyCode    key   = CGEventGetIntegerValueField(pEventRef, kCGKeyboardEventKeycode);
+
+    if (key == kHIDUsage_KeyboardCapsLock ||
+        key == kHIDUsage_KeypadNumLock)
+    {
+        Log2(("carbon event: caps=%s, num=%s\n", VBOX_BOOL_TO_STR_STATE(fCaps), VBOX_BOOL_TO_STR_STATE(fNum)));
+        if (g_LastTouchedState)
+        {
+            g_LastTouchedState->fCapsLockOn = fCaps;
+            g_LastTouchedState->fNumLockOn  = fNum;
+        }
+    }
+
+    return pEventRef;
+}
+#undef VBOX_BOOL_TO_STR_STATE
+
+static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
+{
+    CFMachPortRef pTapRef;
+    CGEventMask   fMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
+
+    g_LastTouchedState = NULL;
+
+    pTapRef = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, fMask, darwinCarbonGlobalKeyPressCallback, NULL);
+    if (pTapRef)
+    {
+        CFRunLoopSourceRef pLoopSourceRef;
+        pLoopSourceRef = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, pTapRef, 0);
+        if (pLoopSourceRef)
+        {
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), pLoopSourceRef, kCFRunLoopCommonModes);
+            CGEventTapEnable(pTapRef, true);
+
+            pState->pTapRef = pTapRef;
+            pState->pLoopSourceRef = pLoopSourceRef;
+
+            return 0;
+        }
+        else
+            Log2(("Unable to create a loop source\n"));
+
+        CFRelease(pTapRef);
+    }
+    else
+        Log2(("Unable to create an event tap\n"));
+
+    return kIOReturnError;
+}
+
+static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
+{
+    AssertReturnVoid(pState);
+    AssertReturnVoid(pState->pTapRef);
+    AssertReturnVoid(pState->pLoopSourceRef);
+
+    g_LastTouchedState = NULL;
+
+    CGEventTapEnable(pState->pTapRef, false);
+    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pState->pLoopSourceRef, kCFRunLoopCommonModes);
+    CFRelease(pState->pLoopSourceRef);
+}
+
 #endif // !VBOX_WITH_KBD_LEDS_SYNC
 
 /** Save the states of leds for all HID devices attached to the system and return it. */
@@ -1418,13 +1519,19 @@ void * DarwinHidDevicesKeepLedsState(void)
                                                 hidsState->hidLedsCollection[i].fScrollLockOn = false;
                                             }
 
+                                            /* Register per-device input callback */
+                                            IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], darwinHidInputCallback, (void *)&hidsState->hidLedsCollection[i]);
+                                            IOHIDDeviceScheduleWithRunLoop(hidsState->hidDevicesCollection[i], CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
                                         }
                                     }
 
-                                    CFRelease(deviceMatchingDictRef);
                                     CFRelease(elementMatchingDict);
 
-                                    return hidsState;
+                                    if (darwinAddCarbonGlobalKeyPressHandler(hidsState) == 0)
+                                    {
+                                        CFRelease(deviceMatchingDictRef);
+                                        return hidsState;
+                                    }
                                 }
 
                                 RTMemFree(hidsState->hidLedsCollection);
@@ -1471,6 +1578,9 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 
     if (hidsState)
     {
+        /* Need to unregister Carbon stuff first */
+        darwinRemoveCarbonGlobalKeyPressHandler(hidsState);
+
         CFDictionaryRef elementMatchingDict = darwinGetLedElementMatchingDictionary();
         if (elementMatchingDict)
         {
@@ -1487,6 +1597,9 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                     Log2(("Unable to restore led states for device (%d)!\n", (int)i));
                     rc2 = kIOReturnError;
                 }
+
+                IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], NULL, NULL);
+                IOHIDDeviceUnscheduleFromRunLoop(hidsState->hidDevicesCollection[i], CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
             }
         }
 
