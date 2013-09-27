@@ -78,25 +78,71 @@ DebugPrint(IN UINTN ErrorLevel, IN CONST CHAR8 *Format, ...)
 
 }
 
+/**
+ * Adds a character to the panic message.
+ *
+ * @param   ch          The ASCII char to add.
+ */
+static void
+VBoxPanicMsgChar(int ch)
+{
+    ASMOutU16(EFI_PANIC_PORT, EFI_PANIC_CMD_MSG_FROM_CHAR(ch));
+}
+
+/**
+ * Adds a string to the panic message.
+ *
+ * @param   pszString   The string to add.
+ */
+static void
+VBoxPanicMsgString(const char *pszString)
+{
+    char ch;
+    while ((ch = *pszString++) != '\0')
+        VBoxPanicMsgChar(ch);
+}
+
+/**
+ * Adds a unsigned decimal number to the panic message.
+ *
+ * @param   uValue      The value.
+ */
+static void
+VBoxPanicMsgDecimalU32(uint32_t uValue)
+{
+    char     szTmp[32];
+    unsigned off = sizeof(szTmp) - 1;
+
+    szTmp[off] = '\0';
+    do
+    {
+        char chDigit = uValue % 10;
+        uValue /= 10;
+        szTmp[--off] = chDigit + '0';
+    } while (uValue != 0 && off > 0);
+
+    VBoxPanicMsgString(&szTmp[off]);
+}
 
 VOID EFIAPI
 DebugAssert(IN CONST CHAR8 *FileName, IN UINTN LineNumber, IN CONST CHAR8 *Description)
 {
     RTCCUINTREG SavedFlags = ASMIntDisableFlags();
 
-    VBoxPrintString("EFI Assertion failed! File=");
-    VBoxPrintString(FileName ? FileName : "<NULL>");
-    VBoxPrintString(" line=0x");
-    VBoxPrintHex(LineNumber, sizeof(LineNumber));
-    VBoxPrintString("\nDescription: ");
-    VBoxPrintString(Description ? Description : "<NULL>");
-
-    ASMOutU8(EFI_PANIC_PORT, 2); /** @todo fix this. */
+    ASMOutU8(EFI_PANIC_PORT, EFI_PANIC_CMD_START_MSG);
+    VBoxPanicMsgString("EFI Assertion failed!"
+                       "\nFile:  ");
+    VBoxPanicMsgString(FileName ? FileName : "<NULL>");
+    VBoxPanicMsgString("\nLine:  ");
+    VBoxPanicMsgDecimalU32((uint32_t)LineNumber);
+    VBoxPanicMsgString("\nEDescription: ");
+    VBoxPanicMsgString(Description ? Description : "<NULL>");
+    ASMOutU8(EFI_PANIC_PORT, EFI_PANIC_CMD_END_MSG);
 
     ASMSetFlags(SavedFlags);
 }
 
-CHAR16* VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
+CHAR16 *VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
 {
 #if 0
     EFI_STATUS rc;
@@ -115,7 +161,7 @@ CHAR16* VBoxDebugDevicePath2Str(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
 #endif
 }
 
-CHAR16* VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
+CHAR16 *VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
 {
 #if 0
     EFI_STATUS rc;
@@ -142,7 +188,7 @@ CHAR16* VBoxDebugHandleDevicePath2Str(IN EFI_HANDLE hHandle)
     return NULL;
 #endif
 }
-CHAR16* VBoxDebugPrintDevicePath(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
+CHAR16 *VBoxDebugPrintDevicePath(IN EFI_DEVICE_PATH_PROTOCOL  *pDevicePath)
 {
 #if 0
     EFI_STATUS rc;

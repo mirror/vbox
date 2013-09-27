@@ -40,7 +40,7 @@
 #include <iprt/string.h>
 #include <iprt/mp.h>
 #include <iprt/list.h>
-#ifdef DEBUG
+#if defined(DEBUG) && defined(IN_RING3)
 # include <iprt/stream.h>
 # define DEVEFI_WITH_VBOXDBG_SCRIPT
 #endif
@@ -129,14 +129,37 @@ typedef struct DEVEFI
 {
     /** Pointer back to the device instance. */
     PPDMDEVINS              pDevIns;
+
     /** EFI message buffer. */
     char                    szMsg[VBOX_EFI_DEBUG_BUFFER];
     /** EFI message buffer index. */
     uint32_t                iMsg;
+
     /** EFI panic message buffer. */
     char                    szPanicMsg[2048];
     /** EFI panic message buffer index. */
     uint32_t                iPanicMsg;
+
+    struct
+    {
+        /** The current/last image event. */
+        uint8_t             uEvt;
+        /** Module path/name offset. */
+        uint8_t             offName;
+        /** The offset of the last component in the module path/name. */
+        uint8_t             offNameLastComponent;
+        /** Alignment padding. */
+        uint8_t             abPadding[5];
+        /** First address associated with the event (image address). */
+        uint64_t            uAddr0;
+        /** Second address associated with the event (old image address). */
+        uint64_t            uAddr1;
+        /** The size associated with the event (0 if none). */
+        uint64_t            cb0;
+        /** The module name. */
+        char                szName[256];
+    } ImageEvt;
+
     /** The system EFI ROM data. */
     uint8_t                *pu8EfiRom;
     /** The size of the system EFI ROM. */
@@ -476,13 +499,14 @@ static int nvramStore(PDEVEFI pThis)
  *
  * @param   pThis               The EFI state.
  * @param   pEfiVar             The resulting variable. NULL if not found / end.
+ * @param   fEnumQuery          Set if enumeration query, clear if specific.
  */
-static void nvramWriteVariableOpQueryCopyResult(PDEVEFI pThis, PEFIVAR pEfiVar)
+static void nvramWriteVariableOpQueryCopyResult(PDEVEFI pThis, PEFIVAR pEfiVar, bool fEnumQuery)
 {
-    RT_ZERO(pThis->NVRAM.VarOpBuf.szName);
     RT_ZERO(pThis->NVRAM.VarOpBuf.abValue);
     if (pEfiVar)
     {
+        RT_ZERO(pThis->NVRAM.VarOpBuf.szName);
         pThis->NVRAM.VarOpBuf.uuid        = pEfiVar->uuid;
         pThis->NVRAM.VarOpBuf.cchName     = pEfiVar->cchName;
         memcpy(pThis->NVRAM.VarOpBuf.szName, pEfiVar->szName, pEfiVar->cchName); /* no need for + 1. */
@@ -497,12 +521,17 @@ static void nvramWriteVariableOpQueryCopyResult(PDEVEFI pThis, PEFIVAR pEfiVar)
     }
     else
     {
+        if (fEnumQuery)
+            LogFlow(("EFI: Variable query -> NOT_FOUND \n"));
+        else
+            LogFlow(("EFI: Variable query %RTuuid::'%s' -> NOT_FOUND \n",
+                     &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName));
+        RT_ZERO(pThis->NVRAM.VarOpBuf.szName);
         pThis->NVRAM.VarOpBuf.fAttributes = 0;
         pThis->NVRAM.VarOpBuf.cbValue     = 0;
         pThis->NVRAM.VarOpBuf.cchName     = 0;
         pThis->NVRAM.pCurVar              = NULL;
         pThis->NVRAM.u32Status            = EFI_VARIABLE_OP_STATUS_NOT_FOUND;
-        LogFlow(("EFI: Variable query -> NOT_FOUND\n"));
     }
 }
 
@@ -521,7 +550,7 @@ static int nvramWriteVariableOpQuery(PDEVEFI pThis)
                                               pThis->NVRAM.VarOpBuf.szName,
                                               &pThis->NVRAM.VarOpBuf.uuid,
                                               &pEfiVar);
-    nvramWriteVariableOpQueryCopyResult(pThis, RT_SUCCESS(rc) ? pEfiVar : NULL);
+    nvramWriteVariableOpQueryCopyResult(pThis, RT_SUCCESS(rc) ? pEfiVar : NULL, false /*fEnumQuery*/);
     return VINF_SUCCESS;
 }
 
@@ -541,7 +570,7 @@ static int nvramWriteVariableOpQueryNext(PDEVEFI pThis)
         pEfiVar = RTListGetNext(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode);
     else
         pEfiVar = RTListGetFirst(&pThis->NVRAM.VarList, EFIVAR, ListNode);
-    nvramWriteVariableOpQueryCopyResult(pThis, pEfiVar);
+    nvramWriteVariableOpQueryCopyResult(pThis, pEfiVar, true /* fEnumQuery */);
     return VINF_SUCCESS;
 }
 
@@ -553,9 +582,9 @@ static int nvramWriteVariableOpQueryNext(PDEVEFI pThis)
  */
 static int nvramWriteVariableOpAdd(PDEVEFI pThis)
 {
-    LogRel(("EFI_VARIABLE_OP_ADD: %RTuuid::'%s' fAttributes=%#x abValue=%.*Rhxs\n",
-            &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes,
-            pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
+    Log(("EFI_VARIABLE_OP_ADD: %RTuuid::'%s' fAttributes=%#x abValue=%.*Rhxs\n",
+         &pThis->NVRAM.VarOpBuf.uuid, pThis->NVRAM.VarOpBuf.szName, pThis->NVRAM.VarOpBuf.fAttributes,
+         pThis->NVRAM.VarOpBuf.cbValue, pThis->NVRAM.VarOpBuf.abValue));
 
     /*
      * Validate and adjust the input a little before we start.
@@ -568,7 +597,7 @@ static int nvramWriteVariableOpAdd(PDEVEFI pThis)
         pThis->NVRAM.u32Status = EFI_VARIABLE_OP_STATUS_ERROR;
         return VINF_SUCCESS;
     }
-    pThis->NVRAM.VarOpBuf.cchName = RTStrNLen(pThis->NVRAM.VarOpBuf.szName, sizeof(pThis->NVRAM.VarOpBuf.szName));
+    pThis->NVRAM.VarOpBuf.cchName = (uint32_t)RTStrNLen(pThis->NVRAM.VarOpBuf.szName, sizeof(pThis->NVRAM.VarOpBuf.szName));
 
     /*
      * Look it up and see what to do.
@@ -754,7 +783,7 @@ static int nvramWriteVariableParam(PDEVEFI pThis, uint32_t u32Value)
             /* Currently simplifying this to UCS2, i.e. no surrogates. */
             if (pThis->NVRAM.offOpBuffer == 0)
                 RT_ZERO(pThis->NVRAM.VarOpBuf.szName);
-            size_t cbUtf8 = RTStrCpSize(u32Value);
+            uint32_t cbUtf8 = (uint32_t)RTStrCpSize(u32Value);
             if (pThis->NVRAM.offOpBuffer + cbUtf8 < sizeof(pThis->NVRAM.VarOpBuf.szName))
             {
                 RTStrPutCp(&pThis->NVRAM.VarOpBuf.szName[pThis->NVRAM.offOpBuffer], u32Value);
@@ -878,7 +907,7 @@ static int nvramReadVariableOp(PDEVEFI pThis,  uint32_t *pu32, unsigned cb)
 
         case EFI_VM_VARIABLE_OP_NAME_LENGTH_UTF16:
             /* Lazy bird: ASSUME no surrogate pairs. */
-            *pu32 = RTStrUniLen(pThis->NVRAM.VarOpBuf.szName);
+            *pu32 = (uint32_t)RTStrUniLen(pThis->NVRAM.VarOpBuf.szName);
             break;
 
         case EFI_VM_VARIABLE_OP_VALUE:
@@ -1140,6 +1169,137 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
     }
 }
 
+
+#ifdef IN_RING3
+static void efiVBoxDbgScript(PDEVEFI pThis, const char *pszFormat, ...)
+{
+# ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
+    PRTSTREAM pStrm;
+    int rc2 = RTStrmOpen("./DevEFI.VBoxDbg", "a", &pStrm);
+    if (RT_SUCCESS(rc2))
+    {
+        va_list va;
+        va_start(va, pszFormat);
+        RTStrmPrintfV(pStrm, pszFormat, va);
+        va_end(va);
+        RTStrmClose(pStrm);
+    }
+# endif
+}
+#endif /* IN_RING3 */
+
+
+/**
+ * Handles writes to the image event port.
+ *
+ * @returns VBox status suitable for I/O port write handler.
+ *
+ * @param   pThis               The EFI state.
+ * @param   u32                 The value being written.
+ * @param   cb                  The size of the value.
+ */
+static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
+{
+    switch (u32 & EFI_IMAGE_EVT_CMD_MASK)
+    {
+        case EFI_IMAGE_EVT_CMD_START_LOAD32:
+        case EFI_IMAGE_EVT_CMD_START_LOAD64:
+        case EFI_IMAGE_EVT_CMD_START_UNLOAD32:
+        case EFI_IMAGE_EVT_CMD_START_UNLOAD64:
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) == 0);
+
+            /* Reset the state. */
+            RT_ZERO(pThis->ImageEvt);
+            pThis->ImageEvt.uEvt = (uint8_t)u32; Assert(pThis->ImageEvt.uEvt == u32);
+            return VINF_SUCCESS;
+
+        case EFI_IMAGE_EVT_CMD_COMPLETE:
+        {
+#ifdef IN_RING3
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) == 0);
+
+            /* For now, just log it. */
+            static uint64_t s_cImageEvtLogged = 0;
+            if (s_cImageEvtLogged < 2048)
+            {
+                s_cImageEvtLogged++;
+                switch (pThis->ImageEvt.uEvt)
+                {
+                    /* ASSUMES the name ends with .pdb and the image file ends with .efi! */
+                    case EFI_IMAGE_EVT_CMD_START_LOAD32:
+                        LogRel(("EFI: VBoxDbg> loadimage32 '%.*s.efi' %#llx LB %#llx\n",
+                                pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
+                        if (pThis->ImageEvt.offName > 4)
+                            efiVBoxDbgScript(pThis, "loadimage32 '%.*s.efi' %#llx\n",
+                                             pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0);
+                        break;
+                    case EFI_IMAGE_EVT_CMD_START_LOAD64:
+                        LogRel(("EFI: VBoxDbg> loadimage64 '%.*s.efi' %#llx LB %#llx\n",
+                                pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
+                        if (pThis->ImageEvt.offName > 4)
+                            efiVBoxDbgScript(pThis, "loadimage64 '%.*s.efi' %#llx\n",
+                                             pThis->ImageEvt.offName - 4, pThis->ImageEvt.szName, pThis->ImageEvt.uAddr0);
+                        break;
+                    case EFI_IMAGE_EVT_CMD_START_UNLOAD32:
+                    case EFI_IMAGE_EVT_CMD_START_UNLOAD64:
+                    {
+                        LogRel(("EFI: VBoxDbg> unload '%.*s.efi' # %#llx LB %#llx\n",
+                                pThis->ImageEvt.offName - 4 - pThis->ImageEvt.offNameLastComponent,
+                                &pThis->ImageEvt.szName[pThis->ImageEvt.offNameLastComponent],
+                                pThis->ImageEvt.uAddr0, pThis->ImageEvt.cb0));
+                        if (pThis->ImageEvt.offName > 4)
+                            efiVBoxDbgScript(pThis, "unload '%.*s.efi'\n",
+                                             pThis->ImageEvt.offName - 4 - pThis->ImageEvt.offNameLastComponent,
+                                             &pThis->ImageEvt.szName[pThis->ImageEvt.offNameLastComponent]);
+                        break;
+                    }
+                }
+            }
+            return VINF_SUCCESS;
+#else
+            return VINF_IOM_R3_IOPORT_WRITE;
+#endif
+        }
+
+        case EFI_IMAGE_EVT_CMD_ADDR0:
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= UINT16_MAX);
+            pThis->ImageEvt.uAddr0 <<= 16;
+            pThis->ImageEvt.uAddr0 |= EFI_IMAGE_EVT_GET_PAYLOAD_U16(u32);
+            return VINF_SUCCESS;
+
+        case EFI_IMAGE_EVT_CMD_ADDR1:
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= UINT16_MAX);
+            pThis->ImageEvt.uAddr0 <<= 16;
+            pThis->ImageEvt.uAddr0 |= EFI_IMAGE_EVT_GET_PAYLOAD_U16(u32);
+            return VINF_SUCCESS;
+
+        case EFI_IMAGE_EVT_CMD_SIZE0:
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= UINT16_MAX);
+            pThis->ImageEvt.cb0 <<= 16;
+            pThis->ImageEvt.cb0  |= EFI_IMAGE_EVT_GET_PAYLOAD_U16(u32);
+            return VINF_SUCCESS;
+
+        case EFI_IMAGE_EVT_CMD_NAME:
+            AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= 0x7f);
+            if (pThis->ImageEvt.offName + 1 < sizeof(pThis->ImageEvt.szName))
+            {
+                char ch = EFI_IMAGE_EVT_GET_PAYLOAD_U8(u32);
+                if (ch == '\\')
+                    ch = '/';
+                pThis->ImageEvt.szName[pThis->ImageEvt.offName++] = ch;
+                if (ch == '/' || ch == ':')
+                    pThis->ImageEvt.offNameLastComponent = pThis->ImageEvt.offName;
+            }
+            else
+                Log(("EFI: Image name overflow\n"));
+            return VINF_SUCCESS;
+    }
+
+    Log(("EFI: Unknown image event: %#x (cb=%d)\n", u32, cb));
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Port I/O Handler for IN operations.
  *
@@ -1186,15 +1346,42 @@ static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
            return VINF_IOM_R3_IOPORT_READ;
 #endif
 
-        case EFI_VARIABLE_OP:
+        case EFI_PORT_VARIABLE_OP:
             return nvramReadVariableOp(pThis, pu32, cb);
 
-        case EFI_VARIABLE_PARAM:
+        case EFI_PORT_VARIABLE_PARAM:
+        case EFI_PORT_DEBUG_POINT:
+        case EFI_PORT_IMAGE_EVENT:
             *pu32 = UINT32_MAX;
             return VINF_SUCCESS;
     }
 
     return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/**
+ * Translates a debug point value into a string for logging.
+ *
+ * @returns read-only string
+ * @param   enmDbgPoint         Valid debug point value.
+ */
+static const char *efiDbgPointName(EFIDBGPOINT enmDbgPoint)
+{
+    switch (enmDbgPoint)
+    {
+        case EFIDBGPOINT_SEC_PREMEM:    return "SEC_PREMEM";
+        case EFIDBGPOINT_SEC_POSTMEM:   return "SEC_POSTMEM";
+        case EFIDBGPOINT_DXE_CORE:      return "DXE_CORE";
+        case EFIDBGPOINT_SMM:           return "SMM";
+        case EFIDBGPOINT_SMI_ENTER:     return "SMI_ENTER";
+        case EFIDBGPOINT_SMI_EXIT:      return "SMI_EXIT";
+        case EFIDBGPOINT_GRAPHICS:      return "GRAPHICS";
+        case EFIDBGPOINT_DXE_AP:        return "DXE_AP";
+        default:
+            AssertFailed();
+            return "Unknown";
+    }
 }
 
 
@@ -1238,25 +1425,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             {
                 pThis->szMsg[pThis->iMsg] = '\0';
                 if (pThis->iMsg)
-                {
                     Log(("efi: %s\n", pThis->szMsg));
-#ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
-                    const char *pszVBoxDbg = strstr(pThis->szMsg, "VBoxDbg> ");
-                    if (pszVBoxDbg)
-                    {
-                        pszVBoxDbg += sizeof("VBoxDbg> ") - 1;
-
-                        PRTSTREAM pStrm;
-                        int rc2 = RTStrmOpen("./DevEFI.VBoxDbg", "a", &pStrm);
-                        if (RT_SUCCESS(rc2))
-                        {
-                            RTStrmPutStr(pStrm, pszVBoxDbg);
-                            RTStrmPutCh(pStrm, '\n');
-                            RTStrmClose(pStrm);
-                        }
-                    }
-#endif
-                }
                 pThis->iMsg = 0;
             }
             else
@@ -1279,26 +1448,36 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             {
                 case EFI_PANIC_CMD_BAD_ORG: /* Legacy */
                 case EFI_PANIC_CMD_THUNK_TRAP:
-                    LogRel(("EFI Panic: Unexpected trap!!\n"));
-#ifdef VBOX_STRICT
+#ifdef IN_RING3
+                    LogRel(("EFI: Panic! Unexpected trap!!\n"));
+# ifdef VBOX_STRICT
                     return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: Unexpected trap during early bootstrap!\n");
-#else
+# else
                     AssertReleaseMsgFailed(("Unexpected trap during early EFI bootstrap!!\n"));
-#endif
+# endif
                     break;
+#else
+                    return VINF_IOM_R3_IOPORT_WRITE;
+#endif
 
                 case EFI_PANIC_CMD_START_MSG:
+                    LogRel(("Receiving EFI panic...\n"));
                     pThis->iPanicMsg = 0;
                     pThis->szPanicMsg[0] = '\0';
                     break;
 
                 case EFI_PANIC_CMD_END_MSG:
-                    LogRel(("EFI Panic: %s\n", pThis->szPanicMsg));
-#ifdef VBOX_STRICT
+#ifdef IN_RING3
+                    LogRel(("EFI: Panic! %s\n", pThis->szPanicMsg));
+# ifdef VBOX_STRICT
                     return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: %s\n", pThis->szPanicMsg);
-#else
+# else
                     return VERR_INTERNAL_ERROR;
+# endif
+#else
+                    return VINF_IOM_R3_IOPORT_WRITE;
 #endif
+
 
                 default:
                     if (    u32 >= EFI_PANIC_CMD_MSG_FIRST
@@ -1325,7 +1504,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             break;
         }
 
-        case EFI_VARIABLE_OP:
+        case EFI_PORT_VARIABLE_OP:
         {
             /* clear buffer index */
             if (u32 >= (uint32_t)EFI_VM_VARIABLE_OP_MAX)
@@ -1339,8 +1518,32 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
             break;
         }
 
-        case EFI_VARIABLE_PARAM:
+        case EFI_PORT_VARIABLE_PARAM:
             rc = nvramWriteVariableParam(pThis, u32);
+            break;
+
+        case EFI_PORT_DEBUG_POINT:
+#ifdef IN_RING3
+            if (u32 > EFIDBGPOINT_INVALID && u32 < EFIDBGPOINT_END)
+            {
+                /* For now, just log it. */
+                static uint64_t s_cDbgPointLogged = 0;
+                if (s_cDbgPointLogged < 1024)
+                {
+                    s_cDbgPointLogged++;
+                    LogRel(("EFI: debug point %s\n", efiDbgPointName((EFIDBGPOINT)u32)));
+                }
+                rc = VINF_SUCCESS;
+            }
+            else
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Invalid debug point %#x\n", u32);
+            break;
+#else
+            return VINF_IOM_R3_IOPORT_WRITE;
+#endif
+
+        case EFI_PORT_IMAGE_EVENT:
+            rc = efiPortImageEventWrite(pThis, u32, cb);
             break;
 
         default:
@@ -1437,7 +1640,7 @@ static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
                 rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
                 LogRel(("EFI: Loaded invalid variable value length %#x\n", pEfiVar->cbValue));
             }
-            size_t cchVarName = RTStrNLen(pEfiVar->szName, sizeof(pEfiVar->szName));
+            uint32_t cchVarName = (uint32_t)RTStrNLen(pEfiVar->szName, sizeof(pEfiVar->szName));
             if (cchVarName >= sizeof(pEfiVar->szName))
             {
                 rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
@@ -1587,6 +1790,13 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     pThis->szMsg[0] = '\0';
     pThis->iPanicMsg = 0;
     pThis->szPanicMsg[0] = '\0';
+
+#ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
+    /*
+     * Zap the debugger script
+     */
+    RTFileDelete("./DevEFI.VBoxDbg");
+#endif
 }
 
 
@@ -1999,7 +2209,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                    N_("Configuration error: Querying \"BootArgs\" as a string failed"));
 
     //strcpy(pThis->szBootArgs, "-v keepsyms=1 io=0xf");
-    LogRel(("EFI boot args: %s\n", pThis->szBootArgs));
+    LogRel(("EFI: boot args = %s\n", pThis->szBootArgs));
 
     /*
      * Get device props.
@@ -2011,7 +2221,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                    N_("Configuration error: Querying \"DeviceProps\" as a string failed"));
     if (pszDeviceProps)
     {
-        LogRel(("EFI device props: %s\n", pszDeviceProps));
+        LogRel(("EFI: device props = %s\n", pszDeviceProps));
         rc = efiParseDeviceString(pThis, pszDeviceProps);
         MMR3HeapFree(pszDeviceProps);
         if (RT_FAILURE(rc))
@@ -2054,13 +2264,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->cxUgaResolution = 1024;
         pThis->cyUgaResolution = 768;
     }
-
-#ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
-    /*
-     * Zap the debugger script
-     */
-    RTFileDelete("./DevEFI.VBoxDbg");
-#endif
 
     /*
      * Load firmware volume and thunk ROM.

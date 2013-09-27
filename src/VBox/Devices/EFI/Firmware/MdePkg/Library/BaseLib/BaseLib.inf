@@ -298,6 +298,19 @@
   X86DisablePaging64.c
   X86DisablePaging32.c
 
+# VBox - enable this for non-optimized IA32 builds.
+#  # Compiler helper (C RunTime) functions
+#  ../../../StdLib/LibC/CRT/Ia32/llmul.c          | MSFT    # __allmul
+#  ../../../StdLib/LibC/CRT/Ia32/llshl.c          | MSFT    # __allshl
+#  ../../../StdLib/LibC/CRT/Ia32/ulldiv.c         | MSFT    # __aulldiv
+#  ../../../StdLib/LibC/CRT/Ia32/ullrem.c         | MSFT    # __aullrem
+#  ../../../StdLib/LibC/CRT/Ia32/ullshr.c         | MSFT    # __aullshr
+#  ../../../StdLib/LibC/CRT/Ia32/lldiv.c          | MSFT    # __alldiv
+#  ../../../StdLib/LibC/CRT/Ia32/llrem.c          | MSFT    # __allrem
+#  ../../../StdLib/LibC/CRT/Ia32/lldvrm.c         | MSFT    # __alldvrm
+#  ../../../StdLib/LibC/CRT/Ia32/ulldvrm.c        | MSFT    # __aulldvrm
+# VBox - end
+
 [Sources.X64]
   X64/Thunk16.asm
   X64/CpuPause.asm
@@ -489,3 +502,8 @@
   gEfiMdePkgTokenSpaceGuid.PcdMaximumAsciiStringLength
   gEfiMdePkgTokenSpaceGuid.PcdMaximumUnicodeStringLength
   gEfiMdePkgTokenSpaceGuid.PcdVerifyNodeInList
+
+# VBox - enable this for non-optimized IA32 builds.
+#[BuildOptions]
+# MSFT:*_*_*_CC_FLAGS = /GL-
+# VBox - end
