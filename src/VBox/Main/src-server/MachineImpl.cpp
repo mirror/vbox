@@ -10817,13 +10817,13 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.deviceType = pAttach->getType();
         dev.lPort = pAttach->getPort();
         dev.lDevice = pAttach->getDevice();
+        dev.fPassThrough = pAttach->getPassthrough();
         if (pMedium)
         {
             if (pMedium->isHostDrive())
                 dev.strHostDriveSrc = pMedium->getLocationFull();
             else
                 dev.uuid = pMedium->getId();
-            dev.fPassThrough = pAttach->getPassthrough();
             dev.fTempEject = pAttach->getTempEject();
             dev.fNonRotational = pAttach->getNonRotational();
             dev.fDiscard = pAttach->getDiscard();
