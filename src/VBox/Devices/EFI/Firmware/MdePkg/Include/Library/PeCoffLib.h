@@ -6,10 +6,10 @@
   and can be ported easily to any environment.
   
 Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under 
-the terms and conditions of the BSD License that accompanies this distribution.  
+This program and the accompanying materials are licensed and made available under
+the terms and conditions of the BSD License that accompanies this distribution.
 The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.                                            
+http://opensource.org/licenses/bsd-license.php.
 
 THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,                     
 WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.             
@@ -59,9 +59,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
                           On output, the number of bytes actually read.
   @param  Buffer          Output buffer that contains the data read from the PE/COFF image.
   
-  @retval RETURN_SUCCESS            The specified portion of the PE/COFF image was 
-                                    read and the size 
-  @retval RETURN_DEVICE_ERROR       The specified portion of the PE/COFF image 
+  @retval RETURN_SUCCESS            The specified portion of the PE/COFF image was
+                                    read and the size
+  @retval RETURN_DEVICE_ERROR       The specified portion of the PE/COFF image
                                     could not be read due to a device error.
 
 **/
@@ -121,7 +121,7 @@ typedef struct {
   UINT32                            SectionAlignment;
   ///
   /// Set by PeCoffLoaderGetImageInfo() to offset to the PE/COFF header.
-  /// If the PE/COFF image does not start with a DOS header, this value is zero. 
+  /// If the PE/COFF image does not start with a DOS header, this value is zero.
   /// Otherwise, it's the offset to the PE/COFF header.
   ///
   UINT32                            PeCoffHeaderOffset;
@@ -192,10 +192,20 @@ typedef struct {
   /// Otherwise, the entry remains to be 0.
   ///
   PHYSICAL_ADDRESS                  HiiResourceData;
+#ifdef VBOX /* Mach-O FAT support. */
+  ///
+  /// Indicates that this is a FAT image.
+  ///
+  BOOLEAN                           IsFat;
+  ///
+  /// The EFI image offset within the FAT file.
+  ///
+  UINT32                            FatOffset;
+#endif
   ///
   /// Private storage for implementation specific data. 
   ///
-  UINT64                            Context;      
+  UINT64                            Context;
 } PE_COFF_LOADER_IMAGE_CONTEXT;
 
 /**
@@ -213,8 +223,8 @@ typedef struct {
   The ImageRead and Handle fields of ImageContext structure must be valid prior 
   to invoking this service.
 
-  @param  ImageContext              The pointer to the image context structure that 
-                                    describes the PE/COFF image that needs to be 
+  @param  ImageContext              The pointer to the image context structure that
+                                    describes the PE/COFF image that needs to be
                                     examined by this function.
 
   @retval RETURN_SUCCESS            The information on the PE/COFF image was collected.
@@ -322,7 +332,7 @@ PeCoffLoaderLoadImage (
                             On output, the number of bytes actually read.
   @param  Buffer            Output buffer that contains the data read from the PE/COFF image.
 
-  @retval RETURN_SUCCESS    The data is read from FileOffset from the Handle into 
+  @retval RETURN_SUCCESS    The data is read from FileOffset from the Handle into
                             the buffer.
 **/
 RETURN_STATUS
@@ -349,7 +359,7 @@ PeCoffLoaderImageReadFromMemory (
   cache(s) in hardware, then the caller is responsible for performing cache maintenance operations
   prior to transferring control to a PE/COFF image that is loaded using this library.
 
-  @param  ImageBase          The base address of a PE/COFF image that has been loaded 
+  @param  ImageBase          The base address of a PE/COFF image that has been loaded
                              and relocated into system memory.
   @param  VirtImageBase      The request virtual address that the PE/COFF image is to
                              be fixed up for.
