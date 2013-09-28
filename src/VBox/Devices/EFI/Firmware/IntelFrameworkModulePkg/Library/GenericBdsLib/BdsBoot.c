@@ -18,6 +18,14 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 BOOLEAN mEnumBootDevice = FALSE;
 EFI_HII_HANDLE gBdsLibStringPackHandle = NULL;
 
+#ifdef VBOX
+/** Array of EFI boot files.  */
+CHAR16 CONST *maBdsLibBootFiles[] = {
+  VBOX_EFI_APPLE_MEDIA_FILE_NAME,
+  EFI_REMOVABLE_MEDIA_FILE_NAME,
+};
+#endif
+
 /**
   The constructor function register UNI strings into imageHandle.
 
@@ -472,6 +480,23 @@ BdsFindUsbDevice (
         //  machinename is ia32, ia64, x64, ...
         //
         VBoxLogFlowFuncMark();
+#ifdef VBOX /* We look for serveral files because of apple. */
+        {
+          INT32 IdxFile;
+          for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
+            FullDevicePath = FileDevicePath(Handle, maBdsLibBootFiles[IdxFile]);
+            if (FullDevicePath != NULL) {
+              Status = gBS->LoadImage(TRUE, gImageHandle, FullDevicePath, NULL, 0, &ImageHandle);
+              if (!EFI_ERROR(Status)) {
+                break;
+              }
+            }
+          }
+          if (!EFI_ERROR(Status)) {
+            continue;
+          }
+        }
+#else  /* !VBOX */
         FullDevicePath = FileDevicePath (Handle, EFI_REMOVABLE_MEDIA_FILE_NAME);
         if (FullDevicePath != NULL) {
           REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
@@ -493,6 +518,7 @@ BdsFindUsbDevice (
         } else {
           continue;
         }
+#endif /* !VBOX */
       }
       break;
     }
@@ -636,8 +662,8 @@ BdsLibBootViaBootOption (
   //
   PERF_END(NULL, "BDS", NULL, 0);
 
-  DEBUG((DEBUG_INFO, "BdsLibBootViaBootOption: BootCurrent=0x%x OptionName=%s Description=%s StatusString=%s Attribute=0x%x LoadOptionsSize=0x%x\n",
-         Option->BootCurrent, Option->OptionName, Option->Description, Option->StatusString, Option->Attribute, Option->LoadOptionsSize));
+  VBoxLog(("BdsLibBootViaBootOption: BootCurrent=0x%x OptionName=%s Description=%s StatusString=%s Attribute=0x%x LoadOptionsSize=0x%x\n",
+           Option->BootCurrent, Option->OptionName, Option->Description, Option->StatusString, Option->Attribute, Option->LoadOptionsSize));
 
   *ExitDataSize = 0;
   *ExitData     = NULL;
@@ -779,76 +805,83 @@ BdsLibBootViaBootOption (
       if (Handle == NULL) {
         goto Done;
       }
+#ifdef VBOX /* We have more options to try out because of apple. */
+      //
+      // Try parse any config="folder-path/" stuff found in the optional
+      // section of the boot option and attempt to load boot.efi it.
+      //
+      if (Option->LoadOptionsSize) {
+        /* First, see the there is a config=stuff in the load options. */
+        VBoxLogFlowFuncMarkVar(Option->LoadOptions, "%s");
+        /** @todo Please past and example of this here! */
+        if (StrnCmp(L"config=", (CHAR16 *)Option->LoadOptions, 7) == 0) {
+          EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
+          CHAR16 *pszConfigValue = &((CHAR16 *)Option->LoadOptions)[7];
+          CHAR16 *pszFolder = NULL;
+          CHAR16 *pszTemp0 = NULL;
+          CHAR16 *pszTemp1 = NULL;
+          BOOLEAN fQuoted = (pszConfigValue[0] == L'\"');
+          pszTemp0 = &pszConfigValue[fQuoted ? 2 : 1];
+          pszTemp1 = pszTemp0;
+          VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+          VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+          pszFolder = AllocateZeroPool((StrLen(pszConfigValue) + StrLen(L"\\boot.efi") + 1) * sizeof(UINT16));
+          while (pszTemp0) {
+              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+              VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+              pszFolder = StrnCat(pszFolder, pszTemp1, StrLen(pszTemp1) - StrLen(pszTemp0));
+              pszTemp1 = pszTemp0;
+              pszFolder = StrCat(pszFolder, L"\\");
+              VBoxLogFlowFuncMarkVar(pszFolder, "%s");
+              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+              VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
+              pszTemp0 = StrStr(&pszTemp0[1], L"\\");
+              VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
+          }
+          pszFolder = StrCat(pszFolder, L"boot.efi");
+          VBoxLogFlowFuncMarkVar(pszFolder,"%s");
+
+          Status = gBS->HandleProtocol(Handle, &gEfiSimpleFileSystemProtocolGuid, &Volume);
+          VBoxLogFlowFuncMarkRC(Status);
+          if (!EFI_ERROR(Status)) {
+            FilePath = FileDevicePath((EFI_HANDLE)Handle, pszFolder);
+            if (FilePath) {
+              VBoxLogFlowFuncMarkVar(DevicePathToStr(FilePath), "%s");
+              REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
+              Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
+              VBoxLogFlowFuncMarkRC(Status);
+              /** @todo Probably leaking memory here! */
+            }
+          }
+        }
+      }
+
+      //
+      // Try load any of the default boot files.
+      //
+      if (EFI_ERROR(Status)) {
+        UINT32 IdxFile;
+        for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
+          FilePath = FileDevicePath(Handle, maBdsLibBootFiles[IdxFile]);
+          if (FilePath) {
+            VBoxLog(("BdsLibBootViaBootOption: Trying to load '%s'...\n", DevicePathToStr(FilePath)));
+            REPORT_STATUS_CODE(EFI_PROGRESS_CODE, PcdGet32(PcdProgressCodeOsLoaderLoad));
+            Status = gBS->LoadImage(TRUE, gImageHandle, FilePath, NULL, 0, &ImageHandle );
+            if (!EFI_ERROR(Status)) {
+              VBoxLog(("BdsLibBootViaBootOption: Successfully loaded boot file: %s\n", DevicePathToStr(FilePath)));
+              break;
+            }
+            VBoxLog(("BdsLibBootViaBootOption: Failed loading '%s': 0x%x(%r)\n", DevicePathToStr(FilePath), Status, Status));
+            FilePath = NULL; /** @todo Probably leaking memory here! */
+          }
+        }
+      }
+#else  /* !VBOX */
       //
       // Load the default boot file \EFI\BOOT\boot{machinename}.EFI from removable Media
       //  machinename is ia32, ia64, x64, ...
       //
-#ifdef VBOX
-    /* @todo: improve Mac Detection */
-    FilePath = NULL;
-    if (   Option->LoadOptionsSize
-        || StrnCmp(Option->OptionName, L"Boot0080", 8) == 0)
-    {
-        if (Option->LoadOptionsSize)
-        {
-            VBoxLogFlowFuncMarkVar(Option->LoadOptions, "%s");
-            if (StrnCmp(L"config=", (CHAR16 *)Option->LoadOptions, 7) == 0)
-            {
-                EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
-                CHAR16 *pszConfigValue = &((CHAR16 *)Option->LoadOptions)[7];
-                CHAR16 *pszFolder = NULL;
-                CHAR16 *pszTemp0 = NULL;
-                CHAR16 *pszTemp1 = NULL;
-                BOOLEAN fQouted = (pszConfigValue[0] == L'\"');
-                pszTemp0 = &pszConfigValue[fQouted ? 2 : 1];
-                pszTemp1 = pszTemp0;
-                VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-                VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-                pszFolder = AllocateZeroPool((StrLen(pszConfigValue) + StrLen(L"\\boot.efi") + 1) * sizeof(UINT16));
-                while (pszTemp0)
-                {
-                    VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-                    VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-                    pszFolder = StrnCat(pszFolder, pszTemp1, StrLen(pszTemp1) - StrLen(pszTemp0));
-                    pszTemp1 = pszTemp0;
-                    pszFolder = StrCat(pszFolder, L"\\");
-                    VBoxLogFlowFuncMarkVar(pszFolder, "%s");
-                    VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-                    VBoxLogFlowFuncMarkVar(pszTemp1, "%s");
-                    pszTemp0 = StrStr(&pszTemp0[1], L"\\");
-                    VBoxLogFlowFuncMarkVar(pszTemp0, "%s");
-                }
-                pszFolder = StrCat(pszFolder, L"boot.efi");
-                VBoxLogFlowFuncMarkVar(pszFolder,"%s");
-
-                Status = gBS->HandleProtocol (
-                                Handle,
-                                &gEfiSimpleFileSystemProtocolGuid,
-                                (VOID *) &Volume);
-                VBoxLogFlowFuncMarkRC(Status);
-                if (!EFI_ERROR(Status))
-                {
-                    FilePath = FileDevicePath ((EFI_HANDLE)Handle, pszFolder);
-                    VBoxLogFlowFuncMarkVar(DevicePathToStr(FilePath), "%s");
-                }
-            }
-        }
-        else
-        {
-            /* Boot0080 hasn't got hint how detect file path */
-            VBoxLogFlowFuncMarkVar(Handle, "%p");
-            FilePath = FileDevicePath (Handle, L"\\System\\Library\\CoreServices\\boot.efi");
-            if (FilePath)
-            {
-                VBoxLogFlowFuncMarkVar(DevicePathToStr(FilePath), "%s");
-            }
-        }
-    }
-    if (!FilePath)
-        FilePath = FileDevicePath (Handle, EFI_REMOVABLE_MEDIA_FILE_NAME);
-#else
-     FilePath = FileDevicePath (Handle, EFI_REMOVABLE_MEDIA_FILE_NAME);
-#endif
+      FilePath = FileDevicePath (Handle, EFI_REMOVABLE_MEDIA_FILE_NAME);
       if (FilePath != NULL) {
         REPORT_STATUS_CODE (EFI_PROGRESS_CODE, PcdGet32 (PcdProgressCodeOsLoaderLoad));
         Status = gBS->LoadImage (
@@ -859,7 +892,6 @@ BdsLibBootViaBootOption (
                         0,
                         &ImageHandle
                         );
-       VBoxLogFlowFuncMarkRC(Status);
        if (EFI_ERROR (Status)) {
           //
           // The DevicePath failed, and it's not a valid
@@ -868,6 +900,7 @@ BdsLibBootViaBootOption (
           goto Done;
         }
       }
+#endif /* !VBOX */
     }
 
     if (EFI_ERROR (Status)) {
@@ -1572,7 +1605,7 @@ BdsLibEnumerateAllBootOption (
   CHAR16                        Buffer[40];
   EFI_HANDLE                    *FileSystemHandles;
   UINTN                         NumberFileSystemHandles;
-  BOOLEAN                       NeedDelete = TRUE;
+  BOOLEAN                       NeedDelete;
   EFI_IMAGE_DOS_HEADER          DosHeader;
   CHAR8                         *PlatLang;
   CHAR8                         *LastLang;
@@ -1752,60 +1785,47 @@ BdsLibEnumerateAllBootOption (
         &FileSystemHandles
         );
   for (Index = 0; Index < NumberFileSystemHandles; Index++) {
-#ifdef VBOX
-    BOOLEAN fLoaded = FALSE;
-#endif
     Status = gBS->HandleProtocol (
                     FileSystemHandles[Index],
                     &gEfiBlockIoProtocolGuid,
                     (VOID **) &BlkIo
                     );
-     if (!EFI_ERROR (Status)) {
+    if (!EFI_ERROR (Status)) {
       //
       //  Skip if the file system handle supports a BlkIo protocol,
       //
-#if 0 /* VBox */
-        NeedDelete = TRUE;
-        Hdr.Union  = &HdrData;
-        Status     = BdsLibGetImageHeader (
-                       FileSystemHandles[Index],
-                       L"\\System\\Library\\CoreServices\\boot.efi",
-                       NULL,
-                       Hdr);
-        LogFlowFuncMarkRC(Status);
-        if (EFI_ERROR(Status))
-            continue;
-        else
-        {
-            fLoaded = TRUE;
-        }
-#else
       continue;
-#endif
     }
 
     //
     // Do the removable Media thing. \EFI\BOOT\boot{machinename}.EFI
     //  machinename is ia32, ia64, x64, ...
     //
-#ifdef VBOX
-    VBoxLogFlowFuncMark();
-    if (!fLoaded)
-#endif
+#ifdef VBOX /* We try serveral variants because of apple. */
     {
+      UINT32 IdxFile;
+      NeedDelete = TRUE;
+      for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
         Hdr.Union  = &HdrData;
-        NeedDelete = TRUE;
-        Status     = BdsLibGetImageHeader (
-                       FileSystemHandles[Index],
-                       EFI_REMOVABLE_MEDIA_FILE_NAME,
-                       &DosHeader,
-                       Hdr
-                       );
+        Status = BdsLibGetImageHeader(FileSystemHandles[Index], (CHAR16 *)maBdsLibBootFiles[IdxFile], &DosHeader, Hdr);
+        if (!EFI_ERROR(Status)) {
+          break;
+        }
+      }
     }
-    if (   !EFI_ERROR (Status) 
-        && (   (   EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine)
-               && Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION)
-            || !fLoaded)) { /* VBox */
+#else  /* !VBOX */
+    Hdr.Union  = &HdrData;
+    NeedDelete = TRUE;
+    Status     = BdsLibGetImageHeader (
+                   FileSystemHandles[Index],
+                   EFI_REMOVABLE_MEDIA_FILE_NAME,
+                   &DosHeader,
+                   Hdr
+                   );
+#endif /* !VBOX */
+    if (!EFI_ERROR (Status) &&
+        EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
+        Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
       NeedDelete = FALSE;
     }
 
@@ -2181,19 +2201,33 @@ BdsLibGetBootableHandle (
     // Check whether the device path of boot option is part of the  SimpleFileSystem handle's device path
     //
     if (Size <= TempSize && CompareMem (TempDevicePath, UpdatedDevicePath, Size)==0) {
+#ifdef VBOX
+      //
+      // Try detect image headers for one of the standard boot files.
+      //
+      UINT32 IdxFile;
+      Hdr.Union = &HdrData;
+      for (IdxFile = 0; IdxFile < sizeof(maBdsLibBootFiles) / sizeof(maBdsLibBootFiles[0]); IdxFile++) {
+        Status = BdsLibGetImageHeader(SimpleFileSystemHandles[Index], (CHAR16 *)maBdsLibBootFiles[IdxFile], &DosHeader, Hdr);
+        VBoxLogFlowFuncMarkRC(Status);
+        if (!EFI_ERROR(Status)) {
+          break;
+        }
+        Hdr.Union = &HdrData;
+      }
+#else  /* !VBOX */
       //
       // Load the default boot file \EFI\BOOT\boot{machinename}.EFI from removable Media
       //  machinename is ia32, ia64, x64, ...
       //
       Hdr.Union = &HdrData;
-      VBoxLogFlowFuncMark();
       Status = BdsLibGetImageHeader (
                  SimpleFileSystemHandles[Index],
                  EFI_REMOVABLE_MEDIA_FILE_NAME,
                  &DosHeader,
                  Hdr
                  );
-      VBoxLogFlowFuncMarkRC(Status);
+#endif /* !VBOX */
       if (!EFI_ERROR (Status) &&
         EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Hdr.Pe32->FileHeader.Machine) &&
         Hdr.Pe32->OptionalHeader.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION) {
@@ -2258,7 +2292,7 @@ BdsLibGetBootableHandle (
         }
 # endif
     }
-#endif
+#endif /* VBOX */
   }
 
   FreePool(DupDevicePath);
@@ -2535,6 +2569,9 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   EFI_DEVICE_PATH_PROTOCOL  *LastDeviceNode;
   EFI_BLOCK_IO_PROTOCOL     *BlockIo;
 
+  VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: DevPath=%s CheckMedia=%d Description=%s\n",
+           DevicePathToStr(DevPath), CheckMedia, Description));
+
   TempDevicePath = DevPath;
   LastDeviceNode = DevPath;
 
@@ -2543,7 +2580,6 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   // Check if there is EfiLoadFileProtocol installed.
   // If yes, that means there is a boot option for network.
   //
-  VBoxLogFlowFuncEnter();
   Status = gBS->LocateDevicePath (
                   &gEfiLoadFileProtocolGuid,
                   &TempDevicePath,
@@ -2569,7 +2605,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
       //
       // LoadFile protocol is not installed on handle with exactly the same DevPath
       //
-      VBoxLogFlowFuncLeave();
+      VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns FALSE (#1)\n"));
       return FALSE;
     }
 
@@ -2578,11 +2614,11 @@ BdsLibIsValidEFIBootOptDevicePathExt (
       // Test if it is ready to boot now
       //
       if (BdsLibNetworkBootWithMediaPresent(DevPath)) {
-        VBoxLogFlowFuncLeave();
+        VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#2)\n"));
         return TRUE;
       }
     } else {
-      VBoxLogFlowFuncLeave();
+      VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#3)\n"));
       return TRUE;
     }
   }
@@ -2600,7 +2636,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
     if ((DevicePathType (TempDevicePath) == MESSAGING_DEVICE_PATH) &&
         ((DevicePathSubType (TempDevicePath) == MSG_USB_CLASS_DP) ||
          (DevicePathSubType (TempDevicePath) == MSG_USB_WWID_DP))) {
-      VBoxLogFlowFuncLeave();
+      VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#4)\n"));
       return TRUE;
     }
 
@@ -2609,7 +2645,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
   }
   if ((DevicePathType (LastDeviceNode) == MEDIA_DEVICE_PATH) &&
     (DevicePathSubType (LastDeviceNode) == MEDIA_FILEPATH_DP)) {
-    VBoxLogFlowFuncLeave();
+    VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#5)\n"));
     return TRUE;
   }
 
@@ -2626,13 +2662,13 @@ BdsLibIsValidEFIBootOptDevicePathExt (
                EfiGetNameGuidFromFwVolDevicePathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *) LastDeviceNode)
                );
     if (Status == EFI_ALREADY_STARTED) {
-      VBoxLogFlowFuncLeave();
+      VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#6)\n"));
       return TRUE;
     } else {
       if (Status == EFI_SUCCESS) {
         FreePool (TempDevicePath);
       }
-      VBoxLogFlowFuncLeave();
+      VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns FALSE (#7)\n"));
       return FALSE;
     }
   }
@@ -2671,11 +2707,11 @@ BdsLibIsValidEFIBootOptDevicePathExt (
         // Test if it is ready to boot now
         //
         if (BdsLibGetBootableHandle (DevPath) != NULL) {
-          VBoxLogFlowFuncLeave();
+          VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#8)\n"));
           return TRUE;
         }
       } else {
-        VBoxLogFlowFuncLeave();
+        VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#9)\n"));
         return TRUE;
       }
     }
@@ -2691,11 +2727,11 @@ BdsLibIsValidEFIBootOptDevicePathExt (
         // Test if it is ready to boot now
         //
         if (BdsLibGetBootableHandle (DevPath) != NULL) {
-          VBoxLogFlowFuncLeave();
+          VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#10)\n"));
           return TRUE;
         }
       } else {
-        VBoxLogFlowFuncLeave();
+        VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#10)\n"));
         return TRUE;
       }
     }
@@ -2704,7 +2740,7 @@ BdsLibIsValidEFIBootOptDevicePathExt (
 #ifndef VBOX
   return FALSE;
 #else
-  VBoxLogFlowFuncLeave();
+  VBoxLog(("BdsLibIsValidEFIBootOptDevicePathExt: returns TRUE (#11) - Status 0x%x(%r)\n", Status, Status));
   return TRUE;
 #endif
 }
