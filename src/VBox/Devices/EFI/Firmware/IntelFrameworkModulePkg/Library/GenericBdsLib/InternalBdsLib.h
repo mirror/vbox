@@ -84,6 +84,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
     #endif
 #endif
 
+#ifdef VBOX
+    /**
+      Apple seems to have a different EFI_REMOVABLE_MEDIA_FILE_NAME value, so it
+      seems we have to check for both the apple value and for the UEFI value if we
+      want to support both apple and non-apple systems.  (Probably more to this.)
+    **/
+    #define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
+#endif
+
 /**
 
   Allocates a block of memory and writes performance data of booting into it.
