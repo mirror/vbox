@@ -278,16 +278,13 @@ static int get_dns_addr_domain(PNATState pData, const char **ppszDomain)
             {
                 if ((pDns->de_addr.s_addr) == RT_N2H_U32_C(INADDR_LOOPBACK))
                     pDns->de_addr.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_ALIAS);
-                else
+                else if (pData->fUseDnsProxy != 1)
                 {
                     /* Modern Ubuntu register 127.0.1.1 as DNS server */
-                    LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the host resolver.\n",
+                    LogRel(("NAT: DNS server %RTnaipv4 registration detected, switching to the DNS proxy.\n",
                             pDns->de_addr.s_addr));
-                    RTMemFree(pDns);
-                    /* Releasing fetched DNS information. */
-                    slirpReleaseDnsSettings(pData);
-                    pData->fUseHostResolver = 1;
-                    return VINF_SUCCESS;
+                    pData->fUseDnsProxy = 1;
+                    pData->fUseHostResolver = 0;
                 }
             }
             TAILQ_INSERT_HEAD(&pData->pDnsList, pDns, de_list);
