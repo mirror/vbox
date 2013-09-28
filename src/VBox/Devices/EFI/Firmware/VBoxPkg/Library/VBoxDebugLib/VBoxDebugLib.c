@@ -90,19 +90,13 @@ VBoxLogWorker(const char *pszFormat, ...)
 {
     CHAR8       szBuf[384];
     VA_LIST     va;
-    UINTN       cch;
     RTCCUINTREG SavedFlags;
 
+    /* Format it. */
     VA_START(va, pszFormat);
-    cch = AsciiVSPrint(szBuf, sizeof(szBuf), pszFormat, va);
+    AsciiVSPrint(szBuf, sizeof(szBuf), pszFormat, va);
     VA_END(va);
-
-    /* make sure it's terminated and doesn't end with a newline */
-    if (cch >= sizeof(szBuf))
-        cch = sizeof(szBuf) - 1;
-    while (cch > 0 && (szBuf[cch - 1] == '\n' || szBuf[cch - 1] == '\r'))
-        cch--;
-    szBuf[cch] = '\0';
+    szBuf[sizeof(szBuf) - 1] = '\0';
 
     /* Output the log string. */
     SavedFlags = ASMIntDisableFlags();
