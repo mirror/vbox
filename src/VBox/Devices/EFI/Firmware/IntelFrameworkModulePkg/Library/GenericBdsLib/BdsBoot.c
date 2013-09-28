@@ -841,7 +841,7 @@ BdsLibBootViaBootOption (
           pszFolder = StrCat(pszFolder, L"boot.efi");
           VBoxLogFlowFuncMarkVar(pszFolder,"%s");
 
-          Status = gBS->HandleProtocol(Handle, &gEfiSimpleFileSystemProtocolGuid, &Volume);
+          Status = gBS->HandleProtocol(Handle, &gEfiSimpleFileSystemProtocolGuid, (VOID **)&Volume);
           VBoxLogFlowFuncMarkRC(Status);
           if (!EFI_ERROR(Status)) {
             FilePath = FileDevicePath((EFI_HANDLE)Handle, pszFolder);
