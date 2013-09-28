@@ -489,19 +489,19 @@ VOID EFIAPI VBoxLogWorker(const char *pszFormat, ...);
 #  define VBoxLogFlowFuncLeaveRC(rc) \
     do { \
         EFI_STATUS rcLog = (rc); \
-        DEBUG((DEBUG_INFO, "%a:" VBOX_XSTR(__LINE__) ": LEAVE " #rc "=0x%x (%r)\n", __FUNCTION__, rcLog, rcLog)); \
+        VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": LEAVE " #rc "=0x%x (%r)\n", __FUNCTION__, rcLog, rcLog)); \
     } while (0)
 #  define VBoxLogFlowFuncMarkVar(var, varfmt) \
     DEBUG((DEBUG_INFO, "%a:" VBOX_XSTR(__LINE__) ": " #var "=" varfmt "\n", __FUNCTION__, (var)))
 #  define VBoxLogFlowFuncMarkRC(rc) \
     do { \
         EFI_STATUS rcLog = (rc); \
-        DEBUG((DEBUG_INFO, "%a:" VBOX_XSTR(__LINE__) ": " #rc "=0x%x (%r)\n", __FUNCTION__, rcLog, rcLog)); \
+        VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #rc "=0x%x (%r)\n", __FUNCTION__, rcLog, rcLog)); \
     } while (0)
 #  define VBoxLogFlowFuncMarkDP(dp) \
-    DEBUG((DEBUG_INFO, "%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugDevicePath2Str(dp)))
+    VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugDevicePath2Str(dp)))
 #  define VBoxLogFlowFuncMarkHandleDP(dp)\
-    DEBUG((DEBUG_INFO, "%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugHandleDevicePath2Str(dp)))
+    VBoxLog(("%a:" VBOX_XSTR(__LINE__) ": " #dp "=%s\n", __FUNCTION__, VBoxDebugHandleDevicePath2Str(dp)))
 #  define VBoxLog(a)                            VBoxLogWorker a
 # else
 #  define VBoxLogFlowFuncEnter()                do {} while (0)
