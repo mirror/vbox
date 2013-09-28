@@ -254,11 +254,32 @@ VBOX_EFI_BUILD_CMD += \
 	--buildtarget $(VBOX_EFI_BUILD_TARGET) \
 	--tagname $(VBOX_EFI_TOOL_CHAIN)
 
+#
+# Tools configurations.
+#
+$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt \
+$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
+               $(VBOX_PATH_EFI_FIRMWARE)/vbox-tools_def.txt \
+		$(MAKEFILE) | $$(dir $$@)
+	$(RM) -f -- "$@"
+	$(SED) \
+		-e 's,@VBOX_IASLCMD@,$(VBOX_IASLCMD),' \
+		-e 's,@KMK@,$(MAKE),' \
+               \
+		-e 's,@VBOX_PATH_PREFIX_MINGW32@,$(VBOX_PATH_PREFIX_MINGW32),' \
+		-e 's,@VBOX_PATH_PREFIX_MINGW64@,$(VBOX_PATH_PREFIX_MINGW64),' \
+		-e 's,@VBOX_MINGW32_Wno@,-Wno-address $(VBOX_MINGW32_Wno-unused-but-set-variable) $(VBOX_MINGW32_Wno-maybe-uninitialized) $(VBOX_MINGW32_Wno-array-bounds),' \
+		-e 's,@VBOX_MINGW64_Wno@,-Wno-address $(VBOX_MINGW64_Wno-unused-but-set-variable) $(VBOX_MINGW64_Wno-maybe-uninitialized) $(VBOX_MINGW64_Wno-array-bounds),' \
+		-e 's,@VBOX_MINGW64_USER_LABEL_PREFIX@,$(VBOX_MINGW64_USER_LABEL_PREFIX),' \
+               \
+		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
+		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
+               \
+		--output $@ $<
 
 #
 # VBoxEFI32
 #
-
 $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBOX_EFI_BLDPROGS)
 	$(APPEND) -tn "$@" \
 		"# Automatically generated, do not edit" \
@@ -273,31 +294,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBO
 		"TARGET_ARCH     = IA32" \
 		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
 		"MAX_CONCURRENT_THREAD_NUMBER = 1"
-
-$(VBoxEfiFirmware_0_OUTDIR)/x86/Conf/tools_def.txt: \
-               $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/tools_def.template \
-		$(MAKEFILE) | $$(dir $$@)
-	$(RM) -f -- "$@"
-ifeq ($(VBOX_EFI_TOOL_CHAIN),UNIXGCC)
-	$(SED) \
-		-e 's,^DEFINE UNIXGCC_IA32_PETOOLS_PREFIX.*$(DOLLAR),DEFINE UNIXGCC_IA32_PETOOLS_PREFIX = $(VBOX_PATH_PREFIX_MINGW32),' \
-		-e 's,^DEFINE UNIXGCC_X64_PETOOLS_PREFIX.*$(DOLLAR),DEFINE UNIXGCC_X64_PETOOLS_PREFIX = $(VBOX_PATH_PREFIX_MINGW64),' \
-		-e 's,^DEFINE UNIX_IASL_BIN.*$(DOLLAR),DEFINE UNIX_IASL_BIN = $(VBOX_IASLCMD),' \
-		-e 's,^\(DEFINE GCC_ALL_CC_FLAGS.*$(DOLLAR)\),\1 -Wno-address $(VBOX_MINGW32_Wno-unused-but-set-variable) $(VBOX_MINGW32_Wno-maybe-uninitialized),' \
-		$(if $(VBOX_MINGW32_Wno-array-bounds),,-e 's,-Wno-array-bounds,,g') \
-		-e 's,=[[:space:]]*make$(DOLLAR),= $(MAKE),' \
-               $(if-expr "$(VBOX_EFI_BUILD_TARGET)" == "DEBUG", -e 's/ -O2 / /g',) \
-		--output $@ $<
-else if ($(VBOX_EFI_TOOL_CHAIN),VS2010)
-	$(SED) \
-		-e 's,^DEFINE VS2010_BIN[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_BIN = $(PATH_TOOL_$(VBOX_VCC_TOOL))/bin,' \
-		-e 's,^DEFINE VS2010_DLL[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_DLL = DEF(VS2010_BIN),' \
-		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\)$(DOLLAR),\1 /Oy-,' \
-		--output $@ $<
-#		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\) /O1ib2 \(.*\)$(DOLLAR),\1 /Osi /GF /Gy \2 /Oy-,'
-else
- $(error Unexpected VBOX_EFI_TOOL_CHAIN value "$(VBOX_EFI_TOOL_CHAIN)")
-endif
 
 ## @todo 32-bit DEBUG is busted, image to big.
 $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
@@ -317,7 +313,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/x86/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 #
 # VBoxEFI64
 #
-
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(VBOX_EFI_BLDPROGS)
 	$(APPEND) -tn "$@" \
 		"# Automatically generated, do not edit" \
@@ -332,32 +327,6 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/target.txt: $(MAKEFILE) | $$(dir $$@) $(V
 		"TARGET_ARCH     = X64" \
 		"TOOL_CHAIN_TAG  = $(VBOX_EFI_TOOL_CHAIN)" \
 		"MAX_CONCURRENT_THREAD_NUMBER = 1"
-
-# Hack! Drop an underscore from the entrypoint, or SecMain won't work.
-$(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
-               $(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Conf/tools_def.template \
-		$(MAKEFILE) | $$(dir $$@)
-	$(RM) -f -- "$@"
-ifeq ($(VBOX_EFI_TOOL_CHAIN),UNIXGCC)
-	$(SED) \
-		-e 's,^DEFINE UNIXGCC_IA32_PETOOLS_PREFIX.*$(DOLLAR),DEFINE UNIXGCC_IA32_PETOOLS_PREFIX = $(VBOX_PATH_PREFIX_MINGW32),' \
-		-e 's,^DEFINE UNIXGCC_X64_PETOOLS_PREFIX.*$(DOLLAR),DEFINE UNIXGCC_X64_PETOOLS_PREFIX = $(VBOX_PATH_PREFIX_MINGW64),' \
-		-e 's,^DEFINE UNIX_IASL_BIN.*$(DOLLAR),DEFINE UNIX_IASL_BIN = $(VBOX_IASLCMD),' \
-		-e 's,^\(DEFINE GCC_ALL_CC_FLAGS.*$(DOLLAR)\),\1 -Wno-address $(VBOX_MINGW64_Wno-unused-but-set-variable) $(VBOX_MINGW64_Wno-maybe-uninitialized),' \
-		$(if $(VBOX_MINGW64_Wno-array-bounds),,-e 's,-Wno-array-bounds,,g') \
-		-e 's,=[[:space:]]*make$(DOLLAR),= $(MAKE),' \
-		-e 's,^\(DEFINE GCC_IA32_X64_DLINK_COMMON.*\)$(DOLLAR),\1 --fatal-warnings,' \
-		$(if $(VBOX_MINGW64_USER_LABEL_PREFIX),,-e 's,^\(DEFINE GCC_IA32_X64_DLINK_FLAGS.* --entry \)_,\1,') \
-		--output $@ $<
-else if ($(VBOX_EFI_TOOL_CHAIN),VS2010)
-	$(SED) \
-		-e 's,^DEFINE VS2010_BIN[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_BIN = $(PATH_TOOL_$(VBOX_VCC_TOOL))/bin,' \
-		-e 's,^DEFINE VS2010_DLL[[:space:]]*=.*$(DOLLAR),DEFINE VS2010_DLL = DEF(VS2010_BIN),' \
-		-e 's,^\([^=]*_VS2010[a-zA-Z_0-9]*_CC_FLAGS[[:space:]]*=.*\) /X \(.*\)$(DOLLAR),\1 \2 /Oy-,' \
-		--output $@ $<
-else
- $(error Unexpected VBOX_EFI_TOOL_CHAIN value "$(VBOX_EFI_TOOL_CHAIN)")
-endif
 
 $(VBoxEfiFirmware_0_OUTDIR)/amd64/$(VBOX_EFI_OUTPUT_SUBDIR)/FV/OVMF.fd \
 + $(VBoxEfiFirmwareDbg64_SOURCES): \
