@@ -281,7 +281,7 @@ static EFI_STATUS fsw_efi_ReMount(IN FSW_VOLUME_DATA *pVolume,
                                           &FSW_FSTYPE_TABLE_NAME(FSTYPE), &pVolume->vol),
                                 pVolume);
 
-    VBoxLogFlowFuncMarkVar(Status, "%r");
+    VBoxLogFlowFuncMarkRC(Status);
     if (!EFI_ERROR(Status)) {
         // register the SimpleFileSystem protocol
         pVolume->FileSystem.Revision     = EFI_FILE_IO_INTERFACE_REVISION;
