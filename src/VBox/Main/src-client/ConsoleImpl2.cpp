@@ -119,10 +119,19 @@
 #ifdef VBOX_WITH_EXTPACK
 # include "ExtPackManagerImpl.h"
 #endif
+#if defined(RT_OS_DARWIN)
+# include "IOKit/IOKitLib.h"
+#endif
+
+
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static Utf8Str *GetExtraDataBoth(IVirtualBox *pVirtualBox, IMachine *pMachine, const char *pszName, Utf8Str *pStrValue);
+
+
 
 #if defined(RT_OS_DARWIN)
-
-# include "IOKit/IOKitLib.h"
 
 static int DarwinSmcKey(char *pabKey, uint32_t cbKey)
 {
@@ -247,20 +256,18 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *
     return VINF_SUCCESS;
 }
 
-static int getSmcDeviceKey(IMachine *pMachine, BSTR *aKey, bool *pfGetKeyFromRealSMC)
+/**
+ * @throws HRESULT on extra data retrival error.
+ */
+static int getSmcDeviceKey(IVirtualBox *pVirtualBox, IMachine *pMachine, Utf8Str *pStrKey, bool *pfGetKeyFromRealSMC)
 {
     *pfGetKeyFromRealSMC = false;
 
     /*
      * The extra data takes precedence (if non-zero).
      */
-    HRESULT hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey").raw(),
-                                         aKey);
-    if (FAILED(hrc))
-        return Global::vboxStatusCodeFromCOM(hrc);
-    if (   SUCCEEDED(hrc)
-        && *aKey
-        && **aKey)
+    GetExtraDataBoth(pVirtualBox, pMachine, "VBoxInternal2/SmcDeviceKey", pStrKey);
+    if (pStrKey->isNotEmpty())
         return VINF_SUCCESS;
 
 #ifdef RT_OS_DARWIN
@@ -464,6 +471,40 @@ static void RemoveConfigValue(PCFGMNODE pNode,
     if (RT_FAILURE(vrc))
         throw ConfigError("CFGMR3RemoveValue", vrc, pcszName);
 }
+
+/**
+ * Gets an extra data value, consulting both machine and global extra data.
+ *
+ * @throws  HRESULT on failure
+ * @returns pStrValue for the callers convenience.
+ * @param   pVirtualBox     Pointer to the IVirtualBox interface.
+ * @param   pMachine        Pointer to the IMachine interface.
+ * @param   pszName         The value to get.
+ * @param   pStrValue       Where to return it's value (empty string if not
+ *                          found).
+ */
+static Utf8Str *GetExtraDataBoth(IVirtualBox *pVirtualBox, IMachine *pMachine, const char *pszName, Utf8Str *pStrValue)
+{
+    pStrValue->setNull();
+
+    Bstr bstrName(pszName);
+    Bstr bstrValue;
+    HRESULT hrc = pMachine->GetExtraData(bstrName.raw(), bstrValue.asOutParam());
+    if (FAILED(hrc))
+        throw hrc;
+    if (bstrValue.isEmpty())
+    {
+        hrc = pVirtualBox->GetExtraData(bstrName.raw(), bstrValue.asOutParam());
+        if (FAILED(hrc))
+            throw hrc;
+    }
+
+    if (bstrValue.isNotEmpty())
+        *pStrValue = bstrValue;
+    return pStrValue;
+}
+
+
 /** Helper that finds out the next SATA port used
  */
 static LONG GetNextUsedSataPort(LONG aSataPortUsed[30], LONG lBaseVal, uint32_t u32Size)
@@ -710,6 +751,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
     int             rc;
     HRESULT         hrc;
+    Utf8Str         strTmp;
     Bstr            bstr;
 
 #define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
@@ -1258,11 +1300,11 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigNode(pInst,    "Config", &pCfg);
 
             bool fGetKeyFromRealSMC;
-            Bstr bstrKey;
-            rc = getSmcDeviceKey(pMachine, bstrKey.asOutParam(), &fGetKeyFromRealSMC);
+            Utf8Str strKey;
+            rc = getSmcDeviceKey(virtualBox, pMachine, &strKey, &fGetKeyFromRealSMC);
             AssertRCReturn(rc, rc);
 
-            InsertConfigString(pCfg,   "DeviceKey", bstrKey);
+            InsertConfigString(pCfg,   "DeviceKey", strKey);
             InsertConfigInteger(pCfg,  "GetKeyFromRealSMC", fGetKeyFromRealSMC);
         }
 
@@ -1475,29 +1517,29 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             AssertRCReturn(rc, rc);
 
             /* Get boot args */
-            Bstr bootArgs;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiBootArgs").raw(), bootArgs.asOutParam()); H();
+            Utf8Str bootArgs;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiBootArgs", &bootArgs);
 
             /* Get device props */
-            Bstr deviceProps;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiDeviceProps").raw(), deviceProps.asOutParam()); H();
+            Utf8Str deviceProps;
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiDeviceProps", &deviceProps);
 
             /* Get GOP mode settings */
             uint32_t u32GopMode = UINT32_MAX;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiGopMode").raw(), bstr.asOutParam()); H();
-            if (!bstr.isEmpty())
-                u32GopMode = Utf8Str(bstr).toUInt32();
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGopMode", &strTmp);
+            if (!strTmp.isEmpty())
+                u32GopMode = strTmp.toUInt32();
 
             /* UGA mode settings */
             uint32_t u32UgaHorisontal = 0;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaHorizontalResolution").raw(), bstr.asOutParam()); H();
-            if (!bstr.isEmpty())
-                u32UgaHorisontal = Utf8Str(bstr).toUInt32();
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaHorizontalResolution", &strTmp);
+            if (!strTmp.isEmpty())
+                u32UgaHorisontal = strTmp.toUInt32();
 
             uint32_t u32UgaVertical = 0;
-            hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaVerticalResolution").raw(), bstr.asOutParam()); H();
-            if (!bstr.isEmpty())
-                u32UgaVertical = Utf8Str(bstr).toUInt32();
+            GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiUgaVerticalResolution", &strTmp);
+            if (!strTmp.isEmpty())
+                u32UgaVertical = strTmp.toUInt32();
 
             /*
              * EFI subtree.
@@ -2826,6 +2868,10 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
     {
         // InsertConfig threw something:
         return x.m_vrc;
+    }
+    catch (HRESULT hrcXcpt)
+    {
+        AssertMsgFailedReturn(("hrc=%Rhrc\n", hrcXcpt), VERR_GENERAL_FAILURE);
     }
 
 #ifdef VBOX_WITH_EXTPACK
