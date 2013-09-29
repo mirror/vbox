@@ -811,9 +811,27 @@ BdsLibBootViaBootOption (
       // section of the boot option and attempt to load boot.efi it.
       //
       if (Option->LoadOptionsSize) {
-        /* First, see the there is a config=stuff in the load options. */
+        /*
+         * First, see the there is a config=folder in the load options.  We
+         * interpret it as a path to the folder containing boot.efi and go
+         * about constructing the path in a bit of a round about way...
+         *
+         * This is what we got when Lion rebooted after the first installation step:
+         *   Variable - fAttr=0x07 - '8be4df61-93ca-11d2-aa0d-00e098032b8c:Boot0080' - cb=0xbe
+         *   0000: 01 00 00 00 48 00 4d 00-61 00 63 00 20 00 4f 00 ....H.M.a.c. .O.
+         *   0010: 53 00 20 00 58 00 00 00-02 01 0c 00 d0 41 03 0a S. .X........A..
+         *   0020: 00 00 00 00 01 01 06 00-02 1f 03 01 08 00 00 01 ................
+         *   0030: 00 00 04 01 2a 00 02 00-00 00 28 40 06 00 00 00 ....*.....(@....
+         *   0040: 00 00 b0 bf 75 02 00 00-00 00 e5 b2 19 a7 cb 59 ....u..........Y
+         *   0050: 69 4c b9 92 51 3c fd 4b-d7 c4 02 02 7f ff 04 00 iL..Q<.K........
+         *   0060: 63 00 6f 00 6e 00 66 00-69 00 67 00 3d 00 22 00 c.o.n.f.i.g.=.".
+         *   0070: 5c 00 4d 00 61 00 63 00-20 00 4f 00 53 00 20 00 \.M.a.c. .O.S. .
+         *   0080: 58 00 20 00 49 00 6e 00-73 00 74 00 61 00 6c 00 X. .I.n.s.t.a.l.
+         *   0090: 6c 00 20 00 44 00 61 00-74 00 61 00 5c 00 63 00 l. .D.a.t.a.\.c.
+         *   00a0: 6f 00 6d 00 2e 00 61 00-70 00 70 00 6c 00 65 00 o.m...a.p.p.l.e.
+         *   00b0: 2e 00 42 00 6f 00 6f 00-74 00 22 00 00 00       ..B.o.o.t."...
+         */
         VBoxLogFlowFuncMarkVar(Option->LoadOptions, "%s");
-        /** @todo Please past and example of this here! */
         if (StrnCmp(L"config=", (CHAR16 *)Option->LoadOptions, 7) == 0) {
           EFI_SIMPLE_FILE_SYSTEM_PROTOCOL  *Volume;
           CHAR16 *pszConfigValue = &((CHAR16 *)Option->LoadOptions)[7];
