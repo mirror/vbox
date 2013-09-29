@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2012 Oracle Corporation
+# Copyright (C) 2006-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -17,6 +17,9 @@
 
 SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
+
+# Enable the new SMC code.
+VBOX_WITH_SMC_NEW = 1
 
 # Make sure our Config.kmk is included.
 ifndef VBOX_DEVICES_CONFIG_KMK_INCLUDED
