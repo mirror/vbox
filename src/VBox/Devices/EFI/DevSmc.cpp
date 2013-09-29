@@ -235,8 +235,10 @@ typedef struct DEVSMC
     uint8_t                 bNinjaActionTimerJob;
     /** @} */
 } DEVSMC;
+#ifndef _MSC_VER
 AssertCompileMembersAtSameOffset(DEVSMC, u.abRegsRW[SMC_REG_CMD],         DEVSMC, u.s.bState);
 AssertCompileMembersAtSameOffset(DEVSMC, u.abRegsRW[SMC_REG_STATUS_CODE], DEVSMC, u.s.bStatusCode);
+#endif
 
 /** Pointer to the SMC state. */
 typedef DEVSMC *PDEVSMC;
