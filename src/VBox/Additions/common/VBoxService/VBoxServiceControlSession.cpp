@@ -401,7 +401,11 @@ static int gstcntlSessionHandleFileWrite(const PVBOXSERVICECTRLSESSION pSession,
         pFile = gstcntlSessionFileGetLocked(pSession, uHandle);
         if (pFile)
         {
-            rc = RTFileWrite(pFile->hFile, pvScratchBuf, cbScratchBuf, &cbWritten);
+            rc = RTFileWrite(pFile->hFile, pvScratchBuf, cbToWrite, &cbWritten);
+#ifdef DEBUG
+            VBoxServiceVerbose(4, "[File %s]: Writing pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
+                               pFile->szName, pvScratchBuf, cbToWrite, cbWritten, rc);
+#endif
         }
         else
             rc = VERR_NOT_FOUND;
@@ -446,7 +450,11 @@ static int gstcntlSessionHandleFileWriteAt(const PVBOXSERVICECTRLSESSION pSessio
         if (pFile)
         {
             rc = RTFileWriteAt(pFile->hFile, iOffset,
-                               pvScratchBuf, cbScratchBuf, &cbWritten);
+                               pvScratchBuf, cbToWrite, &cbWritten);
+#ifdef DEBUG
+            VBoxServiceVerbose(4, "[File %s]: Writing iOffset=%RI64, pvScratchBuf=%p, cbToWrite=%RU32, cbWritten=%zu, rc=%Rrc\n",
+                               pFile->szName, iOffset, pvScratchBuf, cbToWrite, cbWritten, rc);
+#endif
         }
         else
             rc = VERR_NOT_FOUND;
@@ -509,8 +517,14 @@ static int gstcntlSessionHandleFileSeek(const PVBOXSERVICECTRLSESSION pSession,
             }
 
             if (RT_SUCCESS(rc))
+            {
                 rc = RTFileSeek(pFile->hFile, (int64_t)uOffset,
                                 uSeekMethodIPRT, &uOffsetActual);
+#ifdef DEBUG
+                VBoxServiceVerbose(4, "[File %s]: Seeking to iOffset=%RI64, uSeekMethodIPRT=%RU16, rc=%Rrc\n",
+                                   pFile->szName, (int64_t)uOffset, uSeekMethodIPRT, rc);
+#endif
+            }
         }
         else
             rc = VERR_NOT_FOUND;
@@ -549,6 +563,10 @@ static int gstcntlSessionHandleFileTell(const PVBOXSERVICECTRLSESSION pSession,
         if (pFile)
         {
             uOffsetActual = RTFileTell(pFile->hFile);
+#ifdef DEBUG
+            VBoxServiceVerbose(4, "[File %s]: Telling uOffsetActual=%RU64\n",
+                               pFile->szName, uOffsetActual);
+#endif
         }
         else
             rc = VERR_NOT_FOUND;
