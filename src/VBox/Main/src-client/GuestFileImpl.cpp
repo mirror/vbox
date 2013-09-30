@@ -1414,6 +1414,7 @@ STDMETHODIMP GuestFile::Write(ComSafeArrayIn(BYTE, aData), ULONG aTimeoutMS, ULO
 #else
     LogFlowThisFuncEnter();
 
+    CheckComArgSafeArrayNotNull(aData);
     CheckComArgOutPointerValid(aWritten);
 
     AutoCaller autoCaller(this);
@@ -1448,6 +1449,7 @@ STDMETHODIMP GuestFile::WriteAt(LONG64 aOffset, ComSafeArrayIn(BYTE, aData), ULO
 #else
     LogFlowThisFuncEnter();
 
+    CheckComArgSafeArrayNotNull(aData);
     CheckComArgOutPointerValid(aWritten);
 
     AutoCaller autoCaller(this);
