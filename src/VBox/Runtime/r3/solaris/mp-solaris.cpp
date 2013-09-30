@@ -305,3 +305,9 @@ RTDECL(RTCPUID) RTMpGetPresentCount(void)
     return sysconf(_SC_NPROCESSORS_CONF);
 }
 
+
+RTDECL(RTCPUID) RTMpGetPresentCoreCount(void)
+{
+    return RTMpGetCoreCount();
+}
+
