@@ -955,7 +955,23 @@ STDMETHODIMP Host::COMGETTER(ProcessorCoreCount)(ULONG *aCount)
     CheckComArgOutPointerValid(aCount);
     // no locking required
 
-    return E_NOTIMPL;
+    *aCount = RTMpGetPresentCoreCount();
+    return S_OK;
+}
+
+/**
+ * Returns the number of installed physical processor cores.
+ *
+ * @returns COM status code
+ * @param   count address of result variable
+ */
+STDMETHODIMP Host::COMGETTER(ProcessorOnlineCoreCount)(ULONG *aCount)
+{
+    CheckComArgOutPointerValid(aCount);
+    // no locking required
+
+    *aCount = RTMpGetOnlineCoreCount();
+    return S_OK;
 }
 
 /**

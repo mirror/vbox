@@ -345,7 +345,7 @@ bool UIMachineSettingsSystem::validate(QList<UIValidationMessage> &messages)
         message.first = VBoxGlobal::removeAccelMark(m_pTabWidgetSystem->tabText(1));
 
         /* VCPU amount test: */
-        int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCount();
+        int cTotalCPUs = vboxGlobal().host().GetProcessorOnlineCoreCount();
         if (m_pSliderCPUCount->value() > 2 * cTotalCPUs)
         {
             message.second << tr(

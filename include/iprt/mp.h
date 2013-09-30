@@ -145,7 +145,7 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void);
  *
  * @returns The number of online cores.
  */
-RTDECL(RTCPUID) RTMpGetCoreOnlineCount(void);
+RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void);
 
 /**
  * Checks if a CPU is online or not.
