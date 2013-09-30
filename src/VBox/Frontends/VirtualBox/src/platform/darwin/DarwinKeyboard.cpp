@@ -1363,8 +1363,7 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     return rc2;
 }
 
-
-
+/** IOKit key press callback. Triggered before Carbon callback. */
 static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, IOHIDValueRef valueRef)
 {
     (void)unused;
@@ -1382,6 +1381,7 @@ static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, 
             }
 }
 
+/** Carbon key press callback. Triggered after IOKit callback. */
 #define VBOX_BOOL_TO_STR_STATE(x) (x) ? "ON" : "OFF"
 static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGEventType type, CGEventRef pEventRef, void *unused1)
 {
@@ -1405,6 +1405,9 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
         {
             g_LastTouchedState->fCapsLockOn = fCaps;
             g_LastTouchedState->fNumLockOn  = fNum;
+
+            /* Forget device */
+            g_LastTouchedState = NULL;
         }
     }
 
@@ -1412,6 +1415,7 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
 }
 #undef VBOX_BOOL_TO_STR_STATE
 
+/** Register Carbon key press callback. */
 static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
 {
     CFMachPortRef pTapRef;
@@ -1445,6 +1449,7 @@ static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
     return kIOReturnError;
 }
 
+/** Remove Carbon key press callback. */
 static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
 {
     AssertReturnVoid(pState);
@@ -1667,6 +1672,8 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
                         CFDictionaryRef elementMatchingDict = darwinGetLedElementMatchingDictionary();
                         if (elementMatchingDict)
                         {
+                            Log2(("Start LEDs broadcast\n"));
+
                             for (CFIndex i = 0; i < cDevices; i++)
                             {
                                 if (IOHIDDeviceConformsTo(hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard))
@@ -1678,6 +1685,7 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
                                 }
                             }
 
+                            Log2(("LEDs broadcast completed\n"));
                             CFRelease(elementMatchingDict);
                         }
 
