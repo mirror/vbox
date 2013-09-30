@@ -330,7 +330,7 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>&amp;Einstellungen...</translation>
+        <translation>&amp;Ändern...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
@@ -2574,7 +2574,7 @@
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation>Der Typ des Gastsystems erlaubt 64-Bit-Gäste. Dafür wird Hardware-Virtualisierung benötigt. Diese Einstellung wird aktiviert, sobald Sie die Einstellungen bestätigen.</translation>
+        <translation>Der Typ des Gastsystems erlaubt 64-Bit-Gäste. Dafür wird Hardware-Virtualisierung benötigt. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
 </context>
 <context>
@@ -2682,7 +2682,7 @@
     </message>
     <message>
         <source>No bridged network adapter is currently selected.</source>
-        <translation>Es wurde kein Netzadapter für die Netzwerkbrücke ausgewählt.</translation>
+        <translation>Es wurde kein Netzwerkadapter für die Netzwerkbrücke ausgewählt.</translation>
     </message>
     <message>
         <source>No internal network name is currently specified.</source>
@@ -3493,11 +3493,11 @@
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
-        <translation>Der I/O-APIC wurde in den System-Einstellungen nicht aktiviert. Der ICH9-Chipsatz erfordert die Emulation von I/O-APICs. Diese Einstellung wird Bestätigen automatisch aktiviert.</translation>
+        <translation>Der I/O-APIC wurde in den System-Einstellungen nicht aktiviert. Der ICH9-Chipsatz erfordert die Emulation von I/O-APICs. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation>Die USB-Controller-Emulation wurde nicht aktiviert. Ein USB-Controller wird für das USB-Zeigergerät benötigt. Diese Einstellung wird beim Bestätigen automatisch aktiviert.</translation>
+        <translation>Die USB-Controller-Emulation wurde nicht aktiviert. Ein USB-Controller wird für das USB-Zeigergerät benötigt. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
@@ -3509,11 +3509,11 @@
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation>Der I/O-APIC ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste ist ein I/O-APIC erforderlich. Diese Einstellung wird beim Bestätigen automatisch aktiviert.</translation>
+        <translation>Der I/O-APIC ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste ist ein I/O-APIC erforderlich. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation>Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste muss diese Einstellunge aber aktiviert sein. Diese Einstellung wird beim Bestätigen automatisch aktiviert.</translation>
+        <translation>Hardware-Virtualisierung ist in den Systemeinstellungen deaktiviert. Für Multi-CPU-Gäste muss diese Einstellung aber aktiviert sein. Diese Einstellung wird daher beim Bestätigen automatisch aktiviert.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
@@ -4782,7 +4782,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Möchten Sie das NAT-Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; löschen?&lt;/p&gt;&lt;p&gt;Falls dieses Netzwerk von einer oder mehreren virtuellen Netzadaptern verwendet wird, dann werden diese funktionsuntüchtig, bis Sie die Einstellungen dieser Adapter korrigieren.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Möchten Sie das NAT-Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; löschen?&lt;/p&gt;&lt;p&gt;Falls dieses Netzwerk von einer oder mehreren virtuellen Netzwerkadaptern verwendet wird, dann werden diese funktionsuntüchtig, bis Sie die Einstellungen dieser Adapter korrigieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
