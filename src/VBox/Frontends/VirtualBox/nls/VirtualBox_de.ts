@@ -268,7 +268,7 @@
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>Medium mit Gasterweiterungen einbinden</translation>
+        <translation>Medium mit den VirtualBox-Gasterweiterungen einbinden</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
@@ -874,7 +874,7 @@
     <name>UIDownloaderAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Wählen Sie den Ordner aus, in dem die Gasterweiterungen gespeichert werden sollen</translation>
+        <translation>Wählen Sie den Ordner aus, in dem die VirtualBox-Gasterweiterungen gespeichert werden sollen</translation>
     </message>
     <message>
         <source>VirtualBox Guest Additions</source>
@@ -2773,7 +2773,7 @@
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation>Zwei oder mehr Ports haben die gleichen Einstellungen.</translation>
+        <translation>Zwei oder mehr Ports haben identische Einstellungen.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
@@ -3013,7 +3013,7 @@
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation>Zwei oder mehr Ports haben die gleichen Einstellungen.</translation>
+        <translation>Zwei oder mehr Ports haben identische Einstellungen.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
@@ -3485,11 +3485,11 @@
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
-        <translation>Mehr als &lt;b&gt;%1&lt;/b&gt; des Hostspeichers (&lt;b&gt;%2&lt;/b&gt;) wurden der virtuellen Maschine zugewiesen. Damit bleibt nicht genügend Speicher für das Host-Betriebssystem. Bitte wählen Sie einen kleineren Wert.</translation>
+        <translation>Mehr als &lt;b&gt;%1%&lt;/b&gt; des Hauptspeichers des Hosts (&lt;b&gt;%2&lt;/b&gt;) wurden der virtuellen Maschine zugewiesen. Damit bleibt nicht genügend Speicher für das Host-Betriebssystem. Bitte wählen Sie einen kleineren Wert.</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</source>
-        <translation>Mehr als &lt;b&gt;%1&lt;/b&gt; des Hostspeichers (&lt;b&gt;%2&lt;/b&gt;) wurden der virtuellen Maschine zugewiesen. Damit bleibt möglicherweise nicht genügend Speicher für das Host-Betriebssystem. Bitte wählen ggf. Sie einen kleineren Wert.</translation>
+        <translation>Mehr als &lt;b&gt;%1%&lt;/b&gt; des Hauptspeichers des Hosts (&lt;b&gt;%2&lt;/b&gt;) wurden der virtuellen Maschine zugewiesen. Damit bleibt möglicherweise nicht genügend Speicher für das Host-Betriebssystem. Bitte wählen ggf. Sie einen kleineren Wert.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
@@ -3517,7 +3517,7 @@
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
-        <translation>Die CPU-Ausführungsbegrenzung wurde auf einen sehr niedrigen Wert gesetzt. Dadurch wird die virtuelle Maschine wahrscheinlich spürebar schlechter reagieren.</translation>
+        <translation>Die CPU-Ausführungsbegrenzung wurde auf einen sehr niedrigen Wert gesetzt. Dadurch wird die virtuelle Maschine wahrscheinlich spürbar schlechter reagieren.</translation>
     </message>
 </context>
 <context>
@@ -4654,11 +4654,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das virtuelle optische Medium &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; konnte nicht in das Laufwerk der Maschine &lt;b&gt;%2&lt;/b&gt; eingelegt werden.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das Einlegen des Mediums erzwingen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4730,7 +4730,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file.&lt;/p&gt;&lt;p&gt;Do you wish to download this disk image file from the Internet?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Die Datei mit den &lt;b&gt;VirtualBox-Gasterweiterungen&lt;/b&gt; konnte nicht gefunden werden.&lt;/p&gt;&lt;p&gt;Möchten Sie dieses Abbild aus dem Internet herunterladen?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Download</source>
@@ -4750,7 +4750,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Das virtuelle Medium mit den &lt;b&gt;VirtualBox-Gasterweiterungen&lt;/b&gt; konnte in kein Laufwerk der virtuellen Machine &lt;b&gt;%1&lt;/b&gt; eingelegt werden, da diese keine CD/DVD-Laufwerke besitzt. Bitte fügen Sie ein solches Laufwerk in den Einstellungen zu Massenspeichern ein.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -4782,11 +4782,11 @@
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Möchten Sie das NAT-Netzwerk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; löschen?&lt;/p&gt;&lt;p&gt;Falls dieses Netzwerk von einer oder mehreren virtuellen Netzadaptern verwendet wird, dann werden diese funktionsuntüchtig, bis Sie die Einstellungen dieser Adapter korrigieren.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Failed to remove the shared folder &lt;b&gt;%1&lt;/b&gt; (pointing to &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) from the virtual machine &lt;b&gt;%3&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please close all programs in the guest OS that may be using this shared folder and try again.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Der gemeinsame Ordner &lt;b&gt;%1&lt;/b&gt; (mit Verweis auf &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;) der virtuellen Maschine &lt;b&gt;%3&lt;/b&gt; kann nicht gelöscht werden.&lt;/p&gt;&lt;p&gt;Bitte schließen Sie alle Programme im Gast, die auf diesen Ordner zugreifen, und versuchen Sie es noch einmal.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
