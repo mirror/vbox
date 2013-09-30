@@ -95,6 +95,12 @@
       </listitem>
 
       <listitem>
+        <para>GUI: use the number of physical presented processor cores instead of
+          the number of logical processor cores to check if the users assigned
+          too many virtual CPUs to the guest</para>
+      </listitem>
+
+      <listitem>
         <para>Snapshots: made live snapshots work again (bug #9255)</para>
       </listitem>
 
