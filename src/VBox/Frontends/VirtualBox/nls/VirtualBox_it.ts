@@ -153,7 +153,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Dimensione fotogrammi: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
+        <translation>Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -292,7 +292,7 @@
     </message>
     <message>
         <source>Automatically resize the guest display when the window is resized (requires Guest Additions)</source>
-        <translation>Ridimensiona automaticamente lo schermo Guest quando la finestra viene ridimensionata (richiede le Guest Additions)</translation>
+        <translation>Ridimensiona automaticamente lo schermo del guest quando la finestra viene ridimensionata (richiede le Guest Additions)</translation>
     </message>
     <message>
         <source>&amp;Adjust Window Size</source>
@@ -806,7 +806,7 @@
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation type="unfinished">Spegni la macchina virtuale</translation>
+        <translation>Spegni la macchina virtuale</translation>
     </message>
     <message>
         <source>Show &amp;log...</source>
@@ -1998,7 +1998,7 @@
     <name>UIDownloaderAdditions</name>
     <message>
         <source>Select folder to save Guest Additions image to</source>
-        <translation>Selezionare la cartella dove salvare l&apos;immagine di Guest Additions</translation>
+        <translation>Selezionare la cartella dove salvare l&apos;immagine delle Guest Additions</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -5092,7 +5092,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame &amp;Size:</source>
-        <translation>Dimen&amp;sione fotogrammi:</translation>
+        <translation>Ri&amp;soluzione:</translation>
     </message>
     <message>
         <source>This setting determines the resolution (frame size) of the recorded video.</source>
@@ -5112,7 +5112,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa impostazione specifica il numero massimo di &lt;b&gt;fotogrammi al secondo&lt;/b&gt;. I fotogrammi aggiuntivi saranno ignorati. La riduzione di questo valore aumenterà il numero di fotogrammi ignorati e riduce le dimensioni del file.</translation>
     </message>
     <message>
         <source>&amp;Quality:</source>
@@ -5120,11 +5120,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa impostazione specifica la &lt;b&gt;qualità&lt;/b&gt;. L&apos;incremento di questo valore migliorerà la resa del video al costo di maggiori dimensioni del file.</translation>
     </message>
     <message>
         <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Questa impostazione specifica il bitrate in &lt;b&gt;kilobit al secondo&lt;/b&gt;. L&apos;incremento di questo valore migliorerà la resa del video al costo di maggiori dimensioni del file.</translation>
     </message>
     <message>
         <source>&amp;Screens:</source>
@@ -5132,23 +5132,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>La macchina virtuale è impostata per utilizzare l&apos;accelerazione grafica hardware. Tuttavia il sistema host non la fornisce, perciò non sarà possibile avviare la macchina.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla macchina virtuale è attualmente assegnata meno di &lt;b&gt;%1&lt;/b&gt; di memoria video che è la quantità minima richiesta per passare in modalità a schermo intero o trasparente.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla macchina virtuale è attualmente assegnata meno di &lt;b&gt;%1&lt;/b&gt; di memoria video che è la quantità minima richiesta per visualizzare in modo efficace video in alta definizione.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>La macchina virtuale è configurata per utilizzare l&apos;accelerazione grafica hardware e il sistema operativo è impostato a Windows Vista o successivo. Per migliori prestazioni, dovresti impostare la memoria video della macchina almeno a &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>La macchina virtuale è configurata per utilizzare l&apos;accelerazione del flusso video. Poiché questa caratteristica funziona solo con i sistemi guest Windows, sarà disabilitata.</translation>
     </message>
     <message>
         <source>The VRDE server port value is not currently specified.</source>
@@ -5454,7 +5454,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Il sistema operativo della macchina virtuale è impostato a 64 bit. I sistemi guest a 64 bit richiedono la virtualizzazione hardware, che sarà abilitata se confermi le modifiche.</translation>
     </message>
 </context>
 <context>
@@ -6751,7 +6751,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Processor(s):</source>
-        <translation>&amp;Processore(i):</translation>
+        <translation>&amp;Processori:</translation>
     </message>
     <message>
         <source>When checked, the Physical Address Extension (PAE) feature of the host CPU will be exposed to the virtual machine.</source>
@@ -6907,23 +6907,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Per motivi legati alle prestazioni, il numero di CPU virtuali assegnate alla macchina virtuale non possono eccedere il doppio del numero di CPU fisiche dell&apos;host (&lt;b&gt;%1&lt;/b&gt;). Riduci il numero di CPU virtuali.</translation>
     </message>
     <message>
         <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alla macchina virtuale è assegnato un numero di CPU virtuali maggiore del numero di CPU fisiche del sistema host (&lt;b&gt;%1&lt;/b&gt;). Ciò potrebbe degradare le prestazioni della macchina virtuale. Dovresti ridurre il numero di CPU virtuali.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La funzionalità I/O APIC non è attualmente abilitata nella sezione Scheda madre della pagina Sistema. Questa funzionalità è richiesta per supportare più di un processore virtuale. Sarà attivata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>La virtualizzazione hardware non è attualmente abilitata nella sezione Accelerazione della pagina Sistema. Ciò è richiesto per supportare più di un processore virtuale. Sarà abilitata automaticamente se confermi le modifiche.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>L&apos;execution cap del processore è impostata a un valore basso. Ciò potrebbe rallentare la macchina.</translation>
     </message>
 </context>
 <context>
@@ -8065,7 +8065,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Le Guest Additions di VirtualBox non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Le VirtualBox Guest Additions non sembrano essere presenti su questa macchina virtuale, e le cartelle condivise non possono essere utilizzate senza di esse. Per utilizzare le cartelle condivise nella macchina virtuale, installa le Guest Additions se non sono installate, o installale di nuovo se non funzionano correttamente, selezionando &lt;b&gt;Installa Guest Additions&lt;/b&gt; dal menu &lt;b&gt;Dispositivi&lt;/b&gt;. Se sono installate, ma la macchina non è completamente avviata, le cartelle condivise saranno disponibili solo ad avvio completato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -8811,11 +8811,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not find a language file for the language &lt;b&gt;%1&lt;/b&gt; in the directory &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;The language will be temporarily reset to the system default language. Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile trovare il file della lingua &lt;b&gt;%1&lt;/b&gt; nella cartella &lt;b&gt;&lt;nobr&gt;%2&lt;/nobr&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;La lingua sarà temporaneamente reimpostata a quella predefinita di sistema. Apri la finestra delle &lt;b&gt;Preferenze&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra del gestore di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not load the language file &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;. &lt;p&gt;The language will be temporarily reset to English (built-in). Please go to the &lt;b&gt;Preferences&lt;/b&gt; window which you can open from the &lt;b&gt;File&lt;/b&gt; menu of the VirtualBox Manager window, and select one of the existing languages on the &lt;b&gt;Language&lt;/b&gt; page.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile caricare il file della lingua &lt;b&gt;&lt;nobr&gt;%1&lt;/nobr&gt;&lt;/b&gt;.&lt;p&gt;La lingua sarà temporaneamente reimpostata a Inglese (built-in). Apri la finestra delle &lt;b&gt;Preferenze&lt;/b&gt; dal menu &lt;b&gt;File&lt;/b&gt; della finestra del gestore di VirtualBox, e scegli una delle lingue esistenti nella pagina &lt;b&gt;Lingua&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>There is no virtual machine with the identifier &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -8879,7 +8879,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;As this hard disk is inaccessible its image file can not be deleted.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Poiché questo disco fisso è inaccessibile, il file dell&apos;immagine relativo non può essere eliminato.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Are you sure you want to remove the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the list of known disk image files?&lt;/p&gt;</source>
@@ -8891,27 +8891,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile inserire il disco ottico virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nella macchina &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force insertion of this disk?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vuoi provare a forzare l&apos;inserimento di questo disco?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual optical disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile espellere il disco ottico virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Would you like to try to force ejection of this disk?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vuoi provare a forzare l&apos;espulsione di questo disco?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to insert the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; into the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile inserire il disco floppy virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; nella macchina &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Unable to eject the virtual floppy disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; from the machine &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Impossibile espellere il disco floppy virtuale &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; dalla macchina &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the hard disk file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -8940,14 +8940,14 @@ p, li { white-space: pre-wrap; }
     <message numerus="yes">
         <source>&lt;p&gt;The %n following virtual machine(s) are currently in a saved state: &lt;b&gt;%1&lt;/b&gt;&lt;/p&gt;&lt;p&gt;If you continue the runtime state of the exported machine(s) will be discarded. The other machine(s) will not be changed.&lt;/p&gt;</source>
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
-        <translation type="unfinished">
+        <translation>
             <numerusform>&lt;p&gt;La macchina virtuale &lt;b&gt;%1&lt;/b&gt; è attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione della macchina esportata sarà scartato. Nota che la macchina esistente non viene modificata.&lt;/p&gt;</numerusform>
             <numerusform>&lt;p&gt;Le macchine virtuali &lt;b&gt;%1&lt;/b&gt; sono attualmente in uno stato salvato.&lt;/p&gt;&lt;p&gt;Se continui, lo stato di esecuzione delle macchine esportate sarà scartato. Nota che le macchine esistenti non sono modificate.&lt;/p&gt;</numerusform>
         </translation>
     </message>
     <message>
         <source>Switch</source>
-        <translation type="unfinished"></translation>
+        <translation>Commuta</translation>
     </message>
     <message>
         <source>Failed to enable the remote desktop server for the virtual machine &lt;b&gt;%1&lt;/b&gt;.</source>
@@ -8979,15 +8979,15 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; but can&apos;t be saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Please choose another location for that file.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il file dell&apos;immagine del disco delle &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; è stato scaricato correttamente da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt;, ma non può essere salvato localmente come &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Scegli un&apos;altra posizione per il file.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file has been successfully downloaded from &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; and saved locally as &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to register this disk image file and insert it into the virtual CD/DVD drive?&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Il file dell&apos;immagine del disco delle &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; è stato scaricato correttamente da &lt;nobr&gt;&lt;a href=&quot;%1&quot;&gt;%1&lt;/a&gt;&lt;/nobr&gt; e salvato localmente come &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Vuoi registrare il file dell&apos;immagine del disco e inserirlo nel lettore CD/DVD virtuale?&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; disk image file into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD drives. Please add a drive using the storage page of the virtual machine settings window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Impossibile inserire il file dell&apos;immagine delle &lt;b&gt;Guest Additions di VirtualBox&lt;/b&gt; nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore CD/DVD. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Impossibile inserire il file dell&apos;immagine delle &lt;b&gt;VirtualBox Guest Additions&lt;/b&gt; nella macchina virtuale&lt;b&gt;%1&lt;/b&gt;, poiché la macchina non ha alcun lettore CD/DVD. Aggiungi un lettore dalla pagina di archiviazione della finestra delle impostazioni della macchina virtuale.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Could not find the &lt;b&gt;VirtualBox User Manual&lt;/b&gt; &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Do you wish to download this file from the Internet?&lt;/p&gt;</source>
@@ -9019,7 +9019,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Vuoi rimuovere la rete con NAT &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;Se la rete è utilizzata da una o più schede di rete delle macchine virtuali, tali schede non saranno utilizzabili fino a quando non correggi le loro impostazioni, scegliendo un nome di rete diverso o un tipo di scheda diverso.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -13412,7 +13412,7 @@ Versione %1</translation>
     <message>
         <source>Processor(s)</source>
         <comment>details report</comment>
-        <translation>Processore(i)</translation>
+        <translation>Processori</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
