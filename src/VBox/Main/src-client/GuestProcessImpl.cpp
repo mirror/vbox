@@ -1945,6 +1945,7 @@ STDMETHODIMP GuestProcess::Write(ULONG aHandle, ULONG aFlags,
 #else
     LogFlowThisFuncEnter();
 
+    CheckComArgSafeArrayNotNull(aData);
     CheckComArgOutPointerValid(aWritten);
 
     AutoCaller autoCaller(this);
@@ -1989,6 +1990,7 @@ STDMETHODIMP GuestProcess::WriteArray(ULONG aHandle, ComSafeArrayIn(ProcessInput
 #else
     LogFlowThisFuncEnter();
 
+    CheckComArgSafeArrayNotNull(aData);
     CheckComArgOutPointerValid(aWritten);
 
     AutoCaller autoCaller(this);
