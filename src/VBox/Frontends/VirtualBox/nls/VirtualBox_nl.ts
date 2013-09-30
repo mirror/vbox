@@ -137,7 +137,10 @@
     <name>QIMessageBox</name>
     <message>
         <source>OK</source>
-        <translation>OK</translation>
+        <translation variants="yes">
+            <lengthvariant>OK</lengthvariant>
+            <lengthvariant></lengthvariant>
+        </translation>
     </message>
     <message>
         <source>Yes</source>
@@ -229,7 +232,7 @@
     </message>
     <message>
         <source>&amp;Insert Ctrl-Alt-Del</source>
-        <translation>&amp;Invoegen van Ctrl-Alt-Del</translation>
+        <translation>&amp;Invoegen Ctrl+Alt+Del</translation>
     </message>
     <message>
         <source>Send the Ctrl-Alt-Del sequence to the virtual machine</source>
@@ -241,7 +244,7 @@
     </message>
     <message>
         <source>Send the Ctrl-Alt-Backspace sequence to the virtual machine</source>
-        <translation>Stuur de Ctrl+Alt+Backspace-combinatie naar de virtuele machine</translation>
+        <translation>Stuur Ctrl+Alt+Backspace-combinatie naar de virtuele machine</translation>
     </message>
     <message>
         <source>Take &amp;Snapshot...</source>
@@ -433,7 +436,7 @@
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>Hierdoor worden alle onderdrukte waarschuwingen en berichten weer zichtbaar</translation>
+        <translation>Terug naar weer tonen van alle onderdrukte waarschuwingen en berichten</translation>
     </message>
     <message>
         <source>&amp;Network Operations Manager...</source>
@@ -469,7 +472,7 @@
     </message>
     <message>
         <source>Ins&amp;ert Ctrl-Alt-Backspace</source>
-        <translation>Invo&amp;egen van Ctrl+Alt+Backspace</translation>
+        <translation>Invo&amp;egen Ctrl+Alt+Backspace</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -656,15 +659,15 @@
     </message>
     <message>
         <source>&amp;Reset All Warnings</source>
-        <translation>Alle waarschuwingen &amp;resetten</translation>
+        <translation>Alle waarschuwingen te&amp;rugzetten</translation>
     </message>
     <message>
         <source>C&amp;heck for Updates...</source>
-        <translation>&amp;Controleren op updates...</translation>
+        <translation>&amp;Controleren op updates ...</translation>
     </message>
     <message>
         <source>Rena&amp;me Group...</source>
-        <translation>Hernoe&amp;men Groep...</translation>
+        <translation>Hernoe&amp;men groep...</translation>
     </message>
     <message>
         <source>Sort the items of the selected virtual machine group alphabetically</source>
@@ -736,7 +739,7 @@
     </message>
     <message>
         <source>&amp;Add Machine...</source>
-        <translation>M&amp;achine toevoegen...</translation>
+        <translation>Toevoegen M&amp;achine...</translation>
     </message>
     <message>
         <source>&amp;Ungroup...</source>
@@ -1886,8 +1889,8 @@
         <source>%n group(s)</source>
         <comment>Group item tool-tip / Group info</comment>
         <translation>
-            <numerusform>%n groep(en)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n groep</numerusform>
+            <numerusform>%n groepen</numerusform>
         </translation>
     </message>
     <message>
@@ -1899,8 +1902,8 @@
         <source>%n machine(s)</source>
         <comment>Group item tool-tip / Machine info</comment>
         <translation>
-            <numerusform>%n machine(s)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>%n machine</numerusform>
+            <numerusform>%n machines</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -1908,7 +1911,7 @@
         <comment>Group item tool-tip / Running machine info</comment>
         <translation>
             <numerusform>(%n draaiend)</numerusform>
-            <numerusform></numerusform>
+            <numerusform>(%n draaiend)</numerusform>
         </translation>
     </message>
     <message>
@@ -2500,7 +2503,7 @@
     </message>
     <message>
         <source>Lists all installed packages.</source>
-        <translation>Geef alle geïnstalleerde pakketten weer.</translation>
+        <translation>Geeft alle geïnstalleerde pakketten weer.</translation>
     </message>
     <message>
         <source>Active</source>
@@ -2543,7 +2546,7 @@
     <name>UIGlobalSettingsGeneral</name>
     <message>
         <source>Holds the path to the default virtual machine folder. This folder is used, if not explicitly specified otherwise, when creating new virtual machines.</source>
-        <translation>Geeft het pad weer naar de standaardmap voor virtuele machines. Deze map wordt gebruikt voor het aanmaken van nieuwe virtuele machines, tenzij deze uitdrukkelijk wordt aangepast.</translation>
+        <translation>Geeft het pad weer naar de standaardmap voor virtuele machines. Deze map wordt gebruikt voor het aanmaken van nieuwe virtuele machines, tenzij het pad uitdrukkelijk wordt aangepast.</translation>
     </message>
     <message>
         <source>Holds the path to the library that provides authentication for Remote Display (VRDP) clients.</source>
@@ -2551,7 +2554,7 @@
     </message>
     <message>
         <source>Default &amp;Machine Folder:</source>
-        <translation>Standaardmap voor Virtuele &amp;machines:</translation>
+        <translation>Standaardmap voor Virtuele &amp;Machines:</translation>
     </message>
     <message>
         <source>V&amp;RDP Authentication Library:</source>
@@ -2709,7 +2712,7 @@
     </message>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation>Taal&amp;interface</translation>
+        <translation>&amp;Interface-talen</translation>
     </message>
 </context>
 <context>
@@ -3323,7 +3326,7 @@
     </message>
     <message>
         <source>Specifies how often the new version check should be performed. Note that if you want to completely disable this check, just clear the above check box.</source>
-        <translation>Geeft aan hoe vaak de controle op nieuwe versies moet plaatsvinden. Let op: wilt u deze controle niet laten plaatsvinden verwijder eenvoudigweg het vinkje in het keuzevakje.</translation>
+        <translation>Geeft aan hoe vaak de controle op nieuwe versies moet plaatsvinden. Wilt u deze controle helemaal niet laten plaatsvinden, verwijdert u eenvoudigweg het vinkje in het keuzevakje.</translation>
     </message>
     <message>
         <source>Next Check:</source>
@@ -3335,7 +3338,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you only wish to be notified about stable updates to VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van de stabiele updates van VirtualBox.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kies hiervoor als u op de hoogte wilt blijven van de stabiele updates van VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Stable Release Versions</source>
@@ -3344,7 +3347,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Choose this if you wish to be notified about all new VirtualBox releases.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van alle nieuwe VirtualBox-releases.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kies hiervoor als u op de hoogte wilt blijven van alle nieuwe VirtualBox-releases.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;All New Releases</source>
@@ -3352,7 +3355,7 @@
     </message>
     <message>
         <source>&lt;p&gt;Choose this to be notified about all new VirtualBox releases and pre-release versions of VirtualBox.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Kies hiervoor als op de hoogte wilt blijven van alle nieuwe VirtualBox-releases en van pre-release versies van VirtualBox.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;Kies hiervoor als u op de hoogte wilt blijven van alle nieuwe VirtualBox-releases en van pre-release versies van VirtualBox.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>All New Releases and &amp;Pre-Releases</source>
@@ -5034,7 +5037,7 @@
     </message>
     <message>
         <source>Move Down (Ctrl-Down)</source>
-        <translation>Naar beneden (Ctrl-Down)</translation>
+        <translation>Naar beneden (Ctrl+Down)</translation>
     </message>
     <message>
         <source>Moves the selected boot device down.</source>
@@ -6635,7 +6638,7 @@
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have sub-group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;.&lt;/p&gt;&lt;p&gt;Please resolve this name-conflict and try again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;U probeert machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te verplaatsen naar groep &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, die al de subgroep &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;heeft.&lt;/p&gt;&lt;p&gt;Kies een andere naam voor de machine of voor de subgroep en probeer opnieuw.&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;U probeert machine &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; te verplaatsen naar groep &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;, die al de subgroep &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;heeft.&lt;/p&gt;&lt;p&gt;Kies een andere naam voor de machine of voor de subgroep en probeer het opnieuw.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;You are trying to move group &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt; to group &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt; which already have another item with the same name.&lt;/p&gt;&lt;p&gt;Would you like to automatically rename it?&lt;/p&gt;</source>
