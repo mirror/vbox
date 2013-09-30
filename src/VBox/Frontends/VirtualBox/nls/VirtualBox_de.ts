@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>Zeigt einen Dialog mit Session-Informationen</translation>
+        <translation>Zeigt einen Dialog mit Sitzungsinformationen</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
@@ -330,7 +330,7 @@
     </message>
     <message>
         <source>&amp;Settings...</source>
-        <translation>Änd&amp;ern...</translation>
+        <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
         <source>Manage the virtual machine settings</source>
@@ -338,7 +338,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation>Session-I&amp;nformationen...</translation>
+        <translation>Sitzungsi&amp;nformationen...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -2308,7 +2308,7 @@
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol) über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
+        <translation>Aktiviert die Fernsteuerung (RDP = Remote Desktop Protocol), über die sich entfernte RDP-Clients mit der VM verbinden und diese steuern können.</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -2372,7 +2372,7 @@
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
-        <translation>Aktiviert die Videoaufzeichnung der virtuellen Maschine in eine Datei.</translation>
+        <translation>Aktiviert die Videoaufzeichnung dieser Sitzung in eine Datei.</translation>
     </message>
     <message>
         <source>&amp;Enable Video Capture</source>
@@ -2530,7 +2530,7 @@
     </message>
     <message>
         <source>If checked, any CD/DVD or floppy disks inserted into or removed from the virtual drives while the machine is running will be remembered.</source>
-        <translation>Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
+        <translation>Falls ausgewählt, werden zur Laufzeit zugewiesene CD/DVD- oder Diskettenmedien in den Einstellungen gespeichert, um die Zuweisung über die Laufzeit der VM hinaus beizubehalten.</translation>
     </message>
     <message>
         <source>Removable Media:</source>
@@ -5283,7 +5283,7 @@
     <message>
         <source>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 since %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</source>
         <comment>VM tooltip (name, last state change, session state)</comment>
-        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Session %4&lt;/nobr&gt;</translation>
+        <translation>&lt;nobr&gt;%1&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;%2 seit %3&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;Sitzung %4&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;br&gt;&lt;/nobr&gt;&lt;nobr&gt;Inaccessible since %2&lt;/nobr&gt;</source>
@@ -6934,7 +6934,7 @@
     <message>
         <source>Unlocked</source>
         <comment>SessionState</comment>
-        <translation>entsperrt</translation>
+        <translation>nicht gesperrt</translation>
     </message>
     <message>
         <source>Locked</source>
@@ -7698,7 +7698,7 @@
     <name>VBoxVMInformationDlg</name>
     <message>
         <source>%1 - Session Information</source>
-        <translation>%1 - Session-Informationen</translation>
+        <translation>%1 - Sitzungsinformationen</translation>
     </message>
     <message>
         <source>DMA Transfers</source>
