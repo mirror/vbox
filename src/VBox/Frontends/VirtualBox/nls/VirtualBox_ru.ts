@@ -112,7 +112,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
     </message>
 </context>
 <context>
@@ -348,7 +348,7 @@
     </message>
     <message>
         <source>ACPI Sh&amp;utdown</source>
-        <translation type="unfinished">&amp;Завершить работу</translation>
+        <translation>&amp;Завершить работу</translation>
     </message>
     <message>
         <source>ACPI S&amp;hutdown</source>
@@ -431,7 +431,7 @@
     <message>
         <source>&amp;Logging...</source>
         <comment>debug action</comment>
-        <translation type="unfinished">С&amp;бор данных...</translation>
+        <translation>С&amp;бор данных...</translation>
     </message>
     <message>
         <source>&amp;Help</source>
@@ -549,7 +549,7 @@
     </message>
     <message>
         <source>Session I&amp;nformation...</source>
-        <translation type="unfinished">Показать &amp;информацию о сессии...</translation>
+        <translation>Показать &amp;информацию о сессии...</translation>
     </message>
     <message>
         <source>Show the log files of the selected virtual machine</source>
@@ -900,54 +900,54 @@
     </message>
     <message>
         <source>Drag&apos;n&apos;Drop</source>
-        <translation type="unfinished"></translation>
+        <translation>Drag&apos;n&apos;Drop</translation>
     </message>
     <message>
         <source>Save the machine state of the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить состояние виртуальной машины</translation>
     </message>
     <message>
         <source>Power off the virtual machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Выключить виртуальную машину</translation>
     </message>
     <message>
         <source>&amp;Network Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить &amp;сеть...</translation>
     </message>
     <message>
         <source>&amp;Shared Folders Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить &amp;общие папки...</translation>
     </message>
     <message>
         <source>R&amp;emote Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Уд&amp;аленный доступ</translation>
     </message>
     <message>
         <source>Toggle remote desktop (RDP) connections to this machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить удалённый доступ (RDP) к этой машине</translation>
     </message>
     <message>
         <source>&amp;Video Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Захват видео</translation>
     </message>
     <message>
         <source>Toggle video capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить захват видео для данной машины</translation>
     </message>
     <message>
         <source>&amp;Video Capture Settings...</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить &amp;захват видео...</translation>
     </message>
     <message>
         <source>Configure video capture settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить захват видео для данной машины</translation>
     </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished"></translation>
+        <translation>Всплывающее меню</translation>
     </message>
 </context>
 <context>
@@ -2728,27 +2728,27 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Video Capture File</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Файл захвата видео</translation>
     </message>
     <message>
         <source>Video Capture Attributes</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Атрибуты захвата видео</translation>
     </message>
     <message>
         <source>Video Capture</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Захват видео</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>details (display/video capture)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Выключен</translation>
     </message>
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
-        <translation type="unfinished"></translation>
+        <translation>Сеть NAT, &apos;%1&apos;</translation>
     </message>
 </context>
 <context>
@@ -3025,7 +3025,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Extension Packages</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Плагины</translation>
     </message>
 </context>
 <context>
@@ -3084,27 +3084,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Dock and Menubar:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Док и меню-бар:</translation>
     </message>
     <message>
         <source>Auto-Show in Fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывать в полноэкранном режиме</translation>
     </message>
     <message>
         <source>When checked, the host dock and menu bar will be shown when the virtual machine is in fullscreen mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, док и меню-бар хоста будут видны, даже если машина находится в полноэкранном режиме.</translation>
     </message>
     <message>
         <source>&amp;Host Screensaver:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Скринсейвер хоста:</translation>
     </message>
     <message>
         <source>When checked, the host screensaver will be disabled whenever a virtual machine is running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Когда стоит галочка, скринсейвер хоста будет отключен во время работы машины.</translation>
     </message>
     <message>
         <source>Disable When Running Virtual Machines</source>
-        <translation type="unfinished"></translation>
+        <translation>Отключать во время работы машины</translation>
     </message>
 </context>
 <context>
@@ -3143,27 +3143,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Host Key Combination</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост-комбинация</translation>
     </message>
     <message>
         <source>Some items have the same shortcuts assigned.</source>
-        <translation type="unfinished"></translation>
+        <translation>Некоторым из действий назначены идентичные сочетания клавиш.</translation>
     </message>
     <message>
         <source>&amp;VirtualBox Manager</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox &amp;менеджер</translation>
     </message>
     <message>
         <source>Virtual &amp;Machine</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная м&amp;ашина</translation>
     </message>
     <message>
         <source>Lists all the available shortcuts which can be configured.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает список всех настраиваемых сочетаний клавиш.</translation>
     </message>
     <message>
         <source>Enter a sequence to filter the shortcut list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Позволяет фильтровать список сочетаний клавиш.</translation>
     </message>
 </context>
 <context>
@@ -3222,7 +3222,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Interface Languages</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Языки интерфейса</translation>
     </message>
 </context>
 <context>
@@ -3379,128 +3379,128 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;NAT Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Сети NAT</translation>
     </message>
     <message>
         <source>Lists all available NAT networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает список всех доступных сетей NAT.</translation>
     </message>
     <message>
         <source>&amp;Host-only Networks</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Виртуальные сети хоста</translation>
     </message>
     <message>
         <source>No new name specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано имя сети с прежним именем: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан CIDR сети &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>No CIDR specified for the NAT network previously called &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указан CIDR сети с прежним именем: &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задан неверный CIDR (&lt;i&gt;%1&lt;/i&gt;) сети &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Invalid CIDR specified (&lt;i&gt;%1&lt;/i&gt;) for the NAT network previously called &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задан неверный CIDR (&lt;i&gt;%1&lt;/i&gt;) сети с прежним именем: &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя сети</translation>
     </message>
     <message>
         <source>[empty]</source>
-        <translation type="unfinished"></translation>
+        <translation>[Не задано]</translation>
     </message>
     <message>
         <source>%1 (renamed from %2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (Прежнее имя: &quot;%2&quot;)</translation>
     </message>
     <message>
         <source>Old Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Прежнее имя</translation>
     </message>
     <message>
         <source>New Network Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Новое имя</translation>
     </message>
     <message>
         <source>Network CIDR</source>
-        <translation type="unfinished"></translation>
+        <translation>CIDR сети</translation>
     </message>
     <message>
         <source>Supports DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Поддержка DHCP</translation>
     </message>
     <message>
         <source>yes</source>
-        <translation type="unfinished"></translation>
+        <translation>есть</translation>
     </message>
     <message>
         <source>no</source>
-        <translation type="unfinished"></translation>
+        <translation>нет</translation>
     </message>
     <message>
         <source>Supports IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>Поддержка IPv6</translation>
     </message>
     <message>
         <source>Default IPv6 route</source>
-        <translation type="unfinished"></translation>
+        <translation>Роутинг IPv6 по-умолчанию</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверный IPv4 адрес.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv4 network mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверную IPv4 маску сети.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid IPv6 address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверный IPv6 адрес.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверный адрес DHCP сервера.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server mask.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверную маску сети DHCP сервера.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server lower address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверную нижнюю границу диапазона DHCP адресов.</translation>
     </message>
     <message>
         <source>Host interface &lt;b&gt;%1&lt;/b&gt; does not currently have a valid DHCP server upper address bound.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальный интерфейс хоста &lt;b&gt;%1&lt;/b&gt; имеет неверную верхнюю границу диапазона DHCP адресов.</translation>
     </message>
     <message>
         <source>The name &lt;b&gt;%1&lt;/b&gt; is being used for several NAT networks.</source>
-        <translation type="unfinished"></translation>
+        <translation>Имя &lt;b&gt;%1&lt;/b&gt; используется более, чем одной NAT сетью.</translation>
     </message>
     <message>
         <source>Active</source>
         <comment>NAT network</comment>
-        <translation type="unfinished">Активен</translation>
+        <translation>Активна</translation>
     </message>
     <message>
         <source>&amp;Add NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Добавить NAT сеть</translation>
     </message>
     <message>
         <source>&amp;Remove NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Удалить NAT сеть</translation>
     </message>
     <message>
         <source>&amp;Edit NAT network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Изменить NAT сеть</translation>
     </message>
 </context>
 <context>
@@ -3602,177 +3602,177 @@ p, li { white-space: pre-wrap; }
     <name>UIGlobalSettingsNetworkDetailsHost</name>
     <message>
         <source>Host-only Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детали виртуальной сети хоста</translation>
     </message>
     <message>
         <source>&amp;Adapter</source>
-        <translation type="unfinished">&amp;Адаптер</translation>
+        <translation>&amp;Адаптер</translation>
     </message>
     <message>
         <source>Manual &amp;Configuration</source>
-        <translation type="unfinished">&amp;Ручная конфигурация</translation>
+        <translation>&amp;Ручная конфигурация</translation>
     </message>
     <message>
         <source>Use manual configuration for this host-only network adapter.</source>
-        <translation type="unfinished">Настроить виртуальный адаптер сети хоста вручную.</translation>
+        <translation>Настроить виртуальный адаптер сети хоста вручную.</translation>
     </message>
     <message>
         <source>&amp;IPv4 Address:</source>
-        <translation type="unfinished">IPv4 &amp;адрес:</translation>
+        <translation>IPv4 &amp;адрес:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 address for this adapter.</source>
-        <translation type="unfinished">Отображает IPv4 адрес адаптера хоста данной виртуальной сети.</translation>
+        <translation>Отображает IPv4 адрес адаптера хоста данной виртуальной сети.</translation>
     </message>
     <message>
         <source>IPv4 Network &amp;Mask:</source>
-        <translation type="unfinished">IPv4 &amp;маска сети:</translation>
+        <translation>IPv4 &amp;маска сети:</translation>
     </message>
     <message>
         <source>Holds the host IPv4 network mask for this adapter.</source>
-        <translation type="unfinished">Отображает IPv4 маску адаптера хоста данной виртуальной сети.</translation>
+        <translation>Отображает IPv4 маску адаптера хоста данной виртуальной сети.</translation>
     </message>
     <message>
         <source>I&amp;Pv6 Address:</source>
-        <translation type="unfinished">IPv6 а&amp;дрес:</translation>
+        <translation>IPv6 а&amp;дрес:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 address for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Отображает IPv6 адрес адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+        <translation>Отображает IPv6 адрес адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>IPv6 Network Mask &amp;Length:</source>
-        <translation type="unfinished">IPv6 д&amp;лина маски сети:</translation>
+        <translation>IPv6 д&amp;лина маски сети:</translation>
     </message>
     <message>
         <source>Holds the host IPv6 network mask prefix length for this adapter if IPv6 is supported.</source>
-        <translation type="unfinished">Отображает длину IPv6 маски адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
+        <translation>Отображает длину IPv6 маски адаптера хоста данной виртуальной сети, если IPv6 поддерживается.</translation>
     </message>
     <message>
         <source>&amp;DHCP Server</source>
-        <translation type="unfinished">DHCP &amp;сервер</translation>
+        <translation>DHCP &amp;сервер</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить сервер</translation>
     </message>
     <message>
         <source>Indicates whether the DHCP Server is enabled on machine startup or not.</source>
-        <translation type="unfinished">Отображает запускается ли DHCP сервер при старте машины.</translation>
+        <translation>Отображает запускается ли DHCP сервер при старте машины.</translation>
     </message>
     <message>
         <source>Server Add&amp;ress:</source>
-        <translation type="unfinished">А&amp;дрес сервера:</translation>
+        <translation>А&amp;дрес сервера:</translation>
     </message>
     <message>
         <source>Holds the address of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Отображает адрес DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>Server &amp;Mask:</source>
-        <translation type="unfinished">&amp;Маска сети сервера:</translation>
+        <translation>&amp;Маска сети сервера:</translation>
     </message>
     <message>
         <source>Holds the network mask of the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Отображает маску сети DHCP сервера, обслуживающего виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Lower Address Bound:</source>
-        <translation type="unfinished">&amp;Нижняя граница адресов:</translation>
+        <translation>&amp;Нижняя граница адресов:</translation>
     </message>
     <message>
         <source>Holds the lower address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Отображает нижнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
     <message>
         <source>&amp;Upper Address Bound:</source>
-        <translation type="unfinished">В&amp;ерхняя граница адресов:</translation>
+        <translation>В&amp;ерхняя граница адресов:</translation>
     </message>
     <message>
         <source>Holds the upper address bound offered by the DHCP server servicing the network associated with this host-only adapter.</source>
-        <translation type="unfinished">Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
+        <translation>Отображает верхнюю границу, предоставляемую DHCP сервером, обслуживающим виртуальную сеть хоста, связанную с данным сетевым адаптером.</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsNetworkDetailsNAT</name>
     <message>
         <source>NAT Network Details</source>
-        <translation type="unfinished"></translation>
+        <translation>Детали сети NAT</translation>
     </message>
     <message>
         <source>&amp;Enable Network</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить сеть</translation>
     </message>
     <message>
         <source>Enable this NAT network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, является ли сеть активной.</translation>
     </message>
     <message>
         <source>Network &amp;Name:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Имя сети:</translation>
     </message>
     <message>
         <source>Holds the name for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет имя данной сети.</translation>
     </message>
     <message>
         <source>Network &amp;CIDR:</source>
-        <translation type="unfinished"></translation>
+        <translation>CIDR &amp;сети:</translation>
     </message>
     <message>
         <source>Holds the CIDR for this network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет CIDR данной сети.</translation>
     </message>
     <message>
         <source>Network Options:</source>
-        <translation type="unfinished"></translation>
+        <translation>Опции сети:</translation>
     </message>
     <message>
         <source>Supports &amp;DHCP</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Поддержка DHCP</translation>
     </message>
     <message>
         <source>Determines whether this network supports DHCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, поддерживает ли данная сеть DHCP.</translation>
     </message>
     <message>
         <source>Supports &amp;IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>П&amp;оддержка IPv6</translation>
     </message>
     <message>
         <source>Determines whether this network supports IPv6.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, поддерживает ли данная сеть IPv6.</translation>
     </message>
     <message>
         <source>Advertise Default IPv6 &amp;Route</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Объявить маршрутом IPv6 по-умолчанию</translation>
     </message>
     <message>
         <source>Determines whether this network should be advertised as the default IPv6 route.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, является ли данная сеть маршрутом IPv6 по-умолчанию.</translation>
     </message>
     <message>
         <source>Opens a window to manage port forwarding rules.</source>
-        <translation type="unfinished">Открыть диалог для управления правилами проброса портов.</translation>
+        <translation>Открыть диалог для управления правилами проброса портов.</translation>
     </message>
     <message>
         <source>&amp;Port Forwarding</source>
-        <translation type="unfinished">&amp;Проброс портов</translation>
+        <translation>&amp;Проброс портов</translation>
     </message>
 </context>
 <context>
     <name>UIGlobalSettingsPortForwardingDlg</name>
     <message>
         <source>Port Forwarding Rules</source>
-        <translation type="unfinished">Правила проброса портов</translation>
+        <translation>Правила проброса портов</translation>
     </message>
     <message>
         <source>IPv4</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv4</translation>
     </message>
     <message>
         <source>IPv6</source>
-        <translation type="unfinished"></translation>
+        <translation>IPv6</translation>
     </message>
 </context>
 <context>
@@ -3827,11 +3827,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No proxy host is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан адрес прокси-сервера.</translation>
     </message>
     <message>
         <source>No proxy port is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан порт прокси-сервера.</translation>
     </message>
 </context>
 <context>
@@ -3896,71 +3896,71 @@ p, li { white-space: pre-wrap; }
     <name>UIHostComboEditor</name>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished">&lt;клавиша_%1&gt;</translation>
+        <translation>&lt;клавиша_%1&gt;</translation>
     </message>
     <message>
         <source>Left </source>
-        <translation type="unfinished">Левый </translation>
+        <translation>Левый </translation>
     </message>
     <message>
         <source>Right </source>
-        <translation type="unfinished">Правый </translation>
+        <translation>Правый </translation>
     </message>
     <message>
         <source>Left Shift</source>
-        <translation type="unfinished">Левый Shift</translation>
+        <translation>Левый Shift</translation>
     </message>
     <message>
         <source>Right Shift</source>
-        <translation type="unfinished">Правый Shift</translation>
+        <translation>Правый Shift</translation>
     </message>
     <message>
         <source>Left Ctrl</source>
-        <translation type="unfinished">Левый Ctrl</translation>
+        <translation>Левый Ctrl</translation>
     </message>
     <message>
         <source>Right Ctrl</source>
-        <translation type="unfinished">Правый Ctrl</translation>
+        <translation>Правый Ctrl</translation>
     </message>
     <message>
         <source>Left Alt</source>
-        <translation type="unfinished">Левый Alt</translation>
+        <translation>Левый Alt</translation>
     </message>
     <message>
         <source>Right Alt</source>
-        <translation type="unfinished">Правый Alt</translation>
+        <translation>Правый Alt</translation>
     </message>
     <message>
         <source>Left WinKey</source>
-        <translation type="unfinished">Левая Win-клавиша</translation>
+        <translation>Левая Win-клавиша</translation>
     </message>
     <message>
         <source>Right WinKey</source>
-        <translation type="unfinished">Правая Win-клавиша</translation>
+        <translation>Правая Win-клавиша</translation>
     </message>
     <message>
         <source>Menu key</source>
-        <translation type="unfinished">Клавиша Menu</translation>
+        <translation>Клавиша Menu</translation>
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished">Alt Gr</translation>
+        <translation>Alt Gr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished">Caps Lock</translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished">Scroll Lock</translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>Host+</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост+</translation>
     </message>
     <message>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>Отсутствует</translation>
     </message>
 </context>
 <context>
@@ -4127,22 +4127,22 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Reset shortcut to default</source>
-        <translation type="unfinished"></translation>
+        <translation>Сбросить сочетание клавиш на значение по-умолчанию</translation>
     </message>
     <message>
         <source>Unset shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>Очистить сочетание клавиш</translation>
     </message>
 </context>
 <context>
     <name>UIHotKeyTableModel</name>
     <message>
         <source>Name</source>
-        <translation type="unfinished">Имя</translation>
+        <translation>Команда</translation>
     </message>
     <message>
         <source>Shortcut</source>
-        <translation type="unfinished"></translation>
+        <translation>Сочетание клавиш</translation>
     </message>
 </context>
 <context>
@@ -4385,20 +4385,20 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;nobr&gt;Indicates video capturing activity:&lt;/nobr&gt;&lt;br&gt;%1</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;Показывает активность захвата видео:&lt;/nobr&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture disabled&lt;/b&gt;&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Захват видео выключен&lt;/b&gt;&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;&lt;b&gt;Video capture file:&lt;/b&gt; %1&lt;/nobr&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;&lt;b&gt;Производится захват видео в файл:&lt;/b&gt; %1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Additional feature status:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>Статус дополнительных опций:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%5:&lt;/b&gt;&amp;nbsp;%6&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%7:&lt;/b&gt;&amp;nbsp;%8%&lt;/nobr&gt;</translation>
     </message>
 </context>
 <context>
@@ -4626,130 +4626,130 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Video &amp;Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Захват видео</translation>
     </message>
     <message>
         <source>When checked, VirtualBox will record the virtual machine session as a video file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Если стоит галочка, VirtualBox будет записывать сессию виртуальной машины в видео файл.</translation>
     </message>
     <message>
         <source>&amp;Enable Video Capture</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Включить захват видео</translation>
     </message>
     <message>
         <source>File &amp;Path:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Путь к файлу:</translation>
     </message>
     <message>
         <source>This setting determines the filename VirtualBox uses to save the recorded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет путь к файлу, используемому VirtualBox для хранения записанного видео контента.</translation>
     </message>
     <message>
         <source>Frame &amp;Size:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Размер кадра:</translation>
     </message>
     <message>
         <source>This setting determines the resolution (frame size) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет размер кадра (разрешение) записанного видео контента.</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;horizontal&lt;/b&gt; resolution (frame width) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет &lt;b&gt;горизонтальное&lt;/b&gt; разрешение (длину кадра) записанного видео контента.</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;vertical&lt;/b&gt; resolution (frame height) of the recorded video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет &lt;b&gt;вертикальное&lt;/b&gt; разрешение (ширину кадра) записанного видео контента.</translation>
     </message>
     <message>
         <source>&amp;Frame Rate:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Скорость записи:</translation>
     </message>
     <message>
         <source>This setting determines the maximum number of &lt;b&gt;frames per second&lt;/b&gt;. Additional frames will be skipped. Reducing this value will increase the number of skipped frames and reduce the file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет максимальное число &lt;b&gt;кадров в секунду&lt;/b&gt;. Лишние кадры будут пропущены. Понижение данного параметра приведёт к увеличению числа пропущенных кадров и уменьшению размера видео файла.</translation>
     </message>
     <message>
         <source>&amp;Quality:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Качество:</translation>
     </message>
     <message>
         <source>This setting determines the &lt;b&gt;quality&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет &lt;b&gt;качество&lt;/b&gt; видео. Увеличение данного параметра в общем случае приведёт к улучшению качества видео и увеличению размера видео файла.</translation>
     </message>
     <message>
         <source>This setting determines the bitrate in &lt;b&gt;kilobits per second&lt;/b&gt;. Increasing this value will make the video look better at the cost of an increased file size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет битрейт видео в &lt;b&gt;килобитах в секунду&lt;/b&gt;. Увеличение данного параметра в общем случае приведёт к улучшению качества видео и увеличению размера видео файла.</translation>
     </message>
     <message>
         <source>&amp;Screens:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Дисплеи:</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration. However the host system does not currently provide this, so you will not be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная машина настроена на использование средств аппаратного ускорения. Однако эти средства в данный момент недоступны, поэтому машина не может быть запущена.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required to switch to fullscreen or seamless mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Под видеопамять виртуальной машины выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для переключения машины в полноэкранный режим или режим интеграции дисплея.</translation>
     </message>
     <message>
         <source>The virtual machine is currently assigned less than &lt;b&gt;%1&lt;/b&gt; of video memory which is the minimum amount required for High Definition Video to be played efficiently.</source>
-        <translation type="unfinished"></translation>
+        <translation>Под видеопамять виртуальной машины выделено менее &lt;b&gt;%1&lt;/b&gt;. Данное значение является минимальным количеством, необходимым для того, что бы видео формата HD корректно воспроизводилось.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use hardware graphics acceleration and the operating system hint is set to Windows Vista or later. For best performance you should set the machine&apos;s video memory to at least b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная машина настроена на использование аппаратного ускорения, а операционной системой является Windows Vista (или более новая версия). Для достижения наилучшей производительности следует выделить под видеопамять машины как минимум &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The virtual machine is set up to use Video Stream Acceleration. As this feature only works with Windows guest systems it will be disabled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальная машина настроена для использования функции ускорения видео-потока. Поскольку данная функция поддерживается лишь классом гостевых систем Windows, она будет отключена.</translation>
     </message>
     <message>
         <source>The VRDE server port value is not currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан порт сервера удаленного рабочего стола.</translation>
     </message>
     <message>
         <source>The VRDE authentication timeout value is not currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано максимальное время ожидания авторизации подключения к серверу удаленного рабочего стола.</translation>
     </message>
     <message>
         <source>User Defined</source>
-        <translation type="unfinished"></translation>
+        <translation>Пользовательский</translation>
     </message>
     <message>
         <source>%1 fps</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 кдр/сек</translation>
     </message>
     <message>
         <source>fps</source>
-        <translation type="unfinished"></translation>
+        <translation>кдр/сек</translation>
     </message>
     <message>
         <source>low</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>низкое</translation>
     </message>
     <message>
         <source>medium</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>среднее</translation>
     </message>
     <message>
         <source>high</source>
         <comment>quality</comment>
-        <translation type="unfinished"></translation>
+        <translation>высокое</translation>
     </message>
     <message>
         <source>kbps</source>
-        <translation type="unfinished"></translation>
+        <translation>кбит/сек</translation>
     </message>
     <message>
         <source>Screen %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Дисплей %1</translation>
     </message>
     <message>
         <source>Enable video recording for screen %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Включить захват видео для дисплея %1.</translation>
     </message>
 </context>
 <context>
@@ -4996,11 +4996,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No name specified for the virtual machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано имя виртуальной машины.</translation>
     </message>
     <message>
         <source>The virtual machine operating system hint is set to a 64-bit type. 64-bit guest systems require hardware virtualization, so this will be enabled automatically if you confirm the changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Для этой машины выбран 64х-битный тип гостевой ОС. В связи с тем, что такие ОС требуют средств аппаратной виртуализации (VT-x/AMD-V), эти функции будут включены автоматически.</translation>
     </message>
 </context>
 <context>
@@ -5239,7 +5239,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the virtual network adapter on the host system that traffic to and from this network card will go through. You can create and remove adapters using the global network settings in the virtual machine manager window.</source>
-        <translation>Задаёт виртуальный сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера. Вы можете добавлять и удалять виртуальные сетевые адаптеры хоста, используя окно глобальных свойств менеджера виртуальных машин.</translation>
+        <translation>Задаёт виртуальный сетевой адаптер хоста, через который пойдёт трафик данного виртуального сетевого адаптера. Вы можете добавлять и удалять виртуальные сетевые адаптеры хоста на странице глобальных сетевых настроек VirtualBox.</translation>
     </message>
     <message>
         <source>Selects the driver to be used with this network card.</source>
@@ -5255,35 +5255,35 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No bridged network adapter is currently selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран адаптер для подключения по сетевому мосту.</translation>
     </message>
     <message>
         <source>No internal network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя внутренней сети.</translation>
     </message>
     <message>
         <source>No host-only network adapter is currently selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран виртуальный сетевой адаптер хоста.</translation>
     </message>
     <message>
         <source>No generic driver is currently selected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не выбран универсальный сетевой драйвер.</translation>
     </message>
     <message>
         <source>The MAC address must be 12 hexadecimal digits long.</source>
-        <translation type="unfinished"></translation>
+        <translation>Длина MAC адреса должна ровняться 12и шестнадцатеричным символам.</translation>
     </message>
     <message>
         <source>The second digit in the MAC address may not be odd as only unicast addresses are allowed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вторая цифра MAC-адреса не может быть нечётной, поскольку допустима лишь одноадресная конфигурация.</translation>
     </message>
     <message>
         <source>No NAT network name is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя NAT сети.</translation>
     </message>
     <message>
         <source>Holds the name of the NAT network that this network card will be connected to. You can create and remove networks using the global network settings in the virtual machine manager window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Задаёт имя NAT сети, к которой будет подключен данный виртуальный сетевой адаптер. Вы можете создавать и удалять такие сети на странице глобальных сетевых настроек VirtualBox.</translation>
     </message>
 </context>
 <context>
@@ -5460,23 +5460,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано IRQ.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан I/O порт.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Как минимум два порта имеют идентичные настройки.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан путь к порту.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Как минимум два порта имеют идентичные пути.</translation>
     </message>
 </context>
 <context>
@@ -5740,23 +5740,23 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No IRQ is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задано IRQ.</translation>
     </message>
     <message>
         <source>No I/O port is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан I/O порт.</translation>
     </message>
     <message>
         <source>Two or more ports have the same settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Как минимум два порта имеют идентичные настройки.</translation>
     </message>
     <message>
         <source>No port path is currently specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не задан путь к порту.</translation>
     </message>
     <message>
         <source>There are currently duplicate port paths specified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Как минимум два порта имеют идентичные пути.</translation>
     </message>
 </context>
 <context>
@@ -5855,7 +5855,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No hard disk is selected for &lt;i&gt;%1&lt;/i&gt;.</source>
-        <translation type="unfinished">Не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
+        <translation>Не выбран жёсткий диск для &lt;i&gt;%1&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; uses a medium that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
@@ -6189,19 +6189,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No name is currently specified for the controller at position &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не указано имя контроллера на позиции &lt;b&gt;%1&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>The controller at position &lt;b&gt;%1&lt;/b&gt; has the same name as the controller at position &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Контроллер на позиции &lt;b&gt;%1&lt;/b&gt; использует имя, используемое контроллером на позиции &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;i&gt;%1&lt;/i&gt; is using a disk that is already attached to &lt;i&gt;%2&lt;/i&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;i&gt;%1&lt;/i&gt; использует жесткий диск, который уже подключен к &lt;i&gt;%2&lt;/i&gt;.</translation>
     </message>
     <message>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>В данный момент больше контроллеров носителей информации, чем поддерживается чипсетом %1. Пожалуйста, измените тип чипсета на странице &apos;Система&apos; или уменьшите количество следующих контроллеров на странице &apos;Носители&apos;: %2.</translation>
     </message>
 </context>
 <context>
@@ -6429,47 +6429,47 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Pointing Device:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Манипулятор курсора:</translation>
     </message>
     <message>
         <source>Determines whether the emulated pointing device is a standard PS/2 mouse, a USB tablet or a USB multi-touch tablet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Определяет, является ли манипулятором курсора обычная PS/2 мышь, USB планшет или USB планшет с поддержкой multi-touch.</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. Not enough memory is left for the host operating system. Please select a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Недостаточно памяти для операционной системы хоста. Задайте меньшее значение.</translation>
     </message>
     <message>
         <source>More than &lt;b&gt;%1%&lt;/b&gt; of the host computer&apos;s memory (&lt;b&gt;%2&lt;/b&gt;) is assigned to the virtual machine. There might not be enough memory left for the host operating system. Please consider selecting a smaller amount.</source>
-        <translation type="unfinished"></translation>
+        <translation>Виртуальной машине назначено более &lt;b&gt;%1%&lt;/b&gt; памяти компьютера (&lt;b&gt;%2&lt;/b&gt;). Для операционной системы хоста может оказаться недостаточно памяти. Продолжайте на свой страх и риск.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support a chip set of type ICH9. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование чипсета ICH9, для работы которого требуется функция IO-APIC, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>USB controller emulation is not currently enabled on the USB page. This is needed to support an emulated USB input device. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование одного из USB устройств в качетве манипулятора курсора. Данная опция не сможет функционировать без эмуляции USB, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>For performance reasons, the number of virtual CPUs attached to the virtual machine may not be more than twice the number of physical CPUs on the host (&lt;b&gt;%1&lt;/b&gt;). Please reduce the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>В целях производительности, число виртуальных процессоров, подсоединённых к виртуальной машине, не может превышать число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;) более чем в два раза. Пожалуйста, задайте меньшее число виртуальных процессоров.</translation>
     </message>
     <message>
         <source>More virtual CPUs are assigned to the virtual machine than the number of physical CPUs on the host system (&lt;b&gt;%1&lt;/b&gt;). This is likely to degrade the performance of your virtual machine. Please consider reducing the number of virtual CPUs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Заданно число виртуальных процессоров, превышающее число реальных процессоров хоста (&lt;b&gt;%1&lt;/b&gt;). Это может отрицательно отразиться на производительности виртуальной машины. Возможно имеет смысл уменьшить число виртуальных процессоров данной машины.</translation>
     </message>
     <message>
         <source>The I/O APIC feature is not currently enabled in the Motherboard section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование более одного виртуального процессора, что в свою очередь требует активации функции IO-APIC, которая будет включена автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>Hardware virtualization is not currently enabled in the Acceleration section of the System page. This is needed in order to support more than one virtual processor. It will be done automatically if you confirm your changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на использование более одного виртуального процессора, что в свою очередь требует средств аппаратной виртуализации, которые будет включены автоматически при сохранении настроек.</translation>
     </message>
     <message>
         <source>The processor execution cap is set to a low value. This may make the machine feel slow to respond.</source>
-        <translation type="unfinished"></translation>
+        <translation>Вы установили слишком низкий предел загрузки ЦПУ, что может привести к очень медленной работе виртуальной машины.</translation>
     </message>
 </context>
 <context>
@@ -6605,7 +6605,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB 2.0 is currently enabled for this virtual machine. However, this requires the &lt;b&gt;%1&lt;/b&gt; to be installed. Please install the Extension Pack from the VirtualBox download site or disable USB 2.0 to be able to start the machine.</source>
-        <translation type="unfinished"></translation>
+        <translation>Данная машина настроена на эмуляцию USB 2.0, для чего требуюется установить &lt;b&gt;%1&lt;/b&gt;. Если необходимо, установите данный плагин, предварительно скачав его с сайта VirtualBox или отключите USB 2.0 для дальнейшей работы с машиной.</translation>
     </message>
 </context>
 <context>
@@ -8300,8 +8300,6 @@ p, li { white-space: pre-wrap; }
         <comment>This text is never used with n == 0. Feel free to drop the %n where possible, we only included it because of problems with Qt Linguist (but the user can see how many machines are in the list and doesn&apos;t need to be told).</comment>
         <translation type="unfinished">
             <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
         </translation>
     </message>
     <message>
@@ -8430,19 +8428,19 @@ p, li { white-space: pre-wrap; }
     <name>UIMiniToolBar</name>
     <message>
         <source>Always show the toolbar</source>
-        <translation type="unfinished">Держать тулбар в зоне видимости</translation>
+        <translation>Держать тулбар в зоне видимости</translation>
     </message>
     <message>
         <source>Minimize Window</source>
-        <translation type="unfinished">Свернуть окно</translation>
+        <translation>Свернуть окно</translation>
     </message>
     <message>
         <source>Exit Full Screen or Seamless Mode</source>
-        <translation type="unfinished">Выйти из режима полного экрана</translation>
+        <translation>Вернуться в оконный режим</translation>
     </message>
     <message>
         <source>Close VM</source>
-        <translation type="unfinished">Закрыть ВМ</translation>
+        <translation>Завершить работу машины</translation>
     </message>
 </context>
 <context>
@@ -8519,7 +8517,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The network operation failed with the following error: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Сетевая операция завершилась неудачей по следующей причине: %1.</translation>
     </message>
 </context>
 <context>
@@ -8546,27 +8544,27 @@ p, li { white-space: pre-wrap; }
     <name>UINetworkReplyPrivate</name>
     <message>
         <source>Host not found</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост недоступен</translation>
     </message>
     <message>
         <source>Content access denied</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка доступа к контенту</translation>
     </message>
     <message>
         <source>Protocol failure</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка протокола</translation>
     </message>
     <message>
         <source>Wrong SSL certificate format</source>
-        <translation type="unfinished"></translation>
+        <translation>Неверный формат SSL сертификата</translation>
     </message>
     <message>
         <source>SSL authentication failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ошибка SSL аутентификации</translation>
     </message>
     <message>
         <source>Unknown reason</source>
-        <translation type="unfinished"></translation>
+        <translation>Неизвестная причина</translation>
     </message>
 </context>
 <context>
@@ -9236,7 +9234,7 @@ p, li { white-space: pre-wrap; }
     <name>UIPopupCenter</name>
     <message>
         <source>Click for full details</source>
-        <translation type="unfinished"></translation>
+        <translation>Кликните мышкой для более подробной информации</translation>
     </message>
 </context>
 <context>
@@ -9414,11 +9412,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;b&gt;%1&lt;/b&gt; page:</source>
-        <translation type="unfinished"></translation>
+        <translation>Страница &lt;b&gt;%1&lt;/b&gt;:</translation>
     </message>
     <message>
         <source>&lt;b&gt;%1: %2&lt;/b&gt; page:</source>
-        <translation type="unfinished"></translation>
+        <translation>Страница &lt;b&gt;%1: %2&lt;/b&gt;:</translation>
     </message>
 </context>
 <context>
@@ -9680,7 +9678,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>S&amp;end the shutdown signal</source>
-        <translation type="unfinished">Послать сигнал &amp;завершения работы</translation>
+        <translation>&amp;Послать сигнал завершения работы</translation>
     </message>
     <message>
         <source>&lt;p&gt;Turns off the virtual machine.&lt;/p&gt;&lt;p&gt;Note that this action will stop machine execution immediately so that the guest operating system running inside it will not be able to perform a clean shutdown procedure which may result in &lt;i&gt;data loss&lt;/i&gt; inside the virtual machine. Selecting this action is recommended only if the virtual machine does not respond to the &lt;b&gt;Send the shutdown signal&lt;/b&gt; action.&lt;/p&gt;</source>
