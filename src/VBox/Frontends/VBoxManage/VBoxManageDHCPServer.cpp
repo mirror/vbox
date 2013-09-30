@@ -133,8 +133,8 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     const char * pLowerIp = NULL;
     const char * pUpperIp = NULL;
 
-    uint8_t u8OptId = -1;
-    uint8_t u8Slot = -1;
+    uint8_t u8OptId = (uint8_t)~0;
+    uint8_t u8Slot = (uint8_t)~0;
 
     int enable = -1;
 
