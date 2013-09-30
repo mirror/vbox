@@ -278,7 +278,8 @@ static int getSmcDeviceKey(IVirtualBox *pVirtualBox, IMachine *pMachine, Utf8Str
     int rc = DarwinSmcKey(abKeyBuf, sizeof(abKeyBuf));
     if (SUCCEEDED(rc))
     {
-        Bstr(abKeyBuf).detachTo(aKey);
+        *pStrKey = abKeyBuf;
+        *pfGetKeyFromRealSMC = true;
         return rc;
     }
     LogRel(("Warning: DarwinSmcKey failed with rc=%Rrc!\n", rc));
