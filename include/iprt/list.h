@@ -306,7 +306,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /** @copydoc RTListForEach */
 #define RTListForEachCpp(pList, pIterator, Type, Member) \
     for (pIterator = RTListNodeGetNextCpp(pList, Type, Member); \
-         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         !RTListNodeIsDummyCpp(pList, pIterator, Type, Member); \
          pIterator = RT_FROM_CPP_MEMBER((pIterator)->Member.pNext, Type, Member) )
 
 
@@ -331,7 +331,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 #define RTListForEachSafeCpp(pList, pIterator, pIterNext, Type, Member) \
     for (pIterator = RTListNodeGetNextCpp(pList, Type, Member), \
          pIterNext = RT_FROM_CPP_MEMBER((pIterator)->Member.pNext, Type, Member); \
-         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         !RTListNodeIsDummyCpp(pList, pIterator, Type, Member); \
          pIterator = pIterNext, \
          pIterNext = RT_FROM_CPP_MEMBER((pIterator)->Member.pNext, Type, Member) )
 
@@ -351,7 +351,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 /** @copydoc RTListForEachReverse */
 #define RTListForEachReverseCpp(pList, pIterator, Type, Member) \
     for (pIterator = RTListNodeGetPrevCpp(pList, Type, Member); \
-         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         !RTListNodeIsDummyCpp(pList, pIterator, Type, Member); \
          pIterator = RT_FROM_CPP_MEMBER((pIterator)->Member.pPrev, Type, Member) )
 
 
@@ -375,7 +375,7 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 #define RTListForEachReverseSafeCpp(pList, pIterator, pIterPrev, Type, Member) \
     for (pIterator = RTListNodeGetPrevCpp(pList, Type, Member), \
          pIterPrev = RT_FROM_CPP_MEMBER((pIterator)->Member.pPrev, Type, Member); \
-         !RTListNodeIsDummy(pList, pIterator, Type, Member); \
+         !RTListNodeIsDummyCpp(pList, pIterator, Type, Member); \
          pIterator = pIterPrev, \
          pIterPrev = RT_FROM_CPP_MEMBER((pIterator)->Member.pPrev, Type, Member) )
 
