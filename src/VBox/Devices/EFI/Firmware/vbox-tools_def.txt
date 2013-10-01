@@ -256,7 +256,7 @@ DEFINE GCC_X64_RC_FLAGS            = -I binary -O elf64-x86-64      -B i386 --re
 *_UNIXGCC_IA32_VFRPP_PATH           = DEF(UNIXGCC_IA32_PETOOLS_PREFIX)gcc
 *_UNIXGCC_IA32_RC_PATH              = DEF(UNIXGCC_IA32_PETOOLS_PREFIX)objcopy
 
-  DEBUG_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O1 -fno-omit-frame-pointer
+  DEBUG_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -Os -fno-omit-frame-pointer
   NOOPT_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O0 -fno-omit-frame-pointer
 RELEASE_UNIXGCC_IA32_CC_FLAGS       = DEF(GCC_IA32_CC_FLAGS) -O2 -fno-omit-frame-pointer
 *_UNIXGCC_IA32_RC_FLAGS             = DEF(GCC_IA32_RC_FLAGS)
