@@ -2456,7 +2456,10 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     for (ui=0; ui<uiNumElems; ++ui)
     {
         CRGLSLShader *pShader = crStateLoadGLSLShader(pSSM);
+        GLboolean fNewKeyCheck;
         if (!pShader) return VERR_SSM_UNEXPECTED_DATA;
+        fNewKeyCheck = crHashtableAllocRegisterKey(pContext->glsl.programs, pShader->id);
+        CRASSERT(fNewKeyCheck);
         crHashtableAdd(pContext->glsl.shaders, pShader->id, pShader);
     }
 
