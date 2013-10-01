@@ -1019,6 +1019,8 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
                     crServerVBoxCompositionSetEnableStateGlobal(GL_FALSE);
 
+                    g_pConsole = pConsole;
+
                     rc = crVBoxServerSetScreenCount(monitorCount);
                     AssertRCReturn(rc, rc);
 
@@ -1041,8 +1043,6 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
                             AssertRCReturn(rc, rc);
                         }
                     }
-
-                    g_pConsole = pConsole;
 
                     crServerVBoxCompositionSetEnableStateGlobal(GL_TRUE);
 

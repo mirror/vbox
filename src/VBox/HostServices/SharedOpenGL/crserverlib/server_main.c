@@ -2737,6 +2737,8 @@ DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
 
     crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
 
+/*    crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA, NULL); */
+
     return VINF_SUCCESS;
 }
 
@@ -2805,6 +2807,9 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
         if (pDisplay)
             CrDpReparent(pDisplay, &SCREEN(sIndex));
     }
+
+    crVBoxServerNotifyEvent(sIndex, VBOX3D_NOTIFY_EVENT_TYPE_VISIBLE_3DDATA,
+            cr_server.aWinVisibilityInfos[sIndex].cVisibleWindows ? (void*)1 : NULL);
 
     return VINF_SUCCESS;
 }
