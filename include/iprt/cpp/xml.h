@@ -30,10 +30,14 @@
 # error "There are no XML APIs available in Ring-0 Context!"
 #endif
 
+/*#define USE_STD_LIST_FOR_CHILDREN*/
+
+#include <iprt/list.h>
+#include <iprt/cpp/exception.h>
+
 #include <list>
 #include <memory>
 
-#include <iprt/cpp/exception.h>
 
 /** @defgroup grp_rt_cpp_xml    C++ XML support
  * @ingroup grp_rt_cpp
@@ -380,47 +384,131 @@ class AttributeNode;
 class ContentNode;
 
 /**
- * Node base class. Cannot be used directly, but ElementNode, ContentNode and
- * AttributeNode derive from this. This does implement useful public methods though.
+ * Node base class.
+ *
+ * Cannot be used directly, but ElementNode, ContentNode and AttributeNode
+ * derive from this.  This does implement useful public methods though.
+ *
+ *
  */
 class RT_DECL_CLASS Node
 {
 public:
     ~Node();
 
-    const char* getName() const;
-    const char* getPrefix() const;
-    const char* getNamespaceURI() const;
+    const char *getName() const;
+    const char *getPrefix() const;
+    const char *getNamespaceURI() const;
     bool nameEquals(const char *pcszNamespace, const char *pcsz) const;
     bool nameEquals(const char *pcsz) const
     {
         return nameEquals(NULL, pcsz);
     }
+    bool nameEqualsN(const char *pcszNamespace, const char *pcsz, size_t cchMax) const;
 
-    const char* getValue() const;
+    const char *getValue() const;
     bool copyValue(int32_t &i) const;
     bool copyValue(uint32_t &i) const;
     bool copyValue(int64_t &i) const;
     bool copyValue(uint64_t &i) const;
 
-    int getLineNumber() const;
-
-    int isElement() const
+    /** @name Introspection.
+     * @{ */
+    /** Is this an ElementNode instance.
+     * @returns true / false  */
+    bool isElement() const
     {
         return m_Type == IsElement;
     }
 
-protected:
-    typedef enum {IsElement, IsAttribute, IsContent} EnumType;
+    /** Is this an ContentNode instance.
+     * @returns true / false  */
+    bool isContent() const
+    {
+        return m_Type == IsContent;
+    }
 
-    EnumType    m_Type;
-    Node        *m_pParent;
-    xmlNode     *m_plibNode;            // != NULL if this is an element or content node
-    xmlAttr     *m_plibAttr;            // != NULL if this is an attribute node
-    const char  *m_pcszNamespacePrefix; // not always set
-    const char  *m_pcszNamespaceHref;   // full http:// spec
-    const char  *m_pcszName;            // element or attribute name, points either into plibNode or plibAttr;
-                                        // NULL if this is a content node
+    /** Is this an AttributeNode instance.
+     * @returns true / false  */
+    bool isAttribute() const
+    {
+        return m_Type == IsElement;
+    }
+
+    int getLineNumber() const;
+
+    /** @} */
+
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    /** @name General tree enumeration.
+     *
+     * Use the introspection methods isElement() and isContent() before doing static
+     * casting.  Parents are always or ElementNode type, but siblings and children
+     * can be of both ContentNode and ElementNode types.
+     *
+     * @remarks Careful mixing tree walking with node removal!
+     * @{
+     */
+    /** Get the parent node
+     * @returns Pointer to the parent node, or NULL if root. */
+    const Node *getParent() const
+    {
+        return m_pParent;
+    }
+
+    /** Get the first child node.
+     * @returns Pointer to the first child node, NULL if no children. */
+    const Node *getFirstChild() const
+    {
+        return RTListGetFirst(&m_children, const Node, m_childEntry);
+    }
+
+    /** Get the last child node.
+     * @returns Pointer to the last child node, NULL if no children. */
+    const Node *getLastChild() const
+    {
+        return RTListGetLast(&m_children, const Node, m_childEntry);
+    }
+
+    /** Get the previous sibling.
+     * @returns Pointer to the previous sibling node, NULL if first child. */
+    const Node *getPrevSibiling() const
+    {
+        if (!m_pParent)
+            return NULL;
+        return RTListGetPrev(&m_pParent->m_children, this, const Node, m_childEntry);
+    }
+
+    /** Get the next sibling.
+     * @returns Pointer to the next sibling node, NULL if last child. */
+    const Node *getNextSibiling() const
+    {
+        if (!m_pParent)
+            return NULL;
+        return RTListGetNext(&m_pParent->m_children, this, const Node, m_childEntry);
+    }
+    /** @} */
+#endif
+
+protected:
+    /** Node types. */
+    typedef enum { IsElement, IsAttribute, IsContent } EnumType;
+
+    EnumType    m_Type;                 /**< The type of node this is an instance of. */
+    Node       *m_pParent;              /**< The parent node, NULL if root. */
+    xmlNode    *m_plibNode;            ///< != NULL if this is an element or content node
+    xmlAttr    *m_plibAttr;            ///< != NULL if this is an attribute node
+    const char *m_pcszNamespacePrefix; ///< not always set
+    const char *m_pcszNamespaceHref;   ///< full http:// spec
+    const char *m_pcszName;            ///< element or attribute name, points either into plibNode or plibAttr;
+                                       ///< NULL if this is a content node
+
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    /** Child list entry of this node. (List head m_pParent->m_children.) */
+    RTLISTNODE      m_childEntry;
+    /** Child elements, if this is an element; can be empty. */
+    RTLISTANCHOR    m_children;
+#endif
 
     // hide the default constructor so people use only our factory methods
     Node(EnumType type,
@@ -436,6 +524,7 @@ protected:
     Data *m;
 
     friend class AttributeNode;
+    friend class ElementNode; /* C list hack. */
 };
 
 /**
@@ -464,8 +553,14 @@ public:
     }
     const ElementNode* findChildElementFromId(const char *pcszId) const;
 
+    const ElementNode *findChildElementDeep(const char *pcszNamespace, const char *pcszPath) const;
+    const ElementNode *findChildElementDeep(const char *pcszPath) const
+    {
+        return findChildElementDeep(NULL, pcszPath);
+    }
+
     const AttributeNode* findAttribute(const char *pcszMatch) const;
-    bool getAttributeValue(const char *pcszMatch, const char *&ppcsz) const;
+    bool getAttributeValue(const char *pcszMatch, const char *&pcsz) const;
     bool getAttributeValue(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValuePath(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
@@ -473,6 +568,19 @@ public:
     bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, bool &f) const;
+
+    /** @name Variants that for clarity does not use references for output params.
+     * @{ */
+    bool getAttributeValue(const char *pcszMatch, const char **ppcsz) const { return getAttributeValue(pcszMatch, *ppcsz); }
+    bool getAttributeValue(const char *pcszMatch, RTCString *pStr) const    { return getAttributeValue(pcszMatch, *pStr); }
+    bool getAttributeValuePath(const char *pcszMatch, RTCString *pStr) const { return getAttributeValuePath(pcszMatch, *pStr); }
+    bool getAttributeValue(const char *pcszMatch, int32_t *pi) const        { return getAttributeValue(pcszMatch, *pi); }
+    bool getAttributeValue(const char *pcszMatch, uint32_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
+    bool getAttributeValue(const char *pcszMatch, int64_t *pi) const        { return getAttributeValue(pcszMatch, *pi); }
+    bool getAttributeValue(const char *pcszMatch, uint64_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
+    bool getAttributeValue(const char *pcszMatch, bool *pf) const           { return getAttributeValue(pcszMatch, *pf); }
+    /** @} */
+
 
     ElementNode* createChild(const char *pcszElementName);
 
