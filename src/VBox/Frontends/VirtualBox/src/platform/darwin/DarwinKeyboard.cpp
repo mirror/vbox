@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_WITH_KBD_LEDS_SYNC
+#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -1419,7 +1419,7 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
 static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
 {
     CFMachPortRef pTapRef;
-    CGEventMask   fMask = CGEventMaskBit(kCGEventKeyDown) | CGEventMaskBit(kCGEventFlagsChanged);
+    CGEventMask   fMask = CGEventMaskBit(kCGEventFlagsChanged);
 
     g_LastTouchedState = NULL;
 
