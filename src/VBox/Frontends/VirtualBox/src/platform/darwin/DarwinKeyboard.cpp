@@ -39,9 +39,9 @@
 # include <IOKit/IOKitLib.h>
 # include <IOKit/IOCFPlugIn.h>
 # include <IOKit/hid/IOHIDUsageTables.h>
-# include <IOKit/usb/USB.h>
 # include <CoreFoundation/CoreFoundation.h>
 #endif
+# include <IOKit/usb/USB.h>
 #include <IOKit/hid/IOHIDLib.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
@@ -1463,6 +1463,39 @@ static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
     CFRelease(pState->pLoopSourceRef);
 }
 
+/** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
+ * In the list below, devices which verified to be stable against LEDs manipulation.
+ * If you want to add new device, add it here. Currently, we only filter devices by Vendor ID.
+ * In future it might make sense to take Product ID into account as well. */
+static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
+{
+    bool      fSupported = false;
+    CFTypeRef pNumberRef;
+    uint32_t  vendorId = 0;
+
+    pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
+    if (pNumberRef)
+    {
+        if (CFGetTypeID(pNumberRef) == CFNumberGetTypeID())
+        {
+            if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &vendorId))
+            {
+                switch (vendorId)
+                {
+                    case kIOUSBVendorIDAppleComputer:   /** Apple devices always in the list */
+                    case 0x03F0:                        /** Hewlett-Packard (verified with model KU-0316) */
+                        fSupported = true;
+                        break;
+                }
+
+                Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
+            }
+        }
+    }
+
+    return fSupported;
+}
+
 #endif // !VBOX_WITH_KBD_LEDS_SYNC
 
 /** Save the states of leds for all HID devices attached to the system and return it. */
@@ -1507,7 +1540,8 @@ void * DarwinHidDevicesKeepLedsState(void)
                                 {
                                     for (CFIndex i = 0; i < hidsState->cDevices; i++)
                                     {
-                                        if (IOHIDDeviceConformsTo(hidsState->hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard))
+                                        if (IOHIDDeviceConformsTo(hidsState->hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard)
+                                         && darwinHidDeviceSupported(hidsState->hidDevicesCollection[i]))
                                         {
                                             rc = darwinGetDeviceLedsState(hidsState->hidDevicesCollection[i],
                                                                           elementMatchingDict,
@@ -1603,8 +1637,12 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                     rc2 = kIOReturnError;
                 }
 
-                IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], NULL, NULL);
-                IOHIDDeviceUnscheduleFromRunLoop(hidsState->hidDevicesCollection[i], CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+                /* Only supported devices have subscription to input callbacks. */
+                if (darwinHidDeviceSupported(hidsState->hidDevicesCollection[i]))
+                {
+                    IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], NULL, NULL);
+                    IOHIDDeviceUnscheduleFromRunLoop(hidsState->hidDevicesCollection[i], CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+                }
             }
         }
 
@@ -1676,7 +1714,8 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
 
                             for (CFIndex i = 0; i < cDevices; i++)
                             {
-                                if (IOHIDDeviceConformsTo(hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard))
+                                if (IOHIDDeviceConformsTo(hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard)
+                                 && darwinHidDeviceSupported(hidDevicesCollection[i]))
                                 {
                                     rc = darwinSetDeviceLedsState(hidDevicesCollection[i], elementMatchingDict,
                                                                   fNumLockOn, fCapsLockOn, fScrollLockOn);
