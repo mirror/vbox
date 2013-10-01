@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2012 Oracle Corporation
+ * Copyright (C) 2007-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +24,10 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/dir.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
@@ -42,14 +46,12 @@
 #include <libxml/xmlschemas.h>
 
 #include <map>
-#include <boost/shared_ptr.hpp>
+#include <boost/shared_ptr.hpp> /* This is the ONLY use of boost. */
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// globals
-//
-////////////////////////////////////////////////////////////////////////////////
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 /**
  * Global module initialization structure. This is to wrap non-reentrant bits
  * of libxml, among other things.
@@ -58,8 +60,7 @@
  * module initialization and cleanup. There must be only one global variable of
  * this structure.
  */
-static
-class Global
+static class Global
 {
 public:
 
@@ -93,8 +94,7 @@ public:
         RTCLockMtx lock;
     }
     sxml;  /* XXX naming this xml will break with gcc-3.3 */
-}
-gGlobal;
+} gGlobal;
 
 
 
@@ -131,8 +131,7 @@ XmlError::XmlError(xmlErrorPtr aErr)
  * Composes a single message for the given error. The caller must free the
  * returned string using RTStrFree() when no more necessary.
  */
-// static
-char *XmlError::Format(xmlErrorPtr aErr)
+/* static */ char *XmlError::Format(xmlErrorPtr aErr)
 {
     const char *msg = aErr->message ? aErr->message : "<none>";
     size_t msgLen = strlen(msg);
@@ -442,28 +441,42 @@ struct Node::Data
     typedef std::map<const char*, boost::shared_ptr<AttributeNode>, compare_const_char > AttributesMap;
     AttributesMap attribs;
 
+#ifdef USE_STD_LIST_FOR_CHILDREN
     // child elements, if this is an element; can be empty
     typedef std::list< boost::shared_ptr<Node> > InternalNodesList;
     InternalNodesList children;
+#endif
 };
 
 Node::Node(EnumType type,
            Node *pParent,
            xmlNode *plibNode,
            xmlAttr *plibAttr)
-    : m_Type(type),
-      m_pParent(pParent),
-      m_plibNode(plibNode),
-      m_plibAttr(plibAttr),
-      m_pcszNamespacePrefix(NULL),
-      m_pcszNamespaceHref(NULL),
-      m_pcszName(NULL),
-      m(new Data)
+    : m_Type(type)
+    , m_pParent(pParent)
+    , m_plibNode(plibNode)
+    , m_plibAttr(plibAttr)
+    , m_pcszNamespacePrefix(NULL)
+    , m_pcszNamespaceHref(NULL)
+    , m_pcszName(NULL)
+    , m(new Data)
 {
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    RTListInit(&m_childEntry);
+    RTListInit(&m_children);
+#endif
 }
 
 Node::~Node()
 {
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    Node *pCur, *pNext;
+    RTListForEachSafe(&m_children, pCur, pNext, Node, m_childEntry)
+    {
+        delete pCur;
+    }
+    RTListInit(&m_children);
+#endif
     delete m;
 }
 
@@ -486,9 +499,21 @@ void Node::buildChildren(const ElementNode &elmRoot)       // private
     }
 
     // go thru this element's child elements
-    xmlNodePtr plibNode = m_plibNode->children;
-    while (plibNode)
+    for (xmlNodePtr plibNode = m_plibNode->children; plibNode; plibNode = plibNode->next)
     {
+#ifndef USE_STD_LIST_FOR_CHILDREN
+        Node *pNew;
+        if (plibNode->type == XML_ELEMENT_NODE)
+            pNew = new ElementNode(&elmRoot, this, plibNode);
+        else if (plibNode->type == XML_TEXT_NODE)
+            pNew = new ContentNode(this, plibNode);
+        else
+            continue;
+        RTListAppend(&m_children, &pNew->m_childEntry);
+
+        /* Recurse for this child element to get its own children. */
+        pNew->buildChildren(elmRoot);
+#else
         boost::shared_ptr<Node> pNew;
 
         if (plibNode->type == XML_ELEMENT_NODE)
@@ -503,8 +528,7 @@ void Node::buildChildren(const ElementNode &elmRoot)       // private
             // recurse for this child element to get its own children
             pNew->buildChildren(elmRoot);
         }
-
-        plibNode = plibNode->next;
+#endif
     }
 }
 
@@ -566,24 +590,52 @@ bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
 }
 
 /**
+ * Variant of nameEquals that checks the namespace as well.
+ *
+ * @return  true if equal, false if not.
+ * @param   pcszNamespace   The name space prefix or NULL.
+ * @param   pcsz            The element name.
+ * @param   cchMax          The maximum number of character from @a pcsz to
+ *                          match.
+ */
+bool Node::nameEqualsN(const char *pcszNamespace, const char *pcsz, size_t cchMax) const
+{
+    /* Match the name. */
+    if (!m_pcszName)
+        return false;
+    if (!pcsz || cchMax == 0)
+        return false;
+    if (strncmp(m_pcszName, pcsz, cchMax))
+        return false;
+    if (strlen(m_pcszName) > cchMax)
+        return false;
+
+    /* Match name space. */
+    if (!pcszNamespace)
+        return true;    /* NULL, anything goes. */
+    if (!m_pcszNamespacePrefix)
+        return false;   /* Element has no namespace. */
+    return !strcmp(m_pcszNamespacePrefix, pcszNamespace);
+}
+
+/**
  * Returns the value of a node. If this node is an attribute, returns
  * the attribute value; if this node is an element, then this returns
  * the element text content.
  * @return
  */
-const char* Node::getValue() const
+const char *Node::getValue() const
 {
-    if (    (m_plibAttr)
-         && (m_plibAttr->children)
-       )
+    if (   m_plibAttr
+        && m_plibAttr->children
+        )
         // libxml hides attribute values in another node created as a
         // single child of the attribute node, and it's in the content field
-        return (const char*)m_plibAttr->children->content;
+        return (const char *)m_plibAttr->children->content;
 
-    if (    (m_plibNode)
-         && (m_plibNode->children)
-       )
-        return (const char*)m_plibNode->children->content;
+    if (   m_plibNode
+        && m_plibNode->children)
+        return (const char *)m_plibNode->children->content;
 
     return NULL;
 }
@@ -709,18 +761,25 @@ int ElementNode::getChildElements(ElementNodesList &children,
     const
 {
     int i = 0;
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    Node *p;
+    RTListForEach(&m_children, p, Node, m_childEntry)
+#else
     for (Data::InternalNodesList::iterator it = m->children.begin();
          it != m->children.end();
          ++it)
+#endif
     {
         // export this child node if ...
+#ifdef USE_STD_LIST_FOR_CHILDREN
         Node *p = it->get();
+#endif
         if (p->isElement())
-            if (    (!pcszMatch)    // the caller wants all nodes or
-                 || (!strcmp(pcszMatch, p->getName())) // the element name matches
+            if (   !pcszMatch                       // ... the caller wants all nodes or ...
+                || !strcmp(pcszMatch, p->getName()) // ... the element name matches.
                )
             {
-                children.push_back(static_cast<ElementNode*>(p));
+                children.push_back(static_cast<ElementNode *>(p));
                 ++i;
             }
     }
@@ -734,24 +793,31 @@ int ElementNode::getChildElements(ElementNodesList &children,
  * @param pcszMatch Element name to match.
  * @return
  */
-const ElementNode* ElementNode::findChildElement(const char *pcszNamespace,
-                                                 const char *pcszMatch)
-    const
+const ElementNode *ElementNode::findChildElement(const char *pcszNamespace, const char *pcszMatch) const
 {
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    Node *p;
+    RTListForEach(&m_children, p, Node, m_childEntry)
+    {
+        if (p->isElement())
+        {
+            ElementNode *pelm = static_cast<ElementNode*>(p);
+            if (pelm->nameEquals(pcszNamespace, pcszMatch))
+                return pelm;
+        }
+    }
+#else
     Data::InternalNodesList::const_iterator
         it,
         last = m->children.end();
-    for (it = m->children.begin();
-         it != last;
-         ++it)
-    {
+    for (it = m->children.begin(); it != last; ++it)
         if ((**it).isElement())
         {
             ElementNode *pelm = static_cast<ElementNode*>((*it).get());
             if (pelm->nameEquals(pcszNamespace, pcszMatch))
                 return pelm;
         }
-    }
+#endif
 
     return NULL;
 }
@@ -761,8 +827,21 @@ const ElementNode* ElementNode::findChildElement(const char *pcszNamespace,
  * @param pcszId identifier to look for.
  * @return child element or NULL if not found.
  */
-const ElementNode* ElementNode::findChildElementFromId(const char *pcszId) const
+const ElementNode * ElementNode::findChildElementFromId(const char *pcszId) const
 {
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    Node *p;
+    RTListForEach(&m_children, p, Node, m_childEntry)
+    {
+        if (p->isElement())
+        {
+            ElementNode *pelm = static_cast<ElementNode*>(p);
+            const AttributeNode *pAttr = pelm->findAttribute("id");
+            if (pAttr && !strcmp(pAttr->getValue(), pcszId))
+                return pelm;
+        }
+    }
+#else
     Data::InternalNodesList::const_iterator
         it,
         last = m->children.end();
@@ -780,6 +859,57 @@ const ElementNode* ElementNode::findChildElementFromId(const char *pcszId) const
                 return pelm;
         }
     }
+#endif
+    return NULL;
+}
+
+/**
+ * Recursively find the first matching child element.
+ *
+ * @returns child element or NULL if not found.
+ * @param   pcszNamespace   The Namespace prefix or NULL.
+ * @param   pcszPath        Simple element path, with parent and child elements
+ *                          separated by a forward slash ('/').
+ */
+const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, const char *pcszPath) const
+{
+    size_t cchThis = strchr(pcszPath, '/') - pcszPath;
+    if (cchThis == (const char *)0 - pcszPath)
+        return this->findChildElement(pcszNamespace, pcszPath);
+
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    /** @todo Can be done without recursion as we have both sibling lists and parent
+     *        pointers in this variant.  */
+    Node *p;
+    RTListForEach(&m_children, p, Node, m_childEntry)
+    {
+        if (p->isElement())
+        {
+            const ElementNode *pElm = static_cast<ElementNode*>(p);
+            if (pElm->nameEqualsN(pcszNamespace, pcszPath, cchThis))
+            {
+                pElm = findChildElementDeep(pcszNamespace, pcszPath + cchThis);
+                if (pElm)
+                    return pElm;
+            }
+        }
+    }
+#else
+    Data::InternalNodesList::const_iterator  itLast = m->children.end();
+    for (Data::InternalNodesList::const_iterator it = m->children.begin(); it != itLast; ++it)
+    {
+        if ((**it).isElement())
+        {
+            const ElementNode *pElm = static_cast<ElementNode*>((*it).get());
+            if (pElm->nameEqualsN(pcszNamespace, pcszPath, cchThis))
+            {
+                pElm = findChildElementDeep(pcszNamespace, pcszPath + cchThis);
+                if (pElm)
+                    return pElm;
+            }
+        }
+    }
+#endif
 
     return NULL;
 }
@@ -1000,7 +1130,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
  * @param pcszElementName
  * @return
  */
-ElementNode* ElementNode::createChild(const char *pcszElementName)
+ElementNode *ElementNode::createChild(const char *pcszElementName)
 {
     // we must be an element, not an attribute
     if (!m_plibNode)
@@ -1015,8 +1145,12 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
 
     // now wrap this in C++
     ElementNode *p = new ElementNode(m_pelmRoot, this, plibNode);
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    RTListAppend(&m_children, &p->m_childEntry);
+#else
     boost::shared_ptr<ElementNode> pNew(p);
     m->children.push_back(pNew);
+#endif
 
     return p;
 }
@@ -1029,18 +1163,22 @@ ElementNode* ElementNode::createChild(const char *pcszElementName)
  * @param pcszContent
  * @return
  */
-ContentNode* ElementNode::addContent(const char *pcszContent)
+ContentNode *ElementNode::addContent(const char *pcszContent)
 {
     // libxml side: create new node
-    xmlNode *plibNode;
-    if (!(plibNode = xmlNewText((const xmlChar*)pcszContent)))
+    xmlNode *plibNode = xmlNewText((const xmlChar*)pcszContent);
+    if (!plibNode)
         throw std::bad_alloc();
     xmlAddChild(m_plibNode, plibNode);
 
     // now wrap this in C++
     ContentNode *p = new ContentNode(this, plibNode);
+#ifndef USE_STD_LIST_FOR_CHILDREN
+    RTListAppend(&m_children, &p->m_childEntry);
+#else
     boost::shared_ptr<ContentNode> pNew(p);
     m->children.push_back(pNew);
+#endif
 
     return p;
 }
@@ -1500,12 +1638,13 @@ XmlMemParser::~XmlMemParser()
  *
  * The document that is passed in will be reset before being filled if not empty.
  *
- * @param pvBuf in: memory buffer to parse.
- * @param cbSize in: size of the memory buffer.
- * @param strFilename in: name fo file to parse.
- * @param doc out: document to be reset and filled with data according to file contents.
+ * @param pvBuf         Memory buffer to parse.
+ * @param cbSize        Size of the memory buffer.
+ * @param strFilename   Refernece to the name of the file we're parsing.
+ * @param doc           Reference to the output document.  This will be reset
+ *                      and filled with data according to file contents.
  */
-void XmlMemParser::read(const void* pvBuf, size_t cbSize,
+void XmlMemParser::read(const void *pvBuf, size_t cbSize,
                         const RTCString &strFilename,
                         Document &doc)
 {
