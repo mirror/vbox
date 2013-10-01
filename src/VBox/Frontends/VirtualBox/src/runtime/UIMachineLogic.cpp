@@ -1034,7 +1034,10 @@ bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
                      * set current lock states to guest values we have,
                      * As we have no ipc between threads of different VMs
                      * we are using 300ms timer as lazy sync timout: */
-                    QTimer::singleShot(300, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
+                    //QTimer::singleShot(300, this, SLOT(sltSwitchKeyboardLedsToGuestLeds()));
+
+                    /* Trigger callback synchronously for now! */
+                    sltSwitchKeyboardLedsToGuestLeds();
                     break;
                 }
                 /* Handle *window deactivated* event: */
@@ -2190,6 +2193,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds()
 
     /* Here we have to update host LED lock states using values provided by UISession registry.
      * [bool] uisession() -> isNumLock(), isCapsLock(), isScrollLock() can be used for that. */
+
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToGuestLeds: keep host LED lock states and broadcast guest's ones (NOT IMPLEMENTED).\n"));
 #ifdef Q_WS_MAC
     if (m_pHostLedsState == NULL)
         m_pHostLedsState = DarwinHidDevicesKeepLedsState();
@@ -2204,6 +2209,8 @@ void UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds()
 //    printf("%s: UIMachineLogic: sltSwitchKeyboardLedsToPreviousLeds called, machine name is {%s}\n",
 //           strDt.toAscii().constData(),
 //           session().GetMachine().GetName().toAscii().constData());
+
+    LogRelFlow(("UIMachineLogic::sltSwitchKeyboardLedsToPreviousLeds: restore host LED lock states (NOT IMPLEMENTED).\n"));
 
     /* Here we have to restore host LED lock states. */
 #ifdef Q_WS_MAC
