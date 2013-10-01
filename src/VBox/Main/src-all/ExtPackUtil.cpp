@@ -322,7 +322,7 @@ RTCString *VBoxExtPackLoadDescFromVfsFile(RTVFSFILE hVfsFile, PVBOXEXTPACKDESC a
     if (RT_SUCCESS(rc))
     {
         xml::XmlMemParser   Parser;
-        RTCString    strFileName = VBOX_EXTPACK_DESCRIPTION_NAME;
+        RTCString           strFileName = VBOX_EXTPACK_DESCRIPTION_NAME;
         try
         {
             Parser.read(pvFile, cbFile, strFileName, Doc);
