@@ -22,7 +22,7 @@ Import-Package: javax.validation.constraints;version="1.0",
  javax.xml.ws.soap,javax.xml.ws.handler,javax.xml.ws.http,
  javax.xml.ws.wsaddressing,javax.xml.parsers,javax.xml.stream,
  javax.xml.transform,javax.xml.transform.dom,
- javax.xml.transform.stream,org.w2c.dom,org.xml.sax,javax.xml.bind,
+ javax.xml.transform.stream,org.w3c.dom,org.xml.sax,javax.xml.bind,
  javax.xml.bind.annotation,javax.xml.bind.attachment,
  javax.xml.bind.helpers,javax.xml.bind.util,
  org.virtualbox@VBOX_API_SUFFIX@;version="@VBOX_VERSION_MAJOR@.@VBOX_VERSION_MINOR@"
