@@ -337,9 +337,9 @@ void UIMachineView::sltMachineStateChanged()
         }
         case KMachineState_Running:
         {
-            if (   m_previousState == KMachineState_Paused
-                || m_previousState == KMachineState_TeleportingPausedVM
-                || m_previousState == KMachineState_Restoring)
+            if (m_previousState == KMachineState_Paused ||
+                m_previousState == KMachineState_TeleportingPausedVM ||
+                m_previousState == KMachineState_Restoring)
             {
                 if (m_pFrameBuffer)
                 {
@@ -347,8 +347,12 @@ void UIMachineView::sltMachineStateChanged()
                     resetPauseShot();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
-                    CDisplay dsp = session().GetConsole().GetDisplay();
-                    dsp.InvalidateAndUpdate();
+                    if (m_previousState == KMachineState_Paused ||
+                        m_previousState == KMachineState_TeleportingPausedVM)
+                    {
+                        CDisplay dsp = session().GetConsole().GetDisplay();
+                        dsp.InvalidateAndUpdate();
+                    }
                 }
             }
             break;
