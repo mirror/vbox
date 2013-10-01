@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-#define VBOX_WITH_KBD_LEDS_SYNC
+//#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
