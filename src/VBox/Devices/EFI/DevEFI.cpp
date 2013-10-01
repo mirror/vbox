@@ -1281,7 +1281,7 @@ static int efiPortImageEventWrite(PDEVEFI pThis, uint32_t u32, unsigned cb)
 
         case EFI_IMAGE_EVT_CMD_NAME:
             AssertBreak(EFI_IMAGE_EVT_GET_PAYLOAD(u32) <= 0x7f);
-            if (pThis->ImageEvt.offName + 1 < sizeof(pThis->ImageEvt.szName))
+            if (pThis->ImageEvt.offName < sizeof(pThis->ImageEvt.szName) - 1)
             {
                 char ch = EFI_IMAGE_EVT_GET_PAYLOAD_U8(u32);
                 if (ch == '\\')
