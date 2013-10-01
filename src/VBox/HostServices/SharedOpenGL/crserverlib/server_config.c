@@ -242,6 +242,26 @@ void crServerSetVBoxConfiguration()
     cr_server.fPresentModeDefault = cr_server.fPresentMode;
     cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
 
+    env = crGetenv("CR_SERVER_CAPS");
+    if (env && env[0] != '\0')
+    {
+        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/);
+    }
+    else
+    {
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/;
+    }
+
+    if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))
+    {
+        /* can not do tex present in case CR_SERVER_REDIR_F_FBO is disabled */
+        cr_server.u32Caps &= ~CR_VBOX_CAP_TEX_PRESENT;
+    }
+
+    crInfo("Cfg: fPresentModeDefault(%#x), fVramPresentModeDefault(%#x), u32Caps(%#x)",
+            cr_server.fPresentModeDefault, cr_server.fVramPresentModeDefault, cr_server.u32Caps);
+
     /* Need to do this as early as possible */
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
@@ -385,6 +405,26 @@ void crServerSetVBoxConfigurationHGCM()
 #endif
     cr_server.fPresentModeDefault = cr_server.fPresentMode;
     cr_server.fVramPresentModeDefault = CR_SERVER_REDIR_F_FBO_RAM/* | CR_SERVER_REDIR_F_FBO_RPW*/;
+
+    env = crGetenv("CR_SERVER_CAPS");
+    if (env && env[0] != '\0')
+    {
+        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
+        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/);
+    }
+    else
+    {
+        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT/* | CR_VBOX_CAP_NO_DWM_SUPPORT*/;
+    }
+
+    if (!(cr_server.fPresentModeDefault & CR_SERVER_REDIR_F_FBO))
+    {
+        /* can not do tex present in case CR_SERVER_REDIR_F_FBO is disabled */
+        cr_server.u32Caps &= ~CR_VBOX_CAP_TEX_PRESENT;
+    }
+
+    crInfo("Cfg: fPresentModeDefault(%#x), fVramPresentModeDefault(%#x), u32Caps(%#x)",
+            cr_server.fPresentModeDefault, cr_server.fVramPresentModeDefault, cr_server.u32Caps);
 
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
     cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);
