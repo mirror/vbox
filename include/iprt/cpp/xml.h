@@ -460,14 +460,14 @@ public:
      * @returns Pointer to the first child node, NULL if no children. */
     const Node *getFirstChild() const
     {
-        return RTListGetFirst(&m_children, const Node, m_childEntry);
+        return RTListGetFirstCpp(&m_children, const Node, m_childEntry);
     }
 
     /** Get the last child node.
      * @returns Pointer to the last child node, NULL if no children. */
     const Node *getLastChild() const
     {
-        return RTListGetLast(&m_children, const Node, m_childEntry);
+        return RTListGetLastCpp(&m_children, const Node, m_childEntry);
     }
 
     /** Get the previous sibling.
@@ -476,7 +476,7 @@ public:
     {
         if (!m_pParent)
             return NULL;
-        return RTListGetPrev(&m_pParent->m_children, this, const Node, m_childEntry);
+        return RTListGetPrevCpp(&m_pParent->m_children, this, const Node, m_childEntry);
     }
 
     /** Get the next sibling.
@@ -485,7 +485,7 @@ public:
     {
         if (!m_pParent)
             return NULL;
-        return RTListGetNext(&m_pParent->m_children, this, const Node, m_childEntry);
+        return RTListGetNextCpp(&m_pParent->m_children, this, const Node, m_childEntry);
     }
     /** @} */
 #endif

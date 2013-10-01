@@ -471,7 +471,7 @@ Node::~Node()
 {
 #ifndef USE_STD_LIST_FOR_CHILDREN
     Node *pCur, *pNext;
-    RTListForEachSafe(&m_children, pCur, pNext, Node, m_childEntry)
+    RTListForEachSafeCpp(&m_children, pCur, pNext, Node, m_childEntry)
     {
         delete pCur;
     }
@@ -763,7 +763,7 @@ int ElementNode::getChildElements(ElementNodesList &children,
     int i = 0;
 #ifndef USE_STD_LIST_FOR_CHILDREN
     Node *p;
-    RTListForEach(&m_children, p, Node, m_childEntry)
+    RTListForEachCpp(&m_children, p, Node, m_childEntry)
 #else
     for (Data::InternalNodesList::iterator it = m->children.begin();
          it != m->children.end();
@@ -797,7 +797,7 @@ const ElementNode *ElementNode::findChildElement(const char *pcszNamespace, cons
 {
 #ifndef USE_STD_LIST_FOR_CHILDREN
     Node *p;
-    RTListForEach(&m_children, p, Node, m_childEntry)
+    RTListForEachCpp(&m_children, p, Node, m_childEntry)
     {
         if (p->isElement())
         {
@@ -831,7 +831,7 @@ const ElementNode * ElementNode::findChildElementFromId(const char *pcszId) cons
 {
 #ifndef USE_STD_LIST_FOR_CHILDREN
     Node *p;
-    RTListForEach(&m_children, p, Node, m_childEntry)
+    RTListForEachCpp(&m_children, p, Node, m_childEntry)
     {
         if (p->isElement())
         {
@@ -881,7 +881,7 @@ const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, 
     /** @todo Can be done without recursion as we have both sibling lists and parent
      *        pointers in this variant.  */
     Node *p;
-    RTListForEach(&m_children, p, Node, m_childEntry)
+    RTListForEachCpp(&m_children, p, Node, m_childEntry)
     {
         if (p->isElement())
         {
