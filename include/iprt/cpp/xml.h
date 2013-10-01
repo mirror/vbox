@@ -528,6 +528,35 @@ protected:
 };
 
 /**
+ * Node subclass that represents an attribute of an element.
+ *
+ * For attributes, Node::getName() returns the attribute name, and Node::getValue()
+ * returns the attribute value, if any.
+ *
+ * Since the Node constructor is private, one can create new attribute nodes
+ * only through the following factory methods:
+ *
+ *  --  ElementNode::setAttribute()
+ */
+class RT_DECL_CLASS AttributeNode : public Node
+{
+public:
+
+protected:
+    // hide the default constructor so people use only our factory methods
+    AttributeNode(const ElementNode &elmRoot,
+                  Node *pParent,
+                  xmlAttr *plibAttr,
+                  const char **ppcszKey);
+    AttributeNode(const AttributeNode &x);      // no copying
+
+    RTCString    m_strKey;
+
+    friend class Node;
+    friend class ElementNode;
+};
+
+/**
  *  Node subclass that represents an element.
  *
  *  For elements, Node::getName() returns the element name, and Node::getValue()
@@ -545,21 +574,98 @@ public:
     int getChildElements(ElementNodesList &children,
                          const char *pcszMatch = NULL) const;
 
-    const ElementNode* findChildElement(const char *pcszNamespace,
+    const ElementNode *findChildElement(const char *pcszNamespace,
                                         const char *pcszMatch) const;
-    const ElementNode* findChildElement(const char *pcszMatch) const
+    const ElementNode *findChildElement(const char *pcszMatch) const
     {
         return findChildElement(NULL, pcszMatch);
     }
-    const ElementNode* findChildElementFromId(const char *pcszId) const;
+    const ElementNode *findChildElementFromId(const char *pcszId) const;
 
-    const ElementNode *findChildElementDeep(const char *pcszNamespace, const char *pcszPath) const;
-    const ElementNode *findChildElementDeep(const char *pcszPath) const
+    /** Finds the first decendant matching the name at the end of @a pcszPath and
+     *  optionally namespace.
+     *
+     * @returns Pointer to the child string value, NULL if not found or no value.
+     * @param   pcszPath        The attribute name.  Slashes can be used to make a
+     *                          simple path to any decendant.
+     * @param   pcszNamespace   The namespace to match, NULL (default) match any
+     *                          namespace.  When using a path, this matches all
+     *                          elements along the way.
+     * @see     findChildElement, findChildElementP
+     */
+    const ElementNode *findChildElementP(const char *pcszPath, const char *pcszNamespace = NULL) const;
+
+    /** Finds the first child with matching the give name and optionally namspace,
+     *  returning its value.
+     *
+     * @returns Pointer to the child string value, NULL if not found or no value.
+     * @param   pcszPath        The attribute name.  Slashes can be used to make a
+     *                          simple path to any decendant.
+     * @param   pcszNamespace   The namespace to match, NULL (default) match any
+     *                          namespace.  When using a path, this matches all
+     *                          elements along the way.
+     * @see     findChildElement, findChildElementP
+     */
+    const char *findChildElementValueP(const char *pcszPath, const char *pcszNamespace = NULL) const
     {
-        return findChildElementDeep(NULL, pcszPath);
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getValue();
+        return NULL;
     }
 
-    const AttributeNode* findAttribute(const char *pcszMatch) const;
+
+    /** @name Element enumeration.
+     * @{ */
+    /** Get the previous sibling element.
+     * @returns Pointer to the previous sibling element, NULL if first child
+     *          element.
+     * @see getNextSibilingElement, getPrevSibling
+     */
+    const ElementNode *getPrevSibilingElement() const;
+
+    /** Get the next sibling element.
+     * @returns Pointer to the next sibling element, NULL if last child element.
+     * @see getPrevSibilingElement, getNextSibling
+     */
+    const ElementNode *getNextSibilingElement() const;
+
+    /** Find the previous element matching the given name and namespace (optionally).
+     * @returns Pointer to the previous sibling element, NULL if first child
+     *          element.
+     * @param   pcszName        The element name to match.
+     * @param   pcszNamespace   The namespace name, default is NULL which means
+     *                          anything goes.
+     * @note    Changed the order of the arguments.
+     */
+    const ElementNode *findPrevSibilingElement(const char *pcszName, const char *pcszNamespace = NULL) const;
+
+    /** Find the next element matching the given name and namespace (optionally).
+     * @returns Pointer to the previous sibling element, NULL if first child
+     *          element.
+     * @param   pcszName        The element name to match.
+     * @param   pcszNamespace   The namespace name, default is NULL which means
+     *                          anything goes.
+     * @note    Changed the order of the arguments.
+     */
+    const ElementNode *findNextSibilingElement(const char *pcszName, const char *pcszNamespace = NULL) const;
+    /** @} */
+
+
+    const AttributeNode *findAttribute(const char *pcszMatch) const;
+    /** Find the first attribute with the given name, returning its value string.
+     * @returns Pointer to the attribute string value.
+     * @param   pcszName        The attribute name.
+     * @see getAttributeValue
+     */
+    const char *findAttributeValue(const char *pcszName) const
+    {
+        const AttributeNode *pAttr = findAttribute(pcszName);
+        if (pAttr)
+            return pAttr->getValue();
+        return NULL;
+    }
+
     bool getAttributeValue(const char *pcszMatch, const char *&pcsz) const;
     bool getAttributeValue(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValuePath(const char *pcszMatch, RTCString &str) const;
@@ -582,26 +688,26 @@ public:
     /** @} */
 
 
-    ElementNode* createChild(const char *pcszElementName);
+    ElementNode *createChild(const char *pcszElementName);
 
-    ContentNode* addContent(const char *pcszContent);
-    ContentNode* addContent(const RTCString &strContent)
+    ContentNode *addContent(const char *pcszContent);
+    ContentNode *addContent(const RTCString &strContent)
     {
         return addContent(strContent.c_str());
     }
 
-    AttributeNode* setAttribute(const char *pcszName, const char *pcszValue);
-    AttributeNode* setAttribute(const char *pcszName, const RTCString &strValue)
+    AttributeNode *setAttribute(const char *pcszName, const char *pcszValue);
+    AttributeNode *setAttribute(const char *pcszName, const RTCString &strValue)
     {
         return setAttribute(pcszName, strValue.c_str());
     }
-    AttributeNode* setAttributePath(const char *pcszName, const RTCString &strValue);
-    AttributeNode* setAttribute(const char *pcszName, int32_t i);
-    AttributeNode* setAttribute(const char *pcszName, uint32_t i);
-    AttributeNode* setAttribute(const char *pcszName, int64_t i);
-    AttributeNode* setAttribute(const char *pcszName, uint64_t i);
-    AttributeNode* setAttributeHex(const char *pcszName, uint32_t i);
-    AttributeNode* setAttribute(const char *pcszName, bool f);
+    AttributeNode *setAttributePath(const char *pcszName, const RTCString &strValue);
+    AttributeNode *setAttribute(const char *pcszName, int32_t i);
+    AttributeNode *setAttribute(const char *pcszName, uint32_t i);
+    AttributeNode *setAttribute(const char *pcszName, int64_t i);
+    AttributeNode *setAttribute(const char *pcszName, uint64_t i);
+    AttributeNode *setAttributeHex(const char *pcszName, uint32_t i);
+    AttributeNode *setAttribute(const char *pcszName, bool f);
 
 protected:
     // hide the default constructor so people use only our factory methods
@@ -636,34 +742,6 @@ protected:
     friend class ElementNode;
 };
 
-/**
- * Node subclass that represents an attribute of an element.
- *
- * For attributes, Node::getName() returns the attribute name, and Node::getValue()
- * returns the attribute value, if any.
- *
- * Since the Node constructor is private, one can create new attribute nodes
- * only through the following factory methods:
- *
- *  --  ElementNode::setAttribute()
- */
-class RT_DECL_CLASS AttributeNode : public Node
-{
-public:
-
-protected:
-    // hide the default constructor so people use only our factory methods
-    AttributeNode(const ElementNode &elmRoot,
-                  Node *pParent,
-                  xmlAttr *plibAttr,
-                  const char **ppcszKey);
-    AttributeNode(const AttributeNode &x);      // no copying
-
-    RTCString    m_strKey;
-
-    friend class Node;
-    friend class ElementNode;
-};
 
 /**
  * Handy helper class with which one can loop through all or some children

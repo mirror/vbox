@@ -863,15 +863,8 @@ const ElementNode * ElementNode::findChildElementFromId(const char *pcszId) cons
     return NULL;
 }
 
-/**
- * Recursively find the first matching child element.
- *
- * @returns child element or NULL if not found.
- * @param   pcszNamespace   The Namespace prefix or NULL.
- * @param   pcszPath        Simple element path, with parent and child elements
- *                          separated by a forward slash ('/').
- */
-const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, const char *pcszPath) const
+
+const ElementNode *ElementNode::findChildElementP(const char *pcszPath, const char *pcszNamespace /*= NULL*/) const
 {
     size_t cchThis = strchr(pcszPath, '/') - pcszPath;
     if (cchThis == (size_t)((const char *)0 - pcszPath))
@@ -888,7 +881,7 @@ const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, 
             const ElementNode *pElm = static_cast<ElementNode*>(p);
             if (pElm->nameEqualsN(pcszNamespace, pcszPath, cchThis))
             {
-                pElm = findChildElementDeep(pcszNamespace, pcszPath + cchThis);
+                pElm = findChildElementP(pcszPath + cchThis, pcszNamespace);
                 if (pElm)
                     return pElm;
             }
@@ -903,7 +896,7 @@ const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, 
             const ElementNode *pElm = static_cast<ElementNode*>((*it).get());
             if (pElm->nameEqualsN(pcszNamespace, pcszPath, cchThis))
             {
-                pElm = findChildElementDeep(pcszNamespace, pcszPath + cchThis);
+                pElm = findChildElementP(pcszPath + cchThis, pcszNamespace);
                 if (pElm)
                     return pElm;
             }
@@ -913,6 +906,75 @@ const ElementNode *ElementNode::findChildElementDeep(const char *pcszNamespace, 
 
     return NULL;
 }
+
+const ElementNode *ElementNode::getPrevSibilingElement() const
+{
+    if (!m_pParent)
+        return NULL;
+    const Node *pSibling = this;
+    for (;;)
+    {
+        pSibling = RTListGetPrevCpp(&m_pParent->m_children, pSibling, const Node, m_childEntry);
+        if (!pSibling)
+            return NULL;
+        if (pSibling->isElement())
+            return static_cast<const ElementNode *>(pSibling);
+    }
+}
+
+const ElementNode *ElementNode::getNextSibilingElement() const
+{
+    if (!m_pParent)
+        return NULL;
+    const Node *pSibling = this;
+    for (;;)
+    {
+        pSibling = RTListGetNextCpp(&m_pParent->m_children, pSibling, const Node, m_childEntry);
+        if (!pSibling)
+            return NULL;
+        if (pSibling->isElement())
+            return static_cast<const ElementNode *>(pSibling);
+    }
+}
+
+const ElementNode *ElementNode::findPrevSibilingElement(const char *pcszMatch, const char *pcszNamespace /*= NULL*/) const
+{
+    if (!m_pParent)
+        return NULL;
+    const Node *pSibling = this;
+    for (;;)
+    {
+        pSibling = RTListGetPrevCpp(&m_pParent->m_children, pSibling, const Node, m_childEntry);
+        if (!pSibling)
+            return NULL;
+        if (pSibling->isElement())
+        {
+            const ElementNode *pElem = static_cast<const ElementNode *>(pSibling);
+            if (pElem->nameEquals(pcszNamespace, pcszMatch))
+                return pElem;
+        }
+    }
+}
+
+const ElementNode *ElementNode::findNextSibilingElement(const char *pcszMatch, const char *pcszNamespace /*= NULL*/) const
+{
+    if (!m_pParent)
+        return NULL;
+    const Node *pSibling = this;
+    for (;;)
+    {
+        pSibling = RTListGetNextCpp(&m_pParent->m_children, pSibling, const Node, m_childEntry);
+        if (!pSibling)
+            return NULL;
+        if (pSibling->isElement())
+        {
+            const ElementNode *pElem = static_cast<const ElementNode *>(pSibling);
+            if (pElem->nameEquals(pcszNamespace, pcszMatch))
+                return pElem;
+        }
+    }
+}
+
 
 /**
  * Looks up the given attribute node in this element's attribute map.
