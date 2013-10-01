@@ -72,8 +72,13 @@ typedef struct RTZIPXARREADER
     xml::ElementNode const *pToc;
     /** The TOC XML document. */
     xml::Document          *pDoc;
-    /** The current file ID. */
-    uint32_t            idCurFile;
+
+    /** The current file. */
+    xml::ElementNode const *pCurFile;
+    /** The depth of the current file, with 0 being the root level. */
+    uint32_t                cCurDepth;
+    /** Set if it's the first file. */
+    bool                    fFirstFile;
 } RTZIPXARREADER;
 /** Pointer to the XAR reader instance data. */
 typedef RTZIPXARREADER *PRTZIPXARREADER;
@@ -83,17 +88,54 @@ typedef RTZIPXARREADER *PRTZIPXARREADER;
  */
 typedef struct RTZIPXARBASEOBJ
 {
-    /** The stream offset of the (first) header.  */
-    RTFOFF                  offHdr;
     /** Pointer to the reader instance data (resides in the filesystem
      * stream).
      * @todo Fix this so it won't go stale... Back ref from this obj to fss? */
     PRTZIPXARREADER         pXarReader;
-    /** The object info with unix attributes. */
-    RTFSOBJINFO             ObjInfo;
+    /** The file TOC element. */
+    xml::ElementNode const *pFileElem;
 } RTZIPXARBASEOBJ;
 /** Pointer to a XAR filesystem stream base object. */
 typedef RTZIPXARBASEOBJ *PRTZIPXARBASEOBJ;
+
+
+/**
+ * XAR data encoding.
+ */
+typedef enum RTZIPXARENCODING
+{
+    RTZIPXARENCODING_INVALID = 0,
+    RTZIPXARENCODING_STORE,
+    RTZIPXARENCODING_GZIP,
+    RTZIPXARENCODING_UNSUPPORTED,
+    RTZIPXARENCODING_END
+} RTZIPXARENCODING;
+
+
+/**
+ * Data stream attributes.
+ */
+typedef struct RTZIPXARDATASTREAM
+{
+    /** Offset of the data in the stream, relative to XARREADER::offZero. */
+    RTFOFF                  offData;
+    /** The size of the archived data. */
+    RTFOFF                  cbDataArchived;
+    /** The size of the extracted data. */
+    RTFOFF                  cbDataExtracted;
+    /** The encoding of the archived ata. */
+    RTZIPXARENCODING        enmEncoding;
+    /** The hash function used for the archived data. */
+    uint8_t                 uHashFunArchived;
+    /** The hash function used for the extracted data. */
+    uint8_t                 uHashFunExtracted;
+    /** The digest of the archived data. */
+    RTZIPXARHASHDIGEST      DigestArchived;
+    /** The digest of the extracted data. */
+    RTZIPXARHASHDIGEST      DigestExtracted;
+} RTZIPXARDATASTREAM;
+/** Pointer to XAR data stream attributes. */
+typedef RTZIPXARDATASTREAM *PRTZIPXARDATASTREAM;
 
 
 /**
@@ -103,19 +145,39 @@ typedef struct RTZIPXARIOSTREAM
 {
     /** The basic XAR object data. */
     RTZIPXARBASEOBJ         BaseObj;
-    /** The number of bytes in the file. */
-    RTFOFF                  cbFile;
+    /** The attributes of the primary data stream. */
+    RTZIPXARDATASTREAM      Data;
     /** The current file position. */
     RTFOFF                  offFile;
-    /** The number of padding bytes following the file. */
-    uint32_t                cbPadding;
-    /** Set if we've reached the end of the file. */
-    bool                    fEndOfStream;
     /** The input I/O stream. */
     RTVFSIOSTREAM           hVfsIos;
+    /** Set if we've reached the end of the file. */
+    bool                    fEndOfStream;
+    /** The size of the file that we've currently hashed.
+     * We use this to check whether the user skips part of the file while reading
+     * and when to compare the digests. */
+    RTFOFF                  cbDigested;
+    /** The digest of the archived data. */
+    RTZIPXARHASHDIGEST      DigestArchived;
+    /** The digest of the extracted data. */
+    RTZIPXARHASHDIGEST      DigestExtracted;
 } RTZIPXARIOSTREAM;
 /** Pointer to a the private data of a XAR file I/O stream. */
 typedef RTZIPXARIOSTREAM *PRTZIPXARIOSTREAM;
+
+
+/**
+ * Xar file represented as a VFS file.
+ */
+typedef struct RTZIPXARFILE
+{
+    /** The XAR I/O stream object. */
+    RTZIPXARIOSTREAM        IosObj;
+    /** The input file. */
+    RTVFSFILE               hVfsFile;
+} RTZIPXARFILE;
+/** Pointer to a the private data of a XAR file. */
+typedef RTZIPXARFILE *PRTZIPXARFILE;
 
 
 /**
@@ -183,6 +245,9 @@ static void rtZipXarCalcHash(uint32_t uHashFunction, void const *pvSrc, size_t c
 
 static int rtZipXarGetOffsetSizeFromElem(xml::ElementNode const *pElement, PRTFOFF poff, uint64_t *pcb)
 {
+    if (pElement)
+        return VERR_XAR_DATA_NODE_NOT_FOUND;
+
     /*
      * The offset.
      */
@@ -414,7 +479,7 @@ static DECLCALLBACK(int) rtZipXarFssBaseObj_Close(void *pvThis)
     PRTZIPXARBASEOBJ pThis = (PRTZIPXARBASEOBJ)pvThis;
 
     /* Currently there is nothing we really have to do here. */
-    pThis->offHdr = -1;
+    NOREF(pThis);
 
     return VINF_SUCCESS;
 }
@@ -529,8 +594,8 @@ static int rtZipXarFssIos_ReadOneSeg(PRTZIPXARIOSTREAM pThis, void *pvBuf, size_
     if (pThis->fEndOfStream)
         return pcbRead ? VINF_EOF : VERR_EOF;
 
-    Assert(pThis->cbFile >= pThis->offFile);
-    uint64_t cbLeft = (uint64_t)(pThis->cbFile - pThis->offFile);
+    Assert(pThis->Data.cbDataExtracted >= pThis->offFile);
+    uint64_t cbLeft = (uint64_t)(pThis->Data.cbDataExtracted - pThis->offFile);
     if (cbToRead > cbLeft)
     {
         if (!pcbRead)
@@ -546,11 +611,11 @@ static int rtZipXarFssIos_ReadOneSeg(PRTZIPXARIOSTREAM pThis, void *pvBuf, size_
         pcbRead = &cbReadStack;
     int rc = RTVfsIoStrmRead(pThis->hVfsIos, pvBuf, cbToRead, fBlocking, pcbRead);
     pThis->offFile += *pcbRead;
-    if (pThis->offFile >= pThis->cbFile)
+    if (pThis->offFile >= pThis->Data.cbDataExtracted)
     {
-        Assert(pThis->offFile == pThis->cbFile);
+        Assert(pThis->offFile == pThis->Data.cbDataExtracted);
         pThis->fEndOfStream = true;
-        RTVfsIoStrmSkip(pThis->hVfsIos, pThis->cbPadding);
+        /// @todo RTVfsIoStrmSkip(pThis->hVfsIos, pThis->cbPadding);
     }
 
     return rc;
@@ -784,6 +849,9 @@ static DECLCALLBACK(int) rtZipXarFss_Close(void *pvThis)
     RTVfsIoStrmRelease(pThis->hVfsIos);
     pThis->hVfsIos = NIL_RTVFSIOSTREAM;
 
+    RTVfsFileRelease(pThis->hVfsFile);
+    pThis->hVfsFile = NIL_RTVFSFILE;
+
     return VINF_SUCCESS;
 }
 
@@ -797,6 +865,44 @@ static DECLCALLBACK(int) rtZipXarFss_QueryInfo(void *pvThis, PRTFSOBJINFO pObjIn
     /* Take the lazy approach here, with the sideffect of providing some info
        that is actually kind of useful. */
     return RTVfsIoStrmQueryInfo(pThis->hVfsIos, pObjInfo, enmAddAttr);
+}
+
+
+static xml::ElementNode const *rtZipXarGetNextFileElement(xml::ElementNode const *pCurFile, uint32_t *pcCurDepth)
+{
+    /*
+     * Consider children first.
+     */
+    xml::ElementNode const *pChild = pCurFile->findChildElement("file");
+    if (pChild)
+    {
+        *pcCurDepth += 1;
+        return pChild;
+    }
+
+    /*
+     * Then siblings.
+     */
+    xml::ElementNode const *pSibling = pCurFile->findNextSibilingElement("file");
+    if (pSibling != NULL)
+        return pSibling;
+
+    /*
+     * Ascend and see if some parent has more siblings.
+     */
+    while (*pcCurDepth > 0)
+    {
+        pCurFile = static_cast<const xml::ElementNode *>(pCurFile->getParent());
+        AssertBreak(pCurFile);
+        Assert(pCurFile->nameEquals("file"));
+        *pcCurDepth -= 1;
+
+        pSibling = pCurFile->findNextSibilingElement("file");
+        if (pSibling != NULL)
+            return pSibling;
+    }
+
+    return NULL;
 }
 
 
@@ -815,7 +921,7 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
         if (pThis->pCurIosData)
         {
             pThis->pCurIosData->fEndOfStream = true;
-            pThis->pCurIosData->offFile      = pThis->pCurIosData->cbFile;
+/// @todo            pThis->pCurIosData->offFile      = pThis->pCurIosData->cbFile;
             pThis->pCurIosData = NULL;
         }
 
@@ -831,29 +937,102 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
     if (pThis->rcFatal != VINF_SUCCESS)
         return pThis->rcFatal;
 
-#if 0
     /*
-     * Make sure the input stream is in the right place.
+     * Get the next file element.
      */
-    RTFOFF offHdr = RTVfsIoStrmTell(pThis->hVfsIos);
-    while (   offHdr >= 0
-           && offHdr < pThis->offNextHdr)
+    if (pThis->XarReader.fFirstFile)
     {
-        int rc = RTVfsIoStrmSkip(pThis->hVfsIos, pThis->offNextHdr - offHdr);
-        if (RT_FAILURE(rc))
-        {
-            /** @todo Ignore if we're at the end of the stream? */
-            return pThis->rcFatal = rc;
-        }
-
-        offHdr = RTVfsIoStrmTell(pThis->hVfsIos);
+        pThis->XarReader.pCurFile  = pThis->XarReader.pToc->findChildElement("file");
+        pThis->XarReader.cCurDepth = 0;
+    }
+    else if (pThis->XarReader.pCurFile)
+        pThis->XarReader.pCurFile = rtZipXarGetNextFileElement(pThis->XarReader.pCurFile, &pThis->XarReader.cCurDepth);
+    if (!pThis->XarReader.pCurFile)
+    {
+        pThis->fEndOfStream = true;
+        return VERR_EOF;
     }
 
-    if (offHdr < 0)
-        return pThis->rcFatal = (int)offHdr;
-    if (offHdr > pThis->offNextHdr)
-        return pThis->rcFatal = VERR_INTERNAL_ERROR_3;
+    /*
+     * Retrive the fundamental attributes (elements actually).
+     */
+    const char *pszName = pThis->XarReader.pCurFile->findChildElementValueP("name");
+    const char *pszType = pThis->XarReader.pCurFile->findChildElementValueP("type");
+    if (RT_UNLIKELY(!pszName || !pszType))
+        return pThis->rcFatal = VERR_XAR_BAD_FILE_ELEMENT;
 
+    /*
+     * Gather any additional attributes that are essential to the file type,
+     * then create the VFS object we're going to return.
+     */
+    int             rc;
+    RTVFSOBJ        hVfsObj;
+    RTVFSOBJTYPE    enmType;
+    if (!strcmp(pszType, "file"))
+    {
+#if 0 /// @todo continue hacking here
+        rc = rtZipXarGetDataStreamAttributes(pThis->XarReader.pCurFile, &offData, &cbData);
+        if (RT_FAILURE(rc))
+            return pThis->rcFatal = rc;
+
+
+        if (pThis->hVfsFile != NIL_RTVFSFILE)
+        {
+
+        }
+        else
+        {
+            RTVFSIOSTREAM       hVfsIos;
+            PRTZIPXARIOSTREAM   pIosData;
+            rc = RTVfsNewIoStream(&g_rtZipXarFssIosOps,
+                                  sizeof(*pIosData),
+                                  RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                                  NIL_RTVFS,
+                                  NIL_RTVFSLOCK,
+                                  &hVfsIos,
+                                  (void **)&pIosData);
+            if (RT_FAILURE(rc))
+                return pThis->rcFatal = rc;
+
+            pIosData->BaseObj.pXarReader = &pThis->XarReader;
+            pIosData->BaseObj.pFileElem  = pThis->XarReader.pCurFile;
+            pIosData->cbFile            = cbData;
+            pIosData->offFile           = 0;
+            pIosData->cbPadding         = (uint32_t)(Info.cbAllocated - Info.cbObject);
+            pIosData->fEndOfStream      = false;
+            pIosData->hVfsIos           = pThis->hVfsIos;
+            RTVfsIoStrmRetain(pThis->hVfsIos);
+
+            pThis->pCurIosData = pIosData;
+            pThis->offNextHdr += pIosData->cbFile + pIosData->cbPadding;
+
+            enmType = RTVFSOBJTYPE_IO_STREAM;
+            hVfsObj = RTVfsObjFromIoStream(hVfsIos);
+            RTVfsIoStrmRelease(hVfsIos);
+        }
+#endif
+    }
+    else if (!strcmp(pszType, "directory"))
+    {
+        PRTZIPXARBASEOBJ pBaseObjData;
+        rc = RTVfsNewBaseObj(&g_rtZipXarFssBaseObjOps,
+                             sizeof(*pBaseObjData),
+                             NIL_RTVFS,
+                             NIL_RTVFSLOCK,
+                             &hVfsObj,
+                             (void **)&pBaseObjData);
+        if (RT_FAILURE(rc))
+            return pThis->rcFatal = rc;
+
+        pBaseObjData->pXarReader = &pThis->XarReader;
+        pBaseObjData->pFileElem  = pThis->XarReader.pCurFile;
+
+        enmType = RTVFSOBJTYPE_BASE;
+    }
+    else
+        return pThis->rcFatal = VERR_XAR_BAD_UNKNOWN_FILE_TYPE;
+
+#if 0
     /*
      * Consume XAR headers.
      */
@@ -912,34 +1091,6 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
          */
         case RTFS_TYPE_FILE:
         {
-            RTVFSIOSTREAM       hVfsIos;
-            PRTZIPXARIOSTREAM   pIosData;
-            rc = RTVfsNewIoStream(&g_rtZipXarFssIosOps,
-                                  sizeof(*pIosData),
-                                  RTFILE_O_READ | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
-                                  NIL_RTVFS,
-                                  NIL_RTVFSLOCK,
-                                  &hVfsIos,
-                                  (void **)&pIosData);
-            if (RT_FAILURE(rc))
-                return pThis->rcFatal = rc;
-
-            pIosData->BaseObj.offHdr    = offHdr;
-            pIosData->BaseObj.pXarReader= &pThis->XarReader;
-            pIosData->BaseObj.ObjInfo   = Info;
-            pIosData->cbFile            = Info.cbObject;
-            pIosData->offFile           = 0;
-            pIosData->cbPadding         = (uint32_t)(Info.cbAllocated - Info.cbObject);
-            pIosData->fEndOfStream      = false;
-            pIosData->hVfsIos           = pThis->hVfsIos;
-            RTVfsIoStrmRetain(pThis->hVfsIos);
-
-            pThis->pCurIosData = pIosData;
-            pThis->offNextHdr += pIosData->cbFile + pIosData->cbPadding;
-
-            enmType = RTVFSOBJTYPE_IO_STREAM;
-            hVfsObj = RTVfsObjFromIoStream(hVfsIos);
-            RTVfsIoStrmRelease(hVfsIos);
             break;
         }
 
@@ -1004,13 +1155,14 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
             return pThis->rcFatal = VERR_INTERNAL_ERROR_5;
     }
     pThis->hVfsCurObj = hVfsObj;
+#endif
 
     /*
      * Set the return data and we're done.
      */
     if (ppszName)
     {
-        rc = RTStrDupEx(ppszName, pThis->XarReader.szName);
+        rc = RTStrDupEx(ppszName, pszName); /** @todo fixme */
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1023,7 +1175,6 @@ static DECLCALLBACK(int) rtZipXarFss_Next(void *pvThis, char **ppszName, RTVFSOB
 
     if (penmType)
         *penmType = enmType;
-#endif
 
     return VINF_SUCCESS;
 }
@@ -1353,7 +1504,9 @@ RTDECL(int) RTZipXarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
                         pThis->rcFatal              = VINF_SUCCESS;
                         pThis->XarReader.pDoc       = pDoc;
                         pThis->XarReader.pToc       = pTocElem;
-                        pThis->XarReader.idCurFile  = 0; /* Assuming the ID numbering is from 1. */
+                        pThis->XarReader.pCurFile   = 0;
+                        pThis->XarReader.cCurDepth  = 0;
+                        pThis->XarReader.fFirstFile = true;
 
                         /*
                          * Next validation step.

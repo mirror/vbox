@@ -1839,6 +1839,12 @@ RT_C_DECLS_END
 #define VERR_XAR_MISSING_SIZE_ELEMENT               (-22720)
 /** Bad size element in table of content sub-element. */
 #define VERR_XAR_BAD_SIZE_ELEMENT                   (-22721)
+/** Bad file element in XAR table of content. */
+#define VERR_XAR_BAD_FILE_ELEMENT                   (-22722)
+/** An data element is expected for XAR file of type file. */
+#define VERR_XAR_DATA_NODE_NOT_FOUND                (-22723)
+/** Unknown XAR file type value. */
+#define VERR_XAR_BAD_UNKNOWN_FILE_TYPE              (-22724)
 /** @} */
 
 
