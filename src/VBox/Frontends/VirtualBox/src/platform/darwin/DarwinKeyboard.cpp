@@ -1430,7 +1430,7 @@ static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
         pLoopSourceRef = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, pTapRef, 0);
         if (pLoopSourceRef)
         {
-            CFRunLoopAddSource(CFRunLoopGetCurrent(), pLoopSourceRef, kCFRunLoopCommonModes);
+            CFRunLoopAddSource(CFRunLoopGetCurrent(), pLoopSourceRef, kCFRunLoopDefaultMode);
             CGEventTapEnable(pTapRef, true);
 
             pState->pTapRef = pTapRef;
@@ -1459,7 +1459,7 @@ static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
     g_LastTouchedState = NULL;
 
     CGEventTapEnable(pState->pTapRef, false);
-    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pState->pLoopSourceRef, kCFRunLoopCommonModes);
+    CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pState->pLoopSourceRef, kCFRunLoopDefaultMode);
     CFRelease(pState->pLoopSourceRef);
 }
 
@@ -1491,6 +1491,8 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
                 Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
             }
         }
+
+        CFRelease(pNumberRef);
     }
 
     return fSupported;
