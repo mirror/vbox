@@ -339,17 +339,6 @@ crServerInit(int argc, char *argv[])
         crDebug("Debug: using multiple contexts!");
     }
 
-    env = crGetenv("CR_SERVER_CAPS");
-    if (env && env[0] != '\0')
-    {
-        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_NO_DWM_SUPPORT);
-    }
-    else
-    {
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
-    }
-
     cr_server.firstCallCreateContext = GL_TRUE;
     cr_server.firstCallMakeCurrent = GL_TRUE;
     cr_server.bForceMakeCurrentOnClientSwitch = GL_FALSE;
@@ -448,17 +437,6 @@ GLboolean crVBoxServerInit(void)
     {
         crInfo("Info: using multiple contexts!");
         crDebug("Debug: using multiple contexts!");
-    }
-
-    env = crGetenv("CR_SERVER_CAPS");
-    if (env && env[0] != '\0')
-    {
-        cr_server.u32Caps = crServerVBoxParseNumerics(env, 0);
-        cr_server.u32Caps &= ~(CR_VBOX_CAP_TEX_PRESENT | CR_VBOX_CAP_NO_DWM_SUPPORT);
-    }
-    else
-    {
-        cr_server.u32Caps = CR_VBOX_CAP_TEX_PRESENT;
     }
 
     crNetInit(crServerRecv, crServerClose);
