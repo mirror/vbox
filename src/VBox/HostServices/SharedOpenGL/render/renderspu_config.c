@@ -15,13 +15,13 @@
 
 static void set_window_geometry( RenderSPU *render_spu, const char *response )
 {
-    float x, y, w, h;
+    int x, y, w, h;
     CRASSERT(response[0] == '[');
-    sscanf( response, "[ %f, %f, %f, %f ]", &x, &y, &w, &h );
+    sscanf( response, "[ %d, %d, %d, %d ]", &x, &y, &w, &h );
     render_spu->defaultX = (int) x;
     render_spu->defaultY = (int) y;
-    render_spu->defaultWidth = (int) w;
-    render_spu->defaultHeight = (int) h;
+    render_spu->defaultWidth = (unsigned int) w;
+    render_spu->defaultHeight = (unsigned int) h;
 }
 
 static void set_default_visual( RenderSPU *render_spu, const char *response )
