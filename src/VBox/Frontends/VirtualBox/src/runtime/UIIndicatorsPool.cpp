@@ -667,13 +667,13 @@ public:
 
         bool bNestEnabled = debugger.GetHWVirtExNestedPagingEnabled();
         QString nestedPaging = bNestEnabled ?
-            VBoxGlobal::tr("Enabled", "nested paging") :
-            VBoxGlobal::tr("Disabled", "nested paging");
+            VBoxGlobal::tr("Enabled", "details report (Nested Paging)") :
+            VBoxGlobal::tr("Disabled", "details report (Nested Paging)");
 
         bool bUXEnabled = debugger.GetHWVirtExUXEnabled();
         QString unrestrictExec = bUXEnabled ?
-            VBoxGlobal::tr("Enabled", "unrestricted execution") :
-            VBoxGlobal::tr("Disabled", "unrestricted execution");
+            VBoxGlobal::tr("Enabled", "details report (Unrestricted Execution)") :
+            VBoxGlobal::tr("Disabled", "details report (Unrestricted Execution)");
 
         QString strCPUExecCap = QString::number(console.GetMachine().GetCPUExecutionCap());
 
