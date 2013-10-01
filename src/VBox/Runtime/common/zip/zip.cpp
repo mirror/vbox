@@ -1916,6 +1916,46 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
         }
 
         case RTZIPTYPE_ZLIB:
+        {
+#ifdef RTZIP_USE_ZLIB
+            AssertReturn(cbSrc == (uInt)cbSrc, VERR_TOO_MUCH_DATA);
+            AssertReturn(cbDst == (uInt)cbDst, VERR_OUT_OF_RANGE);
+
+            z_stream ZStrm;
+            RT_ZERO(ZStrm);
+            ZStrm.next_in   = (Bytef *)pvSrc;
+            ZStrm.avail_in  = (uInt)cbSrc;
+            ZStrm.next_out  = (Bytef *)pvDst;
+            ZStrm.avail_out = (uInt)cbDst;
+
+            int rc = inflateInit(&ZStrm);
+            if (RT_UNLIKELY(rc != Z_OK))
+                return zipErrConvertFromZlib(rc, false /*fCompressing*/);
+            rc = inflate(&ZStrm, Z_FINISH);
+            if (rc != Z_STREAM_END)
+            {
+                inflateEnd(&ZStrm);
+                if ((rc == Z_BUF_ERROR && ZStrm.avail_in == 0) || rc == Z_NEED_DICT)
+                    return VERR_ZIP_CORRUPTED;
+                if (rc == Z_BUF_ERROR)
+                    return VERR_BUFFER_OVERFLOW;
+                AssertReturn(rc < Z_OK, VERR_GENERAL_FAILURE);
+                return zipErrConvertFromZlib(rc, false /*fCompressing*/);
+            }
+            rc = inflateEnd(&ZStrm);
+            if (rc != Z_OK)
+                return zipErrConvertFromZlib(rc, false /*fCompressing*/);
+
+            if (pcbSrcActual)
+                *pcbSrcActual = ZStrm.avail_in - cbSrc;
+            if (pcbDstActual)
+                *pcbDstActual = ZStrm.total_out;
+            break;
+#else
+            return VERR_NOT_SUPPORTED;
+#endif
+        }
+
         case RTZIPTYPE_BZLIB:
             return VERR_NOT_SUPPORTED;
 

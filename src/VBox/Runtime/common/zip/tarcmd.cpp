@@ -59,6 +59,19 @@
 #define RTZIPTARCMD_OPT_FILE_MODE_OR_MASK   1006
 #define RTZIPTARCMD_OPT_DIR_MODE_AND_MASK   1007
 #define RTZIPTARCMD_OPT_DIR_MODE_OR_MASK    1008
+#define RTZIPTARCMD_OPT_FORMAT              1009
+
+/** File format. */
+typedef enum RTZIPTARFORMAT
+{
+    RTZIPTARFORMAT_INVALID = 0,
+    /** Autodetect if possible, defaulting to TAR. */
+    RTZIPTARFORMAT_AUTO_DEFAULT,
+    /** TAR.  */
+    RTZIPTARFORMAT_TAR,
+    /** XAR.  */
+    RTZIPTARFORMAT_XAR
+} RTZIPTARFORMAT;
 
 
 /*******************************************************************************
@@ -69,6 +82,9 @@
  */
 typedef struct RTZIPTARCMDOPS
 {
+    /** The file format. */
+    RTZIPTARFORMAT  enmFormat;
+
     /** The operation (Acdrtux or RTZIPTARCMD_OPT_DELETE). */
     int             iOperation;
     /** The long operation option name. */
@@ -246,9 +262,18 @@ static RTEXITCODE rtZipTarCmdOpenInputArchive(PRTZIPTARCMDOPS pOpts, PRTVFSFSSTR
     }
 
     /*
-     * Open the tar filesystem stream.
+     * Open the filesystem stream.
      */
-    rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
+    if (pOpts->enmFormat == RTZIPTARFORMAT_TAR)
+        rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
+    else if (pOpts->enmFormat == RTZIPTARFORMAT_XAR)
+#ifdef IPRT_WITH_XAR /* Requires C++ and XML, so only in some configruation of IPRT. */
+        rc = RTZipXarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
+#else
+        rc = VERR_NOT_SUPPORTED;
+#endif
+    else /** @todo make RTZipTarFsStreamFromIoStream fail if not tar file! */
+        rc = RTZipTarFsStreamFromIoStream(hVfsIos, 0/*fFlags*/, phVfsFss);
     RTVfsIoStrmRelease(hVfsIos);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to open tar filesystem stream: %Rrc", rc);
@@ -949,7 +974,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         /* other options. */
         { "--owner",                RTZIPTARCMD_OPT_OWNER, RTGETOPT_REQ_STRING },
         { "--group",                RTZIPTARCMD_OPT_GROUP, RTGETOPT_REQ_STRING },
-        { "--utc",                  RTZIPTARCMD_OPT_UTC,  RTGETOPT_REQ_NOTHING },
+        { "--utc",                  RTZIPTARCMD_OPT_UTC,   RTGETOPT_REQ_NOTHING },
 
         /* IPRT extensions */
         { "--prefix",               RTZIPTARCMD_OPT_PREFIX,             RTGETOPT_REQ_STRING },
@@ -957,6 +982,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
         { "--file-mode-or-mask",    RTZIPTARCMD_OPT_FILE_MODE_OR_MASK,  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--dir-mode-and-mask",    RTZIPTARCMD_OPT_DIR_MODE_AND_MASK,  RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
         { "--dir-mode-or-mask",     RTZIPTARCMD_OPT_DIR_MODE_OR_MASK,   RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_OCT },
+        { "--format",               RTZIPTARCMD_OPT_FORMAT,             RTGETOPT_REQ_STRING },
     };
 
     RTGETOPTSTATE GetState;
@@ -967,6 +993,7 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
 
     RTZIPTARCMDOPS Opts;
     RT_ZERO(Opts);
+    Opts.enmFormat = RTZIPTARFORMAT_AUTO_DEFAULT;
     Opts.uidOwner = NIL_RTUID;
     Opts.gidGroup = NIL_RTUID;
     Opts.fFileModeAndMask = RTFS_UNIX_ALL_ACCESS_PERMS;
@@ -1093,6 +1120,16 @@ RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs)
                 Opts.fDirModeOrMask   = ValueUnion.u32 & RTFS_UNIX_ALL_PERMS;
                 break;
 
+            case RTZIPTARCMD_OPT_FORMAT:
+                if (!strcmp(ValueUnion.psz, "auto") || !strcmp(ValueUnion.psz, "default"))
+                    Opts.enmFormat = RTZIPTARFORMAT_AUTO_DEFAULT;
+                else if (!strcmp(ValueUnion.psz, "tar"))
+                    Opts.enmFormat = RTZIPTARFORMAT_TAR;
+                else if (!strcmp(ValueUnion.psz, "xar"))
+                    Opts.enmFormat = RTZIPTARFORMAT_XAR;
+                else
+                    return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Unknown archive format: '%s'", ValueUnion.psz);
+                break;
 
             /* Standard bits. */
             case 'h':

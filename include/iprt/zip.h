@@ -270,6 +270,21 @@ RTDECL(int) RTZipTarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlag
  */
 RTDECL(RTEXITCODE) RTZipTarCmd(unsigned cArgs, char **papszArgs);
 
+/**
+ * Opens a XAR filesystem stream.
+ *
+ * This is used to extract, list or check a XAR archive.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hVfsIosIn           The compressed input stream.  The reference is
+ *                              not consumed, instead another one is retained.
+ * @param   fFlags              Flags, MBZ.
+ * @param   phVfsFss            Where to return the handle to the XAR filesystem
+ *                              stream.
+ */
+RTDECL(int) RTZipXarFsStreamFromIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSFSSTREAM phVfsFss);
+
 /** @} */
 
 RT_C_DECLS_END

@@ -1289,7 +1289,7 @@ VBoxRT_SDKS.win                = $(VBOX_WINPSDK) $(VBOX_WINDDK) VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
 endif
-VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3
+VBoxRT_DEFS                   := $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SUP_R3 IN_SUP_R3 IPRT_WITH_XAR
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  VBoxRT_DEFS                  += RT_NO_GIP
 endif
@@ -1302,7 +1302,8 @@ VBoxRT_SOURCES                := \
 	r3/xml.cpp \
 	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES)) \
 	common/checksum/crc32-zlib.cpp \
-	common/misc/aiomgr.cpp
+	common/misc/aiomgr.cpp \
+	common/zip/xarvfs.cpp
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += common/misc/s3.cpp
  VBoxRT_SOURCES               += common/misc/http.cpp

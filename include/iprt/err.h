@@ -1788,6 +1788,59 @@ RT_C_DECLS_END
 #define VERR_FILESYSTEM_CORRUPT                     (-22600)
 /** @} */
 
+/** @name RTZipXar status codes.
+ * @{ */
+/** Wrong magic value. */
+#define VERR_XAR_WRONG_MAGIC                        (-22700)
+/** Bad header size. */
+#define VERR_XAR_BAD_HDR_SIZE                       (-22701)
+/** Unsupported version. */
+#define VERR_XAR_UNSUPPORTED_VERSION                (-22702)
+/** Unsupported hashing function. */
+#define VERR_XAR_UNSUPPORTED_HASH_FUNCTION          (-22703)
+/** The table of content (TOC) is too small and therefore can't be valid. */
+#define VERR_XAR_TOC_TOO_SMALL                      (-22704)
+/** The table of content (TOC) is too big. */
+#define VERR_XAR_TOC_TOO_BIG                        (-22705)
+/** The compressed table of content is too big. */
+#define VERR_XAR_TOC_TOO_BIG_COMPRESSED             (-22706)
+/** The uncompressed table of content size in the header didn't match what
+ * ZLib returned. */
+#define VERR_XAR_TOC_UNCOMP_SIZE_MISMATCH           (-22707)
+/** The table of content string length didn't match the size specified in the
+ *  header. */
+#define VERR_XAR_TOC_STRLEN_MISMATCH                (-22708)
+/** The table of content isn't valid UTF-8. */
+#define VERR_XAR_TOC_UTF8_ENCODING                  (-22709)
+/** XML error while parsing the table of content. */
+#define VERR_XAR_TOC_XML_PARSE_ERROR                (-22710)
+/** The table of content XML document does not have a toc element. */
+#define VERR_XML_TOC_ELEMENT_MISSING                (-22711)
+/** The table of content XML element (toc) has sibilings, we expected it to be
+ *  an only child or the root element (xar). */
+#define VERR_XML_TOC_ELEMENT_HAS_SIBLINGS           (-22712)
+/** The XAR table of content digest doesn't match. */
+#define VERR_XAR_TOC_DIGEST_MISMATCH                (-22713)
+/** Bad or missing XAR checksum element. */
+#define VERR_XAR_BAD_CHECKSUM_ELEMENT               (-22714)
+/** The hash function in the header doesn't match the one in the table of
+ *  content. */
+#define VERR_XAR_HASH_FUNCTION_MISMATCH             (-22715)
+/** Bad digest length encountered in the table of content.  */
+#define VERR_XAR_BAD_DIGEST_LENGTH                  (-22716)
+/** The order of elements in the XAR file does not lend it self to expansion
+ *  from via an I/O stream. */
+#define VERR_XAR_NOT_STREAMBLE_ELEMENT_ORDER        (-22717)
+/** Missing offset element in table of content sub-element. */
+#define VERR_XAR_MISSING_OFFSET_ELEMENT             (-22718)
+/** Bad offset element in table of content sub-element. */
+#define VERR_XAR_BAD_OFFSET_ELEMENT                 (-22719)
+/** Missing size element in table of content sub-element. */
+#define VERR_XAR_MISSING_SIZE_ELEMENT               (-22720)
+/** Bad size element in table of content sub-element. */
+#define VERR_XAR_BAD_SIZE_ELEMENT                   (-22721)
+/** @} */
+
 
 /* SED-END */
 
