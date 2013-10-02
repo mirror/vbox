@@ -29,10 +29,10 @@ HostDnsServiceWin::~HostDnsServiceWin()
 }
 
 
-HRESULT HostDnsServiceWin::init(void)
+HRESULT HostDnsServiceWin::init(const VirtualBox *aParent)
 {
     HRESULT hrc;
-    hrc = HostDnsService::init();
+    hrc = HostDnsService::init(aParent);
     AssertComRCReturn(hrc, hrc);
 
     hrc = update();

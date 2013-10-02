@@ -62,7 +62,7 @@ HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
     RTFileClose(m_ResolvConfFile);
 }
 
-HRESULT HostDnsServiceResolvConf::init()
+HRESULT HostDnsServiceResolvConf::init(const VirtualBox *aParent)
 {
     HRESULT hrc;
 
@@ -71,7 +71,7 @@ HRESULT HostDnsServiceResolvConf::init()
     AssertRCReturn(rc, E_FAIL);
 
 
-    hrc = HostDnsService::init();
+    hrc = HostDnsService::init(aParent);
     AssertComRCReturn(hrc, hrc);
 
 

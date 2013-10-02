@@ -305,7 +305,7 @@ HRESULT Host::init(VirtualBox *aParent)
     m->pHostDnsService = new HostDnsService();
 # endif
 
-    hrc = m->pHostDnsService->init();
+    hrc = m->pHostDnsService->init(m->pParent);
     AssertComRCReturn(hrc, hrc);
 
     hrc = m->pHostDnsService->start();
