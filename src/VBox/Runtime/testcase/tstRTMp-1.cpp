@@ -129,6 +129,16 @@ int main()
         cCpusOnline = 1;
     }
 
+    RTCPUID cCoresOnline = RTMpGetOnlineCoreCount();
+    if (cCoresOnline > 0)
+        RTTestIPrintf(RTTESTLVL_ALWAYS, "RTMpGetOnlineCoreCount -> %d\n", (int)cCoresOnline);
+    else
+    {
+        RTTestIFailed("RTMpGetOnlineCoreCount -> %d, expected <= %d\n", (int)cCoresOnline, (int)cCpusOnline);
+        cCoresOnline = 1;
+    }
+    RTTESTI_CHECK(cCoresOnline <= cCpusOnline);
+
     RTCPUSET SetOnline;
     pSet = RTMpGetOnlineSet(&SetOnline);
     if (pSet == &SetOnline)
