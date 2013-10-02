@@ -89,7 +89,7 @@ install_udev() {
                            "$USB_GROUP" "$NO_INSTALL" "$udev_out"
     fi
     # Remove old udev description file
-    rm -f /etc/udev/rules.d/60-vboxdrv.rules 2> /dev/null
+    rm -f /etc/udev/rules.d/10-vboxdrv.rules 2> /dev/null
 }
 
 # Add a unit test if/when needed following the same pattern as for
@@ -111,7 +111,7 @@ install_create_usb_node_for_sysfs() {
 }
 
 # install_device_node_setup contains some aliases for unit testing purposes.  # Set them to their normal values here.
-udev_rule_file=/etc/udev/rules.d/10-vboxdrv.rules # Set this to /dev/null
+udev_rule_file=/etc/udev/rules.d/60-vboxdrv.rules # Set this to /dev/null
                                                   # for unit testing
 sysfs_usb_devices="/sys/bus/usb/devices/*"
 
