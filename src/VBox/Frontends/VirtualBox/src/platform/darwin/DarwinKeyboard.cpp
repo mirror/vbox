@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_WITH_KBD_LEDS_SYNC
+#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -1269,6 +1269,8 @@ static int darwinLedElementGetValue(IOHIDDeviceRef hidDevice, IOHIDElementRef el
             default:
                 rc = kIOReturnError;
         }
+
+        CFRelease(valueRef);
     }
 
     return rc;
@@ -1312,8 +1314,9 @@ static int darwinSetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
                 Log2(("Failed to set led (%d) state\n", (int)IOHIDElementGetUsage(element)));
                 rc2 = kIOReturnError;
             }
-
         }
+
+        CFRelease(matchingElementsArrayRef);
     }
 
     return rc2;
@@ -1358,6 +1361,8 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
                 rc2 = kIOReturnError;
             }
         }
+
+        CFRelease(matchingElementsArrayRef);
     }
 
     return rc2;
@@ -1371,14 +1376,18 @@ static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, 
 
     IOHIDElementRef pElementRef = IOHIDValueGetElement(valueRef);
 
-    if (IOHIDElementGetUsagePage(pElementRef) == kHIDPage_KeyboardOrKeypad)        /* Keyboard or keypad event */
-        if (IOHIDValueGetIntegerValue(valueRef) == 1)                              /* key has been pressed down */
-            if (IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeyboardCapsLock || /* CapsLock key has been pressed */
-                IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeypadNumLock)      /* ... or NumLock key has been pressed */
-            {
-                Log2(("A modifier key has been pressed\n"));
-                g_LastTouchedState = (VBoxHidLeds_t *)pData;
-            }
+    if (pElementRef)
+    {
+        if (IOHIDElementGetUsagePage(pElementRef) == kHIDPage_KeyboardOrKeypad)        /* Keyboard or keypad event */
+            if (IOHIDValueGetIntegerValue(valueRef) == 1)                              /* key has been pressed down */
+                if (IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeyboardCapsLock || /* CapsLock key has been pressed */
+                    IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeypadNumLock)      /* ... or NumLock key has been pressed */
+                {
+                    Log2(("A modifier key has been pressed\n"));
+                    g_LastTouchedState = (VBoxHidLeds_t *)pData;
+                }
+
+    }
 }
 
 /** Carbon key press callback. Triggered after IOKit callback. */
@@ -1461,6 +1470,7 @@ static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pState)
     CGEventTapEnable(pState->pTapRef, false);
     CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pState->pLoopSourceRef, kCFRunLoopDefaultMode);
     CFRelease(pState->pLoopSourceRef);
+    CFRelease(pState->pTapRef);
 }
 
 /** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
@@ -1507,16 +1517,16 @@ void * DarwinHidDevicesKeepLedsState(void)
     IOReturn         rc;
     VBoxHidsState_t *hidsState;
 
-    hidsState = (VBoxHidsState_t *)RTMemAllocZ(sizeof(VBoxHidsState_t));
+    hidsState = (VBoxHidsState_t *)malloc(sizeof(VBoxHidsState_t));
     if (hidsState)
     {
         hidsState->hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, 0);
         if (hidsState->hidManagerRef)
         {
-
             CFDictionaryRef deviceMatchingDictRef = darwinGetLedDeviceMatchingDictionary();
             if (deviceMatchingDictRef)
             {
+                IOHIDManagerScheduleWithRunLoop(hidsState->hidManagerRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
                 IOHIDManagerSetDeviceMatching(hidsState->hidManagerRef, deviceMatchingDictRef);
 
                 rc = IOHIDManagerOpen(hidsState->hidManagerRef, kIOHIDOptionsTypeNone);
@@ -1529,10 +1539,10 @@ void * DarwinHidDevicesKeepLedsState(void)
                     {
                         /* Get all the available devices and cycle through them. */
                         hidsState->cDevices = CFSetGetCount(hidDevicesSetRef);
-                        hidsState->hidDevicesCollection = (IOHIDDeviceRef *)RTMemAllocZ((size_t)hidsState->cDevices * sizeof(IOHIDDeviceRef));
+                        hidsState->hidDevicesCollection = (IOHIDDeviceRef *)malloc((size_t)hidsState->cDevices * sizeof(IOHIDDeviceRef));
                         if (hidsState->hidDevicesCollection)
                         {
-                            hidsState->hidLedsCollection = (VBoxHidLeds_t *)RTMemAllocZ((size_t)hidsState->cDevices * sizeof(VBoxHidLeds_t));
+                            hidsState->hidLedsCollection = (VBoxHidLeds_t *)malloc((size_t)hidsState->cDevices * sizeof(VBoxHidLeds_t));
                             if (hidsState->hidLedsCollection)
                             {
                                 CFSetGetValues(hidDevicesSetRef, (const void **)hidsState->hidDevicesCollection);
@@ -1570,16 +1580,19 @@ void * DarwinHidDevicesKeepLedsState(void)
 
                                     if (darwinAddCarbonGlobalKeyPressHandler(hidsState) == 0)
                                     {
+                                        CFRelease(hidDevicesSetRef);
                                         CFRelease(deviceMatchingDictRef);
                                         return hidsState;
                                     }
                                 }
 
-                                RTMemFree(hidsState->hidLedsCollection);
+                                free(hidsState->hidLedsCollection);
                             }
 
-                            RTMemFree(hidsState->hidDevicesCollection);
+                            free(hidsState->hidDevicesCollection);
                         }
+
+                        CFRelease(hidDevicesSetRef);
                     }
 
                     rc = IOHIDManagerClose(hidsState->hidManagerRef, 0);
@@ -1593,7 +1606,7 @@ void * DarwinHidDevicesKeepLedsState(void)
             CFRelease(hidsState->hidManagerRef);
         }
 
-        RTMemFree(hidsState);
+        free(hidsState);
     }
 
     return NULL;
@@ -1629,7 +1642,8 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
             for (i = 0; i < hidsState->cDevices; i++)
             {
                 /* Cycle through supported devices only. */
-                if (darwinHidDeviceSupported(hidsState->hidDevicesCollection[i]))
+                if (IOHIDDeviceConformsTo(hidsState->hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard)
+                 && darwinHidDeviceSupported(hidsState->hidDevicesCollection[i]))
                 {
                     rc = darwinSetDeviceLedsState(hidsState->hidDevicesCollection[i],
                                                   elementMatchingDict,
@@ -1642,28 +1656,32 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                         rc2 = kIOReturnError;
                     }
 
-                    IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], NULL, NULL);
                     IOHIDDeviceUnscheduleFromRunLoop(hidsState->hidDevicesCollection[i], CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+                    IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], NULL, NULL);
                 }
             }
+
+            CFRelease(elementMatchingDict);
         }
 
         /* Free resources */
 
-        RTMemFree(hidsState->hidLedsCollection);
-        RTMemFree(hidsState->hidDevicesCollection);
+        free(hidsState->hidLedsCollection);
+        free(hidsState->hidDevicesCollection);
 
         rc = IOHIDManagerClose(hidsState->hidManagerRef, 0);
         if (rc != kIOReturnSuccess)
             Log2(("Warning! Something went wrong in attempt to close HID device manager!\n"));
 
+        IOHIDManagerUnscheduleFromRunLoop(hidsState->hidManagerRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+
         CFRelease(hidsState->hidManagerRef);
 
-        RTMemFree(hidsState);
+        free(hidsState);
     }
 
     return rc2;
-#else // !VBOX_WITH_KBD_LEDS_SYNC
+#else /* !VBOX_WITH_KBD_LEDS_SYNC */
     (void)pState;
     return 0;
 #endif
@@ -1692,6 +1710,7 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
         CFDictionaryRef deviceMatchingDictRef = darwinGetLedDeviceMatchingDictionary();
         if (deviceMatchingDictRef)
         {
+            IOHIDManagerScheduleWithRunLoop(hidManagerRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
             IOHIDManagerSetDeviceMatching(hidManagerRef, deviceMatchingDictRef);
 
             rc = IOHIDManagerOpen(hidManagerRef, kIOHIDOptionsTypeNone);
@@ -1704,7 +1723,7 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
                 {
                     /* Get all the available devices and cycle through them. */
                     CFIndex cDevices = CFSetGetCount(hidDevicesSetRef);
-                    IOHIDDeviceRef *hidDevicesCollection = (IOHIDDeviceRef *)RTMemAllocZ((size_t)cDevices * sizeof(IOHIDDeviceRef));
+                    IOHIDDeviceRef *hidDevicesCollection = (IOHIDDeviceRef *)malloc((size_t)cDevices * sizeof(IOHIDDeviceRef));
                     if (hidDevicesCollection)
                     {
                         CFSetGetValues(hidDevicesSetRef, (const void **)hidDevicesCollection);
@@ -1730,8 +1749,10 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
                             CFRelease(elementMatchingDict);
                         }
 
-                        RTMemFree(hidDevicesCollection);
+                        free(hidDevicesCollection);
                     }
+
+                    CFRelease(hidDevicesSetRef);
                 }
 
                 rc = IOHIDManagerClose(hidManagerRef, 0);
@@ -1739,13 +1760,14 @@ void DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScro
                     Log2(("Warning! Something went wrong in attempt to close HID device manager!\n"));
             }
 
+            IOHIDManagerUnscheduleFromRunLoop(hidManagerRef, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+
             CFRelease(deviceMatchingDictRef);
         }
 
         CFRelease(hidManagerRef);
     }
-#else // !VBOX_WITH_KBD_LEDS_SYNC
-
+#else /* !VBOX_WITH_KBD_LEDS_SYNC */
     (void)fNumLockOn;
     (void)fCapsLockOn;
     (void)fScrollLockOn;
