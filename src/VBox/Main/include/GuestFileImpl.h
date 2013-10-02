@@ -89,7 +89,7 @@ public:
     int             openFile(uint32_t uTimeoutMS, int *pGuestRc);
     int             readData(uint32_t uSize, uint32_t uTimeoutMS, void* pvData, uint32_t cbData, uint32_t* pcbRead);
     int             readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS, void* pvData, size_t cbData, size_t* pcbRead);
-    int             seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
+    int             seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType, uint32_t uTimeoutMS, uint64_t *puOffset);
     static HRESULT  setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     int             setFileStatus(FileStatus_T fileStatus, int fileRc);
     int             waitForOffsetChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, uint64_t *puOffset);
