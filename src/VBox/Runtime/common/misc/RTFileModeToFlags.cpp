@@ -55,13 +55,14 @@ RTR3DECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode)
         bool fSkip = false;
         switch (*pszCur)
         {
-            /* Opens an existing file for reading and places the
-             * file pointer at the end of the file. */
+            /* Opens an existing file for writing and places the
+             * file pointer at the end of the file. The file is
+             * created if it does not exist. */
             case 'a':
                 if ((uMode & RTFILE_O_ACTION_MASK) == 0)
                 {
-                    uMode |=   RTFILE_O_OPEN
-                             | RTFILE_O_READ
+                    uMode |=   RTFILE_O_OPEN_CREATE
+                             | RTFILE_O_WRITE
                              | RTFILE_O_APPEND;
                 }
                 else
@@ -135,6 +136,7 @@ RTR3DECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode)
             {
                 switch (chPrev)
                 {
+                    case 'a':
                     case 'c':
                     case 'w':
                     case 'x':
@@ -142,7 +144,6 @@ RTR3DECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode)
                         uMode |= RTFILE_O_READ;
                         break;
 
-                    case 'a':
                     case 'r':
                         /* Also open / create file with write access. */
                         uMode |= RTFILE_O_WRITE;
@@ -215,7 +216,7 @@ RTR3DECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposit
         return VERR_INVALID_PARAMETER;
 
     /*
-     * Handle open mode.
+     * Handle access mode.
      */
     while (    pszCur
            && *pszCur != '\0')
@@ -305,6 +306,11 @@ RTR3DECL(int) RTFileModeToFlagsEx(const char *pszAccess, const char *pszDisposit
     /* Open existing file, create file if does not exist. */
     else if (!RTStrCmp(pszCur, "oc"))
         uMode |= RTFILE_O_OPEN_CREATE;
+    /* Open existing file and place the file pointer at
+     * the end of the file, if opened with write access.
+     * Create the file if does not exist. */
+    else if (!RTStrCmp(pszCur, "oa"))
+        uMode |= RTFILE_O_OPEN_CREATE | RTFILE_O_APPEND;
     /* Open existing, fail if does not exist. */
     else if (!RTStrCmp(pszCur, "oe"))
         uMode |= RTFILE_O_OPEN;
