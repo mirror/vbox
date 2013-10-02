@@ -95,7 +95,7 @@ class HostDnsServiceResolvConf: public HostDnsService
 public:
     HostDnsServiceResolvConf(const char *aResolvConfFileName = "/etc/resolv.conf");
     virtual ~HostDnsServiceResolvConf();
-    virtual HRESULT init(VirtualBox *aParent);
+    virtual HRESULT init(const VirtualBox *aParent);
     virtual HRESULT update();
 protected:
     com::Utf8Str m_ResolvConfFilename;
