@@ -3096,7 +3096,8 @@ void VirtualBox::onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL
 
 void VirtualBox::onHostNameResolutionConfigurationChange()
 {
-    fireHostNameResolutionConfigurationChangeEvent(m->pEventSource);
+    if (m->pEventSource)
+        fireHostNameResolutionConfigurationChangeEvent(m->pEventSource);
 }
 
 
