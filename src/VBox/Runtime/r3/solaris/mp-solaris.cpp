@@ -435,8 +435,8 @@ RTDECL(RTCPUID) RTMpGetOnlineCoreCount(void)
                 {
                     kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(g_papCpuInfo[idCpu], (char *)"state");
                     Assert(pStat->data_type == KSTAT_DATA_CHAR);
-                    if(   !RTStrNCmp(pStat->value.c, PS_ONLINE, sizeof(PS_ONLINE))
-                       || !RTStrNCmp(pStat->value.c, PS_NOINTR, sizeof(PS_NOINTR)))
+                    if(   !RTStrNCmp(pStat->value.c, PS_ONLINE, sizeof(PS_ONLINE) - 1)
+                       || !RTStrNCmp(pStat->value.c, PS_NOINTR, sizeof(PS_NOINTR) - 1))
                     {
                         uOnlineCores++;
                         break;      /* Move to the next core. We have at least 1 hyperthread online in the current core. */
