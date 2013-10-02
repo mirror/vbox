@@ -19,7 +19,7 @@
 #  purge:            (our version): purge this package
 #  deconfigure:      (our version): removing conflicting version
 
-rm -f /etc/udev/rules.d/10-vboxdrv.rules
+rm -f /etc/udev/rules.d/60-vboxdrv.rules
 rm -f /etc/vbox/license_agreed
 rm -f /etc/vbox/module_not_compiled
 

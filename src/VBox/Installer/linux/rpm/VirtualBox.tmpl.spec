@@ -399,7 +399,7 @@ if [ "$1" = 0 ]; then
   /sbin/service vboxdrv stop > /dev/null
   /sbin/chkconfig --del vboxdrv
 %endif
-  rm -f /etc/udev/rules.d/10-vboxdrv.rules
+  rm -f /etc/udev/rules.d/60-vboxdrv.rules
   rm -f /etc/vbox/license_agreed
   rm -f /etc/vbox/module_not_compiled
 fi
