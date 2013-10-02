@@ -722,6 +722,11 @@ VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIDesktopServices_darwin_cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin-cocoa.mm \
 	src/platform/darwin/VBoxUtils-darwin.cpp
+
+ifeq ($(KBUILD_TARGET),darwin)
+src/platform/darwin/DarwinKeyboard.cpp_DEFS += RTMEM_WRAP_TO_EF_APIS RTMEMEF_NEW_AND_DELETE_OPERATORS
+endif
+
 VirtualBox_QT_MOCHDRS.darwin += \
 	src/platform/darwin/UICocoaSpecialControls.h
 
