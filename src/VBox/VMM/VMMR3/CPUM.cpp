@@ -4333,7 +4333,7 @@ VMMR3DECL(void) CPUMR3LogCpuIds(PVM pVM)
                 RTCpuSetToU64(RTMpGetOnlineSet(&OnlineSet)) ));
     RTCPUID cCores = RTMpGetCoreCount();
     if (cCores)
-        LogRel(("Physical cores: %u\n", (unsigned)cCores));
+        LogRel(("Physical host cores: %u\n", (unsigned)cCores));
     LogRel(("************************* CPUID dump ************************\n"));
     DBGFR3Info(pVM->pUVM, "cpuid", "verbose", DBGFR3InfoLogRelHlp());
     LogRel(("\n"));
