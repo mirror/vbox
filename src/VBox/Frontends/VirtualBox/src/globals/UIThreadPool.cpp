@@ -149,27 +149,29 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
     /* Lock task locker: */
     m_taskLocker.lock();
 
-    /* Try to get task (moving it from queue to processing list): */
+    /* Try to dequeue task: */
     if (!m_tasks.isEmpty())
         pTask = m_tasks.dequeue();
 
-    /* If there is no task currently: */
-    if (!pTask)
+    /* Make sure we have a task or outdated: */
+    bool fOutdated = false;
+    while (!pTask && !fOutdated)
     {
         /* Mark thread as not busy: */
         pWorker->setBusy(false);
 
         /* Wait for <m_uIdleTimeout> milli-seconds for the next task,
          * this issue will temporary unlock <m_taskLocker>: */
-        m_taskCondition.wait(&m_taskLocker, m_uIdleTimeout);
+        fOutdated = !m_taskCondition.wait(&m_taskLocker, m_uIdleTimeout);
 
         /* Mark thread as busy again: */
         pWorker->setBusy(true);
 
-        /* Try to get task again (moving it from queue to processing list): */
+        /* Try to dequeue task again: */
         if (!m_tasks.isEmpty())
             pTask = m_tasks.dequeue();
     }
+    Assert(pTask || fOutdated);
 
     /* Unlock task locker: */
     m_taskLocker.unlock();
