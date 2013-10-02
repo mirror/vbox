@@ -345,7 +345,7 @@ const Global::OSType Global::sOSTypes[] =
       2048,   4, 20 * _1G64, NetworkAdapterType_I82543GC, 0,
       StorageControllerType_IntelAhci, StorageBus_SATA, StorageControllerType_IntelAhci, StorageBus_SATA,
       ChipsetType_ICH9, AudioControllerType_HDA  },
-    { "MacOS",   "Mac OS X",          "MacOS109_64",        "Mac OS X 10.9 Maverick (64 bit)", /* Not to be confused with McCain. */
+    { "MacOS",   "Mac OS X",          "MacOS109_64",        "Mac OS X 10.9 Mavericks (64 bit)", /* Not to be confused with McCain. */
       VBOXOSTYPE_MacOS109_x64,    VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT
                                 | VBOXOSHINT_USBHID | VBOXOSHINT_HPET | VBOXOSHINT_RTCUTC | VBOXOSHINT_USBTABLET,
       2048,   4, 20 * _1G64, NetworkAdapterType_I82543GC, 0,
