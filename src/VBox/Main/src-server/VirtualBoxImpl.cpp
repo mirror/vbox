@@ -3094,6 +3094,12 @@ void VirtualBox::onNATNetworkPortForward(IN_BSTR aNetworkName, BOOL create, BOOL
 }
 
 
+void VirtualBox::onHostNameResolutionConfigurationChange()
+{
+    fireHostNameResolutionConfigurationChangeEvent(m->pEventSource);
+}
+
+
 int VirtualBox::natNetworkRefInc(IN_BSTR aNetworkName)
 {
     AutoWriteLock safeLock(*spMtxNatNetworkNameToRefCountLock COMMA_LOCKVAL_SRC_POS);

@@ -225,6 +225,7 @@ public:
                                  IN_BSTR aRuleName, NATProtocol_T proto,
                                  IN_BSTR aHostIp, LONG aHostPort,
                                  IN_BSTR aGuestIp, LONG aGuestPort);
+    void onHostNameResolutionConfigurationChange();
     
     int natNetworkRefInc(IN_BSTR aNetworkName);
     int natNetworkRefDec(IN_BSTR aNetworkName);
