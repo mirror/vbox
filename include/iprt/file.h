@@ -626,7 +626,10 @@ RTDECL(int) RTFileModeToFlags(const char *pszMode, uint64_t *puMode);
  * Disposition modes:
  *      "ca" - Creates a new file, always. Overwrites an existing file.
  *      "ce" - Creates a new file if it does not exist. Fail if exist.
- *      "oc" - Opens and existing file or create it if it does not exist.
+ *      "oa" - Opens an existing file and places the file pointer at
+ *             the end of the file, if opened with write access.
+ *             Create the file if it does not exist.
+ *      "oc" - Opens an existing file or create it if it does not exist.
  *      "oe" - Opens an existing file or fail if it does not exist.
  *      "ot" - Opens and truncate an existing file or fail if it does not exist.
  *
