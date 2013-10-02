@@ -19581,7 +19581,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   -->
   <enum
     name="VBoxEventType"
-    uuid="e40cbdc9-ef63-4407-9b7b-2d1201a39bd1"
+    uuid="5248e377-e578-47d7-b07b-84b1db6db8a8"
     >
 
     <desc>
@@ -19955,8 +19955,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestMouseEvent">IGuestMouseEvent</link>.
       </desc>
     </const>
+    <const name="OnHostNameResolutionConfigurationChange" value="94">
+      <desc>
+        See <link to="IHostNameResolutionConfigurationChangeEvent">IHostNameResolutionConfigurationChangeEvent</link>.
+      </desc>
+    </const>
+    <!-- OnHostNameResolutionConfigurationChange -->
     <!-- Last event marker -->
-    <const name="Last" value="94">
+    <const name="Last" value="95">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -21891,6 +21897,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="hostPort" type="long" readonly="yes"/>
     <attribute name="guestIp" type="wstring" readonly="yes"/>
     <attribute name="guestPort" type="long" readonly="yes"/>
+  </interface>
+
+  <interface
+    name="IHostNameResolutionConfigurationChangeEvent" extends="IEvent"
+    uuid="f9b9e1cf-cb63-47a1-84fb-02c4894b89a9"
+    wsmap="managed" autogen="VBoxEvent" id="OnHostNameResolutionConfigurationChange"
+    >
   </interface>
 
   <module name="VBoxSVC" context="LocalServer">
