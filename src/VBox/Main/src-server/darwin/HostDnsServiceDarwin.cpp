@@ -88,7 +88,7 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, v
     RTCritSectLeave(&pThis->m_hCritSect);
 }
 
-HRESULT HostDnsServiceDarwin::init()
+HRESULT HostDnsServiceDarwin::init(const VirtualBox *aParent)
 {
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
@@ -104,7 +104,7 @@ HRESULT HostDnsServiceDarwin::init()
     if (!g_DnsWatcher)
         return E_OUTOFMEMORY;
 
-    HRESULT hrc = HostDnsService::init();
+    HRESULT hrc = HostDnsService::init(aParent);
     AssertComRCReturn(hrc, hrc);
 
     int rc = RTSemEventCreate(&g_DnsInitEvent);
@@ -217,5 +217,7 @@ HRESULT HostDnsServiceDarwin::update()
     }
 
     CFRelease(propertyRef);
+    this->HostDnsService::update();
+
     return S_OK;
 }

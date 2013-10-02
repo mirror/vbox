@@ -19,6 +19,9 @@
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
 
+#include <iprt/cpp/utils.h>
+
+#include "VirtualBoxImpl.h"
 #include "HostDnsService.h"
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
@@ -32,8 +35,10 @@ HostDnsService::~HostDnsService ()
 }
 
 
-HRESULT HostDnsService::init (void) 
+HRESULT HostDnsService::init(const VirtualBox *aParent) 
 {
+    mParent = aParent;
+    
     int rc = RTCritSectInit(&m_hCritSect);
     AssertRCReturn(rc, E_FAIL);
     return S_OK;
@@ -50,6 +55,7 @@ void HostDnsService::stop()
 
 HRESULT HostDnsService::update()
 {
+    unconst(mParent)->onHostNameResolutionConfigurationChange();
     return S_OK;
 }
 
