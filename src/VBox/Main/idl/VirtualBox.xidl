@@ -10791,6 +10791,8 @@
           <ul>
             <li><tt>"ca"</tt>: Creates a new file, always. Overwrites an existing file.</li>
             <li><tt>"ce"</tt>: Creates a new file if it does not exist. Fail if exist.</li>
+            <li><tt>"oa"</tt>: Opens an existing file and places the file pointer at the
+              end of the file, if opened with write access. Create the file if it does not exist.</li>
             <li><tt>"oc"</tt>: Opens and existing file or create it if it does not exist.</li>
             <li><tt>"oe"</tt>: Opens an existing file or fail if it does not exist.</li>
             <li><tt>"ot"</tt>: Opens and truncate an existing file or fail if it does not exist.</li>
