@@ -936,8 +936,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
-	generic/RTMpGetCoreCount-generic.cpp \
-	generic/RTMpGetOnlineCoreCount-generic.cpp \
 	generic/sched-generic.cpp \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
