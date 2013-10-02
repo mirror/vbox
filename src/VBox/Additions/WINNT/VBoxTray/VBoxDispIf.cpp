@@ -2044,7 +2044,7 @@ static DWORD vboxDispIfSeamlesSubmitWDDM(VBOXDISPIF_SEAMLESS *pSeamless, VBOXDIS
     EscapeData.hContext = pSeamless->modeData.wddm.Context.hContext;
 #endif
     EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
-    EscapeData.Flags.HardwareAccess = 1;
+    /*EscapeData.Flags.HardwareAccess = 1;*/
     EscapeData.pPrivateDriverData = pData;
     EscapeData.PrivateDriverDataSize = VBOXDISPIFESCAPE_SIZE(cbData);
 
