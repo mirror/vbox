@@ -367,6 +367,8 @@ typedef enum LOGGROUP
     LOG_GROUP_MAIN_GUESTUSERSTATECHANGEDEVENT,
     /** Main group, IHost. */
     LOG_GROUP_MAIN_HOST,
+    /** Main group, IHostNameResolutionConfigurationChangeEvent. */
+    LOG_GROUP_MAIN_HOSTNAMERESOLUTIONCONFIGURATIONCHANGEEVENT,
     /** Main group, IHostNetworkInterface. */
     LOG_GROUP_MAIN_HOSTNETWORKINTERFACE,
     /** Main group, IHostPCIDevicePlugEvent. */
