@@ -2596,16 +2596,6 @@ quint64 VBoxGlobal::parseSize (const QString &aText)
 QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
                                 FormatSize aMode /* = FormatSize_Round */)
 {
-    static QString Suffixes [7];
-    Suffixes[0] = tr ("B", "size suffix Bytes");
-    Suffixes[1] = tr ("KB", "size suffix KBytes=1024 Bytes");
-    Suffixes[2] = tr ("MB", "size suffix MBytes=1024 KBytes");
-    Suffixes[3] = tr ("GB", "size suffix GBytes=1024 MBytes");
-    Suffixes[4] = tr ("TB", "size suffix TBytes=1024 GBytes");
-    Suffixes[5] = tr ("PB", "size suffix PBytes=1024 TBytes");
-    Suffixes[6] = (const char *)NULL;
-    AssertCompile(6 < RT_ELEMENTS (Suffixes));
-
     quint64 denom = 0;
     int suffix = 0;
 
@@ -2666,7 +2656,7 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
             decm = 0;
             ++ intg;
             /* check if we've got 1024 XB after rounding and scale down if so */
-            if (intg == 1024 && Suffixes [suffix + 1] != NULL)
+            if (intg == 1024 && suffix + 1 < (int)SizeSuffix_Max)
             {
                 intg /= 1024;
                 ++ suffix;
@@ -2681,7 +2671,7 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
         number = QString::number (intg);
     }
 
-    return QString ("%1 %2").arg (number).arg (Suffixes [suffix]);
+    return QString ("%1 %2").arg (number).arg (gpConverter->toString(static_cast<SizeSuffix>(suffix)));
 }
 
 /**

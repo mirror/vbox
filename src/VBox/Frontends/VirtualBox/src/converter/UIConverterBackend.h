@@ -57,6 +57,7 @@ template<class X> QString toInternalString(const X & /* xobject */) { Assert(0);
 template<class X> X fromInternalString(const QString & /* strData */) { Assert(0); return X(); }
 
 /* Declare global canConvert specializations: */
+template<> bool canConvert<SizeSuffix>();
 template<> bool canConvert<StorageSlot>();
 template<> bool canConvert<RuntimeMenuType>();
 template<> bool canConvert<UIVisualStateType>();
@@ -90,6 +91,8 @@ template<> bool canConvert<KChipsetType>();
 template<> bool canConvert<KNATProtocol>();
 
 /* Declare global conversion specializations: */
+template<> QString toString(const SizeSuffix &sizeSuffix);
+template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix);
 template<> QString toString(const StorageSlot &storageSlot);
 template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
 template<> QString toInternalString(const RuntimeMenuType &runtimeMenuType);

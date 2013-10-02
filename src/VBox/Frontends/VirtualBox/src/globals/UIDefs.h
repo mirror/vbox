@@ -227,6 +227,18 @@ struct StorageSlot
 };
 Q_DECLARE_METATYPE(StorageSlot);
 
+/* Common UI size suffixes: */
+enum SizeSuffix
+{
+    SizeSuffix_Byte = 0,
+    SizeSuffix_KiloByte,
+    SizeSuffix_MegaByte,
+    SizeSuffix_GigaByte,
+    SizeSuffix_TeraByte,
+    SizeSuffix_PetaByte,
+    SizeSuffix_Max
+};
+
 /* Runtime UI menu types: */
 enum RuntimeMenuType
 {

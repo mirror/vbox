@@ -30,6 +30,7 @@
 
 /* Determines if <Object of type X> can be converted to object of other type.
  * These functions returns 'true' for all allowed conversions. */
+template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
 template<> bool canConvert<RuntimeMenuType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
@@ -38,6 +39,44 @@ template<> bool canConvert<GlobalSettingsPageType>() { return true; }
 template<> bool canConvert<MachineSettingsPageType>() { return true; }
 template<> bool canConvert<IndicatorType>() { return true; }
 template<> bool canConvert<MachineCloseAction>() { return true; }
+
+/* QString <= SizeSuffix: */
+template<> QString toString(const SizeSuffix &sizeSuffix)
+{
+    QString strResult;
+    switch (sizeSuffix)
+    {
+        case SizeSuffix_Byte:     strResult = QApplication::translate("VBoxGlobal", "B", "size suffix Bytes"); break;
+        case SizeSuffix_KiloByte: strResult = QApplication::translate("VBoxGlobal", "KB", "size suffix KBytes=1024 Bytes"); break;
+        case SizeSuffix_MegaByte: strResult = QApplication::translate("VBoxGlobal", "MB", "size suffix MBytes=1024 KBytes"); break;
+        case SizeSuffix_GigaByte: strResult = QApplication::translate("VBoxGlobal", "GB", "size suffix GBytes=1024 MBytes"); break;
+        case SizeSuffix_TeraByte: strResult = QApplication::translate("VBoxGlobal", "TB", "size suffix TBytes=1024 GBytes"); break;
+        case SizeSuffix_PetaByte: strResult = QApplication::translate("VBoxGlobal", "PB", "size suffix PBytes=1024 TBytes"); break;
+        default:
+        {
+            AssertMsgFailed(("No text for size suffix=%d", sizeSuffix));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* SizeSuffix <= QString: */
+template<> SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix)
+{
+    QHash<QString, SizeSuffix> list;
+    list.insert(QApplication::translate("VBoxGlobal", "B", "size suffix Bytes"),               SizeSuffix_Byte);
+    list.insert(QApplication::translate("VBoxGlobal", "KB", "size suffix KBytes=1024 Bytes"),  SizeSuffix_KiloByte);
+    list.insert(QApplication::translate("VBoxGlobal", "MB", "size suffix MBytes=1024 KBytes"), SizeSuffix_MegaByte);
+    list.insert(QApplication::translate("VBoxGlobal", "GB", "size suffix GBytes=1024 MBytes"), SizeSuffix_GigaByte);
+    list.insert(QApplication::translate("VBoxGlobal", "TB", "size suffix TBytes=1024 GBytes"), SizeSuffix_TeraByte);
+    list.insert(QApplication::translate("VBoxGlobal", "PB", "size suffix PBytes=1024 TBytes"), SizeSuffix_PetaByte);
+    if (!list.contains(strSizeSuffix))
+    {
+        AssertMsgFailed(("No value for '%s'", strSizeSuffix.toAscii().constData()));
+    }
+    return list.value(strSizeSuffix);
+}
 
 /* QString <= StorageSlot: */
 template<> QString toString(const StorageSlot &storageSlot)
