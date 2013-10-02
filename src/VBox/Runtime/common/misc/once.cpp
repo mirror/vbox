@@ -362,7 +362,7 @@ RTDECL(void) RTOnceReset(PRTONCE pOnce)
     Assert(pOnce->hEventMulti == NIL_RTSEMEVENTMULTI);
     int32_t iState = ASMAtomicUoReadS32(&pOnce->iState);
     AssertMsg(   iState == RTONCESTATE_DONE
-              && iState == RTONCESTATE_UNINITIALIZED,
+              || iState == RTONCESTATE_UNINITIALIZED,
               ("%d\n", iState));
     NOREF(iState);
 
