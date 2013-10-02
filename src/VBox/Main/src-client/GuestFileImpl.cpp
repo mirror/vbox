@@ -593,20 +593,18 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 pSvcCbData->mpaParms[idx++].getPointer(&dataCb.u.read.pvData,
                                                        &dataCb.u.read.cbData);
                 uint32_t cbRead = dataCb.u.read.cbData;
-                if (cbRead)
-                {
-                    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                    mData.mOffCurrent += cbRead;
+                AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                    alock.release();
+                mData.mOffCurrent += cbRead;
 
-                    com::SafeArray<BYTE> data((size_t)cbRead);
-                    data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
+                alock.release();
 
-                    fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
-                                           cbRead, ComSafeArrayAsInParam(data));
-                }
+                com::SafeArray<BYTE> data((size_t)cbRead);
+                data.initFrom((BYTE*)dataCb.u.read.pvData, cbRead);
+
+                fireGuestFileReadEvent(mEventSource, mSession, this, mData.mOffCurrent,
+                                       cbRead, ComSafeArrayAsInParam(data));
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -626,9 +624,8 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
 
                 alock.release();
 
-                if (dataCb.u.write.cbWritten)
-                    fireGuestFileWriteEvent(mEventSource, mSession, this, uOffCurrent,
-                                            dataCb.u.write.cbWritten);
+                fireGuestFileWriteEvent(mEventSource, mSession, this, uOffCurrent,
+                                        dataCb.u.write.cbWritten);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -644,13 +641,11 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
                 mData.mOffCurrent = dataCb.u.seek.uOffActual;
-                uint64_t uOffCurrent = mData.mOffCurrent;
 
                 alock.release();
 
-                if (dataCb.u.seek.uOffActual)
-                    fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                    uOffCurrent, 0 /* Processed */);
+                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
+                                                dataCb.u.seek.uOffActual, 0 /* Processed */);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -665,16 +660,12 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
 
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-                if (mData.mOffCurrent != dataCb.u.tell.uOffActual)
-                {
-                    mData.mOffCurrent = dataCb.u.tell.uOffActual;
-                    uint64_t uOffCurrent = mData.mOffCurrent;
+                mData.mOffCurrent = dataCb.u.tell.uOffActual;
 
-                    alock.release();
+                alock.release();
 
-                    fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
-                                                    uOffCurrent, 0 /* Processed */);
-                }
+                fireGuestFileOffsetChangedEvent(mEventSource, mSession, this,
+                                                dataCb.u.tell.uOffActual, 0 /* Processed */);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -863,11 +854,11 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
     return vrc;
 }
 
-int GuestFile::seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType,
+int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
                       uint32_t uTimeoutMS, uint64_t *puOffset)
 {
-    LogFlowThisFunc(("uOffset=%RU64, uTimeoutMS=%RU32\n",
-                     uOffset, uTimeoutMS));
+    LogFlowThisFunc(("iOffset=%RI64, uTimeoutMS=%RU32\n",
+                     iOffset, uTimeoutMS));
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -893,7 +884,8 @@ int GuestFile::seekAt(uint64_t uOffset, GUEST_FILE_SEEKTYPE eSeekType,
     paParms[i++].setUInt32(pEvent->ContextID());
     paParms[i++].setUInt32(mData.mID /* File handle */);
     paParms[i++].setUInt32(eSeekType /* Seek method */);
-    paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
+    /** @todo uint64_t vs. int64_t! */
+    paParms[i++].setUInt64((uint64_t)iOffset /* Offset (in bytes) to start reading */);
 
     vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -1373,7 +1365,7 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
 
         default:
             return setError(E_INVALIDARG, tr("Invalid seek type specified"));
-            break;
+            break; /* Never reached. */
     }
 
     int vrc = seekAt(aOffset, eSeekType,
@@ -1384,7 +1376,7 @@ STDMETHODIMP GuestFile::Seek(LONG64 aOffset, FileSeekType_T aType)
         {
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
-                              tr("Seeking file \"%s\" (to offset %RU64) failed: %Rrc"),
+                              tr("Seeking file \"%s\" (to offset %RI64) failed: %Rrc"),
                               mData.mOpenInfo.mFileName.c_str(), aOffset, vrc);
                 break;
         }
