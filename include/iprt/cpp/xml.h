@@ -30,10 +30,9 @@
 # error "There are no XML APIs available in Ring-0 Context!"
 #endif
 
-/*#define USE_STD_LIST_FOR_CHILDREN*/
-
 #include <iprt/list.h>
 #include <iprt/cpp/exception.h>
+#include <iprt/cpp/utils.h>
 
 #include <list>
 #include <memory>
@@ -394,7 +393,7 @@ class ContentNode;
 class RT_DECL_CLASS Node
 {
 public:
-    ~Node();
+    virtual ~Node();
 
     const char *getName() const;
     const char *getPrefix() const;
@@ -436,15 +435,16 @@ public:
     }
 
     int getLineNumber() const;
-
     /** @} */
 
-#ifndef USE_STD_LIST_FOR_CHILDREN
     /** @name General tree enumeration.
      *
      * Use the introspection methods isElement() and isContent() before doing static
      * casting.  Parents are always or ElementNode type, but siblings and children
      * can be of both ContentNode and ElementNode types.
+     *
+     * @remarks Attribute node are in the attributes list, while both content and
+     *          element nodes are in the list of children. See ElementNode.
      *
      * @remarks Careful mixing tree walking with node removal!
      * @{
@@ -456,72 +456,55 @@ public:
         return m_pParent;
     }
 
-    /** Get the first child node.
-     * @returns Pointer to the first child node, NULL if no children. */
-    const Node *getFirstChild() const
-    {
-        return RTListGetFirstCpp(&m_children, const Node, m_childEntry);
-    }
-
-    /** Get the last child node.
-     * @returns Pointer to the last child node, NULL if no children. */
-    const Node *getLastChild() const
-    {
-        return RTListGetLastCpp(&m_children, const Node, m_childEntry);
-    }
-
     /** Get the previous sibling.
-     * @returns Pointer to the previous sibling node, NULL if first child. */
+     * @returns Pointer to the previous sibling node, NULL if first child.
+     */
     const Node *getPrevSibiling() const
     {
-        if (!m_pParent)
+        if (!m_pParentListAnchor)
             return NULL;
-        return RTListGetPrevCpp(&m_pParent->m_children, this, const Node, m_childEntry);
+        return RTListGetPrevCpp(m_pParentListAnchor, this, const Node, m_listEntry);
     }
 
     /** Get the next sibling.
      * @returns Pointer to the next sibling node, NULL if last child. */
     const Node *getNextSibiling() const
     {
-        if (!m_pParent)
+        if (!m_pParentListAnchor)
             return NULL;
-        return RTListGetNextCpp(&m_pParent->m_children, this, const Node, m_childEntry);
+        return RTListGetNextCpp(m_pParentListAnchor, this, const Node, m_listEntry);
     }
     /** @} */
-#endif
 
 protected:
     /** Node types. */
     typedef enum { IsElement, IsAttribute, IsContent } EnumType;
 
-    EnumType    m_Type;                 /**< The type of node this is an instance of. */
-    Node       *m_pParent;              /**< The parent node, NULL if root. */
-    xmlNode    *m_plibNode;            ///< != NULL if this is an element or content node
-    xmlAttr    *m_plibAttr;            ///< != NULL if this is an attribute node
+    /** The type of node this is an instance of. */
+    EnumType    m_Type;
+    /** The parent node (always an element), NULL if root. */
+    Node       *m_pParent;
+
+    xmlNode    *m_pLibNode;            ///< != NULL if this is an element or content node
+    xmlAttr    *m_pLibAttr;            ///< != NULL if this is an attribute node
     const char *m_pcszNamespacePrefix; ///< not always set
     const char *m_pcszNamespaceHref;   ///< full http:// spec
-    const char *m_pcszName;            ///< element or attribute name, points either into plibNode or plibAttr;
+    const char *m_pcszName;            ///< element or attribute name, points either into pLibNode or pLibAttr;
                                        ///< NULL if this is a content node
 
-#ifndef USE_STD_LIST_FOR_CHILDREN
     /** Child list entry of this node. (List head m_pParent->m_children.) */
-    RTLISTNODE      m_childEntry;
-    /** Child elements, if this is an element; can be empty. */
-    RTLISTANCHOR    m_children;
-#endif
+    RTLISTNODE      m_listEntry;
+    /** Pointer to the parent list anchor.
+     * This allows us to use m_listEntry both for children and attributes. */
+    PRTLISTANCHOR   m_pParentListAnchor;
 
     // hide the default constructor so people use only our factory methods
     Node(EnumType type,
          Node *pParent,
-         xmlNode *plibNode,
-         xmlAttr *plibAttr);
+         PRTLISTANCHOR pListAnchor,
+         xmlNode *pLibNode,
+         xmlAttr *pLibAttr);
     Node(const Node &x);      // no copying
-
-    void buildChildren(const ElementNode &elmRoot);
-
-    /* Obscure class data */
-    struct Data;
-    Data *m;
 
     friend class AttributeNode;
     friend class ElementNode; /* C list hack. */
@@ -544,12 +527,14 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    AttributeNode(const ElementNode &elmRoot,
+    AttributeNode(const ElementNode *pElmRoot,
                   Node *pParent,
-                  xmlAttr *plibAttr,
-                  const char **ppcszKey);
+                  PRTLISTANCHOR pListAnchor,
+                  xmlAttr *pLibAttr);
     AttributeNode(const AttributeNode &x);      // no copying
 
+    /** For storing attribute names with namespace prefix.
+     * Only used if with non-default namespace specified. */
     RTCString    m_strKey;
 
     friend class Node;
@@ -614,9 +599,66 @@ public:
         return NULL;
     }
 
+    /** Combines findChildElementP and findAttributeValue.
+     *
+     * @returns Pointer to attribute string value, NULL if either the element or
+     *          the attribute was not found.
+     * @param   pcszPath            The attribute name.  Slashes can be used to make a
+     *                              simple path to any decendant.
+     * @param   pcszAttribute       The attribute name.
+     * @param   pcszPathNamespace   The namespace to match @pcszPath with, NULL
+     *                              (default) match any namespace.  When using a
+     *                              path, this matches all elements along the way.
+     * @see     findChildElementP and findAttributeValue
+     */
+    const char *findChildElementAttributeValueP(const char *pcszPath, const char *pcszAttribute,
+                                                const char *pcszPathNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszPathNamespace);
+        if (pElem)
+            return pElem->findAttributeValue(pcszAttribute);
+        return NULL;
+    }
 
-    /** @name Element enumeration.
+
+    /** @name Tree enumeration.
      * @{ */
+
+    /** Get the next tree element in a full tree enumeration.
+     *
+     * By starting with the root node, this can be used to enumerate the entire tree
+     * (or sub-tree if @a pElmRoot is used).
+     *
+     * @returns Pointer to the next element in the tree, NULL if we're done.
+     * @param   pElmRoot            The root of the tree we're enumerating.  NULL if
+     *                              it's the entire tree.
+     */
+    ElementNode const *getNextTreeElement(ElementNode const *pElmRoot = NULL) const;
+    RT_CPP_GETTER_UNCONST_RET(ElementNode *, ElementNode, getNextTreeElement, (const ElementNode *pElmRoot = NULL), (pElmRoot))
+
+    /** Get the first child node.
+     * @returns Pointer to the first child node, NULL if no children. */
+    const Node *getFirstChild() const
+    {
+        return RTListGetFirstCpp(&m_children, const Node, m_listEntry);
+    }
+    RT_CPP_GETTER_UNCONST_RET(Node *, ElementNode, getFirstChild,(),())
+
+    /** Get the last child node.
+     * @returns Pointer to the last child node, NULL if no children. */
+    const Node *getLastChild() const
+    {
+        return RTListGetLastCpp(&m_children, const Node, m_listEntry);
+    }
+
+    /** Get the first child node.
+     * @returns Pointer to the first child node, NULL if no children. */
+    const ElementNode *getFirstChildElement() const;
+
+    /** Get the last child node.
+     * @returns Pointer to the last child node, NULL if no children. */
+    const ElementNode *getLastChildElement() const;
+
     /** Get the previous sibling element.
      * @returns Pointer to the previous sibling element, NULL if first child
      *          element.
@@ -666,27 +708,112 @@ public:
         return NULL;
     }
 
-    bool getAttributeValue(const char *pcszMatch, const char *&pcsz) const;
+    bool getAttributeValue(const char *pcszMatch, const char *&pcsz) const  { return getAttributeValue(pcszMatch, &pcsz); }
     bool getAttributeValue(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValuePath(const char *pcszMatch, RTCString &str) const;
     bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
     bool getAttributeValue(const char *pcszMatch, uint32_t &i) const;
-    bool getAttributeValue(const char *pcszMatch, int64_t &i) const;
+    bool getAttributeValue(const char *pcszMatch, int64_t &i) const         { return getAttributeValue(pcszMatch, &i); }
     bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
     bool getAttributeValue(const char *pcszMatch, bool &f) const;
 
     /** @name Variants that for clarity does not use references for output params.
      * @{ */
-    bool getAttributeValue(const char *pcszMatch, const char **ppcsz) const { return getAttributeValue(pcszMatch, *ppcsz); }
+    bool getAttributeValue(const char *pcszMatch, const char **ppcsz) const;
     bool getAttributeValue(const char *pcszMatch, RTCString *pStr) const    { return getAttributeValue(pcszMatch, *pStr); }
     bool getAttributeValuePath(const char *pcszMatch, RTCString *pStr) const { return getAttributeValuePath(pcszMatch, *pStr); }
     bool getAttributeValue(const char *pcszMatch, int32_t *pi) const        { return getAttributeValue(pcszMatch, *pi); }
     bool getAttributeValue(const char *pcszMatch, uint32_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
-    bool getAttributeValue(const char *pcszMatch, int64_t *pi) const        { return getAttributeValue(pcszMatch, *pi); }
+    bool getAttributeValue(const char *pcszMatch, int64_t *piValue) const;
     bool getAttributeValue(const char *pcszMatch, uint64_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
     bool getAttributeValue(const char *pcszMatch, bool *pf) const           { return getAttributeValue(pcszMatch, *pf); }
     /** @} */
 
+    /** @name Convenience methods for convering the element value.
+     * @{ */
+    bool getElementValue(int32_t  *piValue) const;
+    bool getElementValue(uint32_t *puValue) const;
+    bool getElementValue(int64_t  *piValue) const;
+    bool getElementValue(uint64_t *puValue) const;
+    bool getElementValue(bool     *pfValue) const;
+    /** @} */
+
+    /** @name Convenience findChildElementAttributeValueP and getElementValue.
+     * @{ */
+    bool getChildElementValueP(const char *pcszPath, int32_t  *piValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        return pElem && pElem->getElementValue(piValue);
+    }
+    bool getChildElementValueP(const char *pcszPath, uint32_t *puValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        return pElem && pElem->getElementValue(puValue);
+    }
+    bool getChildElementValueP(const char *pcszPath, int64_t  *piValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        return pElem && pElem->getElementValue(piValue);
+    }
+    bool getChildElementValueP(const char *pcszPath, uint64_t *puValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        return pElem && pElem->getElementValue(puValue);
+    }
+    bool getChildElementValueP(const char *pcszPath, bool     *pfValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        return pElem && pElem->getElementValue(pfValue);
+    }
+
+    /** @} */
+
+    /** @name Convenience findChildElementAttributeValueP and getElementValue with a
+     *        default value being return if the child element isn't present.
+     *
+     * @remarks These will return false on conversion errors.
+     * @{ */
+    bool getChildElementValueDefP(const char *pcszPath, int32_t  iDefault, int32_t  *piValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getElementValue(piValue);
+        *piValue = iDefault;
+        return true;
+    }
+    bool getChildElementValueDefP(const char *pcszPath, uint32_t uDefault, uint32_t *puValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getElementValue(puValue);
+        *puValue = uDefault;
+        return true;
+    }
+    bool getChildElementValueDefP(const char *pcszPath, int64_t  iDefault, int64_t  *piValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getElementValue(piValue);
+        *piValue = iDefault;
+        return true;
+    }
+    bool getChildElementValueDefP(const char *pcszPath, uint64_t uDefault, uint64_t *puValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getElementValue(puValue);
+        *puValue = uDefault;
+        return true;
+    }
+    bool getChildElementValueDefP(const char *pcszPath, bool     fDefault, bool     *pfValue, const char *pcszNamespace = NULL) const
+    {
+        const ElementNode *pElem = findChildElementP(pcszPath, pcszNamespace);
+        if (pElem)
+            return pElem->getElementValue(pfValue);
+        *pfValue = fDefault;
+        return true;
+    }
+    /** @} */
 
     ElementNode *createChild(const char *pcszElementName);
 
@@ -711,10 +838,19 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    ElementNode(const ElementNode *pelmRoot, Node *pParent, xmlNode *plibNode);
+    ElementNode(const ElementNode *pElmRoot, Node *pParent, PRTLISTANCHOR pListAnchor, xmlNode *pLibNode);
     ElementNode(const ElementNode &x);      // no copying
+    virtual ElementNode::~ElementNode();
 
-    const ElementNode *m_pelmRoot;
+    /** We keep a pointer to the root element for attribute namespace handling. */
+    const ElementNode  *m_pElmRoot;
+
+    /** List of child elements and content nodes. */
+    RTLISTANCHOR        m_children;
+    /** List of attributes nodes. */
+    RTLISTANCHOR        m_attributes;
+
+    static void buildChildren(ElementNode *pElmRoot);
 
     friend class Node;
     friend class Document;
@@ -735,7 +871,7 @@ public:
 
 protected:
     // hide the default constructor so people use only our factory methods
-    ContentNode(Node *pParent, xmlNode *plibNode);
+    ContentNode(Node *pParent, PRTLISTANCHOR pListAnchor, xmlNode *pLibNode);
     ContentNode(const ContentNode &x);      // no copying
 
     friend class Node;
@@ -771,7 +907,7 @@ private:
     Document doc;
     XmlFileParser parser;
     parser.read("file.xml", doc);
-    Element *pelmRoot = doc.getRootElement();
+    Element *pElmRoot = doc.getRootElement();
    @endcode
  *
  * --   XmlMemWriter or XmlFileWriter to write out an XML document after it has
@@ -779,7 +915,7 @@ private:
  *
  * @code
     Document doc;
-    Element *pelmRoot = doc.createRootElement();
+    Element *pElmRoot = doc.createRootElement();
     // add children
     xml::XmlFileWriter writer(doc);
     writer.write("file.xml", true);
