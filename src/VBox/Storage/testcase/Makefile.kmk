@@ -83,7 +83,7 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
  #
  # vbox-img - static because it migth be used as at standalone tool.
  #
- vbox-img_TEMPLATE = VBOXR3STATIC
+ vbox-img_TEMPLATE = VBoxR3Static
  vbox-img_DEFS += IN_VBOXDDU IN_VBOXDDU_STATIC VBOX_HDD_NO_DYNAMIC_BACKENDS
  vbox-img_SOURCES = \
 	vbox-img.cpp \
@@ -99,7 +99,8 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	../QED.cpp \
 	../QCOW.cpp \
 	../VHDX.cpp \
-	../VCICache.cpp
+	../VCICache.cpp \
+       ../VDIfVfs.cpp
  vbox-img_LIBS = \
 	$(VBOX_LIB_RUNTIME_STATIC)
  if1of ($(KBUILD_TARGET),os2 win)

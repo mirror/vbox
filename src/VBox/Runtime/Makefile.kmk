@@ -231,7 +231,7 @@ endif
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
 RuntimeR3_TEMPLATE      = VBoxR3Static
-RuntimeR3_SDKS          = VBOX_OPENSSL
+RuntimeR3_SDKS          = VBOX_OPENSSL VBOX_LIBXML2
 RuntimeR3_SDKS.win      = $(VBOX_WINPSDK) $(VBOX_WINDDK)
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
 #RuntimeR3_DEFS         += RTMEM_WRAP_TO_EF_APIS
@@ -514,7 +514,10 @@ RuntimeR3_SOURCES       = \
 	r3/testi.cpp \
 	r3/tcp.cpp \
 	r3/udp.cpp \
-	r3/generic/semspinmutex-r3-generic.cpp
+	r3/generic/semspinmutex-r3-generic.cpp \
+	r3/xml.cpp \
+	common/zip/xarvfs.cpp
+
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
 # RuntimeR3_SOURCES += common/time/timesupA.asm
@@ -1068,6 +1071,11 @@ RuntimeBldProg_EXTENDS          := RuntimeR3
 RuntimeBldProg_BLD_TRG          := $(KBUILD_HOST)
 RuntimeBldProg_BLD_TRG_ARCH     := $(KBUILD_HOST_ARCH)
 RuntimeBldProg_BLD_TRG_CPU      := $(KBUILD_HOST_CPU)
+RuntimeBldProg_SOURCES          = $(filter-out \
+	r3/xml.cpp \
+	common/zip/xarvfs.cpp \
+	, $(RuntimeR3_SOURCES))
+
 
 
 #
@@ -1092,6 +1100,8 @@ RuntimeGuestR3_SOURCES                  := $(filter-out \
 	common/checksum/RTSha256Digest.cpp \
 	common/checksum/sha% \
 	generic/RTLogWriteUser-generic.cpp \
+	r3/xml.cpp \
+	common/zip/xarvfs.cpp \
 	, $(RuntimeR3_SOURCES))
 RuntimeGuestR3_SOURCES              += \
 	common/time/timesysalias.cpp \
@@ -1297,11 +1307,9 @@ endif
 VBoxRT_DEFS.$(KBUILD_TYPE)    := $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                := \
 	VBox/VBoxRTDeps.cpp \
-	r3/xml.cpp \
 	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES)) \
 	common/checksum/crc32-zlib.cpp \
-	common/misc/aiomgr.cpp \
-	common/zip/xarvfs.cpp
+	common/misc/aiomgr.cpp
 ifdef VBOX_WITH_LIBCURL
  VBoxRT_SOURCES               += common/misc/s3.cpp
  VBoxRT_SOURCES               += common/misc/http.cpp
