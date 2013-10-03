@@ -142,9 +142,9 @@ typedef struct RTZIPXARDATASTREAM
      *          after the TOC. */
     RTFOFF                  offData;
     /** The size of the archived data. */
-    uint64_t                cbDataArchived;
+    RTFOFF                  cbDataArchived;
     /** The size of the extracted data. */
-    uint64_t                cbDataExtracted;
+    RTFOFF                  cbDataExtracted;
     /** The encoding of the archived ata. */
     RTZIPXARENCODING        enmEncoding;
     /** The hash function used for the archived data. */
@@ -394,7 +394,7 @@ static bool rtZipXarHashIsEqual(uint32_t uHashFunction, PRTZIPXARHASHDIGEST pHas
  * @param   pcbLength           Where to return the length value, optional.
  */
 static int rtZipXarGetOffsetSizeLengthFromElem(xml::ElementNode const *pElement,
-                                               PRTFOFF poff, uint64_t *pcbSize, uint64_t *pcbLength)
+                                               PRTFOFF poff, PRTFOFF pcbSize, PRTFOFF pcbLength)
 {
     /*
      * The offset.
@@ -424,10 +424,11 @@ static int rtZipXarGetOffsetSizeLengthFromElem(xml::ElementNode const *pElement,
     if (!pszValue)
         return VERR_XAR_BAD_SIZE_ELEMENT;
 
-    rc = RTStrToUInt64Full(pszValue, 0, pcbSize);
+    rc = RTStrToInt64Full(pszValue, 0, pcbSize);
     if (   RT_FAILURE(rc)
         || rc == VWRN_NUMBER_TOO_BIG
-        || *pcbSize >= UINT64_MAX / 2 /* prevent overflow casting to RTFOFF_MAX. */)
+        || *pcbSize >= RTFOFF_MAX - _1M
+        || *pcbSize < 0)
         return VERR_XAR_BAD_SIZE_ELEMENT;
     AssertCompile(RTFOFF_MAX == UINT64_MAX / 2);
 
@@ -445,10 +446,11 @@ static int rtZipXarGetOffsetSizeLengthFromElem(xml::ElementNode const *pElement,
         if (!pszValue)
             return VERR_XAR_BAD_LENGTH_ELEMENT;
 
-        rc = RTStrToUInt64Full(pszValue, 0, pcbLength);
+        rc = RTStrToInt64Full(pszValue, 0, pcbLength);
         if (   RT_FAILURE(rc)
             || rc == VWRN_NUMBER_TOO_BIG
-            || *pcbLength >= UINT64_MAX / 2 /* prevent overflow casting to RTFOFF_MAX. */)
+            || *pcbLength >= RTFOFF_MAX - _1M
+            || *pcbLength < 0)
             return VERR_XAR_BAD_LENGTH_ELEMENT;
         AssertCompile(RTFOFF_MAX == UINT64_MAX / 2);
     }
@@ -839,11 +841,11 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
      */
     if (off == -1)
         off = pThis->offCurPos;
-    if (off < 0 || off > (RTFOFF)pThis->DataAttr.cbDataArchived)
+    if (off < 0 || off > pThis->DataAttr.cbDataArchived)
         return VERR_EOF;
     if (pThis->fEndOfStream)
     {
-        if (off >= (RTFOFF)pThis->DataAttr.cbDataArchived)
+        if (off >= pThis->DataAttr.cbDataArchived)
             return pcbRead ? VINF_EOF : VERR_EOF;
         if (!pThis->fSeekable)
             return VERR_SEEK_ON_DEVICE;
@@ -851,7 +853,7 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
     }
 
     size_t cbToRead = pSgBuf->paSegs[0].cbSeg;
-    uint64_t cbLeft = (uint64_t)(pThis->DataAttr.cbDataArchived - off);
+    uint64_t cbLeft = pThis->DataAttr.cbDataArchived - off;
     if (cbToRead > cbLeft)
     {
         if (!pcbRead)
@@ -896,14 +898,14 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
     /*
      * Check for end of stream, also check the hash.
      */
-    if (pThis->offCurPos >= (RTFOFF)pThis->DataAttr.cbDataArchived)
+    if (pThis->offCurPos >= pThis->DataAttr.cbDataArchived)
     {
         Assert(pThis->offCurPos == pThis->DataAttr.cbDataArchived);
         pThis->fEndOfStream = true;
 
         /* Check hash. */
         if (   pThis->uHashState == RTZIPXAR_HASH_PENDING
-            && pThis->cbDigested == (RTFOFF)pThis->DataAttr.cbDataArchived)
+            && pThis->cbDigested == pThis->DataAttr.cbDataArchived)
         {
             RTZIPXARHASHDIGEST Digest;
             rtZipXarHashFinal(&pThis->CtxArchived, pThis->DataAttr.uHashFunArchived, &Digest);
@@ -1081,11 +1083,11 @@ static DECLCALLBACK(int) rtZipXarFssFile_Seek(void *pvThis, RTFOFF offSeek, unsi
     /* Do limit checks. */
     if (offSeek < 0)
         offSeek = 0;
-    else if (offSeek > (RTFOFF)pThis->Ios.DataAttr.cbDataArchived)
+    else if (offSeek > pThis->Ios.DataAttr.cbDataArchived)
         offSeek = pThis->Ios.DataAttr.cbDataArchived;
 
     /* Apply and return. */
-    pThis->Ios.fEndOfStream = (offSeek >= (RTFOFF)pThis->Ios.DataAttr.cbDataArchived);
+    pThis->Ios.fEndOfStream = (offSeek >= pThis->Ios.DataAttr.cbDataArchived);
     pThis->Ios.offCurPos    = offSeek;
     if (poffActual)
         *poffActual = offSeek;
@@ -1190,7 +1192,7 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCR
     /*
      * Enforce the cbDataExtracted limit.
      */
-    if (pThis->offCurPos > (RTFOFF)pThis->pIosRaw->DataAttr.cbDataExtracted)
+    if (pThis->offCurPos > pThis->pIosRaw->DataAttr.cbDataExtracted)
         return VERR_XAR_EXTRACTED_SIZE_EXCEEDED;
 
     /*
@@ -1212,7 +1214,7 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCR
     rtZipXarHashUpdate(&pThis->CtxExtracted, pThis->uHashFunExtracted, pSgBuf->paSegs[0].pvSeg, cbActuallyRead);
     if (rc == VINF_EOF)
     {
-        if (pThis->offCurPos == (RTFOFF)pThis->pIosRaw->DataAttr.cbDataExtracted)
+        if (pThis->offCurPos == pThis->pIosRaw->DataAttr.cbDataExtracted)
         {
             if (pThis->uHashState == RTZIPXAR_HASH_PENDING)
             {
@@ -1236,7 +1238,7 @@ static DECLCALLBACK(int) rtZipXarFssDecompIos_Read(void *pvThis, RTFOFF off, PCR
            message digests are checked. */
         if (RT_SUCCESS(rc))
         {
-            if (   pThis->pIosRaw->offCurPos < (RTFOFF)pThis->pIosRaw->DataAttr.cbDataArchived
+            if (   pThis->pIosRaw->offCurPos < pThis->pIosRaw->DataAttr.cbDataArchived
                 || pThis->pIosRaw->uHashState == RTZIPXAR_HASH_PENDING)
                 rc = VERR_XAR_UNUSED_ARCHIVED_DATA;
             else if (pThis->pIosRaw->uHashState != RTZIPXAR_HASH_OK)
@@ -1811,17 +1813,17 @@ static int rtZipXarValidateTocPart2(PRTZIPXARFSSTREAM pThis, PCXARHEADER pXarHdr
         if (pThis->uHashFunction != XAR_HASH_NONE)
         {
             RTFOFF   offChecksum;
-            uint64_t cbChecksum;
+            RTFOFF   cbChecksum;
             rc = rtZipXarGetOffsetSizeLengthFromElem(pChecksumElem, &offChecksum, &cbChecksum, NULL);
             if (RT_FAILURE(rc))
                 return rc;
-            if (cbChecksum != pThis->cbHashDigest)
+            if (cbChecksum != (RTFOFF)pThis->cbHashDigest)
                 return VERR_XAR_BAD_DIGEST_LENGTH;
             if (offChecksum != 0 && pThis->hVfsFile == NIL_RTVFSFILE)
                 return VERR_XAR_NOT_STREAMBLE_ELEMENT_ORDER;
 
             RTZIPXARHASHDIGEST StoredDigest;
-            rc = RTVfsIoStrmReadAt(pThis->hVfsIos, pThis->offZero + offChecksum, &StoredDigest, cbChecksum,
+            rc = RTVfsIoStrmReadAt(pThis->hVfsIos, pThis->offZero + offChecksum, &StoredDigest, pThis->cbHashDigest,
                                    true /*fBlocking*/, NULL /*pcbRead*/);
             if (RT_FAILURE(rc))
                 return rc;
