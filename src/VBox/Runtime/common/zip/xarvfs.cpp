@@ -903,7 +903,7 @@ static DECLCALLBACK(int) rtZipXarFssIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF
 
         /* Check hash. */
         if (   pThis->uHashState == RTZIPXAR_HASH_PENDING
-            && pThis->cbDigested == pThis->DataAttr.cbDataArchived)
+            && pThis->cbDigested == (RTFOFF)pThis->DataAttr.cbDataArchived)
         {
             RTZIPXARHASHDIGEST Digest;
             rtZipXarHashFinal(&pThis->CtxArchived, pThis->DataAttr.uHashFunArchived, &Digest);
