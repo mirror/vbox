@@ -456,8 +456,11 @@ static int dmgWrapFileReadUser(PDMGIMAGE pThis, RTFOFF off, PVDIOCTX pIoCtx, siz
     else
     {
         /*
-         * The I/O context stuff seems to complicated and undocument that I'm
-         * not going to bother trying implement this efficiently right now.
+         * Alloate a temporary buffer on the stack or heap and use
+         * vdIfIoIntIoCtxCopyTo to work the context.
+         *
+         * The I/O context stuff seems too complicated and undocument that I'm
+         * not going to bother trying to implement this efficiently right now.
          */
         void *pvFree = NULL;
         void *pvBuf;
@@ -465,7 +468,7 @@ static int dmgWrapFileReadUser(PDMGIMAGE pThis, RTFOFF off, PVDIOCTX pIoCtx, siz
             pvBuf = alloca(cbToRead);
         else
             pvFree = pvBuf = RTMemTmpAlloc(cbToRead);
-        if (!pvBuf)
+        if (pvBuf)
         {
             rc = RTVfsFileReadAt(pThis->hDmgFileInXar, off, pvBuf, cbToRead, NULL);
             if (RT_SUCCESS(rc))
@@ -1440,7 +1443,7 @@ static int dmgBlkxParse(PDMGIMAGE pThis, PDMGBLKX pBlkx)
  *
  * @returns VBox status code.
  * @param   fOpen           Flags for defining the open type.
- * @param   pVDIfsIo        The storage I/O interface to use.
+ * @param   pVDIfs          List of VD I/O interfaces that we can use.
  * @param   pvStorage       The storage pointer that goes with @a pVDIfsIo.
  * @param   pszFilename     The input filename, optional.
  * @param   phXarFss        Where to return the XAR file system stream handle on
@@ -1451,17 +1454,14 @@ static int dmgBlkxParse(PDMGIMAGE pThis, PDMGBLKX pBlkx)
  * @remarks Not using the PDMGIMAGE structure directly here because the function
  *          is being in serveral places.
  */
-static int dmgOpenImageWithinXar(uint32_t fOpen, PVDINTERFACEIO pVDIfsIo, void *pvStorage, const char *pszFilename,
+static int dmgOpenImageWithinXar(uint32_t fOpen, PVDINTERFACE pVDIfs, void *pvStorage, const char *pszFilename,
                                  PRTVFSFSSTREAM phXarFss, PRTVFSFILE phDmgFileInXar)
 {
     /*
      * Open the XAR file stream.
      */
-    if (!pVDIfsIo)
-        return VERR_INVALID_PARAMETER;
-
     RTVFSFILE hVfsFile;
-    int rc = VDIfCreateVfsFile(pVDIfsIo, pvStorage, fOpen, &hVfsFile);
+    int rc = VDIfCreateVfsFile(pVDIfs, pvStorage, fOpen, &hVfsFile);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1565,7 +1565,7 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     if (u32XarMagic == XAR_HEADER_MAGIC)
     {
         rc = dmgOpenImageWithinXar(VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */),
-                                   VDIfIoGet(pThis->pVDIfsImage),
+                                   pThis->pVDIfsImage,
                                    pThis->pStorage,
                                    pThis->pszFilename,
                                    &pThis->hXarFss, &pThis->hDmgFileInXar);
@@ -1709,7 +1709,7 @@ static DECLCALLBACK(int) dmgCheckIfValid(const char *pszFilename, PVDINTERFACE p
         && u32XarMagic == XAR_HEADER_MAGIC)
     {
         rc = dmgOpenImageWithinXar(RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE,
-                                   VDIfIoGet(pVDIfsImage), pStorage, NULL /* pszFilename */,
+                                   pVDIfsImage, pStorage, NULL /* pszFilename */,
                                    &hXarFss, &hDmgFileInXar);
         if (RT_FAILURE(rc))
             return rc;

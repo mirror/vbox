@@ -629,13 +629,13 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
  * the VFS object returned by this API.
  *
  * @return  VBox status code.
- * @param   pVDIfsIo        Pointer to the VD I/O interface.
+ * @param   pVDIfs          List of VD I/O interface we can use.
  * @param   pvStorage       The storage argument to pass to the interface
  *                          methods.
  * @param   fFlags          RTFILE_O_XXX, access mask requied.
  * @param   phVfsFile       Where to return the VFS file handle on success.
  */
-VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile);
+VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACE pVDIfs, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile);
 
 
 /**
