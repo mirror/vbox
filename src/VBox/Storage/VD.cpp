@@ -826,7 +826,7 @@ DECLINLINE(void) vdIoCtxInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, VDIOCTXTXDIR enmTx
 {
     pIoCtx->pDisk                 = pDisk;
     pIoCtx->enmTxDir              = enmTxDir;
-    pIoCtx->Req.Io.cbTransferLeft = cbTransfer;
+    pIoCtx->Req.Io.cbTransferLeft = (uint32_t)cbTransfer; Assert((uint32_t)cbTransfer == cbTransfer);
     pIoCtx->Req.Io.uOffset        = uOffset;
     pIoCtx->Req.Io.cbTransfer     = cbTransfer;
     pIoCtx->Req.Io.pImageStart    = pImageStart;
@@ -983,7 +983,7 @@ static int vdDiscardRemoveBlocks(PVBOXHDD pDisk, PVDDISCARDSTATE pDiscard, size_
         uint32_t idxStart = 0;
         size_t cbLeft = pBlock->cbDiscard;
         bool fAllocated = ASMBitTest(pBlock->pbmAllocated, idxStart);
-        uint32_t cSectors = pBlock->cbDiscard / 512;
+        uint32_t cSectors = (uint32_t)(pBlock->cbDiscard / 512);
 
         while (cbLeft > 0)
         {
@@ -1098,7 +1098,7 @@ static int vdDiscardSetRangeAllocated(PVBOXHDD pDisk, uint64_t uOffset, size_t c
                 cbThisRange = RT_MIN(cbThisRange, pBlock->Core.KeyLast - uOffset + 1);
 
                 idxStart = (uOffset - pBlock->Core.Key) / 512;
-                idxEnd = idxStart + (cbThisRange / 512);
+                idxEnd = idxStart + (int32_t)(cbThisRange / 512);
                 ASMBitSetRange(pBlock->pbmAllocated, idxStart, idxEnd);
             }
             else
@@ -1291,7 +1291,8 @@ DECLINLINE(void) vdIoCtxChildReset(PVDIOCTX pIoCtx)
 
     RTSgBufReset(&pIoCtx->Req.Io.SgBuf);
     pIoCtx->Req.Io.uOffset        = pIoCtx->Type.Child.uOffsetSaved;
-    pIoCtx->Req.Io.cbTransferLeft = pIoCtx->Type.Child.cbTransferLeftSaved;
+    pIoCtx->Req.Io.cbTransferLeft = (uint32_t)pIoCtx->Type.Child.cbTransferLeftSaved;
+    Assert((uint32_t)pIoCtx->Type.Child.cbTransferLeftSaved == pIoCtx->Type.Child.cbTransferLeftSaved);
 }
 
 DECLINLINE(PVDMETAXFER) vdMetaXferAlloc(PVDIOSTORAGE pIoStorage, uint64_t uOffset, size_t cb)
@@ -1828,7 +1829,7 @@ static int vdReadHelperAsync(PVDIOCTX pIoCtx)
         if (rc == VERR_VD_BLOCK_FREE)
         {
             /* No image in the chain contains the data for the block. */
-            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbThisRead);
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbThisRead); Assert(cbThisRead == (uint32_t)cbThisRead);
 
             /* Fill the free space with 0 if we are told to do so
              * or a previous read returned valid data. */
@@ -2463,7 +2464,8 @@ static int vdWriteHelperOptimizedAsync(PVDIOCTX pIoCtx)
 
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
-    pIoCtx->Req.Io.cbTransferLeft = cbPreRead + cbThisWrite + cbPostRead - cbFill;
+    size_t cbTmp = cbPreRead + cbThisWrite + cbPostRead - cbFill; Assert(cbTmp == (uint32_t)cbTmp);
+    pIoCtx->Req.Io.cbTransferLeft = (uint32_t)cbTmp;
     pIoCtx->Req.Io.cbTransfer     = pIoCtx->Req.Io.cbTransferLeft;
     pIoCtx->Req.Io.uOffset       -= cbPreRead;
 
@@ -2597,7 +2599,7 @@ static int vdWriteHelperStandardAsync(PVDIOCTX pIoCtx)
         pIoCtx->pfnIoCtxTransferNext = vdWriteHelperStandardPreReadAsync;
 
         /* Read the data that goes before the write to fill the block. */
-        pIoCtx->Req.Io.cbTransferLeft = cbPreRead;
+        pIoCtx->Req.Io.cbTransferLeft = (uint32_t)cbPreRead; Assert(cbPreRead == (uint32_t)cbPreRead);
         pIoCtx->Req.Io.cbTransfer     = pIoCtx->Req.Io.cbTransferLeft;
         pIoCtx->Req.Io.uOffset       -= cbPreRead;
     }
@@ -2703,7 +2705,8 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                 {
                     LogFlow(("Child write request completed\n"));
                     Assert(pIoCtx->Req.Io.cbTransferLeft >= cbThisWrite);
-                    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbThisWrite);
+                    Assert(cbThisWrite == (uint32_t)cbThisWrite);
+                    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbThisWrite);
                     vdIoCtxUnlockDisk(pDisk, pIoCtx, false /* fProcessDeferredReqs*/ );
                     vdIoCtxFree(pDisk, pIoCtxWrite);
 
@@ -2873,7 +2876,7 @@ static int vdDiscardRemoveBlocksAsync(PVBOXHDD pDisk, PVDIOCTX pIoCtx, size_t cb
         uint32_t idxStart = 0;
         size_t cbLeft = pBlock->cbDiscard;
         bool fAllocated = ASMBitTest(pBlock->pbmAllocated, idxStart);
-        uint32_t cSectors = pBlock->cbDiscard / 512;
+        uint32_t cSectors = (uint32_t)(pBlock->cbDiscard / 512);
 
         while (cbLeft > 0)
         {
@@ -3089,7 +3092,7 @@ static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
             Assert(!((offStart - pBlock->Core.Key) % 512));
 
             idxStart = (offStart - pBlock->Core.Key) / 512;
-            idxEnd = idxStart + (cbThisDiscard / 512);
+            idxEnd = idxStart + (int32_t)(cbThisDiscard / 512);
 
             ASMBitClearRange(pBlock->pbmAllocated, idxStart, idxEnd);
 
@@ -3097,7 +3100,7 @@ static int vdDiscardHelperAsync(PVDIOCTX pIoCtx)
             offStart      += cbThisDiscard;
 
             /* Call the backend to discard the block if it is completely unallocated now. */
-            if (ASMBitFirstSet((volatile void *)pBlock->pbmAllocated, pBlock->cbDiscard / 512) == -1)
+            if (ASMBitFirstSet((volatile void *)pBlock->pbmAllocated, (uint32_t)(pBlock->cbDiscard / 512)) == -1)
             {
                 pIoCtx->Req.Discard.pBlock   = pBlock;
                 pIoCtx->pfnIoCtxTransferNext = vdDiscardWholeBlockAsync;
@@ -3555,7 +3558,7 @@ static int vdIoCtxContinue(PVDIOCTX pIoCtx, int rcReq)
 
                     /* Update the parent state. */
                     Assert(pIoCtxParent->Req.Io.cbTransferLeft >= pIoCtx->Type.Child.cbTransferParent);
-                    ASMAtomicSubU32(&pIoCtxParent->Req.Io.cbTransferLeft, pIoCtx->Type.Child.cbTransferParent);
+                    ASMAtomicSubU32(&pIoCtxParent->Req.Io.cbTransferLeft, (uint32_t)pIoCtx->Type.Child.cbTransferParent);
                 }
                 else
                     Assert(pIoCtx->enmTxDir == VDIOCTXTXDIR_FLUSH);
@@ -3634,7 +3637,7 @@ static int vdUserXferCompleted(PVDIOSTORAGE pIoStorage, PVDIOCTX pIoCtx,
     VD_IS_LOCKED(pDisk);
 
     Assert(pIoCtx->Req.Io.cbTransferLeft >= cbTransfer);
-    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTransfer);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbTransfer); Assert(cbTransfer == (uint32_t)cbTransfer);
     ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
 
     if (pfnComplete)
@@ -4046,7 +4049,10 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
                                               pIoStorage->pStorage, uOffset,
                                               Seg.pvSeg, cbRead, NULL);
         if (RT_SUCCESS(rc))
-            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbRead);
+        {
+            Assert(cbRead == (uint32_t)cbRead);
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbRead);
+        }
     }
     else
     {
@@ -4055,9 +4061,7 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
         {
             RTSGSEG  aSeg[VD_IO_TASK_SEGMENTS_MAX];
             unsigned cSegments  = VD_IO_TASK_SEGMENTS_MAX;
-            size_t   cbTaskRead = 0;
-
-            cbTaskRead = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, aSeg, &cSegments, cbRead);
+            size_t   cbTaskRead = RTSgBufSegArrayCreate(&pIoCtx->Req.Io.SgBuf, aSeg, &cSegments, cbRead);
 
             Assert(cSegments > 0);
             Assert(cbTaskRead > 0);
@@ -4071,7 +4075,8 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
                               ("Segment %u is invalid\n", i));
 #endif
 
-            PVDIOTASK pIoTask = vdIoTaskUserAlloc(pIoStorage, NULL, NULL, pIoCtx, cbTaskRead);
+            Assert(cbTaskRead == (uint32_t)cbTaskRead);
+            PVDIOTASK pIoTask = vdIoTaskUserAlloc(pIoStorage, NULL, NULL, pIoCtx, (uint32_t)cbTaskRead);
 
             if (!pIoTask)
                 return VERR_NO_MEMORY;
@@ -4087,7 +4092,7 @@ static int vdIOIntReadUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffs
             if (RT_SUCCESS(rc))
             {
                 AssertMsg(cbTaskRead <= pIoCtx->Req.Io.cbTransferLeft, ("Impossible!\n"));
-                ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTaskRead);
+                ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbTaskRead);
                 ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
                 vdIoTaskFree(pDisk, pIoTask);
             }
@@ -4142,7 +4147,10 @@ static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
                                               pIoStorage->pStorage, uOffset,
                                               Seg.pvSeg, cbWrite, NULL);
         if (RT_SUCCESS(rc))
-            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbWrite);
+        {
+            Assert(pIoCtx->Req.Io.cbTransferLeft >= cbWrite);
+            ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbWrite);
+        }
     }
     else
     {
@@ -4167,7 +4175,8 @@ static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
                               ("Segment %u is invalid\n", i));
 #endif
 
-            PVDIOTASK pIoTask = vdIoTaskUserAlloc(pIoStorage, pfnComplete, pvCompleteUser, pIoCtx, cbTaskWrite);
+            Assert(cbTaskWrite == (uint32_t)cbTaskWrite);
+            PVDIOTASK pIoTask = vdIoTaskUserAlloc(pIoStorage, pfnComplete, pvCompleteUser, pIoCtx, (uint32_t)cbTaskWrite);
 
             if (!pIoTask)
                 return VERR_NO_MEMORY;
@@ -4183,7 +4192,7 @@ static int vdIOIntWriteUser(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOff
             if (RT_SUCCESS(rc))
             {
                 AssertMsg(cbTaskWrite <= pIoCtx->Req.Io.cbTransferLeft, ("Impossible!\n"));
-                ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbTaskWrite);
+                ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbTaskWrite);
                 ASMAtomicDecU32(&pIoCtx->cDataTransfersPending);
                 vdIoTaskFree(pDisk, pIoTask);
             }
@@ -4561,7 +4570,8 @@ static size_t vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyTo(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCopied);
+    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbCopied);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbCopied);
 
     return cbCopied;
 }
@@ -4580,7 +4590,8 @@ static size_t vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyFrom(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCopied);
+    Assert(pIoCtx->Req.Io.cbTransferLeft > cbCopied);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbCopied);
 
     return cbCopied;
 }
@@ -4598,7 +4609,8 @@ static size_t vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
     cbSet = vdIoCtxSet(pIoCtx, ch, cb);
     Assert(cbSet == cb);
 
-    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbSet);
+    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbSet);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbSet);
 
     return cbSet;
 }
@@ -4640,7 +4652,8 @@ static void vdIOIntIoCtxCompleted(void *pvUser, PVDIOCTX pIoCtx, int rcReq,
      * the request would hang indefinite.
      */
     ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rcReq, VINF_SUCCESS);
-    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, cbCompleted);
+    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbCompleted);
+    ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbCompleted);
 
     /* Set next transfer function if the current one finished.
      * @todo: Find a better way to prevent vdIoCtxContinue from calling the current helper again. */
