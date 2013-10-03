@@ -32,6 +32,7 @@
 #include <iprt/time.h>
 #include "internal/iprt.h"
 
+#include <iprt/ctype.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include "internal/time.h"
@@ -742,4 +743,165 @@ RTDECL(char *) RTTimeSpecToString(PCRTTIMESPEC pTime, char *psz, size_t cb)
     return RTTimeToString(RTTimeExplode(&Time, pTime), psz, cb);
 }
 RT_EXPORT_SYMBOL(RTTimeSpecToString);
+
+
+
+/**
+ * Attempts to convert an ISO date string to a time structure.
+ *
+ * We're a little forgiving with zero padding, unspecified parts, and leading
+ * and trailing spaces.
+ *
+ * @retval  pTime on success,
+ * @retval  NULL on failure.
+ * @param   pTime       Where to store the time on success.
+ * @param   pszString   The ISO date string to convert.
+ */
+RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
+{
+    /* Ignore leading spaces. */
+    while (RT_C_IS_SPACE(*pszString))
+        pszString++;
+
+    /*
+     * Init non date & time parts.
+     */
+    pTime->fFlags = RTTIME_FLAGS_TYPE_LOCAL;
+    pTime->offUTC = 0;
+
+    /*
+     * The day part.
+     */
+
+    /* Year */
+    int rc = RTStrToInt32Ex(pszString, (char **)&pszString, 10, &pTime->i32Year);
+    if (rc != VWRN_TRAILING_CHARS)
+        return NULL;
+
+    bool const fLeapYear = rtTimeIsLeapYear(pTime->i32Year);
+    if (fLeapYear)
+        pTime->fFlags |= RTTIME_FLAGS_LEAP_YEAR;
+
+    if (*pszString++ != '-')
+        return NULL;
+
+    /* Month of the year. */
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Month);
+    if (rc != VWRN_TRAILING_CHARS)
+        return NULL;
+    if (pTime->u8Month == 0 || pTime->u8Month > 12)
+        return NULL;
+    if (*pszString++ != '-')
+        return NULL;
+
+    /* Day of month.*/
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8MonthDay);
+    if (rc != VWRN_TRAILING_CHARS && rc != VINF_SUCCESS)
+        return NULL;
+    unsigned const cDaysInMonth = fLeapYear
+                                ? g_acDaysInMonthsLeap[pTime->u8Month - 1]
+                                : g_acDaysInMonthsLeap[pTime->u8Month - 1];
+    if (pTime->u8MonthDay == 0 || pTime->u8MonthDay > cDaysInMonth)
+        return NULL;
+
+    /* Calculate year day. */
+    pTime->u16YearDay = pTime->u8MonthDay - 1
+                      + (fLeapYear
+                         ? g_aiDayOfYearLeap[pTime->u8Month - 1]
+                         : g_aiDayOfYear[pTime->u8Month - 1]);
+
+    /*
+     * The time part.
+     */
+    if (*pszString++ != 'T')
+        return NULL;
+
+    /* Hour. */
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Hour);
+    if (rc != VWRN_TRAILING_CHARS)
+        return NULL;
+    if (pTime->u8Hour > 23)
+        return NULL;
+    if (*pszString++ != ':')
+        return NULL;
+
+    /* Minute. */
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Minute);
+    if (rc != VWRN_TRAILING_CHARS)
+        return NULL;
+    if (pTime->u8Minute > 59)
+        return NULL;
+    if (*pszString++ != ':')
+        return NULL;
+
+    /* Second. */
+    rc = RTStrToUInt8Ex(pszString, (char **)&pszString, 10, &pTime->u8Minute);
+    if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
+        return NULL;
+    if (pTime->u8Second > 59)
+        return NULL;
+
+    /* Nanoseconds is optional and probably non-standard. */
+    if (*pszString == '.')
+    {
+        rc = RTStrToUInt32Ex(pszString + 1, (char **)&pszString, 10, &pTime->u32Nanosecond);
+        if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
+            return NULL;
+        if (pTime->u32Nanosecond >= 1000000000)
+            return NULL;
+    }
+    else
+        pTime->u32Nanosecond = 0;
+
+    /*
+     * Time zone.
+     */
+    if (*pszString == 'Z')
+    {
+        *pszString++;
+        pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
+        pTime->fFlags |= ~RTTIME_FLAGS_TYPE_UTC;
+        pTime->offUTC = 0;
+    }
+    else if (   *pszString == '+'
+             || *pszString == '-')
+    {
+        rc = RTStrToInt32Ex(pszString, (char **)&pszString, 10, &pTime->offUTC);
+        if (rc != VINF_SUCCESS && rc != VWRN_TRAILING_CHARS && rc != VWRN_TRAILING_SPACES)
+            return NULL;
+    }
+    /* else: No time zone given, local with offUTC = 0. */
+
+    /*
+     * The rest of the string should be blanks.
+     */
+    char ch;
+    while ((ch = *pszString++) != '\0')
+        if (!RT_C_IS_BLANK(ch))
+            return NULL;
+
+    return pTime;
+}
+RT_EXPORT_SYMBOL(RTTimeFromString);
+
+
+/**
+ * Attempts to convert an ISO date string to a time structure.
+ *
+ * We're a little forgiving with zero padding, unspecified parts, and leading
+ * and trailing spaces.
+ *
+ * @retval  pTime on success,
+ * @retval  NULL on failure.
+ * @param   pTime       The time spec.
+ * @param   pszString   The ISO date string to convert.
+ */
+RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszString)
+{
+    RTTIME Time;
+    if (RTTimeFromString(&Time, pszString))
+        return RTTimeImplode(pTime, &Time);
+    return NULL;
+}
+RT_EXPORT_SYMBOL(RTTimeSpecFromString);
 

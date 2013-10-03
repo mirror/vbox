@@ -524,6 +524,19 @@ DECLINLINE(bool) RTTimeSpecIsEqual(PCRTTIMESPEC pTime1, PCRTTIMESPEC pTime2)
  */
 RTDECL(char *) RTTimeSpecToString(PCRTTIMESPEC pTime, char *psz, size_t cb);
 
+/**
+ * Attempts to convert an ISO date string to a time structure.
+ *
+ * We're a little forgiving with zero padding, unspecified parts, and leading
+ * and trailing spaces.
+ *
+ * @retval  pTime on success,
+ * @retval  NULL on failure.
+ * @param   pTime       The time spec.
+ * @param   pszString   The ISO date string to convert.
+ */
+RTDECL(PRTTIMESPEC) RTTimeSpecFromString(PRTTIMESPEC pTime, const char *pszString);
+
 /** @} */
 
 
@@ -707,6 +720,19 @@ RTDECL(PRTTIME) RTTimeLocalNormalize(PRTTIME pTime);
  * @param   cb          The size of the buffer.
  */
 RTDECL(char *) RTTimeToString(PCRTTIME pTime, char *psz, size_t cb);
+
+/**
+ * Attempts to convert an ISO date string to a time structure.
+ *
+ * We're a little forgiving with zero padding, unspecified parts, and leading
+ * and trailing spaces.
+ *
+ * @retval  pTime on success,
+ * @retval  NULL on failure.
+ * @param   pTime       Where to store the time on success.
+ * @param   pszString   The ISO date string to convert.
+ */
+RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString);
 
 /**
  * Checks if a year is a leap year or not.
