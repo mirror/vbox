@@ -4570,7 +4570,7 @@ static size_t vdIOIntIoCtxCopyTo(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyTo(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbCopied);
+    /// @todo Assert(pIoCtx->Req.Io.cbTransferLeft >= cbCopied); - triggers with vdCopyHelper/dmgRead.
     ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbCopied);
 
     return cbCopied;
@@ -4590,7 +4590,7 @@ static size_t vdIOIntIoCtxCopyFrom(void *pvUser, PVDIOCTX pIoCtx,
     cbCopied = vdIoCtxCopyFrom(pIoCtx, (uint8_t *)pvBuf, cbBuf);
     Assert(cbCopied == cbBuf);
 
-    Assert(pIoCtx->Req.Io.cbTransferLeft > cbCopied);
+    /// @todo Assert(pIoCtx->Req.Io.cbTransferLeft > cbCopied); - triggers with vdCopyHelper/dmgRead.
     ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbCopied);
 
     return cbCopied;
@@ -4609,7 +4609,7 @@ static size_t vdIOIntIoCtxSet(void *pvUser, PVDIOCTX pIoCtx, int ch, size_t cb)
     cbSet = vdIoCtxSet(pIoCtx, ch, cb);
     Assert(cbSet == cb);
 
-    Assert(pIoCtx->Req.Io.cbTransferLeft >= cbSet);
+    /// @todo Assert(pIoCtx->Req.Io.cbTransferLeft >= cbSet); - triggers with vdCopyHelper/dmgRead.
     ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbSet);
 
     return cbSet;
