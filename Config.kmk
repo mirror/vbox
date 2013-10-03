@@ -3750,7 +3750,7 @@ endif
 #
 TEMPLATE_VBOXR3STATIC                  = VBox Static Ring 3 EXE
 TEMPLATE_VBOXR3STATIC_EXTENDS          = VBOXR3EXE
-TEMPLATE_VBOXR3STATIC_DEFS             = IN_RT_STATIC $(TEMPLATE_VBOXR3EXE_DEFS)
+TEMPLATE_VBOXR3STATIC_DEFS             = IN_RT_STATIC IN_RT_R3 $(TEMPLATE_VBOXR3EXE_DEFS)
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBOXR3STATIC_CFLAGS          = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
  TEMPLATE_VBOXR3STATIC_CXXFLAGS        = $(filter-out -MD$(VBOX_VCC_CRT_TYPE), $(TEMPLATE_VBOXR3EXE_CFLAGS)) -MT$(VBOX_VCC_CRT_TYPE)
@@ -3780,10 +3780,13 @@ endif
 
 #
 # Temporary: Renaming the template and warnings will be errors (soon).
+# Unlike VBOXR3STATIC, this is strict wrt warnings and includes IPRT.
 #
 TEMPLATE_VBoxR3Static               = New name for VBOXR3STATIC
 TEMPLATE_VBoxR3Static_EXTENDS       = VBOXR3STATIC
 TEMPLATE_VBoxR3Static_EXTENDS_BY    = appending
+TEMPLATE_VBoxR3Static_SDKS         += VBOX_OPENSSL
+TEMPLATE_VBoxR3Static_SDKS.win     += VBOX_NTDLL
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3Static_CXXFLAGS    += $(VBOX_VCC_WERR)
@@ -3792,6 +3795,31 @@ else
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3Static_CXXFLAGS    += $(VBOX_GCC_WERR)
 endif
+TEMPLATE_VBoxR3Static_LIBS         += \
+ 	$(VBOX_LIB_RUNTIME_STATIC)
+ifndef SDK_VBOX_OPENSSL_LIBS
+ TEMPLATE_VBoxR3Static_LIBS        += \
+ 	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
+endif
+if1of ($(KBUILD_TARGET),os2 win)
+ TEMPLATE_VBoxR3Static_LIBS        += \
+ 	$(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB) \
+ 	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB)
+else
+ TEMPLATE_VBoxR3Static_LIBS        += \
+ 	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
+ 	$(SDK_VBOX_ZLIB_LIBS)
+ ifeq ($(KBUILD_TARGET),linux)
+  TEMPLATE_VBoxR3Static_LIBS       += crypt
+ else if1of ($(KBUILD_TARGET),darwin freebsd)
+  TEMPLATE_VBoxR3Static_LIBS       += iconv
+ else ifeq ($(KBUILD_TARGET),solaris)
+  TEMPLATE_VBoxR3Static_LIBS       += kstat
+ endif
+endif
+
 
 #
 # Same as VBOXR3EXE but without C++ exceptions.

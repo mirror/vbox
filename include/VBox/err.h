@@ -1581,6 +1581,10 @@
 #define VERR_VD_READ_OUT_OF_RANGE                   (-3282)
 /** Block read was marked as free in the image and returned as a zero block. */
 #define VINF_VD_NEW_ZEROED_BLOCK                    3283
+/** Unable to parse the XML in DMG file. */
+#define VERR_VD_DMG_XML_PARSE_ERROR                 (-3284)
+/** Unable to locate a usable DMG file within the XAR archive. */
+#define VERR_VD_DMG_NOT_FOUND_INSIDE_XAR            (-3285)
 /** @} */
 
 
