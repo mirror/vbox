@@ -452,7 +452,7 @@ QVariant UIPortForwardingModel::data(const QModelIndex &index, int iRole) const
     return QVariant();
 }
 
-bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &value, int iRole /*= Qt::EditRole*/)
+bool UIPortForwardingModel::setData(const QModelIndex &index, const QVariant &value, int iRole /* = Qt::EditRole */)
 {
     /* Check index validness: */
     if (!index.isValid() || iRole != Qt::EditRole)
