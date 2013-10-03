@@ -229,6 +229,13 @@ RTDECL(int)     RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
  */
 RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosGunzip);
 
+/** @name RTZipGzipDecompressIoStream flags.
+ * @{ */
+/** Allow the smaller ZLIB header as well as the regular GZIP header. */
+#define RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR    RT_BIT(0)
+/** @} */
+
+
 /**
  * Opens a gzip decompression I/O stream.
  *
