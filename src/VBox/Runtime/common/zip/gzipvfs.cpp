@@ -685,7 +685,7 @@ static RTVFSIOSTREAMOPS g_rtZipGzipOps =
 RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags, PRTVFSIOSTREAM phVfsIosOut)
 {
     AssertPtrReturn(hVfsIosIn, VERR_INVALID_HANDLE);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR), VERR_INVALID_PARAMETER);
     AssertPtrReturn(phVfsIosOut, VERR_INVALID_POINTER);
 
     uint32_t cRefs = RTVfsIoStrmRetain(hVfsIosIn);
@@ -709,12 +709,15 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
 
         memset(&pThis->Zlib, 0, sizeof(pThis->Zlib));
         pThis->Zlib.opaque  = pThis;
-        rc = inflateInit2(&pThis->Zlib, MAX_WBITS + 16 /* autodetect gzip header */);
+        rc = inflateInit2(&pThis->Zlib,
+                          fFlags & RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR
+                          ? MAX_WBITS
+                          : MAX_WBITS + 16 /* autodetect gzip header */);
         if (rc >= 0)
         {
             /*
              * Read the gzip header from the input stream to check that it's
-             * a gzip stream.
+             * a gzip stream as specified by the user.
              *
              * Note!. Since we've told zlib to check for the gzip header, we
              *        prebuffer what we read in the input buffer so it can
@@ -725,23 +728,37 @@ RTDECL(int) RTZipGzipDecompressIoStream(RTVFSIOSTREAM hVfsIosIn, uint32_t fFlags
             {
                 /* Validate the header and make a copy of it. */
                 PCRTZIPGZIPHDR pHdr = (PCRTZIPGZIPHDR)pThis->abBuffer;
-                if (   pHdr->bId1 != RTZIPGZIPHDR_ID1
-                    || pHdr->bId2 != RTZIPGZIPHDR_ID2
-                    || pHdr->fFlags & ~RTZIPGZIPHDR_FLG_VALID_MASK)
-                    rc = VERR_ZIP_BAD_HEADER;
-                else if (pHdr->bCompressionMethod != RTZIPGZIPHDR_CM_DEFLATE)
-                    rc = VERR_ZIP_UNSUPPORTED_METHOD;
-                else
+                if (   pHdr->bId1 == RTZIPGZIPHDR_ID1
+                    && pHdr->bId2 == RTZIPGZIPHDR_ID2
+                    && !(pHdr->fFlags & ~RTZIPGZIPHDR_FLG_VALID_MASK))
                 {
-                    pThis->Hdr = *pHdr;
+                    if (pHdr->bCompressionMethod == RTZIPGZIPHDR_CM_DEFLATE)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_ZIP_UNSUPPORTED_METHOD;
+                }
+                else if (   (fFlags & RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR)
+                         && (RT_MAKE_U16(pHdr->bId2, pHdr->bId1) % 31) == 0
+                         && (pHdr->bId1 & 0xf) == RTZIPGZIPHDR_CM_DEFLATE )
+                {
+                    pHdr = NULL;
+                    rc = VINF_SUCCESS;
+                }
+                else
+                    rc = VERR_ZIP_BAD_HEADER;
+                if (RT_SUCCESS(rc))
+                {
                     pThis->Zlib.avail_in = sizeof(RTZIPGZIPHDR);
                     pThis->Zlib.next_in  = &pThis->abBuffer[0];
-
-                    /* Parse on if there are names or comments. */
-                    if (pHdr->fFlags & (RTZIPGZIPHDR_FLG_NAME | RTZIPGZIPHDR_FLG_COMMENT))
+                    if (pHdr)
                     {
-                        /** @todo Can implement this when someone needs the
-                         *        name or comment for something useful. */
+                        pThis->Hdr = *pHdr;
+                        /* Parse on if there are names or comments. */
+                        if (pHdr->fFlags & (RTZIPGZIPHDR_FLG_NAME | RTZIPGZIPHDR_FLG_COMMENT))
+                        {
+                            /** @todo Can implement this when someone needs the
+                             *        name or comment for something useful. */
+                        }
                     }
                     if (RT_SUCCESS(rc))
                     {
