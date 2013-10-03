@@ -433,21 +433,22 @@ static int convInRead(void *pvUser, void *pStorage, uint64_t uOffset,
     if (pFS->offBuffer == UINT64_MAX)
     {
         /* Repeat reading until buffer is full or EOF. */
-        size_t cbSumRead = 0, cbRead;
-        uint8_t *pTmp = (uint8_t *)&pFS->abBuffer[0];
+        size_t cbRead;
+        size_t cbSumRead = 0;
+        uint8_t *pbTmp = (uint8_t *)&pFS->abBuffer[0];
         size_t cbTmp = sizeof(pFS->abBuffer);
         do
         {
-            rc = RTFileRead(pFS->file, pTmp, cbTmp, &cbRead);
+            rc = RTFileRead(pFS->file, pbTmp, cbTmp, &cbRead);
             if (RT_FAILURE(rc))
                 return rc;
-            pTmp += cbRead;
+            pbTmp += cbRead;
             cbTmp -= cbRead;
             cbSumRead += cbRead;
         } while (cbTmp && cbRead);
 
         pFS->offBuffer = 0;
-        pFS->cbBuffer = cbSumRead;
+        pFS->cbBuffer = (uint32_t)cbSumRead;
         if (!cbSumRead && !pcbRead) /* Caller can't handle partial reads. */
             return VERR_EOF;
     }
@@ -467,25 +468,26 @@ static int convInRead(void *pvUser, void *pStorage, uint64_t uOffset,
             }
 
             /* Repeat reading until buffer is full or EOF. */
-            size_t cbSumRead = 0, cbRead;
-            uint8_t *pTmp = (uint8_t *)&pFS->abBuffer[0];
+            size_t cbRead;
+            size_t cbSumRead = 0;
+            uint8_t *pbTmp = (uint8_t *)&pFS->abBuffer[0];
             size_t cbTmp = sizeof(pFS->abBuffer);
             do
             {
-                rc = RTFileRead(pFS->file, pTmp, cbTmp, &cbRead);
+                rc = RTFileRead(pFS->file, pbTmp, cbTmp, &cbRead);
                 if (RT_FAILURE(rc))
                     return rc;
-                pTmp += cbRead;
+                pbTmp += cbRead;
                 cbTmp -= cbRead;
                 cbSumRead += cbRead;
             } while (cbTmp && cbRead);
 
             pFS->offBuffer += pFS->cbBuffer;
-            pFS->cbBuffer = cbSumRead;
+            pFS->cbBuffer = (uint32_t)cbSumRead;
         }
 
-        uint32_t cbThisRead = RT_MIN(cbBuffer,
-                                     pFS->cbBuffer - uOffset % sizeof(pFS->abBuffer));
+        uint32_t cbThisRead = (uint32_t)RT_MIN(cbBuffer,
+                                               pFS->cbBuffer - uOffset % sizeof(pFS->abBuffer));
         memcpy(pvBuffer, &pFS->abBuffer[uOffset % sizeof(pFS->abBuffer)],
                cbThisRead);
         uOffset += cbThisRead;
@@ -657,8 +659,8 @@ static int convOutWrite(void *pvUser, void *pStorage, uint64_t uOffset,
             pFS->cbBuffer = 0;
         }
 
-        uint32_t cbThisWrite = RT_MIN(cbBuffer,
-                                      sizeof(pFS->abBuffer) - uOffset % sizeof(pFS->abBuffer));
+        uint32_t cbThisWrite = (uint32_t)RT_MIN(cbBuffer,
+                                                sizeof(pFS->abBuffer) - uOffset % sizeof(pFS->abBuffer));
         memcpy(&pFS->abBuffer[uOffset % sizeof(pFS->abBuffer)], pvBuffer,
                cbThisWrite);
         uOffset += cbThisWrite;
