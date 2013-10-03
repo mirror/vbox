@@ -36,19 +36,19 @@
 *******************************************************************************/
 
 /**
- * The internal data of a DVM volume I/O stream.
+ * The internal data of an VD I/O to VFS file or I/O stream wrapper.
  */
-typedef struct VDIFVFSIOS
+typedef struct VDIFVFSIOSFILE
 {
     /** The VD I/O interface we wrap. */
     PVDINTERFACEIO  pVDIfsIo;
     /** User pointer to pass to the VD I/O interface methods. */
     void           *pvStorage;
-    /** The current stream position relative to the VDIfCreateVfsStream call. */
-    uint64_t        offCurPos;
-} VDIFVFSIOS;
+    /** The current stream position. */
+    RTFOFF          offCurPos;
+} VDIFVFSIOSFILE;
 /** Pointer to a the internal data of a DVM volume file. */
-typedef VDIFVFSIOS *PVDIFVFSIOS;
+typedef VDIFVFSIOSFILE *PVDIFVFSIOSFILE;
 
 
 
@@ -79,8 +79,9 @@ static DECLCALLBACK(int) vdIfVfsIos_QueryInfo(void *pvThis, PRTFSOBJINFO pObjInf
  */
 static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbRead)
 {
-    PVDIFVFSIOS pThis = (PVDIFVFSIOS)pvThis;
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
+    Assert(off >= -1);
 
     /*
      * This may end up being a little more complicated, esp. wrt VERR_EOF.
@@ -90,7 +91,7 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
     int rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
     if (RT_SUCCESS(rc))
     {
-        size_t cbAdvance = (pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg);
+        size_t cbAdvance = pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
         pThis->offCurPos = off + cbAdvance;
         if (pcbRead && !cbAdvance)
             rc = VINF_EOF;
@@ -104,8 +105,9 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
  */
 static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pSgBuf, bool fBlocking, size_t *pcbWritten)
 {
-    PVDIFVFSIOS pThis = (PVDIFVFSIOS)pvThis;
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     Assert(pSgBuf->cSegs == 1); NOREF(fBlocking);
+    Assert(off >= -1);
 
     /*
      * This may end up being a little more complicated, esp. wrt VERR_EOF.
@@ -124,7 +126,7 @@ static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pS
  */
 static DECLCALLBACK(int) vdIfVfsIos_Flush(void *pvThis)
 {
-    PVDIFVFSIOS pThis = (PVDIFVFSIOS)pvThis;
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     return vdIfIoFileFlushSync(pThis->pVDIfsIo, pThis->pvStorage);
 }
 
@@ -133,7 +135,7 @@ static DECLCALLBACK(int) vdIfVfsIos_Flush(void *pvThis)
  * @interface_method_impl{RTVFSIOSTREAMOPS,pfnPollOne}
  */
 static DECLCALLBACK(int) vdIfVfsIos_PollOne(void *pvThis, uint32_t fEvents, RTMSINTERVAL cMillies, bool fIntr,
-                                              uint32_t *pfRetEvents)
+                                            uint32_t *pfRetEvents)
 {
     NOREF(pvThis);
     int rc;
@@ -153,15 +155,16 @@ static DECLCALLBACK(int) vdIfVfsIos_PollOne(void *pvThis, uint32_t fEvents, RTMS
  */
 static DECLCALLBACK(int) vdIfVfsIos_Tell(void *pvThis, PRTFOFF poffActual)
 {
-    PVDIFVFSIOS pThis = (PVDIFVFSIOS)pvThis;
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
     *poffActual = pThis->offCurPos;
     return VINF_SUCCESS;
 }
 
+
 /**
- * Standard file operations.
+ * VFS I/O stream operations for a VD file or stream.
  */
-DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_vdIfVfsStdIosOps =
+DECL_HIDDEN_CONST(const RTVFSIOSTREAMOPS) g_vdIfVfsIosOps =
 {
     { /* Obj */
         RTVFSOBJOPS_VERSION,
@@ -193,8 +196,8 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
      * Create the volume file.
      */
     RTVFSIOSTREAM hVfsIos;
-    PVDIFVFSIOS pThis;
-    int rc = RTVfsNewIoStream(&g_vdIfVfsStdIosOps, sizeof(*pThis), fFlags,
+    PVDIFVFSIOSFILE pThis;
+    int rc = RTVfsNewIoStream(&g_vdIfVfsIosOps, sizeof(*pThis), fFlags,
                               NIL_RTVFS, NIL_RTVFSLOCK, &hVfsIos, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
@@ -208,4 +211,167 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
 
     return rc;
 }
+
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnMode}
+ */
+static DECLCALLBACK(int) vdIfVfsFile_SetMode(void *pvThis, RTFMODE fMode, RTFMODE fMask)
+{
+    NOREF(pvThis);
+    NOREF(fMode);
+    NOREF(fMask);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetTimes}
+ */
+static DECLCALLBACK(int) vdIfVfsFile_SetTimes(void *pvThis, PCRTTIMESPEC pAccessTime, PCRTTIMESPEC pModificationTime,
+                                              PCRTTIMESPEC pChangeTime, PCRTTIMESPEC pBirthTime)
+{
+    NOREF(pvThis);
+    NOREF(pAccessTime);
+    NOREF(pModificationTime);
+    NOREF(pChangeTime);
+    NOREF(pBirthTime);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSOBJSETOPS,pfnSetOwner}
+ */
+static DECLCALLBACK(int) vdIfVfsFile_SetOwner(void *pvThis, RTUID uid, RTGID gid)
+{
+    NOREF(pvThis);
+    NOREF(uid);
+    NOREF(gid);
+    return VERR_NOT_SUPPORTED;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnSeek}
+ */
+static DECLCALLBACK(int) vdIfVfsFile_Seek(void *pvThis, RTFOFF offSeek, unsigned uMethod, PRTFOFF poffActual)
+{
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
+
+    uint64_t cbFile;
+    int rc = vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pvStorage, &cbFile);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (cbFile >= (uint64_t)RTFOFF_MAX)
+        cbFile = RTFOFF_MAX;
+
+    /* Recalculate the request to RTFILE_SEEK_BEGIN. */
+    switch (uMethod)
+    {
+        case RTFILE_SEEK_BEGIN:
+            break;
+        case RTFILE_SEEK_CURRENT:
+            offSeek += pThis->offCurPos;
+            break;
+        case RTFILE_SEEK_END:
+            offSeek = cbFile + offSeek;
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_PARAMETER);
+    }
+
+    /* Do limit checks. */
+    if (offSeek < 0)
+        offSeek = 0;
+    else if (offSeek > (RTFOFF)cbFile)
+        offSeek = cbFile;
+
+    /* Apply and return. */
+    pThis->offCurPos = offSeek;
+    if (poffActual)
+        *poffActual = offSeek;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{RTVFSFILEOPS,pfnQuerySize}
+ */
+static DECLCALLBACK(int) vdIfVfsFile_QuerySize(void *pvThis, uint64_t *pcbFile)
+{
+    PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
+    return vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pvStorage, pcbFile);
+}
+
+
+
+/**
+ * VFS file operations for a VD file.
+ */
+DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdIfVfsFileOps =
+{
+    { /* I/O stream */
+        { /* Obj */
+            RTVFSOBJOPS_VERSION,
+            RTVFSOBJTYPE_FILE,
+            "VDIfFile",
+            vdIfVfsIos_Close,
+            vdIfVfsIos_QueryInfo,
+            RTVFSOBJOPS_VERSION
+        },
+        RTVFSIOSTREAMOPS_VERSION,
+        RTVFSIOSTREAMOPS_FEAT_NO_SG,
+        vdIfVfsIos_Read,
+        vdIfVfsIos_Write,
+        vdIfVfsIos_Flush,
+        vdIfVfsIos_PollOne,
+        vdIfVfsIos_Tell,
+        NULL /*Skip*/,
+        NULL /*ZeroFill*/,
+        RTVFSIOSTREAMOPS_VERSION,
+    },
+    RTVFSFILEOPS_VERSION,
+    0,
+    { /* ObjSet */
+        RTVFSOBJSETOPS_VERSION,
+        RT_OFFSETOF(RTVFSFILEOPS, Stream.Obj) - RT_OFFSETOF(RTVFSFILEOPS, ObjSet),
+        vdIfVfsFile_SetMode,
+        vdIfVfsFile_SetTimes,
+        vdIfVfsFile_SetOwner,
+        RTVFSOBJSETOPS_VERSION
+    },
+    vdIfVfsFile_Seek,
+    vdIfVfsFile_QuerySize,
+    RTVFSFILEOPS_VERSION,
+};
+
+
+VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile)
+{
+    AssertPtrReturn(pVDIfsIo, VERR_INVALID_HANDLE);
+    AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
+
+    /*
+     * Create the volume file.
+     */
+    RTVFSFILE hVfsFile;
+    PVDIFVFSIOSFILE pThis;
+    int rc = RTVfsNewFile(&g_vdIfVfsFileOps, sizeof(*pThis), fFlags,
+                          NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pThis);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->pVDIfsIo  = pVDIfsIo;
+        pThis->pvStorage = pvStorage;
+        pThis->offCurPos = 0;
+
+        *phVfsFile = hVfsFile;
+        return VINF_SUCCESS;
+    }
+
+    return rc;
+}
+
 
