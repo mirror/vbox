@@ -1488,7 +1488,7 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
 }
 
 
-/** @copydoc VBOXHDDBACKEND::pfnCheckIfValid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnCheckIfValid} */
 static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
                            PVDINTERFACE pVDIfsImage, VDTYPE *penmType)
 {
@@ -1551,7 +1551,7 @@ static int dmgCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnOpen */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnOpen} */
 static int dmgOpen(const char *pszFilename, unsigned uOpenFlags,
                    PVDINTERFACE pVDIfsDisk, PVDINTERFACE pVDIfsImage,
                    VDTYPE enmType, void **ppBackendData)
@@ -1616,7 +1616,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnCreate */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnCreate} */
 static int dmgCreate(const char *pszFilename, uint64_t cbSize,
                      unsigned uImageFlags, const char *pszComment,
                      PCVDGEOMETRY pPCHSGeometry, PCVDGEOMETRY pLCHSGeometry,
@@ -1632,7 +1632,7 @@ static int dmgCreate(const char *pszFilename, uint64_t cbSize,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRename */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnRename} */
 static int dmgRename(void *pBackendData, const char *pszFilename)
 {
     LogFlowFunc(("pBackendData=%#p pszFilename=%#p\n", pBackendData, pszFilename));
@@ -1642,7 +1642,7 @@ static int dmgRename(void *pBackendData, const char *pszFilename)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnClose */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnClose} */
 static int dmgClose(void *pBackendData, bool fDelete)
 {
     LogFlowFunc(("pBackendData=%#p fDelete=%d\n", pBackendData, fDelete));
@@ -1656,7 +1656,7 @@ static int dmgClose(void *pBackendData, bool fDelete)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnRead */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnRead} */
 static int dmgRead(void *pBackendData, uint64_t uOffset,  size_t cbToRead,
                    PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
@@ -1747,7 +1747,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnWrite */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnWrite} */
 static int dmgWrite(void *pBackendData, uint64_t uOffset, size_t cbToWrite,
                     PVDIOCTX pIoCtx, size_t *pcbWriteProcess, size_t *pcbPreRead,
                     size_t *pcbPostRead, unsigned fWrite)
@@ -1774,7 +1774,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnFlush */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnFlush} */
 static int dmgFlush(void *pBackendData, PVDIOCTX pIoCtx)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1789,7 +1789,7 @@ static int dmgFlush(void *pBackendData, PVDIOCTX pIoCtx)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetVersion */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetVersion} */
 static unsigned dmgGetVersion(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1803,7 +1803,7 @@ static unsigned dmgGetVersion(void *pBackendData)
         return 0;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSectorSize */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetSectorSize} */
 static uint32_t dmgGetSectorSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1819,7 +1819,7 @@ static uint32_t dmgGetSectorSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetSize */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetSize} */
 static uint64_t dmgGetSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1835,7 +1835,7 @@ static uint64_t dmgGetSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetFileSize */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetFileSize} */
 static uint64_t dmgGetFileSize(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1859,7 +1859,7 @@ static uint64_t dmgGetFileSize(void *pBackendData)
     return cb;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetPCHSGeometry */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetPCHSGeometry} */
 static int dmgGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p\n", pBackendData, pPCHSGeometry));
@@ -1885,7 +1885,7 @@ static int dmgGetPCHSGeometry(void *pBackendData, PVDGEOMETRY pPCHSGeometry)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetPCHSGeometry */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetPCHSGeometry} */
 static int dmgSetPCHSGeometry(void *pBackendData, PCVDGEOMETRY pPCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
@@ -1914,7 +1914,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetLCHSGeometry */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetLCHSGeometry} */
 static int dmgGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
 {
      LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p\n", pBackendData, pLCHSGeometry));
@@ -1940,7 +1940,7 @@ static int dmgGetLCHSGeometry(void *pBackendData, PVDGEOMETRY pLCHSGeometry)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetLCHSGeometry */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetLCHSGeometry} */
 static int dmgSetLCHSGeometry(void *pBackendData, PCVDGEOMETRY pLCHSGeometry)
 {
     LogFlowFunc(("pBackendData=%#p pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
@@ -1969,7 +1969,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetImageFlags */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetImageFlags} */
 static unsigned dmgGetImageFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -1987,7 +1987,7 @@ static unsigned dmgGetImageFlags(void *pBackendData)
     return uImageFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetOpenFlags */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetOpenFlags} */
 static unsigned dmgGetOpenFlags(void *pBackendData)
 {
     LogFlowFunc(("pBackendData=%#p\n", pBackendData));
@@ -2005,7 +2005,7 @@ static unsigned dmgGetOpenFlags(void *pBackendData)
     return uOpenFlags;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetOpenFlags */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetOpenFlags} */
 static int dmgSetOpenFlags(void *pBackendData, unsigned uOpenFlags)
 {
     LogFlowFunc(("pBackendData=%#p\n uOpenFlags=%#x", pBackendData, uOpenFlags));
@@ -2032,7 +2032,7 @@ out:
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetComment */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetComment} */
 static int dmgGetComment(void *pBackendData, char *pszComment,
                          size_t cbComment)
 {
@@ -2051,7 +2051,7 @@ static int dmgGetComment(void *pBackendData, char *pszComment,
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetComment */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetComment} */
 static int dmgSetComment(void *pBackendData, const char *pszComment)
 {
     LogFlowFunc(("pBackendData=%#p pszComment=\"%s\"\n", pBackendData, pszComment));
@@ -2074,7 +2074,7 @@ static int dmgSetComment(void *pBackendData, const char *pszComment)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetUuid} */
 static int dmgGetUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2092,7 +2092,7 @@ static int dmgGetUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetUuid} */
 static int dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2116,7 +2116,7 @@ static int dmgSetUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetModificationUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetModificationUuid} */
 static int dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2134,7 +2134,7 @@ static int dmgGetModificationUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetModificationUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetModificationUuid} */
 static int dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2157,7 +2157,7 @@ static int dmgSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentUuid} */
 static int dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2175,7 +2175,7 @@ static int dmgGetParentUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentUuid} */
 static int dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2198,7 +2198,7 @@ static int dmgSetParentUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnGetParentModificationUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnGetParentModificationUuid} */
 static int dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p pUuid=%#p\n", pBackendData, pUuid));
@@ -2216,7 +2216,7 @@ static int dmgGetParentModificationUuid(void *pBackendData, PRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnSetParentModificationUuid */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnSetParentModificationUuid} */
 static int dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
 {
     LogFlowFunc(("pBackendData=%#p Uuid=%RTuuid\n", pBackendData, pUuid));
@@ -2239,7 +2239,7 @@ static int dmgSetParentModificationUuid(void *pBackendData, PCRTUUID pUuid)
     return rc;
 }
 
-/** @copydoc VBOXHDDBACKEND::pfnDump */
+/** @interface_method_impl{VBOXHDDBACKEND,pfnDump} */
 static void dmgDump(void *pBackendData)
 {
     PDMGIMAGE pThis = (PDMGIMAGE)pBackendData;
@@ -2352,3 +2352,4 @@ VBOXHDDBACKEND g_DmgBackend =
     /* pfnRepair */
     NULL
 };
+
