@@ -110,6 +110,7 @@ protected:
 
     /* Visibility stuff: */
     void handleScreenCountChange();
+    void handleScreenResize();
 
     /* Update stuff: */
     virtual void updateAppearanceOf(int iElement);

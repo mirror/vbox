@@ -438,6 +438,11 @@ void UIMachineWindow::handleScreenCountChange()
     showInNecessaryMode();
 }
 
+void UIMachineWindow::handleScreenResize()
+{
+    showInNecessaryMode();
+}
+
 void UIMachineWindow::updateAppearanceOf(int iElement)
 {
     /* Update window title: */

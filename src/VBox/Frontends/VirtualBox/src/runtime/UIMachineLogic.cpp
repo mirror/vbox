@@ -543,6 +543,13 @@ void UIMachineLogic::sltHostScreenCountChanged(int /*cHostScreenCount*/)
         pMachineWindow->handleScreenCountChange();
 }
 
+void UIMachineLogic::sltHostScreenResized(int /*iHostScreenNumber*/)
+{
+    /* Deliver event to all machine-windows: */
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->handleScreenResize();
+}
+
 UIMachineLogic::UIMachineLogic(QObject *pParent, UISession *pSession, UIVisualStateType visualStateType)
     : QIWithRetranslateUI3<QObject>(pParent)
     , m_pSession(pSession)
@@ -713,6 +720,12 @@ void UIMachineLogic::prepareSessionConnections()
     /* Host-screen-change updater: */
     connect(uisession(), SIGNAL(sigHostScreenCountChanged(int)),
             this, SLOT(sltHostScreenCountChanged(int)));
+
+    /* Host-screen-resize updaters: */
+    connect(uisession(), SIGNAL(sigHostScreenFullGeometryResized(int)),
+            this, SLOT(sltHostScreenResized(int)));
+    connect(uisession(), SIGNAL(sigHostScreenAvailableGeometryResized(int)),
+            this, SLOT(sltHostScreenResized(int)));
 }
 
 void UIMachineLogic::prepareActionGroups()

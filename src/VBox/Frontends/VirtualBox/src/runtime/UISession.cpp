@@ -874,6 +874,11 @@ void UISession::prepareConnections()
 
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)),
             this, SIGNAL(sigHostScreenCountChanged(int)));
+
+    connect(QApplication::desktop(), SIGNAL(resized(int)),
+            this, SIGNAL(sigHostScreenFullGeometryResized(int)));
+    connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),
+            this, SIGNAL(sigHostScreenAvailableGeometryResized(int)));
 }
 
 void UISession::prepareScreens()
