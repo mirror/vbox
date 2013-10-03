@@ -1239,8 +1239,9 @@ static int vdiDiscardBlockAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx,
  */
 static void *vdiAllocationBitmapCreate(void *pvData, size_t cbData)
 {
-    unsigned cSectors = cbData / 512;
-    unsigned uSectorCur = 0;
+    Assert(cbData <= UINT32_MAX / 8);
+    uint32_t cSectors = (uint32_t)(cbData / 512);
+    uint32_t uSectorCur = 0;
     void *pbmAllocationBitmap = NULL;
 
     Assert(!(cbData % 512));
@@ -1252,7 +1253,7 @@ static void *vdiAllocationBitmapCreate(void *pvData, size_t cbData)
 
     while (uSectorCur < cSectors)
     {
-        int idxSet = ASMBitFirstSet((uint8_t *)pvData + uSectorCur * 512, cbData * 8);
+        int idxSet = ASMBitFirstSet((uint8_t *)pvData + uSectorCur * 512, (uint32_t)cbData * 8);
 
         if (idxSet != -1)
         {

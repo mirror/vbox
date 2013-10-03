@@ -2682,7 +2682,7 @@ static int iscsiPDUTxPrepare(PISCSIIMAGE pImage, PISCSICMD pIScsiCmd)
     paReqBHS[2] = RT_H2N_U32(pImage->LUN >> 32);
     paReqBHS[3] = RT_H2N_U32(pImage->LUN & 0xffffffff);
     paReqBHS[4] = pIScsiCmd->Itt;
-    paReqBHS[5] = RT_H2N_U32(cbData);
+    paReqBHS[5] = RT_H2N_U32((uint32_t)cbData); Assert((uint32_t)cbData == cbData);
     paReqBHS[6] = RT_H2N_U32(pImage->CmdSN);
     paReqBHS[7] = RT_H2N_U32(pImage->ExpStatSN);
     memcpy(paReqBHS + 8, pScsiReq->abCDB, pScsiReq->cbCDB);
