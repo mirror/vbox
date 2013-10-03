@@ -30,6 +30,7 @@
 #include <iprt/vfslowlevel.h>
 #include <iprt/poll.h>
 #include <VBox/vd.h>
+#include <VBox/vd-ifs-internal.h>
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -40,12 +41,16 @@
  */
 typedef struct VDIFVFSIOSFILE
 {
-    /** The VD I/O interface we wrap. */
-    PVDINTERFACEIO  pVDIfsIo;
+    /** The VD I/O interface we prefer wrap.
+     *  Can be NULL, in which case pVDIfsIoInt must be valid. */
+    PVDINTERFACEIO      pVDIfsIo;
+    /** The VD I/O interface we alternatively can wrap.
+        Can be NULL, in which case pVDIfsIo must be valid. */
+    PVDINTERFACEIOINT   pVDIfsIoInt;
     /** User pointer to pass to the VD I/O interface methods. */
-    void           *pvStorage;
+    PVDIOSTORAGE        pStorage;
     /** The current stream position. */
-    RTFOFF          offCurPos;
+    RTFOFF              offCurPos;
 } VDIFVFSIOSFILE;
 /** Pointer to a the internal data of a DVM volume file. */
 typedef VDIFVFSIOSFILE *PVDIFVFSIOSFILE;
@@ -88,7 +93,15 @@ static DECLCALLBACK(int) vdIfVfsIos_Read(void *pvThis, RTFOFF off, PCRTSGBUF pSg
      */
     if (off == -1)
         off = pThis->offCurPos;
-    int rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
+    int rc;
+    if (pThis->pVDIfsIo)
+        rc = vdIfIoFileReadSync(pThis->pVDIfsIo, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbRead);
+    else
+    {
+        rc = vdIfIoIntFileReadSync(pThis->pVDIfsIoInt, (PVDIOSTORAGE)pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg);
+        if (pcbRead)
+            *pcbRead = RT_SUCCESS(rc) ? pSgBuf->paSegs[0].cbSeg : 0;
+    }
     if (RT_SUCCESS(rc))
     {
         size_t cbAdvance = pcbRead ? *pcbRead : pSgBuf->paSegs[0].cbSeg;
@@ -114,7 +127,15 @@ static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pS
      */
     if (off == -1)
         off = pThis->offCurPos;
-    int rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pvStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+    int rc;
+    if (pThis->pVDIfsIo)
+        rc = vdIfIoFileWriteSync(pThis->pVDIfsIo, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg, pcbWritten);
+    else
+    {
+        rc = vdIfIoIntFileWriteSync(pThis->pVDIfsIoInt, pThis->pStorage, off, pSgBuf[0].pvSegCur, pSgBuf->paSegs[0].cbSeg);
+        if (pcbWritten)
+            *pcbWritten = RT_SUCCESS(rc) ? pSgBuf->paSegs[0].cbSeg : 0;
+    }
     if (RT_SUCCESS(rc))
         pThis->offCurPos = off + (pcbWritten ? *pcbWritten : pSgBuf->paSegs[0].cbSeg);
     return rc;
@@ -127,7 +148,12 @@ static DECLCALLBACK(int) vdIfVfsIos_Write(void *pvThis, RTFOFF off, PCRTSGBUF pS
 static DECLCALLBACK(int) vdIfVfsIos_Flush(void *pvThis)
 {
     PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
-    return vdIfIoFileFlushSync(pThis->pVDIfsIo, pThis->pvStorage);
+    int rc;
+    if (pThis->pVDIfsIo)
+        rc = vdIfIoFileFlushSync(pThis->pVDIfsIo, pThis->pStorage);
+    else
+        rc = vdIfIoIntFileFlushSync(pThis->pVDIfsIoInt, pThis->pStorage);
+    return rc;
 }
 
 
@@ -201,9 +227,10 @@ VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, 
                               NIL_RTVFS, NIL_RTVFSLOCK, &hVfsIos, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->pVDIfsIo  = pVDIfsIo;
-        pThis->pvStorage = pvStorage;
-        pThis->offCurPos = 0;
+        pThis->pVDIfsIo     = pVDIfsIo;
+        pThis->pVDIfsIoInt  = NULL;
+        pThis->pStorage     = (PVDIOSTORAGE)pvStorage;
+        pThis->offCurPos    = 0;
 
         *phVfsIos = hVfsIos;
         return VINF_SUCCESS;
@@ -261,7 +288,11 @@ static DECLCALLBACK(int) vdIfVfsFile_Seek(void *pvThis, RTFOFF offSeek, unsigned
     PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
 
     uint64_t cbFile;
-    int rc = vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pvStorage, &cbFile);
+    int rc;
+    if (pThis->pVDIfsIo)
+        rc = vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pStorage, &cbFile);
+    else
+        rc = vdIfIoIntFileGetSize(pThis->pVDIfsIoInt, pThis->pStorage, &cbFile);
     if (RT_FAILURE(rc))
         return rc;
     if (cbFile >= (uint64_t)RTFOFF_MAX)
@@ -303,7 +334,12 @@ static DECLCALLBACK(int) vdIfVfsFile_Seek(void *pvThis, RTFOFF offSeek, unsigned
 static DECLCALLBACK(int) vdIfVfsFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 {
     PVDIFVFSIOSFILE pThis = (PVDIFVFSIOSFILE)pvThis;
-    return vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pvStorage, pcbFile);
+    int rc;
+    if (pThis->pVDIfsIo)
+        rc = vdIfIoFileGetSize(pThis->pVDIfsIo, pThis->pStorage, pcbFile);
+    else
+        rc = vdIfIoIntFileGetSize(pThis->pVDIfsIoInt, pThis->pStorage, pcbFile);
+    return rc;
 }
 
 
@@ -349,10 +385,14 @@ DECL_HIDDEN_CONST(const RTVFSFILEOPS) g_vdIfVfsFileOps =
 };
 
 
-VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile)
+VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACE pVDIfs, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile)
 {
-    AssertPtrReturn(pVDIfsIo, VERR_INVALID_HANDLE);
+    AssertPtrReturn(pVDIfs, VERR_INVALID_HANDLE);
     AssertPtrReturn(phVfsFile, VERR_INVALID_POINTER);
+
+    PVDINTERFACEIO    pPreferred   = VDIfIoGet(pVDIfs);
+    PVDINTERFACEIOINT pAlternative = VDIfIoIntGet(pVDIfs);
+    AssertReturn(pPreferred || pAlternative, VERR_INVALID_HANDLE);
 
     /*
      * Create the volume file.
@@ -363,9 +403,10 @@ VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfsIo, void *pvStorage, ui
                           NIL_RTVFS, NIL_RTVFSLOCK, &hVfsFile, (void **)&pThis);
     if (RT_SUCCESS(rc))
     {
-        pThis->pVDIfsIo  = pVDIfsIo;
-        pThis->pvStorage = pvStorage;
-        pThis->offCurPos = 0;
+        pThis->pVDIfsIo     = pPreferred;
+        pThis->pVDIfsIoInt  = pAlternative;
+        pThis->pStorage     = (PVDIOSTORAGE)pvStorage;
+        pThis->offCurPos    = 0;
 
         *phVfsFile = hVfsFile;
         return VINF_SUCCESS;
