@@ -621,6 +621,22 @@ DECLINLINE(int) vdIfIoFileFlushSync(PVDINTERFACEIO pIfIo, void *pStorage)
  */
 VBOXDDU_DECL(int) VDIfCreateVfsStream(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSIOSTREAM phVfsIos);
 
+/**
+ * Create a VFS file handle around a VD I/O interface.
+ *
+ * The I/O interface will not be closed or free by the VFS file, the caller will
+ * do so after it is done with the VFS file and has released the instances of
+ * the VFS object returned by this API.
+ *
+ * @return  VBox status code.
+ * @param   pVDIfsIo        Pointer to the VD I/O interface.
+ * @param   pvStorage       The storage argument to pass to the interface
+ *                          methods.
+ * @param   fFlags          RTFILE_O_XXX, access mask requied.
+ * @param   phVfsFile       Where to return the VFS file handle on success.
+ */
+VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfsIo, void *pvStorage, uint32_t fFlags, PRTVFSFILE phVfsFile);
+
 
 /**
  * Callback which provides progress information about a currently running
