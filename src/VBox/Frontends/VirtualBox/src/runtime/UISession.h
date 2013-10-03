@@ -205,6 +205,8 @@ signals:
 
     /* Qt callback signal: */
     void sigHostScreenCountChanged(int cHostScreenCount);
+    void sigHostScreenFullGeometryResized(int iHostScreenNumber);
+    void sigHostScreenAvailableGeometryResized(int iHostScreenNumber);
 
     /* Session signals: */
     void sigMachineStarted();
