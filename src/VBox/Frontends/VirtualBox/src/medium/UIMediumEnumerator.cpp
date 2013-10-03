@@ -51,6 +51,16 @@ private:
     void run();
 };
 
+void UITaskMediumEnumeration::run()
+{
+    /* Get medium: */
+    UIMedium medium = m_data.value<UIMedium>();
+    /* Enumerate it: */
+    medium.blockAndQueryState();
+    /* Put medium back: */
+    m_data = QVariant::fromValue(medium);
+}
+
 
 UIMediumEnumerator::UIMediumEnumerator(ulong uWorkerCount /* = 3*/, ulong uWorkerTimeout /* = 5000*/)
     : m_pThreadPool(0)
@@ -163,8 +173,7 @@ void UIMediumEnumerator::enumerateMediums()
     emit sigMediumEnumerationStarted();
 
     /* Start enumeration for all the new mediums: */
-    QList<QString> mediumIDs = m_mediums.keys();
-    foreach (QString strMediumID, mediumIDs)
+    foreach (const QString &strMediumID, m_mediums.keys())
         createMediumEnumerationTask(m_mediums[strMediumID]);
 }
 
@@ -189,8 +198,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
     CMachine machine = vboxGlobal().virtualBox().FindMachine(strMachineID);
     if (!machine.isNull())
     {
-        CMediumAttachmentVector attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
+        foreach (const CMediumAttachment &attachment, machine.GetMediumAttachments())
         {
             CMedium cmedium = attachment.GetMedium();
             if (cmedium.isNull())
@@ -228,7 +236,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
             continue;
         }
         /* Enumerate UIMedium if CMedium still exists: */
-        createMediumEnumerationTask(m_mediums[strExcludedMediumID]);
+        createMediumEnumerationTask(uimedium);
     }
 
     /* For each of included items: */
@@ -334,16 +342,6 @@ void UIMediumEnumerator::addHardDisksToMap(const CMediumVector &inputMediums, UI
         /* Insert medium children into map too: */
         addHardDisksToMap(medium.GetChildren(), outputMediums);
     }
-}
-
-void UITaskMediumEnumeration::run()
-{
-    /* Get medium: */
-    UIMedium medium = m_data.value<UIMedium>();
-    /* Enumerate it: */
-    medium.blockAndQueryState();
-    /* Put medium back: */
-    m_data = QVariant::fromValue(medium);
 }
 
 
