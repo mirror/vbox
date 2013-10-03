@@ -127,10 +127,6 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -847,9 +843,6 @@
         <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
         <translation type="unfinished"></translation>
@@ -1897,6 +1890,10 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -10013,12 +10010,12 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Gaiturik</translation>
+        <translation type="obsolete">Gaiturik</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation type="unfinished">Ezgaiturik</translation>
+        <translation type="obsolete">Ezgaiturik</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -10451,12 +10448,12 @@ gogorrak erantsi ditzakezu.&lt;/p&gt;</translation>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">Gaiturik</translation>
+        <translation type="obsolete">Gaiturik</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">Ezgaiturik</translation>
+        <translation type="obsolete">Ezgaiturik</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

@@ -90,7 +90,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
+        <translation type="obsolete">Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -816,12 +816,16 @@
         <comment>debug action</comment>
         <translation>&amp;Loggen...</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Popupmenu</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Popupmenu</translation>
+        <translation type="obsolete">Popupmenu</translation>
     </message>
 </context>
 <context>
@@ -2224,6 +2228,10 @@
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT-netwerk, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -9613,12 +9621,12 @@
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="obsolete">Ingeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="obsolete">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -10141,12 +10149,12 @@
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Ingeschakeld</translation>
+        <translation type="obsolete">Ingeschakeld</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Uitgeschakeld</translation>
+        <translation type="obsolete">Uitgeschakeld</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

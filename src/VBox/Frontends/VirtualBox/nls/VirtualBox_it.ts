@@ -153,7 +153,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
+        <translation type="obsolete">Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -1108,12 +1108,16 @@
         <source>Configure video capture settings</source>
         <translation>Configura le impostazioni dell&apos;acquisizione video</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Menu a comparsa</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Menu a comparsa</translation>
+        <translation type="obsolete">Menu a comparsa</translation>
     </message>
 </context>
 <context>
@@ -3013,6 +3017,10 @@ p, li { white-space: pre-wrap; }
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>Rete con NAT, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -13716,12 +13724,12 @@ Versione %1</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Abilitata</translation>
+        <translation type="obsolete">Abilitata</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Disabilitata</translation>
+        <translation type="obsolete">Disabilitata</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -14563,12 +14571,12 @@ Versione %1</translation>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Abilitata</translation>
+        <translation type="obsolete">Abilitata</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Disabilitata</translation>
+        <translation type="obsolete">Disabilitata</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

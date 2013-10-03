@@ -145,7 +145,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
+        <translation type="obsolete">Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -902,12 +902,16 @@
         <source>Configure video capture settings</source>
         <translation>Görüntü yakalama ayarlarını yapılandır</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Açılır Menü</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Açılır Menü</translation>
+        <translation type="obsolete">Açılır Menü</translation>
     </message>
 </context>
 <context>
@@ -2145,6 +2149,10 @@
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT Ağı, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -11476,12 +11484,12 @@ Version %1</source>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Etkinleştirildi</translation>
+        <translation type="obsolete">Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="obsolete">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -11914,12 +11922,12 @@ Version %1</source>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Etkinleştirildi</translation>
+        <translation type="obsolete">Etkinleştirildi</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Etkisizleştirildi</translation>
+        <translation type="obsolete">Etkisizleştirildi</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

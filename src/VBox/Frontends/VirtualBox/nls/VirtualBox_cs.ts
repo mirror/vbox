@@ -153,7 +153,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Rozlišení snímku: %1x%2, počet snímků: %3fps,rychlost snímků: %4kbps</translation>
+        <translation type="obsolete">Rozlišení snímku: %1x%2, počet snímků: %3fps,rychlost snímků: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -997,12 +997,16 @@
         <source>Configure video capture settings</source>
         <translation>Nastavení pro zachytávání videa</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Vyskakovací nabídka</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Vyskakovací nabídka</translation>
+        <translation type="obsolete">Vyskakovací nabídka</translation>
     </message>
 </context>
 <context>
@@ -2804,6 +2808,10 @@ p, li { white-space: pre-wrap; }
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT síť, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Rozlišení snímku: %1x%2, počet snímků: %3fps,rychlost snímků: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -13490,12 +13498,12 @@ Verze %1</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Povolen</translation>
+        <translation type="obsolete">Povolen</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Zakázán</translation>
+        <translation type="obsolete">Zakázán</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -14012,12 +14020,12 @@ Verze %1</translation>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Povoleno</translation>
+        <translation type="obsolete">Povoleno</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Zakázáno</translation>
+        <translation type="obsolete">Zakázáno</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

@@ -147,10 +147,6 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -913,9 +909,6 @@
         <source>Configure video capture settings</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
         <translation type="unfinished"></translation>
@@ -2537,6 +2530,10 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -11824,12 +11821,12 @@ verzia %1</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Povolené</translation>
+        <translation type="obsolete">Povolené</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Vypnuté</translation>
+        <translation type="obsolete">Vypnuté</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -12323,16 +12320,6 @@ verzia %1</translation>
     <message>
         <source>PS/2 and USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>unrestricted execution</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>unrestricted execution</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>
