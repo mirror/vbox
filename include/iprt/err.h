@@ -1839,12 +1839,43 @@ RT_C_DECLS_END
 #define VERR_XAR_MISSING_SIZE_ELEMENT               (-22720)
 /** Bad size element in table of content sub-element. */
 #define VERR_XAR_BAD_SIZE_ELEMENT                   (-22721)
+/** Missing length element in table of content sub-element. */
+#define VERR_XAR_MISSING_LENGTH_ELEMENT             (-22722)
+/** Bad length element in table of content sub-element. */
+#define VERR_XAR_BAD_LENGTH_ELEMENT                 (-22723)
 /** Bad file element in XAR table of content. */
-#define VERR_XAR_BAD_FILE_ELEMENT                   (-22722)
-/** An data element is expected for XAR file of type file. */
-#define VERR_XAR_DATA_NODE_NOT_FOUND                (-22723)
+#define VERR_XAR_BAD_FILE_ELEMENT                   (-22724)
+/** Missing data element for XAR file. */
+#define VERR_XAR_MISSING_DATA_ELEMENT               (-22725)
 /** Unknown XAR file type value. */
-#define VERR_XAR_BAD_UNKNOWN_FILE_TYPE              (-22724)
+#define VERR_XAR_UNKNOWN_FILE_TYPE                  (-22726)
+/** Missing encoding element for XAR data stream. */
+#define VERR_XAR_NO_ENCODING                        (-22727)
+/** Bad timestamp for XAR file. */
+#define VERR_XAR_BAD_FILE_TIMESTAMP                 (-22728)
+/** Bad file mode for XAR file. */
+#define VERR_XAR_BAD_FILE_MODE                      (-22729)
+/** Bad file user id for XAR file. */
+#define VERR_XAR_BAD_FILE_UID                       (-22730)
+/** Bad file group id for XAR file. */
+#define VERR_XAR_BAD_FILE_GID                       (-22731)
+/** Bad file inode device number for XAR file. */
+#define VERR_XAR_BAD_FILE_DEVICE_NO                 (-22732)
+/** Bad file inode number for XAR file. */
+#define VERR_XAR_BAD_FILE_INODE                     (-22733)
+/** Invalid name for XAR file. */
+#define VERR_XAR_INVALID_FILE_NAME                  (-22734)
+/** The message digest of the extracted data does not match the one supplied. */
+#define VERR_XAR_EXTRACTED_HASH_MISMATCH            (-22735)
+/** The extracted data has exceeded the expected size. */
+#define VERR_XAR_EXTRACTED_SIZE_EXCEEDED            (-22736)
+/** The message digest of the archived data does not match the one supplied. */
+#define VERR_XAR_ARCHIVED_HASH_MISMATCH             (-22737)
+/** The decompressor completed without using all the input data. */
+#define VERR_XAR_UNUSED_ARCHIVED_DATA               (-22738)
+/** Expected the archived and extracted XAR data sizes to be the same for
+ * uncompressed data. */
+#define VERR_XAR_ARCHIVED_AND_EXTRACTED_SIZES_MISMATCH (-22739)
 /** @} */
 
 
