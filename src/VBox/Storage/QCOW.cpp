@@ -2437,7 +2437,7 @@ static int qcowSetParentFilename(void *pBackendData, const char *pszParentFilena
 
                     Assert((offData & UINT32_MAX) == offData);
                     pImage->offBackingFilename = (uint32_t)offData;
-                    pImage->cbBackingFilename  = strlen(pszParentFilename);
+                    pImage->cbBackingFilename  = (uint32_t)strlen(pszParentFilename);
                     rc = vdIfIoIntFileSetSize(pImage->pIfIo, pImage->pStorage,
                                               offData + pImage->cbCluster);
                 }

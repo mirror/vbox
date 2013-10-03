@@ -510,40 +510,40 @@ typedef struct VHDXMETADATAITEMPROPS
 typedef struct VHDXIMAGE
 {
     /** Image name. */
-    const char          *pszFilename;
+    const char         *pszFilename;
     /** Storage handle. */
-    PVDIOSTORAGE         pStorage;
+    PVDIOSTORAGE        pStorage;
 
     /** Pointer to the per-disk VD interface list. */
-    PVDINTERFACE         pVDIfsDisk;
+    PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the per-image VD interface list. */
-    PVDINTERFACE         pVDIfsImage;
+    PVDINTERFACE        pVDIfsImage;
     /** Error interface. */
-    PVDINTERFACEERROR    pIfError;
+    PVDINTERFACEERROR   pIfError;
     /** I/O interface. */
-    PVDINTERFACEIOINT    pIfIo;
+    PVDINTERFACEIOINT   pIfIo;
 
     /** Open flags passed by VBoxHD layer. */
-    unsigned             uOpenFlags;
+    unsigned            uOpenFlags;
     /** Image flags defined during creation or determined during open. */
-    unsigned             uImageFlags;
+    unsigned            uImageFlags;
     /** Version of the VHDX image format. */
-    unsigned             uVersion;
+    unsigned            uVersion;
     /** Total size of the image. */
-    uint64_t             cbSize;
+    uint64_t            cbSize;
     /** Logical sector size of the image. */
-    size_t               cbLogicalSector;
+    uint32_t            cbLogicalSector;
     /** Block size of the image. */
-    size_t               cbBlock;
+    size_t              cbBlock;
     /** Physical geometry of this image. */
-    VDGEOMETRY           PCHSGeometry;
+    VDGEOMETRY          PCHSGeometry;
     /** Logical geometry of this image. */
-    VDGEOMETRY           LCHSGeometry;
+    VDGEOMETRY          LCHSGeometry;
 
     /** The BAT. */
-    PVhdxBatEntry        paBat;
+    PVhdxBatEntry       paBat;
     /** Chunk ratio. */
-    uint32_t             uChunkRatio;
+    uint32_t            uChunkRatio;
 
 } VHDXIMAGE, *PVHDXIMAGE;
 
@@ -1143,8 +1143,11 @@ static int vhdxLoadBatRegion(PVHDXIMAGE pImage, uint64_t offRegion,
     LogFlowFunc(("pImage=%#p\n", pImage));
 
     /* Calculate required values first. */
-    uChunkRatio = (RT_BIT_64(23) * pImage->cbLogicalSector) / pImage->cbBlock;
-    cDataBlocks = pImage->cbSize / pImage->cbBlock;
+    uint64_t uChunkRatio64 = (RT_BIT_64(23) * pImage->cbLogicalSector) / pImage->cbBlock;
+    uChunkRatio = (uint32_t)uChunkRatio64; Assert(uChunkRatio == uChunkRatio64);
+    uint64_t cDataBlocks64 = pImage->cbSize / pImage->cbBlock;
+    cDataBlocks = (uint32_t)cDataBlocks64; Assert(cDataBlocks == cDataBlocks64);
+
     if (pImage->cbSize % pImage->cbBlock)
         cDataBlocks++;
 
@@ -1894,7 +1897,7 @@ static int vhdxRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
         rc = VERR_INVALID_PARAMETER;
     else
     {
-        uint32_t idxBat = uOffset / pImage->cbBlock;
+        uint32_t idxBat = (uint32_t)(uOffset / pImage->cbBlock); Assert(idxBat == uOffset / pImage->cbBlock);
         uint32_t offRead = uOffset % pImage->cbBlock;
         uint64_t uBatEntry;
 
@@ -2418,7 +2421,7 @@ static void vhdxDump(void *pBackendData)
     AssertPtr(pImage);
     if (pImage)
     {
-        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%zu\n",
+        vdIfErrorMessage(pImage->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%u\n",
                         pImage->PCHSGeometry.cCylinders, pImage->PCHSGeometry.cHeads, pImage->PCHSGeometry.cSectors,
                         pImage->LCHSGeometry.cCylinders, pImage->LCHSGeometry.cHeads, pImage->LCHSGeometry.cSectors,
                         pImage->cbLogicalSector);
