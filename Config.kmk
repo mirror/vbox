@@ -3802,11 +3802,14 @@ ifndef SDK_VBOX_OPENSSL_LIBS
  	$(PATH_STAGE_LIB)/VBox-libcrypto$(VBOX_SUFF_LIB) \
  	$(PATH_STAGE_LIB)/VBox-libssl$(VBOX_SUFF_LIB)
 endif
+ifndef SDK_VBOX_LIBXML2_LIBS
+ TEMPLATE_VBoxR3Static_LIBS        += \
+ 	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB)
+endif
 if1of ($(KBUILD_TARGET),os2 win)
  TEMPLATE_VBoxR3Static_LIBS        += \
  	$(PATH_STAGE_LIB)/VBox-liblzf-static$(VBOX_SUFF_LIB) \
- 	$(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB) \
- 	$(PATH_STAGE_LIB)/VBox-libxml2-static$(VBOX_SUFF_LIB)
+ 	$(PATH_STAGE_LIB)/VBox-zlib-static$(VBOX_SUFF_LIB)
 else
  TEMPLATE_VBoxR3Static_LIBS        += \
  	$(PATH_STAGE_LIB)/VBox-liblzf$(VBOX_SUFF_LIB) \
