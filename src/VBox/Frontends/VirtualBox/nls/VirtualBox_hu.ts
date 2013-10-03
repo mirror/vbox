@@ -152,10 +152,6 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>A VirtualBox Linuxos eszközmeghajtója nem tölthető be, vagy jogosultságprobléma van a /dev/vboxdrv eszközfájllal. Kérlek, telepítsd újra a kernel modult a&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;parancs rendszergazdaként történő végrehajtásával. Lehet,  hogy ehhez előbb telepítened kell a megfelelő DKMS csomagot, ha ez elérhető a disztribúciódhoz. Ez a csomag figyeli a Linux kenel változásait, és újrafordítja a vboxdrv meghajtót ha szükséges.</translation>
     </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -995,9 +991,6 @@
         <source>Configure video capture settings</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
         <translation type="unfinished"></translation>
@@ -2838,6 +2831,10 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -13337,12 +13334,12 @@ Verzió %1</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Engedélyezve</translation>
+        <translation type="obsolete">Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -13865,12 +13862,12 @@ Verzió %1</translation>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">Engedélyezve</translation>
+        <translation type="obsolete">Engedélyezve</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation type="unfinished">Letiltva</translation>
+        <translation type="obsolete">Letiltva</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

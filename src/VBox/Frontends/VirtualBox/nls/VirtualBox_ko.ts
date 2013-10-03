@@ -112,7 +112,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>프레임 크기: %1x%2, 프레임 레이트: %3fps, 비트 전송률: %4kbps</translation>
+        <translation type="obsolete">프레임 크기: %1x%2, 프레임 레이트: %3fps, 비트 전송률: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -925,12 +925,16 @@
         <source>Configure video capture settings</source>
         <translation>비디오 캡처 설정 변경</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">팝업 메뉴</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>팝업 메뉴</translation>
+        <translation type="obsolete">팝업 메뉴</translation>
     </message>
 </context>
 <context>
@@ -2698,6 +2702,10 @@ p, li { white-space: pre-wrap; }
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT 네트워크, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">프레임 크기: %1x%2, 프레임 레이트: %3fps, 비트 전송률: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -12352,12 +12360,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>사용 안함</translation>
+        <translation type="obsolete">사용 안함</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -12879,12 +12887,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>사용함</translation>
+        <translation type="obsolete">사용함</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>사용 안함</translation>
+        <translation type="obsolete">사용 안함</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

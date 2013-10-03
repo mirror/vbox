@@ -89,7 +89,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>框架大小: %1x%2，畫面播放速率: %3fps，位元率: %4kbps</translation>
+        <translation type="obsolete">框架大小: %1x%2，畫面播放速率: %3fps，位元率: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -704,12 +704,16 @@
         <comment>debug action</comment>
         <translation>記錄(&amp;L)...</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Popup Menu</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Popup Menu</translation>
+        <translation type="obsolete">Popup Menu</translation>
     </message>
 </context>
 <context>
@@ -1221,6 +1225,10 @@
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT 網路，「%1」</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">框架大小: %1x%2，畫面播放速率: %3fps，位元率: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -6905,12 +6913,12 @@
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>啟用</translation>
+        <translation type="obsolete">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -7334,12 +7342,12 @@
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>啟用</translation>
+        <translation type="obsolete">啟用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>停用</translation>
+        <translation type="obsolete">停用</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

@@ -161,7 +161,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Tamaño de fotograma: %1x%2, Tasa de fotogramas: %3fps, Tasa de bits: %4kbps</translation>
+        <translation type="obsolete">Tamaño de fotograma: %1x%2, Tasa de fotogramas: %3fps, Tasa de bits: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -1033,12 +1033,16 @@
         <source>Configure video capture settings</source>
         <translation>Configurar las preferencias de captura de vídeo</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Menú emergente</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Menú emergente</translation>
+        <translation type="obsolete">Menú emergente</translation>
     </message>
 </context>
 <context>
@@ -2880,6 +2884,10 @@ p, li { white-space: pre-wrap; }
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>Red NAT, «%1»</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Tamaño de fotograma: %1x%2, Tasa de fotogramas: %3fps, Tasa de bits: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -13796,12 +13804,12 @@ Versión %1</translation>
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -14335,12 +14343,12 @@ Versión %1</translation>
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Habilitado</translation>
+        <translation type="obsolete">Habilitado</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Inhabilitado</translation>
+        <translation type="obsolete">Inhabilitado</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

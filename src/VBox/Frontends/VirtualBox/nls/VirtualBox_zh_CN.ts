@@ -91,10 +91,6 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>VirtualBox Linux 内核驱动程序 (vboxdrv) 没有加载，或 /dev/vboxdrv 有权限问题。请以 root 权限执行&lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;“/etc/init.d/vboxdrv setup”&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;，以便重新安装内核模块。如果你所用的发行版bs有DKMS软件包，你应该首先安装之。此程序包跟踪 Linux 内核的更改，并在必要时重新编译 vboxdrv 内核模块。</translation>
     </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -814,9 +810,6 @@
         <comment>debug action</comment>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
         <translation type="unfinished"></translation>
@@ -2211,6 +2204,10 @@
     <message>
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -9565,12 +9562,12 @@
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>启用</translation>
+        <translation type="obsolete">启用</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>禁用</translation>
+        <translation type="obsolete">禁用</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -10087,16 +10084,6 @@
     <message>
         <source>PS/2 and USB Mouse</source>
         <comment>PointingHIDType</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enabled</source>
-        <comment>unrestricted execution</comment>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>unrestricted execution</comment>
         <translation type="unfinished"></translation>
     </message>
     <message>

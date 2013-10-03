@@ -112,7 +112,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
+        <translation type="obsolete">Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
     </message>
 </context>
 <context>
@@ -942,12 +942,16 @@
         <source>Configure video capture settings</source>
         <translation>Настроить захват видео для данной машины</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Всплывающее меню</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Всплывающее меню</translation>
+        <translation type="obsolete">Всплывающее меню</translation>
     </message>
 </context>
 <context>
@@ -2749,6 +2753,10 @@ p, li { white-space: pre-wrap; }
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>Сеть NAT, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
     </message>
 </context>
 <context>
@@ -12494,12 +12502,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>Включено</translation>
+        <translation type="obsolete">Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>Выключено</translation>
+        <translation type="obsolete">Выключено</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -13021,12 +13029,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Включено</translation>
+        <translation type="obsolete">Включено</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>Выключено</translation>
+        <translation type="obsolete">Выключено</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>

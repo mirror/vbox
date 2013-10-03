@@ -232,7 +232,7 @@ void UIShortcutPool::loadDefaults()
     const QString strRuntimeShortcutKeyTemplate(m_strShortcutKeyTemplate.arg(GUI_Input_MachineShortcuts));
     /* Default shortcut for the Runtime Popup Menu invokation: */
     m_shortcuts.insert(strRuntimeShortcutKeyTemplate.arg("PopupMenu"),
-                       UIShortcut(QApplication::translate("UIActonPool", "Popup Menu"), QString("Home"), QString("Home")));
+                       UIShortcut(QApplication::translate("UIActionPool", "Popup Menu"), QString("Home"), QString("Home")));
 }
 
 void UIShortcutPool::loadOverrides()

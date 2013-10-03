@@ -89,7 +89,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation>Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
+        <translation type="obsolete">Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -704,12 +704,16 @@
         <comment>debug action</comment>
         <translation>&amp;Logging...</translation>
     </message>
+    <message>
+        <source>Popup Menu</source>
+        <translation type="unfinished">Menü in Fullscreen/Seamless</translation>
+    </message>
 </context>
 <context>
     <name>UIActonPool</name>
     <message>
         <source>Popup Menu</source>
-        <translation>Menü in Fullscreen/Seamless</translation>
+        <translation type="obsolete">Menü in Fullscreen/Seamless</translation>
     </message>
 </context>
 <context>
@@ -1224,6 +1228,10 @@
         <source>NAT Network, &apos;%1&apos;</source>
         <comment>details (network)</comment>
         <translation>NAT-Netzwerk, &apos;%1&apos;</translation>
+    </message>
+    <message>
+        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
+        <translation type="unfinished">Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -6880,12 +6888,12 @@
     <message>
         <source>Enabled</source>
         <comment>nested paging</comment>
-        <translation>aktiviert</translation>
+        <translation type="obsolete">aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>nested paging</comment>
-        <translation>deaktiviert</translation>
+        <translation type="obsolete">deaktiviert</translation>
     </message>
     <message>
         <source>Nested Paging</source>
@@ -7344,12 +7352,12 @@
     <message>
         <source>Enabled</source>
         <comment>unrestricted execution</comment>
-        <translation>aktiviert</translation>
+        <translation type="obsolete">aktiviert</translation>
     </message>
     <message>
         <source>Disabled</source>
         <comment>unrestricted execution</comment>
-        <translation>deaktiviert</translation>
+        <translation type="obsolete">deaktiviert</translation>
     </message>
     <message>
         <source>Unrestricted Execution</source>
