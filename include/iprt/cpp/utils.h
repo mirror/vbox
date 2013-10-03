@@ -96,6 +96,40 @@ inline C *unconst(const C *that)
     return const_cast<C *>(that);
 }
 
+
+/**
+ * Macro for generating a non-const getter version from a const getter.
+ *
+ * @param   a_RetType       The getter return type.
+ * @param   a_Class         The class name.
+ * @param   a_Getter        The getter name.
+ * @param   a_ArgDecls      The argument declaration for the getter method.
+ * @param   a_ArgList       The argument list for the call.
+ */
+#define RT_CPP_GETTER_UNCONST(a_RetType, a_Class, a_Getter, a_ArgDecls, a_ArgList) \
+    a_RetType a_Getter a_ArgDecls \
+    {  \
+        return static_cast< a_Class const *>(this)-> a_Getter a_ArgList; \
+    }
+
+
+/**
+ * Macro for generating a non-const getter version from a const getter,
+ * unconsting the return value as well.
+ *
+ * @param   a_RetType       The getter return type.
+ * @param   a_Class         The class name.
+ * @param   a_Getter        The getter name.
+ * @param   a_ArgDecls      The argument declaration for the getter method.
+ * @param   a_ArgList       The argument list for the call.
+ */
+#define RT_CPP_GETTER_UNCONST_RET(a_RetType, a_Class, a_Getter, a_ArgDecls, a_ArgList) \
+    a_RetType a_Getter a_ArgDecls \
+    {  \
+        return const_cast<a_RetType>(static_cast< a_Class const *>(this)-> a_Getter a_ArgList); \
+    }
+
+
 /** @} */
 
 #endif
