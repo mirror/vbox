@@ -840,7 +840,7 @@ protected:
     // hide the default constructor so people use only our factory methods
     ElementNode(const ElementNode *pElmRoot, Node *pParent, PRTLISTANCHOR pListAnchor, xmlNode *pLibNode);
     ElementNode(const ElementNode &x);      // no copying
-    virtual ElementNode::~ElementNode();
+    virtual ~ElementNode();
 
     /** We keep a pointer to the root element for attribute namespace handling. */
     const ElementNode  *m_pElmRoot;
