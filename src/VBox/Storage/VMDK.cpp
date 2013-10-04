@@ -5753,9 +5753,9 @@ static int vmdkRead(void *pBackendData, uint64_t uOffset, size_t cbToRead,
 
                     uint32_t uSectorInGrain = uSectorExtentRel % pExtent->cSectorsPerGrain;
                     uSectorExtentAbs -= uSectorInGrain;
-                    uint64_t uLBA;
                     if (pExtent->uGrainSectorAbs != uSectorExtentAbs)
                     {
+                        uint64_t uLBA = 0; /* gcc maybe uninitialized */
                         rc = vmdkFileInflateSync(pImage, pExtent,
                                                  VMDK_SECTOR2BYTE(uSectorExtentAbs),
                                                  pExtent->pvGrain,
