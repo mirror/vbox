@@ -87,10 +87,6 @@
         <source>The VirtualBox Linux kernel driver (vboxdrv) is either not loaded or there is a permission problem with /dev/vboxdrv. Please reinstall the kernel module by executing&lt;br/&gt;&lt;br/&gt;  &lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;as root. If it is available in your distribution, you should install the DKMS package first. This package keeps track of Linux kernel changes and recompiles the vboxdrv kernel module if necessary.</source>
         <translation>Der VirtualBox Kerntreiber für Linux (vboxdrv) ist entweder nicht geladen oder auf das Gerät /dev/vboxdrv konnte nicht zugegriffen werden. Richten Sie das Kernmodul neu ein, indem Sie&lt;br/&gt;&lt;br/&gt;&lt;font color=blue&gt;&apos;/etc/init.d/vboxdrv setup&apos;&lt;/font&gt;&lt;br/&gt;&lt;br/&gt;mit Root-Rechten ausführen. Falls Sie eine Linux-Distribution von Ubuntu, Fedora oder Mandriva verweden, sollten Sie das Paket DKMS zuerst installieren. Dieses compiliert die Kernmodule nach einem Kernupgrade automatisch neu.</translation>
     </message>
-    <message>
-        <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="obsolete">Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
-    </message>
 </context>
 <context>
     <name>QIArrowSplitter</name>
@@ -706,14 +702,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Menü in Fullscreen/Seamless</translation>
-    </message>
-</context>
-<context>
-    <name>UIActonPool</name>
-    <message>
-        <source>Popup Menu</source>
-        <translation type="obsolete">Menü in Fullscreen/Seamless</translation>
+        <translation>Menü in Fullscreen/Seamless</translation>
     </message>
 </context>
 <context>
@@ -1231,7 +1220,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
+        <translation>Bildgröße: %1x%2, Bildrate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>
@@ -6886,16 +6875,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">aktiviert</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>nested paging</comment>
-        <translation type="obsolete">deaktiviert</translation>
-    </message>
-    <message>
         <source>Nested Paging</source>
         <translation>Nested Paging</translation>
     </message>
@@ -7350,16 +7329,6 @@
         <translation>PS/2- und USB-Maus</translation>
     </message>
     <message>
-        <source>Enabled</source>
-        <comment>unrestricted execution</comment>
-        <translation type="obsolete">aktiviert</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <comment>unrestricted execution</comment>
-        <translation type="obsolete">deaktiviert</translation>
-    </message>
-    <message>
         <source>Unrestricted Execution</source>
         <translation>Unrestricted Execution</translation>
     </message>
@@ -7785,11 +7754,11 @@
     </message>
     <message>
         <source>Clipboard Mode</source>
-        <translation>Modus für Gemeinsame Zwischenablage</translation>
+        <translation>Gemeinsame Zwischenablage</translation>
     </message>
     <message>
         <source>Drag&apos;n&apos;Drop Mode</source>
-        <translation>Modus für Drag&apos;n&apos;Drop</translation>
+        <translation>Drag&apos;n&apos;Drop</translation>
     </message>
     <message>
         <source>Configuration &amp;Details</source>
