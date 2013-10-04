@@ -2508,12 +2508,14 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			-e '/^strncpy/d' \
 			-e '/^strlen/d' \
 			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
+			-e '/^_Z[[:alpha:]]*[[:digit:]]\+RTC/d' \
                        \
 			-e '/^_ZnwjPv/d' \
 			-e '/^_ZNSt9bad_allocC1Ev/d' \
 			-e '/^_ZNSt9exceptionC2Ev/d' \
 			\
 			-e '/^_ZN[K]*St[[:digit:]]*_*[lL]ist/d' \
+			-e '/^_ZNSaISt[[:digit:]]*_*[lL]ist/d' \
                        \
 			-e '/^_Z[[:digit:]]\+dbus/d' \
 			-e '/^_Z13RTDBusLoadLibv/d' \
