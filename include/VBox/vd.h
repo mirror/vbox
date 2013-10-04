@@ -154,11 +154,11 @@ typedef struct VBOXHDDRAWPARTDESC
  * Auxiliary data structure for difference between GPT and MBR
  * disks.
  */
-enum PARTITIONING_TYPE
+typedef enum VBOXHDDPARTTYPE
 {
     MBR,
     GPT
-};
+} VBOXHDDPARTTYPE;
 
 /**
  * Auxiliary data structure for creating raw disks.
@@ -178,8 +178,8 @@ typedef struct VBOXHDDRAW
     unsigned        cPartDescs;
     /** Pointer to the partition descriptor array. */
     PVBOXHDDRAWPARTDESC pPartDescs;
-    /**partitioning type of the disk */
-    PARTITIONING_TYPE uPartitioningType;
+    /** Partitioning type of the disk */
+    VBOXHDDPARTTYPE uPartitioningType;
 
 } VBOXHDDRAW, *PVBOXHDDRAW;
 
