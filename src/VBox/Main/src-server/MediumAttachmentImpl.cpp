@@ -609,6 +609,15 @@ void MediumAttachment::updateDiscard(bool aDiscard)
     m->bd->fDiscard = aDiscard;
 }
 
+/** Must be called from under this object's write lock. */
+void MediumAttachment::updateHotPluggable(bool aHotPluggable)
+{
+    Assert(isWriteLockOnCurrentThread());
+
+    m->bd.backup();
+    m->bd->fHotPluggable = aHotPluggable;
+}
+
 void MediumAttachment::updateBandwidthGroup(const Utf8Str &aBandwidthGroup)
 {
     LogFlowThisFuncEnter();
