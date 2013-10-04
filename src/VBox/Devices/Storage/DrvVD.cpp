@@ -312,7 +312,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     {
         Assert(!pvUser);
         pStorageBackend->rcReqLast      = rcReq;
-        pStorageBackend->fSyncIoPending = false;
+        ASMAtomicWriteBool(&pStorageBackend->fSyncIoPending, false);
         RTSemEventSignal(pStorageBackend->EventSem);
     }
     else
@@ -349,9 +349,9 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                                         drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
             if (RT_SUCCESS(rc))
             {
-                uint32_t fFlags =    (fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ
-                                   ? PDMACEP_FILE_FLAGS_READ_ONLY
-                                   : 0;
+                uint32_t fFlags = (fOpen & RTFILE_O_ACCESS_MASK) == RTFILE_O_READ
+                                ? PDMACEP_FILE_FLAGS_READ_ONLY
+                                : 0;
                 if (pThis->fShareable)
                 {
                     Assert((fOpen & RTFILE_O_DENY_MASK) == RTFILE_O_DENY_NONE);
@@ -372,6 +372,8 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
 
                     if (RT_SUCCESS(rc))
                     {
+                        LogFlow(("drvvdAsyncIOOpen: Successfully opened '%s'; fOpen=%#x pStorage=%p\n",
+                                 pszLocation, fOpen, pStorageBackend));
                         *ppStorage = pStorageBackend;
                         return VINF_SUCCESS;
                     }
@@ -412,8 +414,8 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
     RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
-    Assert(!pStorageBackend->fSyncIoPending);
-    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    bool fOld = ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    Assert(!fOld);
     DataSeg.cbSeg = cbRead;
     DataSeg.pvSeg = pvBuf;
 
@@ -444,8 +446,8 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
     RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
-    Assert(!pStorageBackend->fSyncIoPending);
-    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    bool fOld = ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    Assert(!fOld);
     DataSeg.cbSeg = cbWrite;
     DataSeg.pvSeg = (void *)pvBuf;
 
@@ -476,8 +478,8 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
 
     LogFlowFunc(("pvUser=%#p pStorage=%#p\n", pvUser, pStorage));
 
-    Assert(!pStorageBackend->fSyncIoPending);
-    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    bool fOld = ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
+    Assert(!fOld);
 
     int rc = PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, NULL, &pTask);
     if (RT_FAILURE(rc))
@@ -504,7 +506,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uin
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    int rc = PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbRead,
+    int rc = PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, (unsigned)cSegments, cbRead,
                                         pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
     if (rc == VINF_AIO_TASK_PENDING)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
@@ -520,7 +522,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, ui
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    int rc = PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbWrite,
+    int rc = PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, (unsigned)cSegments, cbWrite,
                                          pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
     if (rc == VINF_AIO_TASK_PENDING)
         rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
@@ -1532,7 +1534,7 @@ static DECLCALLBACK(int) drvvdRead(PPDMIMEDIA pInterface,
     }
 
     if (RT_SUCCESS(rc))
-        Log2(("%s: off=%#llx pvBuf=%p cbRead=%d %.*Rhxd\n", __FUNCTION__,
+        Log2(("%s: off=%#llx pvBuf=%p cbRead=%d\n%.*Rhxd\n", __FUNCTION__,
               off, pvBuf, cbRead, cbRead, pvBuf));
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1545,7 +1547,7 @@ static DECLCALLBACK(int) drvvdWrite(PPDMIMEDIA pInterface,
 {
     LogFlowFunc(("off=%#llx pvBuf=%p cbWrite=%d\n", off, pvBuf, cbWrite));
     PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
-    Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d %.*Rhxd\n", __FUNCTION__,
+    Log2(("%s: off=%#llx pvBuf=%p cbWrite=%d\n%.*Rhxd\n", __FUNCTION__,
           off, pvBuf, cbWrite, cbWrite, pvBuf));
 
     /* Invalidate any buffer if boot acceleration is enabled. */
