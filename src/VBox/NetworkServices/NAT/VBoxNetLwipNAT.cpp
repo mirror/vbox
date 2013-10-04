@@ -230,7 +230,7 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             hrc = pfEvt->COMGETTER(GuestIp)(strGuestAddr.asOutParam());
             AssertReturn(SUCCEEDED(hrc), hrc);
 
-            hrc = pfEvt->COMGETTER(HostPort)(&lGuestPort);
+            hrc = pfEvt->COMGETTER(GuestPort)(&lGuestPort);
             AssertReturn(SUCCEEDED(hrc), hrc);
           
             hrc = pfEvt->COMGETTER(Create)(&fCreateFW);
