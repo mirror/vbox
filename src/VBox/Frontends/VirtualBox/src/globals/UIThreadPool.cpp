@@ -155,7 +155,7 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
 
     /* Make sure we have a task or outdated: */
     bool fOutdated = false;
-    while (!pTask && !fOutdated)
+    while (!isTerminating() && !pTask && !fOutdated)
     {
         /* Mark thread as not busy: */
         pWorker->setBusy(false);
@@ -171,7 +171,7 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
         if (!m_tasks.isEmpty())
             pTask = m_tasks.dequeue();
     }
-    Assert(pTask || fOutdated);
+    Assert(isTerminating() || pTask || fOutdated);
 
     /* Unlock task locker: */
     m_taskLocker.unlock();
