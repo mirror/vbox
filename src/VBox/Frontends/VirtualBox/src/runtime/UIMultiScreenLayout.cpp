@@ -27,6 +27,7 @@
 #include "UIMultiScreenLayout.h"
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogic.h"
+#include "UIFrameBuffer.h"
 #include "UISession.h"
 #include "UIMessageCenter.h"
 #include "VBoxGlobal.h"
@@ -159,13 +160,25 @@ void UIMultiScreenLayout::update()
         int cDisabledGuestScreens = m_disabledGuestScreens.size();
         /* We have to try to enable disabled guest-screens if any: */
         int cGuestScreensToEnable = qMin(cExcessiveHostScreens, cDisabledGuestScreens);
+        UISession *pSession = m_pMachineLogic->uisession();
         for (int iGuestScreenIndex = 0; iGuestScreenIndex < cGuestScreensToEnable; ++iGuestScreenIndex)
         {
-            /* Get corresponding guest-screen: */
+            /* Defaults: */
+            ULONG uWidth = 800;
+            ULONG uHeight = 600;
+            /* Try to get previous guest-screen arguments: */
             int iGuestScreen = m_disabledGuestScreens[iGuestScreenIndex];
-            /* Re-enable guest-screen with 'default' arguments: */
-            LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d.\n", iGuestScreen));
-            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, 800, 600, 32);
+            if (UIFrameBuffer *pFrameBuffer = pSession->frameBuffer(iGuestScreen))
+            {
+                if (pFrameBuffer->width() > 0)
+                    uWidth = pFrameBuffer->width();
+                if (pFrameBuffer->height() > 0)
+                    uHeight = pFrameBuffer->height();
+            }
+            /* Re-enable guest-screen with proper resolution: */
+            LogRelFlow(("UIMultiScreenLayout::update: Enabling guest-screen %d with following resolution: %dx%d.\n",
+                        iGuestScreen, uWidth, uHeight));
+            display.SetVideoModeHint(iGuestScreen, true, false, 0, 0, uWidth, uHeight, 32);
         }
     }
 
