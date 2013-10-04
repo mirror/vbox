@@ -468,11 +468,23 @@ static int rtZipXarGetOffsetSizeLengthFromElem(xml::ElementNode const *pElement,
  */
 static int rtZipXarParseChecksumStyle(const char *pszStyle, uint8_t *puHashFunction)
 {
-    if (!strcmp(pszStyle, "sha1"))
+    size_t cchStyle = strlen(pszStyle);
+    if (   cchStyle == 4
+        && (pszStyle[0] == 's' || pszStyle[0] == 'S')
+        && (pszStyle[1] == 'h' || pszStyle[1] == 'H')
+        && (pszStyle[2] == 'a' || pszStyle[2] == 'A')
+        &&  pszStyle[3] == '1' )
         *puHashFunction = XAR_HASH_SHA1;
-    else if (!strcmp(pszStyle, "md5"))
+    else if (   cchStyle == 3
+             && (pszStyle[0] == 'm' || pszStyle[0] == 'M')
+             && (pszStyle[1] == 'd' || pszStyle[1] == 'D')
+             &&  pszStyle[2] == '5' )
         *puHashFunction = XAR_HASH_MD5;
-    else if (!strcmp(pszStyle, "none"))
+    else if (   cchStyle == 4
+             && (pszStyle[0] == 'n' || pszStyle[0] == 'N')
+             && (pszStyle[1] == 'o' || pszStyle[1] == 'O')
+             && (pszStyle[2] == 'n' || pszStyle[2] == 'N')
+             && (pszStyle[3] == 'e' || pszStyle[3] == 'E') )
         *puHashFunction = XAR_HASH_NONE;
     else
     {
