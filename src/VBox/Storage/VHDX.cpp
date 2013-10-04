@@ -1591,8 +1591,9 @@ static int vhdxLoadRegionTable(PVHDXIMAGE pImage)
             {
                 /* Parse the region table entries. */
                 PVhdxRegionTblEntry pRegTblEntry = (PVhdxRegionTblEntry)(pbRegionTbl + sizeof(VhdxRegionTblHdr));
-                VhdxRegionTblEntry RegTblEntryBat; /**<< BAT region table entry. */
+                VhdxRegionTblEntry RegTblEntryBat; /* BAT region table entry. */
                 bool fBatRegPresent = false;
+                RT_ZERO(RegTblEntryBat); /* Maybe uninitialized, gcc. */
 
                 for (unsigned i = 0; i < RegionTblHdr.u32EntryCount; i++)
                 {
