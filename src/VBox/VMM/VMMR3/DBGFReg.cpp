@@ -1900,10 +1900,224 @@ VMMR3DECL(int) DBGFR3RegNmQueryAll(PUVM pUVM, PDBGFREGENTRYNM paRegs, size_t cRe
 }
 
 
+/**
+ * On CPU worker for the register modifications, used by DBGFR3RegNmSet.
+ *
+ * @returns VBox status code.
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   pLookupRec          The register lookup record. Maybe be modified,
+ *                              so please pass a copy of the user's one.
+ * @param   pValue              The new register value.
+ * @param   enmType             The register value type.
+ */
+static DECLCALLBACK(int) dbgfR3RegNmSetWorkerOnCpu(PUVM pUVM, PDBGFREGLOOKUP pLookupRec,
+                                                   PCDBGFREGVAL pValue, PCDBGFREGVAL pMask)
+{
+    PCDBGFREGSUBFIELD pSubField = pLookupRec->pSubField;
+    if (pSubField && pSubField->pfnSet)
+        return pSubField->pfnSet(pLookupRec->pSet->uUserArg.pv, pSubField, pValue->u128, pMask->u128);
+    return pLookupRec->pDesc->pfnSet(pLookupRec->pSet->uUserArg.pv, pLookupRec->pDesc, pValue, pMask);
+}
+
+
+/**
+ * Worker for the register setting.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_INVALID_VM_HANDLE
+ * @retval  VERR_INVALID_CPU_ID
+ * @retval  VERR_DBGF_REGISTER_NOT_FOUND
+ * @retval  VERR_DBGF_UNSUPPORTED_CAST
+ * @retval  VINF_DBGF_TRUNCATED_REGISTER
+ * @retval  VINF_DBGF_ZERO_EXTENDED_REGISTER
+ *
+ * @param   pUVM                The user mode VM handle.
+ * @param   idDefCpu            The virtual CPU ID for the default CPU register
+ *                              set.  Can be OR'ed with DBGFREG_HYPER_VMCPUID.
+ * @param   pszReg              The register to query.
+ * @param   pValue              The value to set
+ * @param   enmType             How to interpret the value in @a pValue.
+ */
 VMMR3DECL(int) DBGFR3RegNmSet(PUVM pUVM, VMCPUID idDefCpu, const char *pszReg, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType)
 {
-    NOREF(pUVM); NOREF(idDefCpu); NOREF(pszReg); NOREF(pValue); NOREF(enmType);
-    return VERR_NOT_IMPLEMENTED;
+    /*
+     * Validate input.
+     */
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_VALID_EXT_RETURN(pUVM->pVM, VERR_INVALID_VM_HANDLE);
+    AssertReturn((idDefCpu & ~DBGFREG_HYPER_VMCPUID) < pUVM->cCpus || idDefCpu == VMCPUID_ANY, VERR_INVALID_CPU_ID);
+    AssertPtrReturn(pszReg, VERR_INVALID_POINTER);
+    AssertReturn(enmType > DBGFREGVALTYPE_INVALID && enmType < DBGFREGVALTYPE_END, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pValue, VERR_INVALID_PARAMETER);
+
+    /*
+     * Resolve the register and check that it is writable.
+     */
+    bool fGuestRegs = true;
+    if ((idDefCpu & DBGFREG_HYPER_VMCPUID) && idDefCpu != VMCPUID_ANY)
+    {
+        fGuestRegs = false;
+        idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+    }
+    PCDBGFREGLOOKUP pLookupRec = dbgfR3RegResolve(pUVM, idDefCpu, pszReg, fGuestRegs);
+    if (pLookupRec)
+    {
+        PCDBGFREGDESC       pDesc        = pLookupRec->pDesc;
+        PCDBGFREGSET        pSet         = pLookupRec->pSet;
+        PCDBGFREGSUBFIELD   pSubField    = pLookupRec->pSubField;
+
+        if (  !(pDesc->fFlags & DBGFREG_FLAGS_READ_ONLY)
+            && (pSubField
+                ?    !(pSubField->fFlags & DBGFREGSUBFIELD_FLAGS_READ_ONLY)
+                  && (pSubField->pfnSet != NULL || pDesc->pfnSet != NULL)
+                : pDesc->pfnSet != NULL) )
+        {
+            /*
+             * Calculate the modification mask and cast the input value to the
+             * type of the target register.
+             */
+            DBGFREGVAL Mask  = DBGFREGVAL_INITIALIZE_ZERO;
+            DBGFREGVAL Value = DBGFREGVAL_INITIALIZE_ZERO;
+            switch (enmType)
+            {
+                case DBGFREGVALTYPE_U8:
+                    Value.u8  = pValue->u8;
+                    Mask.u8   = UINT8_MAX;
+                    break;
+                case DBGFREGVALTYPE_U16:
+                    Value.u16 = pValue->u16;
+                    Mask.u16  = UINT16_MAX;
+                    break;
+                case DBGFREGVALTYPE_U32:
+                    Value.u32 = pValue->u32;
+                    Mask.u32  = UINT32_MAX;
+                    break;
+                case DBGFREGVALTYPE_U64:
+                    Value.u64 = pValue->u64;
+                    Mask.u64  = UINT64_MAX;
+                    break;
+                case DBGFREGVALTYPE_U128:
+                    Value.u128 = pValue->u128;
+                    Mask.u128.s.Lo = UINT64_MAX;
+                    Mask.u128.s.Hi = UINT64_MAX;
+                    break;
+                case DBGFREGVALTYPE_R80:
+#ifdef RT_COMPILER_WITH_80BIT_LONG_DOUBLE
+                    Value.r80Ex.lrd = pValue->r80Ex.lrd;
+#else
+                    Value.r80Ex.au64[0] = pValue->r80Ex.au64[0];
+                    Value.r80Ex.au16[4] = pValue->r80Ex.au16[4];
+#endif
+                    Value.r80Ex.au64[0] = UINT64_MAX;
+                    Value.r80Ex.au16[4] = UINT16_MAX;
+                    break;
+                case DBGFREGVALTYPE_DTR:
+                    Value.dtr.u32Limit = pValue->dtr.u32Limit;
+                    Value.dtr.u64Base  = pValue->dtr.u64Base;
+                    Mask.dtr.u32Limit  = UINT32_MAX;
+                    Mask.dtr.u64Base   = UINT64_MAX;
+                    break;
+                case DBGFREGVALTYPE_32BIT_HACK:
+                case DBGFREGVALTYPE_END:
+                case DBGFREGVALTYPE_INVALID:
+                    AssertFailedReturn(VERR_INTERNAL_ERROR_3);
+            }
+
+            int rc = VINF_SUCCESS;
+            DBGFREGVALTYPE enmRegType = pDesc->enmType;
+            if (pSubField)
+            {
+                unsigned const cBits = pSubField->cBits + pSubField->cShift;
+                if (cBits <= 8)
+                    enmRegType = DBGFREGVALTYPE_U8;
+                else if (cBits <= 16)
+                    enmRegType = DBGFREGVALTYPE_U16;
+                else if (cBits <= 32)
+                    enmRegType = DBGFREGVALTYPE_U32;
+                else if (cBits <= 64)
+                    enmRegType = DBGFREGVALTYPE_U64;
+                else
+                    enmRegType = DBGFREGVALTYPE_U128;
+            }
+            else if (pLookupRec->pAlias)
+            {
+                /* Restrict the input to the size of the alias register. */
+                DBGFREGVALTYPE enmAliasType = pLookupRec->pAlias->enmType;
+                if (enmAliasType != enmType)
+                {
+                    rc = dbgfR3RegValCast(&Value, enmType, enmAliasType);
+                    if (RT_FAILURE(rc))
+                        return rc;
+                    dbgfR3RegValCast(&Mask, enmType, enmAliasType);
+                    enmType = enmAliasType;
+                }
+            }
+
+            if (enmType != enmRegType)
+            {
+                int rc2 = dbgfR3RegValCast(&Value, enmType, enmRegType);
+                if (RT_FAILURE(rc2))
+                    return rc2;
+                if (rc2 != VINF_SUCCESS && rc == VINF_SUCCESS)
+                    rc2 = VINF_SUCCESS;
+                dbgfR3RegValCast(&Mask, enmType, enmRegType);
+            }
+
+            /*
+             * Subfields needs some extra processing if there is no subfield
+             * setter, since we'll be feeding it to the normal register setter
+             * instead.  The mask and value must be shifted and truncated to the
+             * subfield position.
+             */
+            if (pSubField && !pSubField->pfnSet)
+            {
+                /* The shift factor is for displaying a subfield value
+                   2**cShift times larger than the stored value.  We have
+                   to undo this before adjusting value and mask.  */
+                if (pSubField->cShift)
+                {
+                    /* Warn about trunction of the lower bits that get
+                       shifted out below. */
+                    if (rc == VINF_SUCCESS)
+                    {
+                        DBGFREGVAL Value2 = Value;
+                        RTUInt128AssignAndNFirstBits(&Value2.u128, -pSubField->cShift);
+                        if (!RTUInt128BitAreAllClear(&Value2.u128))
+                            rc = VINF_DBGF_TRUNCATED_REGISTER;
+                    }
+                    RTUInt128AssignShiftRight(&Value.u128, pSubField->cShift);
+                }
+
+                DBGFREGVAL Value3 = Value;
+                RTUInt128AssignAndNFirstBits(&Value.u128, pSubField->cBits);
+                if (rc == VINF_SUCCESS && RTUInt128IsNotEqual(&Value.u128, &Value.u128))
+                    rc = VINF_DBGF_TRUNCATED_REGISTER;
+                RTUInt128AssignAndNFirstBits(&Mask.u128,  pSubField->cBits);
+
+                RTUInt128AssignShiftLeft(&Value.u128, pSubField->iFirstBit);
+                RTUInt128AssignShiftLeft(&Mask.u128,  pSubField->iFirstBit);
+            }
+
+            /*
+             * Do the actual work on an EMT.
+             */
+            if (pSet->enmType == DBGFREGSETTYPE_CPU)
+                idDefCpu = pSet->uUserArg.pVCpu->idCpu;
+            else if (idDefCpu != VMCPUID_ANY)
+                idDefCpu &= ~DBGFREG_HYPER_VMCPUID;
+
+            int rc2 = VMR3ReqPriorityCallWaitU(pUVM, idDefCpu, (PFNRT)dbgfR3RegNmSetWorkerOnCpu, 4,
+                                               pUVM, pLookupRec, &Value, &Mask);
+
+            if (rc == VINF_SUCCESS || RT_FAILURE(rc2))
+                rc = rc2;
+            return rc;
+        }
+        return VERR_DBGF_READ_ONLY_REGISTER;
+    }
+    return VERR_DBGF_REGISTER_NOT_FOUND;
 }
 
 

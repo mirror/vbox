@@ -1285,6 +1285,11 @@ typedef DBGFREGVALTYPE *PDBGFREGVALTYPE;
  */
 typedef union DBGFREGVAL
 {
+    uint64_t    au64[2];        /**< The 64-bit array view. First because of the initializer. */
+    uint32_t    au32[4];        /**< The 32-bit array view. */
+    uint16_t    au16[8];        /**< The 16-bit array view. */
+    uint8_t     au8[16];        /**< The 8-bit array view. */
+
     uint8_t     u8;             /**< The 8-bit view. */
     uint16_t    u16;            /**< The 16-bit view. */
     uint32_t    u32;            /**< The 32-bit view. */
@@ -1301,16 +1306,18 @@ typedef union DBGFREGVAL
         uint32_t u32Limit;
     }           dtr;
 
-    uint8_t     au8[16];        /**< The 8-bit array view.  */
-    uint16_t    au16[8];        /**< The 16-bit array view.  */
-    uint32_t    au32[4];        /**< The 32-bit array view.  */
-    uint64_t    au64[2];        /**< The 64-bit array view.  */
     RTUINT128U  u;
 } DBGFREGVAL;
 /** Pointer to a generic register value type. */
 typedef DBGFREGVAL *PDBGFREGVAL;
 /** Pointer to a const generic register value type. */
 typedef DBGFREGVAL const *PCDBGFREGVAL;
+
+/** Initialize a DBGFREGVAL variable to all zeros.  */
+#define DBGFREGVAL_INITIALIZE_ZERO { { 0, 0 } }
+/** Initialize a DBGFREGVAL variable to all bits set .  */
+#define DBGFREGVAL_INITIALIZE_FFFF { { UINT64_MAX, UINT64_MAX } }
+
 
 VMMDECL(ssize_t) DBGFR3RegFormatValue(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType, bool fSpecial);
 VMMDECL(ssize_t) DBGFR3RegFormatValueEx(char *pszBuf, size_t cbBuf, PCDBGFREGVAL pValue, DBGFREGVALTYPE enmType,
