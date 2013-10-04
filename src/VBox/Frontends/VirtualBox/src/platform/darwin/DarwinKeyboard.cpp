@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_WITH_KBD_LEDS_SYNC
+#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -1514,6 +1514,8 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 void * DarwinHidDevicesKeepLedsState(void)
 {
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
+    return NULL;
+
     IOReturn         rc;
     VBoxHidsState_t *hidsState;
 
@@ -1625,6 +1627,8 @@ void * DarwinHidDevicesKeepLedsState(void)
 int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
 {
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
+    return 0;
+
     VBoxHidsState_t *hidsState = (VBoxHidsState_t *)pState;
 
     CFIndex     i;
