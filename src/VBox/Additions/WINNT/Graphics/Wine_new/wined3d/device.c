@@ -4540,6 +4540,14 @@ HRESULT CDECL wined3d_device_set_render_target(struct wined3d_device *device,
         return WINED3DERR_INVALIDCALL;
     }
 
+#ifdef VBOX_WITH_WDDM
+    /* @todo: should we extend this to XPDM as well?
+     * MSDN says that setting a *new* render target causes the viewport update to full size of the rt.*/
+    prev = device->fb.render_targets[render_target_idx];
+    if (render_target == prev)
+        return WINED3D_OK;
+#endif
+
     /* Set the viewport and scissor rectangles, if requested. Tests show that
      * stateblock recording is ignored, the change goes directly into the
      * primary stateblock. */
@@ -4562,10 +4570,11 @@ HRESULT CDECL wined3d_device_set_render_target(struct wined3d_device *device,
         device_invalidate_state(device, STATE_SCISSORRECT);
     }
 
-
+#ifndef VBOX_WITH_WDDM
     prev = device->fb.render_targets[render_target_idx];
     if (render_target == prev)
         return WINED3D_OK;
+#endif
 
     if (render_target)
         wined3d_surface_incref(render_target);
