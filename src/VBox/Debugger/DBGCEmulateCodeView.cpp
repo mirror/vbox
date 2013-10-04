@@ -1421,6 +1421,8 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
             if (RT_FAILURE(rc))
                 rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegNmSet failed settings '%s%s': %Rrc\n",
                                          pszActualPrefix, pszReg, rc);
+            if (rc != VINF_SUCCESS)
+                DBGCCmdHlpPrintf(pCmdHlp, "%s: warning: %Rrc\n", pCmd->pszCmd, rc);
         }
         else
             rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
