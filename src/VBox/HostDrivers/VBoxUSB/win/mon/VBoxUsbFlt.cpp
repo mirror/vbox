@@ -325,6 +325,10 @@ PVBOXUSBFLT_DEVICE vboxUsbFltDevGet(PDEVICE_OBJECT pPdo)
 
     VBOXUSBFLT_LOCK_ACQUIRE();
     pDevice = vboxUsbFltDevGetLocked(pPdo);
+    /*
+     * Prevent a host crash when vboxUsbFltDevGetLocked fails to locate the matching PDO
+     * in g_VBoxUsbFltGlobals.DeviceList (see @bugref{6509}).
+     */
     if (pDevice == NULL)
     {
         WARN(("failed to get device for PDO(0x%p)", pPdo));
@@ -1367,6 +1371,10 @@ HVBOXUSBFLTDEV VBoxUsbFltProxyStarted(PDEVICE_OBJECT pPdo)
     PVBOXUSBFLT_DEVICE pDevice;
     VBOXUSBFLT_LOCK_ACQUIRE();
     pDevice = vboxUsbFltDevGetLocked(pPdo);
+    /*
+     * Prevent a host crash when vboxUsbFltDevGetLocked fails to locate the matching PDO
+     * in g_VBoxUsbFltGlobals.DeviceList (see @bugref{6509}).
+     */
     if (pDevice == NULL)
     {
         WARN(("failed to get device for PDO(0x%p)", pPdo));
@@ -1390,6 +1398,15 @@ HVBOXUSBFLTDEV VBoxUsbFltProxyStarted(PDEVICE_OBJECT pPdo)
 void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
 {
     PVBOXUSBFLT_DEVICE pDevice = (PVBOXUSBFLT_DEVICE)hDev;
+    /*
+     * Prevent a host crash when VBoxUsbFltProxyStarted fails, returning NULL.
+     * See @bugref{6509}.
+     */
+    if (pDevice == NULL)
+    {
+        WARN(("VBoxUsbFltProxyStopped called with NULL device pointer"));
+        return;
+    }
     VBOXUSBFLT_LOCK_ACQUIRE();
     if (pDevice->enmState == VBOXUSBFLT_DEVSTATE_CAPTURED
             || pDevice->enmState == VBOXUSBFLT_DEVSTATE_USED_BY_GUEST)
