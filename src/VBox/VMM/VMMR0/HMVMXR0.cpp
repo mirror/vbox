@@ -1814,8 +1814,15 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     }
     else
     {
-        val |=   VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT        /* CR8 reads causes a VM-exit. */
-               | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;        /* CR8 writes causes a VM-exit. */
+        /*
+         * Some 32-bit CPUs do not support CR8 load/store exiting as MOV CR8 is invalid on 32-bit Intel CPUs. 
+         * Set this control only for 64-bit guests.
+         */
+        if (pVM->hm.s.fAllow64BitGuests)
+        {
+            val |=   VMX_VMCS_CTRL_PROC_EXEC_CR8_STORE_EXIT    /* CR8 reads causes a VM-exit. */
+                   | VMX_VMCS_CTRL_PROC_EXEC_CR8_LOAD_EXIT;    /* CR8 writes causes a VM-exit. */
+        }
     }
 
     /* Use MSR-bitmaps if supported by the CPU. */
