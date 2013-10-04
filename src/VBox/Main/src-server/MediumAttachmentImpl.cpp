@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,7 +42,8 @@ struct BackupableMediumAttachmentData
           fTempEject(false),
           fNonRotational(false),
           fDiscard(false),
-          fImplicit(false)
+          fImplicit(false),
+          fHotPluggable(false)
     { }
 
     ComObjPtr<Medium>   pMedium;
@@ -62,6 +63,7 @@ struct BackupableMediumAttachmentData
     bool                fNonRotational;
     bool                fDiscard;
     bool                fImplicit;
+    bool                fHotPluggable;
 };
 
 struct MediumAttachment::Data
@@ -122,10 +124,11 @@ HRESULT MediumAttachment::init(Machine *aParent,
                                bool aTempEject,
                                bool aNonRotational,
                                bool aDiscard,
+                               bool aHotPluggable,
                                const Utf8Str &strBandwidthGroup)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d aNonRotational=%d strBandwithGroup=%s\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject, aNonRotational, strBandwidthGroup.c_str()));
+    LogFlowThisFunc(("aParent=%p aMedium=%p aControllerName=%ls aPort=%d aDevice=%d aType=%d aImplicit=%d aPassthrough=%d aTempEject=%d aNonRotational=%d aDiscard=%d aHotPluggable=%d strBandwithGroup=%s\n", aParent, aMedium, aControllerName.raw(), aPort, aDevice, aType, aImplicit, aPassthrough, aTempEject, aNonRotational, aDiscard, aHotPluggable, strBandwidthGroup.c_str()));
 
     if (aType == DeviceType_HardDisk)
         AssertReturn(aMedium, E_INVALIDARG);
@@ -151,6 +154,7 @@ HRESULT MediumAttachment::init(Machine *aParent,
     m->bd->fNonRotational = aNonRotational;
     m->bd->fDiscard = aDiscard;
     m->bd->fImplicit = aImplicit;
+    m->bd->fHotPluggable = aHotPluggable;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -416,6 +420,23 @@ STDMETHODIMP MediumAttachment::COMGETTER(BandwidthGroup) (IBandwidthGroup **aBwG
     return hrc;
 }
 
+STDMETHODIMP MediumAttachment::COMGETTER(HotPluggable)(BOOL *aHotPluggable)
+{
+    LogFlowThisFuncEnter();
+
+    CheckComArgOutPointerValid(aHotPluggable);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aHotPluggable = m->bd->fHotPluggable;
+
+    LogFlowThisFuncLeave();
+    return S_OK;
+}
+
 /**
  *  @note Locks this object for writing.
  */
@@ -510,6 +531,12 @@ bool MediumAttachment::getDiscard() const
 {
     AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
     return m->bd->fDiscard;
+}
+
+bool MediumAttachment::getHotPluggable() const
+{
+    AutoReadLock lock(this COMMA_LOCKVAL_SRC_POS);
+    return m->bd->fHotPluggable;
 }
 
 const Utf8Str& MediumAttachment::getBandwidthGroup() const
