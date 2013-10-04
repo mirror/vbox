@@ -121,7 +121,7 @@ typedef struct HOSTPARTITION
 typedef struct HOSTPARTITIONS
 {
     /** partitioning type - MBR or GPT */
-    PARTITIONING_TYPE uPartitioningType;
+    VBOXHDDPARTTYPE uPartitioningType;
     unsigned        cPartitions;
     HOSTPARTITION   aPartitions[HOSTPARTITION_MAX];
 } HOSTPARTITIONS, *PHOSTPARTITIONS;
@@ -754,7 +754,7 @@ static int partRead(RTFILE File, PHOSTPARTITIONS pPart)
     uint64_t lastUsableLBA = 0;
     int rc;
 
-    PARTITIONING_TYPE partitioningType;
+    VBOXHDDPARTTYPE partitioningType;
 
     pPart->cPartitions = 0;
     memset(pPart->aPartitions, '\0', sizeof(pPart->aPartitions));
