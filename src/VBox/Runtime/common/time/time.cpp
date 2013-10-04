@@ -858,7 +858,7 @@ RTDECL(PRTTIME) RTTimeFromString(PRTTIME pTime, const char *pszString)
      */
     if (*pszString == 'Z')
     {
-        *pszString++;
+        pszString++;
         pTime->fFlags &= ~RTTIME_FLAGS_TYPE_MASK;
         pTime->fFlags |= ~RTTIME_FLAGS_TYPE_UTC;
         pTime->offUTC = 0;
