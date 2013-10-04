@@ -186,7 +186,7 @@ void UIMediumEnumerator::sltHandleMachineUpdate(QString strMachineID)
     foreach (const QString &strMediumID, mediumIDs())
     {
         const UIMedium &uimedium = m_mediums[strMediumID];
-        const QList<QString> &machineIDs = uimedium.machineIds();
+        const QList<QString> &machineIDs = uimedium.curStateMachineIds();
         if (machineIDs.contains(strMachineID))
             oldUsage << strMediumID;
     }
