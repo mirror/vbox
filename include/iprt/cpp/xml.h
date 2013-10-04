@@ -836,11 +836,12 @@ public:
     AttributeNode *setAttributeHex(const char *pcszName, uint32_t i);
     AttributeNode *setAttribute(const char *pcszName, bool f);
 
+    virtual ~ElementNode();
+
 protected:
     // hide the default constructor so people use only our factory methods
     ElementNode(const ElementNode *pElmRoot, Node *pParent, PRTLISTANCHOR pListAnchor, xmlNode *pLibNode);
     ElementNode(const ElementNode &x);      // no copying
-    virtual ~ElementNode();
 
     /** We keep a pointer to the root element for attribute namespace handling. */
     const ElementNode  *m_pElmRoot;
