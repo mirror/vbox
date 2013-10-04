@@ -978,6 +978,9 @@ struct AttachedDevice
     // Whether the medium supports discarding unused blocks:
     bool                fDiscard;
 
+    // Whether the medium is hot-pluggable:
+    bool                fHotPluggable;
+
     int32_t             lPort;
     int32_t             lDevice;
 

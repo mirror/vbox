@@ -625,6 +625,7 @@
   <xsd:attribute name="tempeject" type="xsd:boolean" default="false"/>
   <xsd:attribute name="nonrotational" type="xsd:boolean" default="false"/>
   <xsd:attribute name="discard" type="xsd:boolean" default="false"/>
+  <xsd:attribute name="hotpluggable" type="xsd:boolean" default="false"/>
 </xsd:complexType>
 
 <xsd:complexType name="TStorageController">

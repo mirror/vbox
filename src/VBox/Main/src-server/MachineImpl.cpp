@@ -4500,6 +4500,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           false /* fTempEject */,
                           false /* fNonRotational */,
                           false /* fDiscard */,
+                          false /* fHotPluggable */,
                           Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
@@ -4827,6 +4828,58 @@ STDMETHODIMP Machine::SetAutoDiscardForDevice(IN_BSTR aControllerName, LONG aCon
                         tr("Setting the discard medium flag rejected as the device attached to device slot %d on port %d of controller '%ls' is not a hard disk"),
                         aDevice, aControllerPort, aControllerName);
     pAttach->updateDiscard(!!aDiscard);
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::SetHotPluggableForDevice(IN_BSTR aControllerName, LONG aControllerPort,
+                                               LONG aDevice, BOOL aHotPluggable)
+{
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+
+    LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aHotPluggable=%d\n",
+                     aControllerName, aControllerPort, aDevice, aHotPluggable));
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    AssertReturn(mData->mMachineState != MachineState_Saved, E_FAIL);
+
+    if (Global::IsOnlineOrTransient(mData->mMachineState))
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Invalid machine state: %s"),
+                        Global::stringifyMachineState(mData->mMachineState));
+
+    MediumAttachment *pAttach = findAttachment(mMediaData->mAttachments,
+                                               aControllerName,
+                                               aControllerPort,
+                                               aDevice);
+    if (!pAttach)
+        return setError(VBOX_E_OBJECT_NOT_FOUND,
+                        tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+    /** @todo remove this blocker and add the missing code to support this
+     * flag properly in all code areas, with proper support checks below. */
+    return setError(VBOX_E_NOT_SUPPORTED,
+                    tr("Controller '%ls' does not support changing the hot-pluggable device flag"),
+                    aControllerName);
+
+    setModified(IsModified_Storage);
+    mMediaData.backup();
+
+    AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
+
+    if (pAttach->getType() == DeviceType_Floppy)
+        return setError(E_INVALIDARG,
+                        tr("Setting the hot-pluggable device flag rejected as the device attached to device slot %d on port %d of controller '%ls' is a floppy drive"),
+                        aDevice, aControllerPort, aControllerName);
+    pAttach->updateHotPluggable(!!aHotPluggable);
 
     return S_OK;
 }
@@ -9715,6 +9768,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.fTempEject,
                                dev.fNonRotational,
                                dev.fDiscard,
+        /// @todo load setting once the hot-pluggable flag works
+                               false /*dev.fHotPluggable*/,
                                pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
@@ -10818,6 +10873,8 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.lPort = pAttach->getPort();
         dev.lDevice = pAttach->getDevice();
         dev.fPassThrough = pAttach->getPassthrough();
+        /// @todo save setting once the hot-pluggable flag works
+        dev.fHotPluggable = false /* pAttach->getHotPluggable()*/;
         if (pMedium)
         {
             if (pMedium->isHostDrive())
@@ -11160,6 +11217,7 @@ HRESULT Machine::createImplicitDiffs(IProgress *aProgress,
                                   false /* aTempEject */,
                                   pAtt->getNonRotational(),
                                   pAtt->getDiscard(),
+                                  pAtt->getHotPluggable(),
                                   pAtt->getBandwidthGroup());
             if (FAILED(rc)) throw rc;
 
@@ -12776,7 +12834,7 @@ HRESULT SessionMachine::init(Machine *aMachine)
             && type == NetworkAttachmentType_NATNetwork)
         {
             Bstr name;
-            
+
             hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
             if (SUCCEEDED(hrc))
             {
