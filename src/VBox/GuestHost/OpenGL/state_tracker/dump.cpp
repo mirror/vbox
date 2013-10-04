@@ -1231,13 +1231,77 @@ VBOXDUMPDECL(void) crRecRecompileCurrentProgram(CR_RECORDER *pRec, CRContext *ct
     }
 }
 
+void crRecDumpTextureV(CR_RECORDER *pRec, const VBOXVR_TEXTURE *pTex, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, va_list pArgList)
+{
+    CR_BLITTER_IMG Img = {0};
+    int rc = CrBltEnter(pRec->pBlitter, pCurCtx, pCurWin);
+    if (RT_SUCCESS(rc))
+    {
+        rc = CrBltImgGetTex(pRec->pBlitter, pTex, GL_BGRA, &Img);
+        if (RT_SUCCESS(rc))
+        {
+            crDmpImgV(pRec->pDumper, &Img, pszStr, pArgList);
+            CrBltImgFree(pRec->pBlitter, &Img);
+        }
+        else
+        {
+            crWarning("CrBltImgGetTex failed, rc %d", rc);
+        }
+        CrBltLeave(pRec->pBlitter);
+    }
+    else
+    {
+        crWarning("CrBltEnter failed, rc %d", rc);
+    }
+}
+
+void crRecDumpTextureF(CR_RECORDER *pRec, const VBOXVR_TEXTURE *pTex, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, ...)
+{
+    va_list pArgList;
+    va_start(pArgList, pszStr);
+    crRecDumpTextureV(pRec, pTex, pCurCtx, pCurWin, pszStr, pArgList);
+    va_end(pArgList);
+}
+
+void crRecDumpTextureByIdV(CR_RECORDER *pRec, CRContext *ctx, GLint id, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, va_list pArgList)
+{
+    CRTextureObj *pTobj = (CRTextureObj *)crHashtableSearch(ctx->shared->textureTable, id);
+    if (!pTobj)
+    {
+        crWarning("no texture of id %d", id);
+        return;
+    }
+
+    CRTextureLevel *pTl = &pTobj->level[0][0 /* level */];
+    VBOXVR_TEXTURE Tex;
+    Tex.width = pTl->width;
+    Tex.height = pTl->height;
+    Tex.target = pTobj->target;
+    Assert(Tex.target == GL_TEXTURE_2D);
+    Tex.hwid = pTobj->hwid;
+    if (!Tex.hwid)
+    {
+        crWarning("no texture hwid of id %d", id);
+        return;
+    }
+
+    crRecDumpTextureV(pRec, &Tex, pCurCtx, pCurWin, pszStr, pArgList);
+}
+
+void crRecDumpTextureByIdF(CR_RECORDER *pRec, CRContext *ctx, GLint id, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, ...)
+{
+    va_list pArgList;
+    va_start(pArgList, pszStr);
+    crRecDumpTextureByIdV(pRec, ctx, id, pCurCtx, pCurWin, pszStr, pArgList);
+    va_end(pArgList);
+}
+
 void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin)
 {
     GLint maxUnits = 0;
     GLint curTexUnit = 0;
     GLint restoreTexUnit = 0;
     GLint curProgram = 0;
-    int rc;
     int i;
 
     pRec->pDispatch->GetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxUnits);
@@ -1293,7 +1357,6 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
 //        if (enabled2D)
         {
             GLint hwTex = 0;
-            CR_BLITTER_IMG Img = {0};
             VBOXVR_TEXTURE Tex;
 
             GLint width = 0, height = 0, depth = 0;
@@ -1326,25 +1389,7 @@ void crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pC
                     crRecDumpTexGen(pRec, ctx);
                 }
 
-                rc = CrBltEnter(pRec->pBlitter, pCurCtx, pCurWin);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = CrBltImgGetTex(pRec->pBlitter, &Tex, GL_BGRA, &Img);
-                    if (RT_SUCCESS(rc))
-                    {
-                        crDmpImgF(pRec->pDumper, &Img, "ctx(%d), Unit %d: TEXTURE_2D id(%d) hwid(%d), width(%d), height(%d)", ctx, i, pTobj->id, pTobj->hwid, width, height);
-                        CrBltImgFree(pRec->pBlitter, &Img);
-                    }
-                    else
-                    {
-                        crWarning("CrBltImgGetTex failed, rc %d", rc);
-                    }
-                    CrBltLeave(pRec->pBlitter);
-                }
-                else
-                {
-                    crWarning("CrBltEnter failed, rc %d", rc);
-                }
+                crRecDumpTextureF(pRec, &Tex, pCurCtx, pCurWin, "ctx(%d), Unit %d: TEXTURE_2D id(%d) hwid(%d), width(%d), height(%d)", ctx, i, pTobj->id, pTobj->hwid, width, height);
             }
 //            else
 //            {

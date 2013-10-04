@@ -467,6 +467,7 @@ void crServerDumpCheckTerm();
 int crServerDumpCheckInit();
 void crServerDumpBuffer(int idx);
 void crServerDumpTextures();
+void crServerDumpTexture(const VBOXVR_TEXTURE *pTex);
 void crServerDumpShader(GLint id);
 void crServerDumpProgram(GLint id);
 void crServerDumpCurrentProgram();
@@ -563,6 +564,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
 
 #define CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER      0x00010000
 #define CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE      0x00020000
+#define CR_SERVER_DUMP_F_TEXPRESENT             0x00040000
 #define CR_SERVER_DUMP_F_DRAWEL                 0x00100000
 #define CR_SERVER_DUMP_F_COMPILE_SHADER         0x01000000
 #define CR_SERVER_DUMP_F_SHADER_SOURCE          0x02000000
@@ -640,6 +642,13 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crDmpStrF(cr_server.Recorder.pDumper, "==Done ENTER[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
         } while (0)
 
+#define CR_SERVER_DUMP_TEXPRESENT(_pTex) do { \
+            if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_TEXPRESENT, cr_server.Recorder.pDumper)) break; \
+            crServerDumpCheckInit(); \
+            crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpTexture((_pTex)); \
+        } while (0)
+
 #define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do { \
             if (!CR_SERVER_DUMP_FILTER_OP(CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE, cr_server.Recorder.pDumper)) break; \
             crDmpStrF(cr_server.Recorder.pDumper, "==LEAVE[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
@@ -665,6 +674,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
 #define CR_SERVER_DUMP_DRAW_LEAVE() do {} while (0)
 #define CR_SERVER_DUMP_COMPILE_SHADER(_id) do {} while (0)
 #define CR_SERVER_DUMP_LINK_PROGRAM(_id) do {} while (0)
+#define CR_SERVER_DUMP_TEXPRESENT(_pTex) do {} while (0)
 #define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do {} while (0)
 #define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do {} while (0)
 #define CR_SERVER_DUMP_SHADER_SOURCE(_id) do {} while (0)

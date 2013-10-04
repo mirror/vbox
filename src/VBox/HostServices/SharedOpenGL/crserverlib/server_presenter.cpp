@@ -947,6 +947,11 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         }
     }
 
+    if (!(cfg & CR_PRESENT_FLAG_CLEAR_RECTS))
+    {
+        CR_SERVER_DUMP_TEXPRESENT(&pEntry->CEntry.Tex);
+    }
+
     CrDpEnter(pDisplay);
 
     if (!(cfg & CR_PRESENT_FLAG_CLEAR_RECTS))
