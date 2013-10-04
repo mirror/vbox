@@ -1467,7 +1467,13 @@ static HRESULT WINAPI d3d9_device_SetRenderTarget(IDirect3DDevice9Ex *iface, DWO
 
     wined3d_mutex_lock();
     hr = wined3d_device_set_render_target(device->wined3d_device, idx,
-            surface_impl ? surface_impl->wined3d_surface : NULL, TRUE);
+            surface_impl ? surface_impl->wined3d_surface : NULL,
+#ifdef VBOX_WITH_WDDM
+                    FALSE
+#else
+                    TRUE
+#endif
+                    );
     wined3d_mutex_unlock();
 
     return hr;
