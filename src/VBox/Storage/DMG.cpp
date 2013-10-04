@@ -38,6 +38,12 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+#if 0
+/** @def VBOX_WITH_DIRECT_XAR_ACCESS
+ * When defined, we will use RTVfs to access the XAR file instead of going
+ * the slightly longer way thru the VFS -> VD wrapper. */
+# define VBOX_WITH_DIRECT_XAR_ACCESS
+#endif
 
 /** Sector size, multiply with all sector counts to get number of bytes. */
 #define DMG_SECTOR_SIZE 512
@@ -786,10 +792,11 @@ static int dmgFlushImage(PDMGIMAGE pThis)
 {
     int rc = VINF_SUCCESS;
 
-    if (   pThis->pStorage
+    if (   pThis
+        && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE)
         && !(pThis->uOpenFlags & VD_OPEN_FLAGS_READONLY))
     {
-        /* @todo handle writable files, update checksums etc. */
+        /** @todo handle writable files, update checksums etc. */
     }
 
     return rc;
@@ -808,13 +815,14 @@ static int dmgFreeImage(PDMGIMAGE pThis, bool fDelete)
      * not signalled as an error. After all nothing bad happens. */
     if (pThis)
     {
+        RTVfsFileRelease(pThis->hDmgFileInXar);
+        pThis->hDmgFileInXar = NIL_RTVFSFILE;
+
+        RTVfsFsStrmRelease(pThis->hXarFss);
+        pThis->hXarFss = NIL_RTVFSFSSTREAM;
+
         if (pThis->pStorage)
         {
-            RTVfsFileRelease(pThis->hDmgFileInXar);
-            pThis->hDmgFileInXar = NIL_RTVFSFILE;
-            RTVfsFsStrmRelease(pThis->hXarFss);
-            pThis->hXarFss = NIL_RTVFSFSSTREAM;
-
             /* No point updating the file that is deleted anyway. */
             if (!fDelete)
                 dmgFlushImage(pThis);
@@ -1443,7 +1451,7 @@ static int dmgBlkxParse(PDMGIMAGE pThis, PDMGBLKX pBlkx)
  *
  * @returns VBox status code.
  * @param   fOpen           Flags for defining the open type.
- * @param   pVDIfs          List of VD I/O interfaces that we can use.
+ * @param   pVDIfIoInt      The internal VD I/O interface to use.
  * @param   pvStorage       The storage pointer that goes with @a pVDIfsIo.
  * @param   pszFilename     The input filename, optional.
  * @param   phXarFss        Where to return the XAR file system stream handle on
@@ -1454,14 +1462,18 @@ static int dmgBlkxParse(PDMGIMAGE pThis, PDMGBLKX pBlkx)
  * @remarks Not using the PDMGIMAGE structure directly here because the function
  *          is being in serveral places.
  */
-static int dmgOpenImageWithinXar(uint32_t fOpen, PVDINTERFACE pVDIfs, void *pvStorage, const char *pszFilename,
+static int dmgOpenImageWithinXar(uint32_t fOpen, PVDINTERFACEIOINT pVDIfIoInt, void *pvStorage, const char *pszFilename,
                                  PRTVFSFSSTREAM phXarFss, PRTVFSFILE phDmgFileInXar)
 {
     /*
      * Open the XAR file stream.
      */
     RTVFSFILE hVfsFile;
-    int rc = VDIfCreateVfsFile(pVDIfs, pvStorage, fOpen, &hVfsFile);
+#ifdef VBOX_WITH_DIRECT_XAR_ACCESS
+    int rc = RTVfsFileOpenNormal(pszFilename, fOpen, &hVfsFile);
+#else
+    int rc = VDIfCreateVfsFile(NULL, pVDIfIoInt, pvStorage, fOpen, &hVfsFile);
+#endif
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1565,13 +1577,28 @@ static int dmgOpenImage(PDMGIMAGE pThis, unsigned uOpenFlags)
     if (u32XarMagic == XAR_HEADER_MAGIC)
     {
         rc = dmgOpenImageWithinXar(VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */),
-                                   pThis->pVDIfsImage,
+                                   pThis->pIfIoXxx,
                                    pThis->pStorage,
                                    pThis->pszFilename,
                                    &pThis->hXarFss, &pThis->hDmgFileInXar);
         if (RT_FAILURE(rc))
             return rc;
+#ifdef VBOX_WITH_DIRECT_XAR_ACCESS
+        vdIfIoIntFileClose(pThis->pIfIoXxx, pThis->pStorage);
+        pThis->pStorage = NULL;
+#endif
     }
+#if 0 /* This is for testing whether the VFS wrappers actually works. */
+    else
+    {
+        rc = RTVfsFileOpenNormal(pThis->pszFilename, VDOpenFlagsToFileOpenFlags(uOpenFlags, false /* fCreate */),
+                                 &pThis->hDmgFileInXar);
+        if (RT_FAILURE(rc))
+            return rc;
+        vdIfIoIntFileClose(pThis->pIfIoXxx, pThis->pStorage);
+        pThis->pStorage = NULL;
+    }
+#endif
 
     /*
      * Read the footer.
@@ -1709,7 +1736,7 @@ static DECLCALLBACK(int) dmgCheckIfValid(const char *pszFilename, PVDINTERFACE p
         && u32XarMagic == XAR_HEADER_MAGIC)
     {
         rc = dmgOpenImageWithinXar(RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE,
-                                   pVDIfsImage, pStorage, NULL /* pszFilename */,
+                                   pIfIo, pStorage, pszFilename,
                                    &hXarFss, &hDmgFileInXar);
         if (RT_FAILURE(rc))
             return rc;
@@ -1736,9 +1763,9 @@ static DECLCALLBACK(int) dmgCheckIfValid(const char *pszFilename, PVDINTERFACE p
             /*
              * Do we recognize this stuff? Does it look valid?
              */
-            if (   Ftr.u32Magic    == RT_H2BE_U32(DMGUDIF_MAGIC)
-                && Ftr.u32Version  == RT_H2BE_U32(DMGUDIF_VER_CURRENT)
-                && Ftr.cbFooter    == RT_H2BE_U32(sizeof(Ftr)))
+            if (   Ftr.u32Magic    == RT_H2BE_U32_C(DMGUDIF_MAGIC)
+                && Ftr.u32Version  == RT_H2BE_U32_C(DMGUDIF_VER_CURRENT)
+                && Ftr.cbFooter    == RT_H2BE_U32_C(sizeof(Ftr)))
             {
                 dmgUdifFtrFile2HostEndian(&Ftr);
                 if (dmgUdifFtrIsValid(&Ftr, offFtr))
@@ -2008,7 +2035,7 @@ static DECLCALLBACK(uint32_t) dmgGetSectorSize(void *pBackendData)
 
     AssertPtr(pThis);
 
-    if (pThis && pThis->pStorage)
+    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
         cb = 2048;
 
     LogFlowFunc(("returns %u\n", cb));
@@ -2024,7 +2051,7 @@ static DECLCALLBACK(uint64_t) dmgGetSize(void *pBackendData)
 
     AssertPtr(pThis);
 
-    if (pThis && pThis->pStorage)
+    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
         cb = pThis->cbSize;
 
     LogFlowFunc(("returns %llu\n", cb));
@@ -2040,7 +2067,7 @@ static DECLCALLBACK(uint64_t) dmgGetFileSize(void *pBackendData)
 
     AssertPtr(pThis);
 
-    if (pThis && pThis->pStorage)
+    if (pThis && (pThis->pStorage || pThis->hDmgFileInXar != NIL_RTVFSFILE))
     {
         uint64_t cbFile;
         int rc = dmgWrapFileGetSize(pThis, &cbFile);
@@ -2435,10 +2462,10 @@ static DECLCALLBACK(void) dmgDump(void *pBackendData)
     AssertPtr(pThis);
     if (pThis)
     {
-        vdIfErrorMessage(pThis->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cbSector=%llu\n",
+        vdIfErrorMessage(pThis->pIfError, "Header: Geometry PCHS=%u/%u/%u LCHS=%u/%u/%u cSectors=%llu\n",
                          pThis->PCHSGeometry.cCylinders, pThis->PCHSGeometry.cHeads, pThis->PCHSGeometry.cSectors,
                          pThis->LCHSGeometry.cCylinders, pThis->LCHSGeometry.cHeads, pThis->LCHSGeometry.cSectors,
-                         pThis->cbSize / 512);
+                         pThis->cbSize / DMG_SECTOR_SIZE);
     }
 }
 
