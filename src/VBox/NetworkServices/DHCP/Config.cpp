@@ -578,7 +578,9 @@ int NetworkManager::ack(Client *client, uint32_t u32Xid,
 int NetworkManager::nak(Client* client, uint32_t u32Xid)
 {
     AssertPtrReturn(client, VERR_INTERNAL_ERROR);
-    AssertPtrReturn(client->m_lease, VERR_INTERNAL_ERROR);
+    
+    if (!client->m_lease) 
+        return VERR_INTERNAL_ERROR;
 
     prepareReplyPacket4Client(client, u32Xid);
 
