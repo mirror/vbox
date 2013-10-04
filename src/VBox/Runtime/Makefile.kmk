@@ -2517,6 +2517,7 @@ if1of ($(LIBRARIES),RuntimeR3 RuntimeR0 RuntimeR0Drv RuntimeRC)
 			\
 			-e '/^_ZN[a-zA-Z]*St[[:digit:]]*_*[lL]ist/d' \
                        -e '/^_ZN[a-zA-Z]*[[:digit:]]*__gnu_cxx/d' \
+                       -e '/^_ZNSa.*ElementNode.*/d' \
                        \
 			-e '/^_Z[[:digit:]]\+dbus/d' \
 			-e '/^_Z13RTDBusLoadLibv/d' \
