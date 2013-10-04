@@ -1589,6 +1589,25 @@ void crServerDumpBuffer(int idx)
     crRecDumpBuffer(&cr_server.Recorder, ctx, &BltCtx, &BltWin, idFBO, idTex ? &RedirTex : NULL);
 }
 
+void crServerDumpTexture(const VBOXVR_TEXTURE *pTex)
+{
+    CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;
+    CR_BLITTER_WINDOW BltWin;
+    CR_BLITTER_CONTEXT BltCtx;
+    CRContext *ctx = crStateGetCurrent();
+    int rc = crServerDumpCheckInit();
+    if (!RT_SUCCESS(rc))
+    {
+        crWarning("crServerDumpCheckInit failed, rc %d", rc);
+        return;
+    }
+
+    crServerVBoxBlitterWinInit(&BltWin, cr_server.currentMural);
+    crServerVBoxBlitterCtxInit(&BltCtx, pCtxInfo);
+
+    crRecDumpTextureF(&cr_server.Recorder, pTex, &BltCtx, &BltWin, "Tex (%d x %d), hwid (%d) target %#x", pTex->width, pTex->height, pTex->hwid, pTex->target);
+}
+
 void crServerDumpTextures()
 {
     CRContextInfo *pCtxInfo = cr_server.currentCtxInfo;

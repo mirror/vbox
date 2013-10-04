@@ -135,6 +135,10 @@ DECLINLINE(void) crRecInit(CR_RECORDER *pRec, CR_BLITTER *pBlitter, SPUDispatchT
 
 VBOXDUMPDECL(void) crRecDumpBuffer(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, GLint idRedirFBO, VBOXVR_TEXTURE *pRedirTex);
 VBOXDUMPDECL(void) crRecDumpTextures(CR_RECORDER *pRec, CRContext *ctx, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin);
+VBOXDUMPDECL(void) crRecDumpTextureV(CR_RECORDER *pRec, const VBOXVR_TEXTURE *pTex, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, va_list pArgList);
+VBOXDUMPDECL(void) crRecDumpTextureF(CR_RECORDER *pRec, const VBOXVR_TEXTURE *pTex, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, ...);
+VBOXDUMPDECL(void) crRecDumpTextureByIdV(CR_RECORDER *pRec, CRContext *ctx, GLint id, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, va_list pArgList);
+VBOXDUMPDECL(void) crRecDumpTextureByIdF(CR_RECORDER *pRec, CRContext *ctx, GLint id, CR_BLITTER_CONTEXT *pCurCtx, CR_BLITTER_WINDOW *pCurWin, const char *pszStr, ...);
 VBOXDUMPDECL(void) crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
 VBOXDUMPDECL(void) crRecRecompileShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid);
