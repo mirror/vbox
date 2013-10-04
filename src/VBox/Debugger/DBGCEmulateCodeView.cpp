@@ -247,7 +247,8 @@ static const DBGCVARDESC    g_aArgReg[] =
 {
     /* cTimesMin,   cTimesMax,  enmCategory,            fFlags,                         pszName,        pszDescription */
     {  0,           1,          DBGCVAR_CAT_SYMBOL,     0,                              "register",     "Register to show or set." },
-    {  0,           1,     DBGCVAR_CAT_NUMBER_NO_RANGE, DBGCVD_FLAGS_DEP_PREV,          "value",        "New register value." },
+    {  0,           1,          DBGCVAR_CAT_STRING, DBGCVD_FLAGS_DEP_PREV,              "=",            "Equal sign." },
+    {  0,           1,          DBGCVAR_CAT_NUMBER, DBGCVD_FLAGS_DEP_PREV,              "value",        "New register value." },
 };
 
 
@@ -347,11 +348,11 @@ const DBGCCMD    g_aCmdsCodeView[] =
     { "ln",         0,        ~0U,      &g_aArgListNear[0], RT_ELEMENTS(g_aArgListNear),    0,       dbgcCmdListNear,    "[addr/sym [..]]",      "List symbols near to the address. Default address is CS:EIP." },
     { "ls",         0,        1,        &g_aArgListSource[0],RT_ELEMENTS(g_aArgListSource), 0,       dbgcCmdListSource,  "[addr]",               "Source." },
     { "m",          1,        1,        &g_aArgMemoryInfo[0],RT_ELEMENTS(g_aArgMemoryInfo), 0,       dbgcCmdMemoryInfo,  "<addr>",               "Display information about that piece of memory." },
-    { "r",          0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [newval]]",       "Show or set register(s) - active reg set." },
-    { "rg",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [newval]]",       "Show or set register(s) - guest reg set." },
+    { "r",          0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdReg,         "[reg [[=] newval]]",   "Show or set register(s) - active reg set." },
+    { "rg",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegGuest,    "[reg [[=] newval]]",   "Show or set register(s) - guest reg set." },
     { "rg32",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 32-bit guest registers." },
     { "rg64",       0,        0,        NULL,               0,                              0,       dbgcCmdRegGuest,    "",                     "Show 64-bit guest registers." },
-    { "rh",         0,        2,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegHyper,    "[reg [newval]]",       "Show or set register(s) - hypervisor reg set." },
+    { "rh",         0,        3,        &g_aArgReg[0],      RT_ELEMENTS(g_aArgReg),         0,       dbgcCmdRegHyper,    "[reg [[=] newval]]",   "Show or set register(s) - hypervisor reg set." },
     { "rt",         0,        0,        NULL,               0,                              0,       dbgcCmdRegTerse,    "",                     "Toggles terse / verbose register info." },
     { "s",          0,       ~0U,       &g_aArgSearchMem[0], RT_ELEMENTS(g_aArgSearchMem),  0,       dbgcCmdSearchMem,   "[options] <range> <pattern>",  "Continue last search." },
     { "sa",         2,       ~0U,       &g_aArgSearchMemType[0], RT_ELEMENTS(g_aArgSearchMemType),0, dbgcCmdSearchMemType, "<range> <pattern>",  "Search memory for an ascii string." },
@@ -1330,8 +1331,7 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
                                           const char *pszPrefix)
 {
     PDBGC pDbgc = DBGC_CMDHLP2DBGC(pCmdHlp);
-    Assert(cArgs == 1 || cArgs == 2); /* cArgs == 0 is handled by the caller  */
-    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2);
+    DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0, cArgs == 1 || cArgs == 2 || cArgs == 3);
     DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 0,    paArgs[0].enmType == DBGCVAR_TYPE_STRING
                                                     || paArgs[0].enmType == DBGCVAR_TYPE_SYMBOL);
 
@@ -1377,24 +1377,43 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         else
             rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
     }
-    else if (cArgs == 2)
+    else
     {
+        DBGCVAR   NewValueTmp;
+        PCDBGCVAR pNewValue;
+        if (cArgs == 3)
+        {
+            DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, paArgs[1].enmType == DBGCVAR_TYPE_STRING);
+            if (strcmp(paArgs[1].u.pszString, "="))
+                return DBGCCmdHlpFail(pCmdHlp, pCmd, "Second argument must be '='.");
+            pNewValue = &paArgs[2];
+        }
+        else
+        {
+            /* Not possible to convince the parser to support both codeview and
+               windbg syntax and make the equal sign optional.  Try help it. */
+            /** @todo make DBGCCmdHlpConvert do more with strings. */
+            rc = DBGCCmdHlpConvert(pCmdHlp, &paArgs[1], DBGCVAR_TYPE_NUMBER, true /*fConvSyms*/, &NewValueTmp);
+            if (RT_FAILURE(rc))
+                return DBGCCmdHlpFailRc(pCmdHlp, pCmd, rc, "The last argument must be a value or valid symbol.");
+            pNewValue = &NewValueTmp;
+        }
+
         /*
          * Modify the register.
          */
-        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1,    paArgs[1].enmType == DBGCVAR_TYPE_STRING
-                                                        || paArgs[1].enmType == DBGCVAR_TYPE_SYMBOL);
+        DBGC_CMDHLP_ASSERT_PARSER_RET(pCmdHlp, pCmd, 1, pNewValue->enmType == DBGCVAR_TYPE_NUMBER);
         if (enmType != DBGFREGVALTYPE_DTR)
         {
             enmType = DBGFREGVALTYPE_U64;
-            rc = DBGCCmdHlpVarToNumber(pCmdHlp, &paArgs[1], &Value.u64);
+            rc = DBGCCmdHlpVarToNumber(pCmdHlp, pNewValue, &Value.u64);
         }
         else
         {
             enmType = DBGFREGVALTYPE_DTR;
-            rc = DBGCCmdHlpVarToNumber(pCmdHlp, &paArgs[1], &Value.dtr.u64Base);
-            if (RT_SUCCESS(rc) && paArgs[1].enmRangeType != DBGCVAR_RANGE_NONE)
-                Value.dtr.u32Limit = (uint32_t)paArgs[1].u64Range;
+            rc = DBGCCmdHlpVarToNumber(pCmdHlp, pNewValue, &Value.dtr.u64Base);
+            if (RT_SUCCESS(rc) && pNewValue->enmRangeType != DBGCVAR_RANGE_NONE)
+                Value.dtr.u32Limit = (uint32_t)pNewValue->u64Range;
         }
         if (RT_SUCCESS(rc))
         {
@@ -1405,11 +1424,6 @@ static DECLCALLBACK(int) dbgcCmdRegCommon(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, P
         }
         else
             rc = DBGCCmdHlpVBoxError(pCmdHlp, rc, "DBGFR3RegFormatValue failed: %Rrc.\n", rc);
-    }
-    else
-    {
-        NOREF(pCmd); NOREF(paArgs);
-        rc = DBGCCmdHlpPrintf(pCmdHlp, "Huh? cArgs=%d Expected 0, 1 or 2!\n", cArgs);
     }
     return rc;
 }
