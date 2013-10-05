@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIThreadPool class implementation
+ * VBox Qt GUI - UIThreadPool and UITask class implementation.
  */
 
 /*
@@ -31,8 +29,15 @@
 #include <VBox/log.h>
 #include <VBox/sup.h>
 
-/* Worker-thread prototype.
- * Performs COM-related GUI tasks in separate thread. */
+/** @todo r=bird: this code was racy, inefficient and buggy in it's first
+ *        incarnation.  What is required from RTReqPool for it to replace the
+ *        internals here?  COM init/term hooks, sure. Does the threads need to
+ *        be QThreads? */
+
+
+/**
+ * COM capable worker thread for the UIThreadPool.
+ */
 class UIThreadWorker : public QThread
 {
     Q_OBJECT;
@@ -47,9 +52,13 @@ public:
     /* Constructor: */
     UIThreadWorker(UIThreadPool *pPool, int iIndex);
 
-    /* API: Busy stuff: */
-    bool isBusy() const;
-    void setBusy(bool fBusy);
+    int getIndex() const { return m_iIndex; }
+
+    /** Disables sigFinished.  For optimizing pool termination. */
+    void setNoFinishedSignal()
+    {
+        m_fNoFinishedSignal = true;
+    }
 
 private:
 
@@ -58,126 +67,171 @@ private:
 
     /* Variables: General stuff: */
     UIThreadPool *m_pPool;
-    int m_iIndex;
 
-    /* Variables: Busy stuff: */
-    bool m_fBusy;
-    mutable QMutex m_busyLocker;
+    /** The index into UIThreadPool::m_workers. */
+    int m_iIndex;
+    /** Indicates whether sigFinished should be emitted or not. */
+    bool m_fNoFinishedSignal;
 };
 
 
-UIThreadPool::UIThreadPool(ulong uWorkerCount /* = 3*/, ulong uWorkerIdleTimeout /* = 5000*/)
-    : m_workers(uWorkerCount /* maximum worker count */)
-    , m_uIdleTimeout(uWorkerIdleTimeout) /* time for worker idle timeout */
+UIThreadPool::UIThreadPool(ulong cMaxWorkers/* = 3*/, ulong cMsWorkerIdleTimeout /* = 5000*/)
+    : m_workers(cMaxWorkers)
+    , m_cMsIdleTimeout(cMsWorkerIdleTimeout)
+    , m_cWorkers(0)
+    , m_cIdleWorkers(0)
     , m_fTerminating(false) /* termination status */
+    , m_everythingLocker(QMutex::Recursive)
 {
 }
 
 UIThreadPool::~UIThreadPool()
 {
-    /* Set termination status: */
-    setTerminating(true);
+    /* Set termination status and alert all idle worker threads: */
+    setTerminating();
 
     /* Cleanup all the workers: */
-    m_taskCondition.wakeAll();
-    for (int iWorkerIndex = 0; iWorkerIndex < m_workers.size(); ++iWorkerIndex)
-        cleanupWorker(iWorkerIndex);
+    m_everythingLocker.lock(); /* paranoia */
+    for (int idxWorker = 0; idxWorker < m_workers.size(); ++idxWorker)
+    {
+        UIThreadWorker *pWorker = m_workers[idxWorker];
+        m_workers[idxWorker] = NULL;
+
+        /* Clean up the worker, if there was one. */
+        if (pWorker)
+        {
+            m_cWorkers--;
+            m_everythingLocker.unlock();
+
+            pWorker->wait();
+
+            m_everythingLocker.lock();
+            delete pWorker;
+        }
+    }
+
+    m_everythingLocker.unlock();
 }
 
 void UIThreadPool::enqueueTask(UITask *pTask)
 {
+    Assert(!isTerminating());
+
     /* Prepare task: */
     connect(pTask, SIGNAL(sigComplete(UITask*)), this, SLOT(sltHandleTaskComplete(UITask*)), Qt::QueuedConnection);
 
-    /* Post task into queue: */
-    m_taskLocker.lock();
+    m_everythingLocker.lock();
+
+    /* Put the task onto the queue: */
     m_tasks.enqueue(pTask);
-    m_taskLocker.unlock();
 
-    /* Search for the first 'not yet created' worker or wake idle if exists: */
-    int iFirstNotYetCreatedWorkerIndex = -1;
-    for (int iWorkerIndex = 0; iWorkerIndex < m_workers.size(); ++iWorkerIndex)
+    /* Wake up an idle worker if we got one: */
+    if (m_cIdleWorkers > 0)
     {
-        /* Remember first 'not yet created' worker: */
-        if (iFirstNotYetCreatedWorkerIndex == -1 && !m_workers[iWorkerIndex])
-            iFirstNotYetCreatedWorkerIndex = iWorkerIndex;
-        /* But if worker 'not yet created' or 'busy' now, just skip it: */
-        if (!m_workers[iWorkerIndex] || m_workers[iWorkerIndex]->isBusy())
-            continue;
-        /* If we found idle worker, wake it up: */
         m_taskCondition.wakeOne();
-        return;
     }
-
-    /* Should we create new worker? */
-    if (iFirstNotYetCreatedWorkerIndex != -1)
+    /* No idle worker threads, should we create a new one? */
+    else if (m_cWorkers < m_workers.size())
     {
-        /* Prepare worker: */
-        UIThreadWorker *pWorker = new UIThreadWorker(this, iFirstNotYetCreatedWorkerIndex);
-        connect(pWorker, SIGNAL(sigFinished(UIThreadWorker*)), this, SLOT(sltHandleWorkerFinished(UIThreadWorker*)), Qt::QueuedConnection);
-        m_workers[iFirstNotYetCreatedWorkerIndex] = pWorker;
-        /* And start it: */
-        pWorker->start();
+        /* Find free slot. */
+        int idxFirstUnused = m_workers.size();
+        while (idxFirstUnused-- > 0)
+            if (m_workers[idxFirstUnused] == NULL)
+            {
+                /* Prepare the new worker: */
+                UIThreadWorker *pWorker = new UIThreadWorker(this, idxFirstUnused);
+                connect(pWorker, SIGNAL(sigFinished(UIThreadWorker*)), this, 
+                        SLOT(sltHandleWorkerFinished(UIThreadWorker*)), Qt::QueuedConnection);
+                m_workers[idxFirstUnused] = pWorker;
+                m_cWorkers++;
+
+                /* And start it: */
+                pWorker->start();
+                break;
+            }
     }
+    /* else: wait for some worker to complete whatever it's busy with and jump to it. */
+
+    m_everythingLocker.unlock();
 }
 
 bool UIThreadPool::isTerminating() const
 {
     /* Acquire termination-flag: */
-    bool fTerminating = false;
-    {
-        QMutexLocker lock(&m_terminationLocker);
-        fTerminating = m_fTerminating;
-        Q_UNUSED(lock);
-    }
+    QMutexLocker lock(&m_everythingLocker);
+    bool fTerminating = m_fTerminating;
+    lock.unlock();
+
     return fTerminating;
 }
 
-void UIThreadPool::setTerminating(bool fTerminating)
+void UIThreadPool::setTerminating()
 {
-    /* Assign termination-flag: */
-    QMutexLocker lock(&m_terminationLocker);
-    m_fTerminating = fTerminating;
-    Q_UNUSED(lock);
+    m_everythingLocker.lock();
+
+    /* Indicate that we're terminating: */
+    m_fTerminating = true;
+
+    /* Tell all threads to NOT queue any termination signals: */
+    for (int idxWorker = 0; idxWorker < m_workers.size(); ++idxWorker)
+    {
+        UIThreadWorker *pWorker = m_workers[idxWorker];
+        if (pWorker)
+            pWorker->setNoFinishedSignal();
+    }
+
+    /* Wake up all idle worker threads: */
+    m_taskCondition.wakeAll();
+
+    m_everythingLocker.unlock();
 }
 
 UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
 {
-    /* Prepare task: */
-    UITask *pTask = 0;
+    /*
+     * Dequeue a task, watching out for terminations. For opimal efficiency in
+     * enqueueTask() we keep count of idle threads.
+     *
+     * If the wait times out, we'll return NULL and terminate the thread.
+     */
+    m_everythingLocker.lock();
 
-    /* Lock task locker: */
-    m_taskLocker.lock();
-
-    /* Try to dequeue task: */
-    if (!m_tasks.isEmpty())
-        pTask = m_tasks.dequeue();
-
-    /* Make sure we have a task or outdated: */
-    bool fOutdated = false;
-    while (!isTerminating() && !pTask && !fOutdated)
+    bool fIdleTimedOut = false;
+    while (!isTerminating())
     {
-        /* Mark thread as not busy: */
-        pWorker->setBusy(false);
+        Assert(m_workers[pWorker->getIndex()] == pWorker); /* paranoia */
 
-        /* Wait for <m_uIdleTimeout> milli-seconds for the next task,
-         * this issue will temporary unlock <m_taskLocker>: */
-        fOutdated = !m_taskCondition.wait(&m_taskLocker, m_uIdleTimeout);
-
-        /* Mark thread as busy again: */
-        pWorker->setBusy(true);
-
-        /* Try to dequeue task again: */
+        /* Dequeue task if there is one: */
         if (!m_tasks.isEmpty())
-            pTask = m_tasks.dequeue();
+        {
+            UITask *pTask = m_tasks.dequeue();
+            if (pTask)
+            {
+                m_everythingLocker.unlock();
+                return pTask;
+            }
+        }
+
+        /* If we timed out already, then quit the worker thread.  To prevent a
+           race between enqueueTask and the queue removal of the thread from
+           the workers vector, we remove it here already.  (This does not apply
+           to the termination scenario.) */
+        if (fIdleTimedOut)
+        {
+            m_workers[pWorker->getIndex()] = NULL;
+            m_cWorkers--;
+            break;
+        }
+
+        /* Wait for a task or timeout.*/
+        m_cIdleWorkers++;
+        fIdleTimedOut = !m_taskCondition.wait(&m_everythingLocker, m_cMsIdleTimeout);
+        m_cIdleWorkers--;
     }
-    Assert(isTerminating() || pTask || fOutdated);
 
-    /* Unlock task locker: */
-    m_taskLocker.unlock();
+    m_everythingLocker.unlock();
 
-    /* Return task: */
-    return pTask;
+    return NULL;
 }
 
 void UIThreadPool::sltHandleTaskComplete(UITask *pTask)
@@ -192,26 +246,11 @@ void UIThreadPool::sltHandleTaskComplete(UITask *pTask)
 
 void UIThreadPool::sltHandleWorkerFinished(UIThreadWorker *pWorker)
 {
-    /* Skip on termination: */
-    if (isTerminating())
-        return;
-
-    /* Make sure that is one of our workers: */
-    int iIndexOfWorker = m_workers.indexOf(pWorker);
-    AssertReturnVoid(iIndexOfWorker != -1);
-
-    /* Cleanup worker: */
-    cleanupWorker(iIndexOfWorker);
-}
-
-void UIThreadPool::cleanupWorker(int iWorkerIndex)
-{
-    /* Cleanup worker if any: */
-    if (!m_workers[iWorkerIndex])
-        return;
-    m_workers[iWorkerIndex]->wait();
-    delete m_workers[iWorkerIndex];
-    m_workers[iWorkerIndex] = 0;
+    /* Wait for the thread to finish completely, then delete the thread
+       object.  We have already removed the thread from the workers vector.
+       Note! We don't want to use 'this' here, in case it's invalid. */
+    pWorker->wait();
+    delete pWorker;
 }
 
 
@@ -237,28 +276,8 @@ void UITask::start()
 UIThreadWorker::UIThreadWorker(UIThreadPool *pPool, int iIndex)
     : m_pPool(pPool)
     , m_iIndex(iIndex)
-    , m_fBusy(true)
+    , m_fNoFinishedSignal(false)
 {
-}
-
-bool UIThreadWorker::isBusy() const
-{
-    /* Acquire busy-flag: */
-    bool fBusy = false;
-    {
-        QMutexLocker lock(&m_busyLocker);
-        fBusy = m_fBusy;
-        Q_UNUSED(lock);
-    }
-    return fBusy;
-}
-
-void UIThreadWorker::setBusy(bool fBusy)
-{
-    /* Assign busy-flag: */
-    QMutexLocker lock(&m_busyLocker);
-    m_fBusy = fBusy;
-    Q_UNUSED(lock);
 }
 
 void UIThreadWorker::run()
@@ -268,21 +287,24 @@ void UIThreadWorker::run()
     /* Initialize COM: */
     COMBase::InitializeCOM(false);
 
-    /* Try to get task from thread-pool queue: */
+    /* Try get a task from the pool queue. */
     while (UITask *pTask = m_pPool->dequeueTask(this))
     {
         /* Process task: */
 //        LogRelFlow(("UIThreadWorker #%d: Task acquired...\n", m_iIndex));
         if (!m_pPool->isTerminating())
             pTask->start();
+        /** @todo else: Just leak the task? */
 //        LogRelFlow(("UIThreadWorker #%d: Task processed!\n", m_iIndex));
     }
 
     /* Cleanup COM: */
     COMBase::CleanupCOM();
 
-    /* Notify listener: */
-    emit sigFinished(this);
+    /* Queue a signal to for the pool to do thread cleanup, unless the pool is
+       already terminating and doesn't need the signal. */
+    if (!m_fNoFinishedSignal)
+        emit sigFinished(this);
 
 //    LogRelFlow(("UIThreadWorker #%d: Finished!\n", m_iIndex));
 }
