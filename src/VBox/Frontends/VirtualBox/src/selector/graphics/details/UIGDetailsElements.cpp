@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIGDetailsDetails class implementation
+ * VBox Qt GUI - UIGDetailsDetails class implementation.
  */
 
 /*
@@ -61,11 +59,6 @@ UIGDetailsElementInterface::UIGDetailsElementInterface(UIGDetailsSet *pParent, D
 
 UIGDetailsElementInterface::~UIGDetailsElementInterface()
 {
-    /* VBoxGlobal must still be valid at this point, otherwise our thread might
-       be doing really bad things to already deleted memory! */
-    Assert(vboxGlobal().isValid());
-    Assert(!vboxGlobal().isCleaningUp());
-
     cleanupThread();
 }
 

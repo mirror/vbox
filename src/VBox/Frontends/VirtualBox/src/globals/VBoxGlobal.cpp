@@ -4367,17 +4367,27 @@ void VBoxGlobal::cleanup()
     /* Destroy our event handlers */
     UIExtraDataEventHandler::destroy();
 
+    /* Destroy the GUI root windows _BEFORE_ the media-mess, because there is
+       code in the GUI that's using the media code an will be racing us! */
+    if (mSelectorWnd)
+    {
+        delete mSelectorWnd;
+        mSelectorWnd = NULL;
+    }
+
+    if (m_pVirtualMachine)
+    {
+        delete m_pVirtualMachine;
+        m_pVirtualMachine = NULL;
+    }
+
     /* Cleanup medium-enumerator: */
     m_mediumEnumeratorDtorRwLock.lockForWrite();
     delete m_pMediumEnumerator;
     m_pMediumEnumerator = 0;
     m_mediumEnumeratorDtorRwLock.unlock();
 
-    if (mSelectorWnd)
-        delete mSelectorWnd;
-    if (m_pVirtualMachine)
-        delete m_pVirtualMachine;
-
+    /* Destroy whatever this converter stuff is: */
     UIConverter::cleanup();
 
     /* Ensure mOsTypeIcons is cleaned up: */
