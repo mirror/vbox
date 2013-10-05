@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIThreadPool class declaration
+ * VBox Qt GUI - UIThreadPool and UITask class declaration.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIThreadPool_h__
-#define __UIThreadPool_h__
+#ifndef ___UIThreadPool_h___
+#define ___UIThreadPool_h___
 
 /* Qt includes: */
 #include <QObject>
@@ -45,7 +43,7 @@ signals:
 public:
 
     /* Constructor/destructor: */
-    UIThreadPool(ulong uWorkerCount = 3, ulong uWorkerIdleTimeout = 5000);
+    UIThreadPool(ulong cMaxWorkers = 3, ulong cMsWorkerIdleTimeout = 5000);
     ~UIThreadPool();
 
     /* API: Task-queue stuff: */
@@ -53,12 +51,12 @@ public:
 
     /* API: Termination stuff: */
     bool isTerminating() const;
-    void setTerminating(bool fTermintating);
+    void setTerminating();
 
 protected:
 
     /* Protected API: Worker-thread stuff: */
-    UITask* dequeueTask(UIThreadWorker *pWorker);
+    UITask *dequeueTask(UIThreadWorker *pWorker);
 
 private slots:
 
@@ -69,22 +67,38 @@ private slots:
     void sltHandleWorkerFinished(UIThreadWorker *pWorker);
 
 private:
-
-    /* Helper: Worker stuff: */
-    void cleanupWorker(int iWorkerIndex);
-
-    /* Variables: Worker stuff: */
+    /** @name Worker thread related variables.
+     * @{ */
     QVector<UIThreadWorker*> m_workers;
-    const ulong m_uIdleTimeout;
-
-    /* Variables: Task stuff: */
-    QQueue<UITask*> m_tasks;
-    QMutex m_taskLocker;
-    QWaitCondition m_taskCondition;
-
-    /* Variables: Termination stuff: */
+    /** Milliseconds  */
+    const ulong m_cMsIdleTimeout;
+    /** The number of worker threads.
+     * @remarks We cannot use the vector size since it may contain NULL pointers. */
+    int m_cWorkers;
+    /** The number of idle worker threads. */
+    int m_cIdleWorkers;
+    /** Set by the destructor to indicate that all worker threads should
+     *  terminate ASAP. */
     bool m_fTerminating;
-    mutable QMutex m_terminationLocker;
+    /** @} */
+
+    /** @name Task related variables
+     * @{ */
+    /** Queue (FIFO) of pending tasks. */
+    QQueue<UITask*> m_tasks;
+    /** Condition variable that gets signalled when queuing a new task and there are
+     * idle worker threads around.
+     *
+     * Idle threads sits in dequeueTask waiting for this. Thus on thermination
+     * setTerminating() will do a broadcast signal to wake up all workers (after
+     * setting m_fTerminating of course). */
+    QWaitCondition m_taskCondition;
+    /** @} */
+
+
+    /** This mutex is used with the m_taskCondition condition and protects m_tasks,
+     *  m_fTerminating and m_workers. */
+    mutable QMutex m_everythingLocker;
 
     /* Friends: */
     friend class UIThreadWorker;
@@ -121,4 +135,5 @@ protected:
     QVariant m_data;
 };
 
-#endif /* __UIThreadPool_h__ */
+#endif /* !___UIThreadPool_h___ */
+
