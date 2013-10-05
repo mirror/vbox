@@ -1051,6 +1051,9 @@ int VBoxNetLwipNAT::run()
 extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
     LogFlowFuncEnter();
+
+    NOREF(envp);
+
 #ifdef RT_OS_WINDOWS
     WSADATA wsaData;
     int err;
