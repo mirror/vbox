@@ -24,6 +24,7 @@
 #include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QMutex>
+#include <QReadLocker>
 #include <QToolButton>
 #include <QProcess>
 #include <QThread>
@@ -942,6 +943,7 @@ QString VBoxGlobal::details(const CMedium &cmedium, bool fPredictDiff, bool fUse
         startMediumEnumeration();
 
         /* Search for corresponding UI medium again: */
+
         uimedium = medium(strMediumID);
         if (uimedium.isNull())
         {
@@ -1663,19 +1665,25 @@ void VBoxGlobal::reloadProxySettings()
 void VBoxGlobal::createMedium(const UIMedium &medium)
 {
     /* Create medium in medium-enumerator: */
-    m_pMediumEnumerator->createMedium(medium);
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        m_pMediumEnumerator->createMedium(medium);
 }
 
 void VBoxGlobal::updateMedium(const UIMedium &medium)
 {
     /* Update medium of medium-enumerator: */
-    m_pMediumEnumerator->updateMedium(medium);
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        m_pMediumEnumerator->updateMedium(medium);
 }
 
 void VBoxGlobal::deleteMedium(const QString &strMediumID)
 {
     /* Delete medium from medium-enumerator: */
-    m_pMediumEnumerator->deleteMedium(strMediumID);
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        m_pMediumEnumerator->deleteMedium(strMediumID);
 }
 
 /* Open some external medium using file open dialog
@@ -1840,25 +1848,34 @@ void VBoxGlobal::startMediumEnumeration(bool fForceStart /* = true*/)
         return;
 
     /* Redirect request to medium-enumerator: */
-    m_pMediumEnumerator->enumerateMediums();
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        m_pMediumEnumerator->enumerateMediums();
 }
 
 bool VBoxGlobal::isMediumEnumerationInProgress() const
 {
     /* Redirect request to medium-enumerator: */
-    return m_pMediumEnumerator->isMediumEnumerationInProgress();
+    return m_pMediumEnumerator
+        && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
 UIMedium VBoxGlobal::medium(const QString &strMediumID) const
 {
     /* Redirect call to medium-enumerator: */
-    return m_pMediumEnumerator->medium(strMediumID);
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        return m_pMediumEnumerator->medium(strMediumID);
+    return UIMedium();
 }
 
 QList<QString> VBoxGlobal::mediumIDs() const
 {
     /* Redirect call to medium-enumerator: */
-    return m_pMediumEnumerator->mediumIDs();
+    QReadLocker cleanupRacePreventor(&m_mediumEnumeratorDtorRwLock);
+    if (m_pMediumEnumerator)
+        return m_pMediumEnumerator->mediumIDs();
+    return QList<QString>();
 }
 
 /**
@@ -4351,8 +4368,10 @@ void VBoxGlobal::cleanup()
     UIExtraDataEventHandler::destroy();
 
     /* Cleanup medium-enumerator: */
+    m_mediumEnumeratorDtorRwLock.lockForWrite();
     delete m_pMediumEnumerator;
     m_pMediumEnumerator = 0;
+    m_mediumEnumeratorDtorRwLock.unlock();
 
     if (mSelectorWnd)
         delete mSelectorWnd;
