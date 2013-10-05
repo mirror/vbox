@@ -57,7 +57,7 @@ RT_C_DECLS_END
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
-#include "internal/ldrMach-O.h"
+#include <iprt/formats/mach-o.h>
 #include "internal/magics.h"
 
 /** @def MY_CPU_TYPE
