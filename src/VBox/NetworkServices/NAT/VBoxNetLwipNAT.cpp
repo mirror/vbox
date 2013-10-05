@@ -177,16 +177,23 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 class PortForwardListener
 {
 public:
+    PortForwardListener():m_pNAT(NULL){}
 
     HRESULT init(VBoxNetLwipNAT *pNAT) 
     {
+        AssertPtrReturn(pNAT, E_INVALIDARG);
+
         m_pNAT = pNAT; 
         return S_OK; 
     }
 
-    HRESULT init() { return init(NULL); }
+    HRESULT init() 
+    { 
+        m_pNAT = NULL;
+        return S_OK; 
+    }
 
-    void uninit() { init(NULL); }
+    void uninit() { m_pNAT = NULL; }
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent)
     {
