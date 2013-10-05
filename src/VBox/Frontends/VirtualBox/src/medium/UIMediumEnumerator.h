@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMediumEnumerator class declaration
+ * VBox Qt GUI - UIMediumEnumerator class declaration.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __UIMediumEnumerator_h__
-#define __UIMediumEnumerator_h__
+#ifndef ___UIMediumEnumerator_h___
+#define ___UIMediumEnumerator_h___
 
 /* Qt includes: */
 #include <QObject>
@@ -87,4 +85,5 @@ private:
     UIMediumMap m_mediums;
 };
 
-#endif /* __UIMediumEnumerator_h__ */
+#endif /* !___UIMediumEnumerator_h___ */
+

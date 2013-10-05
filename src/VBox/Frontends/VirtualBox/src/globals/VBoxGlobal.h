@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxGlobal class declaration
+ * VBox Qt GUI - VBoxGlobal class declaration.
  */
 
 /*
@@ -16,8 +14,8 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-#ifndef __VBoxGlobal_h__
-#define __VBoxGlobal_h__
+#ifndef ___VBoxGlobal_h___
+#define ___VBoxGlobal_h___
 
 /* Qt includes: */
 #include <QApplication>
@@ -26,6 +24,7 @@
 #include <QStyle>
 #include <QHash>
 #include <QFileIconProvider>
+#include <QReadWriteLock>
 #ifdef Q_WS_MAC
 # include <QSet>
 #endif /* Q_WS_MAC */
@@ -72,6 +71,7 @@ public:
     static void destroy();
 
     bool isValid() { return mValid; }
+    bool isCleaningUp() { return m_sfCleanupInProgress; }
 
     static QString qtRTVersionString();
     static uint qtRTVersion();
@@ -428,6 +428,7 @@ private:
 
     /* Variable: Medium-enumeration stuff: */
     UIMediumEnumerator *m_pMediumEnumerator;
+    mutable QReadWriteLock m_mediumEnumeratorDtorRwLock;
 
     RenderMode vm_render_mode;
     const char * vm_render_mode_str;
@@ -508,5 +509,5 @@ private:
 /* Shortcut to the static VBoxGlobal::instance() method: */
 inline VBoxGlobal& vboxGlobal() { return *VBoxGlobal::instance(); }
 
-#endif /* __VBoxGlobal_h__ */
+#endif /* !___VBoxGlobal_h___ */
 
