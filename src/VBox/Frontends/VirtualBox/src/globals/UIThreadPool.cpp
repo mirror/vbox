@@ -81,7 +81,7 @@ UIThreadPool::UIThreadPool(ulong cMaxWorkers/* = 3*/, ulong cMsWorkerIdleTimeout
     , m_cWorkers(0)
     , m_cIdleWorkers(0)
     , m_fTerminating(false) /* termination status */
-    , m_everythingLocker(QMutex::Recursive)
+    , m_everythingLocker(QMutex::NonRecursive)
 {
 }
 
@@ -155,6 +155,12 @@ void UIThreadPool::enqueueTask(UITask *pTask)
     m_everythingLocker.unlock();
 }
 
+/**
+ * Checks if the thread pool is terminating.
+ *
+ * @returns @c true if terminating, @c false if not.
+ * @note    Do NOT call this while owning the thread pool mutex!
+ */
 bool UIThreadPool::isTerminating() const
 {
     /* Acquire termination-flag: */
@@ -197,7 +203,7 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
     m_everythingLocker.lock();
 
     bool fIdleTimedOut = false;
-    while (!isTerminating())
+    while (!m_fTerminating)
     {
         Assert(m_workers[pWorker->getIndex()] == pWorker); /* paranoia */
 
