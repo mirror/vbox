@@ -570,7 +570,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'V':
-                RTPrintf("$Revision: $\n");
+                RTPrintf("$Revision$\n");
                 return 0;
 
             default:
