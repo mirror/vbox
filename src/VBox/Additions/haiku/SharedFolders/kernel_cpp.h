@@ -47,63 +47,63 @@ extern const mynothrow_t mynothrow;
 inline void *
 operator new(size_t size) throw (std::bad_alloc)
 {
-	// we don't actually throw any exceptions, but we have to
-	// keep the prototype as specified in <new>, or else GCC 3
-	// won't like us
-	return malloc(size);
+        // we don't actually throw any exceptions, but we have to
+        // keep the prototype as specified in <new>, or else GCC 3
+        // won't like us
+        return malloc(size);
 }
 
 
 inline void *
 operator new[](size_t size) throw (std::bad_alloc)
 {
-	return malloc(size);
+        return malloc(size);
 }
 
 
 inline void *
 operator new(size_t size, const std::nothrow_t &) throw ()
 {
-	return malloc(size);
+        return malloc(size);
 }
 
 
 inline void *
 operator new[](size_t size, const std::nothrow_t &) throw ()
 {
-	return malloc(size);
+        return malloc(size);
 }
 
 
 inline void *
 operator new(size_t size, const mynothrow_t &) throw ()
 {
-	return malloc(size);
+        return malloc(size);
 }
 
 
 inline void *
 operator new[](size_t size, const mynothrow_t &) throw ()
 {
-	return malloc(size);
+        return malloc(size);
 }
 
 
 inline void
 operator delete(void *ptr) throw ()
 {
-	free(ptr);
+        free(ptr);
 }
 
 
 inline void
 operator delete[](void *ptr) throw ()
 {
-	free(ptr);
+        free(ptr);
 }
 
-#endif	// #if _KERNEL_MODE
+#endif  // #if _KERNEL_MODE
 
-#endif	// __cplusplus
+#endif  // __cplusplus
 
-#endif	/* KERNEL_CPP_H */
+#endif  /* KERNEL_CPP_H */

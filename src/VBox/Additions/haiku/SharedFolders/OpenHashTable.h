@@ -266,7 +266,7 @@ public:
         ValueType* result = NULL;
 
         if (returnElements)
-		{
+                {
             ValueType** nextPointer = &result;
 
             // iterate through all buckets
@@ -347,7 +347,7 @@ public:
     }
 
     class Iterator
-	{
+        {
     public:
         Iterator(const HashTable* table)
             : fTable(table)
