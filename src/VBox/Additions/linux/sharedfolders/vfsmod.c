@@ -464,7 +464,7 @@ static int sf_remount_fs(struct super_block *sb, int *flags, char *data)
     BUG_ON(!sf_g);
     if (data && data[0] != 0)
     {
-        struct vbsf_mount_info_new *info = 
+        struct vbsf_mount_info_new *info =
             (struct vbsf_mount_info_new *)data;
         if (   info->signature[0] == VBSF_MOUNT_SIGNATURE_BYTE_0
             && info->signature[1] == VBSF_MOUNT_SIGNATURE_BYTE_1
