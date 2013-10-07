@@ -134,7 +134,7 @@ void UIThreadPool::enqueueTask(UITask *pTask)
             {
                 /* Prepare the new worker: */
                 UIThreadWorker *pWorker = new UIThreadWorker(this, idxFirstUnused);
-                connect(pWorker, SIGNAL(sigFinished(UIThreadWorker*)), this, 
+                connect(pWorker, SIGNAL(sigFinished(UIThreadWorker*)), this,
                         SLOT(sltHandleWorkerFinished(UIThreadWorker*)), Qt::QueuedConnection);
                 m_workers[idxFirstUnused] = pWorker;
                 m_cWorkers++;

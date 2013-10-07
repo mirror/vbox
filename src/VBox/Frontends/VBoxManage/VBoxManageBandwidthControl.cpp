@@ -166,7 +166,7 @@ static RTEXITCODE handleBandwidthControlAdd(HandlerArg *a, ComPtr<IBandwidthCont
         errorArgument("Invalid bandwidth group type\n");
         return RTEXITCODE_FAILURE;
     }
-    
+
     CHECK_ERROR2_RET(bwCtrl, CreateBandwidthGroup(name.raw(), enmType, (LONG64)cMaxBytesPerSec), RTEXITCODE_FAILURE);
 
     return RTEXITCODE_SUCCESS;
@@ -226,7 +226,7 @@ static RTEXITCODE handleBandwidthControlSet(HandlerArg *a, ComPtr<IBandwidthCont
         }
     }
 
-    
+
     if (cMaxBytesPerSec != INT64_MAX)
     {
         ComPtr<IBandwidthGroup> bwGroup;

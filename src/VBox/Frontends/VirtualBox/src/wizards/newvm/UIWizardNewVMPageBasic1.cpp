@@ -108,7 +108,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(sarge)|(etch)|(lenny)|(squeeze)|(wheezy)|(jessie)|(sid)", Qt::CaseInsensitive), "Debian" },
     { QRegExp("((moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)|(beefy)|(spherical)).*64", Qt::CaseInsensitive), "Fedora_64" },
     { QRegExp("(moonshine)|(werewolf)|(sulphur)|(cambridge)|(leonidas)|(constantine)|(goddard)|(laughlin)|(lovelock)|(verne)|(beefy)|(spherical)", Qt::CaseInsensitive), "Fedora" },
-    
+
     /* Regular names of Linux distributions: */
     { QRegExp("Arc.*64", Qt::CaseInsensitive), "ArchLinux_64" },
     { QRegExp("Arc", Qt::CaseInsensitive), "ArchLinux" },

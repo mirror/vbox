@@ -127,7 +127,7 @@ int startXPCOMEventQueueThread(int eqFD)
     if (RT_SUCCESS(rc))
     {
         RTTHREAD Thread;
-        rc = RTThreadCreate(&Thread, xpcomEventThread, (void *)(intptr_t)eqFD, 
+        rc = RTThreadCreate(&Thread, xpcomEventThread, (void *)(intptr_t)eqFD,
                             0, RTTHREADTYPE_MSG_PUMP, 0, "XPCOMEvent");
     }
     AssertRC(rc);
