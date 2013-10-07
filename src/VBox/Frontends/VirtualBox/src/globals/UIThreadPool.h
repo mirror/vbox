@@ -56,7 +56,7 @@ public:
 protected:
 
     /* Protected API: Worker-thread stuff: */
-    UITask *dequeueTask(UIThreadWorker *pWorker);
+    UITask* dequeueTask(UIThreadWorker *pWorker);
 
 private slots:
 
@@ -67,6 +67,7 @@ private slots:
     void sltHandleWorkerFinished(UIThreadWorker *pWorker);
 
 private:
+
     /** @name Worker thread related variables.
      * @{ */
     QVector<UIThreadWorker*> m_workers;

@@ -29,12 +29,6 @@
 #include <VBox/log.h>
 #include <VBox/sup.h>
 
-/** @todo r=bird: this code was racy, inefficient and buggy in it's first
- *        incarnation.  What is required from RTReqPool for it to replace the
- *        internals here?  COM init/term hooks, sure. Does the threads need to
- *        be QThreads? */
-
-
 /**
  * COM capable worker thread for the UIThreadPool.
  */
@@ -54,7 +48,7 @@ public:
 
     int getIndex() const { return m_iIndex; }
 
-    /** Disables sigFinished.  For optimizing pool termination. */
+    /** Disables sigFinished. For optimizing pool termination. */
     void setNoFinishedSignal()
     {
         m_fNoFinishedSignal = true;
@@ -75,13 +69,12 @@ private:
 };
 
 
-UIThreadPool::UIThreadPool(ulong cMaxWorkers/* = 3*/, ulong cMsWorkerIdleTimeout /* = 5000*/)
+UIThreadPool::UIThreadPool(ulong cMaxWorkers /* = 3 */, ulong cMsWorkerIdleTimeout /* = 5000 */)
     : m_workers(cMaxWorkers)
     , m_cMsIdleTimeout(cMsWorkerIdleTimeout)
     , m_cWorkers(0)
     , m_cIdleWorkers(0)
     , m_fTerminating(false) /* termination status */
-    , m_everythingLocker(QMutex::NonRecursive)
 {
 }
 
@@ -90,8 +83,9 @@ UIThreadPool::~UIThreadPool()
     /* Set termination status and alert all idle worker threads: */
     setTerminating();
 
-    /* Cleanup all the workers: */
     m_everythingLocker.lock(); /* paranoia */
+
+    /* Cleanup all the workers: */
     for (int idxWorker = 0; idxWorker < m_workers.size(); ++idxWorker)
     {
         UIThreadWorker *pWorker = m_workers[idxWorker];
@@ -133,7 +127,7 @@ void UIThreadPool::enqueueTask(UITask *pTask)
     /* No idle worker threads, should we create a new one? */
     else if (m_cWorkers < m_workers.size())
     {
-        /* Find free slot. */
+        /* Find free slot: */
         int idxFirstUnused = m_workers.size();
         while (idxFirstUnused-- > 0)
             if (m_workers[idxFirstUnused] == NULL)
@@ -164,9 +158,9 @@ void UIThreadPool::enqueueTask(UITask *pTask)
 bool UIThreadPool::isTerminating() const
 {
     /* Acquire termination-flag: */
-    QMutexLocker lock(&m_everythingLocker);
+    m_everythingLocker.lock();
     bool fTerminating = m_fTerminating;
-    lock.unlock();
+    m_everythingLocker.unlock();
 
     return fTerminating;
 }
@@ -194,12 +188,9 @@ void UIThreadPool::setTerminating()
 
 UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
 {
-    /*
-     * Dequeue a task, watching out for terminations. For opimal efficiency in
-     * enqueueTask() we keep count of idle threads.
-     *
-     * If the wait times out, we'll return NULL and terminate the thread.
-     */
+    /* Dequeue a task, watching out for terminations.
+     * For opimal efficiency in enqueueTask() we keep count of idle threads.
+     * If the wait times out, we'll return NULL and terminate the thread. */
     m_everythingLocker.lock();
 
     bool fIdleTimedOut = false;
@@ -218,9 +209,9 @@ UITask* UIThreadPool::dequeueTask(UIThreadWorker *pWorker)
             }
         }
 
-        /* If we timed out already, then quit the worker thread.  To prevent a
+        /* If we timed out already, then quit the worker thread. To prevent a
            race between enqueueTask and the queue removal of the thread from
-           the workers vector, we remove it here already.  (This does not apply
+           the workers vector, we remove it here already. (This does not apply
            to the termination scenario.) */
         if (fIdleTimedOut)
         {
@@ -253,7 +244,7 @@ void UIThreadPool::sltHandleTaskComplete(UITask *pTask)
 void UIThreadPool::sltHandleWorkerFinished(UIThreadWorker *pWorker)
 {
     /* Wait for the thread to finish completely, then delete the thread
-       object.  We have already removed the thread from the workers vector.
+       object. We have already removed the thread from the workers vector.
        Note! We don't want to use 'this' here, in case it's invalid. */
     pWorker->wait();
     delete pWorker;
@@ -288,20 +279,16 @@ UIThreadWorker::UIThreadWorker(UIThreadPool *pPool, int iIndex)
 
 void UIThreadWorker::run()
 {
-//    LogRelFlow(("UIThreadWorker #%d: Started...\n", m_iIndex));
-
     /* Initialize COM: */
     COMBase::InitializeCOM(false);
 
     /* Try get a task from the pool queue. */
     while (UITask *pTask = m_pPool->dequeueTask(this))
     {
-        /* Process task: */
-//        LogRelFlow(("UIThreadWorker #%d: Task acquired...\n", m_iIndex));
+        /* Process the task if we are not terminating.
+         * Please take into account tasks are cleared by their creator. */
         if (!m_pPool->isTerminating())
             pTask->start();
-        /** @todo else: Just leak the task? */
-//        LogRelFlow(("UIThreadWorker #%d: Task processed!\n", m_iIndex));
     }
 
     /* Cleanup COM: */
@@ -311,8 +298,6 @@ void UIThreadWorker::run()
        already terminating and doesn't need the signal. */
     if (!m_fNoFinishedSignal)
         emit sigFinished(this);
-
-//    LogRelFlow(("UIThreadWorker #%d: Finished!\n", m_iIndex));
 }
 
 
