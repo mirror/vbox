@@ -2192,6 +2192,9 @@ typedef RTUUID *PRTUUID;
 /** Pointer to readonly UUID data. */
 typedef const RTUUID *PCRTUUID;
 
+/** Initializes a RTUUID structure with all zeros (RTUuidIsNull() true). */
+#define RTUUID_INITIALIZE_NULL  { { 0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0 } }
+
 /** UUID string maximum length. */
 #define RTUUID_STR_LENGTH       37
 
