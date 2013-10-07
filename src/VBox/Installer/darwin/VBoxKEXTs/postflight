@@ -1,7 +1,11 @@
 #!/bin/sh
+# $Id$
+## @file
+# Reloads the new kernel extension at the end of installation.
+#
 
 #
-# Copyright (C) 2007-2010 Oracle Corporation
+# Copyright (C) 2007-2013 Oracle Corporation
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -34,8 +38,8 @@ fi
 #
 sync
 set -e
-kextload    /Library/Extensions/VBoxDrv.kext
-kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxUSB.kext
-kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxNetFlt.kext
-kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxNetAdp.kext
+kextload    '/Library/Application Support/VirtualBox/VBoxDrv.kext'
+kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxUSB.kext'
+kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetFlt.kext'
+kextload -d '/Library/Application Support/VirtualBox/VBoxDrv.kext'  '/Library/Application Support/VirtualBox/VBoxNetAdp.kext'
 
