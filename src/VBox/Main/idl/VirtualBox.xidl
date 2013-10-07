@@ -3934,6 +3934,16 @@
         PXE trace information to the release log.
       </desc>
     </attribute>
+
+    <attribute name="nonVolatileStorageFile" type="wstring" readonly="yes">
+      <desc>
+        The location of the file storing the non-volatile memory content when
+        the VM is powered off.  The file does not always exist.
+
+        This feature will be realized after VirtualBox v4.3.0.
+      </desc>
+    </attribute>
+
   </interface>
 
   <interface
