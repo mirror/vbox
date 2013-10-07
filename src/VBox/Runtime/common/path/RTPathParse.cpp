@@ -73,4 +73,3 @@ RTDECL(int) RTPathParse(const char *pszPath, PRTPATHPARSED pParsed, size_t cbPar
     }
 }
 
-

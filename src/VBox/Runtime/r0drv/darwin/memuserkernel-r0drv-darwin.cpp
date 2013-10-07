@@ -110,4 +110,3 @@ RTR0DECL(int) RTR0MemKernelCopyTo(void *pvDst, void const *pvSrc, size_t cb)
     return VERR_NOT_SUPPORTED;
 }
 
-

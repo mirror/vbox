@@ -53,9 +53,9 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
     BOOL  fForceAppsClosed = fFlags & RTSYSTEM_SHUTDOWN_FORCE ? TRUE : FALSE;
 
     /*
-     * Do the 
+     * Do the
      */
-    if (InitiateSystemShutdownW(NULL /*pwszMachineName = NULL = localhost*/, 
+    if (InitiateSystemShutdownW(NULL /*pwszMachineName = NULL = localhost*/,
                                 pwszLogMsg,
                                 cSecsTimeout,
                                 fForceAppsClosed,
@@ -70,7 +70,7 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
         if (dwErr == ERROR_ACCESS_DENIED)
         {
             HANDLE hToken = NULL;
-            if (OpenThreadToken(GetCurrentThread(), 
+            if (OpenThreadToken(GetCurrentThread(),
                                 TOKEN_ADJUST_PRIVILEGES,
                                 TRUE /*OpenAsSelf*/,
                                 &hToken))
@@ -80,7 +80,7 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
                 dwErr  = GetLastError();
                 if (dwErr == ERROR_NO_TOKEN)
                 {
-                    if (OpenProcessToken(GetCurrentProcess(), 
+                    if (OpenProcessToken(GetCurrentProcess(),
                                          TOKEN_ADJUST_PRIVILEGES,
                                          &hToken))
                         dwErr = NO_ERROR;
@@ -91,7 +91,7 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
 
             if (dwErr == NO_ERROR)
             {
-                union 
+                union
                 {
                     TOKEN_PRIVILEGES TokenPriv;
                     char ab[sizeof(TOKEN_PRIVILEGES) + sizeof(LUID_AND_ATTRIBUTES)];
@@ -107,7 +107,7 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
                                               NULL,
                                               NULL) )
                     {
-                        if (InitiateSystemShutdownW(NULL /*pwszMachineName = NULL = localhost*/, 
+                        if (InitiateSystemShutdownW(NULL /*pwszMachineName = NULL = localhost*/,
                                                     pwszLogMsg,
                                                     cSecsTimeout,
                                                     fForceAppsClosed,

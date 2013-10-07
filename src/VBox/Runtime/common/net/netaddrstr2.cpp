@@ -70,4 +70,3 @@ RTDECL(int) RTNetStrToIPv4Addr(const char *pszAddr, PRTNETADDRIPV4 pAddr)
 }
 RT_EXPORT_SYMBOL(RTNetStrToIPv4Addr);
 
-

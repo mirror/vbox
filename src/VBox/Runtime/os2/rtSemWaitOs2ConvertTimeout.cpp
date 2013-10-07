@@ -36,8 +36,8 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Too lazy to include the right OS/2 header, duplicating the define we 
- * need here. */                                         
+/** Too lazy to include the right OS/2 header, duplicating the define we
+ * need here. */
 #define MY_SEM_INDEFINITE_WAIT UINT32_MAX
 
 
@@ -56,7 +56,7 @@ uint32_t rtR0SemWaitOs2ConvertTimeout(uint32_t fFlags, uint64_t uTimeout)
     if (fFlags & RTSEMWAIT_FLAGS_INDEFINITE)
         return MY_SEM_INDEFINITE_WAIT;
 
-    if (   (fFlags & (RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE)) 
+    if (   (fFlags & (RTSEMWAIT_FLAGS_MILLISECS | RTSEMWAIT_FLAGS_ABSOLUTE))
         == RTSEMWAIT_FLAGS_MILLISECS)
     {
         if (uTimeout < UINT32_MAX)
@@ -66,7 +66,7 @@ uint32_t rtR0SemWaitOs2ConvertTimeout(uint32_t fFlags, uint64_t uTimeout)
 
     if (!uTimeout)
         return 0;
-    
+
     if (uTimeout == UINT64_MAX)
         return MY_SEM_INDEFINITE_WAIT;
 

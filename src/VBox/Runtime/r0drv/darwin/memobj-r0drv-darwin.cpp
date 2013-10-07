@@ -451,7 +451,7 @@ static int rtR0MemObjNativeAllocWorker(PPRTR0MEMOBJINTERNAL ppMem, size_t cb,
      * we'll use rtR0MemObjNativeAllocCont as a fallback for dealing with that.
      *
      * The kIOMemoryKernelUserShared flag just forces the result to be page aligned.
-     * 
+     *
      * The kIOMemoryMapperNone flag is required since 10.8.2 (IOMMU changes?).
      */
     int rc;

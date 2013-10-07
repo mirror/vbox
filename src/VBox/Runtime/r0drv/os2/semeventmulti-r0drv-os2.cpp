@@ -192,8 +192,8 @@ static int rtR0SemEventMultiOs2Wait(PRTSEMEVENTMULTIINTERNAL pThis, uint32_t fFl
     ULONG fBlock     = BLOCK_SPINLOCK;
     if (!(fFlags & RTSEMWAIT_FLAGS_INTERRUPTIBLE))
         fBlock |= BLOCK_UNINTERRUPTABLE;
-        
-    /* 
+
+    /*
      * Do the job.
      */
     KernAcquireSpinLock(&pThis->Spinlock);

@@ -500,4 +500,3 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgDbgHelp =
     /*.u32EndMagic = */         RTDBGMODVTDBG_MAGIC
 };
 
-

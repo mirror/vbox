@@ -91,6 +91,3 @@ RTDECL(int) RTPathIsSame(const char *pszPath1, const char *pszPath2)
 }
 RT_EXPORT_SYMBOL(RTPathIsSame);
 
-
-
-

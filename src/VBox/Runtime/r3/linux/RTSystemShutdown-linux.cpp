@@ -99,4 +99,3 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
 }
 RT_EXPORT_SYMBOL(RTSystemShutdown);
 
-

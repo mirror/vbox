@@ -188,4 +188,3 @@ RTR3DECL(int) RTProcQueryUsername(RTPROCESS hProcess, char *pszUser, size_t cbUs
     return rc;
 }
 
-

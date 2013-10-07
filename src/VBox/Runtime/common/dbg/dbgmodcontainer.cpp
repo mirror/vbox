@@ -654,7 +654,7 @@ static DECLCALLBACK(int)  rtDbgModContainer_DestroyTreeLineNode(PAVLU32NODECORE 
     RTMemCacheFree(pThis->hLineNumAllocator, pLine);
 #else
     RTMemFree(pLine); NOREF(pThis);
-#endif    
+#endif
     return 0;
 }
 

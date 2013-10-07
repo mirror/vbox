@@ -502,4 +502,3 @@ RTDECL(int) RTVfsIoStrmOpenNormal(const char *pszFilename, uint64_t fOpen, PRTVF
     return rc;
 }
 
-
