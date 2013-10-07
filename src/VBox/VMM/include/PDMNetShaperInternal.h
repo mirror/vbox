@@ -44,4 +44,3 @@ typedef struct PDMNSBWGROUP
 /** Pointer to a bandwidth group. */
 typedef PDMNSBWGROUP *PPDMNSBWGROUP;
 
-

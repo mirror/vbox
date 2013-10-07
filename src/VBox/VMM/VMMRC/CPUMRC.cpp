@@ -183,7 +183,7 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
     /*
      * Are we in Ring-0?
      */
-    if (    pCtxCore->ss.Sel 
+    if (    pCtxCore->ss.Sel
         &&  (pCtxCore->ss.Sel & X86_SEL_RPL) == 0
         &&  !pCtxCore->eflags.Bits.u1VM)
     {
@@ -191,7 +191,7 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
          * Set CPL to Ring-1.
          */
         pCtxCore->ss.Sel |= 1;
-        if (    pCtxCore->cs.Sel 
+        if (    pCtxCore->cs.Sel
             &&  (pCtxCore->cs.Sel & X86_SEL_RPL) == 0)
             pCtxCore->cs.Sel |= 1;
     }
@@ -212,7 +212,7 @@ VMMDECL(void) CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore)
      * Assert sanity.
      */
     AssertMsg((pCtxCore->eflags.u32 & X86_EFL_IF), ("X86_EFL_IF is clear\n"));
-    AssertReleaseMsg(pCtxCore->eflags.Bits.u2IOPL == 0, 
+    AssertReleaseMsg(pCtxCore->eflags.Bits.u2IOPL == 0,
                      ("X86_EFL_IOPL=%d CPL=%d\n", pCtxCore->eflags.Bits.u2IOPL, pCtxCore->ss.Sel & X86_SEL_RPL));
 
     pCtxCore->eflags.u32        |= X86_EFL_IF; /* paranoia */

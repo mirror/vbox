@@ -1815,7 +1815,7 @@ static int hmR0VmxSetupProcCtls(PVM pVM, PVMCPU pVCpu)
     else
     {
         /*
-         * Some 32-bit CPUs do not support CR8 load/store exiting as MOV CR8 is invalid on 32-bit Intel CPUs. 
+         * Some 32-bit CPUs do not support CR8 load/store exiting as MOV CR8 is invalid on 32-bit Intel CPUs.
          * Set this control only for 64-bit guests.
          */
         if (pVM->hm.s.fAllow64BitGuests)
