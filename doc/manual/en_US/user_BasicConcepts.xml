@@ -403,6 +403,19 @@
           </glossentry>
 
           <glossentry>
+            <glossterm>Drag'n'Drop</glossterm>
+            <glossdef>
+              <para>This setting allows to enable Drag and Drop: Select a file
+                on the desktop, click the left mouse button, move the mouse
+                to the VM window and release the mouse button. The file is
+                copied from the host to the guest. This feature is currently
+                only implemented for Linux guests and only for copying files
+                from the host to the guest.<footnote><para>Support
+                for Drag'n'Drop was added with VirtualBox 4.2</para></footnote></para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
             <glossterm>Removable media: remember runtime changes</glossterm>
 
             <glossdef>
@@ -424,6 +437,8 @@
               seamless mode, control machine execution or enable certain
               devices. If you don't want to see the toolbar, disable this
               setting.</para>
+              <para>The second setting allows to show the toolbar at the top
+              of the screen instead of showing it at the bottom.</para>
             </glossdef>
           </glossentry>
         </glosslist></para>
@@ -437,6 +452,8 @@
       you may find this space useful to note down things like the
       configuration of a virtual machine and the software that has been
       installed into it.</para>
+      <para>To insert a line break into the description text field, press
+      <emphasis>Shift+Enter</emphasis>.</para>
     </sect2>
   </sect1>
 
@@ -514,6 +531,31 @@
           </glossentry>
 
           <glossentry>
+            <glossterm>Pointing Device</glossterm>
+
+            <glossdef>
+              <para>The default virtual pointing devices for older guests is the
+              traditional PS/2 mouse. If set to <emphasis>USB tablet</emphasis>,
+              VirtualBox reports to the virtual machine that a USB tablet
+              device is present and communicates mouse events to
+              the virtual machine through this device. The third setting is
+              a <emphasis>USB Multi-Touch Tablet</emphasis> which is suited
+              for recent Windows guests.</para>
+
+              <para>Using the virtual USB tablet has the advantage that
+              movements are reported in absolute coordinates (instead of as
+              relative position changes), which allows VirtualBox to translate
+              mouse events over the VM window into tablet events without
+              having to "capture" the mouse in the guest as described in <xref
+              linkend="keyb_mouse_normal" />. This makes using the VM less
+              tedious even if Guest Additions are not installed.<footnote>
+                  <para>The virtual USB tablet was added with VirtualBox 3.2.
+                  Depending on the guest operating system selected, this is
+                  now enabled by default for new virtual machines.</para>
+                </footnote></para>
+            </glossdef>
+          </glossentry>
+          <glossentry>
             <glossterm>Enable I/O APIC</glossterm>
 
             <glossdef>
@@ -567,29 +609,6 @@
             </glossdef>
           </glossentry>
 
-          <glossentry>
-            <glossterm>Enable absolute pointing device</glossterm>
-
-            <glossdef>
-              <para>If enabled, VirtualBox reports to the virtual machine that
-              a USB tablet device is present and communicates mouse events to
-              the virtual machine through this device. If disabled, mouse
-              events are communicated through a traditional PS/2 virtual mouse
-              device.</para>
-
-              <para>Using the virtual USB tablet has the advantage that
-              movements are reported in absolute coordinates (instead of as
-              relative position changes), which allows VirtualBox to translate
-              mouse events over the VM window into tablet events without
-              having to "capture" the mouse in the guest as described in <xref
-              linkend="keyb_mouse_normal" />. This makes using the VM less
-              tedious even if Guest Additions are not installed.<footnote>
-                  <para>The virtual USB tablet was added with VirtualBox 3.2.
-                  Depending on the guest operating system selected, this is
-                  now enabled by default for new virtual machines.</para>
-                </footnote></para>
-            </glossdef>
-          </glossentry>
         </glosslist></para>
 
       <para>In addition, you can turn off the <emphasis role="bold">Advanced
@@ -619,9 +638,10 @@
       virtual machine.</para>
 
       <para>You should not, however, configure virtual machines to use more
-      CPU cores than you have available physically.</para>
+      CPU cores than you have available physically (real cores, no hyperthreads).</para>
 
-      <para>On this tab you can also set the CPU execution cap. This setting
+      <para>On this tab you can also set the <emphasis role="bold">"CPU execution
+      cap"</emphasis>. This setting
       limits the amount of time a host CPU spents to emulate a virtual CPU.
       The default setting is 100% meaning that there is no limitation. A setting
       of 50% implies a single virtual CPU can use up to 50% of a single host
@@ -768,6 +788,16 @@
           standard open-source <computeroutput>rdesktop</computeroutput>
           program. These features are described in detail in
           <xref linkend="vrde" />.</para>
+        </glossdef>
+      </glossentry>
+
+      <glossentry>
+        <glossterm>Video Capture</glossterm>
+
+        <glossdef>
+          <para>Under the "Video Capture" tab you can enable video capturing
+          for this VM. Note that this feature can also be enabled/disabled
+          while the VM is executed.</para>
         </glossdef>
       </glossentry>
     </glosslist>
@@ -955,7 +985,7 @@
 
     <para>On a Linux host, depending on your host configuration, you can also
     select between the OSS, ALSA or the PulseAudio subsystem. On newer Linux
-    distributions (Fedora 8 and above, Ubuntu 8.04 and above) the PulseAudio
+    distributions (Fedora 8 and above, Ubuntu 8.04 and above), the PulseAudio
     subsystem should be preferred.</para>
   </sect1>
 
