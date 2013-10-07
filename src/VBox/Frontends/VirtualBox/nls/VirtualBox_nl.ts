@@ -818,7 +818,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Popupmenu</translation>
+        <translation>Popupmenu</translation>
     </message>
 </context>
 <context>
@@ -2231,7 +2231,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
+        <translation>Framegrootte: %1x%2, Framerate: %3fps, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>

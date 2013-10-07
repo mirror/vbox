@@ -706,7 +706,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Popup Menu</translation>
+        <translation>Popup Menu</translation>
     </message>
 </context>
 <context>
@@ -1228,7 +1228,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">框架大小: %1x%2，畫面播放速率: %3fps，位元率: %4kbps</translation>
+        <translation>框架大小: %1x%2，畫面播放速率: %3fps，位元率: %4kbps</translation>
     </message>
 </context>
 <context>

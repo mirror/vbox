@@ -1110,7 +1110,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Menu a comparsa</translation>
+        <translation>Menu a comparsa</translation>
     </message>
 </context>
 <context>
@@ -3020,7 +3020,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
+        <translation>Risoluzione: %1x%2, Velocità: %3, Bitrate: %4kbps</translation>
     </message>
 </context>
 <context>

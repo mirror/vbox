@@ -944,7 +944,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Всплывающее меню</translation>
+        <translation>Всплывающее меню</translation>
     </message>
 </context>
 <context>
@@ -2756,7 +2756,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
+        <translation>Размер кадра: %1х%2, Скорость записи: %3кдр/сек, Битрейт: %4кб/сек</translation>
     </message>
 </context>
 <context>

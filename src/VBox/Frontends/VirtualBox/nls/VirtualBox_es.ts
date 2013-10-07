@@ -1035,7 +1035,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Menú emergente</translation>
+        <translation>Menú emergente</translation>
     </message>
 </context>
 <context>
@@ -2887,7 +2887,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Tamaño de fotograma: %1x%2, Tasa de fotogramas: %3fps, Tasa de bits: %4kbps</translation>
+        <translation>Tamaño de fotograma: %1x%2, Tasa de fotogramas: %3fps, Tasa de bits: %4kbps</translation>
     </message>
 </context>
 <context>

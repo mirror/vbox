@@ -927,7 +927,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">팝업 메뉴</translation>
+        <translation>팝업 메뉴</translation>
     </message>
 </context>
 <context>
@@ -2705,7 +2705,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">프레임 크기: %1x%2, 프레임 레이트: %3fps, 비트 전송률: %4kbps</translation>
+        <translation>프레임 크기: %1x%2, 프레임 레이트: %3fps, 비트 전송률: %4kbps</translation>
     </message>
 </context>
 <context>
