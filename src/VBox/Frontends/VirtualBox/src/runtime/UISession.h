@@ -96,6 +96,7 @@ public:
 
     /* Common getters: */
     CSession& session() { return m_session; }
+    KMachineState machineStatePrevious() const { return m_machineStatePrevious; }
     KMachineState machineState() const { return m_machineState; }
     UIMachineLogic* machineLogic() const;
     QWidget* mainMachineWindow() const;
@@ -119,6 +120,8 @@ public:
                                     machineState() == KMachineState_Teleporting ||
                                     machineState() == KMachineState_LiveSnapshotting; }
     bool isStuck() const { return machineState() == KMachineState_Stuck; }
+    bool wasPaused() const { return machineStatePrevious() == KMachineState_Paused ||
+                                    machineStatePrevious() == KMachineState_TeleportingPausedVM; }
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRuntimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
@@ -279,6 +282,7 @@ private:
     QVector<UIFrameBuffer*> m_frameBufferVector;
 
     /* Common variables: */
+    KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
     QCursor m_cursor;
 #if defined(Q_WS_WIN)
