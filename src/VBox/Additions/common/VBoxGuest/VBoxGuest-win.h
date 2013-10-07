@@ -191,4 +191,3 @@ RT_C_DECLS_END
 
 #endif /* !___VBoxGuest_win_h */
 
-

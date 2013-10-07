@@ -200,9 +200,9 @@ static int vbglR3Init(const char *pszDeviceName)
     g_File = (RTFILE)hf;
 
 #elif defined(RT_OS_DARWIN)
-    /* 
-     * Darwin is kind of special we need to engage the device via I/O first 
-     * before we open it via the BSD device node. 
+    /*
+     * Darwin is kind of special we need to engage the device via I/O first
+     * before we open it via the BSD device node.
      */
     mach_port_t MasterPort;
     kern_return_t kr = IOMasterPort(MACH_PORT_NULL, &MasterPort);

@@ -83,7 +83,7 @@ static void vbglQueryDriverInfo (void)
     int rc = VINF_SUCCESS;
 
     rc = RTSemMutexRequest(g_vbgldata.mutexDriverInit, RT_INDEFINITE_WAIT);
-    
+
     if (RT_FAILURE(rc))
         return;
 
@@ -266,7 +266,7 @@ DECLVBGL(int) VbglInit (void)
         {
             vbglTerminateCommon ();
         }
-        
+
     }
 
     return rc;
