@@ -17,6 +17,27 @@
 #
 
 #
+# Make sure the old startup items are gone.
+#
+if [ -d /Library/StartupItems/VirtualBox/ ]; then 
+    rm -vf  "/Library/StartupItems/VirtualBox/StartupParameters.plist"
+    rm -vf  "/Library/StartupItems/VirtualBox/VirtualBox"
+    rm -vf  "/Library/StartupItems/VirtualBox/Resources/English.lproj/Localizable.strings"
+    test -d "/Library/StartupItems/VirtualBox/Resources/English.lproj/" && rmdir "/Library/StartupItems/VirtualBox/Resources/English.lproj/"
+    test -d "/Library/StartupItems/VirtualBox/Resources/"               && rmdir "/Library/StartupItems/VirtualBox/Resources/"
+    test -d "/Library/StartupItems/VirtualBox/"                         && rmdir "/Library/StartupItems/VirtualBox/"
+fi
+
+#
+# Install the launchd script.
+#
+rm -vf "/Library/LaunchDaemons/org.virtualbox.startup.plist"
+set -e
+ln -s  "../Application Support/VirtualBox/LaunchDaemons/org.virtualbox.startup.plist" \
+       "/Library/LaunchDaemons/org.virtualbox.startup.plist"
+set +e
+
+#
 # Unload any old extension that might be loaded already (ignore failures).
 #
 sync

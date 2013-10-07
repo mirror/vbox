@@ -57,6 +57,7 @@ test -f "${HOME}/Library/LaunchAgents/org.virtualbox.vboxwebsrv.plist"  && my_fi
 test -d /Library/StartupItems/VirtualBox/          && my_directories+=("/Library/StartupItems/VirtualBox/")
 test -d /Library/Receipts/VBoxStartupItems.pkg/    && my_directories+=("/Library/Receipts/VBoxStartupItems.pkg/")
 
+test -d "/Library/Application Support/VirtualBox/LaunchDaemons/"    && my_directories+=("/Library/Application Support/VirtualBox/LaunchDaemons/")
 test -d "/Library/Application Support/VirtualBox/VBoxDrv.kext/"     && my_directories+=("/Library/Application Support/VirtualBox/VBoxDrv.kext/")
 test -d "/Library/Application Support/VirtualBox/VBoxUSB.kext/"     && my_directories+=("/Library/Application Support/VirtualBox/VBoxUSB.kext/")
 test -d "/Library/Application Support/VirtualBox/VBoxNetFlt.kext/"  && my_directories+=("/Library/Application Support/VirtualBox/VBoxNetFlt.kext/")
@@ -81,6 +82,7 @@ test -f /usr/bin/VBoxBalloonCtrl                   && my_files+=("/usr/bin/VBoxB
 test -f /usr/bin/VBoxAutostart                     && my_files+=("/usr/bin/VBoxAutostart")
 test -f /usr/bin/vbox-img                          && my_files+=("/usr/bin/vbox-img")
 test -d /Library/Receipts/VirtualBoxCLI.pkg/       && my_directories+=("/Library/Receipts/VirtualBoxCLI.pkg/")
+test -f /Library/LaunchDaemons/org.virtualbox.startup.plist && my_files+=("/Library/LaunchDaemons/org.virtualbox.startup.plist")
 
 test -d /Applications/VirtualBox.app/              && my_directories+=("/Applications/VirtualBox.app/")
 test -d /Library/Receipts/VirtualBox.pkg/          && my_directories+=("/Library/Receipts/VirtualBox.pkg/")

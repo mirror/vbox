@@ -165,7 +165,6 @@ endif
 # The meta-package.
 #
 $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg: \
-		$(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg \
 		$(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg \
@@ -271,10 +270,14 @@ $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg: \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res/English.lproj
 	$(MKDIR) -p -m 0755 \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
+		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons \
 		$(foreach kext,$(VBOX_DI_KEXTS), \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents \
 			$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS )
+	@# Copy the launch daemon bits.
+	$(INSTALL) -m 0755  $(VBOX_PATH_DI_SRC)/VBoxKEXTs/VirtualBoxStartup.sh          $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons/
+	$(INSTALL) -m 0644  $(VBOX_PATH_DI_SRC)/VBoxKEXTs/org.virtualbox.startup.plist 	$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/LaunchDaemons/
 	@# Copy the common files (Info.plist).
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(INSTALL) -m 0644 $(VBOX_PATH_DIST)/$(kext).kext/Contents/Info.plist $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/)
@@ -330,61 +333,6 @@ endif
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.desc \
 		$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.res
-
-
-#
-# The VirtualBox Startupitems.
-#
-$(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg: \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxStartupItems/VirtualBox/* \
-		            $(VBOX_PATH_DI_SRC)/VBoxStartupItems/VirtualBox/Resources/*.lproj/*) \
-		$$(wildcard $(VBOX_PATH_DI_SRC)/VBoxStartupItems/* \
-		            $(VBOX_PATH_DI_SRC)/VBoxStartupItems/*.lproj/*) \
-		$(foreach f,$(VBOX_INSTALLER_ADD_LANGUAGES), \
-			$(VBOX_BRAND_$(f)_VBOXSTARTUPITEMS_DESCRIPTION_PLIST)) \
-		$(VBOX_DARWIN_INST_DEP_ON_MAKEFILE)
-	$(call MSG_TOOL,pkgbuild,,,$@)
-	@# Cleanup any previously failed attempts.
-	sudo rm -Rf \
-		$@ \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res
-	@# Correct directory permissions are important.
-	$(MKDIR) -p \
-		$(@D) \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res/English.lproj
-	$(MKDIR) -p -m 0775 $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library
-	$(MKDIR) -p -m 0755 \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox/Resources \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox/Resources/English.lproj
-	@# Copy the files.
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VBoxStartupItems/VirtualBox/StartupParameters.plist                     $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox/
-	$(INSTALL) -m 0755 $(VBOX_PATH_DI_SRC)/VBoxStartupItems/VirtualBox/VirtualBox                                  $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox/
-	$(INSTALL) -m 0644 $(VBOX_PATH_DI_SRC)/VBoxStartupItems/VirtualBox/Resources/English.lproj/Localizable.strings $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/VirtualBox/Resources/English.lproj/
-	@# Set the correct owners.
-	sudo chown    root:admin $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library
-	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems
-	@# Build the package.
-	$(VBOX_PKGBUILD) \
-		--root   $(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library/StartupItems/ \
-		--identifier org.virtualbox.pkg.vboxstartupitems \
-		--version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
-		--install-location /Library/StartupItems/ \
-		--ownership preserve \
-		$(if $(VBOX_MACOSX_INSTALLER_SIGN),--sign "$(VBOX_MACOSX_INSTALLER_SIGN)",) \
-		$@
-	@# Cleanup
-	sudo chown -R "$(shell whoami)" \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root/Library
-	sudo rm -Rf \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.root \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.desc \
-		$(VBOX_PATH_PACK_TMP)/VBoxStartupItems.pkg.res
 
 
 #
@@ -948,7 +896,6 @@ endif
 #
 VBoxKEXTs.pkg:        $(VBOX_PATH_PACK_TMP)/Packages/VBoxKEXTs.pkg
 VirtualBoxCLI.pkg:    $(VBOX_PATH_PACK_TMP)/Packages/VirtualBoxCLI.pkg
-VBoxStartupItems.pkg: $(VBOX_PATH_PACK_TMP)/Packages/VBoxStartupItems.pkg
 VirtualBox.pkg:       $(VBOX_PATH_PACK_TMP)/Packages/VirtualBox.pkg
 VirtualBox.mpkg:      $(VBOX_PATH_PACK_TMP)/DiskImage/VirtualBox.pkg
 VirtualBox.dmg:       $(VBOX_PATH_DIST)/VirtualBox-$(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD)-r$(VBOX_SVN_REV).dmg

@@ -1,5 +1,0 @@
-{
-  Description     = "VirtualBox Support and USB Drivers";
-  Provides        = ("VirtualBox");
-  OrderPreference = "None";
-}
