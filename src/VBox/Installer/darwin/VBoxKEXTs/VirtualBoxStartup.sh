@@ -20,11 +20,11 @@
 if false; then
     . /etc/rc.common
 else
-    # Fake the startup item functions we're using. 
+    # Fake the startup item functions we're using.
 
     ConsoleMessage()
     {
-        if [ "$1" != "-f" ]; then 
+        if [ "$1" != "-f" ]; then
             echo "$@"
         else
             shift
@@ -35,7 +35,7 @@ else
 
     RunService()
     {
-        case "$1" in 
+        case "$1" in
             "start")
                 StartService
                 exit $?;
@@ -54,13 +54,13 @@ else
                     do
                         sleep 3600
                     done
-                fi 
+                fi
                 exit $?;
                 ;;
              **)
                 echo "Error: Unknown action '$1'"
                 exit 1;
-        esac                    
+        esac
     }
 fi
 

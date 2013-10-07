@@ -83,7 +83,7 @@ extern_test_input_install_device_node_setup() {
             do_install_create_usb_node_for_sysfs "$@";;
         *)
             echo Unknown command $command >&2; exit 1;;
-    esac        
+    esac
 }
 
 setup_test_input_install_device_node_setup() {

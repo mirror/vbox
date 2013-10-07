@@ -309,7 +309,7 @@ if [ -d installer ]; then
           info "Error: Failed to copy installer module \"$CUR_FILE\""
           if ! test "$FORCE_UPGRADE" = "force"; then
               exit 1
-          fi        
+          fi
       fi
   done
 fi
@@ -357,7 +357,7 @@ do
         info "Error: Failed to install module \"$CUR_MODULE\""
         if ! test "$FORCE_UPGRADE" = "force"; then
             exit 1
-        fi        
+        fi
     fi
 done
 

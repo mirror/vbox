@@ -533,7 +533,7 @@ unload_module()
                     result=$?
                 done
             fi
-    
+
             if test "$result" -ne 0; then
                 subprint "Unloading: $moddesc module ...FAILED!"
                 if test "$fatal" = "$FATALOP"; then
@@ -1252,7 +1252,7 @@ do
             # Use alternate kernel driver config folder (dev only)
             DIR_CONF="/usr/kernel/drv"
             ;;
-        --sh-trace) # forwarded pkgadd -v 
+        --sh-trace) # forwarded pkgadd -v
             set -x
             ;;
         --help)
