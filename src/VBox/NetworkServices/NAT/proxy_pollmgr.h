@@ -8,14 +8,14 @@
 #include "lwip/sys.h"
 
 enum pollmgr_slot_t {
-    POLLMGR_CHAN_PXTCP_ADD,	/* new proxy tcp connection from guest */
-    POLLMGR_CHAN_PXTCP_POLLIN,	/* free space in ringbuf, may POLLIN */
-    POLLMGR_CHAN_PXTCP_POLLOUT,	/* schedule one-shot POLLOUT callback */
+    POLLMGR_CHAN_PXTCP_ADD,     /* new proxy tcp connection from guest */
+    POLLMGR_CHAN_PXTCP_POLLIN,  /* free space in ringbuf, may POLLIN */
+    POLLMGR_CHAN_PXTCP_POLLOUT, /* schedule one-shot POLLOUT callback */
     POLLMGR_CHAN_PXTCP_DEL,     /* delete pxtcp */
-    POLLMGR_CHAN_PXTCP_RESET,	/* send RST and delete pxtcp */
+    POLLMGR_CHAN_PXTCP_RESET,   /* send RST and delete pxtcp */
 
-    POLLMGR_CHAN_PXUDP_ADD,	/* new proxy udp conversation from guest */
-    POLLMGR_CHAN_PXUDP_DEL,	/* delete pxudp from pollmgr */
+    POLLMGR_CHAN_PXUDP_ADD,     /* new proxy udp conversation from guest */
+    POLLMGR_CHAN_PXUDP_DEL,     /* delete pxudp from pollmgr */
 
     POLLMGR_CHAN_PORTFWD,       /* add/remove port forwarding rules */
 

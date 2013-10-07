@@ -101,7 +101,7 @@ VBoxNetBaseService::VBoxNetBaseService()
     m_cVerbosity            = 0;
     m_Name                  = "VBoxNetNAT";
     m_Network               = "intnet";
-   
+
     for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
         m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
 
@@ -391,7 +391,7 @@ int VBoxNetBaseService::sendBufferOnWire(PCINTNETSEG pcSg, int cSg, size_t cbFra
     }
     /* Commit */
     IntNetRingCommitFrame(&m_pIfBuf->Send, pHdr);
-   
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
@@ -427,7 +427,7 @@ void VBoxNetBaseService::debugPrintV(int iMinLevel, bool fMsg, const char *pszFm
     {
         va_list vaCopy;                 /* This dude is *very* special, thus the copy. */
         va_copy(vaCopy, va);
-        RTStrmPrintf(g_pStdErr, "%s: %s: %N\n", 
+        RTStrmPrintf(g_pStdErr, "%s: %s: %N\n",
                      RTProcShortName(),
                      iMinLevel >= 2 ? "debug" : "info",
                      pszFmt,

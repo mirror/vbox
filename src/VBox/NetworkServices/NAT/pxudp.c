@@ -438,7 +438,7 @@ pxudp_pcb_accept(void *arg, struct udp_pcb *newpcb, struct pbuf *p,
         && newpcb->local_port == 53
         && PCB_ISIPV6(newpcb))
     {
-        /* 
+        /*
          * "Remap" DNS over IPv6 to IPv4 since Ubuntu dnsmasq does not
          * listen on IPv6.
          */

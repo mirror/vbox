@@ -123,7 +123,7 @@ Client *ConfigurationManager::getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, 
     VecClientIterator it;
     bool fDhcpValid = false;
     uint8_t uMsgType = 0;
-    
+
     fDhcpValid = RTNetIPv4IsDHCPValid(NULL, pDhcpMsg, cbDhcpMsg, &uMsgType);
     AssertReturn(fDhcpValid, NULL);
 
@@ -229,10 +229,10 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
      * Well, session hasn't get the config.
      */
     AssertPtrReturn(client, NULL);
-    
+
     /**
      * This mean that client has already bound or commited lease.
-     * If we've it happens it means that we received DHCPDISCOVER twice. 
+     * If we've it happens it means that we received DHCPDISCOVER twice.
      */
     if (client->m_lease)
     {
@@ -264,7 +264,7 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
             hintAddress.u = 0; /* clear hint */
     }
 
-    if (   hintAddress.u 
+    if (   hintAddress.u
         && !isAddressTaken(hintAddress, NULL))
     {
         please = new Lease();
@@ -294,7 +294,7 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
             return please;
         }
     }
-   
+
     return NULL;
 }
 
@@ -317,14 +317,14 @@ int ConfigurationManager::expireLease4Client(Client *client)
 
     delete client->m_lease;
     client->m_lease = NULL;
-    
+
     return VINF_SUCCESS;
 }
 
 bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppLease)
 {
     MapLease2Ip4AddressIterator it;
-    
+
     for (it = m_allocations.begin();
          it != m_allocations.end();
          ++it)
@@ -333,7 +333,7 @@ bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppL
         {
             if (ppLease)
                 *ppLease = it->first;
-            
+
             return true;
         }
     }
@@ -476,7 +476,7 @@ NetworkManager *NetworkManager::getNetworkManager()
 /**
  * Network manager creates DHCPOFFER datagramm
  */
-int NetworkManager::offer4Client(Client *client, uint32_t u32Xid, 
+int NetworkManager::offer4Client(Client *client, uint32_t u32Xid,
                                  uint8_t *pu8ReqList, int cReqList)
 {
     AssertPtrReturn(client, VERR_INTERNAL_ERROR);
@@ -484,7 +484,7 @@ int NetworkManager::offer4Client(Client *client, uint32_t u32Xid,
 
     prepareReplyPacket4Client(client, u32Xid);
 
-    
+
     RTNETADDRIPV4 address = client->m_lease->m_address;
     BootPReplyMsg.BootPHeader.bp_yiaddr =  address;
 
@@ -578,8 +578,8 @@ int NetworkManager::ack(Client *client, uint32_t u32Xid,
 int NetworkManager::nak(Client* client, uint32_t u32Xid)
 {
     AssertPtrReturn(client, VERR_INTERNAL_ERROR);
-    
-    if (!client->m_lease) 
+
+    if (!client->m_lease)
         return VERR_INTERNAL_ERROR;
 
     prepareReplyPacket4Client(client, u32Xid);
@@ -739,7 +739,7 @@ int NetworkManager::processParameterReqList(Client* client, uint8_t *pu8ReqList,
             case RTNET_DHCP_OPT_ROUTERS:
             case RTNET_DHCP_OPT_DNS:
                 {
-                    const Ipv4AddressContainer lst = 
+                    const Ipv4AddressContainer lst =
                       g_ConfigurationManager->getAddressList(pReqList[idxParam]);
                     PRTNETADDRIPV4 pAddresses = (PRTNETADDRIPV4)&opt.au8RawOpt[0];
 

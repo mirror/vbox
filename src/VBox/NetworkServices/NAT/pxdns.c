@@ -398,7 +398,7 @@ pxdns_timer(void *arg)
         pxdns->timeout_slot = 0;
     }
 
-    chain = &pxdns->timeout_list[pxdns->timeout_slot]; 
+    chain = &pxdns->timeout_list[pxdns->timeout_slot];
     req = *chain;
     while (req != NULL) {
         struct request *expired = req;

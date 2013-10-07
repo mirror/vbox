@@ -14,27 +14,27 @@
 extern "C" int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket_vector[2])
 {
     LogFlowFunc(("ENTER: domain:%d, type:%d, protocol:%d, socket_vector:%p\n",
-		 domain, type, protocol, socket_vector));
+                 domain, type, protocol, socket_vector));
     switch (domain)
     {
     case AF_INET:
-	break;
+        break;
     case AF_INET6: /* I dobt we really need it. */
     default:
-	AssertMsgFailedReturn(("Unsuported domain:%d\n", domain), 
-	  		      VERR_INVALID_PARAMETER);
+        AssertMsgFailedReturn(("Unsuported domain:%d\n", domain),
+                              VERR_INVALID_PARAMETER);
     }
-    
+
     switch(type)
     {
     case SOCK_STREAM:
     case SOCK_DGRAM:
-	break;
+        break;
     default:
-	AssertMsgFailedReturn(("Unsuported type:%d\n", type), 
-	 		      VERR_INVALID_PARAMETER);
+        AssertMsgFailedReturn(("Unsuported type:%d\n", type),
+                              VERR_INVALID_PARAMETER);
     }
-    
+
     AssertPtrReturn(socket_vector, VERR_INVALID_PARAMETER);
     if (!socket_vector)
       return VERR_INVALID_PARAMETER;
@@ -42,10 +42,10 @@ extern "C" int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket
     socket_vector[0] = socket_vector[1] = INVALID_SOCKET;
 
     SOCKET listener = INVALID_SOCKET;
-    
+
     union {
-	struct sockaddr_in in_addr;
-	struct sockaddr addr;
+        struct sockaddr_in in_addr;
+        struct sockaddr addr;
     } sa[2];
 
     int cb = sizeof(sa);
@@ -58,126 +58,126 @@ extern "C" int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket
 
     if (type == SOCK_STREAM)
     {
-	listener = WSASocket(domain, type, protocol, 0, NULL, 0);
-    
-	if (listener == INVALID_SOCKET)
-	{
-	    return VERR_INTERNAL_ERROR;
-	}
-    
-	int reuse = 1;
-	cb = sizeof(int);
-	int rc = setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, cb);
+        listener = WSASocket(domain, type, protocol, 0, NULL, 0);
 
-	if (rc)
-	{
-	    goto close_socket;
-	}
-    
-	cb = sizeof(sa[0]);
-	rc = bind(listener, &sa[0].addr, cb);
-	if(rc)
-	{
-	    goto close_socket;
-	}
+        if (listener == INVALID_SOCKET)
+        {
+            return VERR_INTERNAL_ERROR;
+        }
 
-	memset(&sa[0], 0, cb);
-	rc = getsockname(listener, &sa[0].addr, &cb);
-	if (rc)
-	{
-	    goto close_socket;
-	}
+        int reuse = 1;
+        cb = sizeof(int);
+        int rc = setsockopt(listener, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, cb);
 
-	rc = listen(listener, 1);
-	if (rc)
-	{
-	    goto close_socket;
-	}
-    
-	socket_vector[0] = WSASocket(domain, type, protocol, 0, NULL, 0);
-	if (socket_vector[0] == INVALID_SOCKET)
-	{
-	    goto close_socket;
-	}
+        if (rc)
+        {
+            goto close_socket;
+        }
 
-	rc = connect(socket_vector[0], &sa[0].addr, cb);
-	if (rc)
-	  goto close_socket;
+        cb = sizeof(sa[0]);
+        rc = bind(listener, &sa[0].addr, cb);
+        if(rc)
+        {
+            goto close_socket;
+        }
 
-    
-	socket_vector[1] = accept(listener, NULL, NULL);
-	if (socket_vector[1] == INVALID_SOCKET)
-	{
-	    goto close_socket;
-	}
+        memset(&sa[0], 0, cb);
+        rc = getsockname(listener, &sa[0].addr, &cb);
+        if (rc)
+        {
+            goto close_socket;
+        }
 
-	closesocket(listener);
+        rc = listen(listener, 1);
+        if (rc)
+        {
+            goto close_socket;
+        }
+
+        socket_vector[0] = WSASocket(domain, type, protocol, 0, NULL, 0);
+        if (socket_vector[0] == INVALID_SOCKET)
+        {
+            goto close_socket;
+        }
+
+        rc = connect(socket_vector[0], &sa[0].addr, cb);
+        if (rc)
+          goto close_socket;
+
+
+        socket_vector[1] = accept(listener, NULL, NULL);
+        if (socket_vector[1] == INVALID_SOCKET)
+        {
+            goto close_socket;
+        }
+
+        closesocket(listener);
     }
     else
     {
-	socket_vector[0] = WSASocket(domain, type, protocol, 0, NULL, 0);
-	
-	cb = sizeof(sa[0]);
-	int rc = bind(socket_vector[0], &sa[0].addr, cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+        socket_vector[0] = WSASocket(domain, type, protocol, 0, NULL, 0);
 
-	sa[1].in_addr.sin_family = domain;
-	sa[1].in_addr.sin_addr.s_addr = RT_H2N_U32(INADDR_LOOPBACK);
-	sa[1].in_addr.sin_port = 0;
+        cb = sizeof(sa[0]);
+        int rc = bind(socket_vector[0], &sa[0].addr, cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
 
-	socket_vector[1] = WSASocket(domain, type, protocol, 0, NULL, 0);
-	rc = bind(socket_vector[1], &sa[1].addr, cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+        sa[1].in_addr.sin_family = domain;
+        sa[1].in_addr.sin_addr.s_addr = RT_H2N_U32(INADDR_LOOPBACK);
+        sa[1].in_addr.sin_port = 0;
 
-	{
-	    u_long mode = 0;
-	    rc = ioctlsocket(socket_vector[0], FIONBIO, &mode);
-	    AssertMsgReturn(rc != SOCKET_ERROR, 
-			    ("ioctl error: %d\n", WSAGetLastError()),
-			    VERR_INTERNAL_ERROR);
+        socket_vector[1] = WSASocket(domain, type, protocol, 0, NULL, 0);
+        rc = bind(socket_vector[1], &sa[1].addr, cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
 
-	    rc = ioctlsocket(socket_vector[1], FIONBIO, &mode);
-	    AssertMsgReturn(rc != SOCKET_ERROR, 
-			    ("ioctl error: %d\n", WSAGetLastError()),
-			    VERR_INTERNAL_ERROR);
-	}
+        {
+            u_long mode = 0;
+            rc = ioctlsocket(socket_vector[0], FIONBIO, &mode);
+            AssertMsgReturn(rc != SOCKET_ERROR,
+                            ("ioctl error: %d\n", WSAGetLastError()),
+                            VERR_INTERNAL_ERROR);
 
-	memset(&sa, 0, 2 * cb);
-	rc = getsockname(socket_vector[0], &sa[0].addr, &cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+            rc = ioctlsocket(socket_vector[1], FIONBIO, &mode);
+            AssertMsgReturn(rc != SOCKET_ERROR,
+                            ("ioctl error: %d\n", WSAGetLastError()),
+                            VERR_INTERNAL_ERROR);
+        }
 
-	rc = getsockname(socket_vector[1], &sa[1].addr, &cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+        memset(&sa, 0, 2 * cb);
+        rc = getsockname(socket_vector[0], &sa[0].addr, &cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
 
-	rc = connect(socket_vector[0], &sa[1].addr, cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+        rc = getsockname(socket_vector[1], &sa[1].addr, &cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
 
-	rc = connect(socket_vector[1], &sa[0].addr, cb);
-	Assert(rc != SOCKET_ERROR);
-	if (rc == SOCKET_ERROR)
-	{
-	    goto close_socket;
-	}
+        rc = connect(socket_vector[0], &sa[1].addr, cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
+
+        rc = connect(socket_vector[1], &sa[0].addr, cb);
+        Assert(rc != SOCKET_ERROR);
+        if (rc == SOCKET_ERROR)
+        {
+            goto close_socket;
+        }
     }
     LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;

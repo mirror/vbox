@@ -43,10 +43,10 @@ rtmon_get_defaults(void)
 {
     int rtsock;
     struct req {
-	struct rt_msghdr rtm;
-	struct sockaddr_in6 dst;
-	struct sockaddr_in6 mask;
-	struct sockaddr_dl ifp;
+        struct rt_msghdr rtm;
+        struct sockaddr_in6 dst;
+        struct sockaddr_in6 mask;
+        struct sockaddr_dl ifp;
     } req;
     ssize_t nsent;
 
@@ -83,14 +83,14 @@ rtmon_get_defaults(void)
 
     nsent = write(rtsock, &req, req.rtm.rtm_msglen);
     if (nsent < 0) {
-	if (errno == ESRCH) {
-	    /* there's no default route */
-	    return 0;
-	}
-	else {
+        if (errno == ESRCH) {
+            /* there's no default route */
+            return 0;
+        }
+        else {
             DPRINTF0(("rtmon: failed to send RTM_GET\n"));
-	    return -1;
-	}
+            return -1;
+        }
     }
 
     return 1;

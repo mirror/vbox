@@ -10,7 +10,7 @@
 #  include <iprt/log.h>
 /**
  * Inclusion of lwip/def.h was added here to avoid conflict of definitions
- * of hton-family functions in LWIP and windock's headers. 
+ * of hton-family functions in LWIP and windock's headers.
  */
 #  include <lwip/def.h>
 
@@ -22,11 +22,11 @@
 #  define warnx warn
 #  ifdef DEBUG
 #   define err(code,...) do { \
-      AssertMsgFailed((__VA_ARGS__));		\
+      AssertMsgFailed((__VA_ARGS__));           \
     }while(0)
 #else
 #   define err(code,...) do { \
-      DPRINTF0((__VA_ARGS__));	  \
+      DPRINTF0((__VA_ARGS__));    \
       ExitProcess(code); \
     }while(0)
 #endif
@@ -40,15 +40,15 @@
  * converted).  0 is returned if src does not contain a character string
  * representing a valid network address in the specified address family.
  * If af does not contain a valid address family, -1 is returned and
- * errno is set to EAFNOSUPPORT(value 97). 
- * WSA has value most close in our case 
+ * errno is set to EAFNOSUPPORT(value 97).
+ * WSA has value most close in our case
  * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEAFNOSUPPORT (10047)
  */
 DECLINLINE(int) inet_pton(int af_family, const char *str, void *dst)
 {
     AssertPtrReturn(str, 0);
     AssertPtrReturn(dst, 0);
-    
+
     switch (af_family) {
     case AF_INET: {
       RTNETADDRIPV4 a4;
@@ -99,8 +99,8 @@ DECLINLINE(int) inet_pton(int af_family, const char *str, void *dst)
  * Corresponds to WSAEHOSTDOWN (10064) WSAGetLastError()
  */
 #  define EHOSTDOWN WSAEHOSTDOWN
-/** 
- * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEHOSTUNREACH 
+/**
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/ms740668(v=vs.85).aspx#WSAEHOSTUNREACH
  */
 #  define EHOSTUNREAH WSAEHOSTUNREACH
 
@@ -122,7 +122,7 @@ typedef WSABUF IOVEC;
 #  define IOVEC_SET_BASE(iov, b) ((iov).buf = (b))
 
 #  define IOVEC_GET_LEN(iov) ((iov).len)
-#  define IOVEC_SET_LEN(iov, l) ((iov).len = (ULONG)(l)) 
+#  define IOVEC_SET_LEN(iov, l) ((iov).len = (ULONG)(l))
 
 RT_C_DECLS_BEGIN
 int RTWinSocketPair(int domain, int type, int protocol, SOCKET socket_vector[2]);
@@ -141,6 +141,6 @@ typedef struct iovec IOVEC;
 #  define IOVEC_SET_BASE(iov, b) ((iov).iov_base = (b))
 
 #  define IOVEC_GET_LEN(iov) ((iov).iov_len)
-#  define IOVEC_SET_LEN(iov, l) ((iov).iov_len = (l)) 
+#  define IOVEC_SET_LEN(iov, l) ((iov).iov_len = (l))
 # endif
 #endif

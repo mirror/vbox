@@ -170,7 +170,7 @@ pollmgr_add(struct pollmgr_handler *handler, SOCKET fd, int events)
         struct pollfd *newfds;
         struct pollmgr_handler **newhdls;
         nfds_t newcap;
-	nfds_t i;
+        nfds_t i;
 
         newcap = pollmgr.capacity * 2;
 
@@ -337,7 +337,7 @@ pollmgr_loop(void)
         }
 #endif
 
-	DPRINTF2(("%s: ready %d fd%s\n",
+        DPRINTF2(("%s: ready %d fd%s\n",
                   __func__, nready, (nready == 1 ? "" : "s")));
 
         if (nready < 0) {
@@ -358,11 +358,11 @@ pollmgr_loop(void)
 
         for (i = 0; (nfds_t)i < pollmgr.nfds && nready > 0; ++i) {
             struct pollmgr_handler *handler;
-            SOCKET fd; 
+            SOCKET fd;
             int revents, nevents;
 
-	    fd = pollmgr.fds[i].fd;
-	    revents = pollmgr.fds[i].revents;
+            fd = pollmgr.fds[i].fd;
+            revents = pollmgr.fds[i].revents;
 
             /*
              * Channel handlers can request deletion of dynamic slots
@@ -423,7 +423,7 @@ pollmgr_loop(void)
                 }
                 pollmgr.fds[i].events = nevents;
             }
-	    else if (i < POLLMGR_SLOT_FIRST_DYNAMIC) {
+            else if (i < POLLMGR_SLOT_FIRST_DYNAMIC) {
                 /* Don't garbage-collect channels. */
                 DPRINTF2(("%s: fd %d ! DELETED (channel %d)\n",
                           __func__, fd, i));
@@ -436,7 +436,7 @@ pollmgr_loop(void)
                 DPRINTF2(("%s: fd %d ! DELETED\n", __func__, fd));
 
                 /* schedule for deletion (see g/c loop for details) */
-                *pdelprev = i;	/* make previous entry point to us */
+                *pdelprev = i;  /* make previous entry point to us */
                 pdelprev = &pollmgr.fds[i].fd;
 
                 pollmgr.fds[i].fd = INVALID_SOCKET; /* end of list (for now) */
@@ -448,7 +448,7 @@ pollmgr_loop(void)
 
 
         /*
-	 * Garbage collect and compact the array.
+         * Garbage collect and compact the array.
          *
          * We overload pollfd::fd of garbage entries to store the
          * index of the next garbage entry.  The garbage list is
@@ -458,7 +458,7 @@ pollmgr_loop(void)
          *
          * See update_events code for nevents < 0 at the end of the
          * processing loop above.
-	 */
+         */
         while (delfirst != INVALID_SOCKET) {
             const int last = pollmgr.nfds - 1;
 
@@ -628,7 +628,7 @@ pollmgr_refptr_get(struct pollmgr_refptr *rp)
  * Remove (the only) strong reference.
  *
  * If it were real strong/weak pointers, we should also call
- * destructor for the referenced object, but 
+ * destructor for the referenced object, but
  */
 void
 pollmgr_refptr_unref(struct pollmgr_refptr *rp)

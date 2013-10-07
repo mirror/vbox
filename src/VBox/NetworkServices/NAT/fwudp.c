@@ -405,7 +405,7 @@ fwudp_pcb_send(void *arg)
         /*
          * XXX: check that its ours and not accidentally created by
          * outbound traffic.
-         * 
+         *
          * ???: Otherwise?  Expire it and set pcb = NULL; to create a
          * new one below?
          */

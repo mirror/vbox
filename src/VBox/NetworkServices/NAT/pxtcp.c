@@ -668,7 +668,7 @@ void
 pxtcp_cancel_forwarded(struct pxtcp *pxtcp)
 {
     LWIP_ASSERT1(pxtcp->pcb == NULL);
-    pxtcp_pcb_reset_pxtcp(pxtcp);    
+    pxtcp_pcb_reset_pxtcp(pxtcp);
 }
 
 
@@ -1021,9 +1021,9 @@ pxtcp_pcb_heard(void *arg, struct tcp_pcb *newpcb, err_t error)
     nsent = pxtcp_chan_send(POLLMGR_CHAN_PXTCP_ADD, pxtcp);
     if (nsent < 0) {
         pxtcp->sock = INVALID_SOCKET;
-        proxy_reset_socket(sock); 
-	pxtcp_pcb_accept_refuse(pxtcp);
-	return ERR_ABRT;
+        proxy_reset_socket(sock);
+        pxtcp_pcb_accept_refuse(pxtcp);
+        return ERR_ABRT;
     }
 
     return ERR_OK;
@@ -1055,7 +1055,7 @@ pxtcp_pcb_accept(void *arg, struct tcp_pcb *pcb, err_t error)
 
     /* send any inbound data that are already queued */
     pxtcp_pcb_forward_inbound(pxtcp);
-    return ERR_OK; 
+    return ERR_OK;
 }
 
 
@@ -1172,7 +1172,7 @@ pxtcp_pcb_accept_confirm(void *ctx)
         pxtcp_chan_send_weak(POLLMGR_CHAN_PXTCP_RESET, pxtcp);
     }
 
-    /* 
+    /*
      * else if (error != ERR_OK): even if tcp_output() failed with
      * ERR_MEM - don't give up, that SYN|ACK is enqueued and will be
      * retransmitted eventually.
@@ -1430,7 +1430,7 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
     const int send_flags = 0;
 #endif
 
-        
+
     LWIP_ASSERT1(pxtcp->unsent == NULL || pxtcp->unsent == p);
 
     forwarded = 0;
@@ -1468,23 +1468,23 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
         nsent = sendmsg(pxtcp->sock, &mh, send_flags);
 #else
         /**
-         * WSASend(,,,DWORD *,,,) - takes SSIZE_T (64bit value) ... so all nsent's 
+         * WSASend(,,,DWORD *,,,) - takes SSIZE_T (64bit value) ... so all nsent's
          * bits should be zeroed before passing to WSASent.
          */
-        nsent = 0; 
+        nsent = 0;
         rc = WSASend(pxtcp->sock, iov, (DWORD)i, (DWORD *)&nsent, 0, NULL, NULL);
         if (rc == SOCKET_ERROR) {
-            /* WSASent reports SOCKET_ERROR and updates error accessible with 
+            /* WSASent reports SOCKET_ERROR and updates error accessible with
              * WSAGetLastError(). We assign nsent to -1, enforcing code below
              * to access error in BSD style.
              */
-            warn("pxtcp_pcb_forward_outbound:WSASend error:%d nsent:%d\n", 
+            warn("pxtcp_pcb_forward_outbound:WSASend error:%d nsent:%d\n",
                  WSAGetLastError(),
                  nsent);
-            nsent = -1; 
+            nsent = -1;
        }
 #endif
- 
+
         if (nsent == (ssize_t)fwd1) {
             /* successfully sent this chain fragment completely */
             forwarded += nsent;
@@ -1843,7 +1843,7 @@ pxtcp_sock_read(struct pxtcp *pxtcp, int *pstop)
              nread);
         nread = -1;
     }
-    
+
     if (dwFlags) {
         warn("pxtcp_sock_read:WSARecv(%d) dwFlags:%x nread:%d\n",
              pxtcp->sock,
@@ -2045,7 +2045,7 @@ pxtcp_pcb_forward_inbound(struct pxtcp *pxtcp)
             if (toeob == sndbuf || lim == 0) {
                 maybemore = 0;
             }
-            else { 
+            else {
                 maybemore = TCP_WRITE_FLAG_MORE;
             }
 
@@ -2192,7 +2192,7 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
     LWIP_ASSERT1(pxtcp->pcb == pcb);
     LWIP_ASSERT1(pcb->callback_arg == pxtcp);
     LWIP_UNUSED_ARG(pcb);       /* only in assert */
- 
+
     DPRINTF2(("%s: pxtcp %p; pcb %p: +%d ACKed:"
               " unacked %d, unsent %d, vacant %d\n",
               __func__, (void *)pxtcp, (void *)pcb, (int)len,
@@ -2209,7 +2209,7 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
         unacked = pxtcp->inbuf.unacked;
     }
     else {
-        /* 
+        /*
          * Advance unacked index.  Guest acknowledged the data, so it
          * won't be needed again for potential retransmits.
          */
@@ -2228,7 +2228,7 @@ pxtcp_pcb_sent(void *arg, struct tcp_pcb *pcb, u16_t len)
 #ifdef RT_OS_WINDOWS
             /**
              * We have't got enought room in ring buffer to read atm,
-             * but we don't want to lose notification from WSAW4ME when 
+             * but we don't want to lose notification from WSAW4ME when
              * space would be available, so we reset event with empty recv
              */
             recv(pxtcp->sock, NULL, 0, 0);
@@ -2383,7 +2383,7 @@ pxtcp_pcb_err(void *arg, err_t error)
 
     pxtcp->pcb = NULL;          /* pcb is gone */
     if (pxtcp->deferred_delete) {
-        pxtcp_pcb_reset_pxtcp(pxtcp);        
+        pxtcp_pcb_reset_pxtcp(pxtcp);
     }
     else {
         pxtcp_chan_send_weak(POLLMGR_CHAN_PXTCP_RESET, pxtcp);

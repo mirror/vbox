@@ -32,7 +32,7 @@ static ip6_addr_t allnodes_linklocal = {
 
 /*
  * Unsolicited Router Advertisement payload.
- * 
+ *
  * NB: Since ICMP checksum covers pseudo-header with destination
  * address (link-local allnodes multicast in this case) this payload
  * cannot be used for solicited replies to unicast addresses.
