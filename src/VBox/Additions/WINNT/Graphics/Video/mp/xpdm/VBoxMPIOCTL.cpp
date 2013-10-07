@@ -633,7 +633,7 @@ BOOLEAN VBoxMPQueryRegistryFlags(PVBOXMP_DEVEXT pExt, ULONG *pulFlags, PSTATUS_B
         rc = VBoxMPCmnRegQueryDword(Registry, L"VBoxVideoFlags", &u32Flags);
         VBOXMP_WARN_VPS_NOBP(rc);
         if (rc != NO_ERROR)
-        {   
+        {
             u32Flags = 0;
         }
 

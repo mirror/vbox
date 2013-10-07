@@ -19,6 +19,6 @@ int main(int argc, TCHAR* argv[])
     DWORD dwErr = CredUIPromptForWindowsCredentials(&(credUiInfo), 0, &(authPackage),
                                                     NULL, 0, &authBuffer, &authBufferSize, &(save), 0);
     printf("Test returned %ld\n", dwErr);
-    
+
     return dwErr == ERROR_SUCCESS ? 0 : 1;
 }

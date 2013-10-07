@@ -550,7 +550,7 @@ NTSTATUS VBoxMRxFlush (IN PRX_CONTEXT RxContext)
 
     Status = VBoxErrorToNTStatus(vboxRC);
 
-    Log(("VBOXSF: MRxFlush: Returned 0x%08X\n", 
+    Log(("VBOXSF: MRxFlush: Returned 0x%08X\n",
          Status));
     return Status;
 }

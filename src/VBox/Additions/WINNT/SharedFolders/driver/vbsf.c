@@ -1184,7 +1184,7 @@ NTSTATUS vbsfCreateConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
 
                     if (pDeviceExtension->wszLocalConnectionName[idx] == NULL)
                     {
-                        Log(("VBOXSF: vbsfCreateConnection: LocalConnectionName at index %d NOT allocated!\n", 
+                        Log(("VBOXSF: vbsfCreateConnection: LocalConnectionName at index %d NOT allocated!\n",
                              idx));
                         Status = STATUS_INSUFFICIENT_RESOURCES;
                     }

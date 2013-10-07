@@ -558,7 +558,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
                 pStatus->Status = ERROR_INVALID_PARAMETER;
                 bResult = FALSE;
             }
-                
+
             break;
         }
 

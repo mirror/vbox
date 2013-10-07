@@ -220,13 +220,13 @@ ifdef VBOX_WITH_WDDM
 					   $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxOGLpassthroughspu-x86.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxVideoWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
-	
+
  ifdef VBOX_WITH_WDDM_W8
   VBOXWDDMW8_WITH_DISPD3D = 1
   ifdef VBOX_WITH_CROGL
    VBOXWDDMW8_WITH_GL = 1
   endif
- 
+
   INSTALLS += VBoxVideoW8-inf
   VBoxVideoW8-inf_INST = $(INST_ADDITIONS)
   VBoxVideoW8-inf_MODE = a+r,u+w
