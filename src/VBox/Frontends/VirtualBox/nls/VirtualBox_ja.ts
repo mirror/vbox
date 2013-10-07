@@ -1181,7 +1181,7 @@
     <message>
         <location filename="../src/globals/UIShortcutPool.cpp" line="235"/>
         <source>Popup Menu</source>
-        <translation type="unfinished">ポップアップメニュー</translation>
+        <translation>ポップアップメニュー</translation>
     </message>
 </context>
 <context>
@@ -2830,7 +2830,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="429"/>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">フレームサイズ: %1x%2, フレームレート: %3fps, ビットレート: %4kbps</translation>
+        <translation>フレームサイズ: %1x%2, フレームレート: %3fps, ビットレート: %4kbps</translation>
     </message>
     <message>
         <location filename="../src/selector/graphics/details/UIGDetailsElements.cpp" line="435"/>

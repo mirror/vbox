@@ -904,7 +904,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Açılır Menü</translation>
+        <translation>Açılır Menü</translation>
     </message>
 </context>
 <context>
@@ -2152,7 +2152,7 @@
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
+        <translation>Kare Boyutu: %1x%2, Kare Oranı: %3fps, Bit Oranı: %4kbps</translation>
     </message>
 </context>
 <context>

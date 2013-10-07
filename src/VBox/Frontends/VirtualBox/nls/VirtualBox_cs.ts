@@ -999,7 +999,7 @@
     </message>
     <message>
         <source>Popup Menu</source>
-        <translation type="unfinished">Vyskakovací nabídka</translation>
+        <translation>Vyskakovací nabídka</translation>
     </message>
 </context>
 <context>
@@ -2811,7 +2811,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Frame Size: %1x%2, Frame Rate: %3fps, Bit Rate: %4kbps</source>
-        <translation type="unfinished">Rozlišení snímku: %1x%2, počet snímků: %3fps,rychlost snímků: %4kbps</translation>
+        <translation>Rozlišení snímku: %1x%2, počet snímků: %3fps,rychlost snímků: %4kbps</translation>
     </message>
 </context>
 <context>
