@@ -171,7 +171,7 @@ ifdef VBOX_WITH_WDDM
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/displib.lib \
   	$(PATH_SDK_$(VBOX_WINDDK_GST_W8)_LIB)/BufferOverflowK.lib
  endif # VBOX_WITH_WDDM_W8
- 
+
 endif # VBOX_WITH_WDDM
 
 #

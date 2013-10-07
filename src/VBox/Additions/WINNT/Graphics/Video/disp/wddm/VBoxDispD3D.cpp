@@ -1856,7 +1856,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
 {
-	VBOXDISP_DDI_PROLOGUE_ADP(hAdapter);
+        VBOXDISP_DDI_PROLOGUE_ADP(hAdapter);
 
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
 
