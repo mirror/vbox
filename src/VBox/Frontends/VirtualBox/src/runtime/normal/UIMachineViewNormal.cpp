@@ -261,7 +261,7 @@ QSize UIMachineViewNormal::calculateMaxGuestSize() const
     /* To work out how big the guest display can get without the window going
      * over the maximum size we calculated above, we work out how much space
      * the other parts of the window (frame, menu bar, status bar and so on)
-     * take up and subtract that space from the maximum window size. The 
+     * take up and subtract that space from the maximum window size. The
      * central widget shouldn't be bigger than the window, but we bound it for
      * sanity (or insanity) reasons. */
     return maximumSize - (windowSize - centralWidgetSize.boundedTo(windowSize));

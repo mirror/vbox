@@ -686,7 +686,7 @@ public:
                                             "Virtualization Stuff LED")
                     .arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"), virtualization)
                     .arg(VBoxGlobal::tr("Nested Paging"), nestedPaging)
-                    .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)                    
+                    .arg(VBoxGlobal::tr("Unrestricted Execution"), unrestrictExec)
                     .arg(VBoxGlobal::tr("Execution Cap", "details report"), strCPUExecCap));
 
         int cpuCount = console.GetMachine().GetCPUCount();

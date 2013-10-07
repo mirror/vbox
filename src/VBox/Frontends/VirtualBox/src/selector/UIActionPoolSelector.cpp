@@ -1048,4 +1048,3 @@ void UIActionPoolSelector::createMenus()
 
 #include "UIActionPoolSelector.moc"
 
-

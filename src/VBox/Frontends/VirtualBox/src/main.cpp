@@ -294,7 +294,7 @@ static void showHelp()
 
 #ifdef Q_WS_X11
 /** This is a workaround for a bug on old libX11 versions, fixed in commit
- * 	941f02ede63baa46f93ed8abccebe76fb29c0789 and released in version 1.1. */
+ *      941f02ede63baa46f93ed8abccebe76fb29c0789 and released in version 1.1. */
 Status VBoxXInitThreads(void)
 {
     void *pvProcess = dlopen(NULL, RTLD_GLOBAL | RTLD_LAZY);
