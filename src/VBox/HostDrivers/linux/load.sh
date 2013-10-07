@@ -27,4 +27,3 @@ kmk -C "${MY_DIR}/src/vboxdrv" "$@"
 sudo make -C "${MY_DIR}/src/" unload
 echo "Installing SUPDrv (aka VBoxDrv/vboxdrv)"
 sudo /sbin/insmod "${MY_DIR}/src/vboxdrv/vboxdrv.ko"
-                        

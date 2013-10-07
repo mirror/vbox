@@ -1472,13 +1472,13 @@ SUPR0TracerFireProbe:                                                   \n\
 ");
 # if   defined(RT_ARCH_AMD64)
 __asm__(" \
-	    movq    g_pfnSupdrvProbeFireKernel(%rip), %rax                  \n\
-	    jmp	    *%rax \n\
+            movq    g_pfnSupdrvProbeFireKernel(%rip), %rax                  \n\
+            jmp     *%rax \n\
 ");
 # elif defined(RT_ARCH_X86)
 __asm__("\
-	    movl    g_pfnSupdrvProbeFireKernel, %eax                        \n\
-	    jmp	    *%eax \n\
+            movl    g_pfnSupdrvProbeFireKernel, %eax                        \n\
+            jmp     *%eax \n\
 ");
 # else
 #  error "Which arch is this?"
