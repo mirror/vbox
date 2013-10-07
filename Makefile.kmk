@@ -1267,13 +1267,13 @@ testsuite-build: \
 	testsuite-build-freebsd.x86 \
 	testsuite-build-darwin.amd64 \
 	testsuite-build-darwin.x86
-	
+
 testsuite-build-rsync-into-vms: \
 		testsuite-build-solaris.rsync-into-vm \
 		testsuite-build-os2.rsync-into-vm
 	$(call MSG_L1,Rsynced the sources + tools into the VMs.)
 .NOTPARALLEL: testsuite-build-rsync-into-vms
-	
+
 
 VBOX_TESTSUITE_BUILD.amd64 = VBOX_ONLY_TESTSUITE=1 \
 	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
