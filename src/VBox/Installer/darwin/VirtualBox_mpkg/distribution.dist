@@ -77,15 +77,11 @@
     <welcome file="Welcome.rtf" mime-type="text/rtf" uti="public.rtf"/>
     <choices-outline>
         <line choice="choiceVBoxKEXTs"></line>
-        <line choice="choiceVBoxStartup"></line>
         <line choice="choiceVBox"></line>
         <line choice="choiceVBoxCLI"></line>
     </choices-outline>
     <choice id="choiceVBoxKEXTs"   title="choiceVBoxKEXTs_title"   description="choiceVBoxKEXTs_msg"   start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.vboxkexts"></pkg-ref>
-    </choice>
-    <choice id="choiceVBoxStartup" title="choiceVBoxStartup_title" description="choiceVBoxStartup_msg" start_selected="true" start_enabled="false" start_visible="true">
-        <pkg-ref id="org.virtualbox.pkg.vboxstartupitems"></pkg-ref>
     </choice>
     <choice id="choiceVBox"        title="choiceVBox_title"        description="choiceVBox_msg"        start_selected="true" start_enabled="false" start_visible="true">
         <pkg-ref id="org.virtualbox.pkg.virtualbox"></pkg-ref>
@@ -94,7 +90,6 @@
         <pkg-ref id="org.virtualbox.pkg.virtualboxcli"></pkg-ref>
     </choice>
     <pkg-ref id="org.virtualbox.pkg.vboxkexts" auth="Root">file:./Contents/Packages/VBoxKEXTs.pkg</pkg-ref>
-    <pkg-ref id="org.virtualbox.pkg.vboxstartupitems" auth="Root">file:./Contents/Packages/VBoxStartupItems.pkg</pkg-ref>
     <pkg-ref id="org.virtualbox.pkg.virtualbox" auth="Root">file:./Contents/Packages/VirtualBox.pkg</pkg-ref>
     <pkg-ref id="org.virtualbox.pkg.virtualboxcli" auth="Root">file:./Contents/Packages/VirtualBoxCLI.pkg</pkg-ref>
 </installer-gui-script>

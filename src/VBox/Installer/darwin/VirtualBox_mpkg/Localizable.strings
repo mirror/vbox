@@ -1,10 +1,7 @@
 'VirtualBox_title' = '@VBOX_PRODUCT@';
 
 'choiceVBoxKEXTs_title' = '@VBOX_PRODUCT@ Kernel Extensions';
-'choiceVBoxKEXTs_msg' = 'Installs the @VBOX_PRODUCT@ Kernel Extensions into /Library/Extensions.';
-
-'choiceVBoxStartup_title' = '@VBOX_PRODUCT@ Startup Items';
-'choiceVBoxStartup_msg' = 'Installs the @VBOX_PRODUCT@ Startup Items to /Library/StartupItems/VirtualBox.';
+'choiceVBoxKEXTs_msg' = 'Installs the @VBOX_PRODUCT@ Kernel Extensions into /Library/Application Support/VirtualBox;
 
 'choiceVBox_title' = '@VBOX_PRODUCT@';
 'choiceVBox_msg' = 'Installs the @VBOX_PRODUCT@ application into /Applications.';
