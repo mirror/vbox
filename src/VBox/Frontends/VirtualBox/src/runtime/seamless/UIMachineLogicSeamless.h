@@ -48,6 +48,9 @@ protected:
 
 private slots:
 
+    /* Handler: Console callback stuff: */
+    void sltMachineStateChanged();
+
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sltHostScreenCountChanged(int cScreenCount);
 

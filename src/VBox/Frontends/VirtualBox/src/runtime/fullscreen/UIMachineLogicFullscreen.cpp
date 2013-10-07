@@ -88,6 +88,22 @@ bool UIMachineLogicFullscreen::hasHostScreenForGuestScreen(int iScreenId) const
     return m_pScreenLayout->hasHostScreenForGuestScreen(iScreenId);
 }
 
+void UIMachineLogicFullscreen::sltMachineStateChanged()
+{
+    /* Call to base-class: */
+    UIMachineLogic::sltMachineStateChanged();
+
+    /* If machine-state changed from 'paused' to 'running': */
+    if (uisession()->isRunning() && uisession()->wasPaused())
+    {
+        /* We should rebuild screen-layout: */
+        m_pScreenLayout->rebuild();
+        /* We should update machine-windows sizes: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            pMachineWindow->handleScreenResize();
+    }
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::sltChangePresentationMode(bool /* fEnabled */)
 {

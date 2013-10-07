@@ -100,6 +100,22 @@ void UIMachineLogicSeamless::notifyAbout3DOverlayVisibilityChange(bool)
     }
 }
 
+void UIMachineLogicSeamless::sltMachineStateChanged()
+{
+    /* Call to base-class: */
+    UIMachineLogic::sltMachineStateChanged();
+
+    /* If machine-state changed from 'paused' to 'running': */
+    if (uisession()->isRunning() && uisession()->wasPaused())
+    {
+        /* We should rebuild screen-layout: */
+        m_pScreenLayout->rebuild();
+        /* We should update machine-windows sizes: */
+        foreach (UIMachineWindow *pMachineWindow, machineWindows())
+            pMachineWindow->handleScreenResize();
+    }
+}
+
 void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
     LogRelFlow(("UIMachineLogicSeamless::GuestScreenCountChanged.\n"));

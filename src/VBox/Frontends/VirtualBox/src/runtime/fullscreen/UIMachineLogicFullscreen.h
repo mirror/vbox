@@ -45,6 +45,9 @@ protected:
 
 private slots:
 
+    /* Handler: Console callback stuff: */
+    void sltMachineStateChanged();
+
 #ifdef Q_WS_MAC
     void sltChangePresentationMode(bool fEnabled);
     void sltScreenLayoutChanged();
