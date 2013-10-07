@@ -145,12 +145,12 @@ static DECLCALLBACK(int)  dbgDiggerOS2QueryVersion(PUVM pUVM, void *pvData, char
             RTStrPrintf(pszOS2ProductType, sizeof(achOS2ProductType), "OS/2 2.%02d", pThis->OS2MinorVersion);
             pThis->enmVer = DBGDIGGEROS2VER_2_x;
         }
-        else if (pThis->OS2MinorVersion < 40) 
+        else if (pThis->OS2MinorVersion < 40)
         {
             RTStrPrintf(pszOS2ProductType, sizeof(achOS2ProductType), "OS/2 Warp");
             pThis->enmVer = DBGDIGGEROS2VER_3_0;
         }
-        else if (pThis->OS2MinorVersion == 40) 
+        else if (pThis->OS2MinorVersion == 40)
         {
             RTStrPrintf(pszOS2ProductType, sizeof(achOS2ProductType), "OS/2 Warp 4");
             pThis->enmVer = DBGDIGGEROS2VER_4_0;
@@ -273,13 +273,13 @@ static DECLCALLBACK(bool)  dbgDiggerOS2Probe(PUVM pUVM, void *pvData)
         RTUTF16             wsz[8192/2];
     } u;
 
-    /* 
+    /*
      * If the DWORD at 70:0 contains 'SAS ' it's quite unlikely that this wouldn't be OS/2.
      * Note: The SAS layout is similar between 16-bit and 32-bit OS/2, but not identical.
-     * 32-bit OS/2 will have the flat kernel data selector at SAS:06. The selector is 168h 
-     * or similar. For 16-bit OS/2 the field contains a table offset into the SAS which will 
-     * be much smaller. Fun fact: The global infoseg selector in the SAS is bimodal in 16-bit 
-     * OS/2 and will work in real mode as well. 
+     * 32-bit OS/2 will have the flat kernel data selector at SAS:06. The selector is 168h
+     * or similar. For 16-bit OS/2 the field contains a table offset into the SAS which will
+     * be much smaller. Fun fact: The global infoseg selector in the SAS is bimodal in 16-bit
+     * OS/2 and will work in real mode as well.
      */
     do {
         rc = DBGFR3AddrFromSelOff(pUVM, 0 /*idCpu*/, &Addr, 0x70, 0x00);
@@ -290,7 +290,7 @@ static DECLCALLBACK(bool)  dbgDiggerOS2Probe(PUVM pUVM, void *pvData)
             break;
         if (u.au32[0] != DIG_OS2_SAS_SIG)
             break;
-        
+
         /* This sure looks like OS/2, but a bit of paranoia won't hurt. */
         if (u.au16[2] >= u.au16[4])
             break;

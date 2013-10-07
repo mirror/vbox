@@ -160,7 +160,7 @@ unsigned VBoxDbgBaseWindow::m_cyBorder = 0;
 
 
 VBoxDbgBaseWindow::VBoxDbgBaseWindow(VBoxDbgGui *a_pDbgGui, QWidget *a_pParent)
-    : QWidget(a_pParent, Qt::Window), VBoxDbgBase(a_pDbgGui), m_fPolished(false), 
+    : QWidget(a_pParent, Qt::Window), VBoxDbgBase(a_pDbgGui), m_fPolished(false),
     m_x(INT_MAX), m_y(INT_MAX), m_cx(0), m_cy(0)
 {
 }
