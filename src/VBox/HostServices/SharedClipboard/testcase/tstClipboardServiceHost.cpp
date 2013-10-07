@@ -38,7 +38,7 @@ static void testSetMode(void)
     VBOXHGCMSVCFNTABLE table;
     uint32_t u32Mode;
     int rc;
-    
+
     RTTestISub("Testing HOST_FN_SET_MODE");
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
@@ -82,7 +82,7 @@ static void testSetHeadless(void)
     VBOXHGCMSVCFNTABLE table;
     bool fHeadless;
     int rc;
-    
+
     RTTestISub("Testing HOST_FN_SET_HEADLESS");
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));

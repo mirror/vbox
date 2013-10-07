@@ -308,7 +308,7 @@ static uint64_t testRTFileSetFMode;
 extern int testRTFileSetMode(RTFILE File, RTFMODE fMode)
 {
  /* RTPrintf("%s: fMode=%llu\n", __PRETTY_FUNCTION__, LLUIFY(fMode)); */
-    testRTFileSetFMode = fMode; 
+    testRTFileSetFMode = fMode;
     return VINF_SUCCESS;
 }
 
@@ -371,7 +371,7 @@ extern int  testRTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite,
         *pcbWritten = strlen(testRTFileWriteData) + 1;
     return VINF_SUCCESS;
 }
-                             
+
 extern int testRTFsQueryProperties(const char *pszFsPath,
                                       PRTFSPROPERTIES pProperties)
 {
@@ -385,7 +385,7 @@ extern int testRTFsQueryProperties(const char *pszFsPath,
 extern int testRTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
 { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 extern int testRTFsQuerySizes(const char *pszFsPath, PRTFOFF pcbTotal,
-                                 RTFOFF *pcbFree, uint32_t *pcbBlock, 
+                                 RTFOFF *pcbFree, uint32_t *pcbBlock,
                                  uint32_t *pcbSector) { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 
 extern int testRTPathQueryInfoEx(const char *pszPath,
@@ -400,7 +400,7 @@ extern int testRTPathQueryInfoEx(const char *pszPath,
     return VINF_SUCCESS;
 }
 
-extern int testRTSymlinkDelete(const char *pszSymlink, uint32_t fDelete) 
+extern int testRTSymlinkDelete(const char *pszSymlink, uint32_t fDelete)
 { RTPrintf("%s\n", __PRETTY_FUNCTION__); return 0; }
 extern int testRTSymlinkRead(const char *pszSymlink, char *pszTarget,
                               size_t cbTarget, uint32_t fRead)
