@@ -657,7 +657,7 @@ static int vdScriptInterpreterEvaluateStatement(PVDSCRIPTINTERPCTX pThis, PVDSCR
 
             /* Put the conditionals for while and for loops onto the control stack again. */
             PVDSCRIPTASTSTMT pLoopStmt = (PVDSCRIPTASTSTMT)pCtrl->Ctrl.pAstNode;
-  
+
             AssertMsg(   pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_WHILE
                       || pLoopStmt->enmStmtType == VDSCRIPTSTMTTYPE_FOR,
                       ("Invalid statement type, must be for or while loop\n"));
