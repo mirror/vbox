@@ -77,7 +77,7 @@ typedef struct VBOXHOSTCHCALLBACKCTX
 /* Only one service instance is supported. */
 static VBOXHOSTCHCTX g_ctx = { false };
 
-static VBOXHOSTCHANNELCALLBACKS g_callbacks = 
+static VBOXHOSTCHANNELCALLBACKS g_callbacks =
 {
     HostChannelCallbackEvent,
     HostChannelCallbackDeleted
