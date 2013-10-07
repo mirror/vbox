@@ -924,10 +924,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
         if (fOsXGuest)
         {
-            if (   osTypeId >= "MacOS107_64"
-                || osTypeId == "MacOS"          /* legacy */
-                || osTypeId == "MacOS_64")      /* legacy */
-                InsertConfigInteger(pCPUM, "EnableHVP", 1);
+            InsertConfigInteger(pCPUM, "EnableHVP", 1);
 
             /* Fake the CPU family/model so the guest works.  This is partly
                because older mac releases really doesn't work on newer cpus,
