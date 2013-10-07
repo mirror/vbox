@@ -1248,9 +1248,9 @@ int vbmsSolHandleTransparentIOCtl(PVBMSSTATE pState, mblk_t *pMBlk,
         /* We only need state data if there is something to copy back. */
         if (enmDirection == BOTH)
             pUserAddr = *(void **)pMBlk->b_cont->b_rptr;
-	    mcopyin(pMBlk, pUserAddr /* state data */, cbCmd, NULL);
-	}
-	else if (enmDirection == OUT)
+            mcopyin(pMBlk, pUserAddr /* state data */, cbCmd, NULL);
+        }
+        else if (enmDirection == OUT)
     {
         mblk_t *pMBlkOut = allocb(cbCmd, BPRI_MED);
         void *pvData;
