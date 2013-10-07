@@ -227,6 +227,7 @@ typedef struct mach_header_64
 #define MH_BUNDLE                   UINT32_C(8)
 #define MH_DYLIB_STUB               UINT32_C(9)
 #define MH_DSYM                     UINT32_C(10)
+#define MH_KEXT_BUNDLE              UINT32_C(11)
 
 /* mach_header_* flags */
 #define MH_NOUNDEFS                 UINT32_C(0x00000001)
