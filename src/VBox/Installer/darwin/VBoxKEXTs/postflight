@@ -33,6 +33,7 @@ fi
 # Load the extension, exit on first error.
 #
 sync
+set -e
 kextload    /Library/Extensions/VBoxDrv.kext
 kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxUSB.kext
 kextload -d /Library/Extensions/VBoxDrv.kext      /Library/Extensions/VBoxNetFlt.kext
