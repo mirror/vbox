@@ -353,7 +353,7 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
 
     /* set default addresses */
     inet_aton("127.0.0.1", &loopback_addr);
-    
+
     if (!fUseHostResolver)
     {
         rc = slirpInitializeDnsSettings(pData);
@@ -743,11 +743,11 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls)
                 Log2(("NAT: %R[natsock] expired\n", so));
                 if (so->so_timeout != NULL)
                 {
-                    /* so_timeout - might change the so_expire value or 
-                     * drop so_timeout* from so. 
+                    /* so_timeout - might change the so_expire value or
+                     * drop so_timeout* from so.
                      */
                     so->so_timeout(pData, so, so->so_timeout_arg);
-                    /* on 4.2 so->  
+                    /* on 4.2 so->
                      */
                     if (   so_next->so_prev != so /* so_timeout freed the socket */
                         || so->so_timeout)  /* so_timeout just freed so_timeout */

@@ -1097,4 +1097,3 @@ const PDMDRVREG g_DrvHostParallel =
 };
 #endif /*IN_RING3*/
 
-

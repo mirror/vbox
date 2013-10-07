@@ -622,7 +622,7 @@ static int drvvdCfgQuery(void *pvUser, const char *pszName, char *pszString, siz
 *******************************************************************************/
 
 /**
- * vvl: this structure duplicate meaning of sockaddr, 
+ * vvl: this structure duplicate meaning of sockaddr,
  * perhaps it'd be better to get rid of it.
  */
 typedef union INIPSOCKADDRUNION
@@ -680,10 +680,10 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
     PINIPSOCKET pSocketInt = (PINIPSOCKET)Sock;
     int iInetFamily = PF_INET;
     struct in_addr ip;
-#ifdef VBOX_WITH_NEW_LWIP 
+#ifdef VBOX_WITH_NEW_LWIP
     ip6_addr_t ip6;
 #endif
-    
+
     /* Check whether lwIP is set up in this VM instance. */
     if (!DevINIPConfigured())
     {
@@ -695,8 +695,8 @@ static DECLCALLBACK(int) drvvdINIPClientConnect(VDSOCKET Sock, const char *pszAd
 #ifdef VBOX_WITH_NEW_LWIP
     if (inet6_aton(pszAddress, &ip6))
         iInetFamily = PF_INET6;
-    else /* concatination with if */ 
-#endif    
+    else /* concatination with if */
+#endif
       if (!lwip_inet_aton(pszAddress, &ip))
     {
         LogRelFunc(("cannot resolve IP %s\n", pszAddress));

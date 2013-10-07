@@ -185,7 +185,7 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
     int             rcReq = SCSI_STATUS_OK;
     unsigned        uCmd = pVScsiReq->pbCDB[0];
 
-    /* 
+    /*
      * GET CONFIGURATION, GET EVENT/STATUS NOTIFICATION, INQUIRY, and REQUEST SENSE commands
      * operate even when a unit attention condition exists for initiator; every other command
      * needs to report CHECK CONDITION in that case.
@@ -193,9 +193,9 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
     if (!pVScsiLunMmc->Core.fReady && uCmd != SCSI_INQUIRY)
     {
         /*
-         * A note on media changes: As long as a medium is not present, the unit remains in 
-         * the 'not ready' state. Technically the unit becomes 'ready' soon after a medium 
-         * is inserted; however, we internally keep the 'not ready' state until we've had 
+         * A note on media changes: As long as a medium is not present, the unit remains in
+         * the 'not ready' state. Technically the unit becomes 'ready' soon after a medium
+         * is inserted; however, we internally keep the 'not ready' state until we've had
          * a chance to report the UNIT ATTENTION status indicating a media change.
          */
         if (pVScsiLunMmc->Core.fMediaPresent)
@@ -204,7 +204,7 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
                                              SCSI_ASC_MEDIUM_MAY_HAVE_CHANGED, 0x00);
             pVScsiLunMmc->Core.fReady = true;
         }
-        else 
+        else
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY,
                                              SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
     }
@@ -430,7 +430,7 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             format = pVScsiReq->pbCDB[2] & 0x0f;
             cbMax  = vscsiBE2HU16(&pVScsiReq->pbCDB[7]);
             fMSF   = (pVScsiReq->pbCDB[1] >> 1) & 1;
-            switch (format) 
+            switch (format)
             {
                 case 0x00:
                     mmcReadTOCNormal(pVScsiLun, pVScsiReq, cbMax, fMSF);
@@ -460,7 +460,7 @@ static int vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
             vscsiDeviceReqComplete(pVScsiLun->pVScsiDevice, pVScsiReq, rcReq, false, VINF_SUCCESS);
         }
-        else if (!cSectorTransfer) 
+        else if (!cSectorTransfer)
         {
             /* A 0 transfer length is not an error. */
             rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);

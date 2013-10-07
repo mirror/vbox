@@ -79,7 +79,7 @@ VARIABLE_INFO_ENTRY *gVariableInfo = NULL;
 
   @param[in] DataSize           Size of data. 0 means delete
 
-  @param[in] Attributes 	      Attribues of the variable
+  @param[in] Attributes               Attribues of the variable
 
   @param[in] Variable           The variable information which is used to keep track of variable usage.
 

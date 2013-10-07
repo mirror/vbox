@@ -91,7 +91,7 @@ static DECLCALLBACK(int) drvHostFloppyGetMediaSize(PDRVHOSTBASE pThis, uint64_t 
 
         dwLastError = GetLastError();
         rc = RTErrConvertFromWin32(dwLastError);
-        Log(("DrvHostFloppy: IOCTL_DISK_GET_DRIVE_GEOMETRY(%s) failed, LastError=%d rc=%Rrc\n", 
+        Log(("DrvHostFloppy: IOCTL_DISK_GET_DRIVE_GEOMETRY(%s) failed, LastError=%d rc=%Rrc\n",
              pThis->pszDevice, dwLastError, rc));
         return rc;
     }

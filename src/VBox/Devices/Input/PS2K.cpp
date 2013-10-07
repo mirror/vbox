@@ -432,7 +432,7 @@ static const   key_def   aPS2Keys[] = {
     /* A4 */ {UNAS, UNAS, UNAS,     0, T_U }, /* Key Unk: Keyboard ExSel */
 };
 
-/* 
+/*
  * Note 1: The behavior of these keys depends on the state of modifier keys
  * at the time the key was pressed.
  *

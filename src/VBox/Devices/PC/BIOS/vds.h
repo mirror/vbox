@@ -37,7 +37,7 @@ typedef struct {
         uint32_t    pte[1];     /* Page table entry array. */
     } u;
 } vds_edds;
-    
+
 
 /* VDS services */
 

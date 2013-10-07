@@ -693,8 +693,8 @@ static DECLCALLBACK(void) drvscsiMountNotify(PPDMIMOUNTNOTIFY pInterface)
 }
 
 /**
- * Called when media is unmounted 
- *  
+ * Called when media is unmounted
+ *
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  */
 static DECLCALLBACK(void) drvscsiUnmountNotify(PPDMIMOUNTNOTIFY pInterface)
@@ -960,7 +960,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
 
     PDMBLOCKTYPE enmType = pThis->pDrvBlock->pfnGetType(pThis->pDrvBlock);
     VSCSILUNTYPE enmLunType;
-    switch (enmType) 
+    switch (enmType)
     {
     case PDMBLOCKTYPE_HARD_DISK:
         enmLunType = VSCSILUNTYPE_SBC;

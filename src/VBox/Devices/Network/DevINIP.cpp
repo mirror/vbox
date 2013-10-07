@@ -115,10 +115,10 @@ typedef struct DEVINTNETIP
     /** Flag whether the link is up. */
     bool                    fLnkUp;
 #ifndef VBOX_WITH_NEW_LWIP
-    /** 
-     * This hack-flag for spliting initialization logic in devINIPTcpipInitDone, 
+    /**
+     * This hack-flag for spliting initialization logic in devINIPTcpipInitDone,
      * this is the only place when during initialization we can be called from TCPIP
-     * thread. 
+     * thread.
      * This callback used for Initialization and Finalization with old lwip.
      */
     bool fTermination;
@@ -126,7 +126,7 @@ typedef struct DEVINTNETIP
     /**
      * In callback we're getting status of interface adding operation (TCPIP thread),
      * but we need inform constructing routine whether it was success or not(EMT thread).
-     */ 
+     */
     int rcInitialization;
 } DEVINTNETIP, *PDEVINTNETIP;
 
@@ -341,7 +341,7 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
     lwip_etharp_init();
 #else
     netif->output = devINIPOutput;
-    
+
     lwip_etharp_init();
     TMTimerSetMillies(g_pDevINIPData->ARPTimer, ARP_TMR_INTERVAL);
  #endif
@@ -362,8 +362,8 @@ static DECLCALLBACK(int) devINIPNetworkConfiguration(PPDMDEVINS pDevIns, PDEVINT
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"IP\" value"));
-        /* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that 
-         * ISCSI target specified in IPv6 form.  
+        /* @todo: perhaps we should panic if IPv4 address isn't specify, with assumtion that
+         * ISCSI target specified in IPv6 form.
          */
         return rc;
     }
@@ -489,7 +489,7 @@ static DECLCALLBACK(void) devINIPNetworkDown_XmitPending(PPDMINETWORKDOWN pInter
 
 /**
  * Signals the end of lwIP TCPIP initialization.
- * 
+ *
  * @note: TCPIP thread, corresponding EMT waiting on semaphore.
  * @param   arg     opaque argument, here the pointer to the PDEVINTNETIP.
  */
@@ -511,17 +511,17 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
         if (!inet_aton(pThis->pszIP, &ip))
         {
             pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-            PDMDEV_SET_ERROR(pThis->pDevIns, 
+            PDMDEV_SET_ERROR(pThis->pDevIns,
                              pThis->rcInitialization,
                              N_("Configuration error: Invalid \"IP\" value"));
             goto done;
         }
         memcpy(&ipaddr, &ip, sizeof(ipaddr));
-        
+
         if (!inet_aton(pThis->pszNetmask, &ip))
         {
             pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-            PDMDEV_SET_ERROR(pThis->pDevIns, 
+            PDMDEV_SET_ERROR(pThis->pDevIns,
                              pThis->rcInitialization,
                              N_("Configuration error: Invalid \"Netmask\" value"));
             goto done;
@@ -533,7 +533,7 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
             if (!inet_aton(pThis->pszGateway, &ip))
             {
                 pThis->rcInitialization = VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-                PDMDEV_SET_ERROR(pThis->pDevIns, 
+                PDMDEV_SET_ERROR(pThis->pDevIns,
                                  pThis->rcInitialization,
                                  N_("Configuration error: Invalid \"Gateway\" value"));
                 goto done;
@@ -548,15 +548,15 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 
         pThis->IntNetIF.name[0] = 'I';
         pThis->IntNetIF.name[1] = 'N';
-    
+
         ret = netif_add(&pThis->IntNetIF, &ipaddr, &netmask, &gw, NULL,
                         devINIPInterface, lwip_tcpip_input);
 
         if (!ret)
         {
-           
+
             pThis->rcInitialization = VERR_NET_NO_NETWORK;
-            PDMDEV_SET_ERROR(pThis->pDevIns, 
+            PDMDEV_SET_ERROR(pThis->pDevIns,
                              pThis->rcInitialization,
                              N_("netif_add failed"));
             goto done;
@@ -564,7 +564,7 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 
         lwip_netif_set_default(&pThis->IntNetIF);
         lwip_netif_set_up(&pThis->IntNetIF);
-        
+
 #ifndef VBOX_WITH_NEW_LWIP
     }
     done:
@@ -580,7 +580,7 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
  * This callback is for finitializing our activity on TCPIP thread.
  * XXX: We do it only for new LWIP, old LWIP will stay broken for now.
  */
-static DECLCALLBACK(void) devINIPTcpipFiniDone(void *arg) 
+static DECLCALLBACK(void) devINIPTcpipFiniDone(void *arg)
 {
     PDEVINTNETIP pThis = (PDEVINTNETIP)arg;
     AssertPtrReturnVoid(arg);

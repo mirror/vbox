@@ -202,7 +202,7 @@ typedef struct USBHID
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
     /** If device has pending changes. */
-    bool                fHasPendingChanges;    
+    bool                fHasPendingChanges;
     /** Is this a relative, absolute or multi-touch pointing device? */
     USBHIDMODE          enmMode;
     /** Tablet coordinate shift factor for old and broken operating systems. */
@@ -654,12 +654,12 @@ static const uint8_t g_UsbHidMTReportDesc[] =
 /*     Input (Var)                       */ 0x81, 0x02,
 
 /*     Report ID                         */ 0x85, REPORTID_TOUCH_MAX_COUNT,
-/*     Usage (Contact count maximum)     */ 0x09, 0x55,  
-/*     Usage (Device identifier)         */ 0x09, 0x53,  
-/*     Report Size (8)                   */ 0x75, 0x08,  
-/*     Report Count (2)                  */ 0x95, 0x02,  
+/*     Usage (Contact count maximum)     */ 0x09, 0x55,
+/*     Usage (Device identifier)         */ 0x09, 0x53,
+/*     Report Size (8)                   */ 0x75, 0x08,
+/*     Report Count (2)                  */ 0x95, 0x02,
 /*     Logical Maximum (255)             */ 0x26, 0xFF, 0x00,
-/*     Feature (Var)                     */ 0xB1, 0x02,  
+/*     Feature (Var)                     */ 0xB1, 0x02,
 
 /*     Usage Page (Vendor-Defined 1)     */ 0x06, 0x00, 0xFF,
 /*     Usage (QA blob)                   */ 0x09, 0xC5,
@@ -707,20 +707,20 @@ static const uint8_t g_UsbHidMTReportDesc[] =
 /*     End Collection                    */ 0xC0,
 /* End Collection                        */ 0xC0,
 
-/* Usage Page (Digitizer)                */ 0x05, 0x0D,  
-/* Usage (Device configuration)          */ 0x09, 0x0E,  
-/* Collection (Application)              */ 0xA1, 0x01,  
-/*     Report ID                         */ 0x85, REPORTID_TOUCH_DEVCONFIG,  
-/*     Usage (Device settings)           */ 0x09, 0x23,  
-/*     Collection (Logical)              */ 0xA1, 0x02,  
-/*         Usage (Device mode)           */ 0x09, 0x52,  
-/*         Usage (Device identifier)     */ 0x09, 0x53,  
-/*         Logical Minimum (0)           */ 0x15, 0x00,  
-/*         Logical Maximum (10)          */ 0x25, 0x0A,  
-/*         Report Size (8)               */ 0x75, 0x08,  
-/*         Report Count (2)              */ 0x95, 0x02,  
-/*         Feature (Var)                 */ 0xB1, 0x02,  
-/*     End Collection                    */ 0xC0,  
+/* Usage Page (Digitizer)                */ 0x05, 0x0D,
+/* Usage (Device configuration)          */ 0x09, 0x0E,
+/* Collection (Application)              */ 0xA1, 0x01,
+/*     Report ID                         */ 0x85, REPORTID_TOUCH_DEVCONFIG,
+/*     Usage (Device settings)           */ 0x09, 0x23,
+/*     Collection (Logical)              */ 0xA1, 0x02,
+/*         Usage (Device mode)           */ 0x09, 0x52,
+/*         Usage (Device identifier)     */ 0x09, 0x53,
+/*         Logical Minimum (0)           */ 0x15, 0x00,
+/*         Logical Maximum (10)          */ 0x25, 0x0A,
+/*         Report Size (8)               */ 0x75, 0x08,
+/*         Report Count (2)              */ 0x95, 0x02,
+/*         Feature (Var)                 */ 0xB1, 0x02,
+/*     End Collection                    */ 0xC0,
 /* End Collection                        */ 0xC0
 };
 
@@ -1222,7 +1222,7 @@ static size_t usbHidFillReport(PUSBHIDTM_REPORT pReport,
         pReport->m.dx       = clamp_i8(pAccumulated->u.Relative.dx);
         pReport->m.dy       = clamp_i8(pAccumulated->u.Relative.dy);
         pReport->m.dz       = clamp_i8(pAccumulated->u.Relative.dz);
-    
+
         cbCopy = sizeof(pReport->m);
         LogRel3(("Rel event, dx=%d, dy=%d, dz=%d, fButtons=%02x, report size %d\n",
                  pReport->m.dx, pReport->m.dy, pReport->m.dz,
@@ -1780,7 +1780,7 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
 #define SET_IDLE     0x0A
 #define SET_PROTOCOL 0x0B
 
-static uint8_t sau8QASampleBlob[256] = 
+static uint8_t sau8QASampleBlob[256] =
 {
     0xfc, 0x28, 0xfe, 0x84, 0x40, 0xcb, 0x9a, 0x87,
     0x0d, 0xbe, 0x57, 0x3c, 0xb6, 0x70, 0x09, 0x88,

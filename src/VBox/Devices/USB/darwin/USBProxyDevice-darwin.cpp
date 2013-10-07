@@ -217,7 +217,7 @@ typedef struct USBPROXYDEVOSX
     /** The run loop source for the async operations on the device level
      * (i.e. the default control pipe stuff). */
     CFRunLoopSourceRef      RunLoopSrcRef;
-    /** we want to add and remove RunLoopSourceRefs to run loop's of 
+    /** we want to add and remove RunLoopSourceRefs to run loop's of
      * every EMT thread participated in USB processing. */
     RTLISTANCHOR        HeadOfRunLoopLst;
     /** Pointer to the proxy device instance. */
@@ -283,7 +283,7 @@ static DECLCALLBACK(int32_t) usbProxyDarwinInitOnce(void *pvUser1)
 /**
  * Adds Source ref to current run loop and adds it the list of runloops.
  */
-static int usbProxyDarwinAddRunLoopRef(PRTLISTANCHOR pListHead, 
+static int usbProxyDarwinAddRunLoopRef(PRTLISTANCHOR pListHead,
                                        CFRunLoopSourceRef SourceRef)
 {
     AssertPtrReturn(pListHead, VERR_INVALID_PARAMETER);
@@ -307,26 +307,26 @@ static int usbProxyDarwinAddRunLoopRef(PRTLISTANCHOR pListHead,
     RTListInit(&pListNode->List);
 
     RTListAppend((PRTLISTNODE)pListHead, &pListNode->List);
-     
+
     return VINF_SUCCESS;
 }
 
 
 /*
  * Removes all source reference from mode of run loop's we've registered them.
- * 
+ *
  */
-static int usbProxyDarwinRemoveSourceRefFromAllRunLoops(PRTLISTANCHOR pHead, 
+static int usbProxyDarwinRemoveSourceRefFromAllRunLoops(PRTLISTANCHOR pHead,
                                                         CFRunLoopSourceRef SourceRef)
 {
     AssertPtrReturn(pHead, VERR_INVALID_PARAMETER);
-   
-    while (!RTListIsEmpty(pHead)) 
+
+    while (!RTListIsEmpty(pHead))
     {
         PRUNLOOPREFLIST pNode = RTListGetFirst(pHead, RUNLOOPREFLIST, List);
         /* XXX: Should Release Reference? */
         Assert(CFGetRetainCount(pNode->RunLoopRef));
-        
+
         CFRunLoopRemoveSource(pNode->RunLoopRef, SourceRef, g_pRunLoopMode);
         CFRelease(SourceRef);
         CFRelease(pNode->RunLoopRef);
@@ -334,7 +334,7 @@ static int usbProxyDarwinRemoveSourceRefFromAllRunLoops(PRTLISTANCHOR pHead,
         RTListNodeRemove(&pNode->List);
 
         RTMemFree(pNode);
-    } 
+    }
 
     return VINF_SUCCESS;
 }
@@ -895,7 +895,7 @@ static int usbProxyDarwinSeizeAllInterfaces(PUSBPROXYDEVOSX pDevOsX, bool fMakeT
                                     if (irc == kIOReturnSuccess)
                                     {
                                         RTListInit((PRTLISTNODE)&pIf->HeadOfRunLoopLst);
-                                        usbProxyDarwinAddRunLoopRef(&pIf->HeadOfRunLoopLst, 
+                                        usbProxyDarwinAddRunLoopRef(&pIf->HeadOfRunLoopLst,
                                                                     pIf->RunLoopSrcRef);
 
                                         /*

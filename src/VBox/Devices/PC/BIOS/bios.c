@@ -99,7 +99,7 @@ void BIOSCALL dummy_isr_function(pusha_regs_t regs, uint16_t es,
     // interrupt so it will generally be called only once for each unexpected
     // interrupt level.
     uint8_t     isrA, isrB, imr, last_int = 0xFF;
-    
+
     outb(PIC_MASTER, PIC_CMD_RD_ISR);           // Read master ISR
     isrA = inb(PIC_MASTER);
     if (isrA) {
@@ -174,7 +174,7 @@ void BIOSCALL print_bios_banner(void)
     char        *bios_conf;
 
     /* Avoid using preprocessing directives within macro arguments. */
-    bios_conf = 
+    bios_conf =
 #ifdef __WATCOMC__
     "watcom "
 #endif

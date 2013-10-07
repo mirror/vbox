@@ -733,7 +733,7 @@ PeCoffLoaderRelocateImage (
 
       Reloc     = (UINT16 *) ((CHAR8 *) RelocBase + sizeof (EFI_IMAGE_BASE_RELOCATION));
       RelocEnd  = (UINT16 *) ((CHAR8 *) RelocBase + RelocBase->SizeOfBlock);
-      
+
       //
       // Make sure RelocEnd is in the Image range.
       //
@@ -754,7 +754,7 @@ PeCoffLoaderRelocateImage (
                       sizeof(EFI_TE_IMAGE_HEADER) -
                       Hdr.Te->StrippedSize
                       );
-      }    
+      }
 
       //
       // Run this relocation record

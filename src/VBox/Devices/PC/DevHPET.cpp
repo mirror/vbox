@@ -1058,9 +1058,9 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     {
         if (u64Period) {
             hpetAdjustComparator(pHpetTimer, u64CurTick);
-    
+
             u64Diff = hpetComputeDiff(pHpetTimer, u64CurTick);
-    
+
             Log4(("HPET: periodic: next in %llu\n", hpetTicksToNs(pThis, u64Diff)));
             TMTimerSetNano(pTimer, hpetTicksToNs(pThis, u64Diff));
         }
