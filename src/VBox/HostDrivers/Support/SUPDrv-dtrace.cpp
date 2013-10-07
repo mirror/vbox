@@ -46,19 +46,19 @@
 #ifdef RT_OS_DARWIN
 # include VBOX_PATH_MACOSX_DTRACE_H
 #elif defined(RT_OS_LINUX)
-/* DTrace experiments with the Unbreakable Enterprise Kernel (UEK) 
+/* DTrace experiments with the Unbreakable Enterprise Kernel (UEK)
    (Oracle Linux).
-   1. The dtrace.h here is from the dtrace module source, not 
+   1. The dtrace.h here is from the dtrace module source, not
       /usr/include/sys/dtrace.h nor /usr/include/dtrace.h.
-   2. To generate the missing entries for the dtrace module in Module.symvers 
+   2. To generate the missing entries for the dtrace module in Module.symvers
       of UEK:
       nm /lib/modules/....../kernel/drivers/dtrace/dtrace.ko  \
       | grep _crc_ \
       | sed -e 's/^......../0x/' -e 's/ A __crc_/\t/' \
             -e 's/$/\tdrivers\/dtrace\/dtrace\tEXPORT_SYMBOL/' \
       >> Module.symvers
-   3. No tracepoints in vboxdrv, vboxnet* or vboxpci yet.  This requires yasm 
-      and VBoxTpG and build time. */ 
+   3. No tracepoints in vboxdrv, vboxnet* or vboxpci yet.  This requires yasm
+      and VBoxTpG and build time. */
 # undef UINT8_MAX
 # undef UINT16_MAX
 # undef UINT32_MAX
@@ -73,14 +73,14 @@
 #endif
 
 
-/** 
- * The UEK DTrace port is trying to be smart and seems to have turned all 
+/**
+ * The UEK DTrace port is trying to be smart and seems to have turned all
  * errno return codes negative.  While this conforms to the linux kernel way of
- * doing things, it breaks with the way the interfaces work on Solaris and 
+ * doing things, it breaks with the way the interfaces work on Solaris and
  * Mac OS X.
  */
 #ifndef FIX_UEK_RC
-# define FIX_UEK_RC(a_rc) (a_rc) 
+# define FIX_UEK_RC(a_rc) (a_rc)
 #endif
 
 

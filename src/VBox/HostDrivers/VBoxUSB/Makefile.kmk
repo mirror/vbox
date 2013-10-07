@@ -66,4 +66,3 @@ endif # VBOX_WITH_TESTCASES
 # generate rules
 include $(FILE_KBUILD_SUB_FOOTER)
 
-

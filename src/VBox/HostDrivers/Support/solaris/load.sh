@@ -46,7 +46,7 @@ SUDO=sudo
 # Disable the zone access service.
 $SUDO svcadm disable svc:/application/virtualbox/zoneaccess:default
 
-# Unload driver that may depend on the driver we're going to (re-)load 
+# Unload driver that may depend on the driver we're going to (re-)load
 # as well as the driver itself.
 for drv in $DRIVERS_USING_IT $DRVNAME;
 do
@@ -67,9 +67,9 @@ done
 # Reconfigure the driver so it get a major number.
 #
 # Note! We have to copy the driver and config files to somewhere the kernel can
-#       find them. It is searched for as drv/${DRVNAME}.conf in 
-#       kobj_module_path, which is usually: 
-#           /platform/i86pc/kernel /kernel /usr/kernel 
+#       find them. It is searched for as drv/${DRVNAME}.conf in
+#       kobj_module_path, which is usually:
+#           /platform/i86pc/kernel /kernel /usr/kernel
 #       To try prevent bad drivers from being loaded on the next boot, we remove
 #       always the files.
 #
