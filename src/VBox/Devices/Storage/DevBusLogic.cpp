@@ -377,7 +377,7 @@ typedef struct BUSLOGIC
     /** Flag whether IRQs are enabled. */
     bool                            fIRQEnabled;
     /** Flag whether the ISA I/O port range is disabled
-     * to prevent the BIOS to access the device. */ 
+     * to prevent the BIOS to access the device. */
     bool                            fISAEnabled;    /**< @todo unused, to be removed */
     /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
     bool                            fMbxIs24Bit;
@@ -1020,7 +1020,7 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t
  */
 static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
 {
-    LogFlowFunc(("pBusLogic=%#p, clearing %#02x (pending %#02x)\n", 
+    LogFlowFunc(("pBusLogic=%#p, clearing %#02x (pending %#02x)\n",
                  pBusLogic, pBusLogic->regInterrupt, pBusLogic->uPendingIntr));
     pBusLogic->regInterrupt = 0;
     PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 0);
@@ -1192,7 +1192,7 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, PBUSLOGICTASKSTAT
     if (uMailboxCompletionCode != BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED_NOT_FOUND)
     {
         RTGCPHYS GCPhysAddrCCB = pTaskState->MailboxGuest.u32PhysAddrCCB;
-        LogFlowFunc(("Completing CCB %RGp hstat=%u, dstat=%u, outgoing mailbox at %RGp\n", GCPhysAddrCCB, 
+        LogFlowFunc(("Completing CCB %RGp hstat=%u, dstat=%u, outgoing mailbox at %RGp\n", GCPhysAddrCCB,
                      uHostAdapterStatus, uDeviceStatus, GCPhysAddrMailboxIncoming));
 
         /* Update CCB. */
@@ -1348,8 +1348,8 @@ static int buslogicR3DataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
     uint32_t   cbDataCCB;
-    uint32_t   u32PhysAddrCCB; 
-    
+    uint32_t   u32PhysAddrCCB;
+
     /* Extract the data length and physical address from the CCB. */
     if (pTaskState->fIs24Bit)
     {
@@ -1514,7 +1514,7 @@ static void buslogicR3DataBufferFree(PBUSLOGICTASKSTATE pTaskState)
         cbDataCCB = 0;
 #endif
 
-    LogFlowFunc(("pTaskState=%#p cbDataCCB=%u direction=%u cbSeg=%u\n", pTaskState, cbDataCCB, 
+    LogFlowFunc(("pTaskState=%#p cbDataCCB=%u direction=%u cbSeg=%u\n", pTaskState, cbDataCCB,
                  pTaskState->CommandControlBlockGuest.c.uDataDirection, pTaskState->DataSeg.cbSeg));
 
     if (   (cbDataCCB > 0)
@@ -1632,11 +1632,11 @@ static void buslogicR3SenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
         RTGCPHYS    GCPhysAddrSenseBuffer;
 
         /* With 32-bit CCBs, the (optional) sense buffer physical address is provided separately.
-         * On the other hand, with 24-bit CCBs, the sense buffer is simply located at the end of 
-         * the CCB, right after the variable-length CDB. 
+         * On the other hand, with 24-bit CCBs, the sense buffer is simply located at the end of
+         * the CCB, right after the variable-length CDB.
          */
         if (pTaskState->fIs24Bit)
-        {            
+        {
             GCPhysAddrSenseBuffer  = pTaskState->MailboxGuest.u32PhysAddrCCB;
             GCPhysAddrSenseBuffer += pTaskState->CommandControlBlockGuest.c.cbCDB + RT_OFFSETOF(CCB24, abCDB);
         }
@@ -1843,8 +1843,8 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
         case BUSLOGICCOMMAND_INQUIRE_EXTENDED_SETUP_INFORMATION:
         {
             /* Some Adaptec AHA-154x drivers (e.g. OS/2) execute this command and expect
-             * it to fail. If it succeeds, the drivers refuse to load. However, some newer 
-             * Adaptec 154x models supposedly support it too?? 
+             * it to fail. If it succeeds, the drivers refuse to load. However, some newer
+             * Adaptec 154x models supposedly support it too??
              */
 
             /* The reply length is set by the guest and is found in the first byte of the command buffer. */
@@ -1904,12 +1904,12 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             pBusLogic->GCPhysAddrMailboxOutgoingBase = (RTGCPHYS)ADDR_TO_U32(pRequest->aMailboxBaseAddr);
             /* The area for incoming mailboxes is right after the last entry of outgoing mailboxes. */
             pBusLogic->GCPhysAddrMailboxIncomingBase = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->cMailbox * sizeof(Mailbox24));
-    
+
             Log(("GCPhysAddrMailboxOutgoingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxOutgoingBase));
             Log(("GCPhysAddrMailboxIncomingBase=%RGp\n", pBusLogic->GCPhysAddrMailboxIncomingBase));
             Log(("cMailboxes=%u (24-bit mode)\n", pBusLogic->cMailbox));
             LogRel(("Initialized 24-bit mailbox, %d entries at %08x\n", pRequest->cMailbox, ADDR_TO_U32(pRequest->aMailboxBaseAddr)));
-    
+
             pBusLogic->regStatus &= ~BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED;
             pBusLogic->cbReplyParametersLeft = 0;
             break;
@@ -2296,7 +2296,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
                     case BUSLOGICCOMMAND_READ_BUSMASTER_CHIP_FIFO:
                     case BUSLOGICCOMMAND_WRITE_BUSMASTER_CHIP_FIFO:
                         pBusLogic->cbCommandParametersLeft = 3;
-                        break; 
+                        break;
                     case BUSLOGICCOMMAND_INITIALIZE_MAILBOX:
                         pBusLogic->cbCommandParametersLeft = sizeof(RequestInitMbx);
                         break;
@@ -2325,7 +2325,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             {
 #ifndef IN_RING3
                 /* This command must be executed in R3 as it rehooks the ISA I/O port. */
-                if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_MODIFY_IO_ADDRESS) 
+                if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_MODIFY_IO_ADDRESS)
                 {
                     rc = VINF_IOM_R3_IOPORT_WRITE;
                     break;
@@ -2629,10 +2629,10 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
     if (uNewBase != pBusLogic->IOISABase)
     {
         /* Unregister the old range, if any. */
-        if (pBusLogic->IOISABase) 
+        if (pBusLogic->IOISABase)
             rc = PDMDevHlpIOPortDeregister(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->IOISABase, 4);
 
-        if (RT_SUCCESS(rc)) 
+        if (RT_SUCCESS(rc))
         {
             pBusLogic->IOISABase = 0;   /* First mark as unregistered. */
             pBusLogic->uISABaseCode = ISA_BASE_DISABLED;
@@ -2992,7 +2992,7 @@ static int buslogicR3DeviceSCSIRequestAbort(PBUSLOGIC pBusLogic, PBUSLOGICTASKST
 
 /**
  * Read a mailbox from guest memory. Convert 24-bit mailboxes to
- * 32-bit format. 
+ * 32-bit format.
  *
  * @returns Mailbox guest physical address.
  * @param   pBusLogic    Pointer to the BusLogic instance data.
@@ -3484,7 +3484,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     /* Parse arguments. */
     if (pszArgs)
         fVerbose = strstr(pszArgs, "verbose") != NULL;
-    
+
     /* Show basic information. */
     pHlp->pfnPrintf(pHlp,
                     "%s#%d: PCI I/O=%RTiop ISA I/O=%RTiop MMIO=%RGp IRQ=%u GC=%RTbool R0=%RTbool\n",
@@ -3510,7 +3510,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     if (pThis->uOperationCode != 0xff )
         pHlp->pfnPrintf(pHlp, "Current command: %02X\n", pThis->uOperationCode);
 
-    if (fVerbose && (pThis->regStatus & BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED) == 0) 
+    if (fVerbose && (pThis->regStatus & BUSLOGIC_REGISTER_STATUS_INITIALIZATION_REQUIRED) == 0)
     {
         RTGCPHYS    GCMailbox;
 
@@ -3563,7 +3563,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             for (i = 0; i < pThis->cMailbox; ++i)
             {
                 PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx32, sizeof(Mailbox32));
-                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X completion code %02X BTSTAT %02X SDSTAT %02X", i, 
+                pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X completion code %02X BTSTAT %02X SDSTAT %02X", i,
                                 Mbx32.u32PhysAddrCCB, Mbx32.u.in.uCompletionCode, Mbx32.u.in.uHostAdapterStatus, Mbx32.u.in.uTargetDeviceStatus);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox32);

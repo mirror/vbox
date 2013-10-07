@@ -460,7 +460,7 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
 {
     if (pThis->enmProtocol == PS2M_PROTO_PS2STD)
     {
-        switch (pThis->enmKnockState) 
+        switch (pThis->enmKnockState)
         {
         case PS2M_KNOCK_INITIAL:
             if (rate == 200)
@@ -481,10 +481,10 @@ static void ps2mRateProtocolKnock(PPS2M pThis, uint8_t rate)
         default:
             pThis->enmKnockState = PS2M_KNOCK_INITIAL;
         }
-    } 
-    else if (pThis->enmProtocol == PS2M_PROTO_IMPS2) 
+    }
+    else if (pThis->enmProtocol == PS2M_PROTO_IMPS2)
     {
-        switch (pThis->enmKnockState) 
+        switch (pThis->enmKnockState)
         {
         case PS2M_KNOCK_INITIAL:
             if (rate == 200)
@@ -637,7 +637,7 @@ int PS2MByteToAux(PPS2M pThis, uint8_t cmd)
                     pThis->u8CurrCmd = 0;
                     break;
                 case ACMD_SET_SAMP_RATE:
-                    //@todo reject unsupported rates                    
+                    //@todo reject unsupported rates
                     ps2mSetRate(pThis, cmd);
                     ps2mRateProtocolKnock(pThis, cmd);
                     ps2kInsertQueue((GeneriQ *)&pThis->cmdQ, ARSP_ACK);

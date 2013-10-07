@@ -134,7 +134,7 @@ cd_rst_func     softrst[DSKTYP_CNT] = {
 // Start of El-Torito boot functions
 // ---------------------------------------------------------------------------
 
-// !! TODO !! convert EBDA accesses to far pointers 
+// !! TODO !! convert EBDA accesses to far pointers
 
 extern  int     diskette_param_table;
 
@@ -143,7 +143,7 @@ void BIOSCALL cdemu_init(void)
 {
     // @TODO: a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
-    
+
     // the only important data is this one for now
     write_byte(ebda_seg,(uint16_t)&EbdaData->cdemu.active, 0x00);
 }
@@ -152,7 +152,7 @@ uint8_t BIOSCALL cdemu_isactive(void)
 {
     // @TODO: a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
-    
+
     return read_byte(ebda_seg,(uint16_t)&EbdaData->cdemu.active);
 }
 
@@ -160,7 +160,7 @@ uint8_t BIOSCALL cdemu_emulated_drive(void)
 {
     // @TODO: a macro or a function for getting the EBDA segment
     uint16_t    ebda_seg = read_word(0x0040,0x000E);
-    
+
     return read_byte(ebda_seg,(uint16_t)&EbdaData->cdemu.emulated_drive);
 }
 
@@ -176,10 +176,10 @@ void BIOSCALL int13_eltorito(disk_regs_t r)
 
     cdemu = ebda_seg :> &EbdaData->cdemu;
 
-    
+
     BX_DEBUG_INT13_ET("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
     // BX_DEBUG_INT13_ET("%s: SS=%04x DS=%04x ES=%04x DI=%04x SI=%04x\n", __func__, get_SS(), DS, ES, DI, SI);
-    
+
     switch (GET_AH()) {
 
     // FIXME ElTorito Various. Not implemented in many real BIOSes.
@@ -205,7 +205,7 @@ void BIOSCALL int13_eltorito(disk_regs_t r)
         write_byte(DS,SI+0x10,cdemu->vdevice.cylinders);
         write_byte(DS,SI+0x11,cdemu->vdevice.spt);
         write_byte(DS,SI+0x12,cdemu->vdevice.heads);
-        
+
         // If we have to terminate emulation
         if(GET_AL() == 0x00) {
             // FIXME ElTorito Various. Should be handled accordingly to spec
@@ -243,18 +243,18 @@ int13_success:
 static uint16_t device_is_cdrom(uint8_t device)
 {
     bio_dsk_t __far *bios_dsk;
-    
+
     bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
-    
+
     if (device >= BX_MAX_STORAGE_DEVICES)
         return 0;
-    
+
 //    if (bios_dsk->devices[device].type != DSK_TYPE_ATAPI)
 //        return 0;
-    
+
     if (bios_dsk->devices[device].device != DSK_DEVICE_CDROM)
         return 0;
-    
+
     return 1;
 }
 
@@ -389,7 +389,7 @@ uint16_t cdrom_boot(void)
     lba = *((uint32_t *)&buffer[0x28]);
     cdemu->ilba = lba;
 
-    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n", 
+    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n",
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
 
     /* Read the disk image's boot sector into memory. */
@@ -409,7 +409,7 @@ uint16_t cdrom_boot(void)
     if (error != 0)
         return 13;
 
-    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n", 
+    BX_DEBUG_ELTORITO("Emulate drive %02x, type %02x, LBA %lu\n",
                       cdemu->emulated_drive, cdemu->media, cdemu->ilba);
     /* Set up emulated drive geometry based on the media type. */
     switch (cdemu->media) {
@@ -480,19 +480,19 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
     BX_DEBUG_INT13_ET("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
 
     /* at this point, we are emulating a floppy/harddisk */
-    
+
     // Recompute the device number
     device  = cdemu->controller_index * 2;
     device += cdemu->device_spec;
-    
+
     SET_DISK_RET_STATUS(0x00);
-    
+
     /* basic checks : emulation should be active, dl should equal the emulated drive */
     if (!cdemu->active || (cdemu->emulated_drive != GET_DL())) {
         BX_INFO("%s: function %02x, emulation not active for DL= %02x\n", __func__, GET_AH(), GET_DL());
         goto int13_fail;
     }
-    
+
     switch (GET_AH()) {
 
     case 0x00: /* disk controller reset */
@@ -524,7 +524,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         status=read_byte(0x0040, 0x0074);
         SET_AH(status);
         SET_DISK_RET_STATUS(0);
-        
+
         /* set CF if error status read */
         if (status)
             goto int13_fail_nostatus;
@@ -538,7 +538,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         vcylinders = cdemu->vdevice.cylinders;
         vheads     = cdemu->vdevice.heads;
         ilba       = cdemu->ilba;
-        
+
         sector    = GET_CL() & 0x003f;
         cylinder  = (GET_CL() & 0x00c0) << 2 | GET_CH();
         head      = GET_DH();
@@ -552,31 +552,31 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         // no sector to read ?
         if(nbsectors==0)
             goto int13_success;
-        
+
         // sanity checks sco openserver needs this!
         if ((sector   >  vspt)
           || (cylinder >= vcylinders)
           || (head     >= vheads)) {
             goto int13_fail;
         }
-        
+
         // After validating the input, verify does nothing
         if (GET_AH() == 0x04)
             goto int13_success;
-        
+
         segment = ES+(BX / 16);
         offset  = BX % 16;
-        
+
         // calculate the virtual lba inside the image
         vlba=((((uint32_t)cylinder*(uint32_t)vheads)+(uint32_t)head)*(uint32_t)vspt)+((uint32_t)(sector-1));
-        
+
         // In advance so we don't lose the count
         SET_AL(nbsectors);
-        
+
         // start lba on cd
         slba   = (uint32_t)vlba / 4;
         before = (uint32_t)vlba % 4;
-        
+
         // end lba on cd
         elba = (uint32_t)(vlba + nbsectors - 1) / 4;
 
@@ -602,7 +602,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
             SET_AL(0);
             goto int13_fail_noah;
         }
-        
+
         goto int13_success;
         break;
 
@@ -610,7 +610,7 @@ void BIOSCALL int13_cdemu(disk_regs_t r)
         vspt       = cdemu->vdevice.spt;
         vcylinders = cdemu->vdevice.cylinders - 1;
         vheads     = cdemu->vdevice.heads - 1;
-        
+
         SET_AL( 0x00 );
         SET_BL( 0x00 );
         SET_CH( vcylinders & 0xff );
@@ -693,20 +693,20 @@ void BIOSCALL int13_cdrom(uint16_t EHBX, disk_regs_t r)
     dpt_t __far         *dpt;
 
     bios_dsk = ebda_seg :> &EbdaData->bdisk;
-    
+
     BX_DEBUG_INT13_CD("%s: AX=%04x BX=%04x CX=%04x DX=%04x ES=%04x\n", __func__, AX, BX, CX, DX, ES);
-    
+
     SET_DISK_RET_STATUS(0x00);
-    
+
     /* basic check : device should be 0xE0+ */
     if( (GET_ELDL() < 0xE0) || (GET_ELDL() >= 0xE0 + BX_MAX_STORAGE_DEVICES) ) {
         BX_DEBUG("%s: function %02x, ELDL out of range %02x\n", __func__, GET_AH(), GET_ELDL());
         goto int13_fail;
     }
-    
+
     // Get the ata channel
     device = bios_dsk->cdidmap[GET_ELDL()-0xE0];
-    
+
     /* basic check : device has to be valid  */
     if (device >= BX_MAX_STORAGE_DEVICES) {
         BX_DEBUG("%s: function %02x, unmapped device for ELDL=%02x\n", __func__, GET_AH(), GET_ELDL());

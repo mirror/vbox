@@ -178,7 +178,7 @@ static uint16_t mode_info_find_mode(uint16_t mode, Boolean using_lfb)
 {
     uint16_t    sig, vmode, attrs;
     uint16_t    cur_info_ofs;   /* Current offset in mode list. */
-    
+
     /* Read and check the VBE Extra Data signature. */
     sig = in_word(VBE_EXTRA_PORT, 0);
     if (sig != VBEHEADER_MAGIC) {
@@ -187,14 +187,14 @@ static uint16_t mode_info_find_mode(uint16_t mode, Boolean using_lfb)
 #endif
         return 0;
     }
-    
+
     cur_info_ofs = sizeof(VBEHeader);
-    
+
     vmode = in_word(VBE_EXTRA_PORT, cur_info_ofs + offsetof(ModeInfoListItem, mode)/*&cur_info->mode*/);
     while (vmode != VBE_VESA_MODE_END_OF_LIST)
     {
         attrs = in_word(VBE_EXTRA_PORT, /*&cur_info->info.ModeAttributes*/cur_info_ofs + offsetof(ModeInfoListItem, info.ModeAttributes) );
-        
+
         if (vmode == mode)
         {
             if (!using_lfb)
@@ -216,7 +216,7 @@ static uint16_t mode_info_find_mode(uint16_t mode, Boolean using_lfb)
 static ModeInfoListItem* mode_info_find_mode(uint16_t mode, Boolean using_lfb)
 {
     ModeInfoListItem    *cur_info = &mode_info_list;
-    
+
     while (cur_info->mode != VBE_VESA_MODE_END_OF_LIST)
     {
         if (cur_info->mode == mode)
@@ -649,7 +649,7 @@ void vbe_biosfn_restore_video_state(uint16_t ES, uint16_t BX)
  *              BX      = Number of 64-byte blocks to hold the state buffer (if DL=00h)
  *
  */
-void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t DX, 
+void vbe_biosfn_save_restore_state(uint16_t STACK_BASED *AX, uint16_t CX, uint16_t DX,
                                    uint16_t ES, uint16_t STACK_BASED *BX)
 {
     uint16_t    result, val;

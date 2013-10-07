@@ -247,7 +247,7 @@ RuntimeServiceGetNextVariableName (
         return EFI_INVALID_PARAMETER;
     }
 
-    /* 
+    /*
      * Tell DevEFI which the current variable is, then ask for the next one.
      */
     if (!VariableName[0])
@@ -266,7 +266,7 @@ RuntimeServiceGetNextVariableName (
 
     if (u32Rc == EFI_VARIABLE_OP_STATUS_OK)
     {
-        /* 
+        /*
          * Output buffer check.
          */
         UINT32      cwcName;
@@ -276,7 +276,7 @@ RuntimeServiceGetNextVariableName (
         {
             UINT32 i;
 
-            /* 
+            /*
              * Read back the result.
              */
             ASMOutU32(EFI_PORT_VARIABLE_OP, EFI_VM_VARIABLE_OP_GUID);

@@ -1271,7 +1271,7 @@ static void intnetR0IfAddrCacheAddIt(PINTNETIF pIf, PINTNETADDRCACHE pCache, PCR
                  pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->IPv4, pszMsg));
             break;
         case kIntNetAddrType_IPv6:
-            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv6 added #%d %RTnaipv6 %s\n", 
+            Log(("intnetR0IfAddrCacheAddIt: hIf=%#x MAC=%.6Rhxs IPv6 added #%d %RTnaipv6 %s\n",
                  pIf->hIf, &pIf->MacAddr, pCache->cEntries, pAddr->IPv6, pszMsg));
             break;
         default:
@@ -2857,9 +2857,9 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
             }
         }
         else if (pEthHdr->EtherType == RT_H2BE_U16(RTNET_ETHERTYPE_IPV6))
-        { 
+        {
             /*
-             * IPV6 ICMP Neighbor Discovery : replace 
+             * IPV6 ICMP Neighbor Discovery : replace
              * 1) the advertised source mac address in outgoing neighbor sollicitations
              *    with the HW MAC address of the trunk interface,
              * 2) the advertised target mac address in outgoing neighbor advertisements
@@ -2867,21 +2867,21 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
              *
              * Note that this only applies to traffic going out on the trunk. Incoming
              * NS/NA will never advertise any VM mac address, so we do not need to touch
-             * them. Other VMs on this bridge as well as the host will see and use the VM's 
+             * them. Other VMs on this bridge as well as the host will see and use the VM's
              * actual mac addresses.
              *
              */
 
             PRTNETIPV6 pIPv6            = (PRTNETIPV6)(pEthHdr + 1);
-            PRTNETNDP pNd               = (PRTNETNDP)(pIPv6 + 1); 
-            PRTNETNDP_SLLA_OPT pLLAOpt  = (PRTNETNDP_SLLA_OPT)(pNd + 1); 
+            PRTNETNDP pNd               = (PRTNETNDP)(pIPv6 + 1);
+            PRTNETNDP_SLLA_OPT pLLAOpt  = (PRTNETNDP_SLLA_OPT)(pNd + 1);
 
             /* make sure we have enough bytes to work with */
             if(pSG->cbTotal >= (RTNETIPV6_MIN_LEN + RTNETIPV6_ICMPV6_ND_WITH_LLA_OPT_MIN_LEN) &&
                /* ensure the packet came from our LAN (not gone through any router) */
                pIPv6->ip6_hlim == 0xff &&
                /* protocol has to be icmpv6 */
-                pIPv6->ip6_nxt == RTNETIPV6_PROT_ICMPV6 && 
+                pIPv6->ip6_nxt == RTNETIPV6_PROT_ICMPV6 &&
                /* we either have a sollicitation with source link layer addr. opt, or */
                 ((pNd->icmp6_type == RTNETIPV6_ICMP_NS_TYPE &&
                             pNd->icmp6_code == RTNETIPV6_ICMPV6_CODE_0 &&
@@ -2899,7 +2899,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
                 pNd->icmp6_cksum = 0;
                 pNd->icmp6_cksum = computeIPv6FullChecksum(pIPv6);
             }
-            
+
         }
     }
 
@@ -2932,7 +2932,7 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
  *
  * @param   pNetwork        The network the frame is being sent to.
  * @param   pSG             Pointer to the gather list for the frame.
- * @param   pEthHdr         Pointer to the ethernet header. 
+ * @param   pEthHdr         Pointer to the ethernet header.
  */
 static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
@@ -2942,7 +2942,7 @@ static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINT
      * Check the minimum size and get a linear copy of the thing to work on,
      * using the temporary buffer if necessary.
      */
-    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) + 
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
                                             sizeof(RTNETNDP)))
         return false;
     uint8_t bTmp[sizeof(RTNETIPV6) + sizeof(RTNETNDP)];
@@ -2997,7 +2997,7 @@ static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINT
  *
  * @param   pNetwork        The network the frame is being sent to.
  * @param   pSG             Pointer to the gather list for the frame.
- * @param   pEthHdr         Pointer to the ethernet header. 
+ * @param   pEthHdr         Pointer to the ethernet header.
  */
 static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
@@ -3005,7 +3005,7 @@ static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
      * Check the minimum size and get a linear copy of the thing to work on,
      * using the temporary buffer if necessary.
      */
-    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) + 
+    if (RT_UNLIKELY(pSG->cbTotal < sizeof(RTNETETHERHDR) + sizeof(RTNETIPV6) +
                                             sizeof(RTNETNDP)))
         return;
     PRTNETIPV6 pIPv6 = (PRTNETIPV6)((uint8_t *)pSG->aSegs[0].pv + sizeof(RTNETETHERHDR));
@@ -3036,8 +3036,8 @@ static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pS
         &&  pIPv6->ip6_src.QWords.qw0 == 0
         &&  pIPv6->ip6_src.QWords.qw1 == 0)
     {
-        
-        intnetR0NetworkAddrCacheDelete(pNetwork, (PCRTNETADDRU) &pNd->target_address, 
+
+        intnetR0NetworkAddrCacheDelete(pNetwork, (PCRTNETADDRU) &pNd->target_address,
                                         kIntNetAddrType_IPv6, sizeof(RTNETADDRIPV6), "tif/ip6");
     }
 }
@@ -5262,9 +5262,9 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
         case kIntNetTrunkType_None:
         case kIntNetTrunkType_WhateverNone:
 #ifdef VBOX_WITH_NAT_SERVICE
-            /* 
+            /*
              * Well, here we don't want load anything special,
-             * just communicate between processes via internal network. 
+             * just communicate between processes via internal network.
              */
         case kIntNetTrunkType_SrvNat:
 #endif
@@ -5287,7 +5287,7 @@ static int intnetR0NetworkCreateTrunkIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION 
             pszName = "VBoxNetAdp";
 #endif /* VBOXNETADP_DO_NOT_USE_NETFLT */
             break;
-#ifndef VBOX_WITH_NAT_SERVICE   
+#ifndef VBOX_WITH_NAT_SERVICE
         case kIntNetTrunkType_SrvNat:
             pszName = "VBoxSrvNat";
             break;

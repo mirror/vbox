@@ -453,7 +453,7 @@ static DECLCALLBACK(int) dmaReadPage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
         Log2(("Read %#x (byte) from page register %#x (channel %d)\n",
               *pu32, port, DMAPG2CX(reg)));
         return VINF_SUCCESS;
-    } 
+    }
 
     if (cb == 2)
     {
@@ -481,7 +481,7 @@ static DECLCALLBACK(int) dmaWritePage(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         Log2(("Wrote %#x to page register %#x (channel %d)\n",
               u32, port, DMAPG2CX(reg)));
     }
-    else if (cb == 2) 
+    else if (cb == 2)
     {
         Assert(!(u32 & ~0xffff)); /* Check for garbage in high bits. */
         reg = port & 7;
@@ -566,7 +566,7 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
     ch->u16CurCount = end_cnt >> dc->is16bit;
     /* Set the TC (Terminal Count) bit if transfer was completed. */
     if (ch->u16CurCount == ch->u16BaseCount + 1)
-        switch (opmode) 
+        switch (opmode)
         {
         case DMODE_DEMAND:
         case DMODE_SINGLE:

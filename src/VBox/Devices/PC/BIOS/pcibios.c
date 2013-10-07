@@ -79,7 +79,7 @@ enum pci_error {
  * with at least 1,024 bytes of stack space available, that interrupts are not
  * enabled during execution, and that the routines are re-entrant.
  *
- * Implementation notes: 
+ * Implementation notes:
  * - The PCI BIOS interface already uses certain 32-bit registers even in
  * 16-bit mode. To simplify matters, all 32-bit GPRs are saved/restored and
  * may be used by helper routines (notably for 32-bit port I/O).
@@ -231,8 +231,8 @@ uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_cla
     if (search_class) {
         BX_DEBUG_PCI("PCI: Find class %08lX index %u\n",
                      search_item, index);
-    } else 
-        BX_DEBUG_PCI("PCI: Find device %04X:%04X index %u\n", 
+    } else
+        BX_DEBUG_PCI("PCI: Find device %04X:%04X index %u\n",
                      (uint16_t)search_item, (uint16_t)(search_item >> 16), index);
 
     bus_dev_fn = 0;     /* Start at the beginning. */
@@ -260,8 +260,8 @@ uint16_t PCIxx(find_device)(uint32_t search_item, uint16_t index, int search_cla
         }
 
         /* If the header type indicates a bus, we're interested. The secondary
-         * and subordinate bus numbers will indicate which buses are present; 
-         * thus we can determine the highest bus number. In the common case, 
+         * and subordinate bus numbers will indicate which buses are present;
+         * thus we can determine the highest bus number. In the common case,
          * there will be only the primary bus (i.e. bus 0) and we can avoid
          * looking at the remaining 255 theoretically present buses. This check
          * only needs to be done on the primary bus, since bridges must report
@@ -316,7 +316,7 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
     BX_DEBUG_PCI("PCI: AX=%04X BX=%04X CX=%04X DI=%04X\n", AX, BX, CX, DI);
 
     SET_AH(SUCCESSFUL);     /* Assume success. */
-    CLEAR_CF();             
+    CLEAR_CF();
 
     switch (GET_AL()) {
     case PCI_BIOS_PRESENT:

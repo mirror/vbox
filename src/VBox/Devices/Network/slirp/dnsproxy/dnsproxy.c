@@ -119,9 +119,9 @@ timeout(PNATState pData, struct socket *so, void *arg)
     struct dns_entry *de;
     /* be paranoid */
     AssertPtrReturnVoid(arg);
-    
+
     de = TAILQ_PREV(req->dns_server, dns_list_head, de_list);
-    
+
     if (de == NULL)
     {
         hash_remove_request(pData, req);
@@ -136,7 +136,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         int iphlen;
         struct mbuf *m = NULL;
         char *data;
-        
+
         m = slirpDnsMbufAlloc(pData);
         if (m == NULL)
         {
@@ -167,15 +167,15 @@ timeout(PNATState pData, struct socket *so, void *arg)
         req->dns_server = de;
 
         /* expiration will be bumped in dnsproxy_query */
-        
+
         dnsproxy_query(pData, so, m, iphlen);
         /* should we free so->so_m ? */
         return;
     }
- 
- socket_clean_up:   
+
+ socket_clean_up:
     /* This socket (so) will be detached, so we need to remove timeout(&_arg) references
-     * before leave 
+     * before leave
      */
     so->so_timeout = NULL;
     so->so_timeout_arg = NULL;
@@ -308,7 +308,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 
 #else /* VBOX */
     AssertPtr(pData);
-    
+
     /* m->m_data points to IP header */
 #if 0
     /* XXX: for some reason it make gdb ill,
@@ -339,14 +339,14 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     }
 
 
-    req = so->so_timeout_arg; 
+    req = so->so_timeout_arg;
 
     if (!req)
     {
 
         Assert(!so->so_timeout_arg);
 
-        if ((req = RTMemAllocZ(sizeof(struct request) + byte)) == NULL) 
+        if ((req = RTMemAllocZ(sizeof(struct request) + byte)) == NULL)
         {
             LogRel(("calloc failed\n"));
             ++dropped_queries;
@@ -381,9 +381,9 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     }
 
     req->recursion = 0;
-        
+
     DPRINTF(("External query RD=%d\n", RD(buf)));
-        
+
     if (retransmit == 0)
         hash_add_request(pData, req);
 
@@ -393,7 +393,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 
     /* let's slirp to care about expiration */
     so->so_expire = curtime + recursive_timeout * 1000;
- 
+
     memset(&addr, 0, sizeof(struct sockaddr_in));
     addr.sin_family = AF_INET;
     if (req->dns_server->de_addr.s_addr == (pData->special_addr.s_addr | RT_H2N_U32_C(CTL_ALIAS))) {
@@ -407,11 +407,11 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 
     /* send it to our authoritative server */
     Log2(("NAT: request will be sent to %RTnaipv4 on %R[natsock]\n", addr.sin_addr, so));
-    
+
     byte = sendto(so->s, buf, (unsigned int)byte, 0,
                   (struct sockaddr *)&addr,
                   sizeof(struct sockaddr_in));
-    if (byte == -1) 
+    if (byte == -1)
     {
         /* XXX: is it really enough? */
         LogRel(("sendto failed: %s\n", strerror(errno)));
@@ -424,15 +424,15 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 
     ++authoritative_queries;
 
-# if 0    
-    /* XXX: this stuff for _debugging_ only, 
-     * first enforce guest to send next request 
-     * and second for faster getting timeout callback 
-     * other option is adding couple entries in resolv.conf with 
+# if 0
+    /* XXX: this stuff for _debugging_ only,
+     * first enforce guest to send next request
+     * and second for faster getting timeout callback
+     * other option is adding couple entries in resolv.conf with
      * invalid nameservers.
      *
-     * For testing purposes could be used 
-     * namebench -S -q 10000 -m random or -m chunk 
+     * For testing purposes could be used
+     * namebench -S -q 10000 -m random or -m chunk
      */
     /* RTThreadSleep(3000); */
     /* curtime += 300; */
@@ -496,7 +496,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
                 sizeof(struct sockaddr_in)) == -1) {
         LogRel(("sendto failed: %s\n", strerror(errno)));
         ++dropped_answers;
-    } 
+    }
     else
         ++answered_queries;
 
@@ -508,7 +508,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
     struct request *query = NULL;
 
     AssertPtr(pData);
-    
+
     /* XXX: mbuf->data points to ??? */
     byte = m->m_len;
     buf = mtod(m, char *);
@@ -523,9 +523,9 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
     query = hash_find_request(pData, *((unsigned short *)buf));
 
     /* find corresponding query */
-    if (query == NULL) 
+    if (query == NULL)
     {
-        /* XXX: if we haven't found anything for this request ... 
+        /* XXX: if we haven't found anything for this request ...
          * What we are expecting later?
          */
         ++late_answers;

@@ -3595,7 +3595,7 @@ static void ohciCancelOrphanedURBs(POHCI pThis)
             uint32_t TailP  = Ed.TailP & ED_PTR_MASK;
             unsigned k = 0;
             if (  !(Ed.hwinfo & ED_HWINFO_SKIP)
-                && (TdAddr != TailP)) 
+                && (TdAddr != TailP))
             {
                 do
                 {

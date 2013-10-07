@@ -54,7 +54,7 @@
 *******************************************************************************/
 
 /**
- * USB MSD Command Block Wrapper or CBW. The command block 
+ * USB MSD Command Block Wrapper or CBW. The command block
  * itself (CBWCB) contains protocol-specific data (here SCSI).
  */
 #pragma pack(1)

@@ -810,7 +810,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
         pProcessorInf->u8CoreCount         = cCpus;  /*  */
         pProcessorInf->u8CoreEnabled       = cCpus;
         pProcessorInf->u8ThreadCount       = 1;
-        pProcessorInf->u16ProcessorCharacteristics 
+        pProcessorInf->u16ProcessorCharacteristics
                                            = RT_BIT(2); /* 64-bit capable */
         pProcessorInf->u16ProcessorFamily2 = 0;
         DMI_TERM_STRUCT;

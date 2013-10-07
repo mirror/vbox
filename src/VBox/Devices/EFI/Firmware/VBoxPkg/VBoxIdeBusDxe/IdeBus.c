@@ -25,10 +25,10 @@
  */
 
 /** @file
-  This file implement UEFI driver for IDE Bus which includes device identification, 
-  Child device(Disk, CDROM, etc) enumeration and child handler installation, and 
+  This file implement UEFI driver for IDE Bus which includes device identification,
+  Child device(Disk, CDROM, etc) enumeration and child handler installation, and
   driver stop.
-    
+
   Copyright (c) 2006 - 2009, Intel Corporation
   All rights reserved. This program and the accompanying materials
   are licensed and made available under the terms and conditions of the BSD License
@@ -178,7 +178,7 @@ IDEBusDriverBindingSupported (
   if (RemainingDevicePath != NULL) {
     Node = (EFI_DEV_PATH *) RemainingDevicePath;
     //
-    // Check if RemainingDevicePath is the End of Device Path Node, 
+    // Check if RemainingDevicePath is the End of Device Path Node,
     // if yes, go on checking other conditions
     //
     if (!IsDevicePathEnd (Node)) {
@@ -218,7 +218,7 @@ IDEBusDriverBindingSupported (
   if (EFI_ERROR (Status)) {
     return Status;
   }
-  
+
   //
   // Close the I/O Abstraction(s) used to perform the supported test
   //
@@ -453,7 +453,7 @@ IDEBusDriverBindingStart (
 
    if (EnumAll || RemainingDevicePath == NULL) {
     //
-    // If IdeInit->EnumAll is TRUE or RemainingDevicePath is NULL, 
+    // If IdeInit->EnumAll is TRUE or RemainingDevicePath is NULL,
     // must enumerate all IDE devices anyway
     //
     BeginningIdeChannel = IdePrimary;
@@ -463,7 +463,7 @@ IDEBusDriverBindingStart (
 
   } else if (!IsDevicePathEnd (RemainingDevicePath)) {
     //
-    // If RemainingDevicePath isn't the End of Device Path Node, 
+    // If RemainingDevicePath isn't the End of Device Path Node,
     // only scan the specified device by RemainingDevicePath
     //
     Node                = (EFI_DEV_PATH *) RemainingDevicePath;
@@ -484,7 +484,7 @@ IDEBusDriverBindingStart (
     //
     // If RemainingDevicePath is the End of Device Path Node,
     // skip enumerate any device and return EFI_SUCCESS
-    // 
+    //
     BeginningIdeChannel = IdeMaxChannel;
     EndIdeChannel       = IdeMaxChannel - 1;
     BeginningIdeDevice  = IdeMaxDevice;
@@ -1285,7 +1285,7 @@ IDEBlkIoFlushBlocks (
 }
 
 /**
-  This function is used by the IDE bus driver to get inquiry data. 
+  This function is used by the IDE bus driver to get inquiry data.
   Data format of Identify data is defined by the Interface GUID.
 
   @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance.
@@ -1293,9 +1293,9 @@ IDEBlkIoFlushBlocks (
   @param  InquiryDataSize       Pointer to the value for the inquiry data size.
 
   @retval EFI_SUCCESS           The command was accepted without any errors.
-  @retval EFI_NOT_FOUND         Device does not support this data class 
-  @retval EFI_DEVICE_ERROR      Error reading InquiryData from device 
-  @retval EFI_BUFFER_TOO_SMALL  InquiryDataSize not big enough 
+  @retval EFI_NOT_FOUND         Device does not support this data class
+  @retval EFI_DEVICE_ERROR      Error reading InquiryData from device
+  @retval EFI_BUFFER_TOO_SMALL  InquiryDataSize not big enough
 
 **/
 EFI_STATUS
@@ -1326,7 +1326,7 @@ IDEDiskInfoInquiry (
 }
 
 /**
-  This function is used by the IDE bus driver to get identify data. 
+  This function is used by the IDE bus driver to get identify data.
   Data format of Identify data is defined by the Interface GUID.
 
   @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance.
@@ -1334,9 +1334,9 @@ IDEDiskInfoInquiry (
   @param  IdentifyDataSize      Pointer to the value for the identify data size.
 
   @retval EFI_SUCCESS           The command was accepted without any errors.
-  @retval EFI_NOT_FOUND         Device does not support this data class 
-  @retval EFI_DEVICE_ERROR      Error reading IdentifyData from device 
-  @retval EFI_BUFFER_TOO_SMALL  IdentifyDataSize not big enough 
+  @retval EFI_NOT_FOUND         Device does not support this data class
+  @retval EFI_DEVICE_ERROR      Error reading IdentifyData from device
+  @retval EFI_BUFFER_TOO_SMALL  IdentifyDataSize not big enough
 
 **/
 EFI_STATUS
@@ -1367,18 +1367,18 @@ IDEDiskInfoIdentify (
 }
 
 /**
-  This function is used by the IDE bus driver to get sense data. 
+  This function is used by the IDE bus driver to get sense data.
   Data format of Sense data is defined by the Interface GUID.
 
-  @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance. 
-  @param  SenseData             Pointer to the SenseData. 
-  @param  SenseDataSize         Size of SenseData in bytes. 
+  @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance.
+  @param  SenseData             Pointer to the SenseData.
+  @param  SenseDataSize         Size of SenseData in bytes.
   @param  SenseDataNumber       Pointer to the value for the identify data size.
 
   @retval EFI_SUCCESS           The command was accepted without any errors.
-  @retval EFI_NOT_FOUND         Device does not support this data class 
-  @retval EFI_DEVICE_ERROR      Error reading InquiryData from device 
-  @retval EFI_BUFFER_TOO_SMALL  SenseDataSize not big enough 
+  @retval EFI_NOT_FOUND         Device does not support this data class
+  @retval EFI_DEVICE_ERROR      Error reading InquiryData from device
+  @retval EFI_BUFFER_TOO_SMALL  SenseDataSize not big enough
 
 **/
 EFI_STATUS
@@ -1396,12 +1396,12 @@ IDEDiskInfoSenseData (
 /**
   This function is used by the IDE bus driver to get controller information.
 
-  @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance. 
+  @param  This                  Pointer to the EFI_DISK_INFO_PROTOCOL instance.
   @param  IdeChannel            Pointer to the Ide Channel number. Primary or secondary.
   @param  IdeDevice             Pointer to the Ide Device number. Master or slave.
 
-  @retval EFI_SUCCESS           IdeChannel and IdeDevice are valid 
-  @retval EFI_UNSUPPORTED       This is not an IDE device 
+  @retval EFI_SUCCESS           IdeChannel and IdeDevice are valid
+  @retval EFI_UNSUPPORTED       This is not an IDE device
 
 **/
 EFI_STATUS

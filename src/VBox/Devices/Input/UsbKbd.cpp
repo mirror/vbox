@@ -746,12 +746,12 @@ static int usbHidFillReport(PUSBHIDK_REPORT pReport,
                 if (iKey == 0x90 || iKey == 0x91)
                     rc = true;
             }
-            /* Avoid "hanging" keys: If a key is unreported but no longer 
+            /* Avoid "hanging" keys: If a key is unreported but no longer
              * depressed, we'll need to report the key-up state, too.
              */
             if (pabUnreportedKeys[iKey] && !pabDepressedKeys[iKey])
                 rc = true;
-            
+
             pabUnreportedKeys[iKey] = 0;
         }
     }
@@ -973,7 +973,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
                     int     iModKey;
 
                     for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
-                        if (pThis->abDepressedKeys[iModKey]) 
+                        if (pThis->abDepressedKeys[iModKey])
                             pThis->abUnreportedKeys[iModKey] = 1;
                 }
             }

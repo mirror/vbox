@@ -400,7 +400,7 @@ VBoxVgaVideoModeSetup (
     //
     EdidOverrideDataBlock = AllocatePool (sizeof (EDID_BLOCK_SIZE * 2));
     if (NULL == EdidOverrideDataBlock) {
-  		Status = EFI_OUT_OF_RESOURCES;
+                Status = EFI_OUT_OF_RESOURCES;
       goto Done;
     }
 
@@ -428,13 +428,13 @@ VBoxVgaVideoModeSetup (
     //
     if (ReadEdidData (Private, &EdidDiscoveredDataBlock, &EdidDiscoveredDataSize) == EFI_SUCCESS) {
       Private->EdidDiscovered.SizeOfEdid = (UINT32) EdidDiscoveredDataSize;
-     	Private->EdidDiscovered.Edid = (UINT8 *) AllocateCopyPool (
+        Private->EdidDiscovered.Edid = (UINT8 *) AllocateCopyPool (
                                                           EdidDiscoveredDataSize,
                                                           EdidDiscoveredDataBlock
-     																										  );
+                                                                                                                                                                                                                  );
 
       if (NULL == Private->EdidDiscovered.Edid) {
-     	  Status = EFI_OUT_OF_RESOURCES;
+          Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
 
@@ -449,9 +449,9 @@ VBoxVgaVideoModeSetup (
     EdidActiveDataSize  = EdidOverrideDataSize;
     EdidActiveDataBlock = EdidOverrideDataBlock;
     EdidFound = TRUE;
- 	}
+        }
 
- 	if (EdidFound == TRUE) {
+        if (EdidFound == TRUE) {
     //
     // Parse EDID data structure to retrieve modes supported by monitor
     //
@@ -465,7 +465,7 @@ VBoxVgaVideoModeSetup (
                                              EdidActiveDataBlock
                                              );
       if (NULL == Private->EdidActive.Edid) {
-   		  Status = EFI_OUT_OF_RESOURCES;
+                  Status = EFI_OUT_OF_RESOURCES;
         goto Done;
       }
     }
