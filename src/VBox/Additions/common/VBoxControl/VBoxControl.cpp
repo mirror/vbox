@@ -681,7 +681,7 @@ static HKEY getVideoKey(bool writable)
            }
        }
     }
-    
+
     if (numDevices == 0)
     {
         /* Always try '\Device\Video0' as the old code did. Enum can be used in this case in principle. */

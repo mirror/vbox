@@ -24,7 +24,7 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
- 
+
 #include <iprt/mem.h>
 
 #include <VBox/HostServices/VBoxHostChannel.h>
