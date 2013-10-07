@@ -243,7 +243,7 @@ typedef struct VRDEVIDEOINFORMATDESC
     uint16_t cbFormat;     /* Size of the structure including cbFormat and format specific data. */
     uint8_t u8FormatId;    /* The unique identifier of the format on the client. */
     uint8_t u8FormatType;  /* MJPEG etc. VRDE_VIDEOIN_FORMAT_* */
-    uint8_t u8FormatFlags; /* VRDE_VIDEOIN_F_FMT_* */ 
+    uint8_t u8FormatFlags; /* VRDE_VIDEOIN_F_FMT_* */
     uint8_t u8NumFrames;   /* Number of following VRDEVIDEOINFRAMEDESC structures. */
     uint16_t u16Reserved;  /* Must be set to 0. */
     /* Other format specific data may follow. */
@@ -872,7 +872,7 @@ typedef struct VRDEVIDEOINMSG_DEVICEDESC_RSP
 {
     VRDEVIDEOINMSGHDR hdr;
     VRDEVIDEOINDEVICEDESC Device;
-    /* 
+    /*
      * VRDEVIDEOINFORMATDESC[0]
      * VRDEVIDEOINFRAMEDESC[0]
      * ...

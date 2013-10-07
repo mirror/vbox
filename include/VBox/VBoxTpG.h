@@ -130,7 +130,7 @@ typedef VTGPROBELOC const *PCVTGPROBELOC;
 #  define VTG_DECL_VTGPROBELOC(a_VarName) \
     static VTGPROBELOC a_VarName; \
     __asm__ (".stabs \"__VTGPrLcSet\",  23, 0, 0, _" #a_VarName );
-    
+
 # else
 #  error "Unsupported Darwin compiler!"
 # endif

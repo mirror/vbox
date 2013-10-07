@@ -498,7 +498,7 @@ RTR3DECL(int) RTManifestWriteFiles(const char *pszManifestFile, RTDIGESTTYPE enm
  *
  * @param   pvBuf                Pointer to memory buffer of the manifest file.
  * @param   cbSize               Size of the memory buffer.
- * @param   penmDigestType       Where to return the first digest type found in 
+ * @param   penmDigestType       Where to return the first digest type found in
  *                               the manifest.
  * @deprecated Use the RTMANIFEST based API instead.
  */

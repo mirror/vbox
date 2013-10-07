@@ -34,7 +34,7 @@
 #include <VBox/VMMDev2.h>
 #include <iprt/assert.h>
 
- 
+
 #pragma pack(4) /* force structure dword packing here. */
 RT_C_DECLS_BEGIN
 

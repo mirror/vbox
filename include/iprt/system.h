@@ -199,7 +199,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
 /** Reboot the system after shutdown. */
 #define RTSYSTEM_SHUTDOWN_REBOOT            UINT32_C(0)
 /** Reboot the system after shutdown.
- * The call may return VINF_SYS_MAY_POWER_OFF if the OS / 
+ * The call may return VINF_SYS_MAY_POWER_OFF if the OS /
  * hardware combination may power off instead of halting. */
 #define RTSYSTEM_SHUTDOWN_HALT              UINT32_C(1)
 /** Power off the system after shutdown.
@@ -229,10 +229,10 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
  * @returns IPRT status code on failure, on success it may or may not return
  *          depending on the OS.
  * @retval  VINF_SUCCESS
- * @retval  VINF_SYS_MAY_POWER_OFF 
- * @retval  VERR_SYS_SHUTDOWN_FAILED 
- * @retval  VERR_SYS_CANNOT_POWER_OFF 
- *  
+ * @retval  VINF_SYS_MAY_POWER_OFF
+ * @retval  VERR_SYS_SHUTDOWN_FAILED
+ * @retval  VERR_SYS_CANNOT_POWER_OFF
+ *
  * @param   cMsDelay            The delay before the actual reboot.  If this is
  *                              not supported by the OS, an immediate reboot
  *                              will be performed.

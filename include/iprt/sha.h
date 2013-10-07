@@ -220,7 +220,7 @@ RTDECL(int) RTSha256FromString(char const *pszDigest, uint8_t pabDigest[RTSHA256
  *
  * @returns iprt status code.
  *
- * @param   pvBuf                 Memory buffer to create a 
+ * @param   pvBuf                 Memory buffer to create a
  *                                SHA256 digest for.
  * @param   cbBuf                 The amount of data (in bytes).
  * @param   ppszDigest            On success the SHA256 digest.
@@ -234,7 +234,7 @@ RTR3DECL(int) RTSha256Digest(void* pvBuf, size_t cbBuf, char **ppszDigest, PFNRT
  *
  * @returns iprt status code.
  *
- * @param   pszFile               Filename to create a SHA256 
+ * @param   pszFile               Filename to create a SHA256
  *                                digest for.
  * @param   ppszDigest            On success the SHA256 digest.
  * @param   pfnProgressCallback   optional callback for the progress indication
