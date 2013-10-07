@@ -244,7 +244,7 @@ proxy_connected_socket(int sdom, int stype,
     LWIP_ASSERT1(stype == SOCK_STREAM || stype == SOCK_DGRAM);
 
     if (sdom == PF_INET6) {
-        pdst_sa = (struct sockaddr *)&dst_sin6; 
+        pdst_sa = (struct sockaddr *)&dst_sin6;
         pdst_addr = (void *)&dst_sin6.sin6_addr;
 
         memset(&dst_sin6, 0, sizeof(dst_sin6));
@@ -262,7 +262,7 @@ proxy_connected_socket(int sdom, int stype,
 
         memset(&dst_sin, 0, sizeof(dst_sin));
 #if HAVE_SA_LEN
-        dst_sin.sin_len = 
+        dst_sin.sin_len =
 #endif
             dst_sa_len = sizeof(dst_sin);
         dst_sin.sin_family = AF_INET;
@@ -382,7 +382,7 @@ proxy_reset_socket(SOCKET s)
 
     linger.l_onoff = 1;
     linger.l_linger = 0;
-    
+
     /* On Windows we can run into issue here, perhaps SO_LINGER isn't enough, and
      * we should use WSA{Send,Recv}Disconnect instead.
      *
@@ -403,7 +403,7 @@ proxy_sendto(SOCKET sock, struct pbuf *p, void *name, size_t namelen)
 {
     struct pbuf *q;
     size_t i, clen;
-#ifndef RT_OS_WINDOWS 
+#ifndef RT_OS_WINDOWS
     struct msghdr mh;
 #else
     int rc;

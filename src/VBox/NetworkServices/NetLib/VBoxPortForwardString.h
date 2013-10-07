@@ -25,11 +25,11 @@ RT_C_DECLS_BEGIN
 
 #define PF_NAMELEN 64
 /*
- * TBD: Here is shared implementation of parsing port-forward string 
+ * TBD: Here is shared implementation of parsing port-forward string
  * of format:
  *      name:[ipv4 or ipv6 address]:host-port:[ipv4 or ipv6 guest addr]:guest port
- * 
- * This code supposed to be used in NetService and Frontend and perhaps in corresponding 
+ *
+ * This code supposed to be used in NetService and Frontend and perhaps in corresponding
  * services.
  *
  * Note: ports are in host format.

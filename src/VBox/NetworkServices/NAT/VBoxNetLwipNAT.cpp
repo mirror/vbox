@@ -71,13 +71,13 @@
 #include "../NetLib/VBoxNetBaseService.h"
 #include "VBoxLwipCore.h"
 
-extern "C" 
+extern "C"
 {
 /* bunch of LWIP headers */
 #include "lwip/opt.h"
 #ifdef LWIP_SOCKET
 # undef LWIP_SOCKET
-# define LWIP_SOCKET 0 
+# define LWIP_SOCKET 0
 #endif
 #include "lwip/sys.h"
 #include "lwip/stats.h"
@@ -132,7 +132,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     virtual int init(void);
     /* @todo: when configuration would be really needed */
     virtual int parseOpt(int rc, const RTGETOPTUNION& getOptVal);
-    
+
    private:
     struct proxy_options m_ProxyOptions;
     struct sockaddr_in m_src4;
@@ -155,7 +155,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
     RTSEMEVENT hSemSVC;
-    /* Only for debug needs, by default NAT service should load rules from SVC 
+    /* Only for debug needs, by default NAT service should load rules from SVC
      * on startup, and then on sync them on events.
      */
     bool fDontLoadRulesOnStartup;
@@ -168,7 +168,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     VECNATSERVICEPF m_vecPortForwardRule4;
     VECNATSERVICEPF m_vecPortForwardRule6;
-    
+
     static int natServicePfRegister(NATSEVICEPORTFORWARDRULE& natServicePf);
     static int natServiceProcessRegisteredPf(VECNATSERVICEPF& vecPf);
 };
@@ -179,18 +179,18 @@ class PortForwardListener
 public:
     PortForwardListener():m_pNAT(NULL){}
 
-    HRESULT init(VBoxNetLwipNAT *pNAT) 
+    HRESULT init(VBoxNetLwipNAT *pNAT)
     {
         AssertPtrReturn(pNAT, E_INVALIDARG);
 
-        m_pNAT = pNAT; 
-        return S_OK; 
+        m_pNAT = pNAT;
+        return S_OK;
     }
 
-    HRESULT init() 
-    { 
+    HRESULT init()
+    {
         m_pNAT = NULL;
-        return S_OK; 
+        return S_OK;
     }
 
     void uninit() { m_pNAT = NULL; }
@@ -218,7 +218,7 @@ VBOX_LISTENER_DECLARE(PortForwardListenerImpl)
 static VBoxNetLwipNAT *g_pLwipNat;
 
 
-STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType, 
+STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                                                   IEvent *pEvent)
 {
     HRESULT hrc = S_OK;
@@ -230,10 +230,10 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             LONG lHostPort, lGuestPort;
             BOOL fCreateFW, fIPv6FW;
             NATProtocol_T proto = NATProtocol_TCP;
-            
+
 
             ComPtr<INATNetworkPortForwardEvent> pfEvt = pEvent;
-            
+
             hrc = pfEvt->COMGETTER(Name)(name.asOutParam());
             AssertReturn(SUCCEEDED(hrc), hrc);
 
@@ -245,33 +245,33 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             hrc = pfEvt->COMGETTER(HostPort)(&lHostPort);
             AssertReturn(SUCCEEDED(hrc), hrc);
-            
+
             hrc = pfEvt->COMGETTER(GuestIp)(strGuestAddr.asOutParam());
             AssertReturn(SUCCEEDED(hrc), hrc);
 
             hrc = pfEvt->COMGETTER(GuestPort)(&lGuestPort);
             AssertReturn(SUCCEEDED(hrc), hrc);
-          
+
             hrc = pfEvt->COMGETTER(Create)(&fCreateFW);
             AssertReturn(SUCCEEDED(hrc), hrc);
-            
+
             hrc = pfEvt->COMGETTER(Ipv6)(&fIPv6FW);
             AssertReturn(SUCCEEDED(hrc), hrc);
-            
-            VECNATSERVICEPF& rules = (fIPv6FW ? 
-                                      m_vecPortForwardRule6 : 
+
+            VECNATSERVICEPF& rules = (fIPv6FW ?
+                                      m_vecPortForwardRule6 :
                                       m_vecPortForwardRule4);
 
             NATSEVICEPORTFORWARDRULE r;
 
             RT_ZERO(r);
-                
+
             if (name.length() > RT_ELEMENTS(r.Pfr.aszPfrName))
             {
                 hrc = E_INVALIDARG;
                 goto port_forward_done;
             }
-                
+
             switch (proto)
             {
                 case NATProtocol_TCP:
@@ -283,10 +283,10 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                 default:
                     goto port_forward_done;
             }
-                
-                
-            RTStrPrintf(r.Pfr.aszPfrName, RT_ELEMENTS(r.Pfr.aszPfrName), 
-                      "%s", 
+
+
+            RTStrPrintf(r.Pfr.aszPfrName, RT_ELEMENTS(r.Pfr.aszPfrName),
+                      "%s",
                       com::Utf8Str(name).c_str());
 
             RTStrPrintf(r.Pfr.aszPfrHostAddr, RT_ELEMENTS(r.Pfr.aszPfrHostAddr),
@@ -295,7 +295,7 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             /* XXX: limits should be checked */
             r.Pfr.u16PfrHostPort = (uint16_t)lHostPort;
-                
+
             RTStrPrintf(r.Pfr.aszPfrHostAddr, RT_ELEMENTS(r.Pfr.aszPfrGuestAddr),
                       "%s",
                       com::Utf8Str(strHostAddr).c_str());
@@ -306,7 +306,7 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             if (fCreateFW) /* Addition */
             {
                 rules.push_back(r);
-                
+
                 natServicePfRegister(rules.back());
             }
             else /* Deletion */
@@ -328,12 +328,12 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                             break;
                         }
                         memcpy(pFwCopy, &natFw.FWSpec, sizeof(fwspec));
-                        
-                        /* We shouldn't care about pFwCopy this memory will be freed when 
+
+                        /* We shouldn't care about pFwCopy this memory will be freed when
                          * will message will arrive to the destination.
                          */
                         portfwd_rule_del(pFwCopy);
-                        
+
                         rules.erase(it);
                         break;
                     }
@@ -375,14 +375,14 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
     memcpy(&LwipIpNetMask, &g_pLwipNat->m_Ipv4Netmask, sizeof(ip_addr));
     memcpy(&LwipIpNetwork, &IpNetwork, sizeof(ip_addr));
 
-    netif *pNetif = netif_add(&g_pLwipNat->m_LwipNetIf /* Lwip Interface */, 
-                              &LwipIpAddr /* IP address*/, 
+    netif *pNetif = netif_add(&g_pLwipNat->m_LwipNetIf /* Lwip Interface */,
+                              &LwipIpAddr /* IP address*/,
                               &LwipIpNetMask /* Network mask */,
-                              &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,                                               
+                              &LwipIpAddr /* gateway address, @todo: is self IP acceptable? */,
                               g_pLwipNat /* state */,
                               VBoxNetLwipNAT::netifInit /* netif_init_fn */,
                               lwip_tcpip_input /* netif_input_fn */);
-    
+
     AssertPtrReturnVoid(pNetif);
 
     netif_set_up(pNetif);
@@ -420,10 +420,10 @@ void VBoxNetLwipNAT::onLwipTcpIpInit(void* arg)
     }
 
     proxy_init(&g_pLwipNat->m_LwipNetIf, &g_pLwipNat->m_ProxyOptions);
-    
+
     natServiceProcessRegisteredPf(g_pLwipNat->m_vecPortForwardRule4);
     natServiceProcessRegisteredPf(g_pLwipNat->m_vecPortForwardRule6);
-    
+
 }
 
 
@@ -431,7 +431,7 @@ void VBoxNetLwipNAT::onLwipTcpIpFini(void* arg)
 {
     AssertPtrReturnVoid(arg);
     VBoxNetLwipNAT *pThis = (VBoxNetLwipNAT *)arg;
-    
+
     /* XXX: proxy finalization */
     netif_set_link_down(&g_pLwipNat->m_LwipNetIf);
     netif_set_down(&g_pLwipNat->m_LwipNetIf);
@@ -475,7 +475,7 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
     netif_create_ip6_linklocal_address(pNetif, /* :from_mac_48bit */ 1);
     netif_ip6_addr_set_state(pNetif, 0, IP6_ADDR_PREFERRED); // skip DAD
 
-    /* 
+    /*
      * RFC 4193 Locally Assigned Global ID (ULA) in slot 1
      * [fd17:625c:f037:XXXX::1] where XXXX, 16 bit Subnet ID, are two
      * bytes from the middle of the IPv4 address, e.g. :dead: for
@@ -501,7 +501,7 @@ err_t VBoxNetLwipNAT::netifInit(netif *pNetif)
 
 
 /**
- * Intnet-recv thread 
+ * Intnet-recv thread
  */
 int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
 {
@@ -514,7 +514,7 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
 
     /* Well we're ready */
     PINTNETRINGBUF  pRingBuf = &g_pLwipNat->m_pIfBuf->Recv;
-    
+
     for (;;)
     {
         /*
@@ -537,7 +537,7 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
          * Process the receive buffer.
          */
         PCINTNETHDR pHdr;
-        
+
         while ((pHdr = IntNetRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
             uint8_t const u8Type = pHdr->u8Type;
@@ -549,8 +549,8 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
             {
 
                 case INTNETHDR_TYPE_FRAME:
-                    /* @todo:should it be really here? 
-                     * Well well well, we're accessing lwip code here 
+                    /* @todo:should it be really here?
+                     * Well well well, we're accessing lwip code here
                      */
                     pPbufHdr = pPbuf = pbuf_alloc(PBUF_RAW, pHdr->cbFrame, PBUF_POOL);
                     if (!pPbuf)
@@ -566,34 +566,34 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
                         pu8Frame += pPbuf->len;
                         pPbuf = pPbuf->next;
                     }
-                    
+
                     g_pLwipNat->m_LwipNetIf.input(pPbufHdr, &g_pLwipNat->m_LwipNetIf);
 
                     AssertReleaseRC(rc);
                     break;
                 case INTNETHDR_TYPE_GSO:
                   {
-                      PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr, 
+                      PCPDMNETWORKGSO pGso = IntNetHdrGetGsoContext(pHdr,
                                                                     g_pLwipNat->m_pIfBuf);
-                      if (!PDMNetGsoIsValid(pGso, cbFrame, 
+                      if (!PDMNetGsoIsValid(pGso, cbFrame,
                                             cbFrame - sizeof(PDMNETWORKGSO)))
                           break;
                       cbFrame -= sizeof(PDMNETWORKGSO);
                       uint8_t         abHdrScratch[256];
-                      uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso, 
+                      uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso,
                                                                         cbFrame);
                       for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
                       {
                           uint32_t cbSegFrame;
-                          void    *pvSegFrame = 
-                            PDMNetGsoCarveSegmentQD(pGso, 
-                                                    (uint8_t *)(pGso + 1), 
-                                                    cbFrame, 
+                          void    *pvSegFrame =
+                            PDMNetGsoCarveSegmentQD(pGso,
+                                                    (uint8_t *)(pGso + 1),
+                                                    cbFrame,
                                                     abHdrScratch,
-                                                    iSeg, 
-                                                    cSegs, 
+                                                    iSeg,
+                                                    cSegs,
                                                     &cbSegFrame);
-                          
+
                           pPbuf = pbuf_alloc(PBUF_RAW, cbSegFrame, PBUF_POOL);
                           if (!pPbuf)
                           {
@@ -616,8 +616,8 @@ int VBoxNetLwipNAT::intNetThreadRecv(RTTHREAD, void *)
                     break;
             }
             IntNetRingSkipFrame(&g_pLwipNat->m_pIfBuf->Recv);
-            
-        } /* loop */    
+
+        } /* loop */
     }
     /* 3. deinitilization and termination */
     LogFlowFuncLeaveRC(rc);
@@ -648,32 +648,32 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
     AssertPtrReturn(pNetif, ERR_ARG);
     AssertPtrReturn(pPBuf, ERR_ARG);
     AssertReturn((void *)g_pLwipNat == pNetif->state, ERR_ARG);
-    LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n", 
-                 pNetif->name[0], 
-                 pNetif->name[1], 
+    LogFlowFunc(("ENTER: pNetif[%c%c%d], pPbuf:%p\n",
+                 pNetif->name[0],
+                 pNetif->name[1],
                  pNetif->num,
                  pPBuf));
 
     /*
      * We're on the lwip thread ...
      * try accure Xmit lock (actually we DO accure the lock ... )
-     * 1. we've entered csXmit so we should create frame 
+     * 1. we've entered csXmit so we should create frame
      *   1.a. Frame creation success see 2.
      *   1.b. (hm ... what about queue processing in place)
      *   1.c. 2nd attempt create frame
      *   1.d. Unlock the Xmit
      *   1.e. goto BUSY.1
      * 2. Copy pbuf to the frame
-     * 3. Send 
+     * 3. Send
      * 4. leave csXmit & return.
      *
-     * @todo: perhaps we can use it for optimization, 
+     * @todo: perhaps we can use it for optimization,
      * e.g. drop UDP and reoccure lock on TCP NOTE: now BUSY is unachievable!
      * Otherwise (BUSY)
      * 1. Unbuffered (drop)
-     * (buffered) 
+     * (buffered)
      * 1. Copy pbuf to entermediate buffer.
-     * 2. Add call buffer to the queue 
+     * 2. Add call buffer to the queue
      * 3. return.
      */
     /* see p.1 */
@@ -705,9 +705,9 @@ err_t VBoxNetLwipNAT::netifLinkoutput(netif *pNetif, pbuf *pPBuf)
     /* Commit - what really this function do  */
     IntNetRingCommitFrameEx(&g_pLwipNat->m_pIfBuf->Send, pHdr, pPBuf->tot_len);
 
-    g_pLwipNat->vboxNetLwipNATProcessXmit();                    
+    g_pLwipNat->vboxNetLwipNATProcessXmit();
 
-    AssertRCReturn(rc, ERR_IF); 
+    AssertRCReturn(rc, ERR_IF);
     LogFlowFunc(("LEAVE: %d\n", rcLwip));
     return rcLwip;
 }
@@ -741,7 +741,7 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     m_Ipv4Netmask.u     = RT_H2N_U32_C(0xffffff00);
 
     fDontLoadRulesOnStartup = false;
-    
+
     for(unsigned int i = 0; i < RT_ELEMENTS(g_aGetOptDef); ++i)
         m_vecOptionDefs.push_back(&g_aGetOptDef[i]);
 
@@ -779,38 +779,38 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
         default:
             return VERR_IGNORED; /* Ah, just ignore the garbage */
     }
-    
+
     pszHostAddr = natPf.Pfr.aszPfrHostAddr;
 
-    /* XXX: workaround for inet_pton and an empty ipv4 address 
+    /* XXX: workaround for inet_pton and an empty ipv4 address
      * in rule declaration.
      */
     if (   sockFamily == PF_INET
         && pszHostAddr[0] == 0)
         pszHostAddr = (char *)"0.0.0.0"; /* XXX: fix it! without type cast */
 
-            
-    lrc = fwspec_set(&natPf.FWSpec, 
-                     sockFamily, 
-                     socketSpec, 
+
+    lrc = fwspec_set(&natPf.FWSpec,
+                     sockFamily,
+                     socketSpec,
                      pszHostAddr,
-                     natPf.Pfr.u16PfrHostPort, 
-                     natPf.Pfr.aszPfrGuestAddr, 
+                     natPf.Pfr.u16PfrHostPort,
+                     natPf.Pfr.aszPfrGuestAddr,
                      natPf.Pfr.u16PfrGuestPort);
-   
+
     AssertReturn(!lrc, VERR_IGNORED);
-    
+
     fwspec *pFwCopy = (fwspec *)RTMemAllocZ(sizeof(fwspec));
     AssertPtrReturn(pFwCopy, VERR_IGNORED);
-    
-    /* 
-     * We need pass the copy, because we can't be sure 
+
+    /*
+     * We need pass the copy, because we can't be sure
      * how much this pointer will be valid in LWIP environment.
      */
     memcpy(pFwCopy, &natPf.FWSpec, sizeof(fwspec));
 
     lrc = portfwd_rule_add(pFwCopy);
-    
+
     AssertReturn(!lrc, VERR_IGNORED);
 
     return VINF_SUCCESS;
@@ -819,7 +819,7 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
 
 int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
     ITERATORNATSERVICEPF it;
-    for (it = vecRules.begin(); 
+    for (it = vecRules.begin();
          it != vecRules.end(); ++it)
     {
         int rc = natServicePfRegister((*it));
@@ -839,17 +839,17 @@ int VBoxNetLwipNAT::init()
     int rc = VINF_SUCCESS;
     LogFlowFuncEnter();
 
-    
+
     /* virtualbox initialized in super class */
-    
+
     HRESULT hrc;
-    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(), 
+    hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
                                                   net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 #if !defined(RT_OS_WINDOWS)
     /* XXX: Temporaly disabled this code on Windows for further debugging */
     ComPtr<IEventSource> pES;
-    
+
     hrc = net->COMGETTER(EventSource)(pES.asOutParam());
     AssertComRC(hrc);
 
@@ -861,11 +861,11 @@ int VBoxNetLwipNAT::init()
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     com::SafeArray<VBoxEventType_T> events;
-    
+
     events.push_back(VBoxEventType_OnNATNetworkPortForward);
 
     hrc = pES->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
-    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);        
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 #endif
 
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
@@ -880,16 +880,16 @@ int VBoxNetLwipNAT::init()
             RT_ZERO(m_src4);
 
             m_src4.sin_addr.s_addr = addr.u;
-            m_ProxyOptions.src4 = &m_src4; 
-            
+            m_ProxyOptions.src4 = &m_src4;
+
             bstrSourceIpX.setNull();
         }
     }
-    
+
     if (!fDontLoadRulesOnStartup)
     {
         /* XXX: extract function and do not duplicate */
-        com::SafeArray<BSTR> rules; 
+        com::SafeArray<BSTR> rules;
         hrc = net->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
         Assert(SUCCEEDED(hrc));
 
@@ -920,7 +920,7 @@ int VBoxNetLwipNAT::init()
     com::SafeArray<BSTR> strs;
     int count_strs;
     hrc = net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
-    if (   SUCCEEDED(hrc) 
+    if (   SUCCEEDED(hrc)
            && (count_strs = strs.size()))
     {
         unsigned int j = 0;
@@ -936,13 +936,13 @@ int VBoxNetLwipNAT::init()
             const char *pszLo2Off = strLo2Off.c_str();
 
             RT_ZERO(aszAddr);
-                
+
             pszTerm = RTStrStr(pszLo2Off, "=");
 
             if (   !pszTerm
                 || (pszTerm - pszLo2Off) >= 17)
                 continue;
-                
+
             memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
             rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
             if (RT_FAILURE(rc))
@@ -956,7 +956,7 @@ int VBoxNetLwipNAT::init()
             m_lo2off[j].off = u32Off;
             ++j;
         }
-            
+
         m_loOptDescriptor.lomap = m_lo2off;
         m_loOptDescriptor.num_lomap = j;
         m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
@@ -978,11 +978,11 @@ int VBoxNetLwipNAT::init()
 
     rc = RTSemEventCreate(&hSemSVC);
     AssertRCReturn(rc, rc);
-    
+
     rc = RTReqQueueCreate(&hReqIntNet);
     AssertRCReturn(rc, rc);
 
-    g_pLwipNat->tryGoOnline();    
+    g_pLwipNat->tryGoOnline();
     vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
 
     rc = RTThreadCreate(&g_pLwipNat->hThrIntNetRecv, /* thread handle*/
@@ -1009,8 +1009,8 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
         case 'P':
         {
             NATSEVICEPORTFORWARDRULE Rule;
-            VECNATSERVICEPF& rules = (rc == 'P'? 
-                                        m_vecPortForwardRule6 
+            VECNATSERVICEPF& rules = (rc == 'P'?
+                                        m_vecPortForwardRule6
                                       : m_vecPortForwardRule4);
 
             fDontLoadRulesOnStartup = true;
@@ -1088,10 +1088,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     if (!rc)
     {
-    
+
         g_pLwipNat->init();
         g_pLwipNat->run();
-        
+
     }
     delete g_pLwipNat;
     return 0;
@@ -1211,9 +1211,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 # endif /* RT_OS_WINDOWS */
 
 #endif /* !VBOX_WITH_HARDENING */
-
-
-
-
-
 

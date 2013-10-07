@@ -158,7 +158,7 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 #if HAVE_SA_LEN
         dst->sin_len = sizeof(*dst);
 #endif
-        dst->sin_port = htons(dst_port); 
+        dst->sin_port = htons(dst_port);
         dst_addr = &dst->sin_addr;
     }
     else { /* PF_INET6 */
@@ -178,7 +178,7 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 #if HAVE_SA_LEN
         dst->sin6_len = sizeof(*dst);
 #endif
-        dst->sin6_port = htons(dst_port);        
+        dst->sin6_port = htons(dst_port);
         dst_addr = &dst->sin6_addr;
     }
 

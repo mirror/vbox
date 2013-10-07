@@ -365,7 +365,7 @@ public:
     static int extractRequestList(PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& rawOpt);
 
     /**
-     * 
+     *
      */
     Client* getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg);
 
@@ -381,7 +381,7 @@ public:
      * when requested configuration is acceptable.
      */
     int commitLease4Client(Client *client);
-    
+
     /**
      * Expires client lease.
      */
@@ -486,24 +486,24 @@ public:
         pCfg = NULL;
     }
     virtual ~Lease(){}
-    
+
     bool isExpired()
     {
         if (!fBinding)
-            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampLeasingStarted, 1000) 
+            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampLeasingStarted, 1000)
                     > u32LeaseExpirationPeriod);
         else
-            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampBindingStarted, 1000) 
+            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampBindingStarted, 1000)
                     > u32BindExpirationPeriod);
 
     }
 
     /* XXX private: */
     RTNETADDRIPV4 m_address;
-    
+
     /** lease isn't commited */
     bool fBinding;
-    
+
     /** Timestamp when lease commited. */
     uint64_t u64TimestampLeasingStarted;
     /** Period when lease is expired in secs. */

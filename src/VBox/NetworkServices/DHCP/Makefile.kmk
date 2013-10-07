@@ -56,7 +56,7 @@ ifeq ($(USERNAME),vvl)
 PROGRAMS += tstDhcpConfig
 
 #
-# VBOXMAINCLIENT here only to use DhcpOpt_T type. 
+# VBOXMAINCLIENT here only to use DhcpOpt_T type.
 tstDhcpConfig_TEMPLATE = VBOXMAINCLIENTEXE
 #XXX: enable condtionally if user is vvl
 #tstDhcpConfig_INSTTYPE = none

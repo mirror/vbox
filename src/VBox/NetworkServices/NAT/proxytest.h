@@ -73,7 +73,7 @@ void pxudp_init(void);
 #endif
 
 #define LWIP_ASSERT1(condition) LWIP_ASSERT(#condition, condition)
-/* TODO: review debug levels and types */ 
+/* TODO: review debug levels and types */
 #if !LWIP_PROXY_DEBUG
 # define DPRINTF_LEVEL(y, x)      do {} while (0)
 #else

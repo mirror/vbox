@@ -819,7 +819,7 @@ tftp_add_oack(char **ps, size_t *plen,
     if (sz < 0 || (size_t)sz >= *plen) {
         return -1;
     }
-    
+
     ++sz;                       /* for nul byte */
     *ps += sz;
     *plen -= sz;

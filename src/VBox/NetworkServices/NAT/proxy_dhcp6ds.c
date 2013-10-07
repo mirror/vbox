@@ -212,7 +212,7 @@ dhcp6ds_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p,
             DPRINTF(("%s: option %u truncated: expect %u, got %u\n",
                      __func__, opt, optlen, p->tot_len));
             pbuf_free(p);
-            return;            
+            return;
         }
 
         DPRINTF2(("%s: option %u length %u\n", __func__, opt, optlen));
