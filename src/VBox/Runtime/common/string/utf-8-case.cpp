@@ -417,4 +417,3 @@ RTDECL(bool) RTStrIsLowerCased(const char *psz)
 }
 RT_EXPORT_SYMBOL(RTStrIsLowerCased);
 
-

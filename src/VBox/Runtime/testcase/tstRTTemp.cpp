@@ -130,7 +130,7 @@ static void tstDirCreateTemp(const char *pszSubTest, const char *pszTemplate, RT
 static void tstBothCreateTemp(const char *pszSubTest, const char *pszTemplate, RTFMODE fMode, unsigned cTimes, bool fSkipXCheck)
 {
     char pszSubTestLong[128];
-    
+
     RTStrPrintf(pszSubTestLong, sizeof(pszSubTestLong), "RTFileCreateTemp %s",
                 pszSubTest);
     tstFileCreateTemp(pszSubTestLong, pszTemplate, fMode, cTimes,

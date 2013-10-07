@@ -487,7 +487,7 @@ int main(int argc, char **argv)
                 return 1;
 
             case 'V':
-                RTPrintf("$Revision: $\n");
+                RTPrintf("$Revision$\n");
                 return 0;
 
             default:

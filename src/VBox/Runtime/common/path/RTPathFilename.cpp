@@ -97,4 +97,3 @@ RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags)
 }
 RT_EXPORT_SYMBOL(RTPathFilenameEx);
 
-

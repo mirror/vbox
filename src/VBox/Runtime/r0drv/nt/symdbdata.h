@@ -50,7 +50,7 @@ typedef RTNTSDBSET const *PCRTNTSDBSET;
 
 
 #ifndef RTNTSDB_NO_DATA
-const RTNTSDBSET g_artNtSdbSets[] = 
+const RTNTSDBSET g_artNtSdbSets[] =
 {
 # ifdef RT_ARCH_X86
     {   /* Source: s:\WinSyms\uold\w2ksp3sym_nec98\exe\ntkrnlpa.pdb */

@@ -100,4 +100,3 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
     return rc;
 }
 
-

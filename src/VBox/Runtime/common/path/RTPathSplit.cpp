@@ -131,4 +131,3 @@ RTDECL(int) RTPathSplit(const char *pszPath, PRTPATHSPLIT pSplit, size_t cbSplit
     return rc;
 }
 
-

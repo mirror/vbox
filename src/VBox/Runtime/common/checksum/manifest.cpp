@@ -380,7 +380,7 @@ RTR3DECL(int) RTManifestVerifyFilesBuf(void *pvBuf, size_t cbSize, PRTMANIFESTTE
          */
 
         /* Check for the digest algorithm */
-        if (   cch < 4  
+        if (   cch < 4
             || (   !(   pcBuf[0] == 'S'
                      && pcBuf[1] == 'H'
                      && pcBuf[2] == 'A'
@@ -546,7 +546,7 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
     for (size_t i = 0; i < cFiles; ++i)
     {
         size_t cbTmp = strlen(RTPathFilename(paFiles[i].pszTestFile))
-                     + strlen(paFiles[i].pszTestDigest) 
+                     + strlen(paFiles[i].pszTestDigest)
                      + strlen(pcszDigestType)
                      + 6;
         cbMaxSize = RT_MAX(cbMaxSize, cbTmp);
@@ -581,5 +581,4 @@ RTR3DECL(int) RTManifestWriteFilesBuf(void **ppvBuf, size_t *pcbSize, RTDIGESTTY
 
     return VINF_SUCCESS;
 }
-
 

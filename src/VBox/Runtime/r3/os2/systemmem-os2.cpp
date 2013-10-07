@@ -49,7 +49,7 @@ RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb)
     APIRET rc = DosQuerySysInfo(QSV_TOTPHYSMEM, QSV_TOTPHYSMEM, &cbMem, sizeof(cbMem));
     if (rc != NO_ERROR)
         return RTErrConvertFromOS2(rc);
-    
+
     *pcb = cbMem;
     return VINF_SUCCESS;
 }
@@ -63,7 +63,7 @@ RTDECL(int) RTSystemQueryAvailableRam(uint64_t *pcb)
     APIRET rc = DosQuerySysInfo(QSV_TOTAVAILMEM, QSV_TOTAVAILMEM, &cbAvailMem, sizeof(cbAvailMem));
     if (rc != NO_ERROR)
         return RTErrConvertFromOS2(rc);
-    
+
     *pcb = cbAvailMem;
     return VINF_SUCCESS;
 }

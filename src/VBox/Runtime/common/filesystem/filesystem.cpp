@@ -115,4 +115,3 @@ RTDECL(int) RTFilesystemVfsFromFile(RTVFSFILE hVfsFile, PRTVFS phVfs)
     return rc;
 }
 
-

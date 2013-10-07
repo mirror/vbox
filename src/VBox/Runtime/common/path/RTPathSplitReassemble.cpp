@@ -118,4 +118,3 @@ RTDECL(int) RTPathSplitReassemble(PRTPATHSPLIT pSplit, uint32_t fFlags, char *ps
     return VINF_SUCCESS;
 }
 
-
