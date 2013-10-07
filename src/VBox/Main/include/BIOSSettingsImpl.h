@@ -71,6 +71,7 @@ public:
     STDMETHOD(COMSETTER(PXEDebugEnabled))(BOOL enable);
     STDMETHOD(COMGETTER)(TimeOffset)(LONG64 *offset);
     STDMETHOD(COMSETTER)(TimeOffset)(LONG64 offset);
+    STDMETHOD(COMGETTER)(NonVolatileStorageFile)(BSTR *pbstrPath);
 
     // public methods only for internal purposes
 

@@ -507,6 +507,23 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
     return S_OK;
 }
 
+STDMETHODIMP BIOSSettings::COMGETTER(NonVolatileStorageFile)(BSTR *pbstrPath)
+{
+    CheckComArgOutPointerValid(pbstrPath);
+
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        Bstr bstrEmpty("");
+        hrc = bstrEmpty.cloneToEx(pbstrPath);
+    }
+
+    return hrc;
+}
+
+
 
 // IBIOSSettings methods
 /////////////////////////////////////////////////////////////////////////////
