@@ -295,7 +295,7 @@ ifdef VBOX_SIGNING_MODE
 		,$(NLTAB)$(call VBOX_SIGN_MACHO_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext/Contents/MacOS/$(kext),org.virtualbox.app.kext.$(kext)) )
 	$(foreach kext,$(VBOX_DI_KEXTS), \
 		$(NLTAB)$(call VBOX_SIGN_BUNDLE_FN,$(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext,org.virtualbox.app.kext.$(kext)) )
-	$(foreach kext,$(VBOX_DI_KEXTS), $(NLTAB)codesign --verify --verbose 1 $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext )
+	$(foreach kext,$(VBOX_DI_KEXTS), $(NLTAB)codesign --verify --verbose=1 $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/$(kext).kext )
 endif
 	@# Set the correct owners.
 	sudo chown -R root:wheel $(VBOX_PATH_PACK_TMP)/VBoxKEXTs.pkg.root/
