@@ -244,7 +244,7 @@
 
       <itemizedlist>
         <listitem>
-          <para>Qt 4.4.0 or higher;</para>
+          <para>Qt 4.6.2 or higher;</para>
         </listitem>
 
         <listitem>
@@ -389,10 +389,10 @@
 
         <para>First, download the appropriate package for your distribution.
         The following examples assume that you are installing to a 32-bit
-        Ubuntu Karmic system. Use <computeroutput>dpkg</computeroutput> to
+        Ubuntu Raring system. Use <computeroutput>dpkg</computeroutput> to
         install the Debian package:</para>
 
-        <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_karmic_i386.deb</screen>
+        <screen>sudo dpkg -i VirtualBox-3.2_$VBOX_VERSION_STRING_Ubuntu_raring_i386.deb</screen>
 
         <para>You will be asked to accept the VirtualBox Personal Use and
         Evaluation License. Unless you answer "yes" here, the installation
@@ -466,7 +466,7 @@
 
           <listitem>
             <para>It creates
-            <computeroutput>/etc/udev/rules.d/10-vboxdrv.rules</computeroutput>,
+            <computeroutput>/etc/udev/rules.d/60-vboxdrv.rules</computeroutput>,
             a description file for udev, if that is present, which makes the
             USB devices accessible to all users in the
             <computeroutput>vboxusers</computeroutput> group.</para>

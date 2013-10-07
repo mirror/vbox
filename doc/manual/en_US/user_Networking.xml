@@ -145,6 +145,17 @@
         </glossentry>
 
         <glossentry>
+          <glossterm>NAT Network</glossterm>
+
+          <glossdef>
+            <para>The NAT network is a new NAT flavour introduced in
+              VirtualBox 4.3. See
+              <xref linkend="network_nat_service" xrefstyle="template: %n" />
+              for details.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
           <glossterm>Bridged networking</glossterm>
 
           <glossdef>
