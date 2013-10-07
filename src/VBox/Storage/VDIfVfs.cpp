@@ -411,4 +411,3 @@ VBOXDDU_DECL(int) VDIfCreateVfsFile(PVDINTERFACEIO pVDIfs, struct VDINTERFACEIOI
     return rc;
 }
 
-

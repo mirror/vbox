@@ -226,7 +226,7 @@ static int vddbgIoLoggerHeaderUpdate(PVDIOLOGGERINT pIoLogger)
  * Writes data from the given S/G buffer into the I/O log.
  *
  * @returns VBox status code.
- * @param   pIoLogger    The I/O logger to use. 
+ * @param   pIoLogger    The I/O logger to use.
  * @param   off          The start offset in the log to write to.
  * @param   pSgBuf       The S/G buffer to write.
  * @param   cbSgBuf      How much data to write.
