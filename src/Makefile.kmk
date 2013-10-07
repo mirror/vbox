@@ -39,9 +39,6 @@ else if !defined(VBOX_ONLY_BUILD)
  ifdef VBOX_WITH_TESTSUITE
   include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
  endif
- ifdef VBOX_WITH_TESTCASES
-  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
- endif
 endif # !VBOX_ONLY_BUILD
 
 include $(FILE_KBUILD_SUB_FOOTER)
