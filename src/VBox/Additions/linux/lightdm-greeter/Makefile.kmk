@@ -30,7 +30,7 @@ VBOX_GREETER_WITH_PNG_SUPPORT := 1
 PROGRAMS += vbox-greeter
 
 vbox-greeter_TEMPLATE = VBOXGUESTR3EXE
-vbox-greeter_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM  
+vbox-greeter_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
 vbox-greeter_DEFS    += \
 	VBOX_BUILD_TARGET=\"$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)\"
 vbox-greeter_DEFS    += \
@@ -44,7 +44,7 @@ ifndef VBOX_WITH_FLTK
 	GDK_DISABLE_DEPRECATED
 endif
 vbox-greeter_SOURCES  = vbox-greeter.cpp
-### todo: define some _INCS in Config.kmk and use 'pkg-config glib-2.0 --cflags' in configure to override 
+### todo: define some _INCS in Config.kmk and use 'pkg-config glib-2.0 --cflags' in configure to override
 vbox-greeter_INCS     = \
 	/usr/lib/i386-linux-gnu/glib-2.0/include \
 	/usr/lib/x86_64-linux-gnu/glib-2.0/include \
@@ -59,7 +59,7 @@ ifndef VBOX_WITH_FLTK
 	/usr/include/gdk-pixbuf-2.0 \
 	/usr/include/atk-1.0
 endif
-### todo: define some _LIBS in Config.kmk and use 'pkg-config glib-2.0 --libs' in configure to override 
+### todo: define some _LIBS in Config.kmk and use 'pkg-config glib-2.0 --libs' in configure to override
 vbox-greeter_LIBS = \
 	$(if $(VBOX_OSE),lightdm-gobject-1,$(VBOX_PATH_ADDITIONS_LIB)/VBox-liblightdm-gobject$(VBOX_SUFF_LIB)) \
 	glib-2.0 \

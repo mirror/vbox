@@ -36,7 +36,7 @@ mod_autologon_install_ex()
     # Whether to force installation if non-compatible distribution
     # is detected.
     force="$3"
-    
+
     # Check for Ubuntu and derivates. @todo Debian?
     distros="Ubuntu UbuntuStudio Edubuntu Kubuntu Lubuntu Mythbuntu Xubuntu"
     ## @todo Map Linux Mint versions to Ubuntu ones.
@@ -91,7 +91,7 @@ mod_autologon_install_ex()
     if ! test -f "$lightdm_config"; then
         info "Error: LightDM config \"$lightdm_config\" not found (LightDM installed?), skipping auto-logon installation"
         return 1
-    fi 
+    fi
 
     # Check for /usr/share/xgreeters.
     if ! test -d "$greeter_dir"; then
@@ -102,7 +102,7 @@ mod_autologon_install_ex()
         info "Warning: Directory \"$greeter_dir\" does not exist, creating it"
         mkdir -p -m 755 "$greeter_dir" || return 1
     fi
-    
+
     # Link to required greeter files into $greeter_dir.
     add_symlink "$INSTALLATION_DIR/share/VBoxGuestAdditions/vbox-greeter.desktop" "$greeter_dir/vbox-greeter.desktop"
 
@@ -150,7 +150,7 @@ mod_autologon_uninstall()
         mv "$MOD_AUTOLOGON_LIGHTDM_CONFIG.vbox-backup" "$MOD_AUTOLOGON_LIGHTDM_CONFIG"
         if test "$?" -ne "0"; then
             info "Warning: Could not restore original LightDM config \"$MOD_AUTOLOGON_LIGHTDM_CONFIG\""
-        fi 
+        fi
     fi
 
     # Remove greeter directory (if not empty).
