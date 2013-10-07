@@ -234,10 +234,10 @@ private:
 
     struct XMLStack;
 
-    void buildXML(AutoWriteLockBase& writeLock, 
-                  xml::Document &doc, 
-                  XMLStack &stack, 
-                  const Utf8Str &strPath, 
+    void buildXML(AutoWriteLockBase& writeLock,
+                  xml::Document &doc,
+                  XMLStack &stack,
+                  const Utf8Str &strPath,
                   ovf::OVFVersion_T enFormat);
     void buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
                                      xml::ElementNode &elmToAddVirtualSystemsTo,

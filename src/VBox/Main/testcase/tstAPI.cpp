@@ -1524,7 +1524,7 @@ int main(int argc, char *argv[])
             /* get the mutable session machine */
             session->COMGETTER(Machine)(machine.asOutParam());
             CHECK_ERROR_BREAK(machine, COMGETTER(BandwidthControl)(bwCtrl.asOutParam()));
-            
+
             RTPrintf("Creating bandwidth group named '%ls'...\n", grpName.raw());
             CHECK_ERROR_BREAK(bwCtrl, CreateBandwidthGroup(grpName.raw(), BandwidthGroupType_Network, 123));
 

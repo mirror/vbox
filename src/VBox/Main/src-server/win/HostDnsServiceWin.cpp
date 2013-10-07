@@ -13,9 +13,9 @@ static HKEY g_hKeyTcpipParameters;
 
 HostDnsServiceWin::HostDnsServiceWin()
 {
-    RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
-		 TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"), 
-		 0, KEY_READ, &g_hKeyTcpipParameters);
+    RegOpenKeyEx(HKEY_LOCAL_MACHINE,
+                 TEXT("SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters"),
+                 0, KEY_READ, &g_hKeyTcpipParameters);
 }
 
 
@@ -23,7 +23,7 @@ HostDnsServiceWin::~HostDnsServiceWin()
 {
     if (!g_hKeyTcpipParameters)
     {
-	RegCloseKey(g_hKeyTcpipParameters);
+        RegCloseKey(g_hKeyTcpipParameters);
         g_hKeyTcpipParameters = 0;
     }
 }
@@ -68,7 +68,7 @@ HRESULT HostDnsServiceWin::update()
     RT_ZERO(abDomain);
     RT_ZERO(abNameServers);
     RT_ZERO(abSearchList);
-    
+
     regIndex = 0;
     do {
         CHAR keyName[256];
@@ -76,13 +76,13 @@ HRESULT HostDnsServiceWin::update()
         DWORD keyType = 0;
         BYTE keyData[1024];
         DWORD cbKeyData = 1024;
-    
+
         hrc = RegEnumValueA(g_hKeyTcpipParameters, regIndex, keyName, &cbKeyName, 0,
                             &keyType, keyData, &cbKeyData);
-        if (   hrc == ERROR_SUCCESS 
+        if (   hrc == ERROR_SUCCESS
             || hrc == ERROR_MORE_DATA)
         {
-            if (   RTStrICmp("Domain", keyName) == 0 
+            if (   RTStrICmp("Domain", keyName) == 0
                 && cbKeyData > 1
                 && cbKeyData < 256)
                 memcpy(abDomain, keyData, cbKeyData);
@@ -93,18 +93,18 @@ HRESULT HostDnsServiceWin::update()
                      && cbKeyData < 256)
                 memcpy(abDomain, keyData, cbKeyData);
 
-            else if (   RTStrICmp("NameServer", keyName) == 0 
+            else if (   RTStrICmp("NameServer", keyName) == 0
                      && cbKeyData > 1
                      && cbKeyData < 256)
                 memcpy(abNameServers, keyData, cbKeyData);
-      
-            else if (   RTStrICmp("DhcpNameServer", keyName) == 0 
+
+            else if (   RTStrICmp("DhcpNameServer", keyName) == 0
                      && cbKeyData > 1
                      && abNameServers[0] == 0
                      && cbKeyData < 256)
                 memcpy(abNameServers, keyData, cbKeyData);
 
-            else if (   RTStrICmp("SearchList", keyName) == 0 
+            else if (   RTStrICmp("SearchList", keyName) == 0
                      && cbKeyData > 1
                      && cbKeyData < 256)
               memcpy(abSearchList, keyData, cbKeyData);
@@ -119,7 +119,7 @@ HRESULT HostDnsServiceWin::update()
     strList2List(m_llNameServers, (char *)abNameServers);
     /* search list */
     strList2List(m_llSearchStrings, (char *)abNameServers);
-    
+
     return S_OK;
 }
 

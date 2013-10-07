@@ -3841,4 +3841,3 @@ void Appliance::importMachines(ImportStack &stack,
     } // for (it = pAppliance->m->llVirtualSystems.begin() ...
 }
 
-

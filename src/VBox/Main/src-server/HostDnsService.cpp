@@ -28,17 +28,17 @@
 
 HostDnsService::HostDnsService(){}
 
-HostDnsService::~HostDnsService () 
+HostDnsService::~HostDnsService ()
 {
     int rc = RTCritSectDelete(&m_hCritSect);
     AssertRC(rc);
 }
 
 
-HRESULT HostDnsService::init(const VirtualBox *aParent) 
+HRESULT HostDnsService::init(const VirtualBox *aParent)
 {
     mParent = aParent;
-    
+
     int rc = RTCritSectInit(&m_hCritSect);
     AssertRCReturn(rc, E_FAIL);
     return S_OK;
@@ -107,5 +107,4 @@ STDMETHODIMP HostDnsService::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSea
 
     return S_OK;
 }
-
 

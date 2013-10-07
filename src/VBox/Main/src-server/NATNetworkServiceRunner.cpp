@@ -113,7 +113,7 @@ int NATNetworkServiceRunner::start()
     RTENV env;
     int rc = RTEnvCreate(&env);
     AssertRCReturn(rc,rc);
-    
+
     RTEnvPutEx(env, "VBOX_LOG=e.l.f");
 
     rc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &mProcess);

@@ -31,7 +31,7 @@ static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
     *pcbRead = 0;
 
     while (   RT_SUCCESS(rc = RTFileRead(File, &bTest, 1, &cbRead))
-           && (pu8Buf - (char *)pvBuf) >= 0   
+           && (pu8Buf - (char *)pvBuf) >= 0
            && (size_t)(pu8Buf - (char *)pvBuf) < cbBufSize)
     {
         if (cbRead == 0)
@@ -66,7 +66,7 @@ HRESULT HostDnsServiceResolvConf::init(const VirtualBox *aParent)
 {
     HRESULT hrc;
 
-    int rc = RTFileOpen(&m_ResolvConfFile, m_ResolvConfFilename.c_str(), 
+    int rc = RTFileOpen(&m_ResolvConfFile, m_ResolvConfFilename.c_str(),
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
     AssertRCReturn(rc, E_FAIL);
 
@@ -109,7 +109,7 @@ HRESULT HostDnsServiceResolvConf::update()
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
 
-	    m_llNameServers.push_back(com::Utf8Str(buff2));
+            m_llNameServers.push_back(com::Utf8Str(buff2));
 
             cNameserversFound++;
         }
@@ -119,9 +119,9 @@ HRESULT HostDnsServiceResolvConf::update()
             char *saveptr;
 
             tok = strtok_r(&buff[6], " \t\n", &saveptr);
-	    
-	    if (tok != NULL)
-		m_DomainName = com::Utf8Str(tok);
+
+            if (tok != NULL)
+                m_DomainName = com::Utf8Str(tok);
         }
     }
 

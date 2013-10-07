@@ -46,8 +46,8 @@ static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
 
     CFRetain(g_RunLoopRef);
 
-    CFArrayRef watchingArrayRef = CFArrayCreate(NULL, 
-                                                (const void **)&kStateNetworkGlobalDNSKey, 
+    CFArrayRef watchingArrayRef = CFArrayCreate(NULL,
+                                                (const void **)&kStateNetworkGlobalDNSKey,
                                                 1, &kCFTypeArrayCallBacks);
     if (!watchingArrayRef)
     {
@@ -65,7 +65,7 @@ static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
     CFRunLoopRun();
 
     CFRelease(g_RunLoopRef);
-    
+
     return VINF_SUCCESS;
 }
 
@@ -79,7 +79,7 @@ HostDnsServiceDarwin::~HostDnsServiceDarwin()
 void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, void *info)
 {
     HostDnsServiceDarwin *pThis = (HostDnsServiceDarwin *)info;
-    
+
     NOREF(arg0); /* SCDynamicStore */
     NOREF(arg1); /* CFArrayRef */
 
@@ -92,11 +92,11 @@ HRESULT HostDnsServiceDarwin::init(const VirtualBox *aParent)
 {
     SCDynamicStoreContext ctx;
     RT_ZERO(ctx);
-    
+
     ctx.info = this;
 
-    g_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"), 
-                                   (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback, 
+    g_store = SCDynamicStoreCreate(NULL, CFSTR("org.virtualbox.VBoxSVC"),
+                                   (SCDynamicStoreCallBack)HostDnsServiceDarwin::hostDnsServiceStoreCallback,
                                    &ctx);
     AssertReturn(g_store, E_FAIL);
 
@@ -109,7 +109,7 @@ HRESULT HostDnsServiceDarwin::init(const VirtualBox *aParent)
 
     int rc = RTSemEventCreate(&g_DnsInitEvent);
     AssertRCReturn(rc, E_FAIL);
-    
+
     return update();
 }
 
@@ -141,10 +141,10 @@ HRESULT HostDnsServiceDarwin::update()
     m_llSearchStrings.clear();
     m_DomainName.setNull();
 
-    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(g_store, 
+    CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(g_store,
                                                             kStateNetworkGlobalDNSKey);
     /**
-     * 0:vvl@nb-mbp-i7-2(0)# scutil 
+     * 0:vvl@nb-mbp-i7-2(0)# scutil
      * > get State:/Network/Global/DNS
      * > d.show
      * <dictionary> {
@@ -160,15 +160,15 @@ HRESULT HostDnsServiceDarwin::update()
      *   }
      * }
      */
-    
+
     if (!propertyRef)
         return S_OK;
-    
+
     CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
     if (domainNameRef)
     {
-        const char *pszDomainName = CFStringGetCStringPtr(domainNameRef, 
+        const char *pszDomainName = CFStringGetCStringPtr(domainNameRef,
                                                     CFStringGetSystemEncoding());
         if (pszDomainName)
             m_DomainName = com::Utf8Str(pszDomainName);
@@ -186,11 +186,11 @@ HRESULT HostDnsServiceDarwin::update()
             if (!serverArrayRef)
                 continue;
 
-            const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef, 
+            const char *pszServerAddress = CFStringGetCStringPtr(serverAddressRef,
                                                            CFStringGetSystemEncoding());
             if (!pszServerAddress)
                 continue;
-            
+
             m_llNameServers.push_back(com::Utf8Str(pszServerAddress));
         }
     }
@@ -200,18 +200,18 @@ HRESULT HostDnsServiceDarwin::update()
     if (searchArrayRef)
     {
         arrayCount = CFArrayGetCount(searchArrayRef);
-        
+
         for (i = 0; i < arrayCount; ++i)
         {
             CFStringRef searchStringRef = (CFStringRef)CFArrayGetValueAtIndex(searchArrayRef, i);
             if (!searchArrayRef)
                 continue;
 
-            const char *pszSearchString = CFStringGetCStringPtr(searchStringRef, 
+            const char *pszSearchString = CFStringGetCStringPtr(searchStringRef,
                                                           CFStringGetSystemEncoding());
             if (!pszSearchString)
                 continue;
-            
+
             m_llSearchStrings.push_back(com::Utf8Str(pszSearchString));
         }
     }

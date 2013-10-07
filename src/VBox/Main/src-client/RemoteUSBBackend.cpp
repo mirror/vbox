@@ -1320,7 +1320,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
                     /* And insert it to its new place. */
                     if (pDevice->pHeadQURBs->fCompleted)
                     {
-                        /* At least one other completed URB; insert after the 
+                        /* At least one other completed URB; insert after the
                          * last completed URB.
                          */
                         REMOTEUSBQURB *prev_qurb = pDevice->pHeadQURBs;
@@ -1341,7 +1341,7 @@ int RemoteUSBBackend::reapURB (const void *pvBody, uint32_t cbBody)
                         /* No other completed URBs; insert at head. */
                         qurb->next = pDevice->pHeadQURBs;
                         qurb->prev = NULL;
-    
+
                         pDevice->pHeadQURBs->prev = qurb;
                         pDevice->pHeadQURBs = qurb;
                     }

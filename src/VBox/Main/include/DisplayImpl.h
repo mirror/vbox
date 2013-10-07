@@ -56,7 +56,7 @@ typedef struct _DISPLAYFBINFO
     uint32_t u32LineSize;
 
     uint16_t flags;
-    
+
     /* for saving the rectangles arrived during fb resize is in progress. */
     PRTRECT mpSavedVisibleRegion;
     uint32_t mcSavedVisibleRegion;
@@ -298,11 +298,11 @@ private:
 
     int  vbvaLock(void);
     void vbvaUnlock(void);
-    
+
     RTCRITSECT mSaveSeamlessRectLock;
     int  SaveSeamlessRectLock(void);
     void SaveSeamlessRectUnLock(void);
-    
+
 public:
     static int  displayTakeScreenshotEMT(Display *pDisplay, ULONG aScreenId, uint8_t **ppu8Data, size_t *pcbData, uint32_t *pu32Width, uint32_t *pu32Height);
 

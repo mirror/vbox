@@ -47,13 +47,13 @@ public:
 /**
  *  for server configuration needs, it's perhaps better to use (VM,slot) pair
  *  (vm-name, slot) <----> (MAC)
- *  
+ *
  *  but for client configuration, when server will have MACs at hand, it'd be
  *  easier to requiest options by MAC.
  *  (MAC) <----> (option-list)
  *
- *  Doubts: What should be done if MAC changed for (vm-name, slot), when syncing should? 
- *  XML: serialization of dependecy (DHCP options) - (VM,slot) shouldn't be done via MAC in 
+ *  Doubts: What should be done if MAC changed for (vm-name, slot), when syncing should?
+ *  XML: serialization of dependecy (DHCP options) - (VM,slot) shouldn't be done via MAC in
  *  the middle.
  */
 
@@ -113,7 +113,7 @@ public:
     STDMETHOD(GetVmSlotOptions)(IN_BSTR aVmName, LONG aSlot, ComSafeArrayOut(BSTR, aValues));
     STDMETHOD(GetMacOptions)(IN_BSTR aMAC, ComSafeArrayOut(BSTR, aValues));
     STDMETHOD(COMGETTER(EventSource))(IEventSource **aEventSource);
- 
+
     STDMETHOD(SetConfiguration)(IN_BSTR aIPAddress, IN_BSTR aNetworkMask, IN_BSTR aFromIPAddress, IN_BSTR aToIPAddress);
 
     STDMETHOD(Start)(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR aTrunkType);

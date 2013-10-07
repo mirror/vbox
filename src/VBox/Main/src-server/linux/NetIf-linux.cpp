@@ -110,7 +110,7 @@ static uint32_t getInterfaceSpeed(const char *pszName)
             fclose(fp);
         }
     }
-    
+
     if (uSpeed == 0)
     {
         /* Failed to get speed via sysfs, go to plan B. */

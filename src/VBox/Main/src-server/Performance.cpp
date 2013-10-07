@@ -528,7 +528,7 @@ int CollectorGuestManager::enqueueRequest(CollectorGuestRequest *aRequest)
      */
     if (aRequest->getGuest() && aRequest->getGuest() == mGuestBeingCalled)
     {
-        /* 
+        /*
          * Before we can declare a guest blocked we need to wait for a while
          * and then check again as it may never had a chance to process
          * the previous request. Half a second is an eternity for processes

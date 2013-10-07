@@ -199,7 +199,7 @@ const char* const DTMF_SPECS_URI = "http://schemas.dmtf.org/wbem/cim-html/2/";
 ////////////////////////////////////////////////////////////////////////////////
 struct EnvelopeData
 {
-    OVFVersion_T version;//OVF standard version, it is used internally only by VirtualBox 
+    OVFVersion_T version;//OVF standard version, it is used internally only by VirtualBox
     RTCString lang;//language
 
     OVFVersion_T getOVFVersion() const
@@ -377,7 +377,7 @@ public:
 
 protected:
     virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
-    virtual const RTCString& getItemName() 
+    virtual const RTCString& getItemName()
     {
         return _getItemName();
     }
@@ -386,7 +386,7 @@ private:
     RTCString itemName;
     bool fDefault;//true means that some fields were absent in the XML and some default values were assigned to.
 
-    virtual const RTCString& _getItemName() 
+    virtual const RTCString& _getItemName()
     {
         return itemName;
     }
@@ -431,7 +431,7 @@ protected:
 private:
     RTCString itemName;
 
-    virtual const RTCString& _getItemName() 
+    virtual const RTCString& _getItemName()
     {
         return itemName;
     }
@@ -477,7 +477,7 @@ protected:
 private:
     RTCString itemName;
 
-    virtual const RTCString& _getItemName() 
+    virtual const RTCString& _getItemName()
     {
         return itemName;
     }
@@ -639,7 +639,7 @@ public:
     OVFReader(const RTCString &path);
 
     // Data fields
-    EnvelopeData                m_envelopeData;       //data of root element "Envelope" 
+    EnvelopeData                m_envelopeData;       //data of root element "Envelope"
     RTCString                   m_strPath;            // file name given to constructor
     DiskImagesMap               m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
     std::list<VirtualSystem>    m_llVirtualSystems;   // list of virtual systems, created by and valid after read()

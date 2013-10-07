@@ -64,8 +64,8 @@ private:
     struct Data
     {
         Data()
-	{
-	}
+        {
+        }
 
         ComObjPtr<Console> pConsole;
         WebcamsMap webcams;

@@ -237,7 +237,7 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
         data.llPortForwardRules4.push_back(it->second);
 
     data.u32HostLoopback6Offset = m->u32LoopbackIp6;
-    
+
     data.llHostLoopbackOffsetList.clear();
     data.llHostLoopbackOffsetList.assign(m->llNATLoopbackOffsetList.begin(),
                                          m->llNATLoopbackOffsetList.end());
@@ -542,16 +542,16 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
     RTNETADDRIPV4 addr, net, mask;
 
     int rc = RTNetStrToIPv4Addr(Utf8Str(aHostId).c_str(), &addr);
-    if (RT_FAILURE(rc)) 
+    if (RT_FAILURE(rc))
         return E_INVALIDARG;
-    
+
     /* check against 127/8 */
     if ((RT_N2H_U32(addr.u) >> IN_CLASSA_NSHIFT) != IN_LOOPBACKNET)
         return E_INVALIDARG;
-    
+
     /* check against networkid vs network mask */
     rc = RTCidrStrToIPv4(Utf8Str(m->IPv4NetworkCidr).c_str(), &net, &mask);
-    if (RT_FAILURE(rc)) 
+    if (RT_FAILURE(rc))
         return E_INVALIDARG;
 
     if (((net.u + aOffset) & mask.u) != net.u)
@@ -560,7 +560,7 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
     settings::NATLoopbackOffsetList::iterator it;
 
     it = std::find(m->llNATLoopbackOffsetList.begin(),
-                   m->llNATLoopbackOffsetList.end(), 
+                   m->llNATLoopbackOffsetList.end(),
                    Utf8Str(aHostId).c_str());
 
     if (it != m->llNATLoopbackOffsetList.end())
@@ -571,7 +571,7 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
         {
             settings::NATLoopbackOffsetList::iterator it1;
             it1 = std::find(m->llNATLoopbackOffsetList.begin(),
-                           m->llNATLoopbackOffsetList.end(), 
+                           m->llNATLoopbackOffsetList.end(),
                            (uint32_t)aOffset);
             if (it1 != m->llNATLoopbackOffsetList.end())
                 return E_INVALIDARG; /* this offset is already registered. */
@@ -585,7 +585,7 @@ STDMETHODIMP NATNetwork::AddLocalMapping(IN_BSTR aHostId, LONG aOffset)
 
     /* injection */
     it = std::find(m->llNATLoopbackOffsetList.begin(),
-                   m->llNATLoopbackOffsetList.end(), 
+                   m->llNATLoopbackOffsetList.end(),
                    (uint32_t)aOffset);
 
     if (it != m->llNATLoopbackOffsetList.end())
@@ -619,7 +619,7 @@ STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->u32LoopbackIp6 = aLoopbackIp6;
-    
+
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     return mVirtualBox->saveSettings();
 }
@@ -639,7 +639,7 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPor
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR,
-								      aPortForwardRules6))
+                                                                      aPortForwardRules6))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules6);
 
@@ -930,7 +930,7 @@ int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *p
             }
 
         }
-        
+
         if (skip)
             continue;
 
@@ -953,10 +953,10 @@ int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *p
         if (!skip)
             break;
     }
-    
+
     if (poff)
         *poff = off;
-    
+
     return VINF_SUCCESS;
 }
 
