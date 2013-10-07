@@ -1358,5 +1358,3 @@ const char *ScmStreamCGetWordM1(PSCMSTREAM pStream, size_t *pcchWord)
     return psz;
 }
 
-
-

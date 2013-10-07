@@ -1059,5 +1059,3 @@ int ScmSvnApplyChanges(PSCMRWSTATE pState)
 #endif
 }
 
-
-
