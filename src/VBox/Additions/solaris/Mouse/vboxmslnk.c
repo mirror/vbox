@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 void handleArgs(int argc, char *argv[], int *pfNoLogo)
 {
     int fNoLogo = 0, fShowUsage = 0, fShowVersion = 0;
-    
+
     if (argc != 1 && argc != 2)
         fShowUsage = 1;
     if (argc == 2)
