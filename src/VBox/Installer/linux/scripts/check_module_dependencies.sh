@@ -369,8 +369,8 @@ get_system_information()
 
 ## Determine the commands needed to install gcc, make and the kernel headers on
 #  the current system.
-#  @param INSTALL_GCC_MAKE      [out] Command to install gcc and make. 
-#  @param INSTALL_HEADERS       [out] Command to install gcc and make. 
+#  @param INSTALL_GCC_MAKE      [out] Command to install gcc and make.
+#  @param INSTALL_HEADERS       [out] Command to install gcc and make.
 #  @param INSTALL_HEADERS_META  [out] Command to install a dependency on the
 #                                     current kernel headers.  May be empty.
 generate_install_commands()
