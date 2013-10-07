@@ -74,7 +74,7 @@ static PCVBOXEXTPACKHLP g_pHlp;
 //
 
 /**
- * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM 
+ * @interface_method_impl{VBOXEXTPACKREG,pfnVMConfigureVMM
  */
 static DECLCALLBACK(int)  vboxBusMouseExtPack_VMConfigureVMM(PCVBOXEXTPACKREG pThis, IConsole *pConsole, PVM pVM)
 {
