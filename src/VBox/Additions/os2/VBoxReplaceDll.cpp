@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 
-                             
+
 static int usage(const char *argv0)
 {
     char *psz1 = strrchr(argv0, '\\');
@@ -42,7 +42,7 @@ static int usage(const char *argv0)
            "Tells the kernel to cache the specified DLLs in memory and close the\n"
            "files on disk, allowing new DLL versions to be installed.\n"
            "\n"
-           "Copyright (C) 2013 Oracle Corporation\n", 
+           "Copyright (C) 2013 Oracle Corporation\n",
            argv0);
     return 0;
 }
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     int i;
     for (i = 1; i < argc; i++)
     {
-        if (   fOptions 
+        if (   fOptions
             && argv[i][0] == '-')
         {
             if (!strcmp(argv[i], "--"))
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            /* 
+            /*
              * Replace the specified DLL.
              */
             APIRET rc = DosReplaceModule((PCSZ)argv[i], NULL, NULL);
