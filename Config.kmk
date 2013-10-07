@@ -2625,22 +2625,6 @@ ifdef VBOX_SIGNING_MODE
 
   VBOX_CODESIGN ?= codesign
 
-  ## Sign an application bundle, framework or kernel extension.
-  # @param 1  The bundle to sign.
-  # @param 2  Identifier, optional.
-  VBOX_SIGN_BUNDLE_FN = $(VBOX_CODESIGN) \
-	--verbose=9 \
-	--force \
-       $(if $(2), --requirements '\
-=designated => anchor apple generic \
-and identifier "$(2)" \
-and (   (cert leaf[field.1.2.840.113635.100.6.1.9] exists) \
-     or (    certificate 1[field.1.2.840.113635.100.6.2.6] exists \
-         and certificate leaf[field.1.2.840.113635.100.6.1.13] exists \
-         and certificate leaf[subject.OU] = "32YP3C3S77" )) ',) \
-	--file-list - \
-	$(VBOX_CERTIFICATE_SUBJECT_NAME_ARGS) \
-	$(1) $(if $(2),--identifier "$(2)",)
   # The above version with complicated requirements is what Xcode 5.0.1GM suggest for kexts.
   VBOX_SIGN_BUNDLE_FN = $(VBOX_CODESIGN) \
 	--verbose=9 \
