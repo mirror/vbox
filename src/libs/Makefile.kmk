@@ -77,7 +77,7 @@ if defined(VBOX_WITH_MAIN) \
  endif
 endif
 
-if !defined(VBOX_ONLY_TESTSUITE) && !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
+if !defined(VBOX_ONLY_EXTPACKS_USE_IMPLIBS)
  ifeq ($(SDK_VBOX_LIBXML2_INCS),$(PATH_ROOT)/src/libs/libxml2-2.6.31/include)
   include $(PATH_SUB_CURRENT)/libxml2-2.6.31/Makefile.kmk
  endif
