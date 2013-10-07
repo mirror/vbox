@@ -39,7 +39,7 @@
 
 /**
  * Calculates the line number for a file position.
- *  
+ *
  * @returns Line number.
  * @param   pcszContent         The file content.
  * @param   pcszPos             The current position.
@@ -47,7 +47,7 @@
 static unsigned long lineNumber(const char *pcszContent, const char *pcszPos)
 {
     unsigned long cLine = 0;
-    while (   *pcszContent 
+    while (   *pcszContent
            && (uintptr_t)pcszContent < (uintptr_t)pcszPos)
     {
         pcszContent = strchr(pcszContent, '\n');
@@ -62,8 +62,8 @@ static unsigned long lineNumber(const char *pcszContent, const char *pcszPos)
 
 
 /**
- * Writes an error message. 
- *  
+ * Writes an error message.
+ *
  * @returns RTEXITCODE_FAILURE.
  * @param   pcszFormat          Error message.
  * @param   ...                 Format argument referenced in the message.
@@ -82,8 +82,8 @@ static int printErr(const char *pcszFormat, ...)
 
 
 /**
- * Opens the makefile list for writing. 
- *  
+ * Opens the makefile list for writing.
+ *
  * @returns Exit code.
  * @param   pcszPath            The path to the file.
  * @param   pcszVariableName    The make variable name.
@@ -109,8 +109,8 @@ static int openMakefileList(const char *pcszPath, const char *pcszVariableName, 
 
 
 /**
- * Adds the given file to the makefile list. 
- *  
+ * Adds the given file to the makefile list.
+ *
  * @returns Exit code.
  * @param   pFile               The file stream of the makefile list.
  * @param   pszFilename         The file name to add.
@@ -131,8 +131,8 @@ static int addFileToMakefileList(FILE *pFile, char *pszFilename)
 
 
 /**
- * Closes the makefile list. 
- *  
+ * Closes the makefile list.
+ *
  * @returns Exit code derived from @a rc.
  * @param   pFile               The file stream of the makefile list.
  * @param   rc                  The current exit code.
@@ -147,8 +147,8 @@ static int closeMakefileList(FILE *pFile, int rc)
 
 
 /**
- * Reads in a file. 
- *  
+ * Reads in a file.
+ *
  * @returns Exit code.
  * @param   pcszFile            The path to the file.
  * @param   ppszFile            Where to return the buffer.
@@ -198,9 +198,9 @@ static int readFile(const char *pcszFile, char **ppszFile, size_t *pcchFile)
 
 
 /**
- * Checks whether the sub-file already exists and has the exact 
- * same content. 
- *  
+ * Checks whether the sub-file already exists and has the exact
+ * same content.
+ *
  * @returns @c true if the existing file matches exactly, otherwise @c false.
  * @param   pcszFilename    The path to the file.
  * @param   pcszSubContent  The content to write.
@@ -208,7 +208,7 @@ static int readFile(const char *pcszFile, char **ppszFile, size_t *pcchFile)
  */
 static bool compareSubFile(const char *pcszFilename, const char *pcszSubContent, size_t cchSubContent)
 {
-    struct stat     FileStat;             
+    struct stat     FileStat;
     if (stat(pcszFilename, &FileStat))
         return false;
     if ((size_t)FileStat.st_size < cchSubContent)
@@ -229,8 +229,8 @@ static bool compareSubFile(const char *pcszFilename, const char *pcszSubContent,
 
 
 /**
- * Writes out a sub-file. 
- *  
+ * Writes out a sub-file.
+ *
  * @returns exit code.
  * @param   pcszFilename    The path to the sub-file.
  * @param   pcszSubContent  The content of the file.
@@ -257,10 +257,10 @@ static int writeSubFile(const char *pcszFilename, const char *pcszSubContent, si
 
 /**
  * Does the actual file splitting.
- *  
+ *
  * @returns exit code.
  * @param   pcszOutDir      Path to the output directory.
- * @param   pcszContent     The content to split up. 
+ * @param   pcszContent     The content to split up.
  * @param   pFileList       The file stream of the makefile list.  Can be NULL.
  */
 static int splitFile(const char *pcszOutDir, const char *pcszContent, FILE *pFileList)
@@ -291,13 +291,13 @@ static int splitFile(const char *pcszOutDir, const char *pcszContent, FILE *pFil
         const char *pcszStartFilename = pcszBegin + cchBeginMarker;
         const char *pcszEndQuote = (const char *)memchr(pcszStartFilename, '\"', pcszLineAfterBegin - pcszStartFilename);
         if (!pcszEndQuote)
-            return printErr("Can't parse filename after begin-file marker (line %lu).\n", 
+            return printErr("Can't parse filename after begin-file marker (line %lu).\n",
                             lineNumber(pcszContent, s_szBeginMarker));
 
         /* find end marker */
         const char *pcszEnd = strstr(pcszLineAfterBegin, s_szEndMarker);
         if (!pcszEnd)
-            return printErr("No matching end-line marker for begin-file marker found (line %lu).\n", 
+            return printErr("No matching end-line marker for begin-file marker found (line %lu).\n",
                             lineNumber(pcszContent, s_szBeginMarker));
 
         /* construct output filename */
@@ -328,7 +328,7 @@ static int splitFile(const char *pcszOutDir, const char *pcszContent, FILE *pFil
         pcszSearch = pcszEnd;
     } while (rc == 0 && pcszSearch);
 
-    printf("filesplitter: Out of %lu files: %lu rewritten, %lu unchanged. (%s)\n", 
+    printf("filesplitter: Out of %lu files: %lu rewritten, %lu unchanged. (%s)\n",
            cFilesWritten + cFilesUnchanged, cFilesWritten, cFilesUnchanged, pcszOutDir);
     return rc;
 }
