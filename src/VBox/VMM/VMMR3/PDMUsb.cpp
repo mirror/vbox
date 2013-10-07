@@ -814,7 +814,7 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
 
         if (paUsbDevs[i].pUsbDev->pReg->fFlags & PDM_USBREG_HIGHSPEED_CAPABLE)
             iUsbVersion |= VUSB_STDVER_20;
-        
+
         /*
          * Find a suitable hub with free ports.
          */

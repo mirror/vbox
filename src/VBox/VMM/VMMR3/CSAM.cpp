@@ -957,7 +957,7 @@ static int CSAMR3AnalyseCallback(PVM pVM, DISCPUSTATE *pCpu, RCPTRTYPE(uint8_t *
     case OP_MOV:
         /* mov xx, CS is a dangerous instruction as our raw ring usage leaks through. */
         if (    EMIsRawRing1Enabled(pVM)
-            &&  (pCpu->Param2.fUse & DISUSE_REG_SEG) 
+            &&  (pCpu->Param2.fUse & DISUSE_REG_SEG)
             &&  (pCpu->Param2.Base.idxSegReg == DISSELREG_CS))
         {
             Log(("CSAM: Patching dangerous 'mov xx, cs' instruction at %RGv with an int3\n", pCurInstrGC));
@@ -2713,7 +2713,7 @@ VMMR3_INT_DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
             Log(("Installing %s gate handler for 0x%X at %RRv\n", (pGuestIdte->Gen.u5Type2 == VBOX_IDTE_TYPE2_TRAP_32) ? "trap" : "intr", iGate, pHandler));
 
             rc = PATMR3InstallPatch(pVM, pHandler, fPatchFlags);
-            if (    RT_SUCCESS(rc) 
+            if (    RT_SUCCESS(rc)
                 ||  rc == VERR_PATM_ALREADY_PATCHED)
             {
                 Log(("Gate handler 0x%X is SAFE!\n", iGate));

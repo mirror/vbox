@@ -75,4 +75,3 @@ VMMDECL(bool) PDMNsAllocateBandwidth(PPDMNSFILTER pFilter, size_t cbTransfer)
     return fAllowed;
 }
 
-

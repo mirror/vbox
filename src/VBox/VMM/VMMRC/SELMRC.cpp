@@ -388,7 +388,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
      */
     uint32_t cb;
     int rc = EMInterpretInstructionEx(pVCpu, pRegFrame, (RTGCPTR)(RTRCUINTPTR)pvFault, &cb);
-    if (    RT_SUCCESS(rc) 
+    if (    RT_SUCCESS(rc)
         &&  cb)
     {
         rc = VINF_SUCCESS;
