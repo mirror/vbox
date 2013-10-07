@@ -172,10 +172,10 @@ typedef union RTGETOPTUNION
     /** A RTGETOPT_REQ_IPV4ADDR option argument. */
     RTNETADDRIPV4   IPv4Addr;
     /** A RTGETOPT_REQ_IPV4CIDR option argument. */
-    struct 
-    { 
-	RTNETADDRIPV4 IPv4Network;
-	RTNETADDRIPV4 IPv4Netmask;
+    struct
+    {
+        RTNETADDRIPV4 IPv4Network;
+        RTNETADDRIPV4 IPv4Netmask;
     } CidrIPv4;
 #endif
     /** A RTGETOPT_REQ_MACADDR option argument. */

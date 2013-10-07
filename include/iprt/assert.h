@@ -315,7 +315,7 @@ RT_C_DECLS_END
 #endif
 
 /** @def RTASSERT_OFFSET_OF()
- * A offsetof() macro suitable for compile time assertions. 
+ * A offsetof() macro suitable for compile time assertions.
  * Both GCC v4 and VisualAge for C++ v3.08 has trouble using RT_OFFSETOF.
  */
 #if defined(__GNUC__)
@@ -410,7 +410,7 @@ RT_C_DECLS_END
  */
 #define AssertCompileMembersAtSameOffset(type1, member1, type2, member2) \
     AssertCompile(RTASSERT_OFFSET_OF(type1, member1) == RTASSERT_OFFSET_OF(type2, member2))
- 
+
 /** @def AssertCompileMembersSameSize
  * Asserts that members of two different structures have the same size.
  * @param   type1   The first type.

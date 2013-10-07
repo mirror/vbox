@@ -193,7 +193,7 @@ public:
             ::RTUuidClear(&mUuid);
             mGuidState = INVALID_GUID;
         }
-        else 
+        else
         {
             if (isEmpty())
             mGuidState = ZERO_GUID;
