@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_WITH_KBD_LEDS_SYNC
+#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -1184,10 +1184,15 @@ static CFDictionaryRef darwinGetLedDeviceMatchingDictionary()
                                                        &kCFTypeDictionaryKeyCallBacks,
                                                        &kCFTypeDictionaryValueCallBacks);
 
-            CFRelease(usageKeyCFNumberRef);
-            CFRelease(usagePageKeyCFNumberRef);
+            if (deviceMatchingDictRef)
+            {
+                CFRelease(usageKeyCFNumberRef);
+                CFRelease(usagePageKeyCFNumberRef);
 
-            return deviceMatchingDictRef;
+                return deviceMatchingDictRef;
+            }
+
+            CFRelease(usageKeyCFNumberRef);
         }
 
         CFRelease(usagePageKeyCFNumberRef);
@@ -1219,8 +1224,13 @@ static CFDictionaryRef darwinGetLedElementMatchingDictionary()
                                                     &kCFTypeDictionaryKeyCallBacks,
                                                     &kCFTypeDictionaryValueCallBacks);
 
+        if (elementMatchingDictRef)
+        {
+            CFRelease(usagePageKeyCFNumberRef);
+            return elementMatchingDictRef;
+        }
+
         CFRelease(usagePageKeyCFNumberRef);
-        return elementMatchingDictRef;
     }
 
     return NULL;
@@ -1283,7 +1293,7 @@ static int darwinSetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
 
-    matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, 0);
+    matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
     {
         CFIndex cElements = CFArrayGetCount(matchingElementsArrayRef);
@@ -1329,7 +1339,7 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     CFArrayRef matchingElementsArrayRef;
     int        rc2 = 0;
 
-    matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, 0);
+    matchingElementsArrayRef = IOHIDDeviceCopyMatchingElements(hidDevice, elementMatchingDict, kIOHIDOptionsTypeNone);
     if (matchingElementsArrayRef)
     {
         CFIndex cElements = CFArrayGetCount(matchingElementsArrayRef);
@@ -1483,26 +1493,29 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
     CFTypeRef pNumberRef;
     uint32_t  vendorId = 0;
 
-    pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
-    if (pNumberRef)
+    if (pHidDeviceRef)
     {
-        if (CFGetTypeID(pNumberRef) == CFNumberGetTypeID())
+        pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
+        if (pNumberRef)
         {
-            if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &vendorId))
+            if (CFGetTypeID(pNumberRef) == CFNumberGetTypeID())
             {
-                switch (vendorId)
+                if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &vendorId))
                 {
-                    case kIOUSBVendorIDAppleComputer:   /** Apple devices always in the list */
-                    case 0x03F0:                        /** Hewlett-Packard (verified with model KU-0316) */
-                        fSupported = true;
-                        break;
+                    switch (vendorId)
+                    {
+                        case kIOUSBVendorIDAppleComputer:   /** Apple devices always in the list */
+                        case 0x03F0:                        /** Hewlett-Packard (verified with model KU-0316) */
+                            fSupported = true;
+                            break;
+                    }
+
+                    Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
                 }
-
-                Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
             }
-        }
 
-        CFRelease(pNumberRef);
+            //CFRelease(pNumberRef);
+        }
     }
 
     return fSupported;
@@ -1520,7 +1533,7 @@ void * DarwinHidDevicesKeepLedsState(void)
     hidsState = (VBoxHidsState_t *)malloc(sizeof(VBoxHidsState_t));
     if (hidsState)
     {
-        hidsState->hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, 0);
+        hidsState->hidManagerRef = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
         if (hidsState->hidManagerRef)
         {
             CFDictionaryRef deviceMatchingDictRef = darwinGetLedDeviceMatchingDictionary();
