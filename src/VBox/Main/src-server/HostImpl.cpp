@@ -839,7 +839,7 @@ STDMETHODIMP Host::COMGETTER(USBDevices)(ComSafeArrayOut(IHostUSBDevice*, aUSBDe
 
 
 /**
- * This method return the list of registered name servers 
+ * This method return the list of registered name servers
  */
 STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
 {
@@ -859,9 +859,9 @@ STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
  */
 STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
 {
-    /* XXX: note here should be synchronization with thread polling state 
+    /* XXX: note here should be synchronization with thread polling state
      * changes in name resoving system on host */
-    
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

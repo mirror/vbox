@@ -3117,7 +3117,7 @@ int VirtualBox::natNetworkRefInc(IN_BSTR aNetworkName)
     }
 
     sNatNetworkNameToRefCount[name]++;
-    
+
     return sNatNetworkNameToRefCount[name];
 }
 
@@ -5198,11 +5198,11 @@ HRESULT VirtualBox::registerNATNetwork(NATNetwork *aNATNetwork,
     rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
     AssertComRCReturnRC(rc);
 
-    /* returned value isn't 0 and aSaveSettings is true 
+    /* returned value isn't 0 and aSaveSettings is true
      * means that we create duplicate, otherwise we just load settings.
      */
-    if (   sNatNetworkNameToRefCount[name] 
-        && aSaveSettings) 
+    if (   sNatNetworkNameToRefCount[name]
+        && aSaveSettings)
         AssertComRCReturnRC(E_INVALIDARG);
 
     rc = S_OK;
@@ -5253,11 +5253,11 @@ HRESULT VirtualBox::unregisterNATNetwork(NATNetwork *aNATNetwork,
 
     AutoCaller natNetworkCaller(aNATNetwork);
     AssertComRCReturn(natNetworkCaller.rc(), natNetworkCaller.rc());
-    
+
     Bstr name;
     HRESULT rc = aNATNetwork->COMGETTER(NetworkName)(name.asOutParam());
     /* Hm, there're still running clients. */
-    if (FAILED(rc) || sNatNetworkNameToRefCount[name]) 
+    if (FAILED(rc) || sNatNetworkNameToRefCount[name])
         AssertComRCReturnRC(E_INVALIDARG);
 
     m->allNATNetworks.removeChild(aNATNetwork);

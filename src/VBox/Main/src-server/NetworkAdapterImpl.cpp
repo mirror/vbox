@@ -745,7 +745,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
         }
 
         mData.backup();
-        
+
         alock.release();
 
         hrc = checkAndSwitchFromNatNetworking();
@@ -1609,7 +1609,7 @@ HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking()
         if (natCount == -1)
             return E_INVALIDARG; /* no such network */
     }
-    
+
     return S_OK;
 }
 

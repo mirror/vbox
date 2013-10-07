@@ -76,7 +76,7 @@ struct Appliance::Data
     LocationInfo        locInfo;        // location info for the currently processed OVF
     bool                fManifest;      // Create a manifest file on export
     bool                fSha256;        // true = SHA256 (OVF 2.0), false = SHA1 (OVF 1.0)
-    Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import) 
+    Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import)
 
     RTCList<ImportOptions_T> optList;
 

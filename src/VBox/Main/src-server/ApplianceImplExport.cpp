@@ -1960,7 +1960,7 @@ HRESULT Appliance::writeFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         vrc = VDInterfaceAdd(&pTarIo->Core, name.c_str(),
                              VDINTERFACETYPE_IO, tar, sizeof(VDINTERFACEIO),
                              &storage.pVDImageIfaces);
-        
+
         if (RT_FAILURE(vrc))
         {
             rc = E_FAIL;
@@ -2112,8 +2112,8 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                     rc = pProgress2->init(mVirtualBox, static_cast<IAppliance*>(this), BstrFmt(tr("Creating medium '%s'"), strTargetFilePath.c_str()).raw(), TRUE);
                     if (FAILED(rc)) throw rc;
 
-                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(), 
-                                                 format, 
+                    rc = pSourceDisk->exportFile(strTargetFilePath.c_str(),
+                                                 format,
                                                  MediumVariant_VmdkStreamOptimized,
                                                  pIfIo,
                                                  pStorage,
@@ -2134,7 +2134,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                         void *pvUser = pStorage;
 
                         vrc = pIfIo->pfnOpen(pvUser, strTargetFilePath.c_str(),
-                                             RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE, 
+                                             RTFILE_O_OPEN_CREATE | RTFILE_O_WRITE | RTFILE_O_DENY_NONE,
                                              0,
                                              &pvStorage);
                         if (RT_FAILURE(vrc))

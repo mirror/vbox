@@ -51,8 +51,8 @@ private:
     struct Data
     {
         Data()
-	{
-	}
+        {
+        }
 
         ComObjPtr<SessionMachine> pSessionMachine;
     };

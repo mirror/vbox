@@ -55,8 +55,8 @@ private:
     struct Data
     {
         Data()
-	{
-	}
+        {
+        }
 
         com::Utf8Str name;
         com::Utf8Str path;
