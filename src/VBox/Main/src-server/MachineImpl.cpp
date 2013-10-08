@@ -6380,7 +6380,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
     CheckComArgStrNotEmptyOrNull(aName);
 
     if (   (aConnectionType <= StorageBus_Null)
-        || (aConnectionType >  StorageBus_SAS))
+        || (aConnectionType >  StorageBus_USB))
         return setError(E_INVALIDARG,
                         tr("Invalid connection type: %d"),
                         aConnectionType);
@@ -12487,6 +12487,7 @@ bool Machine::isControllerHotplugCapable(StorageControllerType_T enmCtrlType)
     switch (enmCtrlType)
     {
         case StorageControllerType_IntelAhci:
+        case StorageControllerType_USB:
             return true;
         case StorageControllerType_LsiLogic:
         case StorageControllerType_LsiLogicSas:

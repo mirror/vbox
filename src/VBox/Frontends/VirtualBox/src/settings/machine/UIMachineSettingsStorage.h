@@ -228,6 +228,19 @@ private:
     uint size() const;
 };
 
+/* USB Controller Type */
+class USBStorageControllerType : public AbstractControllerType
+{
+public:
+
+    USBStorageControllerType (KStorageControllerType aSubType);
+
+private:
+
+    KStorageControllerType first() const;
+    uint size() const;
+};
+
 /* Abstract Item */
 class AbstractItem
 {
@@ -435,6 +448,7 @@ public:
         R_IsMoreSCSIControllersPossible,
         R_IsMoreFloppyControllersPossible,
         R_IsMoreSASControllersPossible,
+        R_IsMoreUSBControllersPossible,
         R_IsMoreAttachmentsPossible,
 
         R_CtrName,
@@ -691,6 +705,7 @@ private slots:
     void addSCSIController();
     void addFloppyController();
     void addSASController();
+    void addUSBController();
     void delController();
 
     void addAttachment();
@@ -769,6 +784,7 @@ private:
     QAction *mAddSCSICtrAction;
     QAction *mAddSASCtrAction;
     QAction *mAddFloppyCtrAction;
+    QAction *mAddUSBCtrAction;
     QAction *mAddAttAction;
     QAction *mDelAttAction;
     QAction *mAddHDAttAction;

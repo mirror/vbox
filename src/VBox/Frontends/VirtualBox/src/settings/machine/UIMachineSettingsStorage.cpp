@@ -155,6 +155,9 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
             case KStorageBus_SAS:
                 mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
                 break;
+            case KStorageBus_USB:
+                mPixmaps [i] = (PixmapPool::PixmapType) (PixmapPool::SATAControllerNormal + i);
+                break;
             default:
                 break;
         }
@@ -274,6 +277,23 @@ uint SASControllerType::size() const
 {
     return 1;
 }
+
+/* USB Controller Type */
+USBStorageControllerType::USBStorageControllerType (KStorageControllerType aSubType)
+    : AbstractControllerType (KStorageBus_USB, aSubType)
+{
+}
+
+KStorageControllerType USBStorageControllerType::first() const
+{
+    return KStorageControllerType_USB;
+}
+
+uint USBStorageControllerType::size() const
+{
+    return 1;
+}
+
 
 /* Abstract Item */
 AbstractItem::AbstractItem (AbstractItem *aParent)
@@ -415,6 +435,10 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
         case KStorageBus_SAS:
             mCtrType = new SASControllerType (aControllerType);
             break;
+        case KStorageBus_USB:
+            mCtrType = new USBStorageControllerType (aControllerType);
+            break;
+
         default:
             AssertMsgFailed (("Wrong Controller Type {%d}!\n", aBusType));
             break;
@@ -1016,6 +1040,12 @@ QVariant StorageModel::data (const QModelIndex &aIndex, int aRole) const
                    (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_SAS) <
                     vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_SAS));
         }
+        case R_IsMoreUSBControllersPossible:
+        {
+            return (m_dialogType == SettingsDialogType_Offline) &&
+                   (static_cast<RootItem*>(mRootItem)->childCount(KStorageBus_USB) <
+                    vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), KStorageBus_USB));
+        }
         case R_IsMoreAttachmentsPossible:
         {
             if (AbstractItem *item = static_cast <AbstractItem*> (aIndex.internalPointer()))
@@ -1551,7 +1581,7 @@ void StorageModel::clear()
 QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
 {
     QMap<KStorageBus, int> currentMap;
-    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_USB; ++iStorageBusType)
     {
         currentMap.insert((KStorageBus)iStorageBusType,
                           static_cast<RootItem*>(mRootItem)->childCount((KStorageBus)iStorageBusType));
@@ -1562,7 +1592,7 @@ QMap<KStorageBus, int> StorageModel::currentControllerTypes() const
 QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
 {
     QMap<KStorageBus, int> maximumMap;
-    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_USB; ++iStorageBusType)
     {
         maximumMap.insert((KStorageBus)iStorageBusType,
                           vboxGlobal().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
@@ -1721,7 +1751,7 @@ private:
 UIMachineSettingsStorage::UIMachineSettingsStorage()
     : mStorageModel(0)
     , mAddCtrAction(0), mDelCtrAction(0)
-    , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0)
+    , mAddIDECtrAction(0), mAddSATACtrAction(0), mAddSCSICtrAction(0), mAddSASCtrAction(0), mAddFloppyCtrAction(0), mAddUSBCtrAction(0)
     , mAddAttAction(0), mDelAttAction(0)
     , mAddHDAttAction(0), mAddCDAttAction(0), mAddFDAttAction(0)
     , m_pMediumIdHolder(new UIMediumIDHolder(this))
@@ -1763,6 +1793,10 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
 
     mAddSASCtrAction = new QAction (this);
     mAddSASCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
+                                                  PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
+
+    mAddUSBCtrAction = new QAction (this);
+    mAddUSBCtrAction->setIcon(UIIconPool::iconSet(PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddEn),
                                                   PixmapPool::pool()->pixmap (PixmapPool::SATAControllerAddDis)));
 
     mDelCtrAction = new QAction (this);
@@ -1843,6 +1877,7 @@ UIMachineSettingsStorage::UIMachineSettingsStorage()
     connect (mAddSCSICtrAction, SIGNAL (triggered (bool)), this, SLOT (addSCSIController()));
     connect (mAddSASCtrAction, SIGNAL (triggered (bool)), this, SLOT (addSASController()));
     connect (mAddFloppyCtrAction, SIGNAL (triggered (bool)), this, SLOT (addFloppyController()));
+    connect (mAddUSBCtrAction, SIGNAL (triggered (bool)), this, SLOT (addUSBController()));
     connect (mDelCtrAction, SIGNAL (triggered (bool)), this, SLOT (delController()));
     connect (mAddAttAction, SIGNAL (triggered (bool)), this, SLOT (addAttachment()));
     connect (mAddHDAttAction, SIGNAL (triggered (bool)), this, SLOT (addHDAttachment()));
@@ -2167,7 +2202,7 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
     QStringList excessiveList;
     QMap<KStorageBus, int> currentType = mStorageModel->currentControllerTypes();
     QMap<KStorageBus, int> maximumType = mStorageModel->maximumControllerTypes();
-    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_SAS; ++iStorageBusType)
+    for (int iStorageBusType = KStorageBus_IDE; iStorageBusType <= KStorageBus_USB; ++iStorageBusType)
     {
         if (currentType[(KStorageBus)iStorageBusType] > maximumType[(KStorageBus)iStorageBusType])
         {
@@ -2213,6 +2248,7 @@ void UIMachineSettingsStorage::retranslateUi()
     mAddSCSICtrAction->setText (tr ("Add SCSI Controller"));
     mAddSASCtrAction->setText (tr ("Add SAS Controller"));
     mAddFloppyCtrAction->setText (tr ("Add Floppy Controller"));
+    mAddUSBCtrAction->setText (tr ("Add USB Controller"));
     mDelCtrAction->setText (tr ("Remove Controller"));
     mAddAttAction->setText (tr ("Add Attachment"));
     mAddHDAttAction->setText (tr ("Add Hard Disk"));
@@ -2322,6 +2358,7 @@ void UIMachineSettingsStorage::addController()
     menu.addAction (mAddSCSICtrAction);
     menu.addAction (mAddSASCtrAction);
     menu.addAction (mAddFloppyCtrAction);
+    menu.addAction (mAddUSBCtrAction);
     menu.exec (QCursor::pos());
 }
 
@@ -2348,6 +2385,11 @@ void UIMachineSettingsStorage::addFloppyController()
 void UIMachineSettingsStorage::addSASController()
 {
     addControllerWrapper (generateUniqueName ("SAS"), KStorageBus_SAS, KStorageControllerType_LsiLogicSas);
+}
+
+void UIMachineSettingsStorage::addUSBController()
+{
+    addControllerWrapper (generateUniqueName ("USB"), KStorageBus_USB, KStorageControllerType_USB);
 }
 
 void UIMachineSettingsStorage::delController()
@@ -2473,7 +2515,7 @@ void UIMachineSettingsStorage::getInformation()
 
                 KStorageBus bus = mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>();
                 mLbPortCount->setVisible (bus == KStorageBus_SATA);
-                mSbPortCount->setVisible (bus == KStorageBus_SATA);
+                mSbPortCount->setVisible (bus == KStorageBus_SATA || bus == KStorageBus_SAS);
                 uint uPortCount = mStorageModel->data (index, StorageModel::R_CtrPortCount).toUInt();
                 mSbPortCount->setValue (uPortCount);
 
@@ -2754,17 +2796,19 @@ void UIMachineSettingsStorage::updateActionsState()
     bool isSCSIPossible = mStorageModel->data (index, StorageModel::R_IsMoreSCSIControllersPossible).toBool();
     bool isFloppyPossible = mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool();
     bool isSASPossible = mStorageModel->data (index, StorageModel::R_IsMoreSASControllersPossible).toBool();
+    bool isUSBPossible = mStorageModel->data (index, StorageModel::R_IsMoreUSBControllersPossible).toBool();
 
     bool isController = mStorageModel->data (index, StorageModel::R_IsController).toBool();
     bool isAttachment = mStorageModel->data (index, StorageModel::R_IsAttachment).toBool();
     bool isAttachmentsPossible = mStorageModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
 
-    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible);
+    mAddCtrAction->setEnabled (isIDEPossible || isSATAPossible || isSCSIPossible || isFloppyPossible || isSASPossible || isUSBPossible);
     mAddIDECtrAction->setEnabled (isIDEPossible);
     mAddSATACtrAction->setEnabled (isSATAPossible);
     mAddSCSICtrAction->setEnabled (isSCSIPossible);
     mAddFloppyCtrAction->setEnabled (isFloppyPossible);
     mAddSASCtrAction->setEnabled (isSASPossible);
+    mAddUSBCtrAction->setEnabled (isUSBPossible);
 
     mAddAttAction->setEnabled (isController && isAttachmentsPossible);
     mAddHDAttAction->setEnabled (isController && isAttachmentsPossible);
@@ -3048,6 +3092,9 @@ void UIMachineSettingsStorage::addControllerWrapper (const QString &aName, KStor
             break;
         case KStorageBus_Floppy:
             Assert (mStorageModel->data (index, StorageModel::R_IsMoreFloppyControllersPossible).toBool());
+            break;
+        case KStorageBus_USB:
+            Assert (mStorageModel->data (index, StorageModel::R_IsMoreUSBControllersPossible).toBool());
             break;
         default:
             break;

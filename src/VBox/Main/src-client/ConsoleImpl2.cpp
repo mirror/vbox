@@ -65,6 +65,7 @@
 #include <VBox/err.h>
 #include <VBox/param.h>
 #include <VBox/vmm/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
+#include <VBox/vmm/pdmusb.h> /* For PDMR3UsbCreateEmulatedDevice */
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
@@ -1084,6 +1085,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pRoot, "PowerOffInsteadOfReset", 1);
 
 
+
         /*
          * MM values.
          */
@@ -1575,6 +1577,226 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
 
         /*
+         * The USB Controllers.
+         */
+        com::SafeIfaceArray<IUSBController> usbCtrls;
+        hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));        H();
+        bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is present. */
+
+        for (size_t i = 0; i < usbCtrls.size(); ++i)
+        {
+            USBControllerType_T enmCtrlType;
+            rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
+            if (enmCtrlType == USBControllerType_OHCI)
+            {
+                fOhciPresent = true;
+                break;
+            }
+        }
+
+        /*
+         * Currently EHCI is only enabled when a OHCI controller is present too.
+         * This might change when XHCI is supported.
+         */
+        if (fOhciPresent)
+            mfVMHasUsbController = true;
+
+        PCFGMNODE pUsbDevices = NULL; /**< Required for USB storage controller later. */
+        if (mfVMHasUsbController)
+        {
+            for (size_t i = 0; i < usbCtrls.size(); ++i)
+            {
+                USBControllerType_T enmCtrlType;
+                rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
+
+                if (enmCtrlType == USBControllerType_OHCI)
+                {
+                    InsertConfigNode(pDevices, "usb-ohci", &pDev);
+                    InsertConfigNode(pDev,     "0", &pInst);
+                    InsertConfigNode(pInst,    "Config", &pCfg);
+                    InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
+                    hrc = pBusMgr->assignPCIDevice("usb-ohci", pInst);                          H();
+                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                    InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                    InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                    /*
+                     * Attach the status driver.
+                     */
+                    attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
+                }
+#ifdef VBOX_WITH_EHCI
+                else if (enmCtrlType == USBControllerType_EHCI)
+                {
+                    /*
+                     * USB 2.0 is only available if the proper ExtPack is installed.
+                     *
+                     * Note. Configuring EHCI here and providing messages about
+                     * the missing extpack isn't exactly clean, but it is a
+                     * necessary evil to patch over legacy compatability issues
+                     * introduced by the new distribution model.
+                     */
+                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
+# ifdef VBOX_WITH_EXTPACK
+                    if (mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
+# endif
+                    {
+                        InsertConfigNode(pDevices, "usb-ehci", &pDev);
+                        InsertConfigNode(pDev,     "0", &pInst);
+                        InsertConfigNode(pInst,    "Config", &pCfg);
+                        InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
+                        hrc = pBusMgr->assignPCIDevice("usb-ehci", pInst);                  H();
+
+                        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                        InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
+                        InsertConfigNode(pLunL0,   "Config", &pCfg);
+
+                        /*
+                         * Attach the status driver.
+                         */
+                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
+                    }
+# ifdef VBOX_WITH_EXTPACK
+                    else
+                    {
+                        /* Always fatal! Up to VBox 4.0.4 we allowed to start the VM anyway
+                         * but this induced problems when the user saved + restored the VM! */
+                        return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
+                                N_("Implementation of the USB 2.0 controller not found!\n"
+                                   "Because the USB 2.0 controller state is part of the saved "
+                                   "VM state, the VM cannot be started. To fix "
+                                   "this problem, either install the '%s' or disable USB 2.0 "
+                                   "support in the VM settings"),
+                                s_pszUsbExtPackName);
+                    }
+# endif
+                }
+#endif
+            } /* for every USB controller. */
+
+
+            /*
+             * Virtual USB Devices.
+             */
+            InsertConfigNode(pRoot, "USB", &pUsbDevices);
+
+#ifdef VBOX_WITH_USB
+            {
+                /*
+                 * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
+                 * on a per device level now.
+                 */
+                InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
+                InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
+                // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
+                //InsertConfigInteger(pCfg, "Force11Device", true);
+                // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
+                // that it's documented somewhere.) Users needing it can use:
+                //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
+                //InsertConfigInteger(pCfg, "Force11PacketSize", true);
+            }
+#endif
+
+#ifdef VBOX_WITH_USB_CARDREADER
+            BOOL aEmulatedUSBCardReaderEnabled = FALSE;
+            hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
+            if (aEmulatedUSBCardReaderEnabled)
+            {
+                InsertConfigNode(pUsbDevices, "CardReader", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+# ifdef VBOX_WITH_USB_CARDREADER_TEST
+                InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+# else
+                InsertConfigString(pLunL0, "Driver", "UsbCardReader");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
+# endif
+             }
+#endif
+
+            /* Virtual USB Mouse/Tablet */
+            if (   aPointingHID == PointingHIDType_USBMouse
+                || aPointingHID == PointingHIDType_ComboMouse
+                || aPointingHID == PointingHIDType_USBTablet
+                || aPointingHID == PointingHIDType_USBMultiTouch)
+                InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
+            if (aPointingHID == PointingHIDType_USBMouse)
+            {
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigString(pCfg,   "Mode", "relative");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
+            if (   aPointingHID == PointingHIDType_USBTablet
+                || aPointingHID == PointingHIDType_USBMultiTouch)
+            {
+                InsertConfigNode(pDev,     "1", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigString(pCfg,   "Mode", "absolute");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
+            if (aPointingHID == PointingHIDType_USBMultiTouch)
+            {
+                InsertConfigNode(pDev,     "2", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigString(pCfg,   "Mode", "multitouch");
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            128);
+
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",        "MainMouse");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
+            }
+
+            /* Virtual USB Keyboard */
+            KeyboardHIDType_T aKbdHID;
+            hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                       H();
+            if (aKbdHID == KeyboardHIDType_USBKeyboard)
+            {
+                InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+
+                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
+                InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
+                InsertConfigNode(pLunL0,   "Config", &pCfg);
+                InsertConfigInteger(pCfg,  "QueueSize",            64);
+
+                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
+                InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
+                InsertConfigNode(pLunL1,   "Config", &pCfg);
+                pKeyboard = mKeyboard;
+                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
+            }
+        }
+
+        /*
          * Storage controllers.
          */
         com::SafeIfaceArray<IStorageController> ctrls;
@@ -1588,7 +1810,8 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 
             StorageControllerType_T enmCtrlType;
             rc = ctrls[i]->COMGETTER(ControllerType)(&enmCtrlType);                         H();
-            AssertRelease((unsigned)enmCtrlType < RT_ELEMENTS(aCtrlNodes));
+            AssertRelease((unsigned)enmCtrlType < RT_ELEMENTS(aCtrlNodes)
+                          || enmCtrlType == StorageControllerType_USB);
 
             StorageBus_T enmBus;
             rc = ctrls[i]->COMGETTER(Bus)(&enmBus);                                         H();
@@ -1605,22 +1828,25 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             BOOL fBootable;
             rc = ctrls[i]->COMGETTER(Bootable)(&fBootable);                                 H();
 
-            /* /Devices/<ctrldev>/ */
-            const char *pszCtrlDev = convertControllerTypeToDev(enmCtrlType);
-            pDev = aCtrlNodes[enmCtrlType];
-            if (!pDev)
-            {
-                InsertConfigNode(pDevices, pszCtrlDev, &pDev);
-                aCtrlNodes[enmCtrlType] = pDev; /* IDE variants are handled in the switch */
-            }
-
-            /* /Devices/<ctrldev>/<instance>/ */
             PCFGMNODE pCtlInst = NULL;
-            InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pCtlInst);
+            const char *pszCtrlDev = convertControllerTypeToDev(enmCtrlType);
+            if (enmCtrlType != StorageControllerType_USB)
+            {
+                /* /Devices/<ctrldev>/ */
+                pDev = aCtrlNodes[enmCtrlType];
+                if (!pDev)
+                {
+                    InsertConfigNode(pDevices, pszCtrlDev, &pDev);
+                    aCtrlNodes[enmCtrlType] = pDev; /* IDE variants are handled in the switch */
+                }
 
-            /* Device config: /Devices/<ctrldev>/<instance>/<values> & /ditto/Config/<values> */
-            InsertConfigInteger(pCtlInst, "Trusted",   1);
-            InsertConfigNode(pCtlInst,    "Config",    &pCfg);
+                /* /Devices/<ctrldev>/<instance>/ */
+                InsertConfigNode(pDev, Utf8StrFmt("%u", ulInstance).c_str(), &pCtlInst);
+
+                /* Device config: /Devices/<ctrldev>/<instance>/<values> & /ditto/Config/<values> */
+                InsertConfigInteger(pCtlInst, "Trusted",   1);
+                InsertConfigNode(pCtlInst,    "Config",    &pCfg);
+            }
 
             switch (enmCtrlType)
             {
@@ -1797,6 +2023,26 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSas], 0, 7,
                                        &mapMediumAttachments, pszCtrlDev, ulInstance);
                     paLedDevType = &maStorageDevType[iLedSas];
+                    break;
+                }
+
+                case StorageControllerType_USB:
+                {
+                    if (pUsbDevices)
+                    {
+                        /*
+                         * USB MSDs are handled a bit different as the device instance
+                         * doesn't match the storage controller instance but the port.
+                         */
+                        InsertConfigNode(pUsbDevices, "Msd", &pDev);
+                        pCtlInst = pDev;
+                    }
+                    else
+                        return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
+                                N_("There is no USB controller enabled but there\n"
+                                   "is at least one USB storage device configured for this VM.\n"
+                                   "To fix this problem either enable the USB controller or remove\n"
+                                   "the storage device from the VM"));
                     break;
                 }
 
@@ -2332,248 +2578,6 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             }
             hrc = pMachine->COMGETTER(Name)(bstr.asOutParam());                             H();
             InsertConfigString(pCfg, "StreamName", bstr);
-        }
-
-        /*
-         * The USB Controllers.
-         */
-        com::SafeIfaceArray<IUSBController> usbCtrls;
-        hrc = pMachine->COMGETTER(USBControllers)(ComSafeArrayAsOutParam(usbCtrls));        H();
-        bool fOhciPresent = false; /**< Flag whether at least one OHCI controller is presnet. */
-
-        for (size_t i = 0; i < usbCtrls.size(); ++i)
-        {
-            USBControllerType_T enmCtrlType;
-            rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
-            if (enmCtrlType == USBControllerType_OHCI)
-            {
-                fOhciPresent = true;
-                break;
-            }
-        }
-
-        /*
-         * Currently EHCI is only enabled when a OHCI controller is present too.
-         * This might change when XHCI is supported.
-         */
-        if (fOhciPresent)
-            mfVMHasUsbController = true;
-
-        if (mfVMHasUsbController)
-        {
-            for (size_t i = 0; i < usbCtrls.size(); ++i)
-            {
-                USBControllerType_T enmCtrlType;
-                rc = usbCtrls[i]->COMGETTER(Type)(&enmCtrlType);                                   H();
-
-                if (enmCtrlType == USBControllerType_OHCI)
-                {
-                    InsertConfigNode(pDevices, "usb-ohci", &pDev);
-                    InsertConfigNode(pDev,     "0", &pInst);
-                    InsertConfigNode(pInst,    "Config", &pCfg);
-                    InsertConfigInteger(pInst, "Trusted",              1); /* boolean */
-                    hrc = pBusMgr->assignPCIDevice("usb-ohci", pInst);                          H();
-                    InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                    InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
-                    InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-                    /*
-                     * Attach the status driver.
-                     */
-                    attachStatusDriver(pInst, &mapUSBLed[0], 0, 0, NULL, NULL, 0);
-                }
-#ifdef VBOX_WITH_EHCI
-                else if (enmCtrlType == USBControllerType_EHCI)
-                {
-                    /*
-                     * USB 2.0 is only available if the proper ExtPack is installed.
-                     *
-                     * Note. Configuring EHCI here and providing messages about
-                     * the missing extpack isn't exactly clean, but it is a
-                     * necessary evil to patch over legacy compatability issues
-                     * introduced by the new distribution model.
-                     */
-                    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
-# ifdef VBOX_WITH_EXTPACK
-                    if (mptrExtPackManager->isExtPackUsable(s_pszUsbExtPackName))
-# endif
-                    {
-                        InsertConfigNode(pDevices, "usb-ehci", &pDev);
-                        InsertConfigNode(pDev,     "0", &pInst);
-                        InsertConfigNode(pInst,    "Config", &pCfg);
-                        InsertConfigInteger(pInst, "Trusted", 1); /* boolean */
-                        hrc = pBusMgr->assignPCIDevice("usb-ehci", pInst);                  H();
-
-                        InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                        InsertConfigString(pLunL0, "Driver",               "VUSBRootHub");
-                        InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-                        /*
-                         * Attach the status driver.
-                         */
-                        attachStatusDriver(pInst, &mapUSBLed[1], 0, 0, NULL, NULL, 0);
-                    }
-# ifdef VBOX_WITH_EXTPACK
-                    else
-                    {
-                        /* Always fatal! Up to VBox 4.0.4 we allowed to start the VM anyway
-                         * but this induced problems when the user saved + restored the VM! */
-                        return VMR3SetError(pUVM, VERR_NOT_FOUND, RT_SRC_POS,
-                                N_("Implementation of the USB 2.0 controller not found!\n"
-                                   "Because the USB 2.0 controller state is part of the saved "
-                                   "VM state, the VM cannot be started. To fix "
-                                   "this problem, either install the '%s' or disable USB 2.0 "
-                                   "support in the VM settings"),
-                                s_pszUsbExtPackName);
-                    }
-# endif
-                }
-#endif
-            } /* for every USB controller. */
-
-
-            /*
-             * Virtual USB Devices.
-             */
-            PCFGMNODE pUsbDevices = NULL;
-            InsertConfigNode(pRoot, "USB", &pUsbDevices);
-
-#ifdef VBOX_WITH_USB
-            {
-                /*
-                 * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
-                 * on a per device level now.
-                 */
-                InsertConfigNode(pUsbDevices, "USBProxy", &pCfg);
-                InsertConfigNode(pCfg, "GlobalConfig", &pCfg);
-                // This globally enables the 2.0 -> 1.1 device morphing of proxied devices to keep windows quiet.
-                //InsertConfigInteger(pCfg, "Force11Device", true);
-                // The following breaks stuff, but it makes MSDs work in vista. (I include it here so
-                // that it's documented somewhere.) Users needing it can use:
-                //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
-                //InsertConfigInteger(pCfg, "Force11PacketSize", true);
-            }
-#endif
-
-#ifdef VBOX_WITH_USB_CARDREADER
-            BOOL aEmulatedUSBCardReaderEnabled = FALSE;
-            hrc = pMachine->COMGETTER(EmulatedUSBCardReaderEnabled)(&aEmulatedUSBCardReaderEnabled);    H();
-            if (aEmulatedUSBCardReaderEnabled)
-            {
-                InsertConfigNode(pUsbDevices, "CardReader", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-# ifdef VBOX_WITH_USB_CARDREADER_TEST
-                InsertConfigString(pLunL0, "Driver", "DrvDirectCardReader");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-# else
-                InsertConfigString(pLunL0, "Driver", "UsbCardReader");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object", (uintptr_t)mUsbCardReader);
-# endif
-             }
-#endif
-
-# if 0  /* Virtual MSD*/
-            InsertConfigNode(pUsbDevices, "Msd", &pDev);
-            InsertConfigNode(pDev,     "0", &pInst);
-            InsertConfigNode(pInst,    "Config", &pCfg);
-            InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-
-            InsertConfigString(pLunL0, "Driver", "SCSI");
-            InsertConfigNode(pLunL0,   "Config", &pCfg);
-
-            InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-            InsertConfigString(pLunL1, "Driver", "Block");
-            InsertConfigNode(pLunL1,   "Config", &pCfg);
-            InsertConfigString(pCfg,   "Type", "HardDisk");
-            InsertConfigInteger(pCfg,  "Mountable", 0);
-
-            InsertConfigNode(pLunL1,   "AttachedDriver", &pLunL2);
-            InsertConfigString(pLunL2, "Driver", "VD");
-            InsertConfigNode(pLunL2,   "Config", &pCfg);
-            InsertConfigString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi");
-            InsertConfigString(pCfg,   "Format", "VDI");
-# endif
-
-            /* Virtual USB Mouse/Tablet */
-            if (   aPointingHID == PointingHIDType_USBMouse
-                || aPointingHID == PointingHIDType_ComboMouse
-                || aPointingHID == PointingHIDType_USBTablet
-                || aPointingHID == PointingHIDType_USBMultiTouch)
-                InsertConfigNode(pUsbDevices, "HidMouse", &pDev);
-            if (aPointingHID == PointingHIDType_USBMouse)
-            {
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigString(pCfg,   "Mode", "relative");
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "QueueSize",            128);
-
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-            }
-            if (   aPointingHID == PointingHIDType_USBTablet
-                || aPointingHID == PointingHIDType_USBMultiTouch)
-            {
-                InsertConfigNode(pDev,     "1", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigString(pCfg,   "Mode", "absolute");
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "QueueSize",            128);
-
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-            }
-            if (aPointingHID == PointingHIDType_USBMultiTouch)
-            {
-                InsertConfigNode(pDev,     "2", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigString(pCfg,   "Mode", "multitouch");
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",        "MouseQueue");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "QueueSize",            128);
-
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver",        "MainMouse");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pMouse);
-            }
-
-            /* Virtual USB Keyboard */
-            KeyboardHIDType_T aKbdHID;
-            hrc = pMachine->COMGETTER(KeyboardHIDType)(&aKbdHID);                       H();
-            if (aKbdHID == KeyboardHIDType_USBKeyboard)
-            {
-                InsertConfigNode(pUsbDevices, "HidKeyboard", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-
-                InsertConfigNode(pInst,    "LUN#0", &pLunL0);
-                InsertConfigString(pLunL0, "Driver",               "KeyboardQueue");
-                InsertConfigNode(pLunL0,   "Config", &pCfg);
-                InsertConfigInteger(pCfg,  "QueueSize",            64);
-
-                InsertConfigNode(pLunL0,   "AttachedDriver", &pLunL1);
-                InsertConfigString(pLunL1, "Driver",               "MainKeyboard");
-                InsertConfigNode(pLunL1,   "Config", &pCfg);
-                pKeyboard = mKeyboard;
-                InsertConfigInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);
-            }
         }
 
         /*
@@ -3344,6 +3348,46 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         PCFGMNODE pLunL0 = NULL;
         hrc = Console::convertBusPortDeviceToLun(enmBus, lPort, lDev, uLUN);                H();
 
+        if (enmBus == StorageBus_USB)
+        {
+            PCFGMNODE pCfg = NULL;
+
+            /* Create correct instance. */
+            if (!fHotplug && !fAttachDetach)
+                InsertConfigNode(pCtlInst, Utf8StrFmt("%d", lPort).c_str(), &pCtlInst);
+            else if (fAttachDetach)
+                pCtlInst = CFGMR3GetChildF(pCtlInst, "%d/", lPort);
+
+            if (!fAttachDetach)
+                InsertConfigNode(pCtlInst, "Config", &pCfg);
+
+            uInstance = lPort; /* Overwrite uInstance with the correct one. */
+
+            if (!fHotplug && !fAttachDetach)
+            {
+                char aszUuid[RTUUID_STR_LENGTH + 1];
+                USBStorageDevice UsbMsd = USBStorageDevice();
+
+                memset(aszUuid, 0, sizeof(aszUuid));
+                rc = RTUuidCreate(&UsbMsd.mUuid);
+                AssertRCReturn(rc, rc);
+                rc = RTUuidToStr(&UsbMsd.mUuid, aszUuid, sizeof(aszUuid));
+                AssertRCReturn(rc, rc);
+
+                UsbMsd.iPort = uInstance;
+
+                InsertConfigString(pCtlInst, "UUID", aszUuid);
+                mUSBStorageDevices.push_back(UsbMsd);
+
+                /** @todo: No LED after hotplugging. */
+                /* Attach the status driver */
+                Assert(cLedUsb >= 8);
+                attachStatusDriver(pCtlInst, &mapStorageLeds[iLedUsb], 0, 7,
+                                   &mapMediumAttachments, pcszDevice, 0);
+                paLedDevType = &maStorageDevType[iLedUsb];
+            }
+        }
+
         /* First check if the LUN already exists. */
         pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
         if (pLunL0)
@@ -3376,7 +3420,10 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
                     }
                 }
 
-                rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                if (enmBus == StorageBus_USB)
+                    rc = PDMR3UsbDriverDetach(pUVM, pcszDevice, uInstance, uLUN, NULL, 0, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
+                else
+                    rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG);
                 if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
                     rc = VINF_SUCCESS;
                 AssertRCReturn(rc, rc);
@@ -3419,7 +3466,7 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         mapMediumAttachments[devicePath] = pMediumAtt;
 
         /* SCSI has a another driver between device and block. */
-        if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS)
+        if (enmBus == StorageBus_SCSI || enmBus == StorageBus_SAS || enmBus == StorageBus_USB)
         {
             InsertConfigString(pLunL0, "Driver", "SCSI");
             PCFGMNODE pL1Cfg = NULL;
@@ -3669,8 +3716,24 @@ int Console::configMediumAttachment(PCFGMNODE pCtlInst,
         if (fAttachDetach)
         {
             /* Attach the new driver. */
-            rc = PDMR3DeviceAttach(pUVM, pcszDevice, uInstance, uLUN,
-                                   fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
+            if (enmBus == StorageBus_USB)
+            {
+                if (fHotplug)
+                {
+                    USBStorageDevice UsbMsd = USBStorageDevice();
+                    RTUuidCreate(&UsbMsd.mUuid);
+                    UsbMsd.iPort = uInstance;
+                    rc = PDMR3UsbCreateEmulatedDevice(pUVM, pcszDevice, pCtlInst, &UsbMsd.mUuid);
+                    if (RT_SUCCESS(rc))
+                        mUSBStorageDevices.push_back(UsbMsd);
+                }
+                else
+                    rc = PDMR3UsbDriverAttach(pUVM, pcszDevice, uInstance, uLUN,
+                                              fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
+            }
+            else
+                rc = PDMR3DeviceAttach(pUVM, pcszDevice, uInstance, uLUN,
+                                       fHotplug ? 0 : PDM_TACH_FLAGS_NOT_HOT_PLUG, NULL /*ppBase*/);
             AssertRCReturn(rc, rc);
 
             /* There is no need to handle removable medium mounting, as we

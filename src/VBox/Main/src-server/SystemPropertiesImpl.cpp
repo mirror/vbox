@@ -422,6 +422,7 @@ STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus(StorageBus_T aB
         case StorageBus_SATA:
         case StorageBus_SCSI:
         case StorageBus_SAS:
+        case StorageBus_USB:
         {
             /* SATA and both SCSI controllers only support one device per port. */
             *aMaxDevicesPerPort = 1;
@@ -474,6 +475,7 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus(StorageBus_T aBus,
             break;
         }
         case StorageBus_SAS:
+        case StorageBus_USB:
         {
             *aMinPortCount = 8;
             break;
@@ -517,6 +519,7 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus(StorageBus_T aBus,
             break;
         }
         case StorageBus_SAS:
+        case StorageBus_USB:
         {
             *aMaxPortCount = 8;
             break;
@@ -547,6 +550,7 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(ChipsetType_T aChipse
         case StorageBus_SAS:
             cCtrs = aChipset == ChipsetType_ICH9 ? 8 : 1;
             break;
+        case StorageBus_USB:
         case StorageBus_IDE:
         case StorageBus_Floppy:
         {
@@ -577,6 +581,7 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
         case StorageBus_SATA:
         case StorageBus_SCSI:
         case StorageBus_SAS:
+        case StorageBus_USB:
         {
             com::SafeArray<DeviceType_T> saDeviceTypes(2);
             saDeviceTypes[0] = DeviceType_DVD;
@@ -612,6 +617,7 @@ STDMETHODIMP SystemProperties::GetDefaultIoCacheSettingForStorageController(Stor
         case StorageControllerType_BusLogic:
         case StorageControllerType_IntelAhci:
         case StorageControllerType_LsiLogicSas:
+        case StorageControllerType_USB:
             *aEnabled = false;
             break;
         case StorageControllerType_PIIX3:

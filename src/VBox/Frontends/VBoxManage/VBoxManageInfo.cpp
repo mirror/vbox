@@ -743,6 +743,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
             case StorageControllerType_LsiLogic:
                 pszCtl = "LsiLogic";
                 break;
+            case StorageControllerType_LsiLogicSas:
+                pszCtl = "LsiLogicSas";
+                break;
             case StorageControllerType_BusLogic:
                 pszCtl = "BusLogic";
                 break;
@@ -760,6 +763,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> virtualBox,
                 break;
             case StorageControllerType_I82078:
                 pszCtl = "I82078";
+                break;
+            case StorageControllerType_USB:
+                pszCtl = "USB";
                 break;
 
             default:
