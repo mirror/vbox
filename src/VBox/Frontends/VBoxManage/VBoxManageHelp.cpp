@@ -480,7 +480,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            plugcpu <id> |\n"
                      "                            unplugcpu <id> |\n"
                      "                            cpuexecutioncap <1-100>\n"
-                     "                            webcam attach [path [settings]] | detach [path] | list]\n"
+                     "                            webcam <attach [path [settings]]> | <detach [path]> | <list>\n"
                      "\n", SEP);
     }
 
