@@ -18311,7 +18311,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <enum
     name="StorageBus"
-    uuid="eee67ab3-668d-4ef5-91e0-7025fe4a0d7a"
+    uuid="2dab9df1-9683-48fd-8c11-caada236fcb0"
     >
     <desc>
       The bus type of the storage controller (IDE, SATA, SCSI, SAS or Floppy);
@@ -18325,11 +18325,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="SCSI"      value="3"/>
     <const name="Floppy"    value="4"/>
     <const name="SAS"       value="5"/>
+    <const name="USB"       value="6"/>
   </enum>
 
   <enum
     name="StorageControllerType"
-    uuid="8a412b8a-f43e-4456-bd37-b474f0879a58"
+    uuid="02e190af-b546-4109-b036-6deaa4ef6e69"
     >
     <desc>
       The exact variant of storage controller hardware presented
@@ -18362,6 +18363,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </const>
     <const name="LsiLogicSas"   value="8">
       <desc>A variant of the LsiLogic controller using SAS.</desc>
+    </const>
+    <const name="USB"           value="9">
+      <desc>Special USB based storage controller.</desc>
     </const>
   </enum>
 

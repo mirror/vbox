@@ -3461,6 +3461,8 @@ const char *Console::convertControllerTypeToDev(StorageControllerType_T enmCtrlT
             return "piix3ide";
         case StorageControllerType_I82078:
             return "i82078";
+        case StorageControllerType_USB:
+            return "Msd";
         default:
             return NULL;
     }
@@ -3483,6 +3485,15 @@ HRESULT Console::convertBusPortDeviceToLun(StorageBus_T enmBus, LONG port, LONG 
         case StorageBus_SAS:
         {
             uLun = port;
+            return S_OK;
+        }
+        case StorageBus_USB:
+        {
+             /*
+              * It is always the first lun, the port denotes the device instance
+              * for the Msd device.
+              */
+            uLun = 0;
             return S_OK;
         }
         default:
@@ -3939,9 +3950,17 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
             AssertMsgFailedReturn(("enmVMState=%d\n", enmVMState), VERR_ACCESS_DENIED);
     }
 
-    /* Determine the base path for the device instance. */
+    /*
+     * Determine the base path for the device instance. USB Msd devices are handled different
+     * because the PDM USB API requires a differnet CFGM tree when attaching a new USB device.
+     */
     PCFGMNODE pCtlInst;
-    pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+
+    if (enmBus == StorageBus_USB)
+        pCtlInst = CFGMR3CreateTree(pUVM);
+    else
+        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+
     AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
     int rc = VINF_SUCCESS;
@@ -3966,7 +3985,8 @@ DECLCALLBACK(int) Console::attachStorageDevice(Console *pConsole,
                                              NULL /* paLedDevType */);
     /** @todo this dumps everything attached to this device instance, which
      * is more than necessary. Dumping the changed LUN would be enough. */
-    CFGMR3Dump(pCtlInst);
+    if (enmBus != StorageBus_USB)
+        CFGMR3Dump(pCtlInst);
 
     /*
      * Resume the VM if necessary.
@@ -4185,7 +4205,7 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
     /* Determine the base path for the device instance. */
     PCFGMNODE pCtlInst;
     pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
-    AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
+    AssertReturn(pCtlInst || enmBus == StorageBus_USB, VERR_INTERNAL_ERROR);
 
 #define H()         AssertMsgReturn(!FAILED(hrc), ("hrc=%Rhrc\n", hrc), VERR_GENERAL_FAILURE)
 
@@ -4206,29 +4226,47 @@ DECLCALLBACK(int) Console::detachStorageDevice(Console *pConsole,
 
 #undef H
 
-    /* First check if the LUN really exists. */
-    pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
-    if (pLunL0)
+    if (enmBus != StorageBus_USB)
     {
-        uint32_t fFlags = 0;
+        /* First check if the LUN really exists. */
+        pLunL0 = CFGMR3GetChildF(pCtlInst, "LUN#%u", uLUN);
+        if (pLunL0)
+        {
+            uint32_t fFlags = 0;
 
-        if (fSilent)
-            fFlags |= PDM_TACH_FLAGS_NOT_HOT_PLUG;
+            if (fSilent)
+                fFlags |= PDM_TACH_FLAGS_NOT_HOT_PLUG;
 
-        rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fFlags);
-        if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
-            rc = VINF_SUCCESS;
-        AssertRCReturn(rc, rc);
-        CFGMR3RemoveNode(pLunL0);
+            rc = PDMR3DeviceDetach(pUVM, pcszDevice, uInstance, uLUN, fFlags);
+            if (rc == VERR_PDM_NO_DRIVER_ATTACHED_TO_LUN)
+                rc = VINF_SUCCESS;
+            AssertRCReturn(rc, rc);
+            CFGMR3RemoveNode(pLunL0);
 
-        Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
-        pConsole->mapMediumAttachments.erase(devicePath);
+            Utf8Str devicePath = Utf8StrFmt("%s/%u/LUN#%u", pcszDevice, uInstance, uLUN);
+            pConsole->mapMediumAttachments.erase(devicePath);
 
+        }
+        else
+            AssertFailedReturn(VERR_INTERNAL_ERROR);
+
+        CFGMR3Dump(pCtlInst);
     }
     else
-        AssertFailedReturn(VERR_INTERNAL_ERROR);
+    {
+        /* Find the correct USB device in the list. */
+        USBStorageDeviceList::iterator it;
+        for (it = pConsole->mUSBStorageDevices.begin(); it != pConsole->mUSBStorageDevices.end(); it++)
+        {
+            if (it->iPort == lPort)
+                break;
+        }
 
-    CFGMR3Dump(pCtlInst);
+        AssertReturn(it != pConsole->mUSBStorageDevices.end(), VERR_INTERNAL_ERROR);
+        rc = PDMR3UsbDetachDevice(pUVM, &it->mUuid);
+        AssertRCReturn(rc, rc);
+        pConsole->mUSBStorageDevices.erase(it);
+    }
 
     /*
      * Resume the VM if necessary.
@@ -9451,7 +9489,12 @@ DECLCALLBACK(int) Console::reconfigureMediumAttachment(Console *pConsole,
 
     /* Determine the base path for the device instance. */
     PCFGMNODE pCtlInst;
-    pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+
+    if (enmBus == StorageBus_USB)
+        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "USB/%s/", pcszDevice);
+    else
+        pCtlInst = CFGMR3GetChildF(CFGMR3GetRootU(pUVM), "Devices/%s/%u/", pcszDevice, uInstance);
+
     AssertReturn(pCtlInst, VERR_INTERNAL_ERROR);
 
     /* Update the device instance configuration. */

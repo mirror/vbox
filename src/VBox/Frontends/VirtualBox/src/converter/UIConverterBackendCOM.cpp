@@ -445,6 +445,7 @@ template<> QString toString(const KStorageControllerType &type)
         case KStorageControllerType_ICH6:        return QApplication::translate("VBoxGlobal", "ICH6", "StorageControllerType");
         case KStorageControllerType_I82078:      return QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType");
         case KStorageControllerType_LsiLogicSas: return QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType");
+        case KStorageControllerType_USB:         return QApplication::translate("VBoxGlobal", "USB", "StorageControllerType");
         AssertMsgFailed(("No text for %d", type)); break;
     }
     return QString();
@@ -597,6 +598,7 @@ template<> KStorageControllerType fromString<KStorageControllerType>(const QStri
     list.insert(QApplication::translate("VBoxGlobal", "ICH6", "StorageControllerType"),         KStorageControllerType_ICH6);
     list.insert(QApplication::translate("VBoxGlobal", "I82078", "StorageControllerType"),       KStorageControllerType_I82078);
     list.insert(QApplication::translate("VBoxGlobal", "LsiLogic SAS", "StorageControllerType"), KStorageControllerType_LsiLogicSas);
+    list.insert(QApplication::translate("VBoxGlobal", "USB", "StorageControllerType"),          KStorageControllerType_USB);
     if (!list.contains(strType))
     {
         AssertMsgFailed(("No value for '%s'", strType.toAscii().constData()));
