@@ -1344,6 +1344,28 @@ DWORD vboxDispIfCancelPendingResizeWDDM(PCVBOXDISPIF const pIf)
     return NO_ERROR;
 }
 
+static DWORD vboxDispIfWddmResizeDisplayVista(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD cDevModes, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup)
+{
+    /* Without this, Windows will not ask the miniport for its
+     * mode table but uses an internal cache instead.
+     */
+    for (DWORD i = 0; i < cDevModes; i++)
+    {
+        DEVMODE tempDevMode;
+        ZeroMemory (&tempDevMode, sizeof (tempDevMode));
+        tempDevMode.dmSize = sizeof(DEVMODE);
+        EnumDisplaySettings((LPSTR)paDisplayDevices[i].DeviceName, 0xffffff, &tempDevMode);
+        Log(("VBoxTray: ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
+    }
+
+    DWORD winEr = EnableAndResizeDispDev(paDeviceModes, paDisplayDevices, cDevModes, iChangedMode, paDeviceModes[iChangedMode].dmPelsWidth, paDeviceModes[iChangedMode].dmPelsHeight,
+            paDeviceModes[iChangedMode].dmBitsPerPel, paDeviceModes[iChangedMode].dmPosition.x, paDeviceModes[iChangedMode].dmPosition.y, fEnable, fExtDispSup);
+    if (winEr != NO_ERROR)
+        WARN(("VBoxTray: (WDDM) Failed EnableAndResizeDispDev winEr %d\n", winEr));
+
+    return winEr;
+}
+
 static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, BOOL fEnable, BOOL fExtDispSup, DISPLAY_DEVICE *paDisplayDevices, DEVMODE *paDeviceModes, UINT cDevModes)
 {
     DWORD winEr;
@@ -1355,10 +1377,9 @@ static DWORD vboxDispIfResizePerform(PCVBOXDISPIF const pIf, UINT iChangedMode, 
     }
     else
     {
-        winEr = EnableAndResizeDispDev(paDeviceModes, paDisplayDevices, cDevModes, iChangedMode, paDeviceModes[iChangedMode].dmPelsWidth, paDeviceModes[iChangedMode].dmPelsHeight,
-                paDeviceModes[iChangedMode].dmBitsPerPel, paDeviceModes[iChangedMode].dmPosition.x, paDeviceModes[iChangedMode].dmPosition.y, fEnable, fExtDispSup);
+        winEr = vboxDispIfWddmResizeDisplayVista(paDeviceModes, paDisplayDevices, cDevModes, iChangedMode, fEnable, fExtDispSup);
         if (winEr != NO_ERROR)
-            WARN(("VBoxTray: (WDDM) Failed EnableAndResizeDispDev winEr %d\n", winEr));
+            WARN(("VBoxTray: (WDDM) Failed vboxDispIfWddmResizeDisplayVista winEr %d\n", winEr));
     }
     return winEr;
 }
@@ -1821,9 +1842,9 @@ static DWORD vboxDispIfResizeStartedWDDMOp(VBOXDISPIF_OP *pOp)
     {
         for (DWORD i = 0; i < cIds; ++i)
         {
-            winEr = EnableAndResizeDispDev(paNewDeviceModes, paNewDisplayDevices, NewDevNum, i, 0, 0, 0, 0, 0, FALSE, TRUE);
+            winEr = vboxDispIfWddmResizeDisplayVista(paNewDeviceModes, paNewDisplayDevices, NewDevNum, i, FALSE, TRUE);
             if (winEr != NO_ERROR)
-                WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: EnableAndResizeDispDev failed winEr 0x%x\n", winEr));
+                WARN(("VBoxTray: vboxDispIfResizeStartedWDDMOp: vboxDispIfWddmResizeDisplayVista failed winEr 0x%x\n", winEr));
         }
     }
 
