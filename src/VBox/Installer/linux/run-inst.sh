@@ -112,12 +112,17 @@ def_uninstall()
 
     . ./deffiles
     found=0
+    for i in "/opt/$PACKAGE-"*; do
+        test -e "$i" && found=1
+    done
     for i in $DEFAULT_FILE_NAMES; do
-        test "$found" = 0 -a -e "$i" && found=1
+        test "$found" = 0 && test -e "$i" && found=1
     done
     test "$found" = 0 &&
-        for i in $DEFAULT_VERSIONED_FILE_NAMES-*; do
-            test "$found" = 0 -a -e "$i" && found=1
+        for i in $DEFAULT_VERSIONED_FILE_NAMES; do
+            for j in $i-*; do
+                test "$found" = 0 && test -e "$j" && found=1
+            done
         done
     test "$found" = 0 && return 0
     if ! test "$1" = "force" ; then
