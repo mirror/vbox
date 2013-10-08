@@ -260,7 +260,7 @@ DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDe
                     /* dont any more flags here as, only DM_POISITON is used to enable the secondary display */
                     deviceMode.dmFields = DM_POSITION;
                 else /* for win 7 and above */
-                    /* for vista and aboce DM_BITSPERPELis necessary */
+                    /* for vista and above DM_BITSPERPEL is necessary */
                     deviceMode.dmFields =   DM_BITSPERPEL | DM_DISPLAYFLAGS | DM_DISPLAYFREQUENCY  | DM_POSITION;
 
                 dwStatus = gCtx.pfnChangeDisplaySettingsEx((LPSTR)displayDevice.DeviceName,&deviceMode, NULL, (CDS_UPDATEREGISTRY | CDS_NORESET), NULL);
