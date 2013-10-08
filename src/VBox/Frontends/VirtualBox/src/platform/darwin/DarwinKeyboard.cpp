@@ -1506,6 +1506,7 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
                     {
                         case kIOUSBVendorIDAppleComputer:   /** Apple devices always in the list */
                         case 0x03F0:                        /** Hewlett-Packard (verified with model KU-0316) */
+                        case 0x0430:                        /** Sun keyboards */
                             fSupported = true;
                             break;
                     }
