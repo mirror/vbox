@@ -440,8 +440,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     return rc;
 }
 
-STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
-    NetworkAttachmentType_T *aAttachmentType)
+STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(NetworkAttachmentType_T *aAttachmentType)
 {
     CheckComArgOutPointerValid(aAttachmentType);
 
@@ -455,8 +454,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(AttachmentType)(
     return S_OK;
 }
 
-STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(
-    NetworkAttachmentType_T aAttachmentType)
+STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(NetworkAttachmentType_T aAttachmentType)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -485,7 +483,16 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(
             mData->mNATNetwork = "NatNetwork";
         }
 
+        checkAndSwitchFromNatNetworking();
+
         mData->mAttachmentType = aAttachmentType;
+
+        if (aAttachmentType == NetworkAttachmentType_NATNetwork)
+        {
+            HRESULT hrc = switchToNatNetworking(mData->mNATNetwork.raw());
+            if (FAILED(hrc))
+                return hrc;
+        }
 
         m_fModified = true;
         // leave the lock before informing callbacks
