@@ -2515,7 +2515,7 @@ void UIMachineSettingsStorage::getInformation()
 
                 KStorageBus bus = mStorageModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>();
                 mLbPortCount->setVisible (bus == KStorageBus_SATA);
-                mSbPortCount->setVisible (bus == KStorageBus_SATA || bus == KStorageBus_SAS);
+                mSbPortCount->setVisible (bus == KStorageBus_SATA);
                 uint uPortCount = mStorageModel->data (index, StorageModel::R_CtrPortCount).toUInt();
                 mSbPortCount->setValue (uPortCount);
 
