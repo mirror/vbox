@@ -190,6 +190,8 @@ EXPORTS
     PDMR3UsbCreateProxyDevice
     PDMR3UsbDetachDevice
     PDMR3UsbHasHub
+    PDMR3UsbDriverAttach
+    PDMR3UsbDriverDetach
 
     PGMHandlerPhysicalPageTempOff
     PGMPhysReadGCPtr
