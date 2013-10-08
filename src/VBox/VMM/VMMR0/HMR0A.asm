@@ -1625,3 +1625,4 @@ ENDPROC   SVMR0VMRun64
 
  %include "HMR0Mixed.mac"
 %endif ; VBOX_WITH_HYBRID_32BIT_KERNEL
+
