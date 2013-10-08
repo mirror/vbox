@@ -2018,6 +2018,10 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     InsertConfigString(pCfg,  "ControllerType", "SAS1068");
                     InsertConfigInteger(pCfg, "Bootable",  fBootable);
 
+                    ULONG cPorts = 0;
+                    hrc = ctrls[i]->COMGETTER(PortCount)(&cPorts);                          H();
+                    InsertConfigInteger(pCfg, "NumPorts", cPorts);
+
                     /* Attach the status driver */
                     Assert(cLedSas >= 8);
                     attachStatusDriver(pCtlInst, &mapStorageLeds[iLedSas], 0, 7,

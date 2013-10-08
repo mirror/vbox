@@ -906,7 +906,7 @@ static const RTGETOPTDEF g_aStorageControllerOptions[] =
     { "--name",             'n', RTGETOPT_REQ_STRING },
     { "--add",              'a', RTGETOPT_REQ_STRING },
     { "--controller",       'c', RTGETOPT_REQ_STRING },
-    { "--sataportcount",    'p', RTGETOPT_REQ_UINT32 },
+    { "--portcount",        'p', RTGETOPT_REQ_UINT32 },
     { "--remove",           'r', RTGETOPT_REQ_NOTHING },
     { "--hostiocache",      'i', RTGETOPT_REQ_STRING },
     { "--bootable",         'b', RTGETOPT_REQ_STRING },
@@ -923,7 +923,7 @@ int handleStorageController(HandlerArg *a)
     const char       *pszBootable    = NULL;
     ULONG             satabootdev    = ~0U;
     ULONG             sataidedev     = ~0U;
-    ULONG             sataportcount  = ~0U;
+    ULONG             portcount      = ~0U;
     bool              fRemoveCtl     = false;
     ComPtr<IMachine>  machine;
     RTGETOPTUNION     ValueUnion;
@@ -967,9 +967,9 @@ int handleStorageController(HandlerArg *a)
                 break;
             }
 
-            case 'p':   // sataportcount
+            case 'p':   // portcount
             {
-                sataportcount = ValueUnion.u32;
+                portcount = ValueUnion.u32;
                 break;
             }
 
@@ -1133,7 +1133,7 @@ int handleStorageController(HandlerArg *a)
             }
         }
 
-        if (   (sataportcount != ~0U)
+        if (   (portcount != ~0U)
             && SUCCEEDED(rc))
         {
             ComPtr<IStorageController> ctl;
@@ -1143,7 +1143,7 @@ int handleStorageController(HandlerArg *a)
 
             if (SUCCEEDED(rc))
             {
-                CHECK_ERROR(ctl, COMSETTER(PortCount)(sataportcount));
+                CHECK_ERROR(ctl, COMSETTER(PortCount)(portcount));
             }
             else
             {

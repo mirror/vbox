@@ -552,7 +552,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                      "                            [--add ide|sata|scsi|floppy|sas]\n"
                      "                            [--controller LSILogic|LSILogicSAS|BusLogic|\n"
                      "                                          IntelAHCI|PIIX3|PIIX4|ICH6|I82078]\n"
-                     "                            [--sataportcount <1-30>]\n"
+                     "                            [--portcount <1-n>]\n"
                      "                            [--hostiocache on|off]\n"
                      "                            [--bootable on|off]\n"
                      "                            [--remove]\n"

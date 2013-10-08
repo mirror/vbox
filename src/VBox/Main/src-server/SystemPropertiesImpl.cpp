@@ -455,6 +455,7 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus(StorageBus_T aBus,
     switch (aBus)
     {
         case StorageBus_SATA:
+        case StorageBus_SAS:
         {
             *aMinPortCount = 1;
             break;
@@ -474,7 +475,6 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus(StorageBus_T aBus,
             *aMinPortCount = 1;
             break;
         }
-        case StorageBus_SAS:
         case StorageBus_USB:
         {
             *aMinPortCount = 8;
@@ -519,6 +519,10 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus(StorageBus_T aBus,
             break;
         }
         case StorageBus_SAS:
+        {
+            *aMaxPortCount = 255;
+            break;
+        }
         case StorageBus_USB:
         {
             *aMaxPortCount = 8;

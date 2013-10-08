@@ -527,6 +527,14 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
             break;
         }
         case StorageBus_SAS:
+        {
+            /* SAS supports a maximum of 255 ports. */
+            if (aPortCount < 1 || aPortCount > 255)
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 1, 255);
+            break;
+        }
         case StorageBus_USB:
         {
             /*
