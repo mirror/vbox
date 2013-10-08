@@ -236,6 +236,9 @@ typedef struct USBMSD
     /** The reset URB.
      * This is waiting for SCSI request completion before finishing the reset. */
     PVUSBURB            pResetUrb;
+    /** Indicates that PDMUsbHlpAsyncNotificationCompleted should be called when
+     * the MSD is entering the idle state. */
+    volatile bool       fSignalIdle;
 
     /**
      * LUN\#0 data.
@@ -918,6 +921,27 @@ static DECLCALLBACK(int) usbMsdLun0ScsiRequestCompleted(PPDMISCSIPORT pInterface
 
 
 /**
+ * @interface_method_impl{PDMISCSIPORT,pfnQueryDeviceLocation}
+ */
+static DECLCALLBACK(int) usbMsdLun0QueryDeviceLocation(PPDMISCSIPORT pInterface, const char **ppcszController,
+                                                       uint32_t *piInstance, uint32_t *piLUN)
+{
+    PUSBMSD    pThis = RT_FROM_MEMBER(pInterface, USBMSD, Lun0.IScsiPort);
+    PPDMUSBINS pUsbIns = pThis->pUsbIns;
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
+
+    *ppcszController = pUsbIns->pReg->szName;
+    *piInstance = pUsbIns->iInstance;
+    *piLUN = 0;
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) usbMsdLun0QueryInterface(PPDMIBASE pInterface, const char *pszIID)
@@ -1257,7 +1281,6 @@ static int usbMsdHandleBulkHostToDev(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                     return usbMsdCompleteStall(pThis, NULL, pUrb, "SCSI Submit #2");
                 }
             }
-LogRel(("DATA_FROM_HOST: %d bytes\n", cbData));
             return usbMsdCompleteOk(pThis, pUrb, cbData);
         }
 
@@ -1318,7 +1341,6 @@ static int usbMsdHandleBulkDevToHost(PUSBMSD pThis, PUSBMSDEP pEp, PVUSBURB pUrb
                 Log(("usbMsdHandleBulkDevToHost: Entering STATUS\n"));
                 pReq->enmState = USBMSDREQSTATE_STATUS;
             }
-LogRel(("DATA_TO_HOST: %d bytes\n", cbCopy));
             return usbMsdCompleteOk(pThis, pUrb, cbCopy);
         }
 
@@ -1629,6 +1651,172 @@ static DECLCALLBACK(int) usbMsdUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 
 
 /**
+ * Checks if all asynchronous I/O is finished.
+ *
+ * Used by usbMsdVMReset, usbMsdVMSuspend and usbMsdVMPowerOff.
+ *
+ * @returns true if quiesced, false if busy.
+ * @param   pUsbIns         The USB device instance.
+ */
+static bool usbMsdAllAsyncIOIsFinished(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    if (   VALID_PTR(pThis->pReq)
+        && pThis->pReq->enmState == USBMSDREQSTATE_EXECUTING)
+        return false;
+
+    return true;
+}
+
+/**
+ * @callback_method_impl{FNPDMDEVASYNCNOTIFY,
+ * Callback employed by usbMsdVMSuspend and usbMsdVMPowerOff.}
+ */
+static DECLCALLBACK(bool) usbMsdIsAsyncSuspendOrPowerOffDone(PPDMUSBINS pUsbIns)
+{
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        return false;
+
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    return true;
+}
+
+/**
+ * Common worker for usbMsdVMSuspend and usbMsdVMPowerOff.
+ */
+static void usbMsdSuspendOrPowerOff(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        PDMUsbHlpSetAsyncNotification(pUsbIns, usbMsdIsAsyncSuspendOrPowerOffDone);
+    else
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnVMSuspend
+ */
+static DECLCALLBACK(void) usbMsdVMSuspend(PPDMUSBINS pUsbIns)
+{
+    LogFlow(("usbMsdVMSuspend/#%u:\n", pUsbIns->iInstance));
+    usbMsdSuspendOrPowerOff(pUsbIns);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnVMSuspend
+ */
+static DECLCALLBACK(void) usbMsdVMPowerOff(PPDMUSBINS pUsbIns)
+{
+    LogFlow(("usbMsdVMPowerOff/#%u:\n", pUsbIns->iInstance));
+    usbMsdSuspendOrPowerOff(pUsbIns);
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnDriverAttach
+ */
+static DECLCALLBACK(int) usbMsdDriverAttach(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+    int rc;
+
+    LogFlow(("usbMsdDetach/#%u:\n", pUsbIns->iInstance));
+
+    AssertMsg(iLUN == 0, ("UsbMsd: No other LUN than 0 is supported\n"));
+    AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
+              ("UsbMsd: Device does not support hotplugging\n"));
+
+    /* the usual paranoia */
+    AssertRelease(!pThis->Lun0.pIBase);
+    AssertRelease(!pThis->Lun0.pIScsiConnector);
+
+    /*
+     * Try attach the block device and get the interfaces,
+     * required as well as optional.
+     */
+    rc = PDMUsbHlpDriverAttach(pUsbIns, iLUN, &pThis->Lun0.IBase, &pThis->Lun0.pIBase, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        /* Get SCSI connector interface. */
+        pThis->Lun0.pIScsiConnector = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pIBase, PDMISCSICONNECTOR);
+        AssertMsgReturn(pThis->Lun0.pIScsiConnector, ("Missing SCSI interface below\n"), VERR_PDM_MISSING_INTERFACE);
+    }
+    else
+        AssertMsgFailed(("Failed to attach LUN#%d. rc=%Rrc\n", iLUN, rc));
+
+    if (RT_FAILURE(rc))
+    {
+        pThis->Lun0.pIBase = NULL;
+        pThis->Lun0.pIScsiConnector = NULL;
+    }
+    return rc;
+}
+
+
+/**
+ * @copydoc PDMUSBREG::pfnDriverDetach
+ */
+static DECLCALLBACK(void) usbMsdDriverDetach(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    LogFlow(("usbMsdDetach/#%u:\n", pUsbIns->iInstance));
+
+    AssertMsg(iLUN == 0, ("UsbMsd: No other LUN than 0 is supported\n"));
+    AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
+              ("UsbMsd: Device does not support hotplugging\n"));
+
+    /*
+     * Zero some important members.
+     */
+    pThis->Lun0.pIBase = NULL;
+    pThis->Lun0.pIScsiConnector = NULL;
+}
+
+
+/**
+ * @callback_method_impl{FNPDMDEVASYNCNOTIFY,
+ * Callback employed by usbMsdVMReset.}
+ */
+static DECLCALLBACK(bool) usbMsdIsAsyncResetDone(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        return false;
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+
+    int rc = usbMsdResetWorker(pThis, NULL, false /*fSetConfig*/);
+    AssertRC(rc);
+    return true;
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnReset}
+ */
+static DECLCALLBACK(void) usbMsdVMReset(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        PDMUsbHlpSetAsyncNotification(pUsbIns, usbMsdIsAsyncResetDone);
+    else
+    {
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+        int rc = usbMsdResetWorker(pThis, NULL, false /*fSetConfig*/);
+        AssertRC(rc);
+    }
+}
+
+
+/**
  * @copydoc PDMUSBREG::pfnDestruct
  */
 static void usbMsdDestruct(PPDMUSBINS pUsbIns)
@@ -1680,6 +1868,7 @@ static DECLCALLBACK(int) usbMsdConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     pThis->hEvtReset                                = NIL_RTSEMEVENTMULTI;
     pThis->Lun0.IBase.pfnQueryInterface             = usbMsdLun0QueryInterface;
     pThis->Lun0.IScsiPort.pfnSCSIRequestCompleted   = usbMsdLun0ScsiRequestCompleted;
+    pThis->Lun0.IScsiPort.pfnQueryDeviceLocation    = usbMsdLun0QueryDeviceLocation;
     usbMsdQueueInit(&pThis->ToHostQueue);
     usbMsdQueueInit(&pThis->DoneQueue);
 
@@ -1740,21 +1929,21 @@ const PDMUSBREG g_UsbMsd =
     /* pfnVMPowerOn */
     NULL,
     /* pfnVMReset */
-    NULL,
+    usbMsdVMReset,
     /* pfnVMSuspend */
-    NULL,
+    usbMsdVMSuspend,
     /* pfnVMResume */
     NULL,
     /* pfnVMPowerOff */
-    NULL,
+    usbMsdVMPowerOff,
     /* pfnHotPlugged */
     NULL,
     /* pfnHotUnplugged */
     NULL,
     /* pfnDriverAttach */
-    NULL,
+    usbMsdDriverAttach,
     /* pfnDriverDetach */
-    NULL,
+    usbMsdDriverDetach,
     /* pfnQueryInterface */
     NULL,
     /* pfnUsbReset */
