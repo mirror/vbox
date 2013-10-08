@@ -715,6 +715,8 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
         uint32_t    u32Order;
         /** VBox instance number. */
         uint32_t    iInstance;
+        /** Device UUID. */
+        RTUUID      Uuid;
     } *paUsbDevs = (struct USBDEVORDER *)alloca(sizeof(paUsbDevs[0]) * (cUsbDevs + 1)); /* (One extra for swapping) */
     Assert(paUsbDevs);
     int rc;
@@ -753,6 +755,23 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
             if (pInstanceNode == pGlobal)
                 continue;
 
+            /* Use the configured UUID if present, create our own otherwise. */
+            char *pszUuid = NULL;
+
+            RTUuidClear(&paUsbDevs[i].Uuid);
+            rc = CFGMR3QueryStringAlloc(pInstanceNode, "UUID", &pszUuid);
+            if (RT_SUCCESS(rc))
+            {
+                AssertPtr(pszUuid);
+
+                rc = RTUuidFromStr(&paUsbDevs[i].Uuid, pszUuid);
+                AssertMsgRCReturn(rc, ("Failed to convert UUID from string! rc=%Rrc\n", rc), rc);
+                MMR3HeapFree(pszUuid);
+            }
+            else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+                rc = RTUuidCreate(&paUsbDevs[i].Uuid);
+
+            AssertRCReturn(rc, rc);
             paUsbDevs[i].pNode = pInstanceNode;
             paUsbDevs[i].pUsbDev = pUsbDev;
             paUsbDevs[i].u32Order = u32Order;
@@ -835,10 +854,8 @@ int pdmR3UsbInstantiateDevices(PVM pVM)
         /*
          * Create and attach the device.
          */
-        RTUUID Uuid;
-        rc = RTUuidCreate(&Uuid);
-        AssertRCReturn(rc, rc);
-        rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &Uuid, &paUsbDevs[i].pNode, iUsbVersion);
+        rc = pdmR3UsbCreateDevice(pVM, pHub, paUsbDevs[i].pUsbDev, paUsbDevs[i].iInstance, &paUsbDevs[i].Uuid,
+                                  &paUsbDevs[i].pNode, iUsbVersion);
         if (RT_FAILURE(rc))
             return rc;
     } /* for device instances */
@@ -1170,6 +1187,213 @@ VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM)
     PVM pVM = pUVM->pVM;
     VM_ASSERT_VALID_EXT_RETURN(pVM, false);
     return pVM->pdm.s.pUsbHubs != NULL;
+}
+
+
+/**
+ * Locates a LUN.
+ *
+ * @returns VBox status code.
+ * @param   pVM             Pointer to the VM.
+ * @param   pszDevice       Device name.
+ * @param   iInstance       Device instance.
+ * @param   iLun            The Logical Unit to obtain the interface of.
+ * @param   ppLun           Where to store the pointer to the LUN if found.
+ * @thread  Try only do this in EMT...
+ */
+static int pdmR3UsbFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMLUN ppLun)
+{
+    /*
+     * Iterate registered devices looking for the device.
+     */
+    size_t cchDevice = strlen(pszDevice);
+    for (PPDMUSB pUsbDev = pVM->pdm.s.pUsbDevs; pUsbDev; pUsbDev = pUsbDev->pNext)
+    {
+        if (    pUsbDev->cchName == cchDevice
+            &&  !memcmp(pUsbDev->pReg->szName, pszDevice, cchDevice))
+        {
+            /*
+             * Iterate device instances.
+             */
+            for (PPDMUSBINS pUsbIns = pUsbDev->pInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pPerDeviceNext)
+            {
+                if (pUsbIns->iInstance == iInstance)
+                {
+                    /*
+                     * Iterate luns.
+                     */
+                    for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
+                    {
+                        if (pLun->iLun == iLun)
+                        {
+                            *ppLun = pLun;
+                            return VINF_SUCCESS;
+                        }
+                    }
+                    return VERR_PDM_LUN_NOT_FOUND;
+                }
+            }
+            return VERR_PDM_DEVICE_INSTANCE_NOT_FOUND;
+        }
+    }
+    return VERR_PDM_DEVICE_NOT_FOUND;
+}
+
+
+/**
+ * Attaches a preconfigured driver to an existing device or driver instance.
+ *
+ * This is used to change drivers and suchlike at runtime.  The driver or device
+ * at the end of the chain will be told to attach to whatever is configured
+ * below it.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pszDevice       Device name.
+ * @param   iInstance       Device instance.
+ * @param   iLun            The Logical Unit to obtain the interface of.
+ * @param   fFlags          Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ * @param   ppBase          Where to store the base interface pointer. Optional.
+ *
+ * @thread  EMT
+ */
+VMMR3DECL(int)  PDMR3UsbDriverAttach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, uint32_t fFlags,
+                                     PPPDMIBASE ppBase)
+{
+    LogFlow(("PDMR3UsbDriverAttach: pszDevice=%p:{%s} iDevIns=%d iLun=%d fFlags=%#x ppBase=%p\n",
+             pszDevice, pszDevice, iDevIns, iLun, fFlags, ppBase));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_EMT(pVM);
+
+    if (ppBase)
+        *ppBase = NULL;
+
+    /*
+     * Find the LUN in question.
+     */
+    PPDMLUN pLun;
+    int rc = pdmR3UsbFindLun(pVM, pszDevice, iDevIns, iLun, &pLun);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Anything attached to the LUN?
+         */
+        PPDMDRVINS pDrvIns = pLun->pTop;
+        if (!pDrvIns)
+        {
+            /* No, ask the device to attach to the new stuff. */
+            PPDMUSBINS pUsbIns = pLun->pUsbIns;
+            if (pUsbIns->pReg->pfnDriverAttach)
+            {
+                rc = pUsbIns->pReg->pfnDriverAttach(pUsbIns, iLun, fFlags);
+                if (RT_SUCCESS(rc) && ppBase)
+                    *ppBase = pLun->pTop ? &pLun->pTop->IBase : NULL;
+            }
+            else
+                rc = VERR_PDM_DEVICE_NO_RT_ATTACH;
+        }
+        else
+        {
+            /* Yes, find the bottom most driver and ask it to attach to the new stuff. */
+            while (pDrvIns->Internal.s.pDown)
+                pDrvIns = pDrvIns->Internal.s.pDown;
+            if (pDrvIns->pReg->pfnAttach)
+            {
+                rc = pDrvIns->pReg->pfnAttach(pDrvIns, fFlags);
+                if (RT_SUCCESS(rc) && ppBase)
+                    *ppBase = pDrvIns->Internal.s.pDown
+                            ? &pDrvIns->Internal.s.pDown->IBase
+                            : NULL;
+            }
+            else
+                rc = VERR_PDM_DRIVER_NO_RT_ATTACH;
+        }
+    }
+
+    if (ppBase)
+        LogFlow(("PDMR3UsbDriverAttach: returns %Rrc *ppBase=%p\n", rc, *ppBase));
+    else
+        LogFlow(("PDMR3UsbDriverAttach: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * Detaches the specified driver instance.
+ *
+ * This is used to replumb drivers at runtime for simulating hot plugging and
+ * media changes.
+ *
+ * This method allows detaching drivers from
+ * any driver or device by specifying the driver to start detaching at.  The
+ * only prerequisite is that the driver or device above implements the
+ * pfnDetach callback (PDMDRVREG / PDMUSBREG).
+ *
+ * @returns VBox status code.
+ * @param   pUVM            The user mode VM handle.
+ * @param   pszDevice       Device name.
+ * @param   iDevIns         Device instance.
+ * @param   iLun            The Logical Unit in which to look for the driver.
+ * @param   pszDriver       The name of the driver which to detach.  If NULL
+ *                          then the entire driver chain is detatched.
+ * @param   iOccurance      The occurrence of that driver in the chain.  This is
+ *                          usually 0.
+ * @param   fFlags          Flags, combination of the PDM_TACH_FLAGS_* \#defines.
+ * @thread  EMT
+ */
+VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags)
+{
+    LogFlow(("PDMR3UsbDriverDetach: pszDevice=%p:{%s} iDevIns=%u iLun=%u pszDriver=%p:{%s} iOccurance=%u fFlags=%#x\n",
+             pszDevice, pszDevice, iDevIns, iLun, pszDriver, iOccurance, fFlags));
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+    PVM pVM = pUVM->pVM;
+    VM_ASSERT_VALID_EXT_RETURN(pVM, VERR_INVALID_VM_HANDLE);
+    VM_ASSERT_EMT(pVM);
+    AssertPtr(pszDevice);
+    AssertPtrNull(pszDriver);
+    Assert(iOccurance == 0 || pszDriver);
+    Assert(!(fFlags & ~(PDM_TACH_FLAGS_NOT_HOT_PLUG)));
+
+    /*
+     * Find the LUN in question.
+     */
+    PPDMLUN pLun;
+    int rc = pdmR3UsbFindLun(pVM, pszDevice, iDevIns, iLun, &pLun);
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Locate the driver.
+         */
+        PPDMDRVINS pDrvIns = pLun->pTop;
+        if (pDrvIns)
+        {
+            if (pszDriver)
+            {
+                while (pDrvIns)
+                {
+                    if (!strcmp(pDrvIns->pReg->szName, pszDriver))
+                    {
+                        if (iOccurance == 0)
+                            break;
+                        iOccurance--;
+                    }
+                    pDrvIns = pDrvIns->Internal.s.pDown;
+                }
+            }
+            if (pDrvIns)
+                rc = pdmR3DrvDetach(pDrvIns, fFlags);
+            else
+                rc = VERR_PDM_DRIVER_INSTANCE_NOT_FOUND;
+        }
+        else
+            rc = VINF_PDM_NO_DRIVER_ATTACHED_TO_LUN;
+    }
+
+    LogFlow(("PDMR3UsbDriverDetach: returns %Rrc\n", rc));
+    return rc;
 }
 
 

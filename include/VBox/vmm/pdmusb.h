@@ -269,9 +269,10 @@ typedef struct PDMUSBREG
      * @returns VBox status code.
      * @param   pUsbIns     The USB device instance data.
      * @param   iLUN        The logical unit which is being detached.
+     * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMUSBINS pUsbIns, unsigned iLUN));
+    DECLR3CALLBACKMEMBER(int, pfnDriverAttach,(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags));
 
     /**
      * Driver Detach notification.
@@ -281,9 +282,10 @@ typedef struct PDMUSBREG
      *
      * @param   pUsbIns     The USB device instance data.
      * @param   iLUN        The logical unit which is being detached.
+     * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
      * @remarks Optional.
      */
-    DECLR3CALLBACKMEMBER(void, pfnDriverDetach,(PPDMUSBINS pUsbIns, unsigned iLUN));
+    DECLR3CALLBACKMEMBER(void, pfnDriverDetach,(PPDMUSBINS pUsbIns, unsigned iLUN, uint32_t fFlags));
 
     /**
      * Query the base interface of a logical unit.
@@ -1036,7 +1038,10 @@ VMMR3DECL(int)  PDMR3UsbCreateProxyDevice(PUVM pUVM, PCRTUUID pUuid, bool fRemot
                                           uint32_t iUsbVersion, uint32_t fMaskedIfs);
 VMMR3DECL(int)  PDMR3UsbDetachDevice(PUVM pUVM, PCRTUUID pUuid);
 VMMR3DECL(bool) PDMR3UsbHasHub(PUVM pUVM);
-
+VMMR3DECL(int)  PDMR3UsbDriverAttach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun, uint32_t fFlags,
+                                     PPPDMIBASE ppBase);
+VMMR3DECL(int)  PDMR3UsbDriverDetach(PUVM pUVM, const char *pszDevice, unsigned iDevIns, unsigned iLun,
+                                     const char *pszDriver, unsigned iOccurance, uint32_t fFlags);
 
 /** @} */
 
