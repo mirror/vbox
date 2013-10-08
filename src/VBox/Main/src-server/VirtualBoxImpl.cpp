@@ -3113,6 +3113,10 @@ int VirtualBox::natNetworkRefInc(IN_BSTR aNetworkName)
         AssertComRCReturn(rc, -1);
 
         rc = nat->Start(Bstr("whatever").raw());
+        if (SUCCEEDED(rc))
+            LogRel(("Started NAT network '%ls'\n", aNetworkName));
+        else
+            LogRel(("Error %Rhrc starting NAT network '%ls'\n", rc, aNetworkName));
         AssertComRCReturn(rc, -1);
     }
 
@@ -3139,6 +3143,10 @@ int VirtualBox::natNetworkRefDec(IN_BSTR aNetworkName)
         AssertComRCReturn(rc, -1);
 
         rc = nat->Stop();
+        if (SUCCEEDED(rc))
+            LogRel(("Stopped NAT network '%ls'\n", aNetworkName));
+        else
+            LogRel(("Error %Rhrc stopping NAT network '%ls'\n", rc, aNetworkName));
         AssertComRCReturn(rc, -1);
     }
 

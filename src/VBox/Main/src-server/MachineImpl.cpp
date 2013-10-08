@@ -12834,10 +12834,11 @@ HRESULT SessionMachine::init(Machine *aMachine)
             && type == NetworkAttachmentType_NATNetwork)
         {
             Bstr name;
-
             hrc = mNetworkAdapters[slot]->COMGETTER(NATNetwork)(name.asOutParam());
             if (SUCCEEDED(hrc))
             {
+                LogRel(("VM '%s' starts using NAT network '%ls'\n",
+                        mUserData->s.strName.c_str(), name.raw()));
                 aMachine->lockHandle()->unlockWrite();
                 mParent->natNetworkRefInc(name.raw());
 #ifdef RT_LOCK_STRICT
@@ -13062,6 +13063,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
             if (SUCCEEDED(hrc))
             {
                 multilock.release();
+                LogRel(("VM '%s' stops using NAT network '%ls'\n",
+                        mUserData->s.strName.c_str(), name.raw()));
                 mParent->natNetworkRefDec(name.raw());
                 multilock.acquire();
             }
