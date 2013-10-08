@@ -483,16 +483,20 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(NetworkAttachmentType_T a
             mData->mNATNetwork = "NatNetwork";
         }
 
+#if 0 // later
         checkAndSwitchFromNatNetworking();
+#endif
 
         mData->mAttachmentType = aAttachmentType;
 
+#if 0 // later
         if (aAttachmentType == NetworkAttachmentType_NATNetwork)
         {
             HRESULT hrc = switchToNatNetworking(mData->mNATNetwork.raw());
             if (FAILED(hrc))
                 return hrc;
         }
+#endif
 
         m_fModified = true;
         // leave the lock before informing callbacks
