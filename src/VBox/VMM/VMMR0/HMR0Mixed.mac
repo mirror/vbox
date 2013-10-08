@@ -134,9 +134,9 @@ ALIGN(16)
 ; * Prepares for and executes VMLAUNCH/VMRESUME (32 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    x86:[ebp+8], msc:rcx,gcc:rdi     vmlauch/vmresume
-; * @param   pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Guest context
-; * @param   pCache     x86:[esp+10],msc:r8, gcc:rdx     VMCS cache
+; * @param   fResume    x86:[ebp+8], msc:rcx,gcc:rdi     Whether to use vmlauch/vmresume.
+; * @param   pCtx       x86:[ebp+c], msc:rdx,gcc:rsi     Pointer to the guest-CPU context.
+; * @param   pCache     x86:[esp+10],msc:r8, gcc:rdx     Pointer to the VMCS cache.
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM32)
@@ -160,7 +160,7 @@ BEGINPROC MY_NAME(VMXR0StartVM32)
 %endif
     ; Note: assumes success!
 
-    ; Save the Guest CPU context pointer.
+    ; Save guest-CPU context pointer.
 %ifdef RT_ARCH_AMD64
  %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
@@ -207,13 +207,13 @@ ALIGN(16)
     ; Save the pCtx pointer.
     push    xSI
 
-    ; Save LDTR.
+    ; Save host LDTR.
     xor     eax, eax
     sldt    ax
     push    xAX
 
 %ifndef VMX_SKIP_TR
-    ; The TR limit is reset to 0x67; restore it manually.
+    ; The host TR limit is reset to 0x67; save & restore it manually.
     str     eax
     push    xAX
 %endif
@@ -241,18 +241,18 @@ ALIGN(16)
     ; Note: assumes success!
     ; Don't mess with ESP anymore!!!
 
-    ; Load Guest's general purpose registers.
+    ; Load guest general purpose registers.
     mov     eax, [xSI + CPUMCTX.eax]
     mov     ebx, [xSI + CPUMCTX.ebx]
     mov     ecx, [xSI + CPUMCTX.ecx]
     mov     edx, [xSI + CPUMCTX.edx]
     mov     ebp, [xSI + CPUMCTX.ebp]
 
-    ; Resume or start?
+    ; Resume or start VM?
     cmp     xDI, 0                  ; fResume
     je      .vmlaunch_launch
 
-    ; Restore edi & esi.
+    ; Load guest edi & esi.
     mov     edi, [xSI + CPUMCTX.edi]
     mov     esi, [xSI + CPUMCTX.esi]
 
@@ -260,7 +260,7 @@ ALIGN(16)
     jmp     .vmlaunch_done;      ; Here if vmresume detected a failure.
 
 .vmlaunch_launch:
-    ; Restore edi & esi.
+    ; Save guest edi & esi.
     mov     edi, [xSI + CPUMCTX.edi]
     mov     esi, [xSI + CPUMCTX.esi]
 
@@ -336,7 +336,7 @@ ENDPROC MY_NAME(VMXR0StartVM32)
     mov     rax, cr2
     mov     qword [xDI + CPUMCTX.cr2], rax
 
-    pop     xAX                                 ; The guest edi we pushed above
+    pop     xAX                                 ; The guest rdi we pushed above
     mov     qword [xDI + CPUMCTX.edi], rax
 
  %ifndef VMX_SKIP_TR
@@ -365,9 +365,9 @@ ENDPROC MY_NAME(VMXR0StartVM32)
  %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     ; Save the guest MSRs and load the host MSRs.
     LOADHOSTMSREX MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
-    LOADHOSTMSREX MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
-    LOADHOSTMSREX MSR_K6_STAR, CPUMCTX.msrSTAR
-    LOADHOSTMSREX MSR_K8_LSTAR, CPUMCTX.msrLSTAR
+    LOADHOSTMSREX MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
+    LOADHOSTMSREX MSR_K6_STAR,           CPUMCTX.msrSTAR
+    LOADHOSTMSREX MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
  %endif
 
  %ifdef VMX_USE_CACHED_VMCS_ACCESSES
@@ -403,9 +403,9 @@ ALIGN(16)
 ; * Prepares for and executes VMLAUNCH/VMRESUME (64 bits guest mode)
 ; *
 ; * @returns VBox status code
-; * @param   fResume    msc:rcx, gcc:rdi     vmlauch/vmresume
-; * @param   pCtx       msc:rdx, gcc:rsi     Guest context
-; * @param   pCache     msc:r8,  gcc:rdx     VMCS cache
+; * @param   fResume    msc:rcx, gcc:rdi     Whether to use vmlauch/vmresume.
+; * @param   pCtx       msc:rdx, gcc:rsi     Pointer to the guest-CPU context.
+; * @param   pCache     msc:r8,  gcc:rdx     Pointer to the VMCS cache.
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(VMXR0StartVM64)
@@ -424,7 +424,7 @@ BEGINPROC MY_NAME(VMXR0StartVM64)
     vmwrite rax, r10
     ; Note: assumes success!
 
-    ; Save the Guest CPU context pointer.
+    ; Save guest-CPU context pointer.
 %ifdef ASM_CALL64_GCC
     ; fResume already in rdi
     ; pCtx    already in rsi
@@ -464,28 +464,28 @@ ALIGN(16)
 
 %ifndef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
     ; Save the host MSRs and load the guest MSRs.
-    LOADGUESTMSR MSR_K8_LSTAR, CPUMCTX.msrLSTAR
-    LOADGUESTMSR MSR_K6_STAR, CPUMCTX.msrSTAR
-    LOADGUESTMSR MSR_K8_SF_MASK, CPUMCTX.msrSFMASK
+    LOADGUESTMSR MSR_K8_LSTAR,          CPUMCTX.msrLSTAR
+    LOADGUESTMSR MSR_K6_STAR,           CPUMCTX.msrSTAR
+    LOADGUESTMSR MSR_K8_SF_MASK,        CPUMCTX.msrSFMASK
     LOADGUESTMSR MSR_K8_KERNEL_GS_BASE, CPUMCTX.msrKERNELGSBASE
 %endif
 
     ; Save the pCtx pointer.
     push    xSI
 
-    ; Save LDTR.
+    ; Save host LDTR.
     xor     eax, eax
     sldt    ax
     push    xAX
 
 %ifndef VMX_SKIP_TR
-    ; The TR limit is reset to 0x67; restore it manually.
+    ; The host TR limit is reset to 0x67; save & restore it manually.
     str     eax
     push    xAX
 %endif
 
-    ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
 %ifndef VMX_SKIP_GDTR
+    ; VT-x only saves the base of the GDTR & IDTR and resets the limit to 0xffff; we must restore the limit correctly!
     sub     xSP, xCB * 2
     sgdt    [xSP]
 %endif
@@ -507,7 +507,7 @@ ALIGN(16)
     ; Note: assumes success!
     ; Don't mess with ESP anymore!!!
 
-    ; Restore Guest's general purpose registers.
+    ; Load guest general purpose registers.
     mov     rax, qword [xSI + CPUMCTX.eax]
     mov     rbx, qword [xSI + CPUMCTX.ebx]
     mov     rcx, qword [xSI + CPUMCTX.ecx]
@@ -522,11 +522,11 @@ ALIGN(16)
     mov     r14, qword [xSI + CPUMCTX.r14]
     mov     r15, qword [xSI + CPUMCTX.r15]
 
-    ; Resume or start?
+    ; Resume or start VM?
     cmp     xDI, 0                  ; fResume
     je      .vmlaunch64_launch
 
-    ; Restore edi & esi.
+    ; Load guest rdi & rsi.
     mov     rdi, qword [xSI + CPUMCTX.edi]
     mov     rsi, qword [xSI + CPUMCTX.esi]
 
@@ -534,7 +534,7 @@ ALIGN(16)
     jmp     .vmlaunch64_done;      ; Here if vmresume detected a failure.
 
 .vmlaunch64_launch:
-    ; Restore rdi & rsi.
+    ; Save guest rdi & rsi.
     mov     rdi, qword [xSI + CPUMCTX.edi]
     mov     rsi, qword [xSI + CPUMCTX.esi]
 
@@ -571,9 +571,9 @@ ENDPROC MY_NAME(VMXR0StartVM64)
 ; * Prepares for and executes VMRUN (32 bits guests)
 ; *
 ; * @returns VBox status code
-; * @param   HCPhysVMCB     Physical address of host VMCB
-; * @param   HCPhysVMCB     Physical address of guest VMCB
-; * @param   pCtx           Guest context
+; * @param   HCPhysVMCB     Physical address of host VMCB.
+; * @param   HCPhysVMCB     Physical address of guest VMCB.
+; * @param   pCtx           Pointer to the guest CPU-context.
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun)
@@ -596,7 +596,7 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     ; Save all general purpose host registers.
     MYPUSHAD
 
-    ; Save the Guest CPU context pointer.
+    ; Save guest CPU-context pointer.
     mov     xSI, [xBP + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
     push    xSI                                     ; push for saving the state at the end
 
@@ -608,7 +608,7 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     ; Setup eax for VMLOAD.
     mov     xAX, [xBP + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
-    ; Restore Guest's general purpose registers.
+    ; Load guest general purpose registers.
     ; eax is loaded from the VMCB by VMRUN.
     mov     ebx, [xSI + CPUMCTX.ebx]
     mov     ecx, [xSI + CPUMCTX.ecx]
@@ -648,7 +648,7 @@ BEGINPROC MY_NAME(SVMR0VMRun)
     mov     [ss:xAX + CPUMCTX.edi], edi
     mov     [ss:xAX + CPUMCTX.ebp], ebp
 
-    ; Restore general purpose registers.
+    ; Restore host general purpose registers.
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
@@ -666,9 +666,9 @@ ENDPROC MY_NAME(SVMR0VMRun)
 ; * Prepares for and executes VMRUN (64 bits guests)
 ; *
 ; * @returns VBox status code
-; * @param   HCPhysVMCB     Physical address of host VMCB
-; * @param   HCPhysVMCB     Physical address of guest VMCB
-; * @param   pCtx           Guest context
+; * @param   HCPhysVMCB     Physical address of host VMCB.
+; * @param   HCPhysVMCB     Physical address of guest VMCB.
+; * @param   pCtx           Pointer to the guest-CPU context.
 ; */
 ALIGNCODE(16)
 BEGINPROC MY_NAME(SVMR0VMRun64)
@@ -700,7 +700,7 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     ; Save all general purpose host registers.
     MYPUSHAD
 
-    ; Save the Guest CPU context pointer.
+    ; Save guest CPU-context pointer.
     mov     rsi, [rbp + xCB * 2 + RTHCPHYS_CB * 2]  ; pCtx
     push    rsi                                     ; push for saving the state at the end
 
@@ -712,7 +712,7 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     ; Setup eax for VMLOAD.
     mov     rax, [rbp + xCB * 2 + RTHCPHYS_CB]      ; pVMCBPhys (64 bits physical address; take low dword only)
 
-    ; Restore Guest's general purpose registers.
+    ; Load guest general purpose registers.
     ; rax is loaded from the VMCB by VMRUN.
     mov     rbx, qword [xSI + CPUMCTX.ebx]
     mov     rcx, qword [xSI + CPUMCTX.ecx]
@@ -768,7 +768,7 @@ BEGINPROC MY_NAME(SVMR0VMRun64)
     mov     qword [rax + CPUMCTX.r14], r14
     mov     qword [rax + CPUMCTX.r15], r15
 
-    ; Restore general purpose registers.
+    ; Restore host general purpose registers.
     MYPOPAD
 
     mov     eax, VINF_SUCCESS
