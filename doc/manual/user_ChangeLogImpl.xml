@@ -14,6 +14,11 @@
       </listitem>
 
       <listitem>
+        <para>VMM: introduced a lightweight instruction interpreter for
+          situations not handled by hardware virtualization</para>
+      </listitem>
+
+      <listitem>
         <para>GUI: extended messaging mechanism (new non-modal popup overlays
           used to show non-critical warnings and provide user with additional information)</para>
       </listitem>
