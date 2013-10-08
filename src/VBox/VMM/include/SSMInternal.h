@@ -41,6 +41,8 @@ typedef enum SSMUNITTYPE
     SSMUNITTYPE_DEV = 1,
     /** PDM Driver. */
     SSMUNITTYPE_DRV,
+    /** PDM USB device. */
+    SSMUNITTYPE_USB,
     /** VM Internal. */
     SSMUNITTYPE_INTERNAL,
     /** External Wrapper. */
@@ -119,6 +121,31 @@ typedef struct SSMUNIT
             /** Driver instance. */
             PPDMDRVINS          pDrvIns;
         } Drv;
+
+        /** SSMUNITTYPE_USB. */
+        struct
+        {
+            /** Prepare live save. */
+            PFNSSMUSBLIVEPREP   pfnLivePrep;
+            /** Execute live save. */
+            PFNSSMUSBLIVEEXEC   pfnLiveExec;
+            /** Vote live save complete. */
+            PFNSSMUSBLIVEVOTE   pfnLiveVote;
+            /** Prepare save. */
+            PFNSSMUSBSAVEPREP   pfnSavePrep;
+            /** Execute save. */
+            PFNSSMUSBSAVEEXEC   pfnSaveExec;
+            /** Done save. */
+            PFNSSMUSBSAVEDONE   pfnSaveDone;
+            /** Prepare load. */
+            PFNSSMUSBLOADPREP   pfnLoadPrep;
+            /** Execute load. */
+            PFNSSMUSBLOADEXEC   pfnLoadExec;
+            /** Done load. */
+            PFNSSMUSBLOADDONE   pfnLoadDone;
+            /** USB instance. */
+            PPDMUSBINS          pUsbIns;
+        } Usb;
 
         /** SSMUNITTYPE_INTERNAL. */
         struct
@@ -230,6 +257,17 @@ AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadPrep, u.Drv.pfnLoadPrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadExec, u.Drv.pfnLoadExec);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadDone, u.Drv.pfnLoadDone);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pvKey,       u.Drv.pDrvIns);
+
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.Usb.pfnLivePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.Usb.pfnLiveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveVote, u.Usb.pfnLiveVote);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSavePrep, u.Usb.pfnSavePrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveExec, u.Usb.pfnSaveExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnSaveDone, u.Usb.pfnSaveDone);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadPrep, u.Usb.pfnLoadPrep);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadExec, u.Usb.pfnLoadExec);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLoadDone, u.Usb.pfnLoadDone);
+AssertCompile2MemberOffsets(SSMUNIT, u.Common.pvKey,       u.Usb.pUsbIns);
 
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLivePrep, u.Internal.pfnLivePrep);
 AssertCompile2MemberOffsets(SSMUNIT, u.Common.pfnLiveExec, u.Internal.pfnLiveExec);

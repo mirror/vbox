@@ -1061,7 +1061,7 @@ static void pdmR3UsbDestroyDevice(PVM pVM, PPDMUSBINS pUsbIns)
         pUsbIns->pReg->pfnDestruct(pUsbIns);
     }
     TMR3TimerDestroyUsb(pVM, pUsbIns);
-    //SSMR3DeregisterUsb(pVM, pUsbIns, NULL, 0);
+    SSMR3DeregisterUsb(pVM, pUsbIns, NULL, 0);
     pdmR3ThreadDestroyUsb(pVM, pUsbIns);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     pdmR3AsyncCompletionTemplateDestroyUsb(pVM, pUsbIns);
@@ -1614,13 +1614,11 @@ static DECLCALLBACK(int) pdmR3UsbHlp_SSMRegister(PPDMUSBINS pUsbIns, uint32_t uV
              pfnSavePrep, pfnSaveExec, pfnSaveDone,
              pfnLoadPrep, pfnLoadExec, pfnLoadDone));
 
-    /** @todo
     int rc = SSMR3RegisterUsb(pUsbIns->Internal.s.pVM, pUsbIns, pUsbIns->pReg->szName, pUsbIns->iInstance,
                               uVersion, cbGuess,
                               pfnLivePrep, pfnLiveExec, pfnLiveVote,
                               pfnSavePrep, pfnSaveExec, pfnSaveDone,
-                              pfnLoadPrep, pfnLoadExec, pfnLoadDone); */
-    int rc = VERR_NOT_IMPLEMENTED; AssertFailed();
+                              pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 
     LogFlow(("pdmR3UsbHlp_SSMRegister: caller='%s'/%d: returns %Rrc\n", pUsbIns->pReg->szName, pUsbIns->iInstance, rc));
     return rc;
