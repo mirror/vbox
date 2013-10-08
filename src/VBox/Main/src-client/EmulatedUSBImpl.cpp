@@ -125,10 +125,9 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
     for (it = pThis->mDrvSettings.begin(); it != pThis->mDrvSettings.end(); ++it)
         CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
 
+    /* pInstance will be used by PDM and deallocated on error. */
     int rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid);
     LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
-    if (RT_FAILURE(rc) && pInstance)
-        CFGMR3RemoveNode(pInstance);
     return rc;
 }
 
