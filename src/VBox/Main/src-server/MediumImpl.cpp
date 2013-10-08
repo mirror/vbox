@@ -2331,8 +2331,14 @@ STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
 
     settings::StringsMap::const_iterator it = m->mapProperties.find(Utf8Str(aName));
     if (it == m->mapProperties.end())
-        return setError(VBOX_E_OBJECT_NOT_FOUND,
-                        tr("Property '%ls' does not exist"), aName);
+    {
+        if (!Utf8Str(aName).startsWith("Special/"))
+            return setError(VBOX_E_OBJECT_NOT_FOUND,
+                            tr("Property '%ls' does not exist"), aName);
+        else
+            /* be more silent here */
+            return VBOX_E_OBJECT_NOT_FOUND;
+    }
 
     it->second.cloneTo(aValue);
 
