@@ -1315,6 +1315,58 @@ SSMR3RegisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const char *pszName, uint32_t u
 
 
 /**
+ * Register a PDM USB device data unit.
+ *
+ * @returns VBox status.
+ *
+ * @param   pVM             Pointer to the VM.
+ * @param   pUsbIns         USB instance.
+ * @param   pszName         Data unit name.
+ * @param   uInstance       The instance identifier of the data unit.
+ *                          This must together with the name be unique.
+ * @param   uVersion        Data layout version number.
+ * @param   cbGuess         The approximate amount of data in the unit.
+ *                          Only for progress indicators.
+ *
+ * @param   pfnLivePrep     Prepare live save callback, optional.
+ * @param   pfnLiveExec     Execute live save callback, optional.
+ * @param   pfnLiveVote     Vote live save callback, optional.
+ *
+ * @param   pfnSavePrep     Prepare save callback, optional.
+ * @param   pfnSaveExec     Execute save callback, optional.
+ * @param   pfnSaveDone     Done save callback, optional.
+ *
+ * @param   pfnLoadPrep     Prepare load callback, optional.
+ * @param   pfnLoadExec     Execute load callback, optional.
+ * @param   pfnLoadDone     Done load callback, optional.
+ */
+VMMR3_INT_DECL(int)
+SSMR3RegisterUsb(PVM pVM, PPDMUSBINS pUsbIns, const char *pszName, uint32_t uInstance, uint32_t uVersion, size_t cbGuess,
+                 PFNSSMUSBLIVEPREP pfnLivePrep, PFNSSMUSBLIVEEXEC pfnLiveExec, PFNSSMUSBLIVEVOTE pfnLiveVote,
+                 PFNSSMUSBSAVEPREP pfnSavePrep, PFNSSMUSBSAVEEXEC pfnSaveExec, PFNSSMUSBSAVEDONE pfnSaveDone,
+                 PFNSSMUSBLOADPREP pfnLoadPrep, PFNSSMUSBLOADEXEC pfnLoadExec, PFNSSMUSBLOADDONE pfnLoadDone)
+{
+    PSSMUNIT pUnit;
+    int rc = ssmR3Register(pVM, pszName, uInstance, uVersion, cbGuess, NULL, &pUnit);
+    if (RT_SUCCESS(rc))
+    {
+        pUnit->enmType = SSMUNITTYPE_USB;
+        pUnit->u.Usb.pfnLivePrep = pfnLivePrep;
+        pUnit->u.Usb.pfnLiveExec = pfnLiveExec;
+        pUnit->u.Usb.pfnLiveVote = pfnLiveVote;
+        pUnit->u.Usb.pfnSavePrep = pfnSavePrep;
+        pUnit->u.Usb.pfnSaveExec = pfnSaveExec;
+        pUnit->u.Usb.pfnSaveDone = pfnSaveDone;
+        pUnit->u.Usb.pfnLoadPrep = pfnLoadPrep;
+        pUnit->u.Usb.pfnLoadExec = pfnLoadExec;
+        pUnit->u.Usb.pfnLoadDone = pfnLoadDone;
+        pUnit->u.Usb.pUsbIns = pUsbIns;
+    }
+    return rc;
+}
+
+
+/**
  * Register a internal data unit.
  *
  * @returns VBox status.
@@ -1557,6 +1609,76 @@ VMMR3_INT_DECL(int) SSMR3DeregisterDriver(PVM pVM, PPDMDRVINS pDrvIns, const cha
 
             AssertMsgReturn(!pszName,
                             ("Caller is not owner! Owner=%p Caller=%p %s\n", pUnit->u.Drv.pDrvIns, pDrvIns, pszName),
+                            VERR_SSM_UNIT_NOT_OWNER);
+        }
+
+        /* next */
+        pUnitPrev = pUnit;
+        pUnit = pUnit->pNext;
+    }
+
+    return rc;
+}
+
+
+/**
+ * Deregister one or more PDM USB device data units.
+ *
+ * @returns VBox status.
+ * @param   pVM             Pointer to the VM.
+ * @param   pUsbIns         USB device instance.
+ * @param   pszName         Data unit name.
+ *                          Use NULL to deregister all data units for that driver instance.
+ * @param   uInstance       The instance identifier of the data unit.
+ *                          This must together with the name be unique. Ignored if pszName is NULL.
+ * @remark  Only for dynamic data units and dynamic unloaded modules.
+ */
+VMMR3_INT_DECL(int) SSMR3DeregisterUsb(PVM pVM, PPDMUSBINS pUsbIns, const char *pszName, uint32_t uInstance)
+{
+    /*
+     * Validate input.
+     */
+    AssertMsgReturn(VALID_PTR(pUsbIns), ("pUsbIns is NULL!\n"), VERR_INVALID_PARAMETER);
+
+    /*
+     * Search the list.
+     */
+    size_t      cchName = pszName ? strlen(pszName) : 0;
+    int         rc = pszName ? VERR_SSM_UNIT_NOT_FOUND : VINF_SUCCESS;
+    PSSMUNIT    pUnitPrev = NULL;
+    PSSMUNIT    pUnit = pVM->ssm.s.pHead;
+    while (pUnit)
+    {
+        if (    pUnit->enmType == SSMUNITTYPE_USB
+            &&  (   !pszName
+                 || (   pUnit->cchName == cchName
+                     && !memcmp(pUnit->szName, pszName, cchName)
+                     && pUnit->u32Instance == uInstance))
+            )
+        {
+            if (pUnit->u.Usb.pUsbIns == pUsbIns)
+            {
+                /*
+                 * Unlink it, advance pointer, and free the node.
+                 */
+                PSSMUNIT pFree = pUnit;
+                pUnit = pUnit->pNext;
+                if (pUnitPrev)
+                    pUnitPrev->pNext = pUnit;
+                else
+                    pVM->ssm.s.pHead = pUnit;
+                pVM->ssm.s.cUnits--;
+                Log(("SSM: Removed data unit '%s' (pdm drv).\n", pFree->szName));
+                MMR3HeapFree(pFree);
+
+                if (pszName)
+                    return VINF_SUCCESS;
+                rc = VINF_SUCCESS;
+                continue;
+            }
+
+            AssertMsgReturn(!pszName,
+                            ("Caller is not owner! Owner=%p Caller=%p %s\n", pUnit->u.Usb.pUsbIns, pUsbIns, pszName),
                             VERR_SSM_UNIT_NOT_OWNER);
         }
 
@@ -4309,6 +4431,9 @@ static int ssmR3SaveDoDoneRun(PVM pVM, PSSMHANDLE pSSM)
                 case SSMUNITTYPE_DRV:
                     rc = pUnit->u.Drv.pfnSaveDone(pUnit->u.Drv.pDrvIns, pSSM);
                     break;
+                case SSMUNITTYPE_USB:
+                    rc = pUnit->u.Usb.pfnSaveDone(pUnit->u.Usb.pUsbIns, pSSM);
+                    break;
                 case SSMUNITTYPE_INTERNAL:
                     rc = pUnit->u.Internal.pfnSaveDone(pVM, pSSM);
                     break;
@@ -4658,6 +4783,9 @@ static int ssmR3SaveDoExecRun(PVM pVM, PSSMHANDLE pSSM)
             case SSMUNITTYPE_DRV:
                 rc = pUnit->u.Drv.pfnSaveExec(pUnit->u.Drv.pDrvIns, pSSM);
                 break;
+            case SSMUNITTYPE_USB:
+                rc = pUnit->u.Usb.pfnSaveExec(pUnit->u.Usb.pUsbIns, pSSM);
+                break;
             case SSMUNITTYPE_INTERNAL:
                 rc = pUnit->u.Internal.pfnSaveExec(pVM, pSSM);
                 break;
@@ -4747,6 +4875,9 @@ static int ssmR3SaveDoPrepRun(PVM pVM, PSSMHANDLE pSSM)
                     break;
                 case SSMUNITTYPE_DRV:
                     rc = pUnit->u.Drv.pfnSavePrep(pUnit->u.Drv.pDrvIns, pSSM);
+                    break;
+                case SSMUNITTYPE_USB:
+                    rc = pUnit->u.Usb.pfnSavePrep(pUnit->u.Usb.pUsbIns, pSSM);
                     break;
                 case SSMUNITTYPE_INTERNAL:
                     rc = pUnit->u.Internal.pfnSavePrep(pVM, pSSM);
@@ -5091,6 +5222,9 @@ static int ssmR3LiveDoVoteRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 case SSMUNITTYPE_DRV:
                     rc = pUnit->u.Drv.pfnLiveVote(pUnit->u.Drv.pDrvIns, pSSM, uPass);
                     break;
+                case SSMUNITTYPE_USB:
+                    rc = pUnit->u.Usb.pfnLiveVote(pUnit->u.Usb.pUsbIns, pSSM, uPass);
+                    break;
                 case SSMUNITTYPE_INTERNAL:
                     rc = pUnit->u.Internal.pfnLiveVote(pVM, pSSM, uPass);
                     break;
@@ -5230,6 +5364,9 @@ static int ssmR3LiveDoExecRun(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass)
                 break;
             case SSMUNITTYPE_DRV:
                 rc = pUnit->u.Drv.pfnLiveExec(pUnit->u.Drv.pDrvIns, pSSM, uPass);
+                break;
+            case SSMUNITTYPE_USB:
+                rc = pUnit->u.Usb.pfnLiveExec(pUnit->u.Usb.pUsbIns, pSSM, uPass);
                 break;
             case SSMUNITTYPE_INTERNAL:
                 rc = pUnit->u.Internal.pfnLiveExec(pVM, pSSM, uPass);
@@ -5389,6 +5526,9 @@ static int ssmR3DoLivePrepRun(PVM pVM, PSSMHANDLE pSSM)
                     break;
                 case SSMUNITTYPE_DRV:
                     rc = pUnit->u.Drv.pfnLivePrep(pUnit->u.Drv.pDrvIns, pSSM);
+                    break;
+                case SSMUNITTYPE_USB:
+                    rc = pUnit->u.Usb.pfnLivePrep(pUnit->u.Usb.pUsbIns, pSSM);
                     break;
                 case SSMUNITTYPE_INTERNAL:
                     rc = pUnit->u.Internal.pfnLivePrep(pVM, pSSM);
@@ -7977,6 +8117,9 @@ static int ssmR3LoadExecV1(PVM pVM, PSSMHANDLE pSSM)
                             case SSMUNITTYPE_DRV:
                                 rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
+                            case SSMUNITTYPE_USB:
+                                rc = pUnit->u.Usb.pfnLoadExec(pUnit->u.Usb.pUsbIns, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
+                                break;
                             case SSMUNITTYPE_INTERNAL:
                                 rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, SSM_PASS_FINAL);
                                 break;
@@ -8242,6 +8385,9 @@ static int ssmR3LoadExecV2(PVM pVM, PSSMHANDLE pSSM)
                 case SSMUNITTYPE_DRV:
                     rc = pUnit->u.Drv.pfnLoadExec(pUnit->u.Drv.pDrvIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
+                case SSMUNITTYPE_USB:
+                    rc = pUnit->u.Usb.pfnLoadExec(pUnit->u.Usb.pUsbIns, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
+                    break;
                 case SSMUNITTYPE_INTERNAL:
                     rc = pUnit->u.Internal.pfnLoadExec(pVM, pSSM, UnitHdr.u32Version, UnitHdr.u32Pass);
                     break;
@@ -8414,6 +8560,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                     case SSMUNITTYPE_DRV:
                         rc = pUnit->u.Drv.pfnLoadPrep(pUnit->u.Drv.pDrvIns, &Handle);
                         break;
+                    case SSMUNITTYPE_USB:
+                        rc = pUnit->u.Usb.pfnLoadPrep(pUnit->u.Usb.pUsbIns, &Handle);
+                        break;
                     case SSMUNITTYPE_INTERNAL:
                         rc = pUnit->u.Internal.pfnLoadPrep(pVM, &Handle);
                         break;
@@ -8486,6 +8635,9 @@ VMMR3DECL(int) SSMR3Load(PVM pVM, const char *pszFilename, PCSSMSTRMOPS pStreamO
                         break;
                     case SSMUNITTYPE_DRV:
                         rc = pUnit->u.Drv.pfnLoadDone(pUnit->u.Drv.pDrvIns, &Handle);
+                        break;
+                    case SSMUNITTYPE_USB:
+                        rc = pUnit->u.Usb.pfnLoadDone(pUnit->u.Usb.pUsbIns, &Handle);
                         break;
                     case SSMUNITTYPE_INTERNAL:
                         rc = pUnit->u.Internal.pfnLoadDone(pVM, &Handle);
