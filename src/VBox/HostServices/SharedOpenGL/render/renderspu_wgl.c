@@ -1172,7 +1172,11 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     }
     else
     {
+#ifdef DEBUG_misha
+        crWarning( "Render SPU: Showing the window" );
+#else
         crDebug( "Render SPU: Showing the window" );
+#endif
         crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
     }
 
@@ -1180,7 +1184,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
 
     /* Intel drivers require a window to be visible for proper 3D rendering,
      * so set it visible and handle the visibility with visible regions (see below) */
-    if (window->BltInfo.Base.id)
+    if (window->BltInfo.Base.id != CR_RENDER_DEFAULT_WINDOW_ID)
     {
         ShowWindow( window->hWnd, SW_SHOWNORMAL );
     }
