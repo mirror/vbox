@@ -699,7 +699,7 @@ int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     LogFlowThisFunc(("strFile=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%RU32, uOffset=%RU64\n",
                      mData.mOpenInfo.mFileName.c_str(), mData.mOpenInfo.mOpenMode.c_str(),
@@ -737,7 +737,7 @@ int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
     paParms[i++].setUInt32(mData.mOpenInfo.mCreationMode);
     paParms[i++].setUInt64(mData.mOpenInfo.mInitialOffset);
 
-    alock.release(); /* Drop read lock before sending. */
+    alock.release(); /* Drop write lock before sending. */
 
     vrc = sendCommand(HOST_FILE_OPEN, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -758,6 +758,9 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
 
     LogFlowThisFunc(("uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uSize, uTimeoutMS, pvData, cbData));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -784,6 +787,8 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
     paParms[i++].setUInt32(mData.mID /* File handle */);
     paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
+    alock.release(); /* Drop write lock before sending. */
+
     uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -808,6 +813,9 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
 {
     LogFlowThisFunc(("uOffset=%RU64, uSize=%RU32, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uOffset, uSize, uTimeoutMS, pvData, cbData));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -835,6 +843,8 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
     paParms[i++].setUInt64(uOffset /* Offset (in bytes) to start reading */);
     paParms[i++].setUInt32(uSize /* Size (in bytes) to read */);
 
+    alock.release(); /* Drop write lock before sending. */
+
     uint32_t cbRead;
     vrc = sendCommand(HOST_FILE_READ_AT, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -859,6 +869,9 @@ int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
 {
     LogFlowThisFunc(("iOffset=%RI64, uTimeoutMS=%RU32\n",
                      iOffset, uTimeoutMS));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -886,6 +899,8 @@ int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
     paParms[i++].setUInt32(eSeekType /* Seek method */);
     /** @todo uint64_t vs. int64_t! */
     paParms[i++].setUInt64((uint64_t)iOffset /* Offset (in bytes) to start reading */);
+
+    alock.release(); /* Drop write lock before sending. */
 
     vrc = sendCommand(HOST_FILE_SEEK, i, paParms);
     if (RT_SUCCESS(vrc))
@@ -1103,6 +1118,9 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
 
     LogFlowThisFunc(("uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uTimeoutMS, pvData, cbData));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -1129,6 +1147,8 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     paParms[i++].setUInt32(mData.mID /* File handle */);
     paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
     paParms[i++].setPointer(pvData, cbData);
+
+    alock.release(); /* Drop write lock before sending. */
 
     uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE, i, paParms);
@@ -1157,6 +1177,9 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
 
     LogFlowThisFunc(("uOffset=%RU64, uTimeoutMS=%RU32, pvData=%p, cbData=%zu\n",
                      uOffset, uTimeoutMS, pvData, cbData));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
@@ -1184,6 +1207,8 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     paParms[i++].setUInt64(uOffset /* Offset where to starting writing */);
     paParms[i++].setUInt32(cbData /* Size (in bytes) to write */);
     paParms[i++].setPointer(pvData, cbData);
+
+    alock.release(); /* Drop write lock before sending. */
 
     uint32_t cbWritten;
     vrc = sendCommand(HOST_FILE_WRITE_AT, i, paParms);
