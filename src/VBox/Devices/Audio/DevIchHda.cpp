@@ -75,18 +75,18 @@ extern "C" {
 
 #define HDA_NREGS 112
 /* Registers */
-#define HDA_REG_IND_NAME(x)                 ICH6_HDA_REG_##x
-#define HDA_REG_FIELD_NAME(reg, x)          ICH6_HDA_##reg##_##x
-#define HDA_REG_FIELD_MASK(reg, x)          ICH6_HDA_##reg##_##x##_MASK
-#define HDA_REG_FIELD_FLAG_MASK(reg, x)     RT_BIT(ICH6_HDA_##reg##_##x##_SHIFT)
-#define HDA_REG_FIELD_SHIFT(reg, x)         ICH6_HDA_##reg##_##x##_SHIFT
+#define HDA_REG_IND_NAME(x)                 HDA_REG_##x
+#define HDA_REG_FIELD_NAME(reg, x)          HDA_##reg##_##x
+#define HDA_REG_FIELD_MASK(reg, x)          HDA_##reg##_##x##_MASK
+#define HDA_REG_FIELD_FLAG_MASK(reg, x)     RT_BIT(HDA_##reg##_##x##_SHIFT)
+#define HDA_REG_FIELD_SHIFT(reg, x)         HDA_##reg##_##x##_SHIFT
 #define HDA_REG_IND(pThis, x)               ((pThis)->au32Regs[(x)])
 #define HDA_REG(pThis, x)                   (HDA_REG_IND((pThis), HDA_REG_IND_NAME(x)))
 #define HDA_REG_VALUE(pThis, reg, val)      (HDA_REG((pThis),reg) & (((HDA_REG_FIELD_MASK(reg, val))) << (HDA_REG_FIELD_SHIFT(reg, val))))
 #define HDA_REG_FLAG_VALUE(pThis, reg, val) (HDA_REG((pThis),reg) & (((HDA_REG_FIELD_FLAG_MASK(reg, val)))))
 #define HDA_REG_SVALUE(pThis, reg, val)     (HDA_REG_VALUE(pThis, reg, val) >> (HDA_REG_FIELD_SHIFT(reg, val)))
 
-#define ICH6_HDA_REG_GCAP 0 /* range 0x00-0x01*/
+#define HDA_REG_GCAP 0 /* range 0x00-0x01*/
 #define GCAP(pThis) (HDA_REG((pThis), GCAP))
 /* GCAP HDASpec 3.3.2 This macro encodes the following information about HDA in a compact manner:
  * oss (15:12) - number of output streams supported
@@ -101,46 +101,46 @@ extern "C" {
      | (((bss) & 0x1F) << 3)    \
      | (((bds) & 0x3)  << 2)    \
      | ((b64sup) & 1))
-#define ICH6_HDA_REG_VMIN           1 /* range 0x02 */
+#define HDA_REG_VMIN                1 /* range 0x02 */
 #define VMIN(pThis)                 (HDA_REG((pThis), VMIN))
 
-#define ICH6_HDA_REG_VMAJ           2 /* range 0x03 */
+#define HDA_REG_VMAJ                2 /* range 0x03 */
 #define VMAJ(pThis)                 (HDA_REG((pThis), VMAJ))
 
-#define ICH6_HDA_REG_OUTPAY         3 /* range 0x04-0x05 */
+#define HDA_REG_OUTPAY              3 /* range 0x04-0x05 */
 #define OUTPAY(pThis)               (HDA_REG((pThis), OUTPAY))
 
-#define ICH6_HDA_REG_INPAY          4 /* range 0x06-0x07 */
+#define HDA_REG_INPAY               4 /* range 0x06-0x07 */
 #define INPAY(pThis)                (HDA_REG((pThis), INPAY))
 
-#define ICH6_HDA_REG_GCTL           (5)
-#define ICH6_HDA_GCTL_RST_SHIFT     (0)
-#define ICH6_HDA_GCTL_FSH_SHIFT     (1)
-#define ICH6_HDA_GCTL_UR_SHIFT      (8)
+#define HDA_REG_GCTL                5
+#define HDA_GCTL_RST_SHIFT          0
+#define HDA_GCTL_FSH_SHIFT          1
+#define HDA_GCTL_UR_SHIFT           8
 #define GCTL(pThis)                 (HDA_REG((pThis), GCTL))
 
-#define ICH6_HDA_REG_WAKEEN         6 /* 0x0C */
+#define HDA_REG_WAKEEN              6 /* 0x0C */
 #define WAKEEN(pThis)               (HDA_REG((pThis), WAKEEN))
 
-#define ICH6_HDA_REG_STATESTS       7 /* range 0x0E */
+#define HDA_REG_STATESTS            7 /* range 0x0E */
 #define STATESTS(pThis)             (HDA_REG((pThis), STATESTS))
-#define ICH6_HDA_STATES_SCSF        0x7
+#define HDA_STATES_SCSF             0x7
 
-#define ICH6_HDA_REG_GSTS           8 /* range 0x10-0x11*/
-#define ICH6_HDA_GSTS_FSH_SHIFT     (1)
+#define HDA_REG_GSTS                8 /* range 0x10-0x11*/
+#define HDA_GSTS_FSH_SHIFT          1
 #define GSTS(pThis)                 (HDA_REG(pThis, GSTS))
 
-#define ICH6_HDA_REG_INTCTL         9 /* 0x20 */
-#define ICH6_HDA_INTCTL_GIE_SHIFT   31
-#define ICH6_HDA_INTCTL_CIE_SHIFT   30
-#define ICH6_HDA_INTCTL_S0_SHIFT    (0)
-#define ICH6_HDA_INTCTL_S1_SHIFT    (1)
-#define ICH6_HDA_INTCTL_S2_SHIFT    (2)
-#define ICH6_HDA_INTCTL_S3_SHIFT    (3)
-#define ICH6_HDA_INTCTL_S4_SHIFT    (4)
-#define ICH6_HDA_INTCTL_S5_SHIFT    (5)
-#define ICH6_HDA_INTCTL_S6_SHIFT    (6)
-#define ICH6_HDA_INTCTL_S7_SHIFT    (7)
+#define HDA_REG_INTCTL              9 /* 0x20 */
+#define HDA_INTCTL_GIE_SHIFT        31
+#define HDA_INTCTL_CIE_SHIFT        30
+#define HDA_INTCTL_S0_SHIFT         0
+#define HDA_INTCTL_S1_SHIFT         1
+#define HDA_INTCTL_S2_SHIFT         2
+#define HDA_INTCTL_S3_SHIFT         3
+#define HDA_INTCTL_S4_SHIFT         4
+#define HDA_INTCTL_S5_SHIFT         5
+#define HDA_INTCTL_S6_SHIFT         6
+#define HDA_INTCTL_S7_SHIFT         7
 #define INTCTL(pThis)               (HDA_REG((pThis), INTCTL))
 #define INTCTL_GIE(pThis)           (HDA_REG_FLAG_VALUE(pThis, INTCTL, GIE))
 #define INTCTL_CIE(pThis)           (HDA_REG_FLAG_VALUE(pThis, INTCTL, CIE))
@@ -151,273 +151,273 @@ extern "C" {
  * ICH6/ICH9 datahseet defines SSYNC at offset 0x34. The Linux HDA driver matches
  * the datasheet.
  */
-#define ICH6_HDA_REG_SSYNC          12 /* 0x34 */
+#define HDA_REG_SSYNC               12 /* 0x34 */
 #define SSYNC(pThis)                (HDA_REG((pThis), SSYNC))
 
-#define ICH6_HDA_REG_INTSTS         10 /* 0x24 */
-#define ICH6_HDA_INTSTS_GIS_SHIFT   (31)
-#define ICH6_HDA_INTSTS_CIS_SHIFT   (30)
-#define ICH6_HDA_INTSTS_S0_SHIFT    (0)
-#define ICH6_HDA_INTSTS_S1_SHIFT    (1)
-#define ICH6_HDA_INTSTS_S2_SHIFT    (2)
-#define ICH6_HDA_INTSTS_S3_SHIFT    (3)
-#define ICH6_HDA_INTSTS_S4_SHIFT    (4)
-#define ICH6_HDA_INTSTS_S5_SHIFT    (5)
-#define ICH6_HDA_INTSTS_S6_SHIFT    (6)
-#define ICH6_HDA_INTSTS_S7_SHIFT    (7)
-#define ICH6_HDA_INTSTS_S_MASK(num) RT_BIT(HDA_REG_FIELD_SHIFT(S##num))
+#define HDA_REG_INTSTS              10 /* 0x24 */
+#define HDA_INTSTS_GIS_SHIFT        31
+#define HDA_INTSTS_CIS_SHIFT        30
+#define HDA_INTSTS_S0_SHIFT         0
+#define HDA_INTSTS_S1_SHIFT         1
+#define HDA_INTSTS_S2_SHIFT         2
+#define HDA_INTSTS_S3_SHIFT         3
+#define HDA_INTSTS_S4_SHIFT         4
+#define HDA_INTSTS_S5_SHIFT         5
+#define HDA_INTSTS_S6_SHIFT         6
+#define HDA_INTSTS_S7_SHIFT         7
+#define HDA_INTSTS_S_MASK(num)      RT_BIT(HDA_REG_FIELD_SHIFT(S##num))
 #define INTSTS(pThis)               (HDA_REG((pThis), INTSTS))
 #define INTSTS_GIS(pThis)           (HDA_REG_FLAG_VALUE((pThis), INTSTS, GIS)
 #define INTSTS_CIS(pThis)           (HDA_REG_FLAG_VALUE((pThis), INTSTS, CIS)
 #define INTSTS_SX(pThis, X)         (HDA_REG_FLAG_VALUE(pThis), INTSTS, S##X)
 #define INTSTS_SANY(pThis)          (INTSTS((pThis)) & 0xFF)
 
-#define ICH6_HDA_REG_CORBLBASE      13 /* 0x40 */
+#define HDA_REG_CORBLBASE           13 /* 0x40 */
 #define CORBLBASE(pThis)            (HDA_REG((pThis), CORBLBASE))
-#define ICH6_HDA_REG_CORBUBASE      14 /* 0x44 */
+#define HDA_REG_CORBUBASE           14 /* 0x44 */
 #define CORBUBASE(pThis)            (HDA_REG((pThis), CORBUBASE))
-#define ICH6_HDA_REG_CORBWP         15 /* 48 */
-#define ICH6_HDA_REG_CORBRP         16 /* 4A */
-#define ICH6_HDA_CORBRP_RST_SHIFT   15
-#define ICH6_HDA_CORBRP_WP_SHIFT    0
-#define ICH6_HDA_CORBRP_WP_MASK     0xFF
+#define HDA_REG_CORBWP              15 /* 48 */
+#define HDA_REG_CORBRP              16 /* 4A */
+#define HDA_CORBRP_RST_SHIFT        15
+#define HDA_CORBRP_WP_SHIFT         0
+#define HDA_CORBRP_WP_MASK          0xFF
 
 #define CORBRP(pThis)               (HDA_REG(pThis, CORBRP))
 #define CORBWP(pThis)               (HDA_REG(pThis, CORBWP))
 
-#define ICH6_HDA_REG_CORBCTL        17 /* 0x4C */
-#define ICH6_HDA_CORBCTL_DMA_SHIFT  (1)
-#define ICH6_HDA_CORBCTL_CMEIE_SHIFT (0)
+#define HDA_REG_CORBCTL             17 /* 0x4C */
+#define HDA_CORBCTL_DMA_SHIFT       1
+#define HDA_CORBCTL_CMEIE_SHIFT     0
 
 #define CORBCTL(pThis)              (HDA_REG(pThis, CORBCTL))
 
 
-#define ICH6_HDA_REG_CORBSTS        18 /* 0x4D */
+#define HDA_REG_CORBSTS             18 /* 0x4D */
 #define CORBSTS(pThis)              (HDA_REG(pThis, CORBSTS))
-#define ICH6_HDA_CORBSTS_CMEI_SHIFT (0)
+#define HDA_CORBSTS_CMEI_SHIFT      0
 
-#define ICH6_HDA_REG_CORBSIZE       19 /* 0x4E */
-#define ICH6_HDA_CORBSIZE_SZ_CAP    0xF0
-#define ICH6_HDA_CORBSIZE_SZ        0x3
-#define CORBSIZE_SZ(pThis)          (HDA_REG(pThis, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ)
-#define CORBSIZE_SZ_CAP(pThis)      (HDA_REG(pThis, ICH6_HDA_REG_CORBSIZE) & ICH6_HDA_CORBSIZE_SZ_CAP)
+#define HDA_REG_CORBSIZE            19 /* 0x4E */
+#define HDA_CORBSIZE_SZ_CAP         0xF0
+#define HDA_CORBSIZE_SZ             0x3
+#define CORBSIZE_SZ(pThis)          (HDA_REG(pThis, HDA_REG_CORBSIZE) & HDA_CORBSIZE_SZ)
+#define CORBSIZE_SZ_CAP(pThis)      (HDA_REG(pThis, HDA_REG_CORBSIZE) & HDA_CORBSIZE_SZ_CAP)
 /* till ich 10 sizes of CORB and RIRB are hardcoded to 256 in real hw */
 
-#define ICH6_HDA_REG_RIRLBASE       20 /* 0x50 */
+#define HDA_REG_RIRLBASE            20 /* 0x50 */
 #define RIRLBASE(pThis)             (HDA_REG((pThis), RIRLBASE))
 
-#define ICH6_HDA_REG_RIRUBASE       21 /* 0x54 */
+#define HDA_REG_RIRUBASE            21 /* 0x54 */
 #define RIRUBASE(pThis)             (HDA_REG((pThis), RIRUBASE))
 
-#define ICH6_HDA_REG_RIRBWP         22 /* 0x58 */
-#define ICH6_HDA_RIRBWP_RST_SHIFT   (15)
-#define ICH6_HDA_RIRBWP_WP_MASK     0xFF
+#define HDA_REG_RIRBWP              22 /* 0x58 */
+#define HDA_RIRBWP_RST_SHIFT        15
+#define HDA_RIRBWP_WP_MASK          0xFF
 #define RIRBWP(pThis)              (HDA_REG(pThis, RIRBWP))
 
-#define ICH6_HDA_REG_RINTCNT        23 /* 0x5A */
+#define HDA_REG_RINTCNT             23 /* 0x5A */
 #define RINTCNT(pThis)              (HDA_REG((pThis), RINTCNT))
 #define RINTCNT_N(pThis)            (RINTCNT((pThis)) & 0xff)
 
-#define ICH6_HDA_REG_RIRBCTL        24 /* 0x5C */
-#define ICH6_HDA_RIRBCTL_RIC_SHIFT  (0)
-#define ICH6_HDA_RIRBCTL_DMA_SHIFT  (1)
-#define ICH6_HDA_ROI_DMA_SHIFT      (2)
+#define HDA_REG_RIRBCTL             24 /* 0x5C */
+#define HDA_RIRBCTL_RIC_SHIFT       0
+#define HDA_RIRBCTL_DMA_SHIFT       1
+#define HDA_ROI_DMA_SHIFT           2
 #define RIRBCTL(pThis)              (HDA_REG((pThis), RIRBCTL))
 #define RIRBCTL_RIRB_RIC(pThis)     (HDA_REG_FLAG_VALUE(pThis, RIRBCTL, RIC))
 #define RIRBCTL_RIRB_DMA(pThis)     (HDA_REG_FLAG_VALUE((pThis), RIRBCTL, DMA)
 #define RIRBCTL_ROI(pThis)          (HDA_REG_FLAG_VALUE((pThis), RIRBCTL, ROI))
 
-#define ICH6_HDA_REG_RIRBSTS        25 /* 0x5D */
-#define ICH6_HDA_RIRBSTS_RINTFL_SHIFT (0)
-#define ICH6_HDA_RIRBSTS_RIRBOIS_SHIFT (2)
+#define HDA_REG_RIRBSTS             25 /* 0x5D */
+#define HDA_RIRBSTS_RINTFL_SHIFT    0
+#define HDA_RIRBSTS_RIRBOIS_SHIFT   2
 #define RIRBSTS(pThis)              (HDA_REG(pThis, RIRBSTS))
 #define RIRBSTS_RINTFL(pThis)       (HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RINTFL))
 #define RIRBSTS_RIRBOIS(pThis)      (HDA_REG_FLAG_VALUE(pThis, RIRBSTS, RIRBOIS))
 
-#define ICH6_HDA_REG_RIRBSIZE       26 /* 0x5E */
-#define ICH6_HDA_RIRBSIZE_SZ_CAP    0xF0
-#define ICH6_HDA_RIRBSIZE_SZ        0x3
+#define HDA_REG_RIRBSIZE            26 /* 0x5E */
+#define HDA_RIRBSIZE_SZ_CAP         0xF0
+#define HDA_RIRBSIZE_SZ             0x3
 
-#define RIRBSIZE_SZ(pThis)          (HDA_REG(pThis, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ)
-#define RIRBSIZE_SZ_CAP(pThis)      (HDA_REG(pThis, ICH6_HDA_REG_RIRBSIZE) & ICH6_HDA_RIRBSIZE_SZ_CAP)
+#define RIRBSIZE_SZ(pThis)          (HDA_REG(pThis, HDA_REG_RIRBSIZE) & HDA_RIRBSIZE_SZ)
+#define RIRBSIZE_SZ_CAP(pThis)      (HDA_REG(pThis, HDA_REG_RIRBSIZE) & HDA_RIRBSIZE_SZ_CAP)
 
 
-#define ICH6_HDA_REG_IC             27 /* 0x60 */
+#define HDA_REG_IC                  27 /* 0x60 */
 #define IC(pThis)                   (HDA_REG(pThis, IC))
-#define ICH6_HDA_REG_IR             28 /* 0x64 */
+#define HDA_REG_IR                  28 /* 0x64 */
 #define IR(pThis)                   (HDA_REG(pThis, IR))
-#define ICH6_HDA_REG_IRS            29 /* 0x68 */
-#define ICH6_HDA_IRS_ICB_SHIFT      (0)
-#define ICH6_HDA_IRS_IRV_SHIFT      (1)
+#define HDA_REG_IRS                 29 /* 0x68 */
+#define HDA_IRS_ICB_SHIFT           0
+#define HDA_IRS_IRV_SHIFT           1
 #define IRS(pThis)                  (HDA_REG(pThis, IRS))
 #define IRS_ICB(pThis)              (HDA_REG_FLAG_VALUE(pThis, IRS, ICB))
 #define IRS_IRV(pThis)              (HDA_REG_FLAG_VALUE(pThis, IRS, IRV))
 
-#define ICH6_HDA_REG_DPLBASE        30 /* 0x70 */
+#define HDA_REG_DPLBASE             30 /* 0x70 */
 #define DPLBASE(pThis)              (HDA_REG((pThis), DPLBASE))
-#define ICH6_HDA_REG_DPUBASE        31 /* 0x74 */
+#define HDA_REG_DPUBASE             31 /* 0x74 */
 #define DPUBASE(pThis)              (HDA_REG((pThis), DPUBASE))
 #define DPBASE_ENABLED              1
 #define DPBASE_ADDR_MASK            (~(uint64_t)0x7f)
 
-#define HDA_STREAM_REG_DEF(name, num)           (ICH6_HDA_REG_SD##num##name)
+#define HDA_STREAM_REG_DEF(name, num)           (HDA_REG_SD##num##name)
 #define HDA_STREAM_REG(pThis, name, num)        (HDA_REG((pThis), N_(HDA_STREAM_REG_DEF(name, num))))
 /* Note: sdnum here _MUST_ be stream reg number [0,7] */
-#define HDA_STREAM_REG2(pThis, name, sdnum)     (HDA_REG_IND((pThis), ICH6_HDA_REG_SD0##name + (sdnum) * 10))
+#define HDA_STREAM_REG2(pThis, name, sdnum)     (HDA_REG_IND((pThis), HDA_REG_SD0##name + (sdnum) * 10))
 
-#define ICH6_HDA_REG_SD0CTL         32 /* 0x80 */
-#define ICH6_HDA_REG_SD1CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 10) /* 0xA0 */
-#define ICH6_HDA_REG_SD2CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 20) /* 0xC0 */
-#define ICH6_HDA_REG_SD3CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 30) /* 0xE0 */
-#define ICH6_HDA_REG_SD4CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 40) /* 0x100 */
-#define ICH6_HDA_REG_SD5CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 50) /* 0x120 */
-#define ICH6_HDA_REG_SD6CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 60) /* 0x140 */
-#define ICH6_HDA_REG_SD7CTL         (HDA_STREAM_REG_DEF(CTL, 0) + 70) /* 0x160 */
+#define HDA_REG_SD0CTL              32 /* 0x80 */
+#define HDA_REG_SD1CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 10) /* 0xA0 */
+#define HDA_REG_SD2CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 20) /* 0xC0 */
+#define HDA_REG_SD3CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 30) /* 0xE0 */
+#define HDA_REG_SD4CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 40) /* 0x100 */
+#define HDA_REG_SD5CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 50) /* 0x120 */
+#define HDA_REG_SD6CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 60) /* 0x140 */
+#define HDA_REG_SD7CTL              (HDA_STREAM_REG_DEF(CTL, 0) + 70) /* 0x160 */
 
 #define SD(func, num)               SD##num##func
 #define SDCTL(pThis, num)           HDA_REG((pThis), SD(CTL, num))
 #define SDCTL_NUM(pThis, num)       ((SDCTL((pThis), num) & HDA_REG_FIELD_MASK(SDCTL,NUM)) >> HDA_REG_FIELD_SHIFT(SDCTL, NUM))
-#define ICH6_HDA_SDCTL_NUM_MASK     (0xF)
-#define ICH6_HDA_SDCTL_NUM_SHIFT    (20)
-#define ICH6_HDA_SDCTL_DIR_SHIFT    (19)
-#define ICH6_HDA_SDCTL_TP_SHIFT     (18)
-#define ICH6_HDA_SDCTL_STRIPE_MASK  (0x3)
-#define ICH6_HDA_SDCTL_STRIPE_SHIFT (16)
-#define ICH6_HDA_SDCTL_DEIE_SHIFT   (4)
-#define ICH6_HDA_SDCTL_FEIE_SHIFT   (3)
-#define ICH6_HDA_SDCTL_ICE_SHIFT    (2)
-#define ICH6_HDA_SDCTL_RUN_SHIFT    (1)
-#define ICH6_HDA_SDCTL_SRST_SHIFT   (0)
+#define HDA_SDCTL_NUM_MASK          0xF
+#define HDA_SDCTL_NUM_SHIFT         20
+#define HDA_SDCTL_DIR_SHIFT         19
+#define HDA_SDCTL_TP_SHIFT          18
+#define HDA_SDCTL_STRIPE_MASK       0x3
+#define HDA_SDCTL_STRIPE_SHIFT      16
+#define HDA_SDCTL_DEIE_SHIFT        4
+#define HDA_SDCTL_FEIE_SHIFT        3
+#define HDA_SDCTL_ICE_SHIFT         2
+#define HDA_SDCTL_RUN_SHIFT         1
+#define HDA_SDCTL_SRST_SHIFT        0
 
-#define ICH6_HDA_REG_SD0STS         33 /* 0x83 */
-#define ICH6_HDA_REG_SD1STS         (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
-#define ICH6_HDA_REG_SD2STS         (HDA_STREAM_REG_DEF(STS, 0) + 20) /* 0xC3 */
-#define ICH6_HDA_REG_SD3STS         (HDA_STREAM_REG_DEF(STS, 0) + 30) /* 0xE3 */
-#define ICH6_HDA_REG_SD4STS         (HDA_STREAM_REG_DEF(STS, 0) + 40) /* 0x103 */
-#define ICH6_HDA_REG_SD5STS         (HDA_STREAM_REG_DEF(STS, 0) + 50) /* 0x123 */
-#define ICH6_HDA_REG_SD6STS         (HDA_STREAM_REG_DEF(STS, 0) + 60) /* 0x143 */
-#define ICH6_HDA_REG_SD7STS         (HDA_STREAM_REG_DEF(STS, 0) + 70) /* 0x163 */
+#define HDA_REG_SD0STS              33 /* 0x83 */
+#define HDA_REG_SD1STS              (HDA_STREAM_REG_DEF(STS, 0) + 10) /* 0xA3 */
+#define HDA_REG_SD2STS              (HDA_STREAM_REG_DEF(STS, 0) + 20) /* 0xC3 */
+#define HDA_REG_SD3STS              (HDA_STREAM_REG_DEF(STS, 0) + 30) /* 0xE3 */
+#define HDA_REG_SD4STS              (HDA_STREAM_REG_DEF(STS, 0) + 40) /* 0x103 */
+#define HDA_REG_SD5STS              (HDA_STREAM_REG_DEF(STS, 0) + 50) /* 0x123 */
+#define HDA_REG_SD6STS              (HDA_STREAM_REG_DEF(STS, 0) + 60) /* 0x143 */
+#define HDA_REG_SD7STS              (HDA_STREAM_REG_DEF(STS, 0) + 70) /* 0x163 */
 
 #define SDSTS(pThis, num)           HDA_REG((pThis), SD(STS, num))
-#define ICH6_HDA_SDSTS_FIFORDY_SHIFT (5)
-#define ICH6_HDA_SDSTS_DE_SHIFT     (4)
-#define ICH6_HDA_SDSTS_FE_SHIFT     (3)
-#define ICH6_HDA_SDSTS_BCIS_SHIFT   (2)
+#define HDA_SDSTS_FIFORDY_SHIFT     5
+#define HDA_SDSTS_DE_SHIFT          4
+#define HDA_SDSTS_FE_SHIFT          3
+#define HDA_SDSTS_BCIS_SHIFT        2
 
-#define ICH6_HDA_REG_SD0LPIB        34 /* 0x84 */
-#define ICH6_HDA_REG_SD1LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
-#define ICH6_HDA_REG_SD2LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
-#define ICH6_HDA_REG_SD3LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
-#define ICH6_HDA_REG_SD4LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 40) /* 0x104 */
-#define ICH6_HDA_REG_SD5LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 50) /* 0x124 */
-#define ICH6_HDA_REG_SD6LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 60) /* 0x144 */
-#define ICH6_HDA_REG_SD7LPIB        (HDA_STREAM_REG_DEF(LPIB, 0) + 70) /* 0x164 */
+#define HDA_REG_SD0LPIB             34 /* 0x84 */
+#define HDA_REG_SD1LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 10) /* 0xA4 */
+#define HDA_REG_SD2LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 20) /* 0xC4 */
+#define HDA_REG_SD3LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 30) /* 0xE4 */
+#define HDA_REG_SD4LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 40) /* 0x104 */
+#define HDA_REG_SD5LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 50) /* 0x124 */
+#define HDA_REG_SD6LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 60) /* 0x144 */
+#define HDA_REG_SD7LPIB             (HDA_STREAM_REG_DEF(LPIB, 0) + 70) /* 0x164 */
 
 #define SDLPIB(pThis, num)          HDA_REG((pThis), SD(LPIB, num))
 
-#define ICH6_HDA_REG_SD0CBL         35 /* 0x88 */
-#define ICH6_HDA_REG_SD1CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 10) /* 0xA8 */
-#define ICH6_HDA_REG_SD2CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 20) /* 0xC8 */
-#define ICH6_HDA_REG_SD3CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 30) /* 0xE8 */
-#define ICH6_HDA_REG_SD4CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 40) /* 0x108 */
-#define ICH6_HDA_REG_SD5CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 50) /* 0x128 */
-#define ICH6_HDA_REG_SD6CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 60) /* 0x148 */
-#define ICH6_HDA_REG_SD7CBL         (HDA_STREAM_REG_DEF(CBL, 0) + 70) /* 0x168 */
+#define HDA_REG_SD0CBL              35 /* 0x88 */
+#define HDA_REG_SD1CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 10) /* 0xA8 */
+#define HDA_REG_SD2CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 20) /* 0xC8 */
+#define HDA_REG_SD3CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 30) /* 0xE8 */
+#define HDA_REG_SD4CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 40) /* 0x108 */
+#define HDA_REG_SD5CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 50) /* 0x128 */
+#define HDA_REG_SD6CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 60) /* 0x148 */
+#define HDA_REG_SD7CBL              (HDA_STREAM_REG_DEF(CBL, 0) + 70) /* 0x168 */
 
 #define SDLCBL(pThis, num)          HDA_REG((pThis), SD(CBL, num))
 
-#define ICH6_HDA_REG_SD0LVI         36 /* 0x8C */
-#define ICH6_HDA_REG_SD1LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 10) /* 0xAC */
-#define ICH6_HDA_REG_SD2LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 20) /* 0xCC */
-#define ICH6_HDA_REG_SD3LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 30) /* 0xEC */
-#define ICH6_HDA_REG_SD4LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 40) /* 0x10C */
-#define ICH6_HDA_REG_SD5LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 50) /* 0x12C */
-#define ICH6_HDA_REG_SD6LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 60) /* 0x14C */
-#define ICH6_HDA_REG_SD7LVI         (HDA_STREAM_REG_DEF(LVI, 0) + 70) /* 0x16C */
+#define HDA_REG_SD0LVI              36 /* 0x8C */
+#define HDA_REG_SD1LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 10) /* 0xAC */
+#define HDA_REG_SD2LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 20) /* 0xCC */
+#define HDA_REG_SD3LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 30) /* 0xEC */
+#define HDA_REG_SD4LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 40) /* 0x10C */
+#define HDA_REG_SD5LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 50) /* 0x12C */
+#define HDA_REG_SD6LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 60) /* 0x14C */
+#define HDA_REG_SD7LVI              (HDA_STREAM_REG_DEF(LVI, 0) + 70) /* 0x16C */
 
 #define SDLVI(pThis, num)           HDA_REG((pThis), SD(LVI, num))
 
-#define ICH6_HDA_REG_SD0FIFOW       37 /* 0x8E */
-#define ICH6_HDA_REG_SD1FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 10) /* 0xAE */
-#define ICH6_HDA_REG_SD2FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 20) /* 0xCE */
-#define ICH6_HDA_REG_SD3FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 30) /* 0xEE */
-#define ICH6_HDA_REG_SD4FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 40) /* 0x10E */
-#define ICH6_HDA_REG_SD5FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 50) /* 0x12E */
-#define ICH6_HDA_REG_SD6FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
-#define ICH6_HDA_REG_SD7FIFOW       (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
+#define HDA_REG_SD0FIFOW            37 /* 0x8E */
+#define HDA_REG_SD1FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 10) /* 0xAE */
+#define HDA_REG_SD2FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 20) /* 0xCE */
+#define HDA_REG_SD3FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 30) /* 0xEE */
+#define HDA_REG_SD4FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 40) /* 0x10E */
+#define HDA_REG_SD5FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 50) /* 0x12E */
+#define HDA_REG_SD6FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 60) /* 0x14E */
+#define HDA_REG_SD7FIFOW            (HDA_STREAM_REG_DEF(FIFOW, 0) + 70) /* 0x16E */
 
 /*
  * ICH6 datasheet defined limits for FIFOW values (18.2.38)
  */
-#define HDA_SDFIFOW_8B              (0x2)
-#define HDA_SDFIFOW_16B             (0x3)
-#define HDA_SDFIFOW_32B             (0x4)
+#define HDA_SDFIFOW_8B              0x2
+#define HDA_SDFIFOW_16B             0x3
+#define HDA_SDFIFOW_32B             0x4
 #define SDFIFOW(pThis, num)         HDA_REG((pThis), SD(FIFOW, num))
 
-#define ICH6_HDA_REG_SD0FIFOS       38 /* 0x90 */
-#define ICH6_HDA_REG_SD1FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
-#define ICH6_HDA_REG_SD2FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
-#define ICH6_HDA_REG_SD3FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 30) /* 0xF0 */
-#define ICH6_HDA_REG_SD4FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 40) /* 0x110 */
-#define ICH6_HDA_REG_SD5FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 50) /* 0x130 */
-#define ICH6_HDA_REG_SD6FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
-#define ICH6_HDA_REG_SD7FIFOS       (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
+#define HDA_REG_SD0FIFOS            38 /* 0x90 */
+#define HDA_REG_SD1FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 10) /* 0xB0 */
+#define HDA_REG_SD2FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 20) /* 0xD0 */
+#define HDA_REG_SD3FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 30) /* 0xF0 */
+#define HDA_REG_SD4FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 40) /* 0x110 */
+#define HDA_REG_SD5FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 50) /* 0x130 */
+#define HDA_REG_SD6FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 60) /* 0x150 */
+#define HDA_REG_SD7FIFOS            (HDA_STREAM_REG_DEF(FIFOS, 0) + 70) /* 0x170 */
 
 /*
  * ICH6 datasheet defines limits for FIFOS registers (18.2.39)
  * formula: size - 1
  * Other values not listed are not supported.
  */
-#define HDA_SDONFIFO_16B            (0x0F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_32B            (0x1F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_64B            (0x3F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_128B           (0x7F) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_192B           (0xBF) /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
-#define HDA_SDONFIFO_256B           (0xFF) /* 20-, 24-bit Output Streams */
-#define HDA_SDINFIFO_120B           (0x77) /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
-#define HDA_SDINFIFO_160B           (0x9F) /* 20-, 24-bit Input Streams Streams */
+#define HDA_SDONFIFO_16B            0x0F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_32B            0x1F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_64B            0x3F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_128B           0x7F /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_192B           0xBF /* 8-, 16-, 20-, 24-, 32-bit Output Streams */
+#define HDA_SDONFIFO_256B           0xFF /* 20-, 24-bit Output Streams */
+#define HDA_SDINFIFO_120B           0x77 /* 8-, 16-, 20-, 24-, 32-bit Input Streams */
+#define HDA_SDINFIFO_160B           0x9F /* 20-, 24-bit Input Streams Streams */
 #define SDFIFOS(pThis, num)         HDA_REG((pThis), SD(FIFOS, num))
 
-#define ICH6_HDA_REG_SD0FMT         39 /* 0x92 */
-#define ICH6_HDA_REG_SD1FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 10) /* 0xB2 */
-#define ICH6_HDA_REG_SD2FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 20) /* 0xD2 */
-#define ICH6_HDA_REG_SD3FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 30) /* 0xF2 */
-#define ICH6_HDA_REG_SD4FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 40) /* 0x112 */
-#define ICH6_HDA_REG_SD5FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 50) /* 0x132 */
-#define ICH6_HDA_REG_SD6FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
-#define ICH6_HDA_REG_SD7FMT         (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
+#define HDA_REG_SD0FMT              39 /* 0x92 */
+#define HDA_REG_SD1FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 10) /* 0xB2 */
+#define HDA_REG_SD2FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 20) /* 0xD2 */
+#define HDA_REG_SD3FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 30) /* 0xF2 */
+#define HDA_REG_SD4FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 40) /* 0x112 */
+#define HDA_REG_SD5FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 50) /* 0x132 */
+#define HDA_REG_SD6FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 60) /* 0x152 */
+#define HDA_REG_SD7FMT              (HDA_STREAM_REG_DEF(FMT, 0) + 70) /* 0x172 */
 
 #define SDFMT(pThis, num)           (HDA_REG((pThis), SD(FMT, num)))
-#define ICH6_HDA_SDFMT_BASE_RATE_SHIFT (14)
-#define ICH6_HDA_SDFMT_MULT_SHIFT   (11)
-#define ICH6_HDA_SDFMT_MULT_MASK    (0x7)
-#define ICH6_HDA_SDFMT_DIV_SHIFT    (8)
-#define ICH6_HDA_SDFMT_DIV_MASK     (0x7)
-#define ICH6_HDA_SDFMT_BITS_SHIFT   (4)
-#define ICH6_HDA_SDFMT_BITS_MASK    (0x7)
+#define HDA_SDFMT_BASE_RATE_SHIFT   14
+#define HDA_SDFMT_MULT_SHIFT        11
+#define HDA_SDFMT_MULT_MASK         0x7
+#define HDA_SDFMT_DIV_SHIFT         8
+#define HDA_SDFMT_DIV_MASK          0x7
+#define HDA_SDFMT_BITS_SHIFT        4
+#define HDA_SDFMT_BITS_MASK         0x7
 #define SDFMT_BASE_RATE(pThis, num) ((SDFMT(pThis, num) & HDA_REG_FIELD_FLAG_MASK(SDFMT, BASE_RATE)) >> HDA_REG_FIELD_SHIFT(SDFMT, BASE_RATE))
 #define SDFMT_MULT(pThis, num)      ((SDFMT((pThis), num) & HDA_REG_FIELD_MASK(SDFMT,MULT)) >> HDA_REG_FIELD_SHIFT(SDFMT, MULT))
 #define SDFMT_DIV(pThis, num)       ((SDFMT((pThis), num) & HDA_REG_FIELD_MASK(SDFMT,DIV)) >> HDA_REG_FIELD_SHIFT(SDFMT, DIV))
 
-#define ICH6_HDA_REG_SD0BDPL        40 /* 0x98 */
-#define ICH6_HDA_REG_SD1BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
-#define ICH6_HDA_REG_SD2BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
-#define ICH6_HDA_REG_SD3BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 30) /* 0xF8 */
-#define ICH6_HDA_REG_SD4BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 40) /* 0x118 */
-#define ICH6_HDA_REG_SD5BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 50) /* 0x138 */
-#define ICH6_HDA_REG_SD6BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 60) /* 0x158 */
-#define ICH6_HDA_REG_SD7BDPL        (HDA_STREAM_REG_DEF(BDPL, 0) + 70) /* 0x178 */
+#define HDA_REG_SD0BDPL             40 /* 0x98 */
+#define HDA_REG_SD1BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 10) /* 0xB8 */
+#define HDA_REG_SD2BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 20) /* 0xD8 */
+#define HDA_REG_SD3BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 30) /* 0xF8 */
+#define HDA_REG_SD4BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 40) /* 0x118 */
+#define HDA_REG_SD5BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 50) /* 0x138 */
+#define HDA_REG_SD6BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 60) /* 0x158 */
+#define HDA_REG_SD7BDPL             (HDA_STREAM_REG_DEF(BDPL, 0) + 70) /* 0x178 */
 
 #define SDBDPL(pThis, num)          HDA_REG((pThis), SD(BDPL, num))
 
-#define ICH6_HDA_REG_SD0BDPU        41 /* 0x9C */
-#define ICH6_HDA_REG_SD1BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 10) /* 0xBC */
-#define ICH6_HDA_REG_SD2BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 20) /* 0xDC */
-#define ICH6_HDA_REG_SD3BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 30) /* 0xFC */
-#define ICH6_HDA_REG_SD4BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 40) /* 0x11C */
-#define ICH6_HDA_REG_SD5BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 50) /* 0x13C */
-#define ICH6_HDA_REG_SD6BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 60) /* 0x15C */
-#define ICH6_HDA_REG_SD7BDPU        (HDA_STREAM_REG_DEF(BDPU, 0) + 70) /* 0x17C */
+#define HDA_REG_SD0BDPU             41 /* 0x9C */
+#define HDA_REG_SD1BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 10) /* 0xBC */
+#define HDA_REG_SD2BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 20) /* 0xDC */
+#define HDA_REG_SD3BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 30) /* 0xFC */
+#define HDA_REG_SD4BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 40) /* 0x11C */
+#define HDA_REG_SD5BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 50) /* 0x13C */
+#define HDA_REG_SD6BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 60) /* 0x15C */
+#define HDA_REG_SD7BDPU             (HDA_STREAM_REG_DEF(BDPU, 0) + 70) /* 0x17C */
 
 #define SDBDPU(pThis, num)          HDA_REG((pThis), SD(BDPU, num))
 
@@ -1041,7 +1041,7 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
             && !HDA_REG_FLAG_VALUE(pThis, GCTL, UR))
         {
             Log(("hda: unexpected unsolicited response.\n"));
-            pThis->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
+            pThis->au32Regs[HDA_REG_CORBRP] = corbRp;
             return rc;
         }
         pThis->pu64RirbBuf[rirbWp] = resp;
@@ -1049,8 +1049,8 @@ static int hdaCORBCmdProcess(PHDASTATE pThis)
         if (pThis->u8Counter == RINTCNT_N(pThis))
             break;
     }
-    pThis->au32Regs[ICH6_HDA_REG_CORBRP] = corbRp;
-    pThis->au32Regs[ICH6_HDA_REG_RIRBWP] = rirbWp;
+    pThis->au32Regs[HDA_REG_CORBRP] = corbRp;
+    pThis->au32Regs[HDA_REG_RIRBWP] = rirbWp;
     rc = hdaCmdSync(pThis, false);
     Log(("hda: CORB(RP:%x, WP:%x) RIRBWP:%x\n", CORBRP(pThis), CORBWP(pThis), RIRBWP(pThis)));
     if (RIRBCTL_RIRB_RIC(pThis))
@@ -1199,7 +1199,7 @@ static int hdaRegWriteGCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 static int hdaRegWriteSTATESTS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
 {
     uint32_t v = pThis->au32Regs[iReg];
-    uint32_t nv = u32Value & ICH6_HDA_STATES_SCSF;
+    uint32_t nv = u32Value & HDA_STATES_SCSF;
     pThis->au32Regs[iReg] &= ~(v & nv); /* write of 1 clears corresponding bit */
     return VINF_SUCCESS;
 }
@@ -1326,11 +1326,11 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         Assert((!fInRun && !fRun));
         switch (iReg)
         {
-            case ICH6_HDA_REG_SD0CTL:
+            case HDA_REG_SD0CTL:
                 u8Strm = 0;
                 pBdle = &pThis->StInBdle;
                 break;
-            case ICH6_HDA_REG_SD4CTL:
+            case HDA_REG_SD4CTL:
                 u8Strm = 4;
                 pBdle = &pThis->StOutBdle;
                 break;
@@ -1355,10 +1355,10 @@ static int hdaRegWriteSDCTL(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
             Assert((!fReset && !fInReset));
             switch (iReg)
             {
-                case ICH6_HDA_REG_SD0CTL:
+                case HDA_REG_SD0CTL:
                     AUD_set_active_in(pThis->pCodec->SwVoiceIn, fRun);
                     break;
-                case ICH6_HDA_REG_SD4CTL:
+                case HDA_REG_SD4CTL:
                     AUD_set_active_out(pThis->pCodec->SwVoiceOut, fRun);
                     break;
                 default:
@@ -1415,16 +1415,16 @@ static int hdaRegWriteSDFIFOS(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     switch (iReg)
     {
         /* SDInFIFOS is RO, n=0-3 */
-        case ICH6_HDA_REG_SD0FIFOS:
-        case ICH6_HDA_REG_SD1FIFOS:
-        case ICH6_HDA_REG_SD2FIFOS:
-        case ICH6_HDA_REG_SD3FIFOS:
+        case HDA_REG_SD0FIFOS:
+        case HDA_REG_SD1FIFOS:
+        case HDA_REG_SD2FIFOS:
+        case HDA_REG_SD3FIFOS:
             Log(("hda: Guest tries change value of FIFO size of Input Stream\n"));
             return VINF_SUCCESS;
-        case ICH6_HDA_REG_SD4FIFOS:
-        case ICH6_HDA_REG_SD5FIFOS:
-        case ICH6_HDA_REG_SD6FIFOS:
-        case ICH6_HDA_REG_SD7FIFOS:
+        case HDA_REG_SD4FIFOS:
+        case HDA_REG_SD5FIFOS:
+        case HDA_REG_SD6FIFOS:
+        case HDA_REG_SD7FIFOS:
             switch(u32Value)
             {
                 case HDA_SDONFIFO_16B:
@@ -1451,10 +1451,10 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
 {
     Assert((pAudSetting));
 #define EXTRACT_VALUE(v, mask, shift) ((v & ((mask) << (shift))) >> (shift))
-    uint32_t u32Hz = (u32SdFmt & ICH6_HDA_SDFMT_BASE_RATE_SHIFT) ? 44100 : 48000;
+    uint32_t u32Hz = (u32SdFmt & HDA_SDFMT_BASE_RATE_SHIFT) ? 44100 : 48000;
     uint32_t u32HzMult = 1;
     uint32_t u32HzDiv = 1;
-    switch (EXTRACT_VALUE(u32SdFmt, ICH6_HDA_SDFMT_MULT_MASK, ICH6_HDA_SDFMT_MULT_SHIFT))
+    switch (EXTRACT_VALUE(u32SdFmt, HDA_SDFMT_MULT_MASK, HDA_SDFMT_MULT_SHIFT))
     {
         case 0: u32HzMult = 1; break;
         case 1: u32HzMult = 2; break;
@@ -1463,7 +1463,7 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
         default:
             Log(("hda: unsupported multiplier %x\n", u32SdFmt));
     }
-    switch (EXTRACT_VALUE(u32SdFmt, ICH6_HDA_SDFMT_DIV_MASK, ICH6_HDA_SDFMT_DIV_SHIFT))
+    switch (EXTRACT_VALUE(u32SdFmt, HDA_SDFMT_DIV_MASK, HDA_SDFMT_DIV_SHIFT))
     {
         case 0: u32HzDiv = 1; break;
         case 1: u32HzDiv = 2; break;
@@ -1476,7 +1476,7 @@ static void hdaSdFmtToAudSettings(uint32_t u32SdFmt, audsettings_t *pAudSetting)
     }
     pAudSetting->freq = u32Hz * u32HzMult / u32HzDiv;
 
-    switch (EXTRACT_VALUE(u32SdFmt, ICH6_HDA_SDFMT_BITS_MASK, ICH6_HDA_SDFMT_BITS_SHIFT))
+    switch (EXTRACT_VALUE(u32SdFmt, HDA_SDFMT_BITS_MASK, HDA_SDFMT_BITS_SHIFT))
     {
         case 0:
             Log(("hda: %s requested 8-bit\n", __FUNCTION__));
@@ -1519,10 +1519,10 @@ static int hdaRegWriteSDFMT(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
     hdaSdFmtToAudSettings(u32Value, &as);
     switch (iReg)
     {
-        case ICH6_HDA_REG_SD0FMT:
+        case HDA_REG_SD0FMT:
             rc = hdaCodecOpenVoice(pThis->pCodec, PI_INDEX, &as);
             break;
-        case ICH6_HDA_REG_SD4FMT:
+        case HDA_REG_SD4FMT:
             rc = hdaCodecOpenVoice(pThis->pCodec, PO_INDEX, &as);
             break;
         default:
@@ -1632,28 +1632,28 @@ static int hdaRegWriteBase(PHDASTATE pThis, uint32_t iReg, uint32_t u32Value)
         AssertRCReturn(rc, rc);
     switch(iReg)
     {
-        case ICH6_HDA_REG_CORBLBASE:
+        case HDA_REG_CORBLBASE:
             pThis->u64CORBBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64CORBBase |= pThis->au32Regs[iReg];
             break;
-        case ICH6_HDA_REG_CORBUBASE:
+        case HDA_REG_CORBUBASE:
             pThis->u64CORBBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64CORBBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
-        case ICH6_HDA_REG_RIRLBASE:
+        case HDA_REG_RIRLBASE:
             pThis->u64RIRBBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64RIRBBase |= pThis->au32Regs[iReg];
             break;
-        case ICH6_HDA_REG_RIRUBASE:
+        case HDA_REG_RIRUBASE:
             pThis->u64RIRBBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64RIRBBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
-        case ICH6_HDA_REG_DPLBASE:
+        case HDA_REG_DPLBASE:
             /** @todo: first bit has special meaning */
             pThis->u64DPBase &= UINT64_C(0xFFFFFFFF00000000);
             pThis->u64DPBase |= pThis->au32Regs[iReg];
             break;
-        case ICH6_HDA_REG_DPUBASE:
+        case HDA_REG_DPUBASE:
             pThis->u64DPBase &= UINT64_C(0x00000000FFFFFFFF);
             pThis->u64DPBase |= ((uint64_t)pThis->au32Regs[iReg] << 32);
             break;
@@ -2099,7 +2099,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 #ifdef NEW_READ_CODE
     Assert(cb == 4); Assert((offReg & 3) == 0);
 
-    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
+    if (pThis->fInReset && idxReg != HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));
 
     if (idxReg == -1)
@@ -2214,7 +2214,7 @@ PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 
 DECLINLINE(int) hdaWriteReg(PHDASTATE pThis, int idxReg, uint32_t u32Value, char const *pszLog)
 {
-    if (pThis->fInReset && idxReg != ICH6_HDA_REG_GCTL)
+    if (pThis->fInReset && idxReg != HDA_REG_GCTL)
         Log(("hda: access to registers except GCTL is blocked while reset\n"));  /** @todo where is this enforced? */
 
 #ifdef LOG_ENABLED
@@ -2430,7 +2430,7 @@ static DECLCALLBACK(int) hdaPciIoRegionMap(PPCIDEVICE pPciDev, int iRegion, RTGC
                                IOMMMIO_FLAGS_READ_PASSTHRU |
 #endif
                                IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               hdaMMIOWrite, hdaMMIORead, "ICH6_HDA");
+                               hdaMMIOWrite, hdaMMIORead, "HDA");
 
     if (RT_FAILURE(rc))
         return rc;
@@ -2583,10 +2583,10 @@ hdaFormatStrmCtl(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput,
     return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                        "SDCTL(raw: %#x, strm:%#x, dir:%RTbool, tp:%RTbool strip:%x, deie:%RTbool, ioce:%RTbool, run:%RTbool, srst:%RTbool)",
                        sdCtl,
-                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, NUM)) >> ICH6_HDA_SDCTL_NUM_SHIFT,
+                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, NUM)) >> HDA_SDCTL_NUM_SHIFT,
                        RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DIR)),
                        RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, TP)),
-                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, STRIPE)) >> ICH6_HDA_SDCTL_STRIPE_SHIFT,
+                       (sdCtl & HDA_REG_FIELD_MASK(SDCTL, STRIPE)) >> HDA_SDCTL_STRIPE_SHIFT,
                        RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, DEIE)),
                        RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, ICE)),
                        RT_BOOL(sdCtl & HDA_REG_FIELD_FLAG_MASK(SDCTL, RUN)),
@@ -2789,8 +2789,8 @@ static DECLCALLBACK(void)  hdaReset(PPDMDEVINS pDevIns)
     VMAJ(pThis) = 0x01;       /* see 6.2.3 */
     OUTPAY(pThis) = 0x003C;   /* see 6.2.4 */
     INPAY(pThis)  = 0x001D;   /* see 6.2.5 */
-    pThis->au32Regs[ICH6_HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
-    pThis->au32Regs[ICH6_HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
+    pThis->au32Regs[HDA_REG_CORBSIZE] = 0x42; /* see 6.2.1 */
+    pThis->au32Regs[HDA_REG_RIRBSIZE] = 0x42; /* see 6.2.1 */
     CORBRP(pThis) = 0x0;
     RIRBWP(pThis) = 0x0;
 
