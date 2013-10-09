@@ -926,22 +926,25 @@ static void hmR0SvmFlushTaggedTlb(PVMCPU pVCpu)
 
         pVCpu->hm.s.fForceTLBFlush = false;
     }
+    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
+     *        not be executed. See hmQueueInvlPage() where it is commented
+     *        out. Support individual entry flushing someday. */
+#if 0
     else
     {
-        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-         *        not be executed. See hmQueueInvlPage() where it is commented
-         *        out. Support individual entry flushing someday. */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
         {
             /* Deal with pending TLB shootdown actions which were queued when we were not executing code. */
             STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
             for (uint32_t i = 0; i < pVCpu->hm.s.TlbShootdown.cPages; i++)
                 SVMR0InvlpgA(pVCpu->hm.s.TlbShootdown.aPages[i], pVmcb->ctrl.TLBCtrl.n.u32ASID);
+
+            pVCpu->hm.s.TlbShootdown.cPages = 0;
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
         }
     }
+#endif
 
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
     /* Update VMCB with the ASID. */
     if (pVmcb->ctrl.TLBCtrl.n.u32ASID != pVCpu->hm.s.uCurrentAsid)

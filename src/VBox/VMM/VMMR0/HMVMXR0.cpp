@@ -1312,9 +1312,13 @@ static void hmR0VmxFlushTaggedTlbNone(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
     NOREF(pVM);
 
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_FLUSH);
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
 
+    /** @todo TLB shootdown is currently not used. See hmQueueInvlPage(). */
+#if 0
+    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
     pVCpu->hm.s.TlbShootdown.cPages = 0;
+#endif
+
     pVCpu->hm.s.idLastCpu           = pCpu->idCpu;
     pVCpu->hm.s.cTlbFlushes         = pCpu->cTlbFlushes;
     pVCpu->hm.s.fForceTLBFlush      = false;
@@ -1401,9 +1405,10 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         HMVMX_SET_TAGGED_TLB_FLUSHED();
     }
 
-    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-     *        not be executed. See hmQueueInvlPage() where it is commented
-     *        out. Support individual entry flushing someday. */
+    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
+     *        where it is commented out. Support individual entry flushing
+     *        someday. */
+#if 0
     if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
     {
         STAM_COUNTER_INC(&pVCpu->hm.s.StatTlbShootdown);
@@ -1422,9 +1427,10 @@ static void hmR0VmxFlushTaggedTlbBoth(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
 
         HMVMX_SET_TAGGED_TLB_FLUSHED();
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+        pVCpu->hm.s.TlbShootdown.cPages = 0;
     }
+#endif
 
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
     pVCpu->hm.s.fForceTLBFlush = false;
 
     HMVMX_UPDATE_FLUSH_SKIPPED_STAT();
@@ -1490,11 +1496,12 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
         hmR0VmxFlushEpt(pVCpu, pVM->hm.s.vmx.enmFlushEpt);
         pVCpu->hm.s.fForceTLBFlush = false;
     }
+    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
+     *        where it is commented out. Support individual entry flushing
+     *        someday. */
+#if 0
     else
     {
-        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-         *        not be executed. See hmQueueInvlPage() where it is commented
-         *        out. Support individual entry flushing someday. */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
         {
             /* We cannot flush individual entries without VPID support. Flush using EPT. */
@@ -1503,10 +1510,11 @@ static void hmR0VmxFlushTaggedTlbEpt(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCp
         }
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
-    }
 
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+        pVCpu->hm.s.TlbShootdown.cPages = 0;
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+    }
+#endif
 }
 
 
@@ -1569,6 +1577,10 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
         if (pCpu->fFlushAsidBeforeUse)
             hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
     }
+    /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere. See hmQueueInvlPage()
+     *        where it is commented out. Support individual entry flushing
+     *        someday. */
+#if 0
     else
     {
         AssertMsg(pVCpu->hm.s.uCurrentAsid && pCpu->uCurrentAsid,
@@ -1576,9 +1588,6 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
                    pVCpu->hm.s.uCurrentAsid, pVCpu->hm.s.cTlbFlushes,
                    pCpu->uCurrentAsid, pCpu->cTlbFlushes));
 
-        /** @todo We never set VMCPU_FF_TLB_SHOOTDOWN anywhere so this path should
-         *        not be executed. See hmQueueInvlPage() where it is commented
-         *        out. Support individual entry flushing someday. */
         if (VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN))
         {
             /* Flush individual guest entries using VPID or as little as possible with EPT as supported by the CPU. */
@@ -1589,13 +1598,14 @@ static void hmR0VmxFlushTaggedTlbVpid(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pC
             }
             else
                 hmR0VmxFlushVpid(pVM, pVCpu, pVM->hm.s.vmx.enmFlushVpid, 0 /* GCPtr */);
+
+            pVCpu->hm.s.TlbShootdown.cPages = 0;
+            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
         }
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatNoFlushTlbWorldSwitch);
     }
-
-    pVCpu->hm.s.TlbShootdown.cPages = 0;
-    VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TLB_SHOOTDOWN);
+#endif
 
     AssertMsg(pVCpu->hm.s.cTlbFlushes == pCpu->cTlbFlushes,
               ("Flush count mismatch for cpu %d (%u vs %u)\n", pCpu->idCpu, pVCpu->hm.s.cTlbFlushes, pCpu->cTlbFlushes));
