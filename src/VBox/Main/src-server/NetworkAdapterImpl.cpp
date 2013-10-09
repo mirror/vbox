@@ -483,26 +483,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(NetworkAttachmentType_T a
             mData->mNATNetwork = "NatNetwork";
         }
 
-#if 0 // later
-        alock.release();
-        HRESULT hrc = checkAndSwitchFromNatNetworking();
-        if (FAILED(hrc))
-            return hrc;
-        alock.acquire();
-#endif
-
+        NetworkAttachmentType_T oldAttachmentType = mData->mAttachmentType;
         mData->mAttachmentType = aAttachmentType;
-
-#if 0 // later
-        alock.release();
-        if (aAttachmentType == NetworkAttachmentType_NATNetwork)
-        {
-            hrc = switchToNatNetworking(mData->mNATNetwork.raw());
-            if (FAILED(hrc))
-                return hrc;
-        }
-        alock.acquire();
-#endif
 
         m_fModified = true;
         // leave the lock before informing callbacks
@@ -511,6 +493,12 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AttachmentType)(NetworkAttachmentType_T a
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
+
+        if (oldAttachmentType == NetworkAttachmentType_NATNetwork)
+            checkAndSwitchFromNatNetworking(mData->mNATNetwork.raw());
+
+        if (aAttachmentType == NetworkAttachmentType_NATNetwork)
+            switchToNatNetworking(mData->mNATNetwork.raw());
 
         /* Adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
         mParent->onNetworkAdapterChange(this, TRUE);
@@ -727,7 +715,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
     if (mData->mNATNetwork != aNATNetwork)
     {
 
-        HRESULT hrc;
         /* if an empty/null string is to be set, host only interface must be
          * turned off */
         if (   (aNATNetwork == NULL || *aNATNetwork == '\0')
@@ -739,18 +726,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
 
         mData.backup();
 
-        alock.release();
-
-        hrc = checkAndSwitchFromNatNetworking();
-        if (FAILED(hrc))
-            return hrc;
-
-        hrc = switchToNatNetworking(aNATNetwork);
-        if (FAILED(hrc))
-            return hrc;
-
-        alock.acquire();
-
+        Bstr oldNatNetworkName = mData->mNATNetwork;
         mData->mNATNetwork = aNATNetwork;
 
         m_fModified = true;
@@ -760,6 +736,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork)(IN_BSTR aNATNetwork)
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
+
+        checkAndSwitchFromNatNetworking(oldNatNetworkName.raw());
+
+        switchToNatNetworking(aNATNetwork);
 
         /* When changing the host adapter, adapt the CFGM logic to make this
          * change immediately effect and to notify the guest that the network
@@ -1584,7 +1564,7 @@ void NetworkAdapter::updateBandwidthGroup(BandwidthGroup *aBwGroup)
 }
 
 
-HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking()
+HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking(IN_BSTR networkName)
 {
     HRESULT hrc;
     MachineState_T state;
@@ -1598,8 +1578,8 @@ HRESULT NetworkAdapter::checkAndSwitchFromNatNetworking()
     {
         Bstr bstrName;
         hrc = mParent->COMGETTER(Name)(bstrName.asOutParam());
-        LogRel(("VM '%ls' stops using NAT network '%ls'\n", bstrName.raw(), mData->mNATNetwork.raw()));
-        int natCount = mParent->getVirtualBox()->natNetworkRefDec(mData->mNATNetwork.raw());
+        LogRel(("VM '%ls' stops using NAT network '%ls'\n", bstrName.raw(), networkName));
+        int natCount = mParent->getVirtualBox()->natNetworkRefDec(networkName);
         if (natCount == -1)
             return E_INVALIDARG; /* no such network */
     }
