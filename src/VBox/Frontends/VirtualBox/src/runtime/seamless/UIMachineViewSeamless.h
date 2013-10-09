@@ -40,6 +40,9 @@ protected:
 
 private slots:
 
+    /* Handler: Console callback stuff: */
+    void sltAdditionsStateChanged();
+
     /* Handler: Frame-buffer SetVisibleRegion stuff: */
     virtual void sltHandleSetVisibleRegion(QRegion region);
 
@@ -51,15 +54,17 @@ private:
     /* Prepare helpers: */
     void prepareCommon();
     void prepareFilters();
+    void prepareConsoleConnections();
     void prepareSeamless();
 
     /* Cleanup helpers: */
     void cleanupSeamless();
+    //void cleanupConsoleConnections() {}
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
     /* Private helpers: */
-    void normalizeGeometry(bool /* fAdjustPosition */) {}
+    void normalizeGeometry(bool fAdjustPosition);
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 
