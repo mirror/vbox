@@ -350,7 +350,7 @@ extern GLboolean stubMakeCurrent( WindowInfo *window, ContextInfo *context );
 extern GLint stubNewWindow( const char *dpyName, GLint visBits );
 extern void stubDestroyWindow( GLint con, GLint window );
 extern void stubSwapBuffers(WindowInfo *window, GLint flags);
-extern void stubGetWindowGeometry(const WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
+extern void stubGetWindowGeometry(WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
 extern GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate);
 extern GLboolean stubIsWindowVisible(WindowInfo *win);
 extern bool stubInit(void);
