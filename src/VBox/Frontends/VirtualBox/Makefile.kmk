@@ -1100,8 +1100,8 @@ OTHER_CLEAN += \
 
 # Generate the Doxyfile
 $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
-		$(PATH_CURRENT)/Doxyfile \
-		$(PATH_CURRENT)/Makefile.kmk \
+		$(PATH_SUB_CURRENT)/Doxyfile \
+		$(PATH_SUB_CURRENT)/Makefile.kmk \
 		| $$(dir $$@)
 	$(RM) -f $@ $@.tmp $@.dep
 	$(CP) -f $< $@.tmp
