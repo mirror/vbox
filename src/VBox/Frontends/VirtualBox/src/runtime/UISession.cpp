@@ -80,7 +80,7 @@
 
 #ifdef Q_WS_MAC
 /**
- * Application Services: Core Graphics: Display reconfiguration callback.
+ * MacOS X: Application Services: Core Graphics: Display reconfiguration callback.
  *
  * Notifies about @a display configuration change.
  * Corresponding change described by CoreGraphics @a flags.
@@ -93,10 +93,7 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
     /* Handle 'mode-set' case: */
     if (flags & kCGDisplaySetModeFlag)
     {
-        /* Which resolution we received? */
-        size_t iWid = CGDisplayPixelsWide(display);
-        size_t iHig = CGDisplayPixelsHigh(display);
-        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display mode changed to: %dx%d.\n", (int)iWid, (int)iHig));
+        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display mode changed.\n"));
 
         /* Ask receiver to handle our callback, can't believe I'm using r_c here... */
         UISession *pReceiver = reinterpret_cast<UISession*>(pHandlerObject);
