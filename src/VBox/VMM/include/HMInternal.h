@@ -694,7 +694,7 @@ typedef struct HMCPU
         uint32_t                    u32ErrCode;
         uint32_t                    cbInstr;
         uint32_t                    u32Padding; /**< Explicit alignment padding. */
-        uint64_t                    u64IntrInfo;
+        uint64_t                    u64IntInfo;
         RTGCUINTPTR                 GCPtrFaultAddress;
     } Event;
 

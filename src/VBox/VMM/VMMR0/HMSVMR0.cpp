@@ -2228,7 +2228,7 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
     Assert(!pVCpu->hm.s.Event.fPending);
     Assert(pEvent->n.u1Valid);
 
-    pVCpu->hm.s.Event.u64IntrInfo       = pEvent->u;
+    pVCpu->hm.s.Event.u64IntInfo        = pEvent->u;
     pVCpu->hm.s.Event.fPending          = true;
     pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
 
@@ -2342,7 +2342,7 @@ static void hmR0SvmPendingEventToTrpmTrap(PVMCPU pVCpu)
     Assert(TRPMQueryTrap(pVCpu, NULL /* pu8TrapNo */, NULL /* pEnmType */) == VERR_TRPM_NO_ACTIVE_TRAP);
 
     SVMEVENT Event;
-    Event.u = pVCpu->hm.s.Event.u64IntrInfo;
+    Event.u = pVCpu->hm.s.Event.u64IntInfo;
 
     uint8_t uVector     = Event.n.u8Vector;
     uint8_t uVectorType = Event.n.u3Type;
@@ -2536,7 +2536,7 @@ static void hmR0SvmInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pCtx)
     if (pVCpu->hm.s.Event.fPending)                                /* First, inject any pending HM events. */
     {
         SVMEVENT Event;
-        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
+        Event.u = pVCpu->hm.s.Event.u64IntInfo;
         Assert(Event.n.u1Valid);
 #ifdef VBOX_STRICT
         if (Event.n.u3Type == SVM_EVENT_EXTERNAL_IRQ)
@@ -3764,14 +3764,14 @@ static int hmR0SvmCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMT
                              || uIdtVector == X86_XCPT_PF))
                 {
                     enmReflect = SVMREFLECTXCPT_DF;
-                    Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
+                    Log4(("IDT: Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntInfo,
                           uIdtVector, uExitVector));
                 }
                 else if (uIdtVector == X86_XCPT_DF)
                 {
                     enmReflect = SVMREFLECTXCPT_TF;
-                    Log4(("IDT: Pending vectoring triple-fault %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->hm.s.Event.u64IntrInfo,
-                          uIdtVector, uExitVector));
+                    Log4(("IDT: Pending vectoring triple-fault %#RX64 uIdtVector=%#x uExitVector=%#x\n",
+                          pVCpu->hm.s.Event.u64IntInfo, uIdtVector, uExitVector));
                 }
                 else
                     enmReflect = SVMREFLECTXCPT_XCPT;
@@ -4653,12 +4653,12 @@ HMSVM_EXIT_DECL hmR0SvmExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT
         && pVCpu->hm.s.Event.fPending)
     {
         /*
-         * AMD-V does not provide us with the original exception but we have it in u64IntrInfo since we
+         * AMD-V does not provide us with the original exception but we have it in u64IntInfo since we
          * injected the event during VM-entry. Software interrupts and exceptions will be regenerated
          * when the recompiler restarts the instruction.
          */
         SVMEVENT Event;
-        Event.u = pVCpu->hm.s.Event.u64IntrInfo;
+        Event.u = pVCpu->hm.s.Event.u64IntInfo;
         if (   Event.n.u3Type == SVM_EVENT_EXCEPTION
             || Event.n.u3Type == SVM_EVENT_SOFTWARE_INT)
         {

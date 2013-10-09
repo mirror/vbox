@@ -1520,7 +1520,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             ((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
 #define VMX_IDT_VECTORING_INFO_VALID(a)                           ((a) & RT_BIT(31))
-#define VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(a)                 ((a) & ~RT_BIT(12))
+#define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                  ((a) & ~RT_BIT(12))
 /** @} */
 
 /** @name VMX_VMCS_RO_IDT_VECTORING_INFO_TYPE

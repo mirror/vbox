@@ -220,12 +220,12 @@ typedef struct VMXTRANSIENT
     /** Alignment. */
     uint16_t        u16Alignment0;
     /** The VM-exit interruption error code. */
-    uint32_t        uExitIntrErrorCode;
+    uint32_t        uExitIntErrorCode;
     /** The VM-exit exit qualification. */
     uint64_t        uExitQualification;
 
     /** The VM-exit interruption-information field. */
-    uint32_t        uExitIntrInfo;
+    uint32_t        uExitIntInfo;
     /** The VM-exit instruction-length field. */
     uint32_t        cbInstr;
     /** The VM-exit instruction-information field. */
@@ -251,7 +251,7 @@ typedef struct VMXTRANSIENT
     uint8_t         abAlignment1[3];
 
     /** The VM-entry interruption-information field. */
-    uint32_t        uEntryIntrInfo;
+    uint32_t        uEntryIntInfo;
     /** The VM-entry exception error code field. */
     uint32_t        uEntryXcptErrorCode;
     /** The VM-entry instruction length field. */
@@ -278,8 +278,8 @@ typedef struct VMXTRANSIENT
     bool            fVectoringPF;
 } VMXTRANSIENT;
 AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,             sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntrInfo,           sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntrInfo,          sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntInfo,            sizeof(uint64_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntInfo,           sizeof(uint64_t));
 AssertCompileMemberAlignment(VMXTRANSIENT, fWasGuestFPUStateActive, sizeof(uint64_t));
 AssertCompileMemberSize(VMXTRANSIENT, ExitInstrInfo, sizeof(uint32_t));
 /** Pointer to VMX transient state. */
@@ -333,8 +333,8 @@ typedef FNVMXEXITHANDLER *PFNVMXEXITHANDLER;
 static void               hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush);
 static void               hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr);
 static void               hmR0VmxClearEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx);
-static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
-                                                 uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState);
+static int                hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
+                                                 uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntState);
 #if HC_ARCH_BITS == 32 && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
 static int                hmR0VmxInitVmcsReadCache(PVM pVM, PVMCPU pVCpu);
 #endif
@@ -546,9 +546,9 @@ static void hmR0VmxUpdateErrorRecord(PVM pVM, PVMCPU pVCpu, int rc)
  *
  * @remarks No-long-jump zone!!!
  */
-DECLINLINE(int) hmR0VmxReadEntryIntrInfoVmcs(PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadEntryIntInfoVmcs(PVMXTRANSIENT pVmxTransient)
 {
-    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &pVmxTransient->uEntryIntrInfo);
+    int rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &pVmxTransient->uEntryIntInfo);
     AssertRCReturn(rc, rc);
     return VINF_SUCCESS;
 }
@@ -597,11 +597,11 @@ DECLINLINE(int) hmR0VmxReadEntryInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTra
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitIntInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO))
     {
-        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &pVmxTransient->uExitIntrInfo);
+        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_INFO, &pVmxTransient->uExitIntInfo);
         AssertRCReturn(rc, rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO;
     }
@@ -617,11 +617,11 @@ DECLINLINE(int) hmR0VmxReadExitIntrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pVmxTransient   Pointer to the VMX transient structure.
  */
-DECLINLINE(int) hmR0VmxReadExitIntrErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
+DECLINLINE(int) hmR0VmxReadExitIntErrorCodeVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE))
     {
-        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pVmxTransient->uExitIntrErrorCode);
+        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INTERRUPTION_ERROR_CODE, &pVmxTransient->uExitIntErrorCode);
         AssertRCReturn(rc, rc);
         pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE;
     }
@@ -4986,7 +4986,7 @@ DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
  * Sets an event as a pending event to be injected into the guest.
  *
  * @param   pVCpu               Pointer to the VMCPU.
- * @param   u32IntrInfo         The VM-entry interruption-information field.
+ * @param   u32IntInfo          The VM-entry interruption-information field.
  * @param   cbInstr             The VM-entry instruction length in bytes (for software
  *                              interrupts, exceptions and privileged software
  *                              exceptions).
@@ -4998,12 +4998,12 @@ DECLINLINE(bool) hmR0VmxIsContributoryXcpt(const uint32_t uVector)
  *          re-injected into the guest, i.e. 'StatInjectPendingReflect' is
  *          always incremented.
  */
-DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint32_t cbInstr, uint32_t u32ErrCode,
+DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntInfo, uint32_t cbInstr, uint32_t u32ErrCode,
                                         RTGCUINTPTR GCPtrFaultAddress)
 {
     Assert(!pVCpu->hm.s.Event.fPending);
     pVCpu->hm.s.Event.fPending          = true;
-    pVCpu->hm.s.Event.u64IntrInfo       = u32IntrInfo;
+    pVCpu->hm.s.Event.u64IntInfo        = u32IntInfo;
     pVCpu->hm.s.Event.u32ErrCode        = u32ErrCode;
     pVCpu->hm.s.Event.cbInstr           = cbInstr;
     pVCpu->hm.s.Event.GCPtrFaultAddress = GCPtrFaultAddress;
@@ -5022,10 +5022,10 @@ DECLINLINE(void) hmR0VmxSetPendingEvent(PVMCPU pVCpu, uint32_t u32IntrInfo, uint
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t u32IntrInfo = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo,  0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -5053,11 +5053,11 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
     AssertRCReturn(rc, rc);
     if (VMX_IDT_VECTORING_INFO_VALID(pVmxTransient->uIdtVectoringInfo))
     {
-        rc = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
 
         uint32_t uIntType    = VMX_IDT_VECTORING_INFO_TYPE(pVmxTransient->uIdtVectoringInfo);
-        uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntrInfo);
+        uint32_t uExitVector = VMX_EXIT_INTERRUPTION_INFO_VECTOR(pVmxTransient->uExitIntInfo);
         uint32_t uIdtVector  = VMX_IDT_VECTORING_INFO_VECTOR(pVmxTransient->uIdtVectoringInfo);
 
         typedef enum
@@ -5070,7 +5070,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
 
         /* See Intel spec. 30.7.1.1 "Reflecting Exceptions to Guest Software". */
         VMXREFLECTXCPT enmReflect = VMXREFLECTXCPT_NONE;
-        if (VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntrInfo))
+        if (VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo))
         {
             if (uIntType == VMX_IDT_VECTORING_INFO_TYPE_HW_XCPT)
             {
@@ -5141,11 +5141,11 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 }
 
                 /* If uExitVector is #PF, CR2 value will be updated from the VMCS if it's a guest #PF. See hmR0VmxExitXcptPF(). */
-                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INTR_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
+                hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(pVmxTransient->uIdtVectoringInfo),
                                        0 /* cbInstr */,  u32ErrCode, pMixedCtx->cr2);
                 rc = VINF_SUCCESS;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring event %#RX64 Err=%#RX32\n", pVCpu->idCpu,
-                      pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.u32ErrCode));
+                      pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.u32ErrCode));
 
                 break;
             }
@@ -5155,7 +5155,7 @@ static int hmR0VmxCheckExitDueToEventDelivery(PVMCPU pVCpu, PCPUMCTX pMixedCtx, 
                 hmR0VmxSetPendingXcptDF(pVCpu, pMixedCtx);
                 rc = VINF_HM_DOUBLE_FAULT;
                 Log4(("IDT: vcpu[%RU32] Pending vectoring #DF %#RX64 uIdtVector=%#x uExitVector=%#x\n", pVCpu->idCpu,
-                      pVCpu->hm.s.Event.u64IntrInfo, uIdtVector, uExitVector));
+                      pVCpu->hm.s.Event.u64IntInfo, uIdtVector, uExitVector));
 
                 break;
             }
@@ -6065,15 +6065,15 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
     int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr);
     AssertRC(rc);
 
-    /* Refer Intel spec. 24.8.3 "VM-entry Controls for Event Injection" for the format of u32IntrInfo. */
-    uint32_t u32IntrInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    /* Refer Intel spec. 24.8.3 "VM-entry Controls for Event Injection" for the format of u32IntInfo. */
+    uint32_t u32IntInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
     if (enmTrpmEvent == TRPM_TRAP)
     {
         switch (uVector)
         {
             case X86_XCPT_BP:
             case X86_XCPT_OF:
-                u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 break;
 
             case X86_XCPT_PF:
@@ -6083,31 +6083,31 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPU pVCpu)
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                u32IntrInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+                u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
                 /* no break! */
             default:
-                u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
                 break;
         }
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
     {
         if (uVector == X86_XCPT_NMI)
-            u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
         else
-            u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
-        u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     else
         AssertMsgFailed(("Invalid TRPM event type %d\n", enmTrpmEvent));
 
     rc = TRPMResetTrap(pVCpu);
     AssertRC(rc);
-    Log4(("TRPM->HM event: u32IntrInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u uErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
-         u32IntrInfo, enmTrpmEvent, cbInstr, uErrCode, GCPtrFaultAddress));
+    Log4(("TRPM->HM event: u32IntInfo=%#RX32 enmTrpmEvent=%d cbInstr=%u uErrCode=%#RX32 GCPtrFaultAddress=%#RGv\n",
+         u32IntInfo, enmTrpmEvent, cbInstr, uErrCode, GCPtrFaultAddress));
 
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, uErrCode, GCPtrFaultAddress);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, uErrCode, GCPtrFaultAddress);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatInjectPendingReflect);
 }
 
@@ -6122,9 +6122,9 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
 {
     Assert(pVCpu->hm.s.Event.fPending);
 
-    uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo);
-    uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntrInfo);
-    bool     fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntrInfo);
+    uint32_t uVectorType     = VMX_IDT_VECTORING_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
+    uint32_t uVector         = VMX_IDT_VECTORING_INFO_VECTOR(pVCpu->hm.s.Event.u64IntInfo);
+    bool     fErrorCodeValid = !!VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(pVCpu->hm.s.Event.u64IntInfo);
     uint32_t uErrorCode      = pVCpu->hm.s.Event.u32ErrCode;
 
     /* If a trap was already pending, we did something wrong! */
@@ -6548,10 +6548,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         {
             /* On some CPUs block-by-STI also blocks NMIs. See Intel spec. 26.3.1.5 "Checks On Guest Non-Register State". */
             Log4(("Pending NMI vcpu[%RU32]\n", pVCpu->idCpu));
-            uint32_t u32IntrInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
-            u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+            uint32_t u32IntInfo = X86_XCPT_NMI | VMX_EXIT_INTERRUPTION_INFO_VALID;
+            u32IntInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-            hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddres */);
+            hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddres */);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
         }
         else
@@ -6577,10 +6577,10 @@ static void hmR0VmxEvaluatePendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             if (RT_SUCCESS(rc))
             {
                 Log4(("Pending interrupt vcpu[%RU32] u8Interrupt=%#x \n", pVCpu->idCpu, u8Interrupt));
-                uint32_t u32IntrInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
-                u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+                uint32_t u32IntInfo = u8Interrupt | VMX_EXIT_INTERRUPTION_INFO_VALID;
+                u32IntInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
 
-                hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrfaultAddress */);
+                hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrfaultAddress */);
             }
             else
             {
@@ -6625,8 +6625,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
     if (pVCpu->hm.s.Event.fPending)
     {
 #if defined(VBOX_STRICT) || defined(VBOX_WITH_STATISTICS)
-        uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntrInfo);
-        if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+        uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVCpu->hm.s.Event.u64IntInfo);
+        if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             rc = hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
             AssertRCReturn(rc, rc);
@@ -6635,14 +6635,14 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
         }
-        else if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
+        else if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         {
             Assert(!fBlockSti);
             Assert(!fBlockMovSS);
         }
 #endif
-        Log4(("Injecting pending event vcpu[%RU32] u64IntrInfo=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntrInfo));
-        rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntrInfo, pVCpu->hm.s.Event.cbInstr,
+        Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo));
+        rc = hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, pVCpu->hm.s.Event.u64IntInfo, pVCpu->hm.s.Event.cbInstr,
                                     pVCpu->hm.s.Event.u32ErrCode, pVCpu->hm.s.Event.GCPtrFaultAddress, &uIntrState);
         AssertRCReturn(rc, rc);
 
@@ -6652,7 +6652,7 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
         fBlockSti   = RT_BOOL(uIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI);
 
 #ifdef VBOX_WITH_STATISTICS
-        if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
+        if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectInterrupt);
         else
             STAM_COUNTER_INC(&pVCpu->hm.s.StatInjectXcpt);
@@ -6708,8 +6708,8 @@ static int hmR0VmxInjectPendingEvent(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t u32IntrInfo = X86_XCPT_UD | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    uint32_t u32IntInfo = X86_XCPT_UD | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -6724,10 +6724,10 @@ DECLINLINE(void) hmR0VmxSetPendingXcptUD(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *puIntrState)
 {
-    uint32_t u32IntrInfo = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    u32IntrInfo         |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-    return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */,
+    uint32_t u32IntInfo  = X86_XCPT_DF | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    u32IntInfo          |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+    return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */,
                                   puIntrState);
 }
 
@@ -6742,9 +6742,9 @@ DECLINLINE(int) hmR0VmxInjectXcptDF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t *
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 {
-    uint32_t u32IntrInfo = X86_XCPT_DB | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    uint32_t u32IntInfo  = X86_XCPT_DB | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, 0 /* cbInstr */, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -6760,9 +6760,9 @@ DECLINLINE(void) hmR0VmxSetPendingXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
  */
 DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint32_t cbInstr)
 {
-    uint32_t u32IntrInfo = X86_XCPT_OF | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+    uint32_t u32IntInfo  = X86_XCPT_OF | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -6779,11 +6779,11 @@ DECLINLINE(void) hmR0VmxSetPendingXcptOF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint3
 DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErrorCodeValid, uint32_t u32ErrorCode,
                                     uint32_t *puIntrState)
 {
-    uint32_t u32IntrInfo = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
-    u32IntrInfo         |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    uint32_t u32IntInfo  = X86_XCPT_GP | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    u32IntInfo          |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     if (fErrorCodeValid)
-        u32IntrInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
-    return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntrInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */,
+        u32IntInfo |= VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+    return hmR0VmxInjectEventVmcs(pVCpu, pMixedCtx, u32IntInfo, 0 /* cbInstr */, u32ErrorCode, 0 /* GCPtrFaultAddress */,
                                   puIntrState);
 }
 
@@ -6801,15 +6801,15 @@ DECLINLINE(int) hmR0VmxInjectXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fErro
  */
 DECLINLINE(void) hmR0VmxSetPendingIntN(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint16_t uVector, uint32_t cbInstr)
 {
-    uint32_t u32IntrInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
+    uint32_t u32IntInfo = uVector | VMX_EXIT_INTERRUPTION_INFO_VALID;
     if (   uVector == X86_XCPT_BP
         || uVector == X86_XCPT_OF)
     {
-        u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+        u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
     }
     else
-        u32IntrInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
-    hmR0VmxSetPendingEvent(pVCpu, u32IntrInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
+        u32IntInfo |= (VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT << VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT);
+    hmR0VmxSetPendingEvent(pVCpu, u32IntInfo, cbInstr, 0 /* u32ErrCode */, 0 /* GCPtrFaultAddress */);
 }
 
 
@@ -6851,7 +6851,7 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @param   pMixedCtx           Pointer to the guest-CPU context. The data may
  *                              be out-of-sync. Make sure to update the required
  *                              fields before using them.
- * @param   u64IntrInfo         The VM-entry interruption-information field.
+ * @param   u64IntInfo          The VM-entry interruption-information field.
  * @param   cbInstr             The VM-entry instruction length in bytes (for
  *                              software interrupts, exceptions and privileged
  *                              software exceptions).
@@ -6864,20 +6864,20 @@ DECLINLINE(int) hmR0VmxRealModeGuestStackPush(PVM pVM, PCPUMCTX pMixedCtx, uint1
  * @remarks Requires CR0!
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntrInfo, uint32_t cbInstr,
+static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64IntInfo, uint32_t cbInstr,
                                   uint32_t u32ErrCode, RTGCUINTREG GCPtrFaultAddress, uint32_t *puIntrState)
 {
     /* Intel spec. 24.8.3 "VM-Entry Controls for Event Injection" specifies the interruption-information field to be 32-bits. */
-    AssertMsg(u64IntrInfo >> 32 == 0, ("%#RX64\n", u64IntrInfo));
+    AssertMsg(u64IntInfo >> 32 == 0, ("%#RX64\n", u64IntInfo));
     Assert(puIntrState);
-    uint32_t u32IntrInfo = (uint32_t)u64IntrInfo;
+    uint32_t u32IntInfo = (uint32_t)u64IntInfo;
 
-    const uint32_t uVector   = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntrInfo);
-    const uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo);
+    const uint32_t uVector  = VMX_EXIT_INTERRUPTION_INFO_VECTOR(u32IntInfo);
+    const uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntInfo);
 
 #ifdef VBOX_STRICT
     /* Validate the error-code-valid bit for hardware exceptions. */
-    if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT)
+    if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT)
     {
         switch (uVector)
         {
@@ -6888,7 +6888,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
             case X86_XCPT_SS:
             case X86_XCPT_GP:
             case X86_XCPT_AC:
-                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo),
+                AssertMsg(VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo),
                           ("Error-code-valid bit not set for exception that has an error code uVector=%#x\n", uVector));
                 /* fallthru */
             default:
@@ -6898,7 +6898,7 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 #endif
 
     /* Cannot inject an NMI when block-by-MOV SS is in effect. */
-    Assert(   uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
+    Assert(   uIntType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
            || !(*puIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_MOVSS));
 
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[uVector & MASK_INJECT_IRQ_STAT]);
@@ -6948,13 +6948,13 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
 
             /* Software exceptions (#BP and #OF exceptions thrown as a result of INT3 or INTO) */
             uint16_t uGuestIp = pMixedCtx->ip;
-            if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
+            if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT)
             {
                 Assert(uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
                 /* #BP and #OF are both benign traps, we need to resume the next instruction. */
                 uGuestIp = pMixedCtx->ip + (uint16_t)cbInstr;
             }
-            else if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT)
+            else if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_INT)
                 uGuestIp = pMixedCtx->ip + (uint16_t)cbInstr;
 
             /* Get the code segment selector and offset from the IDT entry for the interrupt handler. */
@@ -6976,8 +6976,8 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 pMixedCtx->rip         = IdtEntry.offSel;
                 pMixedCtx->cs.Sel      = IdtEntry.uSel;
                 pMixedCtx->cs.u64Base  = IdtEntry.uSel << cbIdtEntry;
-                if (   uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
-                    && uVector   == X86_XCPT_PF)
+                if (   uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
+                    && uVector  == X86_XCPT_PF)
                 {
                     pMixedCtx->cr2 = GCPtrFaultAddress;
                 }
@@ -6992,12 +6992,12 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
                 /* We're clearing interrupts, which means no block-by-STI interrupt-inhibition. */
                 if (*puIntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI)
                 {
-                    Assert(   uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
-                           && uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
+                    Assert(   uIntType != VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI
+                           && uIntType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
                     Log4(("Clearing inhibition due to STI.\n"));
                     *puIntrState &= ~VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI;
                 }
-                Log4(("Injecting real-mode: u32IntrInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntrInfo, u32ErrCode, cbInstr));
+                Log4(("Injecting real-mode: u32IntInfo=%#x u32ErrCode=%#x instrlen=%#x\n", u32IntInfo, u32ErrCode, cbInstr));
 
                 /* The event has been truly dispatched. Mark it as no longer pending so we don't attempt to 'undo'
                    it, if we are returning to ring-3 before executing guest code. */
@@ -7012,29 +7012,29 @@ static int hmR0VmxInjectEventVmcs(PVMCPU pVCpu, PCPUMCTX pMixedCtx, uint64_t u64
              * For unrestricted execution enabled CPUs running real-mode guests, we must not set the deliver-error-code bit.
              * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
              */
-            u32IntrInfo &= ~VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
+            u32IntInfo &= ~VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID;
         }
     }
 
     /* Validate. */
-    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntrInfo));       /* Bit 31 (Valid bit) must be set by caller. */
-    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntrInfo));   /* Bit 12 MBZ. */
-    Assert(!(u32IntrInfo & 0x7ffff000));                            /* Bits 30:12 MBZ. */
+    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(u32IntInfo));        /* Bit 31 (Valid bit) must be set by caller. */
+    Assert(!VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(u32IntInfo));    /* Bit 12 MBZ. */
+    Assert(!(u32IntInfo & 0x7ffff000));                             /* Bits 30:12 MBZ. */
 
     /* Inject. */
-    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntrInfo);
-    if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntrInfo))
+    rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, u32IntInfo);
+    if (VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(u32IntInfo))
         rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE, u32ErrCode);
     rc |= VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH, cbInstr);
 
-    if (   VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntrInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
+    if (   VMX_EXIT_INTERRUPTION_INFO_TYPE(u32IntInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_HW_XCPT
         && uVector == X86_XCPT_PF)
     {
         pMixedCtx->cr2 = GCPtrFaultAddress;
     }
 
-    Log4(("Injecting vcpu[%RU32] u32IntrInfo=%#x u32ErrCode=%#x cbInstr=%#x pMixedCtx->uCR2=%#RX64\n", pVCpu->idCpu,
-          u32IntrInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
+    Log4(("Injecting vcpu[%RU32] u32IntInfo=%#x u32ErrCode=%#x cbInstr=%#x pMixedCtx->uCR2=%#RX64\n", pVCpu->idCpu,
+          u32IntInfo, u32ErrCode, cbInstr, pMixedCtx->cr2));
 
     AssertRCReturn(rc, rc);
     return rc;
@@ -7764,10 +7764,10 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     /* Save the basic VM-exit reason. Refer Intel spec. 24.9.1 "Basic VM-exit Information". */
     uint32_t uExitReason;
     int rc  = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_REASON, &uExitReason);
-    rc     |= hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
+    rc     |= hmR0VmxReadEntryIntInfoVmcs(pVmxTransient);
     AssertRC(rc);
     pVmxTransient->uExitReason    = (uint16_t)VMX_EXIT_REASON_BASIC(uExitReason);
-    pVmxTransient->fVMEntryFailed = !!VMX_ENTRY_INTERRUPTION_INFO_VALID(pVmxTransient->uEntryIntrInfo);
+    pVmxTransient->fVMEntryFailed = !!VMX_ENTRY_INTERRUPTION_INFO_VALID(pVmxTransient->uEntryIntInfo);
 
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
@@ -8773,15 +8773,15 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExitXcptNmi, y3);
 
-    int rc = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
-    uint32_t uIntrType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntrInfo);
+    uint32_t uIntType = VMX_EXIT_INTERRUPTION_INFO_TYPE(pVmxTransient->uExitIntInfo);
     Assert(   !(pVCpu->hm.s.vmx.u32ExitCtls & VMX_VMCS_CTRL_EXIT_ACK_EXT_INT)
-           && uIntrType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
-    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntrInfo));
+           && uIntType != VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT);
+    Assert(VMX_EXIT_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uExitIntInfo));
 
-    if (uIntrType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
+    if (uIntType == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
     {
         /*
          * This cannot be a guest NMI as the only way for the guest to receive an NMI is if we injected it ourselves and
@@ -8809,9 +8809,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
         return rc;
     }
 
-    uint32_t uExitIntrInfo = pVmxTransient->uExitIntrInfo;
-    uint32_t uVector       = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntrInfo);
-    switch (uIntrType)
+    uint32_t uExitIntInfo = pVmxTransient->uExitIntInfo;
+    uint32_t uVector       = VMX_EXIT_INTERRUPTION_INFO_VECTOR(uExitIntInfo);
+    switch (uIntType)
     {
         case VMX_EXIT_INTERRUPTION_INFO_TYPE_SW_XCPT:   /* Software exception. (#BP or #OF) */
             Assert(uVector == X86_XCPT_DB || uVector == X86_XCPT_BP || uVector == X86_XCPT_OF);
@@ -8851,10 +8851,10 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
                         Assert(CPUMIsGuestInRealModeEx(pMixedCtx));
 
                         rc  = hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-                        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+                        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
                         AssertRCReturn(rc, rc);
-                        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(uExitIntrInfo),
-                                               pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode,
+                        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(uExitIntInfo),
+                                               pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode,
                                                0 /* GCPtrFaultAddress */);
                         AssertRCReturn(rc, rc);
                     }
@@ -8872,9 +8872,9 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 
         default:
         {
-            pVCpu->hm.s.u32HMError = uExitIntrInfo;
+            pVCpu->hm.s.u32HMError = uExitIntInfo;
             rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
-            AssertMsgFailed(("Unexpected interruption info %#x\n", VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntrInfo)));
+            AssertMsgFailed(("Unexpected interruption info %#x\n", VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntInfo)));
             break;
         }
     }
@@ -9335,14 +9335,14 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
     uint64_t       u64Val;
     uint32_t       u32Val;
 
-    rc  = hmR0VmxReadEntryIntrInfoVmcs(pVmxTransient);
+    rc  = hmR0VmxReadEntryIntInfoVmcs(pVmxTransient);
     rc |= hmR0VmxReadEntryXcptErrorCodeVmcs(pVmxTransient);
     rc |= hmR0VmxReadEntryInstrLenVmcs(pVCpu, pVmxTransient);
     rc |= VMXReadVmcs32(VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE, &uIntrState);
     AssertRCReturn(rc, rc);
 
     Log4(("uInvalidReason                             %u\n", uInvalidReason));
-    Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntrInfo));
+    Log4(("VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO    %#RX32\n", pVmxTransient->uEntryIntInfo));
     Log4(("VMX_VMCS32_CTRL_ENTRY_EXCEPTION_ERRCODE    %#RX32\n", pVmxTransient->uEntryXcptErrorCode));
     Log4(("VMX_VMCS32_CTRL_ENTRY_INSTR_LENGTH         %#RX32\n", pVmxTransient->cbEntryInstr));
     Log4(("VMX_VMCS32_GUEST_INTERRUPTIBILITY_STATE    %#RX32\n", uIntrState));
@@ -9770,8 +9770,8 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * Use instruction-information if available, otherwise fall back on
          * interpreting the instruction.
          */
-        Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
 #if 0 /* Not quite ready, seem iSegReg assertion trigger once... Do we perhaps need to always read that in longjmp / preempt scenario? */
+        Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
         {
@@ -9973,7 +9973,7 @@ HMVMX_EXIT_DECL hmR0VmxExitTaskSwitch(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
                 /* Save it as a pending event and it'll be converted to a TRPM event on the way out to ring-3. */
                 Assert(!pVCpu->hm.s.Event.fPending);
                 pVCpu->hm.s.Event.fPending = true;
-                pVCpu->hm.s.Event.u64IntrInfo = pVmxTransient->uIdtVectoringInfo;
+                pVCpu->hm.s.Event.u64IntInfo = pVmxTransient->uIdtVectoringInfo;
                 rc = hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
                 AssertRCReturn(rc, rc);
                 if (fErrorCodeValid)
@@ -10334,8 +10334,8 @@ static int hmR0VmxExitXcptMF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         return VERR_EM_INTERPRETER;
     }
 
-    hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                           pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
+    hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                           pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return rc;
 }
 
@@ -10357,13 +10357,13 @@ static int hmR0VmxExitXcptBP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     rc = DBGFRZTrap03Handler(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx));
     if (rc == VINF_EM_RAW_GUEST_TRAP)
     {
-        rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
 
-        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                               pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
+        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                               pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     }
 
     Assert(rc == VINF_SUCCESS || rc == VINF_EM_RAW_GUEST_TRAP || rc == VINF_EM_DBG_BREAKPOINT);
@@ -10427,12 +10427,12 @@ static int hmR0VmxExitXcptDB(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         /*
          * Raise #DB in the guest.
          */
-        rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
-        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                               pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
+        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                               pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
         return VINF_SUCCESS;
     }
 
@@ -10492,9 +10492,9 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
         /* Forward #NM to the guest. */
         Assert(rc == VINF_EM_RAW_GUEST_TRAP);
-        rc = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+        rc = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
         AssertRCReturn(rc, rc);
-        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
+        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                pVmxTransient->cbInstr, 0 /* error code */, 0 /* GCPtrFaultAddress */);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestNM);
     }
@@ -10506,7 +10506,7 @@ static int hmR0VmxExitXcptNM(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
 /**
  * VM-exit exception handler for #GP (General-protection exception).
  *
- * @remarks Requires pVmxTransient->uExitIntrInfo to be up-to-date.
+ * @remarks Requires pVmxTransient->uExitIntInfo to be up-to-date.
  */
 static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
@@ -10518,15 +10518,15 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     {
 #ifdef HMVMX_ALWAYS_TRAP_ALL_XCPTS
         /* If the guest is not in real-mode or we have unrestricted execution support, reflect #GP to the guest. */
-        rc  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
-        rc |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+        rc  = hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+        rc |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
         rc |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
         AssertRCReturn(rc, rc);
-        Log4(("#GP Gst: RIP %#RX64 ErrorCode=%#x CR0=%#RX64 CPL=%u\n", pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode,
+        Log4(("#GP Gst: RIP %#RX64 ErrorCode=%#x CR0=%#RX64 CPL=%u\n", pMixedCtx->rip, pVmxTransient->uExitIntErrorCode,
              pMixedCtx->cr0, CPUMGetGuestCPL(pVCpu)));
-        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                               pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
+        hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                               pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
         return rc;
 #else
         /* We don't intercept #GP. */
@@ -10753,7 +10753,7 @@ static int hmR0VmxExitXcptGP(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
  * VM-exit exception handler wrapper for generic exceptions. Simply re-injects
  * the exception reported in the VMX transient structure back into the VM.
  *
- * @remarks Requires uExitIntrInfo in the VMX transient structure to be
+ * @remarks Requires uExitIntInfo in the VMX transient structure to be
  *          up-to-date.
  */
 static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
@@ -10762,13 +10762,13 @@ static int hmR0VmxExitXcptGeneric(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     /* Re-inject the exception into the guest. This cannot be a double-fault condition which would have been handled in
        hmR0VmxCheckExitDueToEventDelivery(). */
-    int rc = hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+    int rc = hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
     rc    |= hmR0VmxReadExitInstrLenVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
     Assert(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO);
 
-    hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                           pVmxTransient->cbInstr, pVmxTransient->uExitIntrErrorCode, 0 /* GCPtrFaultAddress */);
+    hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                           pVmxTransient->cbInstr, pVmxTransient->uExitIntErrorCode, 0 /* GCPtrFaultAddress */);
     return VINF_SUCCESS;
 }
 
@@ -10781,8 +10781,8 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     HMVMX_VALIDATE_EXIT_XCPT_HANDLER_PARAMS();
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
-    rc    |= hmR0VmxReadExitIntrErrorCodeVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxReadExitIntInfoVmcs(pVCpu, pVmxTransient);
+    rc    |= hmR0VmxReadExitIntErrorCodeVmcs(pVCpu, pVmxTransient);
     AssertRCReturn(rc, rc);
 
 #if defined(HMVMX_ALWAYS_TRAP_ALL_XCPTS) || defined(HMVMX_ALWAYS_TRAP_PF)
@@ -10792,8 +10792,8 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
         if (RT_LIKELY(!pVmxTransient->fVectoringPF))
         {
             pMixedCtx->cr2 = pVmxTransient->uExitQualification;  /* Update here in case we go back to ring-3 before injection. */
-            hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
-                                   0 /* cbInstr */, pVmxTransient->uExitIntrErrorCode, pVmxTransient->uExitQualification);
+            hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
+                                   0 /* cbInstr */, pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQualification);
         }
         else
         {
@@ -10812,10 +10812,10 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
     AssertRCReturn(rc, rc);
 
     Log4(("#PF: cr2=%#RX64 cs:rip=%#04x:%#RX64 uErrCode %#RX32 cr3=%#RX64\n", pVmxTransient->uExitQualification,
-          pMixedCtx->cs.Sel, pMixedCtx->rip, pVmxTransient->uExitIntrErrorCode, pMixedCtx->cr3));
+          pMixedCtx->cs.Sel, pMixedCtx->rip, pVmxTransient->uExitIntErrorCode, pMixedCtx->cr3));
 
-    TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQualification, (RTGCUINT)pVmxTransient->uExitIntrErrorCode);
-    rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntrErrorCode, CPUMCTX2CORE(pMixedCtx),
+    TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQualification, (RTGCUINT)pVmxTransient->uExitIntErrorCode);
+    rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntErrorCode, CPUMCTX2CORE(pMixedCtx),
                           (RTGCPTR)pVmxTransient->uExitQualification);
 
     Log4(("#PF: rc=%Rrc\n", rc));
@@ -10841,7 +10841,7 @@ static int hmR0VmxExitXcptPF(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVm
             TRPMResetTrap(pVCpu);
             pVCpu->hm.s.Event.fPending = false;                 /* In case it's a contributory #PF. */
             pMixedCtx->cr2 = pVmxTransient->uExitQualification; /* Update here in case we go back to ring-3 before injection. */
-            hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntrInfo),
+            hmR0VmxSetPendingEvent(pVCpu, VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo),
                                    0 /* cbInstr */, uGstErrorCode, pVmxTransient->uExitQualification);
         }
         else
