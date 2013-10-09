@@ -11156,7 +11156,7 @@
 
     <method name="waitFor">
       <desc>
-        Waits for one more events to happen.
+        Waits for one or more events to happen.
       </desc>
       <param name="waitFor" type="unsigned long" dir="in">
         <desc>
@@ -11180,7 +11180,7 @@
 
     <method name="waitForArray">
       <desc>
-        Waits for one more events to happen.
+        Waits for one or more events to happen.
         Scriptable version of <link to="#waitFor" />.
       </desc>
       <param name="waitFor" type="GuestSessionWaitForFlag" dir="in" safearray="yes">
@@ -11257,7 +11257,7 @@
 
     <method name="waitFor">
       <desc>
-        Waits for one more events to happen.
+        Waits for one or more events to happen.
       </desc>
       <param name="waitFor" type="unsigned long" dir="in">
         <desc>
@@ -11281,7 +11281,7 @@
 
     <method name="waitForArray">
       <desc>
-        Waits for one more events to happen.
+        Waits for one or more events to happen.
         Scriptable version of <link to="#waitFor" />.
       </desc>
       <param name="waitFor" type="ProcessWaitForFlag" dir="in" safearray="yes">
