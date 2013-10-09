@@ -36,10 +36,8 @@ typedef struct VBOXDISPIF_OP
 {
     PCVBOXDISPIF pIf;
     VBOXDISPKMT_ADAPTER Adapter;
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     VBOXDISPKMT_DEVICE Device;
     VBOXDISPKMT_CONTEXT Context;
-#endif
 } VBOXDISPIF_OP;
 
 DWORD EnableAndResizeDispDev(DEVMODE *paDeviceModes, DISPLAY_DEVICE *paDisplayDevices, DWORD totalDispNum, UINT Id, DWORD aWidth, DWORD aHeight,
@@ -511,16 +509,13 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
     HRESULT hr = vboxDispKmtOpenAdapter(&pIf->modeData.wddm.KmtCallbacks, &pOp->Adapter);
     if (SUCCEEDED(hr))
     {
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
         hr = vboxDispKmtCreateDevice(&pOp->Adapter, &pOp->Device);
         if (SUCCEEDED(hr))
         {
             hr = vboxDispKmtCreateContext(&pOp->Device, &pOp->Context, VBOXWDDM_CONTEXT_TYPE_CUSTOM_DISPIF_RESIZE,
                     0, 0, NULL, 0ULL);
             if (SUCCEEDED(hr))
-#endif
                 return ERROR_SUCCESS;
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
             else
                 WARN(("VBoxTray: vboxDispKmtCreateContext failed hr 0x%x", hr));
 
@@ -530,7 +525,6 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
             WARN(("VBoxTray: vboxDispKmtCreateDevice failed hr 0x%x", hr));
 
         vboxDispKmtCloseAdapter(&pOp->Adapter);
-#endif
     }
 
     return hr;
@@ -538,10 +532,8 @@ static DWORD vboxDispIfOpBegin(PCVBOXDISPIF pIf, VBOXDISPIF_OP *pOp)
 
 static VOID vboxDispIfOpEnd(VBOXDISPIF_OP *pOp)
 {
-#ifdef VBOX_DISPIF_WITH_OPCONTEXT
     vboxDispKmtDestroyContext(&pOp->Context);
     vboxDispKmtDestroyDevice(&pOp->Device);
-#endif
     vboxDispKmtCloseAdapter(&pOp->Adapter);
 }
 
