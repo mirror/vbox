@@ -123,6 +123,7 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 #define HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN                RT_BIT(3)
 #define HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_INFO        RT_BIT(4)
 #define HMVMX_UPDATED_TRANSIENT_EXIT_INTERRUPTION_ERROR_CODE  RT_BIT(5)
+#define HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_INFO               RT_BIT(6)
 /** @} */
 
 /** @name
@@ -236,7 +237,7 @@ typedef struct VMXTRANSIENT
         /** INS and OUTS information. */
         struct
         {
-            uint32_t    u6Reserved0 : 6;
+            uint32_t    u6Reserved0 : 7;
             /** The address size; 0=16-bit, 1=32-bit, 2=64-bit, rest undefined. */
             uint32_t    u3AddrSize  : 3;
             uint32_t    u5Reserved1 : 5;
@@ -659,11 +660,11 @@ DECLINLINE(int) hmR0VmxReadExitInstrLenVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTran
  */
 DECLINLINE(int) hmR0VmxReadExitInstrInfoVmcs(PVMCPU pVCpu, PVMXTRANSIENT pVmxTransient)
 {
-    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN))
+    if (!(pVmxTransient->fVmcsFieldsRead & HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_INFO))
     {
-        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_INFO, &pVmxTransient->cbInstr);
+        int rc = VMXReadVmcs32(VMX_VMCS32_RO_EXIT_INSTR_INFO, &pVmxTransient->ExitInstrInfo.u);
         AssertRCReturn(rc, rc);
-        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_LEN;
+        pVmxTransient->fVmcsFieldsRead |= HMVMX_UPDATED_TRANSIENT_EXIT_INSTR_INFO;
     }
     return VINF_SUCCESS;
 }
@@ -9634,7 +9635,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
                     VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
                     Log4(("CRX CR0 write rc=%d CR0=%#RX64\n", rc, pMixedCtx->cr0));
                     break;
-                case 2: /* C2 **/
+                case 2: /* CR2 */
                     /* Nothing to do here, CR2 it's not part of the VMCS. */
                     break;
                 case 3: /* CR3 */
@@ -9770,12 +9771,11 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
          * Use instruction-information if available, otherwise fall back on
          * interpreting the instruction.
          */
-#if 0 /* Not quite ready, seem iSegReg assertion trigger once... Do we perhaps need to always read that in longjmp / preempt scenario? */
         Log4(("CS:RIP=%04x:%#RX64 %#06x/%u %c str\n", pMixedCtx->cs.Sel, pMixedCtx->rip, uIOPort, cbValue, fIOWrite ? 'w' : 'r'));
         AssertReturn(pMixedCtx->dx == uIOPort, VERR_HMVMX_IPE_2);
         if (MSR_IA32_VMX_BASIC_INFO_VMCS_INS_OUTS(pVM->hm.s.vmx.Msrs.u64BasicInfo))
         {
-            rc2  = hmR0VmxReadExitIntrInfoVmcs(pVCpu, pVmxTransient);
+            rc2  = hmR0VmxReadExitInstrInfoVmcs(pVCpu, pVmxTransient);
             /** @todo optimize this, IEM should request the additional state if it needs it (GP, PF, ++). */
             rc2 |= hmR0VmxSaveGuestState(pVCpu, pMixedCtx);
             AssertRCReturn(rc2, rc2);
@@ -9787,18 +9787,16 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             {
                 rcStrict = IEMExecStringIoWrite(pVCpu, cbValue, enmAddrMode, fRep, cbInstr,
                                                 pVmxTransient->ExitInstrInfo.StrIo.iSegReg);
-                //if (rcStrict == VINF_IOM_R3_IOPORT_WRITE)
-                //    hmR0SavePendingIOPortWriteStr(pVCpu, pMixedCtx->rip, cbValue, enmAddrMode, fRep, cbInstr,
-                //                                  pVmxTransient->ExitInstrInfo.StrIo.iSegReg);
             }
             else
             {
-                AssertMsgReturn(pVmxTransient->ExitInstrInfo.StrIo.iSegReg == X86_SREG_ES,
-                                ("%#x (%#llx)\n", pVmxTransient->ExitInstrInfo.StrIo.iSegReg, pVmxTransient->ExitInstrInfo.u),
-                                VERR_HMVMX_IPE_4);
+                /*
+                 * The segment prefix for INS cannot be overridden and is always ES. We can safely assume X86_SREG_ES.
+                 * Hence "iSegReg" field is undefined in the instruction-information field in VT-x for INS.
+                 * See Intel Instruction spec. for "INS".
+                 * See Intel spec. Table 27-8 "Format of the VM-Exit Instruction-Information Field as Used for INS and OUTS".
+                 */
                 rcStrict = IEMExecStringIoRead(pVCpu, cbValue, enmAddrMode, fRep, cbInstr);
-                //if (rcStrict == VINF_IOM_R3_IOPORT_READ)
-                //    hmR0SavePendingIOPortReadStr(pVCpu, pMixedCtx->rip, cbValue, enmAddrMode, fRep, cbInstr);
             }
         }
         else
@@ -9811,30 +9809,6 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         /** @todo IEM needs to be setting these flags somehow. */
         VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
         fUpdateRipAlready = true;
-#else
-        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
-        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
-        if (RT_SUCCESS(rcStrict))
-        {
-            if (fIOWrite)
-            {
-                rcStrict = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                              (DISCPUMODE)pDis->uAddrMode, cbValue);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
-            }
-            else
-            {
-                rcStrict = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
-                                             (DISCPUMODE)pDis->uAddrMode, cbValue);
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
-            }
-        }
-        else
-        {
-            AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("rcStrict=%Rrc RIP %#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->rip));
-            rcStrict = VINF_EM_RAW_EMULATE_INSTR;
-        }
-#endif
     }
     else
     {
