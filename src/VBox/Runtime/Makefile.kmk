@@ -197,6 +197,7 @@ RuntimeWin64ASM_SOURCES = \
 	common/asm/ASMGetIDTR.asm \
 	common/asm/ASMGetGDTR.asm \
 	common/asm/ASMGetLDTR.asm \
+	common/asm/ASMGetSegAttr.asm \
 	common/asm/ASMGetTR.asm
 
 #
@@ -205,7 +206,8 @@ RuntimeWin64ASM_SOURCES = \
 RuntimeWin32ASM_SOURCES = \
 	common/asm/ASMAtomicCmpXchgU8.asm \
 	common/asm/ASMMultU64ByU32DivByU32.asm \
-	common/asm/ASMCpuId_Idx_ECX.asm
+	common/asm/ASMCpuId_Idx_ECX.asm \
+	common/asm/ASMGetSegAttr.asm
 
 #
 # NoCRT sources (minus math stuff).
