@@ -1912,12 +1912,12 @@
 #define VERR_VMX_MSR_LOCKING_FAILED                 (-4013)
 /** Unable to switch due to invalid guest state. */
 #define VERR_VMX_INVALID_GUEST_STATE                (-4014)
-/** Unexpected VM exit code. */
-#define VERR_VMX_UNEXPECTED_EXIT_CODE               (-4015)
-/** Unexpected VM exception code. */
+/** Unexpected VM exit. */
+#define VERR_VMX_UNEXPECTED_EXIT                    (-4015)
+/** Unexpected VM exception. */
 #define VERR_VMX_UNEXPECTED_EXCEPTION               (-4016)
-/** Unexpected interruption exit code. */
-#define VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE  (-4017)
+/** Unexpected interruption exit type. */
+#define VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE  (-4017)
 /** CPU is not in VMX root mode; unexpected when leaving VMX root mode. */
 #define VERR_VMX_NOT_IN_VMX_ROOT_MODE               (-4018)
 /** Undefined VM exit code. */

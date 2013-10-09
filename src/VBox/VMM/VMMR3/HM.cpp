@@ -2938,7 +2938,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
 
             case VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO:
             case VERR_VMX_INVALID_GUEST_STATE:
-            case VERR_VMX_UNEXPECTED_EXIT_CODE:
+            case VERR_VMX_UNEXPECTED_EXIT:
             case VERR_SVM_UNKNOWN_EXIT:
             case VERR_SVM_UNEXPECTED_EXIT:
             case VERR_SVM_UNEXPECTED_PATCH_TYPE:
