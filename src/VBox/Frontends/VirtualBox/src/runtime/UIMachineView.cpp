@@ -200,6 +200,8 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
     /* Send new size-hint to the guest: */
+    LogRelFlow(("UIMachineView: Sending guest size-hint to screen %d: %dx%d\n",
+                (int)screenId(), newSize.width(), newSize.height()));
     session().GetConsole().GetDisplay().SetVideoModeHint(screenId(),
                                                          uisession()->isScreenVisible(screenId()),
                                                          false, 0, 0, newSize.width(), newSize.height(), 0);
