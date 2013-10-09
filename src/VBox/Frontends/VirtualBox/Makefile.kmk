@@ -1089,6 +1089,46 @@ TRANSLATIONS :=
 IMAGES :=
 
 
+#
+# Doxygen documentation.
+#
+QTGUI_DOXYFILE_OUTPUT = $(PATH_OUT)/docs/qtgui
+BLDDIRS += $(QTGUI_DOXYFILE_OUTPUT)
+OTHER_CLEAN += \
+	$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui \
+	$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+
+# Generate the Doxyfile
+$(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
+		$(PATH_CURRENT)/Doxyfile \
+		$(PATH_CURRENT)/Makefile.kmk \
+		| $$(dir $$@)
+	$(RM) -f $@ $@.tmp $@.dep
+	$(CP) -f $< $@.tmp
+	$(APPEND) $@.tmp
+	$(APPEND) $@.tmp "OUTPUT_DIRECTORY = $(QTGUI_DOXYFILE_OUTPUT)"
+	$(APPEND) $@.tmp "WARN_LOGFILE = $(QTGUI_DOXYFILE_OUTPUT)/errors"
+	$(APPEND) $@.tmp "INCLUDE_PATH = $(PATH_ROOT)/include ."
+	$(APPEND) $@.tmp "PREDEFINED += $(ARCH_BITS_DEFS)"
+	$(APPEND) $@.tmp
+	$(APPEND) $@.tmp "INPUT = $(dir $<)"
+	$(APPEND) $@.tmp
+	$(MV) -f $@.tmp $@
+
+# Do the actual job.
+$(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) | $(QTGUI_DOXYFILE_OUTPUT)/
+	$(RM) -f $(wildcard $(QTGUI_DOXYFILE_OUTPUT)/html/*) $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+	doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
+	$(APPEND) $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+
+# aliases
+docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+if !defined(VBOX_ONLY_DOCS) && defined(VBOX_WITH_ALL_DOXYGEN_TARGETS)
+docs:      $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+endif
+
+
+
 # Commit the magic.
 # (note: before custom rules that make usage of generated variables!).
 include $(FILE_KBUILD_SUB_FOOTER)
