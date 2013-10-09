@@ -184,6 +184,14 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
                                                     ("Illegal migration! Entered on CPU %u Current %u\n", \
                                                     pVCpu->hm.s.idEnteredCpu, RTMpCpuId())); \
 
+/** Helper macro for VM-exit handlers called unexpectedly. */
+#define HMVMX_RETURN_UNEXPECTED_EXIT() \
+    do { \
+        pVCpu->hm.s.u32HMError = pVmxTransient->uExitReason; \
+        return VERR_VMX_UNEXPECTED_EXIT; \
+    } while (0)
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -8865,8 +8873,8 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
         default:
         {
             pVCpu->hm.s.u32HMError = uExitIntrInfo;
-            rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_CODE;
-            AssertMsgFailed(("Unexpected interruption code %#x\n", VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntrInfo)));
+            rc = VERR_VMX_UNEXPECTED_INTERRUPTION_EXIT_TYPE;
+            AssertMsgFailed(("Unexpected interruption info %#x\n", VMX_EXIT_INTERRUPTION_INFO_TYPE(uExitIntrInfo)));
             break;
         }
     }
@@ -8901,8 +8909,7 @@ HMVMX_EXIT_DECL hmR0VmxExitNmiWindow(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANS
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     AssertMsgFailed(("Unexpected NMI-window exit.\n"));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_NMI_WINDOW;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -8964,8 +8971,7 @@ HMVMX_EXIT_DECL hmR0VmxExitGetsec(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
         return VINF_EM_RAW_EMULATE_INSTR;
 
     AssertMsgFailed(("hmR0VmxExitGetsec: unexpected VM-exit when CR4.SMXE is 0.\n"));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_GETSEC;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9157,8 +9163,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRsm(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
      * See Intel spec. "33.15.5 Enabling the Dual-Monitor Treatment".
      */
     AssertMsgFailed(("Unexpected RSM VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_RSM;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9174,8 +9179,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT p
      * See Intel spec. "33.15.6 Activating the Dual-Monitor Treatment" and Intel spec. 25.3 "Other Causes of VM-Exits"
      */
     AssertMsgFailed(("Unexpected SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_SMI;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9186,8 +9190,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoSmi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
 {
     /* Same treatment as VMX_EXIT_SMI. See comment in hmR0VmxExitSmi(). */
     AssertMsgFailed(("Unexpected IO SMI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_IO_SMI;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9202,8 +9205,7 @@ HMVMX_EXIT_DECL hmR0VmxExitSipi(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT 
      * See Intel spec. 25.3 "Other Causes of VM-exits".
      */
     AssertMsgFailed(("Unexpected SIPI VM-exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    pVCpu->hm.s.u32HMError = VMX_EXIT_SIPI;
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9373,7 +9375,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrInvalidGuestState(PVMCPU pVCpu, PCPUMCTX pMixedCtx
 HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     AssertMsgFailed(("Unexpected MSR-load exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9384,7 +9386,7 @@ HMVMX_EXIT_DECL hmR0VmxExitErrMsrLoad(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
 HMVMX_EXIT_DECL hmR0VmxExitErrMachineCheck(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT pVmxTransient)
 {
     AssertMsgFailed(("Unexpected machine-check event exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9413,7 +9415,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXdtrAccess(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRAN
     if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_DESCRIPTOR_TABLE_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected XDTR access. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9429,7 +9431,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdrand(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDRAND_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected RDRAND exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -9530,7 +9532,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 case MSR_K8_GS_BASE:
                 {
                     AssertMsgFailed(("Unexpected WRMSR for an MSR in the VMCS. ecx=%#RX32\n", pMixedCtx->ecx));
-                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+                    HMVMX_RETURN_UNEXPECTED_EXIT();
                 }
 
                 case MSR_K8_LSTAR:
@@ -9541,7 +9543,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
                 {
                     AssertMsgFailed(("Unexpected WRMSR for an MSR in the auto-load/store area in the VMCS. ecx=%#RX32\n",
                                      pMixedCtx->ecx));
-                    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+                    HMVMX_RETURN_UNEXPECTED_EXIT();
                 }
             }
         }
@@ -9563,7 +9565,7 @@ HMVMX_EXIT_DECL hmR0VmxExitPause(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     if (pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_PAUSE_EXIT)
         return VERR_EM_INTERPRETER;
     AssertMsgFailed(("Unexpected PAUSE exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-    return VERR_VMX_UNEXPECTED_EXIT_CODE;
+    HMVMX_RETURN_UNEXPECTED_EXIT();
 }
 
 
@@ -10099,7 +10101,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
     if (pVmxTransient->fWasGuestDebugStateActive)
     {
         AssertMsgFailed(("Unexpected MOV DRx exit. pVCpu=%p pMixedCtx=%p\n", pVCpu, pMixedCtx));
-        return VERR_VMX_UNEXPECTED_EXIT_CODE;
+        HMVMX_RETURN_UNEXPECTED_EXIT();
     }
 
     int rc = VERR_INTERNAL_ERROR_5;
