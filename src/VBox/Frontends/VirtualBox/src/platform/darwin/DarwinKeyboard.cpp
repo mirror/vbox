@@ -21,7 +21,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_GUI
-//#define VBOX_WITH_KBD_LEDS_SYNC
+#define VBOX_WITH_KBD_LEDS_SYNC
 
 #include "DarwinKeyboard.h"
 #include <iprt/assert.h>
@@ -291,24 +291,25 @@ static uint32_t     g_fOldHIDModifierMask;
 
 #ifdef VBOX_WITH_KBD_LEDS_SYNC
 /* HID LEDs synchronization data: LED states. */
-typedef struct VBoxHidLeds_t {
+typedef struct VBoxKbdState_t {
     bool             fNumLockOn;
     bool             fCapsLockOn;
     bool             fScrollLockOn;
-} VBoxHidLeds_t;
+    bool             fAttached;
+} VBoxKbdState_t;
 
 /* HID LEDs synchronization data: IOKit specific data. */
 typedef struct VBoxHidsState_t {
     IOHIDManagerRef     hidManagerRef;
     IOHIDDeviceRef     *hidDevicesCollection;
-    VBoxHidLeds_t      *hidLedsCollection;
+    VBoxKbdState_t      *hidLedsCollection;
     CFIndex             cDevices;
     CFMachPortRef       pTapRef;
     CFRunLoopSourceRef  pLoopSourceRef;
 } VBoxHidsState_t;
 
 /* A *sync* between IOKit and Carbon callbacks. */
-static VBoxHidLeds_t *g_LastTouchedState;
+static VBoxKbdState_t *g_LastTouchedState;
 #endif // !VBOX_WITH_KBD_LEDS_SYNC
 
 /*******************************************************************************
@@ -1378,6 +1379,19 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     return rc2;
 }
 
+static void darwinHidRemovalCallback(void *pData, IOReturn unused, void *unused1)
+{
+    (void)unused;
+    (void)unused1;
+
+    VBoxKbdState_t *pState = (VBoxKbdState_t *)pData;
+
+    if (pState)
+    {
+        pState->fAttached = false;
+    }
+}
+
 /** IOKit key press callback. Triggered before Carbon callback. */
 static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, IOHIDValueRef valueRef)
 {
@@ -1394,7 +1408,7 @@ static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, 
                     IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeypadNumLock)      /* ... or NumLock key has been pressed */
                 {
                     Log2(("A modifier key has been pressed\n"));
-                    g_LastTouchedState = (VBoxHidLeds_t *)pData;
+                    g_LastTouchedState = (VBoxKbdState_t *)pData;
                 }
 
     }
@@ -1556,7 +1570,7 @@ void * DarwinHidDevicesKeepLedsState(void)
                         hidsState->hidDevicesCollection = (IOHIDDeviceRef *)malloc((size_t)hidsState->cDevices * sizeof(IOHIDDeviceRef));
                         if (hidsState->hidDevicesCollection)
                         {
-                            hidsState->hidLedsCollection = (VBoxHidLeds_t *)malloc((size_t)hidsState->cDevices * sizeof(VBoxHidLeds_t));
+                            hidsState->hidLedsCollection = (VBoxKbdState_t *)malloc((size_t)hidsState->cDevices * sizeof(VBoxKbdState_t));
                             if (hidsState->hidLedsCollection)
                             {
                                 CFSetGetValues(hidDevicesSetRef, (const void **)hidsState->hidDevicesCollection);
@@ -1583,6 +1597,15 @@ void * DarwinHidDevicesKeepLedsState(void)
                                                 hidsState->hidLedsCollection[i].fCapsLockOn   =
                                                 hidsState->hidLedsCollection[i].fScrollLockOn = false;
                                             }
+
+                                            /* Mark a device as currently attached. If device will be removed (physically)
+                                             * before current state is applied (by DarwinHidDevicesApplyAndReleaseLedsState()), we mark
+                                             * it as detached one in a removal callback. We cannot access device which was detached
+                                             * because IOKit released the resources and this will trigger a SEGFAULT. */
+                                            hidsState->hidLedsCollection[i].fAttached = true;
+
+                                            /* Register per-device removal callback */
+                                            IOHIDDeviceRegisterRemovalCallback(hidsState->hidDevicesCollection[i], darwinHidRemovalCallback, (void *)&hidsState->hidLedsCollection[i]);
 
                                             /* Register per-device input callback */
                                             IOHIDDeviceRegisterInputValueCallback(hidsState->hidDevicesCollection[i], darwinHidInputCallback, (void *)&hidsState->hidLedsCollection[i]);
@@ -1656,7 +1679,8 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
             for (i = 0; i < hidsState->cDevices; i++)
             {
                 /* Cycle through supported devices only. */
-                if (IOHIDDeviceConformsTo(hidsState->hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard)
+                if (hidsState->hidLedsCollection[i].fAttached
+                 && IOHIDDeviceConformsTo(hidsState->hidDevicesCollection[i], kHIDPage_GenericDesktop, kHIDUsage_GD_Keyboard)
                  && darwinHidDeviceSupported(hidsState->hidDevicesCollection[i]))
                 {
                     rc = darwinSetDeviceLedsState(hidsState->hidDevicesCollection[i],
