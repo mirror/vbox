@@ -1162,6 +1162,7 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
  * @remarks Caller is responsible for making sure this function is called only
  *          when NestedPaging is supported and providing @a enmFlush that is
  *          supported by the CPU.
+ * @remarks Can be called with interrupts disabled.
  */
 static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
 {
@@ -1196,6 +1197,8 @@ static void hmR0VmxFlushEpt(PVMCPU pVCpu, VMX_FLUSH_EPT enmFlush)
  * @param   enmFlush    Type of flush.
  * @param   GCPtr       Virtual address of the page to flush (can be 0 depending
  *                      on @a enmFlush).
+ *
+ * @remarks Can be called with interrupts disabled.
  */
 static void hmR0VmxFlushVpid(PVM pVM, PVMCPU pVCpu, VMX_FLUSH_VPID enmFlush, RTGCPTR GCPtr)
 {
@@ -5623,6 +5626,11 @@ static int hmR0VmxSaveGuestControlRegs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
      * -> VMMRZCallRing3Disable() -> hmR0VmxSaveGuestState() -> Set VMCPU_FF_HM_UPDATE_CR3 pending -> return from the longjmp
      * -> continue with VM-exit handling -> hmR0VmxSaveGuestControlRegs() and here we are.
      *
+     * The reason for such complicated handling is because VM-exits that call into PGM expect CR3 to be up-to-date and thus
+     * if any CR3-saves -before- the VM-exit (longjmp) postponed the CR3 update via the force-flag, any VM-exit handler that
+     * calls into PGM when it re-saves CR3 will end up here and we call PGMUpdateCR3(). This is why the code below should
+     * -NOT- check if HMVMX_UPDATED_GUEST_CR3 is already set or not!
+     *
      * The longjmp exit path can't check these CR3 force-flags and call code that takes a lock again. We cover for it here.
      */
     if (VMMRZCallRing3IsEnabled(pVCpu))
@@ -6203,6 +6211,8 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPU pVCpu)
  *                              fields before using them.
  * @param   fSaveGuestState     Whether to save the guest state or not.
  *
+ * @remarks If you modify code here, make sure to check whether
+ *          hmR0VmxCallRing3Callback() needs to be updated too.
  * @remarks No-long-jmp zone!!!
  */
 static int hmR0VmxLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, bool fSaveGuestState)
@@ -6449,6 +6459,8 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
  * @param   pvUser          Opaque pointer to the guest-CPU context. The data
  *                          may be out-of-sync. Make sure to update the required
  *                          fields before using them.
+ * @remarks If you modify code here, make sure to check whether
+ *          hmR0VmxLeave() needs to be updated too.
  */
 DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
