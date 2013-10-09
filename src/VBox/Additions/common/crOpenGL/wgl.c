@@ -295,6 +295,28 @@ DECLEXPORT(BOOL) WINAPI wglShareLists_prox( HGLRC hglrc1, HGLRC hglrc2 )
     return 0;
 }
 
+DECLEXPORT(void) WINAPI VBoxCtxChromiumParameteriCR(HGLRC hglrc, GLenum param, GLint value)
+{
+    ContextInfo *context;
+
+    CR_DDI_PROLOGUE();
+
+//    crHashtableLock(stub.windowTable);
+    crHashtableLock(stub.contextTable);
+
+    context = (ContextInfo *) crHashtableSearch(stub.contextTable, (unsigned long) hglrc);
+
+    if (context)
+    {
+        stubCtxCheckCreate(context);
+        stubConChromiumParameteriCR(CR_CTX_CON(context), param, value);
+    }
+    else
+        crWarning("invalid context %#x", hglrc);
+
+    crHashtableUnlock(stub.contextTable);
+//    crHashtableUnlock(stub.windowTable);
+}
 
 DECLEXPORT(HGLRC) WINAPI VBoxCreateContext( HDC hdc, struct VBOXUHGSMI *pHgsmi )
 {
@@ -409,6 +431,8 @@ DECLEXPORT(void) WINAPI VBoxFlushToHost ( HGLRC hglrc )
 
     if (context)
         stubConFlush(CR_CTX_CON(context));
+    else
+        crWarning("invalid context %#x", hglrc);
 
     crHashtableUnlock(stub.contextTable);
 //    crHashtableUnlock(stub.windowTable);

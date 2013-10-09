@@ -402,6 +402,10 @@ static BOOL WineD3D_CreateFakeGLContext(struct wined3d_fake_gl_ctx *ctx)
         goto fail;
     }
 
+#ifdef VBOX_WITH_WDDM
+        pVBoxCtxChromiumParameteriCR(ctx->gl_ctx, GL_HOST_WND_CREATED_HIDDEN_CR,  GL_TRUE);
+#endif
+
     /* Make it the current GL context. */
     if (!wglMakeCurrent(ctx->dc, ctx->gl_ctx))
     {
