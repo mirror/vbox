@@ -62,11 +62,7 @@ UIMachineViewFullscreen::~UIMachineViewFullscreen()
 
 void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
-    /* Check if we should resize guest to fullscreen */
-    if ((int)frameBuffer()->width() != workingArea().size().width() ||
-        (int)frameBuffer()->height() != workingArea().size().height())
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
-            sltPerformGuestResize(workingArea().size());
+    normalizeGeometry(false);
 }
 
 bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -141,7 +137,11 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
 void UIMachineViewFullscreen::normalizeGeometry(bool /* fAdjustPosition */)
 {
-    sltPerformGuestResize(workingArea().size());
+    /* Check if we should adjust guest to new size: */
+    if ((int)frameBuffer()->width() != workingArea().size().width() ||
+        (int)frameBuffer()->height() != workingArea().size().height())
+        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+            sltPerformGuestResize(workingArea().size());
 }
 
 QRect UIMachineViewFullscreen::workingArea() const
