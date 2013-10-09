@@ -2246,6 +2246,30 @@ DECLINLINE(int) hmR0VmxSaveHostControlRegs(PVM pVM, PVMCPU pVCpu)
 }
 
 
+#if HC_ARCH_BITS == 64
+/**
+ * Macro for adjusting host segment selectors to satisfy VT-x's VM-entry
+ * requirements. See hmR0VmxSaveHostSegmentRegs().
+ */
+# define VMXLOCAL_ADJUST_HOST_SEG(seg, selValue)  \
+    if ((selValue) & (X86_SEL_RPL | X86_SEL_LDT)) \
+    { \
+        bool fValidSelector = true; \
+        if ((selValue) & X86_SEL_LDT) \
+        { \
+            uint32_t uAttr = ASMGetSegAttr((selValue)); \
+            fValidSelector = RT_BOOL(uAttr != ~0U && (uAttr & X86_DESC_P)); \
+        } \
+        if (fValidSelector) \
+        { \
+            pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_##seg; \
+            pVCpu->hm.s.vmx.RestoreHost.uHostSel##seg = (selValue); \
+        } \
+        (selValue) = 0; \
+    }
+#endif
+
+
 /**
  * Saves the host segment registers and GDTR, IDTR, (TR, GS and FS bases) into
  * the host-state area in the VMCS.
@@ -2308,30 +2332,11 @@ DECLINLINE(int) hmR0VmxSaveHostSegmentRegs(PVM pVM, PVMCPU pVCpu)
      * Determine if the host segment registers are suitable for VT-x. Otherwise use zero to gain VM-entry and restore them
      * before we get preempted. See Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers".
      */
-    if (uSelDS & (X86_SEL_RPL | X86_SEL_LDT))
-    {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_DS;
-        pVCpu->hm.s.vmx.RestoreHost.uHostSelDS = uSelDS;
-        uSelDS = 0;
-    }
-    if (uSelES & (X86_SEL_RPL | X86_SEL_LDT))
-    {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_ES;
-        pVCpu->hm.s.vmx.RestoreHost.uHostSelES = uSelES;
-        uSelES = 0;
-    }
-    if (uSelFS & (X86_SEL_RPL | X86_SEL_LDT))
-    {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_FS;
-        pVCpu->hm.s.vmx.RestoreHost.uHostSelFS = uSelFS;
-        uSelFS = 0;
-    }
-    if (uSelGS & (X86_SEL_RPL | X86_SEL_LDT))
-    {
-        pVCpu->hm.s.vmx.fRestoreHostFlags |= VMX_RESTORE_HOST_SEL_GS;
-        pVCpu->hm.s.vmx.RestoreHost.uHostSelGS = uSelGS;
-        uSelGS = 0;
-    }
+    VMXLOCAL_ADJUST_HOST_SEG(DS, uSelDS);
+    VMXLOCAL_ADJUST_HOST_SEG(ES, uSelES);
+    VMXLOCAL_ADJUST_HOST_SEG(FS, uSelFS);
+    VMXLOCAL_ADJUST_HOST_SEG(GS, uSelGS);
+# undef VMXLOCAL_ADJUST_HOST_SEG
 #endif
 
     /* Verification based on Intel spec. 26.2.3 "Checks on Host Segment and Descriptor-Table Registers"  */
