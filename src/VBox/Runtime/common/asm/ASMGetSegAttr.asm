@@ -42,26 +42,20 @@ BEGINCODE
 ;
 BEGINPROC_EXPORTED ASMGetSegAttr
 %ifdef ASM_CALL64_MSC
-    mov         r10, rdi
-    mov         rdi, rcx
+    and     ecx, 0ffffh
+    lar     eax, ecx
+%elifdef ASM_CALL64_GCC
+    and     edi, 0ffffh
+    lar     eax, edi
 %elifdef RT_ARCH_X86
-    push        ebp
-    mov         ebp, esp
-    push        edi
-    mov         edi, [ebp + 08h]
+    movzx   edx, word [esp + 4]
+    lar     eax, edx
+%else
+ %error "Which arch is this?"
 %endif
-
-    larl    eax, edi
-    jz      done
+    jz      .return
     mov     eax, 0ffffffffh
-done:
-
-%ifdef ASM_CALL64_MSC
-    mov     rdi, r10
-%elifdef RT_ARCH_X86
-    pop     edi
-    leave
-%endif
+.return:
     ret
 ENDPROC ASMGetSegAttr
 
