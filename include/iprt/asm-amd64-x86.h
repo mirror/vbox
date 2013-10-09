@@ -387,9 +387,9 @@ DECLINLINE(RTSEL) ASMGetLDTR(void)
  *          have bits 0:7 as 0 (on both Intel & AMD).
  */
 #if RT_INLINE_ASM_EXTERNAL
-DECLASM(uint32_t) ASMGetSegAttr(RTSEL uSel);
+DECLASM(uint32_t) ASMGetSegAttr(uint32_t uSel);
 #else
-DECLINLINE(uint32_t) ASMGetSegAttr(RTSEL uSel)
+DECLINLINE(uint32_t) ASMGetSegAttr(uint32_t uSel)
 {
     uint32_t uAttr;
     /* LAR only accesses 16-bit of the source operand, but eax for the
