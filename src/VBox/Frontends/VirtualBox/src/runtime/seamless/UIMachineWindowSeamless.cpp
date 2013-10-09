@@ -28,7 +28,7 @@
 #include "UIActionPoolRuntime.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindowSeamless.h"
-#include "UIMachineViewSeamless.h"
+#include "UIMachineView.h"
 #ifndef Q_WS_MAC
 # include "UIMachineDefs.h"
 # include "UIMiniToolBar.h"
@@ -196,6 +196,8 @@ void UIMachineWindowSeamless::placeOnScreen()
     move(workingArea.topLeft());
     /* Resize to the appropriate size: */
     resize(workingArea.size());
+    /* Adjust guest if necessary: */
+    machineView()->normalizeGeometry(false);
 #ifndef Q_WS_MAC
     /* Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)

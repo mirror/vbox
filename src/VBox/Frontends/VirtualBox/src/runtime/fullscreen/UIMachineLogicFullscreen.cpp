@@ -96,11 +96,17 @@ void UIMachineLogicFullscreen::sltMachineStateChanged()
     /* If machine-state changed from 'paused' to 'running': */
     if (uisession()->isRunning() && uisession()->wasPaused())
     {
+        LogRelFlow(("UIMachineLogicFullscreen: "
+                    "Machine-state changed from 'paused' to 'running': "
+                    "Updating screen-layout...\n"));
+
+        /* Make sure further code will be called just once: */
+        uisession()->forgetPreviousMachineState();
         /* We should rebuild screen-layout: */
         m_pScreenLayout->rebuild();
         /* We should update machine-windows sizes: */
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
-            pMachineWindow->handleScreenResize();
+            pMachineWindow->handleScreenGeometryChange();
     }
 }
 
@@ -118,7 +124,7 @@ void UIMachineLogicFullscreen::sltScreenLayoutChanged()
 
 void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
 {
-    LogRelFlow(("UIMachineLogicFullscreen::GuestScreenCountChanged.\n"));
+    LogRelFlow(("UIMachineLogicFullscreen: Guest-screen count changed.\n"));
 
     /* Update multi-screen layout before any window update: */
     if (changeType == KGuestMonitorChangedEventType_Enabled ||
@@ -131,7 +137,7 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
 
 void UIMachineLogicFullscreen::sltHostScreenCountChanged(int cScreenCount)
 {
-    LogRelFlow(("UIMachineLogicFullscreen::HostScreenCountChanged.\n"));
+    LogRelFlow(("UIMachineLogicFullscreen: Host-screen count changed.\n"));
 
     /* Update multi-screen layout before any window update: */
     m_pScreenLayout->rebuild();
