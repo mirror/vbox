@@ -154,7 +154,7 @@ private:
     void generateMACAddress();
     HRESULT updateMacAddress(Utf8Str aMacAddress);
     void updateBandwidthGroup(BandwidthGroup *aBwGroup);
-    HRESULT checkAndSwitchFromNatNetworking();
+    HRESULT checkAndSwitchFromNatNetworking(IN_BSTR aNatNetworkName);
     HRESULT switchToNatNetworking(IN_BSTR aNatNetworkName);
 
     Machine * const     mParent;
