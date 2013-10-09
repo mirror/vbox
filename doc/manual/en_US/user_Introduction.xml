@@ -979,7 +979,12 @@
             will go to the guest instead. After you press the host key to
             re-enable the host keyboard, all key presses will go through the
             host again, so that sequences like Alt-Tab will no longer reach
-            the guest.</para>
+            the guest.  For technical reasons it may not be possible for the
+            VM to get all keyboard input even when it does own the keyboard.
+            Examples of this are the Ctrl-Alt-Del sequence on Windows hosts
+            or single keys grabbed by other applications on X11 hosts like
+            the GNOME desktop's "Control key highlights mouse pointer"
+            functionality.</para>
           </listitem>
 
           <listitem>
