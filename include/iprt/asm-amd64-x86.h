@@ -395,22 +395,22 @@ DECLINLINE(uint32_t) ASMGetSegAttr(RTSEL uSel)
     /* LAR only accesses 16-bit of the source operand, but eax for the
        destination operand is required for getting the full 32-bit access rights. */
 # if RT_INLINE_ASM_GNU_STYLE
-    __asm__ __volatile__("mov %1, %%ax\n\t"
-                         "larl %%eax, %0\n\t"
+    __asm__ __volatile__("lar %1, %%eax\n\t"
                          "jz done%=\n\t"
-                         "movl $0xffffffff, %0\n\t"
+                         "movl $0xffffffff, %%eax\n\t"
                          "done%=:\n\t"
+                         "movl %%eax, %0\n\t"
                          : "=r" (uAttr)
                          : "r" (uSel)
                          : "cc", "%eax");
 # else
     __asm
     {
-        mov     ax, [uSel]
-        larl    [uAttr], eax
+        lar     eax, [uSel]
         jz      done
-        mov     [uAttr], ~0h
+        mov     eax, 0ffffffffh
         done:
+        mov     [uAttr], eax
     }
 # endif
     return uAttr;
