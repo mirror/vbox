@@ -438,7 +438,7 @@ void UIMachineWindow::handleScreenCountChange()
     showInNecessaryMode();
 }
 
-void UIMachineWindow::handleScreenResize()
+void UIMachineWindow::handleScreenGeometryChange()
 {
     showInNecessaryMode();
 }

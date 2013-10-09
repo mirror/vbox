@@ -157,6 +157,7 @@ public:
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
     void setSeamlessModeRequested(bool fIsSeamlessModeRequested) { m_fIsSeamlessModeRequested = fIsSeamlessModeRequested; }
     void setAutoCaptureDisabled(bool fIsAutoCaptureDisabled) { m_fIsAutoCaptureDisabled = fIsAutoCaptureDisabled; }
+    void forgetPreviousMachineState() { m_machineStatePrevious = m_machineState; }
 
     /* Keyboard setters: */
     void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
@@ -206,10 +207,9 @@ signals:
     void sigCPUExecutionCapChange();
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
-    /* Qt callback signal: */
+    /* Notifiers: Qt callback stuff: */
     void sigHostScreenCountChanged(int cHostScreenCount);
-    void sigHostScreenFullGeometryResized(int iHostScreenNumber);
-    void sigHostScreenAvailableGeometryResized(int iHostScreenNumber);
+    void sigHostScreenGeometryChanged();
 
     /* Session signals: */
     void sigMachineStarted();
@@ -233,6 +233,9 @@ private slots:
     void sltVideoCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
+    /* Handler: Host callback stuff: */
+    void sltHandleHostScreenGeometryChange();
+
 private:
 
     /* Private getters: */
@@ -252,7 +255,7 @@ private:
     void cleanupFramebuffers();
     //void cleanupScreens() {}
     void cleanupConsoleEventHandlers();
-    //void cleanupConnections() {}
+    void cleanupConnections();
 
     /* Update helpers: */
     void updateSessionSettings();

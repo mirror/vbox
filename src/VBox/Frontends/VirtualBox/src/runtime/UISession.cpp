@@ -21,6 +21,9 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QWidget>
+#ifdef Q_WS_MAC
+# include <QTimer>
+#endif /* Q_WS_MAC */
 
 /* GUI includes: */
 #include "VBoxGlobal.h"
@@ -40,6 +43,9 @@
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+#ifdef Q_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif /* Q_WS_MAC */
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -71,6 +77,33 @@
 #include "CUSBDeviceFilters.h"
 #include "CSnapshot.h"
 #include "CMedium.h"
+
+#ifdef Q_WS_MAC
+/**
+ * Application Services: Core Graphics: Display reconfiguration callback.
+ *
+ * Notifies about @a display configuration change.
+ * Corresponding change described by CoreGraphics @a flags.
+ * UISession::sltHandleHostScreenGeometryChange() is called through @a pHandlerObject to handle this callback.
+ *
+ * @note Last argument (@a pHandlerObject) must always be valid pointer to UISession object.
+ */
+void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChangeSummaryFlags flags, void *pHandlerObject)
+{
+    /* Handle 'mode-set' case: */
+    if (flags & kCGDisplaySetModeFlag)
+    {
+        /* Which resolution we received? */
+        size_t iWid = CGDisplayPixelsWide(display);
+        size_t iHig = CGDisplayPixelsHigh(display);
+        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display mode changed to: %dx%d.\n", (int)iWid, (int)iHig));
+
+        /* Ask receiver to handle our callback, can't believe I'm using r_c here... */
+        UISession *pReceiver = reinterpret_cast<UISession*>(pHandlerObject);
+        QTimer::singleShot(0, pReceiver, SLOT(sltHandleHostScreenGeometryChange()));
+    }
+}
+#endif /* Q_WS_MAC */
 
 UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     : QObject(pMachine)
@@ -786,6 +819,14 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
     emit sigGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
+void UISession::sltHandleHostScreenGeometryChange()
+{
+    LogRelFlow(("UISession: Host-screen geometry changed.\n"));
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenGeometryChanged();
+}
+
 void UISession::sltAdditionsChange()
 {
     /* Get our guest: */
@@ -877,10 +918,16 @@ void UISession::prepareConnections()
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)),
             this, SIGNAL(sigHostScreenCountChanged(int)));
 
+    /* Install Qt reconfiguration callbacks: */
     connect(QApplication::desktop(), SIGNAL(resized(int)),
-            this, SIGNAL(sigHostScreenFullGeometryResized(int)));
+            this, SLOT(sltHandleHostScreenGeometryChange()));
     connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),
-            this, SIGNAL(sigHostScreenAvailableGeometryResized(int)));
+            this, SLOT(sltHandleHostScreenGeometryChange()));
+
+#ifdef Q_WS_MAC
+    /* Install display reconfiguration callback: */
+    CGDisplayRegisterReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#endif /* Q_WS_MAC */
 }
 
 void UISession::prepareScreens()
@@ -1014,6 +1061,14 @@ void UISession::cleanupConsoleEventHandlers()
 {
     /* Destroy console event-handler: */
     UIConsoleEventHandler::destroy();
+}
+
+void UISession::cleanupConnections()
+{
+#ifdef Q_WS_MAC
+    /* Remove display reconfiguration callback: */
+    CGDisplayRemoveReconfigurationCallback(cgDisplayReconfigurationCallback, this);
+#endif /* Q_WS_MAC */
 }
 
 void UISession::updateSessionSettings()

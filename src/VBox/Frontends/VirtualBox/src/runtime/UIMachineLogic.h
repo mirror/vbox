@@ -112,7 +112,7 @@ protected slots:
 
     /* Qt callback handler: */
     virtual void sltHostScreenCountChanged(int cHostScreenCount);
-    virtual void sltHostScreenResized(int iHostScreenNumber);
+    virtual void sltHostScreenGeometryChanged();
 
 protected:
 
