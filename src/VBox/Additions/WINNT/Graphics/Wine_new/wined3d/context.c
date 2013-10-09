@@ -1806,6 +1806,10 @@ struct wined3d_context *context_create(struct wined3d_swapchain *swapchain,
             goto out;
         }
 
+#ifdef VBOX_WITH_WDDM
+        pVBoxCtxChromiumParameteriCR(ctx, GL_HOST_WND_CREATED_HIDDEN_CR,  GL_TRUE);
+#endif
+
 #ifndef VBOX
         if (share_ctx && !wglShareLists(share_ctx, ctx))
         {

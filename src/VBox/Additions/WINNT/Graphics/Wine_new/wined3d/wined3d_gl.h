@@ -191,6 +191,7 @@ typedef void (WINE_GLAPI *PGLFNCHROMIUMPARAMETERUCR)(GLenum param, GLint value);
 PGLFNCHROMIUMPARAMETERUCR pglChromiumParameteriCR;
 
 HGLRC (WINAPI *pVBoxCreateContext)(HDC, struct VBOXUHGSMI*) DECLSPEC_HIDDEN;
+void (WINAPI *pVBoxCtxChromiumParameteriCR)(HGLRC , GLenum , GLint) DECLSPEC_HIDDEN;
 void (WINAPI *pVBoxFlushToHost)(HGLRC) DECLSPEC_HIDDEN;
 GLint (WINAPI *pVBoxGetWindowId)(HDC)  DECLSPEC_HIDDEN;
 GLint (WINAPI *pVBoxGetContextId)(HGLRC)  DECLSPEC_HIDDEN;
@@ -200,6 +201,7 @@ GLint (WINAPI *pVBoxGetContextId)(HGLRC)  DECLSPEC_HIDDEN;
 
 # define VBOX_GL_FUNCS_GEN \
         VBOX_USE_FUNC(VBoxCreateContext) \
+        VBOX_USE_FUNC(VBoxCtxChromiumParameteriCR) \
         VBOX_USE_FUNC(VBoxFlushToHost) \
         VBOX_USE_FUNC(VBoxGetWindowId) \
         VBOX_USE_FUNC(VBoxGetContextId)

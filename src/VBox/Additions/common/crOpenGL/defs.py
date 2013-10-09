@@ -497,6 +497,7 @@ crMakeCurrent
 crSwapBuffers
 crGetProcAddress
 VBoxCreateContext
+VBoxCtxChromiumParameteriCR
 VBoxGetWindowId
 VBoxGetContextId
 VBoxFlushToHost"""

@@ -342,12 +342,15 @@ extern ContextInfo *stubNewContext( const char *dpyName, GLint visBits, ContextT
         , struct VBOXUHGSMI *pHgsmi
 #endif
         );
+extern void stubConChromiumParameteriCR(GLint con, GLenum param, GLint value);
+extern GLboolean stubCtxCreate(ContextInfo *context);
+extern GLboolean stubCtxCheckCreate(ContextInfo *context);
 extern void stubDestroyContext( unsigned long contextId );
 extern GLboolean stubMakeCurrent( WindowInfo *window, ContextInfo *context );
 extern GLint stubNewWindow( const char *dpyName, GLint visBits );
 extern void stubDestroyWindow( GLint con, GLint window );
 extern void stubSwapBuffers(WindowInfo *window, GLint flags);
-extern void stubGetWindowGeometry(WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
+extern void stubGetWindowGeometry(const WindowInfo *win, int *x, int *y, unsigned int *w, unsigned int *h);
 extern GLboolean stubUpdateWindowGeometry(WindowInfo *pWindow, GLboolean bForceUpdate);
 extern GLboolean stubIsWindowVisible(WindowInfo *win);
 extern bool stubInit(void);

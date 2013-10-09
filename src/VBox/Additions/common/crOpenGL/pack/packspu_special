@@ -107,6 +107,7 @@ VBoxPackSetInjectID
 VBoxAttachThread
 VBoxDetachThread
 VBoxCreateContext
+VBoxConChromiumParameteriCR
 VBoxWindowCreate
 VBoxWindowDestroy
 VBoxConCreate
