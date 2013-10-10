@@ -511,8 +511,8 @@ RTDECL(bool) RTFileIsValid(RTFILE File);
 /**
  * Copies a file.
  *
- * @returns VERR_ALREADY_EXISTS if the destination file exists.
- * @returns VBox Status code.
+ * @returns IPRT status code
+ * @retval VERR_ALREADY_EXISTS if the destination file exists.
  *
  * @param   pszSrc      The path to the source file.
  * @param   pszDst      The path to the destination file.
@@ -523,7 +523,7 @@ RTDECL(int) RTFileCopy(const char *pszSrc, const char *pszDst);
 /**
  * Copies a file given the handles to both files.
  *
- * @returns VBox Status code.
+ * @returns IPRT status code
  *
  * @param   FileSrc     The source file. The file position is unaltered.
  * @param   FileDst     The destination file.
@@ -547,8 +547,8 @@ RTDECL(int) RTFileCopyByHandles(RTFILE FileSrc, RTFILE FileDst);
 /**
  * Copies a file.
  *
- * @returns VERR_ALREADY_EXISTS if the destination file exists.
- * @returns VBox Status code.
+ * @returns IPRT status code
+ * @retval  VERR_ALREADY_EXISTS if the destination file exists.
  *
  * @param   pszSrc      The path to the source file.
  * @param   pszDst      The path to the destination file.
@@ -573,6 +573,77 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
  * @param   pvUser      User argument to pass to pfnProgress along with the completion percentage.
  */
 RTDECL(int) RTFileCopyByHandlesEx(RTFILE FileSrc, RTFILE FileDst, PFNRTPROGRESS pfnProgress, void *pvUser);
+
+
+/**
+ * Compares two file given the paths to both files.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
+ * @param   pszFile1    The path to the first file.
+ * @param   pszFile2    The path to the second file.
+ */
+RTDECL(int) RTFileCompare(const char *pszFile1, const char *pszFile2);
+
+/**
+ * Compares two file given the handles to both files.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
+ * @param   hFile1      The first file.  Undefined return position.
+ * @param   hFile2      The second file.  Undefined return position.
+ */
+RTDECL(int) RTFileCompareByHandles(RTFILE hFile1, RTFILE hFile2);
+
+/** Flags for RTFileCompareEx().
+ * @{ */
+/** Do not use RTFILE_O_DENY_WRITE on the first file. */
+#define RTFILECOMP_FLAGS_NO_DENY_WRITE_FILE1  RT_BIT(0)
+/** Do not use RTFILE_O_DENY_WRITE on the second file. */
+#define RTFILECOMP_FLAGS_NO_DENY_WRITE_FILE2  RT_BIT(1)
+/** Do not use RTFILE_O_DENY_WRITE on either of the two files. */
+#define RTFILECOMP_FLAGS_NO_DENY_WRITE      ( RTFILECOMP_FLAGS_NO_DENY_WRITE_FILE1 | RTFILECOMP_FLAGS_NO_DENY_WRITE_FILE2 )
+/** */
+#define RTFILECOMP_FLAGS_MASK               UINT32_C(0x00000003)
+/** @} */
+
+/**
+ * Compares two files, extended version with progress callback.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
+ * @param   pszFile1    The path to the source file.
+ * @param   pszFile2    The path to the destination file. This file will be
+ *                      created.
+ * @param   fFlags      Flags, any of the RTFILECOMP_FLAGS_ \#defines.
+ * @param   pfnProgress Pointer to callback function for reporting progress.
+ * @param   pvUser      User argument to pass to pfnProgress along with the completion percentage.
+ */
+RTDECL(int) RTFileCompareEx(const char *pszFile1, const char *pszFile2, uint32_t fFlags, PFNRTPROGRESS pfnProgress, void *pvUser);
+
+/**
+ * Compares two files given their handles, extended version with progress
+ * callback.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if equal.
+ * @retval  VERR_NOT_EQUAL if not equal.
+ *
+ * @param   hFile1      The first file.  Undefined return position.
+ * @param   hFile2      The second file.  Undefined return position.
+ *
+ * @param   fFlags      Flags, any of the RTFILECOMP_FLAGS_ \#defines, flags
+ *                      related to opening of the files will be ignored.
+ * @param   pfnProgress Pointer to callback function for reporting progress.
+ * @param   pvUser      User argument to pass to pfnProgress along with the completion percentage.
+ */
+RTDECL(int) RTFileCompareByHandlesEx(RTFILE hFile1, RTFILE hFile2, uint32_t fFlags, PFNRTPROGRESS pfnProgress, void *pvUser);
 
 /**
  * Renames a file.
