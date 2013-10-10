@@ -383,7 +383,7 @@ RTDECL(int) RTFileCopyEx(const char *pszSrc, const char *pszDst, uint32_t fFlags
     {
         RTFILE FileDst;
         rc = RTFileOpen(&FileDst, pszDst,
-                        RTFILE_O_WRITE | RTFILE_O_CREATE
+                        RTFILE_O_READ | RTFILE_O_OPEN
                         | (fFlags & RTFILECOPY_FLAGS_NO_DST_DENY_WRITE ? RTFILE_O_DENY_NONE : RTFILE_O_DENY_WRITE));
         if (RT_SUCCESS(rc))
         {
