@@ -1133,7 +1133,7 @@ HRESULT MachineCloneVM::run()
                             /* Check if we have to use another name. */
                             if (!mt.strBaseName.isEmpty())
                                 strSrcTest = mt.strBaseName;
-                            strSrcTest.stripExt();
+                            strSrcTest.stripSuffix();
                             /* If the old disk name was in {uuid} format we also
                              * want the new name in this format, but with the
                              * updated id of course. If the old disk was called
@@ -1141,7 +1141,7 @@ HRESULT MachineCloneVM::run()
                              * For all other disks we rename them with this
                              * template: "new name-disk1.vdi". */
                             if (strSrcTest == strOldVMName)
-                                strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathExt(Utf8Str(bstrSrcName).c_str()));
+                                strNewName = Utf8StrFmt("%s%s", trgMCF.machineUserData.strName.c_str(), RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
                             else if (   strSrcTest.startsWith("{")
                                      && strSrcTest.endsWith("}"))
                             {
@@ -1149,10 +1149,11 @@ HRESULT MachineCloneVM::run()
 
                                 Guid temp_guid(strSrcTest);
                                 if (temp_guid.isValid() && !temp_guid.isZero())
-                                    strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathExt(strNewName.c_str()));
+                                    strNewName = Utf8StrFmt("%s%s", newId.toStringCurly().c_str(), RTPathSuffix(strNewName.c_str()));
                             }
                             else
-                                strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks, RTPathExt(Utf8Str(bstrSrcName).c_str()));
+                                strNewName = Utf8StrFmt("%s-disk%d%s", trgMCF.machineUserData.strName.c_str(), ++cDisks,
+                                                        RTPathSuffix(Utf8Str(bstrSrcName).c_str()));
                         }
 
                         /* Check if this medium comes from the snapshot folder, if

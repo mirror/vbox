@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,14 +32,7 @@
 #include <iprt/path.h>
 
 
-/**
- * Finds the extension part of in a path.
- *
- * @returns Pointer to extension within pszPath.
- * @returns NULL if no extension.
- * @param   pszPath     Path to find extension in.
- */
-RTDECL(char *) RTPathExt(const char *pszPath)
+RTDECL(char *) RTPathSuffix(const char *pszPath)
 {
     const char *psz = pszPath;
     const char *pszExt = NULL;
@@ -65,7 +58,7 @@ RTDECL(char *) RTPathExt(const char *pszPath)
 
             /* the end */
             case '\0':
-                if (pszExt)
+                if (pszExt && pszExt != pszPath && pszExt[1])
                     return (char *)(void *)pszExt;
                 return NULL;
         }

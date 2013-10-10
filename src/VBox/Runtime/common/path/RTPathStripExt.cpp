@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,37 +34,10 @@
 
 
 
-/**
- * Strips the extension from a path.
- *
- * @param   pszPath     Path which extension should be stripped.
- */
-RTDECL(void) RTPathStripExt(char *pszPath)
+RTDECL(void) RTPathStripSuffix(char *pszPath)
 {
-    char *pszDot = NULL;
-    for (;; pszPath++)
-    {
-        switch (*pszPath)
-        {
-            /* handle separators. */
-#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-            case ':':
-            case '\\':
-#endif
-            case '/':
-                pszDot = NULL;
-                break;
-            case '.':
-                pszDot = pszPath;
-                break;
-
-            /* the end */
-            case '\0':
-                if (pszDot)
-                    *pszDot = '\0';
-                return;
-        }
-    }
-    /* will never get here */
+    char *pszSuffix = RTPathSuffix(pszPath);
+    if (pszSuffix)
+        *pszSuffix = '\0';
 }
 

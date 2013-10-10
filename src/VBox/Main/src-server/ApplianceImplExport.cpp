@@ -351,7 +351,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripExt();
+                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
                 strTargetVmdkName = Utf8StrFmt("%s-disk%d.vmdk", strTargetName.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetVmdkName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
@@ -387,7 +387,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
                 if (FAILED(rc)) throw rc;
 
-                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripExt();
+                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
                 strTargetVmdkName = Utf8StrFmt("%s-disk%d.iso", strTargetName.c_str(), ++pAppliance->m->cDisks);
                 if (strTargetVmdkName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
@@ -2014,7 +2014,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
             /* Extract the OVA file name */
             Utf8Str strOvaFile = pTask->locInfo.strPath;
             /* Extract the path */
-            Utf8Str strOvfFile = strOvaFile.stripExt().append(".ovf");
+            Utf8Str strOvfFile = strOvaFile.stripSuffix().append(".ovf");
             // Create a memory buffer containing the XML. */
             void *pvBuf = 0;
             size_t cbSize;
@@ -2234,7 +2234,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
         if (m->fManifest)
         {
             // Create & write the manifest file
-            Utf8Str strMfFilePath = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
+            Utf8Str strMfFilePath = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
             Utf8Str strMfFileName = Utf8Str(strMfFilePath).stripPath();
             pTask->pProgress->SetNextOperation(BstrFmt(tr("Creating manifest file '%s'"), strMfFileName.c_str()).raw(),
                                                m->ulWeightForManifestOperation);     // operation's weight, as set up with the IProgress originally);
@@ -2370,7 +2370,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         /* Add the manifest file */
         if (m->fManifest)
         {
-            Utf8Str strMfFile = Utf8Str(strTmpOvf).stripExt().append(".mf");
+            Utf8Str strMfFile = Utf8Str(strTmpOvf).stripSuffix().append(".mf");
             filesList.push_back(pair<Utf8Str, ULONG>(strMfFile , m->ulWeightForXmlOperation)); /* Use 1% of the total for the manifest file upload */
         }
 

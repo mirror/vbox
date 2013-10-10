@@ -315,11 +315,11 @@ RTDECL(char *) RTPathAbsExDup(const char *pszBase, const char *pszPath);
 RTDECL(void) RTPathStripFilename(char *pszPath);
 
 /**
- * Strips the extension from a path.
+ * Strips the last suffix from a path.
  *
- * @param   pszPath     Path which extension should be stripped.
+ * @param   pszPath     Path which suffix should be stripped.
  */
-RTDECL(void) RTPathStripExt(char *pszPath);
+RTDECL(void) RTPathStripSuffix(char *pszPath);
 
 /**
  * Strips the trailing slashes of a path name.
@@ -396,24 +396,27 @@ RTDECL(char *) RTPathFilename(const char *pszPath);
 RTDECL(char *) RTPathFilenameEx(const char *pszPath, uint32_t fFlags);
 
 /**
- * Finds the extension part of in a path.
+ * Finds the suffix part of in a path (last dot and onwards).
  *
- * @returns Pointer to extension within pszPath.
- * @returns NULL if no extension.
- * @param   pszPath     Path to find extension in.
+ * @returns Pointer to suffix within pszPath.
+ * @returns NULL if no suffix
+ * @param   pszPath     Path to find suffix in.
+ *
+ * @remarks IPRT terminology: A suffix includes the dot, the extension starts
+ *          after the dot. For instance suffix '.txt' and extension 'txt'.
  */
-RTDECL(char *) RTPathExt(const char *pszPath);
+RTDECL(char *) RTPathSuffix(const char *pszPath);
 
 /**
- * Checks if a path has an extension.
+ * Checks if a path has an extension / suffix.
  *
- * @returns true if extension present.
- * @returns false if no extension.
+ * @returns true if extension / suffix present.
+ * @returns false if no extension / suffix.
  * @param   pszPath     Path to check.
  */
-RTDECL(bool) RTPathHasExt(const char *pszPath);
-/** Misspelled, don't use.  */
-#define RTPathHaveExt   RTPathHasExt
+RTDECL(bool) RTPathHasSuffix(const char *pszPath);
+/** Same thing, different name.  */
+#define RTPathHasExt RTPathHasSuffix
 
 /**
  * Checks if a path includes more than a filename.

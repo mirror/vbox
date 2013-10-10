@@ -640,10 +640,12 @@ STDMETHODIMP Appliance::Interpret()
                     {
                         /* Figure out from extension which format the image of disk has. */
                         {
-                            char *pszExt = RTPathExt(di.strHref.c_str());
+                            char *pszExt = RTPathSuffix(di.strHref.c_str());
+                            if (pszExt)
+                                pszExt++;
                             /* Get the system properties. */
                             SystemProperties *pSysProps = mVirtualBox->getSystemProperties();
-                            ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
+                            ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(pszExt);
                             if (trgFormat.isNull())
                             {
                                 throw setError(E_FAIL,
@@ -954,7 +956,7 @@ HRESULT Appliance::readFSOVF(TaskOVF *pTask)
                 break;
             }
 
-            Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
+            Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
 
             SHASTORAGE storage;
             RT_ZERO(storage);
@@ -1100,9 +1102,9 @@ HRESULT Appliance::readFSOVA(TaskOVF *pTask)
                 break;
             }
 
-            Utf8Str extension(RTPathExt(pszFilename));
+            Utf8Str suffix(RTPathSuffix(pszFilename));
 
-            if (!extension.endsWith(".ovf",Utf8Str::CaseInsensitive))
+            if (!suffix.endsWith(".ovf",Utf8Str::CaseInsensitive))
             {
                 vrc = VERR_FILE_NOT_FOUND;
                 rc = setError(VBOX_E_FILE_ERROR,
@@ -1522,7 +1524,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         if (!pFileIo)
             throw setError(E_OUTOFMEMORY);
 
-        Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".mf");
+        Utf8Str strMfFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".mf");
 
         SHASTORAGE storage;
         RT_ZERO(storage);
@@ -1572,7 +1574,7 @@ HRESULT Appliance::importFSOVF(TaskOVF *pTask, AutoWriteLockBase& writeLock)
             /* Save the SHA digest of the manifest file for the next validation */
             Utf8Str manifestShaDigest = storage.strDigest;
 
-            Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripExt().append(".cert");
+            Utf8Str strCertFile = Utf8Str(pTask->locInfo.strPath).stripSuffix().append(".cert");
             if (RTFileExists(strCertFile.c_str()))
             {
                 rc = readFileToBuf(strCertFile, &pvCertBuf, &cbCertSize, false, pShaIo, &storage);
@@ -1684,8 +1686,8 @@ HRESULT Appliance::importFSOVA(TaskOVF *pTask, AutoWriteLockBase& writeLock)
         OVFfilename = pszFilename;
         size_t cbMfSize = 0;
         size_t cbCertSize = 0;
-        Utf8Str strMfFile = (Utf8Str(pszFilename)).stripExt().append(".mf");
-        Utf8Str strCertFile = (Utf8Str(pszFilename)).stripExt().append(".cert");
+        Utf8Str strMfFile = (Utf8Str(pszFilename)).stripSuffix().append(".mf");
+        Utf8Str strCertFile = (Utf8Str(pszFilename)).stripSuffix().append(".cert");
 
         /* Skip the OVF file, cause this was read in IAppliance::Read already. */
         vrc = RTTarSeekNextFile(tar);
@@ -2298,7 +2300,7 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
                 Utf8Str strTempTargetFilename(*strTargetPath);
                 strTempTargetFilename = strTempTargetFilename.stripPath();
-                strTempTargetFilename = strTempTargetFilename.stripExt();
+                strTempTargetFilename = strTempTargetFilename.stripSuffix();
                 Utf8Str vdf = typeOfVirtualDiskFormatFromURI(di.strFormat);
 
                 strTargetDir.append(strTempTargetFilename);
@@ -2336,13 +2338,12 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
 
             Utf8Str strTrgFormat = "VMDK";
             ULONG lCabs = 0;
-            char *pszExt = NULL;
 
-            if (RTPathHaveExt(strTargetPath->c_str()))
+            if (RTPathHasSuffix(strTargetPath->c_str()))
             {
-                pszExt = RTPathExt(strTargetPath->c_str());
+                const char *pszSuff = RTPathSuffix(strTargetPath->c_str());
                 /* Figure out which format the user like to have. Default is VMDK. */
-                ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszExt[1]);
+                ComObjPtr<MediumFormat> trgFormat = pSysProps->mediumFormatFromExtension(&pszSuff[1]);
                 if (trgFormat.isNull())
                     throw setError(VBOX_E_NOT_SUPPORTED,
                                    tr("Could not find a valid medium format for the target disk '%s'"),

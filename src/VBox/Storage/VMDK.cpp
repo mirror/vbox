@@ -3428,15 +3428,15 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
         /** @todo remove fixed buffer without creating memory leaks. */
         char pszPartition[1024];
         const char *pszBase = RTPathFilename(pImage->pszFilename);
-        const char *pszExt = RTPathExt(pszBase);
-        if (pszExt == NULL)
+        const char *pszSuff = RTPathSuffix(pszBase);
+        if (pszSuff == NULL)
             return vdIfError(pImage->pIfError, rc, RT_SRC_POS, N_("VMDK: invalid filename '%s'"), pImage->pszFilename);
         char *pszBaseBase = RTStrDup(pszBase);
         if (!pszBaseBase)
             return VERR_NO_MEMORY;
-        RTPathStripExt(pszBaseBase);
+        RTPathStripSuffix(pszBaseBase);
         RTStrPrintf(pszPartition, sizeof(pszPartition), "%s-pt%s",
-                    pszBaseBase, pszExt);
+                    pszBaseBase, pszSuff);
         RTStrFree(pszBaseBase);
 
         /* Second pass over the partitions, now define all extents. */
@@ -3626,23 +3626,23 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         }
         else
         {
-            char *pszBasenameExt = RTPathExt(pszBasenameSubstr);
+            char *pszBasenameSuff = RTPathSuffix(pszBasenameSubstr);
             char *pszBasenameBase = RTStrDup(pszBasenameSubstr);
-            RTPathStripExt(pszBasenameBase);
+            RTPathStripSuffix(pszBasenameBase);
             char *pszTmp;
             size_t cbTmp;
             if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
             {
                 if (cExtents == 1)
                     RTStrAPrintf(&pszTmp, "%s-flat%s", pszBasenameBase,
-                                 pszBasenameExt);
+                                 pszBasenameSuff);
                 else
                     RTStrAPrintf(&pszTmp, "%s-f%03d%s", pszBasenameBase,
-                                 i+1, pszBasenameExt);
+                                 i+1, pszBasenameSuff);
             }
             else
                 RTStrAPrintf(&pszTmp, "%s-s%03d%s", pszBasenameBase, i+1,
-                             pszBasenameExt);
+                             pszBasenameSuff);
             RTStrFree(pszBasenameBase);
             if (!pszTmp)
                 return VERR_NO_STR_MEMORY;
@@ -5490,14 +5490,14 @@ static int vmdkRename(void *pBackendData, const char *pszFilename)
 
     /* Prepare both old and new base names used for string replacement. */
     pszNewBaseName = RTStrDup(RTPathFilename(pszFilename));
-    RTPathStripExt(pszNewBaseName);
+    RTPathStripSuffix(pszNewBaseName);
     pszOldBaseName = RTStrDup(RTPathFilename(pImage->pszFilename));
-    RTPathStripExt(pszOldBaseName);
+    RTPathStripSuffix(pszOldBaseName);
     /* Prepare both old and new full names used for string replacement. */
     pszNewFullName = RTStrDup(pszFilename);
-    RTPathStripExt(pszNewFullName);
+    RTPathStripSuffix(pszNewFullName);
     pszOldFullName = RTStrDup(pImage->pszFilename);
-    RTPathStripExt(pszOldFullName);
+    RTPathStripSuffix(pszOldFullName);
 
     /* --- Up to this point we have not done any damage yet. --- */
 
