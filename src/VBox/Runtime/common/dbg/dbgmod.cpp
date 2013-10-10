@@ -583,7 +583,7 @@ rtDbgModOpenDebugInfoExternalToImageCallback(RTLDRMOD hLdrMod, PCRTLDRDBGINFO pD
             if (psz)
             {
                 memcpy(psz, pArgs->pDbgMod->pszName, cchName + 1);
-                RTPathStripExt(psz);
+                RTPathStripSuffix(psz);
                 pszExtFile = strcat(psz, pszExt);
             }
         }
