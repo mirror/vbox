@@ -168,18 +168,24 @@ hlfpu_afFlags:
     ;
 align 16
 hlfpua_switch_fpu_ctx:
-%ifndef IN_RING3 ; IN_RC or IN_RING0
+    ; Paranoia. This function was previously used in ring-0, not any longer.
+%ifdef IN_RING3
+%error "This function is not written for ring-3"
+%endif
+%ifdef IN_RING0
+%error "This function is not written for ring-0"
+%endif
+
     mov     xCX, cr0
- %ifdef RT_ARCH_AMD64
+%ifdef RT_ARCH_AMD64
     lea     r8, [hlfpu_afFlags wrt rip]
     and     rcx, [rax*4 + r8]                   ; calc the new cr0 flags.
- %else
+%else
     and     ecx, [eax*2 + hlfpu_afFlags]        ; calc the new cr0 flags.
- %endif
+%endif
     mov     xAX, cr0
     and     xAX, ~(X86_CR0_TS | X86_CR0_EM)
     mov     cr0, xAX                            ; clear flags so we don't trap here.
-%endif
 %ifndef RT_ARCH_AMD64
     mov     eax, edx                            ; Calculate the PCPUM pointer
     sub     eax, [edx + CPUMCPU.offCPUM]
@@ -203,9 +209,8 @@ hlfpua_finished_switch:
 
     ; Load new CR0 value.
     ;; @todo Optimize the many unconditional CR0 writes.
-%ifndef IN_RING3
     mov     cr0, xCX                            ; load the new cr0 flags.
-%endif
+
     ; return continue execution.
     xor     eax, eax
     ret
