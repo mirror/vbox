@@ -441,9 +441,9 @@ VMMR0DECL(int) VMMR0TermVM(PVM pVM, PGVM pGVM)
  * Creates R0 thread-context hooks for the current EMT thread.
  *
  * @returns VBox status code.
- *
  * @param   pVCpu       Pointer to the VMCPU.
- * @thread EMT.
+ *
+ * @thread  EMT(pVCpu)
  */
 VMMR0DECL(int) VMMR0ThreadCtxHooksCreate(PVMCPU pVCpu)
 {
@@ -482,7 +482,7 @@ VMMR0DECL(void) VMMR0ThreadCtxHooksRelease(PVMCPU pVCpu)
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   pfnThreadHook   Pointer to the thread-context callback.
  *
- * @thread EMT.
+ * @thread  EMT(pVCpu)
  */
 VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnThreadHook)
 {
@@ -497,7 +497,7 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksRegister(PVMCPU pVCpu, PFNRTTHREADCTXHOOK pfnT
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
  *
- * @thread EMT.
+ * @thread  EMT(pVCpu)
  */
 VMMR0DECL(int) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
 {
@@ -511,8 +511,6 @@ VMMR0DECL(int) VMMR0ThreadCtxHooksDeregister(PVMCPU pVCpu)
  *
  * @returns true if the hooks are created, false otherwise.
  * @param   pVCpu       Pointer to the VMCPU.
- *
- * @remarks Can be called from any thread.
  */
 VMMR0DECL(bool) VMMR0ThreadCtxHooksAreCreated(PVMCPU pVCpu)
 {
@@ -540,6 +538,8 @@ VMMR0DECL(bool) VMMR0ThreadCtxHooksAreRegistered(PVMCPU pVCpu)
  *
  * @param   enmEvent    The thread-context event.
  * @param   pvUser      Opaque pointer to the VMCPU.
+ *
+ * @thread  EMT(pvUser)
  */
 static DECLCALLBACK(void) vmmR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, void *pvUser)
 {
@@ -1594,7 +1594,7 @@ VMMR0_INT_DECL(bool) VMMR0IsLongJumpArmed(PVMCPU pVCpu)
  *
  * @returns @c true / @c false
  * @param   pVCpu       Pointer to the VMCPU.
- * @thread EMT
+ * @thread  EMT
  */
 VMMR0_INT_DECL(bool) VMMR0IsInRing3LongJump(PVMCPU pVCpu)
 {
