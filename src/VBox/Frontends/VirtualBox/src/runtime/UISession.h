@@ -208,7 +208,7 @@ signals:
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* Notifiers: Qt callback stuff: */
-    void sigHostScreenCountChanged(int cHostScreenCount);
+    void sigHostScreenCountChanged();
     void sigHostScreenGeometryChanged();
 
     /* Session signals: */
@@ -233,7 +233,8 @@ private slots:
     void sltVideoCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
-    /* Handler: Host callback stuff: */
+    /* Handlers: Host callback stuff: */
+    void sltHandleHostScreenCountChange();
     void sltHandleHostScreenGeometryChange();
 
 private:

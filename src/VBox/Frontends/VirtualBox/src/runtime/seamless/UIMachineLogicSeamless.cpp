@@ -135,7 +135,7 @@ void UIMachineLogicSeamless::sltGuestMonitorChange(KGuestMonitorChangedEventType
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
-void UIMachineLogicSeamless::sltHostScreenCountChanged(int cScreenCount)
+void UIMachineLogicSeamless::sltHostScreenCountChanged()
 {
     LogRelFlow(("UIMachineLogicSeamless: Host-screen count changed.\n"));
 
@@ -143,7 +143,7 @@ void UIMachineLogicSeamless::sltHostScreenCountChanged(int cScreenCount)
     m_pScreenLayout->rebuild();
 
     /* Call to base-class: */
-    UIMachineLogic::sltHostScreenCountChanged(cScreenCount);
+    UIMachineLogic::sltHostScreenCountChanged();
 }
 
 void UIMachineLogicSeamless::prepareActionGroups()

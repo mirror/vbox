@@ -536,7 +536,7 @@ void UIMachineLogic::sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong,
         pMachineWindow->handleScreenCountChange();
 }
 
-void UIMachineLogic::sltHostScreenCountChanged(int /*cHostScreenCount*/)
+void UIMachineLogic::sltHostScreenCountChanged()
 {
     /* Deliver event to all machine-windows: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
@@ -720,8 +720,8 @@ void UIMachineLogic::prepareSessionConnections()
             this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
 
     /* Host-screen-change updaters: */
-    connect(uisession(), SIGNAL(sigHostScreenCountChanged(int)),
-            this, SLOT(sltHostScreenCountChanged(int)));
+    connect(uisession(), SIGNAL(sigHostScreenCountChanged()),
+            this, SLOT(sltHostScreenCountChanged()));
     connect(uisession(), SIGNAL(sigHostScreenGeometryChanged()),
             this, SLOT(sltHostScreenGeometryChanged()));
 }

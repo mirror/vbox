@@ -52,7 +52,7 @@ private slots:
     void sltMachineStateChanged();
 
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    void sltHostScreenCountChanged(int cScreenCount);
+    void sltHostScreenCountChanged();
 
 private:
 
