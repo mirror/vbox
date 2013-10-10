@@ -79,34 +79,7 @@ struct fwtcp *fwtcp_list = NULL;
 void
 fwtcp_init(void)
 {
-#if 0
-    struct fwspec fw_echo;
-    struct fwspec fw_daytime;
-    struct fwspec fw_chargen;
-    struct fwspec fw_ssh;
-
-
-#define FWSPEC_INIT_TCP4(fwspec, dst_port) do {                 \
-        int __status;                                           \
-        __status = fwspec_set((fwspec), PF_INET, SOCK_STREAM,   \
-                               "0.0.0.0", 30000 + (dst_port),   \
-                               PROXY_GUEST_IPV4, (dst_port));   \
-        LWIP_ASSERT1(__status == 0);                            \
-        LWIP_UNUSED_ARG(__status);                              \
-    } while (0)
-
-    FWSPEC_INIT_TCP4(&fw_echo,     7);
-    FWSPEC_INIT_TCP4(&fw_daytime, 13);
-    FWSPEC_INIT_TCP4(&fw_chargen, 19);
-    FWSPEC_INIT_TCP4(&fw_ssh,     22);
-
-#undef FWSPEC_INIT_TCP4
-
-    fwtcp_add(&fw_echo);
-    fwtcp_add(&fw_daytime);
-    fwtcp_add(&fw_chargen);
-    fwtcp_add(&fw_ssh);
-#endif
+    return;
 }
 
 
