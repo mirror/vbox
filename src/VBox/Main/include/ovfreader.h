@@ -37,12 +37,12 @@ namespace ovf
  * still makes the OVF impossible to parse. Based on xml::LogicError so
  * that one catch() for all xml::LogicError can handle all possible errors.
  */
-
 class OVFLogicError : public xml::LogicError
 {
 public:
     OVFLogicError(const char *aFormat, ...);
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -370,13 +370,13 @@ public:
         return fDefault;
     }
 
-    void checkConsistencyAndCompliance() throw (OVFLogicError)
+    void checkConsistencyAndCompliance() RT_THROW(OVFLogicError)
     {
         _checkConsistencyAndCompliance();
     }
 
 protected:
-    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+    virtual void _checkConsistencyAndCompliance() RT_THROW(OVFLogicError);
     virtual const RTCString& getItemName()
     {
         return _getItemName();
@@ -427,7 +427,7 @@ public:
     void fillItem(const xml::ElementNode *item);
 
 protected:
-    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+    virtual void _checkConsistencyAndCompliance() RT_THROW(OVFLogicError);
 private:
     RTCString itemName;
 
@@ -473,7 +473,7 @@ public:
     void fillItem(const xml::ElementNode *item);
 
 protected:
-    virtual void _checkConsistencyAndCompliance() throw (OVFLogicError);
+    virtual void _checkConsistencyAndCompliance() RT_THROW(OVFLogicError);
 private:
     RTCString itemName;
 
@@ -631,7 +631,6 @@ struct VirtualSystem
         delete pReader;
 </code>
  */
-
 class OVFReader
 {
 public:
