@@ -1,5 +1,5 @@
 /* -*- indent-tabs-mode: nil; -*- */
-#include "proxytest.h"
+#include "proxy.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>

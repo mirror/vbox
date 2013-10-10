@@ -53,7 +53,7 @@ VBoxNetLwipNAT_LDFLAGS.win = /SUBSYSTEM:windows
 VBoxNetLwipNAT_SOURCES += \
     proxy_pollmgr.c \
     proxy_rtadvd.c \
-    proxytest.c \
+    proxy.c \
     pxremap.c \
     pxtcp.c \
     pxudp.c \

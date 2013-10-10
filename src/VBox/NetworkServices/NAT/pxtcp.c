@@ -3,7 +3,7 @@
 
 #include "pxtcp.h"
 
-#include "proxytest.h"
+#include "proxy.h"
 #include "proxy_pollmgr.h"
 #include "pxremap.h"
 #include "portfwd.h"            /* fwspec */

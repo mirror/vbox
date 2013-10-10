@@ -4,7 +4,7 @@
  */
 #include "winutils.h"
 #include "dhcp6.h"
-#include "proxytest.h"
+#include "proxy.h"
 
 #include <string.h>
 

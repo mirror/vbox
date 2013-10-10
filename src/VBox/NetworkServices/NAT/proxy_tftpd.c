@@ -3,7 +3,7 @@
 /* XXX: replace POSIX file operations with IPRT, to avoid hacks with errno renamings */
 #include "winutils.h"
 
-#include "proxytest.h"
+#include "proxy.h"
 #include "tftp.h"
 
 #ifndef RT_OS_WINDOWS
