@@ -1,5 +1,5 @@
 /* -*- indent-tabs-mode: nil; -*- */
-#include "proxytest.h"
+#include "proxy.h"
 
 #include <sys/types.h>          /* must come before linux/netlink */
 #include <sys/socket.h>

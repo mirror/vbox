@@ -13,7 +13,7 @@
  */
 #include "winutils.h"
 #include "pxremap.h"
-#include "proxytest.h"
+#include "proxy.h"
 
 #include "lwip/netif.h"
 #include "netif/etharp.h"       /* proxy arp hook */

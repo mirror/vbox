@@ -96,7 +96,7 @@ extern "C"
 #include "lwip/sockets.h"
 #include "netif/etharp.h"
 
-#include "proxytest.h"
+#include "proxy.h"
 #include "pxremap.h"
 #include "portfwd.h"
 }

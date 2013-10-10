@@ -1,6 +1,6 @@
 /* -*- indent-tabs-mode: nil; -*- */
 #include "winutils.h"
-#include "proxytest.h"
+#include "proxy.h"
 #include "proxy_pollmgr.h"
 #include "portfwd.h"
 #include "pxtcp.h"

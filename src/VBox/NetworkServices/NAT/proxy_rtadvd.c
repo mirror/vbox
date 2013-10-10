@@ -1,7 +1,7 @@
 /* -*- indent-tabs-mode: nil; -*- */
 #include "winutils.h"
 
-#include "proxytest.h"
+#include "proxy.h"
 
 #include "lwip/opt.h"
 #include "lwip/sys.h"

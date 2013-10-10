@@ -2,7 +2,7 @@
 #include "winutils.h"
 
 #include "proxy_pollmgr.h"
-#include "proxytest.h"
+#include "proxy.h"
 
 #ifndef RT_OS_WINDOWS
 #include <sys/socket.h>

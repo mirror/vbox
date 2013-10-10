@@ -1,5 +1,5 @@
-#ifndef _proxytest_h_
-#define _proxytest_h_
+#ifndef _nat_proxy_h_
+#define _nat_proxy_h_
 
 #if !defined(VBOX)
 #include "vbox-compat.h"
@@ -85,4 +85,4 @@ void pxudp_init(void);
 #define DPRINTF1(x) DPRINTF_LEVEL(LWIP_DBG_LEVEL_SERIOUS, x)
 #define DPRINTF2(x) DPRINTF_LEVEL(LWIP_DBG_LEVEL_SEVERE, x)
 
-#endif /* _proxytest_h_ */
+#endif /* _nat_proxy_h_ */

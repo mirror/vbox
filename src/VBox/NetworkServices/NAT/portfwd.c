@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "proxytest.h"
+#include "proxy.h"
 #include "proxy_pollmgr.h"
 #include "pxremap.h"
 
