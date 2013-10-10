@@ -227,7 +227,6 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
     status = WSAStringToAddressA((char *)src_addr_str, saf, NULL,
                                   &fwspec->src.sa, &socklen);
     if (status == SOCKET_ERROR) {
-        int error = WSAGetLastError();
         return -1;
     }
     
@@ -240,7 +239,6 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
     status = WSAStringToAddressA((char *)dst_addr_str, saf, NULL,
                                 &fwspec->dst.sa, &socklen);
     if (status == SOCKET_ERROR) {
-        int error = WSAGetLastError();
         return -1;
     }
     if (fwspec->dst.sa.sa_family != saf) {
