@@ -966,7 +966,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
 {
     PFNCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
     pfnCreateProcessWithLogonW = (PFNCREATEPROCESSWITHLOGON)RTLdrGetSystemSymbol("Advapi32.dll", "CreateProcessWithLogonW");
-    if (pfnCreateProcessWithLogonW)
+    if (!pfnCreateProcessWithLogonW)
         return VERR_SYMBOL_NOT_FOUND;
 
     PRTUTF16 pwszzBlock;
