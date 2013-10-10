@@ -222,15 +222,11 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 
     saf = (sdom == PF_INET) ? AF_INET : AF_INET6;
 
+    fwspec->src.sa.sa_family = saf;
     socklen = sizeof(fwspec->src);
-    fwspec->src.sa.sa_family = saf; /* see "Remarks" WSAStringToAddress */
     status = WSAStringToAddressA((char *)src_addr_str, saf, NULL,
                                   &fwspec->src.sa, &socklen);
     if (status == SOCKET_ERROR) {
-        return -1;
-    }
-    
-    if (fwspec->src.sa.sa_family != saf) {
         return -1;
     }
 
@@ -239,9 +235,6 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
     status = WSAStringToAddressA((char *)dst_addr_str, saf, NULL,
                                 &fwspec->dst.sa, &socklen);
     if (status == SOCKET_ERROR) {
-        return -1;
-    }
-    if (fwspec->dst.sa.sa_family != saf) {
         return -1;
     }
 
