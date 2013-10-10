@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009-2012 Oracle Corporation
+ * Copyright (C) 2009-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -138,7 +138,10 @@ bool UIWizardExportApp::exportAppliance()
 bool UIWizardExportApp::exportVMs(CAppliance &appliance)
 {
     /* Write the appliance: */
-    CProgress progress = appliance.Write(field("format").toString(), field("manifestSelected").toBool() /* fManifest */, uri());
+    QVector<KExportOptions> options;
+    if (field("manifestSelected").toBool())
+        options.append(KExportOptions_CreateManifest);
+    CProgress progress = appliance.Write(field("format").toString(), options, uri());
     bool fResult = appliance.isOk();
     if (fResult)
     {

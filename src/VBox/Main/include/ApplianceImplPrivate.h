@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -78,7 +78,8 @@ struct Appliance::Data
     bool                fSha256;        // true = SHA256 (OVF 2.0), false = SHA1 (OVF 1.0)
     Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import)
 
-    RTCList<ImportOptions_T> optList;
+    RTCList<ImportOptions_T> optListImport;
+    RTCList<ExportOptions_T> optListExport;
 
     ovf::OVFReader      *pReader;
 

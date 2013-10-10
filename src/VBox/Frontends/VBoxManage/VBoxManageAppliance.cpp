@@ -1050,9 +1050,13 @@ int handleExportAppliance(HandlerArg *a)
         if (FAILED(rc))
             break;
 
+        com::SafeArray<ExportOptions_T> options;
+        if (fManifest)
+            options.push_back(ExportOptions_CreateManifest);
+
         ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(pAppliance, Write(Bstr(strOvfFormat).raw(),
-                                            fManifest,
+                                            ComSafeArrayAsInParam(options),
                                             Bstr(pszAbsFilePath).raw(),
                                             progress.asOutParam()));
         RTStrFree(pszAbsFilePath);

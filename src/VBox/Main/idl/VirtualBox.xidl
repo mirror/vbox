@@ -2796,6 +2796,26 @@
 
   </enum>
 
+  <enum
+    name="ExportOptions"
+    uuid="8f45eb08-fd34-41ee-af95-a880bdee5554"
+    >
+
+    <desc>
+    Export options, used with <link to="IAppliance::write" />.
+    </desc>
+
+    <const name="CreateManifest"    value="1">
+      <desc>Write the optional manifest file (.mf) which is used for integrity
+      checks prior import.</desc>
+    </const>
+    <const name="ExportDVDImages"   value="2">
+      <desc>Export DVD images. Default is not to export them as it is rarely
+      needed for typical VMs.</desc>
+    </const>
+
+  </enum>
+
 
   <!--
   // IAppliance
@@ -3038,11 +3058,8 @@
             and "ovf-2.0"; future versions of VirtualBox may support additional formats.
         </desc>
       </param>
-      <param name="manifest" type="boolean" dir="in">
-        <desc>
-            Indicate if the optional manifest file (.mf) should be written. The manifest file
-            is used for integrity checks prior import.
-        </desc>
+      <param name="options" type="ExportOptions" dir="in" safearray="yes">
+        <desc>Options for the exporting operation.</desc>
       </param>
       <param name="path" type="wstring" dir="in">
           <desc>
