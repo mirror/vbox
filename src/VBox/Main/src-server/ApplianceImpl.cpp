@@ -787,9 +787,9 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
         char *tmpDir = RTStrDup(aName.c_str());
         RTPathStripFilename(tmpDir);;
         char *tmpFile = RTStrDup(RTPathFilename(aName.c_str()));
-        RTPathStripExt(tmpFile);
-        const char *tmpExt = RTPathExt(aName.c_str());
-        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, tmpExt);
+        RTPathStripSuffix(tmpFile);
+        const char *pszTmpSuff = RTPathSuffix(aName.c_str());
+        RTStrAPrintf(&tmpName, "%s%c%s_%d%s", tmpDir, RTPATH_DELIMITER, tmpFile, i, pszTmpSuff);
         RTStrFree(tmpFile);
         RTStrFree(tmpDir);
         ++i;

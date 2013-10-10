@@ -704,9 +704,9 @@ int main()
 
 
     /*
-     * RTPathStripExt
+     * RTPathStripSuffix
      */
-    RTTestSub(hTest, "RTPathStripExt");
+    RTTestSub(hTest, "RTPathStripSuffix");
     struct
     {
         const char *pszSrc;
@@ -724,7 +724,7 @@ int main()
         const char *pszResult   = s_aStripExt[i].pszResult;
 
         strcpy(szPath, pszInput);
-        RTPathStripExt(szPath);
+        RTPathStripSuffix(szPath);
         if (strcmp(szPath, pszResult))
             RTTestIFailed("Unexpected result\n"
                           "   input: '%s'\n"

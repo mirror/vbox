@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,15 +33,8 @@
 
 
 
-/**
- * Checks if a path has an extension.
- *
- * @returns true if extension present.
- * @returns false if no extension present.
- * @param   pszPath     Path to check.
- */
-RTDECL(bool) RTPathHasExt(const char *pszPath)
+RTDECL(bool) RTPathHasSuffix(const char *pszPath)
 {
-    return RTPathExt(pszPath) != NULL;
+    return RTPathSuffix(pszPath) != NULL;
 }
 

@@ -794,12 +794,11 @@ EXPORTS
     RTPathExecDir
     RTPathExists
     RTPathExistsEx
-    RTPathExt
     RTPathFilename
     RTPathGetCurrent
     RTPathGetMode
-    RTPathHaveExt
     RTPathHavePath
+    RTPathHaveSuffix
     RTPathJoin
     RTPathJoinA
     RTPathJoinEx
@@ -818,9 +817,10 @@ EXPORTS
     RTPathSharedLibs
     RTPathStartsWith
     RTPathStartsWithRoot
-    RTPathStripExt
     RTPathStripFilename
+    RTPathStripSuffix
     RTPathStripTrailingSlash
+    RTPathSuffix
     RTPathTemp
     RTPathTraverseList
     RTPathUserHome

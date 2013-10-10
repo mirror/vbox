@@ -134,11 +134,11 @@ Utf8Str& Utf8Str::stripPath()
     return *this;
 }
 
-Utf8Str& Utf8Str::stripExt()
+Utf8Str& Utf8Str::stripSuffix()
 {
     if (length())
     {
-        RTPathStripExt(m_psz);
+        RTPathStripSuffix(m_psz);
         jolt();
     }
     return *this;

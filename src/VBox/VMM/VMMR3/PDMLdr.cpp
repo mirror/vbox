@@ -281,7 +281,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
      * Allocate the module list node and initialize it.
      */
     const char *pszSuff = RTLdrGetSuff();
-    size_t      cchSuff = RTPathHaveExt(pszFilename) ? 0 : strlen(pszSuff);
+    size_t      cchSuff = RTPathHasSuffix(pszFilename) ? 0 : strlen(pszSuff);
     PPDMMOD     pModule = (PPDMMOD)RTMemAllocZ(RT_OFFSETOF(PDMMOD, szFilename[cchFilename + cchSuff + 1]));
     if (pModule)
     {

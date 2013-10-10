@@ -204,8 +204,8 @@ static int parallelsOpenImage(PPARALLELSIMAGE pImage, unsigned uOpenFlags)
     if (memcmp(parallelsHeader.HeaderIdentifier, PARALLELS_HEADER_MAGIC, 16))
     {
         /* Check if the file has hdd as extension. It is a fixed size raw image then. */
-        char *pszExtension = RTPathExt(pImage->pszFilename);
-        if (strcmp(pszExtension, ".hdd"))
+        char *pszSuffix = RTPathSuffix(pImage->pszFilename);
+        if (strcmp(pszSuffix, ".hdd"))
         {
             rc = VERR_VD_PARALLELS_INVALID_HEADER;
             goto out;
@@ -390,7 +390,7 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
              * of 512 and if the file extensions is *.hdd
              */
             uint64_t cbFile;
-            char *pszExtension;
+            char *pszSuffix;
 
             rc = vdIfIoIntFileGetSize(pIfIo, pStorage, &cbFile);
             if (RT_FAILURE(rc) || ((cbFile % 512) != 0))
@@ -399,8 +399,8 @@ static int parallelsCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDis
                 return VERR_VD_PARALLELS_INVALID_HEADER;
             }
 
-            pszExtension = RTPathExt(pszFilename);
-            if (!pszExtension || strcmp(pszExtension, ".hdd"))
+            pszSuffix = RTPathSuffix(pszFilename);
+            if (!pszSuffix || strcmp(pszSuffix, ".hdd"))
                 rc = VERR_VD_PARALLELS_INVALID_HEADER;
             else
                 rc = VINF_SUCCESS;

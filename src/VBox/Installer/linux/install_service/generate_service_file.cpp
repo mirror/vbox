@@ -584,13 +584,11 @@ bool createServiceFileCore(char **ppachTemplate,
             }
             else
             {
-                const char *pcszFileName =
-                    RTPathFilename(pParameters->pcszCommand);
-                const char *pcszExtension =
-                    RTPathExt(pParameters->pcszCommand);
+                const char *pcszFileName = RTPathFilename(pParameters->pcszCommand);
+                const char *pcszSuffix   = RTPathSuffix(pParameters->pcszCommand);
                 char *pszName = RTStrDupN(pcszFileName,
-                                            pcszExtension
-                                          ? pcszExtension - pcszFileName
+                                            pcszSuffix
+                                          ? pcszSuffix - pcszFileName
                                           : RTPATH_MAX);
                 bool fRc;
                 if (!pszName)

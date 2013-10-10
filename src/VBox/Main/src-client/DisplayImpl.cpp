@@ -2738,21 +2738,21 @@ int Display::VideoCaptureStart()
     for (unsigned uScreen = 0; uScreen < mcMonitors; uScreen++)
     {
         char *pszAbsPath = RTPathAbsDup(com::Utf8Str(strFile).c_str());
-        char *pszExt = RTPathExt(pszAbsPath);
-        if (pszExt)
-            pszExt = RTStrDup(pszExt);
-        RTPathStripExt(pszAbsPath);
+        char *pszSuff = RTPathSuffix(pszAbsPath);
+        if (pszSuff)
+            pszSuff = RTStrDup(pszSuff);
+        RTPathStripSuffix(pszAbsPath);
         if (!pszAbsPath)
             rc = VERR_INVALID_PARAMETER;
-        if (!pszExt)
-            pszExt = RTStrDup(".webm");
+        if (!pszSuff)
+            pszSuff = RTStrDup(".webm");
         char *pszName = NULL;
         if (RT_SUCCESS(rc))
         {
             if (mcMonitors > 1)
-                rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszExt);
+                rc = RTStrAPrintf(&pszName, "%s-%u%s", pszAbsPath, uScreen+1, pszSuff);
             else
-                rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszExt);
+                rc = RTStrAPrintf(&pszName, "%s%s", pszAbsPath, pszSuff);
         }
         if (RT_SUCCESS(rc))
         {
@@ -2767,12 +2767,12 @@ int Display::VideoCaptureStart()
                     rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ-%u%s",
                                       pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
                                       time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                      uScreen+1, pszExt);
+                                      uScreen+1, pszSuff);
                 else
                     rc = RTStrAPrintf(&pszName, "%s-%04d-%02u-%02uT%02u-%02u-%02u-%09uZ%s",
                                       pszAbsPath, time.i32Year, time.u8Month, time.u8MonthDay,
                                       time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond,
-                                      pszExt);
+                                      pszSuff);
                 if (RT_SUCCESS(rc))
                     rc = VideoRecStrmInit(mpVideoRecCtx, uScreen,
                                           pszName, ulWidth, ulHeight, ulRate, ulFPS);
@@ -2785,7 +2785,7 @@ int Display::VideoCaptureStart()
         else
             LogRel(("Failed to initialize video recording context #%u (%Rrc)!\n", uScreen, rc));
         RTStrFree(pszName);
-        RTStrFree(pszExt);
+        RTStrFree(pszSuff);
         RTStrFree(pszAbsPath);
     }
     return rc;

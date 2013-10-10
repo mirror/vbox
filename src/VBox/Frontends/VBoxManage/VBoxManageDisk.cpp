@@ -322,7 +322,7 @@ int handleCreateHardDisk(HandlerArg *a)
         DiskVariant = MediumVariant_Diff;
         if (!format || !*format)
         {
-            const char *pszExt = RTPathExt(filename);
+            const char *pszExt = RTPathSuffix(filename);
             /* Skip over . if there is an extension. */
             if (pszExt)
                 pszExt++;
@@ -355,7 +355,7 @@ int handleCreateHardDisk(HandlerArg *a)
     /* check for filename extension */
     /** @todo use IMediumFormat to cover all extensions generically */
     Utf8Str strName(filename);
-    if (!RTPathHaveExt(strName.c_str()))
+    if (!RTPathHasSuffix(strName.c_str()))
     {
         Utf8Str strFormat(format);
         if (strFormat.compare("vmdk", RTCString::CaseInsensitive) == 0)

@@ -1741,20 +1741,20 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                     char *pszLogFile = RTStrDup(g_szLogFile);
                     if (pszLogFile)
                     {
-                        char *pszLogExt = NULL;
-                        if (RTPathHasExt(pszLogFile))
-                            pszLogExt = RTStrDup(RTPathExt(pszLogFile));
-                        RTPathStripExt(pszLogFile);
-                        char *pszLogSuffix;
+                        char *pszLogSuff = NULL;
+                        if (RTPathHasSuffix(pszLogFile))
+                            pszLogSuff = RTStrDup(RTPathSuffix(pszLogFile));
+                        RTPathStripSuffix(pszLogFile);
+                        char *pszLogNewSuffix;
 #ifndef DEBUG
-                        if (RTStrAPrintf(&pszLogSuffix, "-%RU32-%s",
+                        if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%s",
                                          pSessionStartupInfo->uSessionID,
                                          pSessionStartupInfo->szUser) < 0)
                         {
                             rc2 = VERR_NO_MEMORY;
                         }
 #else
-                        if (RTStrAPrintf(&pszLogSuffix, "-%RU32-%RU32-%s",
+                        if (RTStrAPrintf(&pszLogNewSuffix, "-%RU32-%RU32-%s",
                                          pSessionStartupInfo->uSessionID,
                                          s_uCtrlSessionThread,
                                          pSessionStartupInfo->szUser) < 0)
@@ -1764,9 +1764,9 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
 #endif /* DEBUG */
                         else
                         {
-                            rc2 = RTStrAAppend(&pszLogFile, pszLogSuffix);
-                            if (RT_SUCCESS(rc2) && pszLogExt)
-                                rc2 = RTStrAAppend(&pszLogFile, pszLogExt);
+                            rc2 = RTStrAAppend(&pszLogFile, pszLogNewSuffix);
+                            if (RT_SUCCESS(rc2) && pszLogSuff)
+                                rc2 = RTStrAAppend(&pszLogFile, pszLogSuff);
                             if (RT_SUCCESS(rc2))
                             {
                                 if (!RTStrPrintf(szParmLogFile, sizeof(szParmLogFile),
@@ -1775,13 +1775,13 @@ int GstCntlSessionThreadCreate(PRTLISTANCHOR pList,
                                     rc2 = VERR_BUFFER_OVERFLOW;
                                 }
                             }
-                            RTStrFree(pszLogSuffix);
+                            RTStrFree(pszLogNewSuffix);
                         }
                         if (RT_FAILURE(rc2))
                             VBoxServiceError("Error building session logfile string for session %RU32 (user %s), rc=%Rrc\n",
                                              pSessionStartupInfo->uSessionID, pSessionStartupInfo->szUser, rc2);
-                        if (pszLogExt)
-                            RTStrFree(pszLogExt);
+                        if (pszLogSuff)
+                            RTStrFree(pszLogSuff);
                         RTStrFree(pszLogFile);
                     }
                     if (RT_SUCCESS(rc2))

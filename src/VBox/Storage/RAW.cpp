@@ -348,7 +348,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
     PVDIOSTORAGE pStorage = NULL;
     uint64_t cbFile;
     int rc = VINF_SUCCESS;
-    char *pszExtension = NULL;
+    char *pszSuffix = NULL;
 
     PVDINTERFACEIOINT pIfIo = VDIfIoIntGet(pVDIfsImage);
     AssertPtrReturn(pIfIo, VERR_INVALID_PARAMETER);
@@ -360,7 +360,7 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
         goto out;
     }
 
-    pszExtension = RTPathExt(pszFilename);
+    pszSuffix = RTPathSuffix(pszFilename);
 
     /*
      * Open the file and read the footer.
@@ -374,10 +374,10 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
 
     /* Try to guess the image type based on the extension. */
     if (   RT_SUCCESS(rc)
-        && pszExtension)
+        && pszSuffix)
     {
-        if (   !RTStrICmp(pszExtension, ".iso")
-            || !RTStrICmp(pszExtension, ".cdr")) /* DVD images. */
+        if (   !RTStrICmp(pszSuffix, ".iso")
+            || !RTStrICmp(pszSuffix, ".cdr")) /* DVD images. */
         {
             /* Note that there are ISO images smaller than 1 MB; it is impossible to distinguish
              * between raw floppy and CD images based on their size (and cannot be reliably done
@@ -391,11 +391,11 @@ static int rawCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk,
             else
                 rc = VERR_VD_RAW_INVALID_HEADER;
         }
-        else if (   !RTStrICmp(pszExtension, ".img")
-                 || !RTStrICmp(pszExtension, ".ima")
-                 || !RTStrICmp(pszExtension, ".dsk")
-                 || !RTStrICmp(pszExtension, ".flp")
-                 || !RTStrICmp(pszExtension, ".vfd")) /* Floppy images */
+        else if (   !RTStrICmp(pszSuffix, ".img")
+                 || !RTStrICmp(pszSuffix, ".ima")
+                 || !RTStrICmp(pszSuffix, ".dsk")
+                 || !RTStrICmp(pszSuffix, ".flp")
+                 || !RTStrICmp(pszSuffix, ".vfd")) /* Floppy images */
         {
             if (!(cbFile % 512) && cbFile <= RAW_MAX_FLOPPY_IMG_SIZE)
             {
