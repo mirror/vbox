@@ -54,11 +54,4 @@ void fwudp_del(struct fwspec *);
 
 int fwany_ipX_addr_set_src(ipX_addr_t *, const struct sockaddr *);
 
-/* XXX: for testing */
-#ifdef VBOX
-#define PROXY_GUEST_IPV4 "10.0.2.15"
-#else
-#define PROXY_GUEST_IPV4 "192.168.2.11"
-#endif
-
 #endif /* _portfwd_h_ */

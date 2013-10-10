@@ -110,30 +110,7 @@ struct fwudp *fwudp_list = NULL;
 void
 fwudp_init(void)
 {
-#if 0
-    struct fwspec fw_echo;
-    struct fwspec fw_daytime;
-    struct fwspec fw_chargen;
-
-#define FWSPEC_INIT_UDP4(fwspec, dst_port) do {                 \
-        int __status;                                           \
-        __status = fwspec_set((fwspec), PF_INET, SOCK_DGRAM,    \
-                               "0.0.0.0", 30000 + (dst_port),   \
-                               PROXY_GUEST_IPV4, (dst_port));   \
-        LWIP_ASSERT1(__status == 0);                            \
-        LWIP_UNUSED_ARG(__status);                              \
-    } while (0)
-
-    FWSPEC_INIT_UDP4(&fw_echo,     7);
-    FWSPEC_INIT_UDP4(&fw_daytime, 13);
-    FWSPEC_INIT_UDP4(&fw_chargen, 19);
-
-#undef FWSPEC_INIT_UDP4
-
-    fwudp_add(&fw_echo);
-    fwudp_add(&fw_daytime);
-    fwudp_add(&fw_chargen);
-#endif
+    return;
 }
 
 
