@@ -1878,7 +1878,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             goto leave;
         }
         /* load the SDL_ttf library and get the required imports */
-        vrc = RTLdrLoad(LIBSDL_TTF_NAME, &gLibrarySDL_ttf);
+        vrc = RTLdrLoadSystem(LIBSDL_TTF_NAME, true /*fNoUnload*/, &gLibrarySDL_ttf);
         if (RT_SUCCESS(vrc))
             vrc = RTLdrGetSymbol(gLibrarySDL_ttf, "TTF_Init", (void**)&pTTF_Init);
         if (RT_SUCCESS(vrc))
