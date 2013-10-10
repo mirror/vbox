@@ -111,7 +111,7 @@ protected slots:
     virtual void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
     /* Qt callback handler: */
-    virtual void sltHostScreenCountChanged(int cHostScreenCount);
+    virtual void sltHostScreenCountChanged();
     virtual void sltHostScreenGeometryChanged();
 
 protected:

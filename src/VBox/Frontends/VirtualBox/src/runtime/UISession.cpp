@@ -84,14 +84,34 @@
  *
  * Notifies about @a display configuration change.
  * Corresponding change described by CoreGraphics @a flags.
- * UISession::sltHandleHostScreenGeometryChange() is called through @a pHandlerObject to handle this callback.
+ * Calls for corresponding UISession slots through @a pHandlerObject to handle this callback.
  *
  * @note Last argument (@a pHandlerObject) must always be valid pointer to UISession object.
+ * @note Calls for UISession::sltHandleHostScreenCountChange() if display count was changed.
+ * @note Calls for UISession::sltHandleHostScreenGeometryChange() if display mode was changed.
  */
 void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChangeSummaryFlags flags, void *pHandlerObject)
 {
+    /* Handle 'display-add' case: */
+    if (flags & kCGDisplayAddFlag)
+    {
+        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display added.\n"));
+
+        /* Ask receiver to handle our callback, can't believe I'm using r_c here... */
+        UISession *pReceiver = reinterpret_cast<UISession*>(pHandlerObject);
+        QTimer::singleShot(0, pReceiver, SLOT(sltHandleHostScreenCountChange()));
+    }
+    /* Handle 'display-remove' case: */
+    else if (flags & kCGDisplayRemoveFlag)
+    {
+        LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display removed.\n"));
+
+        /* Ask receiver to handle our callback, can't believe I'm using r_c here... */
+        UISession *pReceiver = reinterpret_cast<UISession*>(pHandlerObject);
+        QTimer::singleShot(0, pReceiver, SLOT(sltHandleHostScreenCountChange()));
+    }
     /* Handle 'mode-set' case: */
-    if (flags & kCGDisplaySetModeFlag)
+    else if (flags & kCGDisplaySetModeFlag)
     {
         LogRelFlow(("UISession::cgDisplayReconfigurationCallback: Display mode changed.\n"));
 
@@ -99,6 +119,7 @@ void cgDisplayReconfigurationCallback(CGDirectDisplayID display, CGDisplayChange
         UISession *pReceiver = reinterpret_cast<UISession*>(pHandlerObject);
         QTimer::singleShot(0, pReceiver, SLOT(sltHandleHostScreenGeometryChange()));
     }
+    Q_UNUSED(display);
 }
 #endif /* Q_WS_MAC */
 
@@ -816,6 +837,14 @@ void UISession::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, 
     emit sigGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
+void UISession::sltHandleHostScreenCountChange()
+{
+    LogRelFlow(("UISession: Host-screen count changed.\n"));
+
+    /* Notify current machine-logic: */
+    emit sigHostScreenCountChanged();
+}
+
 void UISession::sltHandleHostScreenGeometryChange()
 {
     LogRelFlow(("UISession: Host-screen geometry changed.\n"));
@@ -912,10 +941,9 @@ void UISession::prepareConnections()
 {
     connect(this, SIGNAL(sigCloseRuntimeUI()), this, SLOT(sltCloseRuntimeUI()));
 
+    /* Install Qt display reconfiguration callbacks: */
     connect(QApplication::desktop(), SIGNAL(screenCountChanged(int)),
-            this, SIGNAL(sigHostScreenCountChanged(int)));
-
-    /* Install Qt reconfiguration callbacks: */
+            this, SLOT(sltHandleHostScreenCountChange()));
     connect(QApplication::desktop(), SIGNAL(resized(int)),
             this, SLOT(sltHandleHostScreenGeometryChange()));
     connect(QApplication::desktop(), SIGNAL(workAreaResized(int)),

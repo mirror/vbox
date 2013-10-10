@@ -135,7 +135,7 @@ void UIMachineLogicFullscreen::sltGuestMonitorChange(KGuestMonitorChangedEventTy
     UIMachineLogic::sltGuestMonitorChange(changeType, uScreenId, screenGeo);
 }
 
-void UIMachineLogicFullscreen::sltHostScreenCountChanged(int cScreenCount)
+void UIMachineLogicFullscreen::sltHostScreenCountChanged()
 {
     LogRelFlow(("UIMachineLogicFullscreen: Host-screen count changed.\n"));
 
@@ -143,7 +143,7 @@ void UIMachineLogicFullscreen::sltHostScreenCountChanged(int cScreenCount)
     m_pScreenLayout->rebuild();
 
     /* Call to base-class: */
-    UIMachineLogic::sltHostScreenCountChanged(cScreenCount);
+    UIMachineLogic::sltHostScreenCountChanged();
 }
 
 void UIMachineLogicFullscreen::prepareActionGroups()
