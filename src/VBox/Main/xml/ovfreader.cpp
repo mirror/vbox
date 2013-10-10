@@ -90,7 +90,7 @@ void OVFReader::parse()
         m_envelopeData.setOVFVersion(ovf::OVFVersion_0_9);
     }
 
-    if ((pTypeAttr = pRootElem->findAttribute("xml:lang")))
+    if ((pTypeAttr = pRootElem->findAttribute("lang", "xml")))
     {
         pcszTypeAttr = pTypeAttr->getValue();
         m_envelopeData.lang = pcszTypeAttr;
@@ -134,8 +134,8 @@ void OVFReader::LoopThruSections(const xml::ElementNode *pReferencesElem,
         const char *pcszElemName = pElem->getName();
         const char *pcszTypeAttr = "";
         const xml::AttributeNode *pTypeAttr;
-        if (    ((pTypeAttr = pElem->findAttribute("xsi:type")))
-             || ((pTypeAttr = pElem->findAttribute("type")))
+        if (    (pTypeAttr = pElem->findAttribute("type", "xsi")) != NULL
+             || (pTypeAttr = pElem->findAttribute("type")) != NULL
            )
             pcszTypeAttr = pTypeAttr->getValue();
 
@@ -230,7 +230,7 @@ void OVFReader::HandleDiskSection(const xml::ElementNode *pReferencesElem,
                 d.iPopulatedSize = -1;
 
             // optional vbox:uuid attribute (if OVF was exported by VirtualBox != 3.2)
-            pelmDisk->getAttributeValue("vbox:uuid", d.uuidVbox);
+            pelmDisk->getAttributeValue("uuid", d.uuidVbox, "vbox");
 
             const char *pcszFileRef;
             if (pelmDisk->getAttributeValue("fileRef", pcszFileRef)) // optional
@@ -334,7 +334,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
 
     // peek under the <VirtualSystem> node whether we have a <vbox:Machine> node;
     // that case case, the caller can completely ignore the OVF but only load the VBox machine XML
-    vsys.pelmVboxMachine = pelmVirtualSystem->findChildElement("vbox", "Machine");
+    vsys.pelmVboxMachine = pelmVirtualSystem->findChildElementNS("vbox", "Machine");
 
     // now look for real OVF
     const xml::AttributeNode *pIdAttr = pelmVirtualSystem->findAttribute("id");
@@ -350,8 +350,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
         if (!strcmp(pcszElemName, "Section"))       // OVF 0.9 used "Section" element always with a varying "type" attribute
         {
             const xml::AttributeNode *pTypeAttr;
-            if (    ((pTypeAttr = pelmThis->findAttribute("type")))
-                 || ((pTypeAttr = pelmThis->findAttribute("xsi:type")))
+            if (    (pTypeAttr = pelmThis->findAttribute("type")) != NULL
+                 || (pTypeAttr = pelmThis->findAttribute("type", "xsi")) != NULL
                )
                 pcszTypeAttr = pTypeAttr->getValue();
             else
@@ -812,8 +812,8 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 vsys.strCimosDesc = pelmCIMOSDescription->getValue();
 
             const xml::ElementNode *pelmVBoxOSType;
-            if ((pelmVBoxOSType = pelmThis->findChildElement("vbox",            // namespace
-                                                             "OSType")))        // element name
+            if ((pelmVBoxOSType = pelmThis->findChildElementNS("vbox",            // namespace
+                                                               "OSType")))        // element name
                 vsys.strTypeVbox = pelmVBoxOSType->getValue();
         }
         else if (    (!strcmp(pcszElemName, "AnnotationSection"))
