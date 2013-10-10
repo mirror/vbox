@@ -1925,7 +1925,7 @@ static int rtZipXarReadAndValidateToc(RTVFSIOSTREAM hVfsIosIn, PCXARHEADER pXarH
                     xml::ElementNode const *pRootElem = pDoc->getRootElement();
                     xml::ElementNode const *pTocElem  = NULL;
                     if (pRootElem && pRootElem->nameEquals("xar"))
-                        pTocElem = pRootElem ? pRootElem->findChildElement(NULL, "toc") : NULL;
+                        pTocElem = pRootElem ? pRootElem->findChildElement("toc") : NULL;
                     if (pTocElem)
                     {
 #ifndef USE_STD_LIST_FOR_CHILDREN

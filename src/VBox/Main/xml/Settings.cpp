@@ -492,9 +492,8 @@ void ConfigFileBase::readExtraData(const xml::ElementNode &elmExtraData,
         {
             // <ExtraDataItem name="GUI/LastWindowPostion" value="97,88,981,858"/>
             Utf8Str strName, strValue;
-            if (    ((pelmExtraDataItem->getAttributeValue("name", strName)))
-                 && ((pelmExtraDataItem->getAttributeValue("value", strValue)))
-               )
+            if (   pelmExtraDataItem->getAttributeValue("name", strName)
+                && pelmExtraDataItem->getAttributeValue("value", strValue) )
                 map[strName] = strValue;
             else
                 throw ConfigFileError(this, pelmExtraDataItem, N_("Required ExtraDataItem/@name or @value attribute is missing"));
@@ -520,9 +519,8 @@ void ConfigFileBase::readUSBDeviceFilters(const xml::ElementNode &elmDeviceFilte
         USBDeviceFilter flt;
         flt.action = USBDeviceFilterAction_Ignore;
         Utf8Str strAction;
-        if (    (pelmLevel4Child->getAttributeValue("name", flt.strName))
-             && (pelmLevel4Child->getAttributeValue("active", flt.fActive))
-           )
+        if (   pelmLevel4Child->getAttributeValue("name", flt.strName)
+            && pelmLevel4Child->getAttributeValue("active", flt.fActive))
         {
             if (!pelmLevel4Child->getAttributeValue("vendorId", flt.strVendorId))
                 pelmLevel4Child->getAttributeValue("vendorid", flt.strVendorId);            // used before 1.3
@@ -575,7 +573,7 @@ void ConfigFileBase::readMedium(MediaType t,
     // <HardDisk uuid="{5471ecdb-1ddb-4012-a801-6d98e226868b}" location="/mnt/innotek-unix/vdis/Windows XP.vdi" format="VDI" type="Normal">
     settings::Medium med;
     Utf8Str strUUID;
-    if (!(elmMedium.getAttributeValue("uuid", strUUID)))
+    if (!elmMedium.getAttributeValue("uuid", strUUID))
         throw ConfigFileError(this, &elmMedium, N_("Required %s/@uuid attribute is missing"), elmMedium.getName());
 
     parseUUID(med.uuid, strUUID);
@@ -668,14 +666,14 @@ void ConfigFileBase::readMedium(MediaType t,
         }
 
         if (med.strFormat.isEmpty())        // not set with 1.4 format above, or 1.4 Custom format?
-            if (!(elmMedium.getAttributeValue("format", med.strFormat)))
+            if (!elmMedium.getAttributeValue("format", med.strFormat))
                 throw ConfigFileError(this, &elmMedium, N_("Required %s/@format attribute is missing"), elmMedium.getName());
 
-        if (!(elmMedium.getAttributeValue("autoReset", med.fAutoReset)))
+        if (!elmMedium.getAttributeValue("autoReset", med.fAutoReset))
             med.fAutoReset = false;
 
         Utf8Str strType;
-        if ((elmMedium.getAttributeValue("type", strType)))
+        if (elmMedium.getAttributeValue("type", strType))
         {
             // pre-1.4 used lower case, so make this case-insensitive
             strType.toUpper();
@@ -700,13 +698,13 @@ void ConfigFileBase::readMedium(MediaType t,
         if (m->sv < SettingsVersion_v1_4)
         {
             // DVD and floppy images before 1.4 had "src" attribute instead of "location"
-            if (!(elmMedium.getAttributeValue("src", med.strLocation)))
+            if (!elmMedium.getAttributeValue("src", med.strLocation))
                 throw ConfigFileError(this, &elmMedium, N_("Required %s/@src attribute is missing"), elmMedium.getName());
 
             fNeedsLocation = false;
         }
 
-        if (!(elmMedium.getAttributeValue("format", med.strFormat)))
+        if (!elmMedium.getAttributeValue("format", med.strFormat))
         {
             // DVD and floppy images before 1.11 had no format attribute. assign the default.
             med.strFormat = "RAW";
@@ -720,7 +718,7 @@ void ConfigFileBase::readMedium(MediaType t,
 
     if (fNeedsLocation)
         // current files and 1.4 CustomHardDisk elements must have a location attribute
-        if (!(elmMedium.getAttributeValue("location", med.strLocation)))
+        if (!elmMedium.getAttributeValue("location", med.strLocation))
             throw ConfigFileError(this, &elmMedium, N_("Required %s/@location attribute is missing"), elmMedium.getName());
 
     elmMedium.getAttributeValue("Description", med.strDescription);       // optional
@@ -744,9 +742,8 @@ void ConfigFileBase::readMedium(MediaType t,
         else if (pelmHDChild->nameEquals("Property"))
         {
             Utf8Str strPropName, strPropValue;
-            if (    (pelmHDChild->getAttributeValue("name", strPropName))
-                 && (pelmHDChild->getAttributeValue("value", strPropValue))
-               )
+            if (   pelmHDChild->getAttributeValue("name", strPropName)
+                && pelmHDChild->getAttributeValue("value", strPropValue) )
                 med.properties[strPropName] = strPropValue;
             else
                 throw ConfigFileError(this, pelmHDChild, N_("Required HardDisk/Property/@name or @value attribute is missing"));
@@ -1301,9 +1298,8 @@ void MainConfigFile::readMachineRegistry(const xml::ElementNode &elmMachineRegis
         {
             MachineRegistryEntry mre;
             Utf8Str strUUID;
-            if (    ((pelmChild1->getAttributeValue("uuid", strUUID)))
-                 && ((pelmChild1->getAttributeValue("src", mre.strSettingsFile)))
-               )
+            if (   pelmChild1->getAttributeValue("uuid", strUUID)
+                && pelmChild1->getAttributeValue("src", mre.strSettingsFile) )
             {
                 parseUUID(mre.uuid, strUUID);
                 llMachines.push_back(mre);
@@ -1327,13 +1323,12 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
         if (pelmServer->nameEquals("DHCPServer"))
         {
             DHCPServer srv;
-            if (    (pelmServer->getAttributeValue("networkName", srv.strNetworkName))
-                 && (pelmServer->getAttributeValue("IPAddress", srv.strIPAddress))
-                    && (pelmServer->getAttributeValue("networkMask", srv.GlobalDhcpOptions[DhcpOpt_SubnetMask]))
-                 && (pelmServer->getAttributeValue("lowerIP", srv.strIPLower))
-                 && (pelmServer->getAttributeValue("upperIP", srv.strIPUpper))
-                 && (pelmServer->getAttributeValue("enabled", srv.fEnabled))
-               )
+            if (   pelmServer->getAttributeValue("networkName", srv.strNetworkName)
+                && pelmServer->getAttributeValue("IPAddress", srv.strIPAddress)
+                && pelmServer->getAttributeValue("networkMask", srv.GlobalDhcpOptions[DhcpOpt_SubnetMask])
+                && pelmServer->getAttributeValue("lowerIP", srv.strIPLower)
+                && pelmServer->getAttributeValue("upperIP", srv.strIPUpper)
+                && pelmServer->getAttributeValue("enabled", srv.fEnabled) )
             {
                 xml::NodesLoop nlOptions(*pelmServer, "Options");
                 const xml::ElementNode *options;
@@ -1350,9 +1345,8 @@ void MainConfigFile::readDHCPServers(const xml::ElementNode &elmDHCPServers)
                     com::Utf8Str strVmName;
                     uint32_t u32Slot;
                     cfg->getAttributeValue("vm-name", strVmName);
-                    cfg->getAttributeValue("slot", (uint32_t&)u32Slot);
-                    readDhcpOptions(srv.VmSlot2OptionsM[VmNameSlotKey(strVmName, u32Slot)],
-                                   *cfg);
+                    cfg->getAttributeValue("slot", u32Slot);
+                    readDhcpOptions(srv.VmSlot2OptionsM[VmNameSlotKey(strVmName, u32Slot)], *cfg);
                 }
                 llDhcpServers.push_back(srv);
             }
@@ -1367,7 +1361,7 @@ void MainConfigFile::readDhcpOptions(DhcpOptionMap& map,
 {
     xml::NodesLoop nl2(options, "Option");
     const xml::ElementNode *opt;
-    while((opt = nl2.forAllNodes()))
+    while ((opt = nl2.forAllNodes()))
     {
         DhcpOpt_T OptName;
         com::Utf8Str OptValue;
@@ -1378,8 +1372,7 @@ void MainConfigFile::readDhcpOptions(DhcpOptionMap& map,
 
         opt->getAttributeValue("value", OptValue);
 
-        map.insert(
-          std::map<DhcpOpt_T, Utf8Str>::value_type(OptName, OptValue));
+        map.insert(std::map<DhcpOpt_T, Utf8Str>::value_type(OptName, OptValue));
     } /* end of forall("Option") */
 
 }
@@ -1397,14 +1390,13 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
         if (pelmNet->nameEquals("NATNetwork"))
         {
             NATNetwork net;
-            if (    (pelmNet->getAttributeValue("networkName", net.strNetworkName))
-                 && (pelmNet->getAttributeValue("enabled", net.fEnabled))
-                 && (pelmNet->getAttributeValue("network", net.strNetwork))
-                 && (pelmNet->getAttributeValue("ipv6", net.fIPv6))
-                 && (pelmNet->getAttributeValue("ipv6prefix", net.strIPv6Prefix))
-                 && (pelmNet->getAttributeValue("advertiseDefaultIPv6Route", net.fAdvertiseDefaultIPv6Route))
-                 && (pelmNet->getAttributeValue("needDhcp", net.fNeedDhcpServer))
-               )
+            if (   pelmNet->getAttributeValue("networkName", net.strNetworkName)
+                && pelmNet->getAttributeValue("enabled", net.fEnabled)
+                && pelmNet->getAttributeValue("network", net.strNetwork)
+                && pelmNet->getAttributeValue("ipv6", net.fIPv6)
+                && pelmNet->getAttributeValue("ipv6prefix", net.strIPv6Prefix)
+                && pelmNet->getAttributeValue("advertiseDefaultIPv6Route", net.fAdvertiseDefaultIPv6Route)
+                && pelmNet->getAttributeValue("needDhcp", net.fNeedDhcpServer) )
             {
                 pelmNet->getAttributeValue("loopback6", net.u32HostLoopback6Offset);
                 const xml::ElementNode *pelmMappings;
@@ -2378,8 +2370,8 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
 
         readNATForwardRuleList(elmMode, nic.nat.llRules);
     }
-    else if (   (elmMode.nameEquals("HostInterface"))
-             || (elmMode.nameEquals("BridgedInterface")))
+    else if (   elmMode.nameEquals("HostInterface")
+             || elmMode.nameEquals("BridgedInterface"))
     {
         enmAttachmentType = NetworkAttachmentType_Bridged;
 
@@ -2413,9 +2405,8 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
             if (pelmModeChild->nameEquals("Property"))
             {
                 Utf8Str strPropName, strPropValue;
-                if (    (pelmModeChild->getAttributeValue("name", strPropName))
-                     && (pelmModeChild->getAttributeValue("value", strPropValue))
-                   )
+                if (   pelmModeChild->getAttributeValue("name", strPropName)
+                    && pelmModeChild->getAttributeValue("value", strPropValue) )
                     nic.genericProperties[strPropName] = strPropValue;
                 else
                     throw ConfigFileError(this, pelmModeChild, N_("Required GenericInterface/Property/@name or @value attribute is missing"));
@@ -2957,9 +2948,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     {
                         /* <Property name="TCP/Ports" value="3000-3002"/> */
                         Utf8Str strName, strValue;
-                        if (    ((pelmProperty->getAttributeValue("name", strName)))
-                             && ((pelmProperty->getAttributeValue("value", strValue)))
-                           )
+                        if (   pelmProperty->getAttributeValue("name", strName)
+                            && pelmProperty->getAttributeValue("value", strValue))
                             hw.vrdeSettings.mapProperties[strName] = strValue;
                         else
                             throw ConfigFileError(this, pelmProperty, N_("Required VRDE Property/@name or @value attribute is missing"));
@@ -3005,7 +2995,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             // legacy BIOS/IDEController (pre 1.7)
             if (    (m->sv < SettingsVersion_v1_7)
-                 && ((pelmBIOSChild = pelmHwChild->findChildElement("IDEController")))
+                 && (pelmBIOSChild = pelmHwChild->findChildElement("IDEController"))
                )
             {
                 StorageController sctl;
@@ -3091,14 +3081,12 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             if ((pelmUSBChild = pelmHwChild->findChildElement("DeviceFilters")))
                 readUSBDeviceFilters(*pelmUSBChild, hw.usbSettings.llDeviceFilters);
         }
-        else if (    (m->sv < SettingsVersion_v1_7)
-                  && (pelmHwChild->nameEquals("SATAController"))
-                )
+        else if (   m->sv < SettingsVersion_v1_7
+                 && pelmHwChild->nameEquals("SATAController"))
         {
             bool f;
-            if (    (pelmHwChild->getAttributeValue("enabled", f))
-                 && (f)
-               )
+            if (   pelmHwChild->getAttributeValue("enabled", f)
+                && f)
             {
                 StorageController sctl;
                 sctl.strName = "SATA Controller";
@@ -3115,15 +3103,15 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         else if (pelmHwChild->nameEquals("RTC"))
         {
             Utf8Str strLocalOrUTC;
-            machineUserData.fRTCUseUTC =    pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
-                                         && strLocalOrUTC == "UTC";
+            machineUserData.fRTCUseUTC = pelmHwChild->getAttributeValue("localOrUTC", strLocalOrUTC)
+                                      && strLocalOrUTC == "UTC";
         }
-        else if (    (pelmHwChild->nameEquals("UART"))
-                  || (pelmHwChild->nameEquals("Uart"))      // used before 1.3
+        else if (    pelmHwChild->nameEquals("UART")
+                  || pelmHwChild->nameEquals("Uart")      // used before 1.3
                 )
             readSerialPorts(*pelmHwChild, hw.llSerialPorts);
-        else if (    (pelmHwChild->nameEquals("LPT"))
-                  || (pelmHwChild->nameEquals("Lpt"))       // used before 1.3
+        else if (    pelmHwChild->nameEquals("LPT")
+                  || pelmHwChild->nameEquals("Lpt")       // used before 1.3
                 )
             readParallelPorts(*pelmHwChild, hw.llParallelPorts);
         else if (pelmHwChild->nameEquals("AudioAdapter"))
@@ -3225,7 +3213,9 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     hw.ioSettings.llBandwidthGroups.push_back(gr);
                 }
             }
-        }  else if (pelmHwChild->nameEquals("HostPci")) {
+        }
+        else if (pelmHwChild->nameEquals("HostPci"))
+        {
             const xml::ElementNode *pelmDevices;
 
             if ((pelmDevices = pelmHwChild->findChildElement("Devices")))
@@ -3536,9 +3526,8 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
 
             const xml::ElementNode *pDriveChild;
             Utf8Str strTmp;
-            if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
-                 && (pDriveChild->getAttributeValue("uuid", strTmp))
-               )
+            if (   (pDriveChild = pelmHwChild->findChildElement("Image")) != NULL
+                && pDriveChild->getAttributeValue("uuid", strTmp))
                 parseUUID(att.uuid, strTmp);
             else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
                 pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
@@ -3566,9 +3555,8 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
         else if (pelmHwChild->nameEquals("FloppyDrive"))
         {
             bool fEnabled;
-            if (    (pelmHwChild->getAttributeValue("enabled", fEnabled))
-                 && (fEnabled)
-               )
+            if (   pelmHwChild->getAttributeValue("enabled", fEnabled)
+                && fEnabled)
             {
                 // create a new floppy controller and attach a floppy "attached device"
                 StorageController sctl;
@@ -3584,9 +3572,8 @@ void MachineConfigFile::readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHar
 
                 const xml::ElementNode *pDriveChild;
                 Utf8Str strTmp;
-                if (    ((pDriveChild = pelmHwChild->findChildElement("Image")))
-                     && (pDriveChild->getAttributeValue("uuid", strTmp))
-                   )
+                if (   (pDriveChild = pelmHwChild->findChildElement("Image"))
+                    && pDriveChild->getAttributeValue("uuid", strTmp) )
                     parseUUID(att.uuid, strTmp);
                 else if ((pDriveChild = pelmHwChild->findChildElement("HostDrive")))
                     pDriveChild->getAttributeValue("src", att.strHostDriveSrc);
@@ -3733,13 +3720,11 @@ void MachineConfigFile::readSnapshot(uint32_t depth,
     {
         if (pelmSnapshotChild->nameEquals("Description"))
             snap.strDescription = pelmSnapshotChild->getValue();
-        else if (    (m->sv < SettingsVersion_v1_7)
-                  && (pelmSnapshotChild->nameEquals("HardDiskAttachments"))
-                )
+        else if (   m->sv < SettingsVersion_v1_7
+                 && pelmSnapshotChild->nameEquals("HardDiskAttachments"))
             readHardDiskAttachments_pre1_7(*pelmSnapshotChild, snap.storage);
-        else if (    (m->sv >= SettingsVersion_v1_7)
-                  && (pelmSnapshotChild->nameEquals("StorageControllers"))
-                )
+        else if (   m->sv >= SettingsVersion_v1_7
+                 && pelmSnapshotChild->nameEquals("StorageControllers"))
             readStorageControllers(*pelmSnapshotChild, snap.storage);
         else if (pelmSnapshotChild->nameEquals("Snapshots"))
         {
@@ -3836,9 +3821,8 @@ void MachineConfigFile::convertOldOSType_pre1_5(Utf8Str &str)
 void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
 {
     Utf8Str strUUID;
-    if (    (elmMachine.getAttributeValue("uuid", strUUID))
-         && (elmMachine.getAttributeValue("name", machineUserData.strName))
-       )
+    if (   elmMachine.getAttributeValue("uuid", strUUID)
+        && elmMachine.getAttributeValue("name", machineUserData.strName))
     {
         parseUUID(uuid, strUUID);
 

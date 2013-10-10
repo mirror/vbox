@@ -483,7 +483,7 @@ const char *Node::getNamespaceURI() const
  * @param pcsz
  * @return
  */
-bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
+bool Node::nameEqualsNS(const char *pcszNamespace, const char *pcsz) const
 {
     if (m_pcszName == pcsz)
         return true;
@@ -507,13 +507,13 @@ bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
 /**
  * Variant of nameEquals that checks the namespace as well.
  *
- * @return  true if equal, false if not.
- * @param   pcszNamespace   The name space prefix or NULL.
+ * @returns true if equal, false if not.
  * @param   pcsz            The element name.
  * @param   cchMax          The maximum number of character from @a pcsz to
  *                          match.
+ * @param   pcszNamespace   The name space prefix or NULL (default).
  */
-bool Node::nameEqualsN(const char *pcszNamespace, const char *pcsz, size_t cchMax) const
+bool Node::nameEqualsN(const char *pcsz, size_t cchMax, const char *pcszNamespace /* = NULL*/) const
 {
     /* Match the name. */
     if (!m_pcszName)
@@ -792,7 +792,7 @@ int ElementNode::getChildElements(ElementNodesList &children,
  * @param pcszMatch Element name to match.
  * @return
  */
-const ElementNode *ElementNode::findChildElement(const char *pcszNamespace, const char *pcszMatch) const
+const ElementNode *ElementNode::findChildElementNS(const char *pcszNamespace, const char *pcszMatch) const
 {
     Node *p;
     RTListForEachCpp(&m_children, p, Node, m_listEntry)
@@ -800,7 +800,7 @@ const ElementNode *ElementNode::findChildElement(const char *pcszNamespace, cons
         if (p->isElement())
         {
             ElementNode *pelm = static_cast<ElementNode*>(p);
-            if (pelm->nameEquals(pcszNamespace, pcszMatch))
+            if (pelm->nameEqualsNS(pcszNamespace, pcszMatch))
                 return pelm;
         }
     }
@@ -833,7 +833,7 @@ const ElementNode *ElementNode::findChildElementP(const char *pcszPath, const ch
 {
     size_t cchThis = strchr(pcszPath, '/') - pcszPath;
     if (cchThis == (size_t)((const char *)0 - pcszPath))
-        return this->findChildElement(pcszNamespace, pcszPath);
+        return findChildElementNS(pcszNamespace, pcszPath);
 
     /** @todo Can be done without recursion as we have both sibling lists and parent
      *        pointers in this variant.  */
@@ -843,7 +843,7 @@ const ElementNode *ElementNode::findChildElementP(const char *pcszPath, const ch
         if (p->isElement())
         {
             const ElementNode *pElm = static_cast<const ElementNode *>(p);
-            if (pElm->nameEqualsN(pcszNamespace, pcszPath, cchThis))
+            if (pElm->nameEqualsN(pcszPath, cchThis, pcszNamespace))
             {
                 pElm = findChildElementP(pcszPath + cchThis, pcszNamespace);
                 if (pElm)
@@ -920,7 +920,7 @@ const ElementNode *ElementNode::findPrevSibilingElement(const char *pcszMatch, c
         if (pSibling->isElement())
         {
             const ElementNode *pElem = static_cast<const ElementNode *>(pSibling);
-            if (pElem->nameEquals(pcszNamespace, pcszMatch))
+            if (pElem->nameEqualsNS(pcszNamespace, pcszMatch))
                 return pElem;
         }
     }
@@ -939,7 +939,7 @@ const ElementNode *ElementNode::findNextSibilingElement(const char *pcszMatch, c
         if (pSibling->isElement())
         {
             const ElementNode *pElem = static_cast<const ElementNode *>(pSibling);
-            if (pElem->nameEquals(pcszNamespace, pcszMatch))
+            if (pElem->nameEqualsNS(pcszNamespace, pcszMatch))
                 return pElem;
         }
     }
@@ -949,30 +949,15 @@ const ElementNode *ElementNode::findNextSibilingElement(const char *pcszMatch, c
 /**
  * Looks up the given attribute node in this element's attribute map.
  *
- * With respect to namespaces, the internal attributes map stores namespace
- * prefixes with attribute names only if the attribute uses a non-default
- * namespace. As a result, the following rules apply:
- *
- *  -- To find attributes from a non-default namespace, pcszMatch must not
- *     be prefixed with a namespace.
- *
- *  -- To find attributes from the default namespace (or if the document does
- *     not use namespaces), pcszMatch must be prefixed with the namespace
- *     prefix and a colon.
- *
- * For example, if the document uses the "vbox:" namespace by default, you
- * must omit "vbox:" from pcszMatch to find such attributes, whether they
- * are specifed in the xml or not.
- *
- * @param pcszMatch
- * @return
+ * @param   pcszMatch       The name of the attribute to find.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
  */
-const AttributeNode *ElementNode::findAttribute(const char *pcszMatch) const
+const AttributeNode *ElementNode::findAttribute(const char *pcszMatch, const char *pcszNamespace /*= NULL*/) const
 {
     AttributeNode *p;
     RTListForEachCpp(&m_attributes, p, AttributeNode, m_listEntry)
     {
-        if (p->nameEquals(pcszMatch))
+        if (p->nameEqualsNS(pcszNamespace, pcszMatch))
             return p;
     }
     return NULL;
@@ -982,14 +967,14 @@ const AttributeNode *ElementNode::findAttribute(const char *pcszMatch) const
  * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a string.
  *
- * @param   pcszMatch   Name of attribute to find (see findAttribute() for
- *                      namespace remarks).
- * @param   ppcsz       Where to return the attribute.
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   ppcsz           Where to return the attribute.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
  * @returns Boolean success indicator.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, const char **ppcsz) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, const char **ppcsz, const char *pcszNamespace /*= NULL*/) const
 {
-    const AttributeNode *pAttr = findAttribute(pcszMatch);
+    const AttributeNode *pAttr = findAttribute(pcszMatch, pcszNamespace);
     if (pAttr)
     {
         *ppcsz = pAttr->getValue();
@@ -1002,20 +987,20 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, const char **ppcsz) c
  * Convenience method which attempts to find the attribute with the given
  * name and returns its value as a string.
  *
- * @param   pcszMatch   Name of attribute to find (see findAttribute() for
- *                      namespace remarks).
- * @param   rStr        Reference to the string object that should receive the
- *                      attribute value.
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   pStr            Pointer to the string object that should receive the
+ *                          attribute value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
  * @returns Boolean success indicator.
  *
  * @throws  Whatever the string class may throw on assignment.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, RTCString &rStr) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, RTCString *pStr, const char *pcszNamespace /*= NULL*/) const
 {
-    const AttributeNode *pAttr = findAttribute(pcszMatch);
+    const AttributeNode *pAttr = findAttribute(pcszMatch, pcszNamespace);
     if (pAttr)
     {
-        rStr = pAttr->getValue();
+        *pStr = pAttr->getValue();
         return true;
     }
 
@@ -1025,15 +1010,18 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, RTCString &rStr) cons
 /**
  * Like getAttributeValue (ministring variant), but makes sure that all backslashes
  * are converted to forward slashes.
- * @param pcszMatch
- * @param str
- * @return
+ *
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   pStr            Pointer to the string object that should
+ *                          receive the attribute path value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
+ * @returns Boolean success indicator.
  */
-bool ElementNode::getAttributeValuePath(const char *pcszMatch, RTCString &str) const
+bool ElementNode::getAttributeValuePath(const char *pcszMatch, RTCString *pStr, const char *pcszNamespace /*= NULL*/) const
 {
-    if (getAttributeValue(pcszMatch, str))
+    if (getAttributeValue(pcszMatch, pStr, pcszNamespace))
     {
-        str.findReplace('\\', '/');
+        pStr->findReplace('\\', '/');
         return true;
     }
 
@@ -1042,60 +1030,58 @@ bool ElementNode::getAttributeValuePath(const char *pcszMatch, RTCString &str) c
 
 /**
  * Convenience method which attempts to find the attribute with the given
- * name and returns its value as a signed integer. This calls
- * RTStrToInt32Ex internally and will only output the integer if that
- * function returns no error.
+ * name and returns its value as a signed 32-bit integer.
  *
- * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
- * @param i out: attribute value; overwritten only if attribute was found
- * @return TRUE if attribute was found and str was thus updated.
- */
-bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t &i) const
-{
-    const char *pcsz;
-    if (    (getAttributeValue(pcszMatch, pcsz))
-         && (VINF_SUCCESS == RTStrToInt32Ex(pcsz, NULL, 0, &i))
-       )
-        return true;
-
-    return false;
-}
-
-/**
- * Convenience method which attempts to find the attribute with the given
- * name and returns its value as an unsigned integer.This calls
- * RTStrToUInt32Ex internally and will only output the integer if that
- * function returns no error.
- *
- * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
- * @param i out: attribute value; overwritten only if attribute was found
- * @return TRUE if attribute was found and str was thus updated.
- */
-bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t &i) const
-{
-    const char *pcsz;
-    if (    (getAttributeValue(pcszMatch, pcsz))
-         && (VINF_SUCCESS == RTStrToUInt32Ex(pcsz, NULL, 0, &i))
-       )
-        return true;
-
-    return false;
-}
-
-/**
- * Convenience method which attempts to find the attribute with the given
- * name and returns its value as a signed long integer. This calls
- * RTStrToInt64Ex internally and will only output the integer if that
- * function returns no error.
- *
- * @param   pcszMatch   Name of attribute to find (see findAttribute() for
- *                      namespace remarks).
- * @param   i           Where to return the attribute value on success.
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   piValue         Where to return the value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
  * @returns Boolean success indicator.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t *piValue) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, int32_t *piValue, const char *pcszNamespace /*= NULL*/) const
 {
-    const char *pcsz = findAttributeValue(pcszMatch);
+    const char *pcsz = findAttributeValue(pcszMatch, pcszNamespace);
+    if (pcsz)
+    {
+        int rc = RTStrToInt32Ex(pcsz, NULL, 0, piValue);
+        if (rc == VINF_SUCCESS)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as an unsigned 32-bit integer.
+ *
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   puValue         Where to return the value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
+ * @returns Boolean success indicator.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, uint32_t *puValue, const char *pcszNamespace /*= NULL*/) const
+{
+    const char *pcsz = findAttributeValue(pcszMatch, pcszNamespace);
+    if (pcsz)
+    {
+        int rc = RTStrToUInt32Ex(pcsz, NULL, 0, puValue);
+        if (rc == VINF_SUCCESS)
+            return true;
+    }
+    return false;
+}
+
+/**
+ * Convenience method which attempts to find the attribute with the given
+ * name and returns its value as a signed 64-bit integer.
+ *
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   piValue         Where to return the value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
+ * @returns Boolean success indicator.
+ */
+bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t *piValue, const char *pcszNamespace /*= NULL*/) const
+{
+    const char *pcsz = findAttributeValue(pcszMatch, pcszNamespace);
     if (pcsz)
     {
         int rc = RTStrToInt64Ex(pcsz, NULL, 0, piValue);
@@ -1107,22 +1093,22 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, int64_t *piValue) con
 
 /**
  * Convenience method which attempts to find the attribute with the given
- * name and returns its value as an unsigned long integer.This calls
- * RTStrToUInt64Ex internally and will only output the integer if that
- * function returns no error.
+ * name and returns its value as an unsigned 64-bit integer.
  *
- * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
- * @param i out: attribute value; overwritten only if attribute was found
- * @return TRUE if attribute was found and str was thus updated.
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   puValue         Where to return the value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
+ * @returns Boolean success indicator.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t *puValue, const char *pcszNamespace /*= NULL*/) const
 {
-    const char *pcsz;
-    if (    (getAttributeValue(pcszMatch, pcsz))
-         && (VINF_SUCCESS == RTStrToUInt64Ex(pcsz, NULL, 0, &i))
-       )
-        return true;
-
+    const char *pcsz = findAttributeValue(pcszMatch, pcszNamespace);
+    if (pcsz)
+    {
+        int rc = RTStrToUInt64Ex(pcsz, NULL, 0, puValue);
+        if (rc == VINF_SUCCESS)
+            return true;
+    }
     return false;
 }
 
@@ -1131,21 +1117,22 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, uint64_t &i) const
  * name and returns its value as a boolean. This accepts "true", "false",
  * "yes", "no", "1" or "0" as valid values.
  *
- * @param pcszMatch name of attribute to find (see findAttribute() for namespace remarks)
- * @param f out: attribute value; overwritten only if attribute was found
- * @return TRUE if attribute was found and str was thus updated.
+ * @param   pcszMatch       Name of attribute to find.
+ * @param   pfValue         Where to return the value.
+ * @param   pcszNamespace   The attribute name space prefix or NULL.
+ * @returns Boolean success indicator.
  */
-bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
+bool ElementNode::getAttributeValue(const char *pcszMatch, bool *pfValue, const char *pcszNamespace /*= NULL*/) const
 {
-    const char *pcsz;
-    if (getAttributeValue(pcszMatch, pcsz))
+    const char *pcsz = findAttributeValue(pcszMatch, pcszNamespace);
+    if (pcsz)
     {
         if (   !strcmp(pcsz, "true")
             || !strcmp(pcsz, "yes")
             || !strcmp(pcsz, "1")
            )
         {
-            f = true;
+            *pfValue = true;
             return true;
         }
         if (   !strcmp(pcsz, "false")
@@ -1153,7 +1140,7 @@ bool ElementNode::getAttributeValue(const char *pcszMatch, bool &f) const
             || !strcmp(pcsz, "0")
            )
         {
-            f = false;
+            *pfValue = false;
             return true;
         }
     }
@@ -1482,15 +1469,6 @@ AttributeNode::AttributeNode(const ElementNode *pElmRoot,
     {
         m_pcszNamespacePrefix = (const char *)pLibAttr->ns->prefix;
         m_pcszNamespaceHref   = (const char *)pLibAttr->ns->href;
-
-        if (   !pElmRoot->m_pcszNamespaceHref
-            || strcmp(m_pcszNamespaceHref, pElmRoot->m_pcszNamespaceHref))
-        {
-            // not default namespace:
-            m_strKey = m_pcszNamespacePrefix;
-            m_strKey.append(':');
-            m_strKey.append(m_pcszName);
-        }
     }
 }
 

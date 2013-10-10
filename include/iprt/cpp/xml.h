@@ -398,12 +398,12 @@ public:
     const char *getName() const;
     const char *getPrefix() const;
     const char *getNamespaceURI() const;
-    bool nameEquals(const char *pcszNamespace, const char *pcsz) const;
+    bool nameEqualsNS(const char *pcszNamespace, const char *pcsz) const;
     bool nameEquals(const char *pcsz) const
     {
-        return nameEquals(NULL, pcsz);
+        return nameEqualsNS(NULL, pcsz);
     }
-    bool nameEqualsN(const char *pcszNamespace, const char *pcsz, size_t cchMax) const;
+    bool nameEqualsN(const char *pcsz, size_t cchMax, const char *pcszNamespace = NULL) const;
 
     const char *getValue() const;
     bool copyValue(int32_t &i) const;
@@ -533,10 +533,6 @@ protected:
                   xmlAttr *pLibAttr);
     AttributeNode(const AttributeNode &x);      // no copying
 
-    /** For storing attribute names with namespace prefix.
-     * Only used if with non-default namespace specified. */
-    RTCString    m_strKey;
-
     friend class Node;
     friend class ElementNode;
 };
@@ -556,14 +552,12 @@ protected:
 class RT_DECL_CLASS ElementNode : public Node
 {
 public:
-    int getChildElements(ElementNodesList &children,
-                         const char *pcszMatch = NULL) const;
+    int getChildElements(ElementNodesList &children, const char *pcszMatch = NULL) const;
 
-    const ElementNode *findChildElement(const char *pcszNamespace,
-                                        const char *pcszMatch) const;
+    const ElementNode *findChildElementNS(const char *pcszNamespace, const char *pcszMatch) const;
     const ElementNode *findChildElement(const char *pcszMatch) const
     {
-        return findChildElement(NULL, pcszMatch);
+        return findChildElementNS(NULL, pcszMatch);
     }
     const ElementNode *findChildElementFromId(const char *pcszId) const;
 
@@ -609,14 +603,17 @@ public:
      * @param   pcszPathNamespace   The namespace to match @pcszPath with, NULL
      *                              (default) match any namespace.  When using a
      *                              path, this matches all elements along the way.
+     * @param   pcszAttribNamespace The namespace prefix to apply to the attribute,
+     *                              NULL (default) match any namespace.
      * @see     findChildElementP and findAttributeValue
      */
     const char *findChildElementAttributeValueP(const char *pcszPath, const char *pcszAttribute,
-                                                const char *pcszPathNamespace = NULL) const
+                                                const char *pcszPathNamespace = NULL,
+                                                const char *pcszAttributeNamespace = NULL) const
     {
         const ElementNode *pElem = findChildElementP(pcszPath, pcszPathNamespace);
         if (pElem)
-            return pElem->findAttributeValue(pcszAttribute);
+            return pElem->findAttributeValue(pcszAttribute, pcszAttributeNamespace);
         return NULL;
     }
 
@@ -694,39 +691,49 @@ public:
     /** @} */
 
 
-    const AttributeNode *findAttribute(const char *pcszMatch) const;
+    const AttributeNode *findAttribute(const char *pcszMatch, const char *pcszNamespace = NULL) const;
     /** Find the first attribute with the given name, returning its value string.
      * @returns Pointer to the attribute string value.
      * @param   pcszName        The attribute name.
+     * @param   pcszNamespace   The namespace name, default is NULL which means
+     *                          anything goes.
      * @see getAttributeValue
      */
-    const char *findAttributeValue(const char *pcszName) const
+    const char *findAttributeValue(const char *pcszName, const char *pcszNamespace = NULL) const
     {
-        const AttributeNode *pAttr = findAttribute(pcszName);
+        const AttributeNode *pAttr = findAttribute(pcszName, pcszNamespace);
         if (pAttr)
             return pAttr->getValue();
         return NULL;
     }
 
-    bool getAttributeValue(const char *pcszMatch, const char *&pcsz) const  { return getAttributeValue(pcszMatch, &pcsz); }
-    bool getAttributeValue(const char *pcszMatch, RTCString &str) const;
-    bool getAttributeValuePath(const char *pcszMatch, RTCString &str) const;
-    bool getAttributeValue(const char *pcszMatch, int32_t &i) const;
-    bool getAttributeValue(const char *pcszMatch, uint32_t &i) const;
-    bool getAttributeValue(const char *pcszMatch, int64_t &i) const         { return getAttributeValue(pcszMatch, &i); }
-    bool getAttributeValue(const char *pcszMatch, uint64_t &i) const;
-    bool getAttributeValue(const char *pcszMatch, bool &f) const;
+    bool getAttributeValue(const char *pcszMatch, const char *&pcsz, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &pcsz, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, RTCString &str, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &str, pcszNamespace); }
+    bool getAttributeValuePath(const char *pcszMatch, RTCString &str, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &str, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, int32_t &i, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &i, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, uint32_t &i, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &i, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, int64_t &i, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &i, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, uint64_t &u, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &u, pcszNamespace); }
+    bool getAttributeValue(const char *pcszMatch, bool &f, const char *pcszNamespace = NULL) const
+    { return getAttributeValue(pcszMatch, &f, pcszNamespace); }
 
     /** @name Variants that for clarity does not use references for output params.
      * @{ */
-    bool getAttributeValue(const char *pcszMatch, const char **ppcsz) const;
-    bool getAttributeValue(const char *pcszMatch, RTCString *pStr) const    { return getAttributeValue(pcszMatch, *pStr); }
-    bool getAttributeValuePath(const char *pcszMatch, RTCString *pStr) const { return getAttributeValuePath(pcszMatch, *pStr); }
-    bool getAttributeValue(const char *pcszMatch, int32_t *pi) const        { return getAttributeValue(pcszMatch, *pi); }
-    bool getAttributeValue(const char *pcszMatch, uint32_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
-    bool getAttributeValue(const char *pcszMatch, int64_t *piValue) const;
-    bool getAttributeValue(const char *pcszMatch, uint64_t *pu) const       { return getAttributeValue(pcszMatch, *pu); }
-    bool getAttributeValue(const char *pcszMatch, bool *pf) const           { return getAttributeValue(pcszMatch, *pf); }
+    bool getAttributeValue(const char *pcszMatch, const char **ppcsz, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, RTCString *pStr, const char *pcszNamespace = NULL) const;
+    bool getAttributeValuePath(const char *pcszMatch, RTCString *pStr, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, int32_t *pi, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, uint32_t *pu, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, int64_t *piValue, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, uint64_t *pu, const char *pcszNamespace = NULL) const;
+    bool getAttributeValue(const char *pcszMatch, bool *pf, const char *pcszNamespace = NULL) const;
     /** @} */
 
     /** @name Convenience methods for convering the element value.
