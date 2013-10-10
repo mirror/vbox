@@ -382,7 +382,6 @@ VMM_INT_DECL(int)       CPUMRawEnter(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
 VMM_INT_DECL(int)       CPUMRawLeave(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, int rc);
 VMMDECL(uint32_t)       CPUMRawGetEFlags(PVMCPU pVCpu);
 VMMDECL(void)           CPUMRawSetEFlags(PVMCPU pVCpu, uint32_t fEfl);
-VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 
 /** @name Changed flags.
  * These flags are used to keep track of which important register that
@@ -490,7 +489,7 @@ DECLASM(void)           CPUMGCCallGuestTrapHandler(PCPUMCTXCORE pRegFrame, uint3
  */
 DECLASM(void)           CPUMGCCallV86Code(PCPUMCTXCORE pRegFrame);
 
-
+VMMDECL(int)            CPUMHandleLazyFPU(PVMCPU pVCpu);
 VMMDECL(uint32_t)       CPUMRCGetGuestCPL(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 #ifdef VBOX_WITH_RAW_RING1
 VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore);
@@ -507,6 +506,7 @@ VMMDECL(void)           CPUMRCRecheckRawState(PVMCPU pVCpu, PCPUMCTXCORE pCtxCor
 VMMR0_INT_DECL(int)     CPUMR0ModuleInit(void);
 VMMR0_INT_DECL(int)     CPUMR0ModuleTerm(void);
 VMMR0_INT_DECL(int)     CPUMR0InitVM(PVM pVM);
+VMMR0_INT_DECL(int)     CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(int)     CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(int)     CPUMR0SaveGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMR0_INT_DECL(int)     CPUMR0SaveHostDebugState(PVM pVM, PVMCPU pVCpu);

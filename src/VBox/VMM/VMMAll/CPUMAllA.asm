@@ -38,6 +38,32 @@
 
 BEGINCODE
 
+;; Macro for FXSAVE/FXRSTOR leaky behaviour on AMD CPUs, see cpumR3CheckLeakyFpu().
+; Cleans the FPU state, if necessary, before restoring the FPU.
+;
+; This macro ASSUMES CR0.TS is not set!
+; @remarks Trashes xAX!!
+; Changes here should also be reflected in CPUMR0A.asm's copy!
+%macro CLEANFPU 0
+    test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USE_FFXSR_LEAKY
+    jz      .nothing_to_clean
+
+    xor     eax, eax
+    fnstsw  ax               ; Get FSW
+    test    eax, RT_BIT(7)   ; If FSW.ES (bit 7) is set, clear it to not cause FPU exceptions
+                             ; while clearing & loading the FPU bits in 'clean_fpu'
+    jz      clean_fpu
+    fnclex
+
+.clean_fpu:
+    ffree   st7              ; Clear FPU stack register(7)'s tag entry to prevent overflow if a wraparound occurs
+                             ; for the upcoming push (load)
+    fild    dword [xDX + CPUMCPU.Guest.fpu] ; Explicit FPU load to overwrite FIP, FOP, FDP registers in the FPU.
+
+.nothing_to_clean:
+%endmacro
+
+
 ;;
 ; Handles lazy FPU saving and restoring.
 ;
@@ -171,10 +197,8 @@ hlfpua_switch_fpu_ctx:
 hlfpua_finished_switch:
 
     ; Load new CR0 value.
-    ; IN_RING0 the caller saves/restores CR0 anyway, so avoid the extra CR0 write.
-    ; Currently the only caller in ring-0 is CPUMR0LoadGuestFPU()->CPUMHandleLazyFPU().
     ;; @todo Optimize the many unconditional CR0 writes.
-%ifdef IN_RC
+%ifndef IN_RING3
     mov     cr0, xCX                            ; load the new cr0 flags.
 %endif
     ; return continue execution.
