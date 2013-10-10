@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,16 +32,6 @@
 #include "internal/iprt.h"
 
 
-/**
- * Copies a file.
- *
- * @returns VERR_ALREADY_EXISTS if the destination file exists.
- * @returns VBox Status code.
- *
- * @param   pszSrc      The path to the source file.
- * @param   pszDst      The path to the destination file.
- *                      This file will be created.
- */
 RTDECL(int) RTFileCopy(const char *pszSrc, const char *pszDst)
 {
     return RTFileCopyEx(pszSrc, pszDst, 0, NULL, NULL);
