@@ -1668,6 +1668,7 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  * @param   enmEvent        The thread-context event.
  * @param   pVCpu           Pointer to the VMCPU.
  * @param   fGlobalInit     Whether global VT-x/AMD-V init. is used.
+ * @thread  EMT(pVCpu)
  */
 VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
 {
