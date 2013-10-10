@@ -71,7 +71,7 @@ BEGINCODE
 ;
 ; This macro ASSUMES CR0.TS is not set!
 ; @remarks Trashes xAX!!
-; Changes here should also be reflected in CPUMAllA.asm's copy!
+; Changes here should also be reflected in CPUMRCA.asm's copy!
 %macro CLEANFPU 0
     test    dword [xDX + CPUMCPU.fUseFlags], CPUM_USE_FFXSR_LEAKY
     jz      .nothing_to_clean
