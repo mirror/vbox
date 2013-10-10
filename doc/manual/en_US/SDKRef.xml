@@ -3543,6 +3543,12 @@ AuthResult AUTHCALL AuthEntry(
         </listitem>
 
         <listitem>
+          <para>The parameter list of <xref linkend="IAppliance__write"
+          xreflabel="IAppliance::write()" /> has been changed slightly, to
+          allow multiple flags to be passed.</para>
+        </listitem>
+
+        <listitem>
           <para><computeroutput>IMachine::delete</computeroutput>
           has been renamed to <xref linkend="IMachine__deleteConfig"
           xreflabel="IMachine::deleteConfig()" />, to improve API client

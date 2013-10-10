@@ -578,11 +578,12 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
 /**
  * Public method implementation.
  * @param format
+ * @param options
  * @param path
  * @param aProgress
  * @return
  */
-STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IProgress **aProgress)
+STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, options), IN_BSTR path, IProgress **aProgress)
 {
     if (!path) return E_POINTER;
     CheckComArgOutPointerValid(aProgress);
@@ -591,6 +592,11 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (options != NULL)
+        m->optListExport = com::SafeArray<ExportOptions_T>(ComSafeArrayInArg(options)).toList();
+
+    AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
 
     // do not allow entering this method if the appliance is busy reading or writing
     if (!isApplianceIdle())
@@ -603,7 +609,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, BOOL fManifest, IN_BSTR path, IPro
         return setError(VBOX_E_FILE_ERROR,
                         tr("Appliance file must have .ovf or .ova extension"));
 
-    m->fManifest = !!fManifest;
+    m->fManifest = m->optListExport.contains(ExportOptions_CreateManifest);
     Utf8Str strFormat(format);
 
     ovf::OVFVersion_T ovfF;
@@ -885,10 +891,10 @@ void Appliance::buildXML(AutoWriteLockBase& writeLock,
         if (pDiskEntry->type == VirtualSystemDescriptionType_HardDiskImage)
         {
             rc = mVirtualBox->OpenMedium(bstrSrcFilePath.raw(),
-                                                 DeviceType_HardDisk,
-                                                 AccessMode_ReadWrite,
-                                                 FALSE /* fForceNewUuid */,
-                                                 pSourceDisk.asOutParam());
+                                         DeviceType_HardDisk,
+                                         AccessMode_ReadWrite,
+                                         FALSE /* fForceNewUuid */,
+                                         pSourceDisk.asOutParam());
             if (FAILED(rc))
                 throw rc;
         }
