@@ -3089,7 +3089,7 @@ VMMDECL(bool) CPUMIsHostUsingSysCall(PVM pVM)
     return RT_BOOL(pVM->cpum.s.fHostUseFlags & CPUM_USE_SYSCALL);
 }
 
-#ifndef IN_RING3
+#ifdef IN_RC
 
 /**
  * Lazily sync in the FPU/XMM state.
@@ -3102,7 +3102,7 @@ VMMDECL(int) CPUMHandleLazyFPU(PVMCPU pVCpu)
     return cpumHandleLazyFPUAsm(&pVCpu->cpum.s);
 }
 
-#endif /* !IN_RING3 */
+#endif /* !IN_RC */
 
 /**
  * Checks if we activated the FPU/XMM state of the guest OS.

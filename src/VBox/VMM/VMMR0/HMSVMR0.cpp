@@ -4832,8 +4832,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
         Assert(!pSvmTransient->fWasGuestFPUStateActive);
 #endif
-        /* Lazy FPU loading; load the guest-FPU state transparently and continue execution of the guest. */
-        rc = CPUMR0LoadGuestFPU(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
+        rc = CPUMR0Trap07Handler(pVCpu->CTX_SUFF(pVM), pVCpu, pCtx);
         Assert(rc == VINF_EM_RAW_GUEST_TRAP || (rc == VINF_SUCCESS && CPUMIsGuestFPUStateActive(pVCpu)));
     }
 
@@ -4842,6 +4841,7 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptNM(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     if (rc == VINF_SUCCESS)
     {
+        /* Guest FPU state was activated, we'll want to change CR0 FPU intercepts before the next VM-reentry. */
         VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_CR0);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExitShadowNM);
     }

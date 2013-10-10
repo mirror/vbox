@@ -539,7 +539,6 @@ ifndef VBOX_ONLY_EXTPACKS
  	VMMR0/VMMR0.cpp \
  	VMMRZ/DBGFRZ.cpp \
  	VMMRZ/VMMRZ.cpp \
- 	VMMAll/CPUMAllA.asm \
  	VMMAll/CPUMAllRegs.cpp \
  	VMMAll/CPUMStack.cpp \
  	VMMAll/DBGFAll.cpp \

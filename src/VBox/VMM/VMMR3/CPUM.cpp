@@ -534,6 +534,45 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
 
 
 /**
+ * Checks for partial/leaky FXSAVE/FXRSTOR handling on AMD CPUs.
+ *
+ * AMD K7, K8 and newer AMD CPUs do not save/restore the x87 error
+ * pointers (last instruction pointer, last data pointer, last opcode)
+ * except when the ES bit (Exception Summary) in x87 FSW (FPU Status
+ * Word) is set. Thus if we don't clear these registers there is
+ * potential, local FPU leakage from a process using the FPU to
+ * another.
+ *
+ * See AMD Instruction Reference for FXSAVE, FXRSTOR.
+ *
+ * @param   pVM     Pointer to the VM.
+ */
+static void cpumR3CheckLeakyFpu(PVM pVM)
+{
+    uint32_t u32CpuVersion;
+    uint32_t u32Dummy;
+    ASMCpuId(1, &u32CpuVersion, &u32Dummy, &u32Dummy, &u32Dummy);
+    uint32_t const u32Family = u32CpuVersion >> 8;
+    if (   u32Family >= 6      /* K7 and higher */
+        && ASMIsAmdCpu())
+    {
+        uint32_t cExt = 0;
+        ASMCpuId(0x80000000, &cExt, &u32Dummy, &u32Dummy, &u32Dummy);
+        if (ASMIsValidExtRange(cExt))
+        {
+            uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
+            if (fExtFeaturesEDX & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
+            {
+                for (VMCPUID i = 0; i < pVM->cCpus; i++)
+                    pVM->aCpus[i].cpum.s.fUseFlags |= CPUM_USE_FFXSR_LEAKY;
+                Log(("CPUMR3Init: host CPU has leaky fxsave/fxrstor behaviour\n"));
+            }
+        }
+    }
+}
+
+
+/**
  * Initializes the CPUM.
  *
  * @returns VBox status code.
@@ -645,6 +684,11 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     rc = cpumR3DbgInit(pVM);
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Check if we need to workaround partial/leaky FPU handling.
+     */
+    cpumR3CheckLeakyFpu(pVM);
 
     /*
      * Initialize the Guest CPUID state.
