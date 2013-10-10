@@ -25,7 +25,7 @@ struct portfwd_msg {
 
 
 static int portfwd_chan_send(struct portfwd_msg *);
-static int portfwd_rule_add_del(struct fwspec *, SOCKET);
+static int portfwd_rule_add_del(struct fwspec *, int);
 static int portfwd_pmgr_chan(struct pollmgr_handler *, SOCKET, int);
 
 
