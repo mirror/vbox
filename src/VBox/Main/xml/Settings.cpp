@@ -1884,6 +1884,7 @@ Hardware::Hardware()
           fSyntheticCpu(false),
           fPAE(false),
           enmLongMode(HC_ARCH_BITS == 64 ? Hardware::LongMode_Enabled : Hardware::LongMode_Disabled),
+          fTripleFaultReset(false),
           cCPUs(1),
           fCpuHotPlug(false),
           fHPETEnabled(false),
@@ -1954,6 +1955,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fSyntheticCpu             == h.fSyntheticCpu)
                   && (fPAE                      == h.fPAE)
                   && (enmLongMode               == h.enmLongMode)
+                  && (fTripleFaultReset         == h.fTripleFaultReset)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
                   && (ulCpuExecutionCap         == h.ulCpuExecutionCap)
@@ -2711,6 +2713,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
 
             if ((pelmCPUChild = pelmHwChild->findChildElement("SyntheticCpu")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fSyntheticCpu);
+
+            if ((pelmCPUChild = pelmHwChild->findChildElement("TripleFaultReset")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fTripleFaultReset);
+
             if ((pelmCPUChild = pelmHwChild->findChildElement("CpuIdTree")))
                 readCpuIdTree(*pelmCPUChild, hw.llCpuIdLeafs);
         }
@@ -3956,6 +3962,8 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
 
     if (hw.fSyntheticCpu)
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
+    if (hw.fTripleFaultReset)
+        pelmCPU->createChild("TripleFaultReset")->setAttribute("enabled", hw.fTripleFaultReset);
     pelmCPU->setAttribute("count", hw.cCPUs);
     if (hw.ulCpuExecutionCap != 100)
         pelmCPU->setAttribute("executionCap", hw.ulCpuExecutionCap);

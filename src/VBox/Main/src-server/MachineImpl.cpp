@@ -187,6 +187,7 @@ Machine::HWData::HWData()
 #endif
     mLongMode =  HC_ARCH_BITS == 64 ? settings::Hardware::LongMode_Enabled : settings::Hardware::LongMode_Disabled;
     mSyntheticCpu = false;
+    mTripleFaultReset = false;
     mHPETEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
@@ -2238,6 +2239,10 @@ STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
 #endif
             break;
 
+        case CPUPropertyType_TripleFaultReset:
+            *aVal = mHWData->mTripleFaultReset;
+            break;
+
         default:
             return E_INVALIDARG;
     }
@@ -2272,6 +2277,12 @@ STDMETHODIMP Machine::SetCPUProperty(CPUPropertyType_T property, BOOL aVal)
             setModified(IsModified_MachineData);
             mHWData.backup();
             mHWData->mLongMode = !aVal ? settings::Hardware::LongMode_Disabled : settings::Hardware::LongMode_Enabled;
+            break;
+
+        case CPUPropertyType_TripleFaultReset:
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mTripleFaultReset = !!aVal;
             break;
 
         default:
@@ -9213,6 +9224,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data, const settings::De
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
         mHWData->mLongMode                    = data.enmLongMode;
+        mHWData->mTripleFaultReset            = data.fTripleFaultReset;
         mHWData->mCPUCount                    = data.cCPUs;
         mHWData->mCPUHotPlugEnabled           = data.fCpuHotPlug;
         mHWData->mCpuExecutionCap             = data.ulCpuExecutionCap;
@@ -10538,6 +10550,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data, settings::Debugging *pDb
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.enmLongMode            = mHWData->mLongMode;
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
+        data.fTripleFaultReset      = !!mHWData->mTripleFaultReset;
 
         /* Standard and Extended CPUID leafs. */
         data.llCpuIdLeafs.clear();
