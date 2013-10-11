@@ -738,7 +738,13 @@ static int rtDbgModOpenDebugInfoExternalToImage2(PRTDBGMODINT pDbgMod, RTDBGCFG 
     {
         case RTLDRFMT_MACHO:
         {
-            rc = RTDbgCfgOpenDsymBundle(hDbgCfg, pDbgMod->pszImgFile, NULL /**@todo pUuid*/,
+            RTUUID  Uuid;
+            PRTUUID pUuid = &Uuid;
+            rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &Uuid, sizeof(Uuid));
+            if (RT_FAILURE(rc))
+                pUuid = NULL;
+
+            rc = RTDbgCfgOpenDsymBundle(hDbgCfg, pDbgMod->pszImgFile, pUuid,
                                         rtDbgModExtDbgInfoOpenCallback2, pDbgMod, NULL /*pvUser2*/);
             if (RT_SUCCESS(rc))
                 return VINF_SUCCESS;

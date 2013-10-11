@@ -458,9 +458,32 @@ RTDECL(int) RTDbgCfgOpenDbg(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
 RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t uCrc32,
                             PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
-
 RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszFilename, PCRTUUID pUuid,
                                    PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2);
+
+
+/** @name Static symbol cache configuration
+ * @{ */
+/** The cache subdirectory containing the UUID mappings for .dSYM bundles.
+ * The UUID mappings implemented by IPRT are splitting the image/dsym UUID up
+ * into five 4 digit parts that maps to directories and one twelve digit part
+ * that maps to a symbolic link.  The symlink points to the file in the
+ * Contents/Resources/DWARF/ directory of the .dSYM bundle for a .dSYM map, and
+ * to the image file (Contents/MacOS/bundlename for bundles) for image map.
+ *
+ * According to available documentation, both lldb and gdb are able to use these
+ * UUID maps to find debug info while debugging.  See:
+ *      http://lldb.llvm.org/symbols.html
+ */
+#define RTDBG_CACHE_UUID_MAP_DIR_DSYMS   "dsym-uuids"
+/** The cache subdirectory containing the UUID mappings for image files. */
+#define RTDBG_CACHE_UUID_MAP_DIR_IMAGES  "image-uuids"
+/** Suffix used for the cached .dSYM debug files.
+ * In .dSYM bundles only the .dSYM/Contents/Resources/DWARF/debug-file is
+ * copied into the cache, and in order to not clash with the stripped/rich image
+ * file, the cache tool slaps this suffix onto the name. */
+#define RTDBG_CACHE_DSYM_FILE_SUFFIX     ".dwarf"
+/** @} */
 
 
 /** @} */

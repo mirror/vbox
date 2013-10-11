@@ -31,7 +31,9 @@
 #include <iprt/zip.h>
 
 #include <iprt/buildconfig.h>
+#include <iprt/dbg.h>
 #include <iprt/file.h>
+#include <iprt/formats/mach-o.h>
 #include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/ldr.h>
@@ -40,10 +42,9 @@
 #include <iprt/path.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include <iprt/vfs.h>
 #include <iprt/zip.h>
-#include <iprt/uuid.h>
-#include <iprt/formats/mach-o.h>
 
 
 /*******************************************************************************
@@ -711,7 +712,7 @@ static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cch
     /** @todo consider looking for Frameworks and handling framework bundles. */
     int rc = rtDbgSymCacheConstructBundlePath(pszPath, cchPath, cchName, "Contents/MacOS/", g_apszBundleSuffixes);
     if (RT_SUCCESS(rc))
-        rc = rtDbgSymCacheAddImageFile(pszPath, NULL, "image-uuids", pCfg);
+        rc = rtDbgSymCacheAddImageFile(pszPath, NULL, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
     return rc;
 }
 
@@ -747,7 +748,7 @@ static int rtDbgSymCacheAddDebugBundle(char *pszPath, size_t cchPath, size_t cch
      */
     int rc = rtDbgSymCacheConstructBundlePath(pszPath, cchPath, cchName, "Contents/Resources/DWARF/", g_apszDSymBundleSuffixes);
     if (RT_SUCCESS(rc))
-        rc = rtDbgSymCacheAddImageFile(pszPath, ".dwarf", "dsym-uuids", pCfg);
+        rc = rtDbgSymCacheAddImageFile(pszPath, RTDBG_CACHE_DSYM_FILE_SUFFIX, RTDBG_CACHE_UUID_MAP_DIR_DSYMS, pCfg);
     return rc;
 }
 
@@ -954,7 +955,7 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
                 break;
 
             case RTDBGSYMCACHEFILETYPE_IMAGE_FILE:
-                rc2 = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, "image-uuids", pCfg);
+                rc2 = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE:
@@ -1065,7 +1066,7 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
             break;
 
         case RTDBGSYMCACHEFILETYPE_IMAGE_FILE:
-            rc = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, "image-uuids", &Cfg);
+            rc = rtDbgSymCacheAddImageFile(pszPath, NULL /*pszExtraSuff*/, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, &Cfg);
             break;
 
         case RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE:
