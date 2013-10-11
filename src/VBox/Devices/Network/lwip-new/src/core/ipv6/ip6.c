@@ -423,6 +423,13 @@ ip6_input(struct pbuf *p, struct netif *inp)
 
   IP6_STATS_INC(ip6.recv);
 
+  /* drop if incoming interface doesn't have IPv6 configured */
+  if (ip6_addr_isinvalid(netif_ip6_addr_state(inp, 0))) {
+    pbuf_free(p);
+    IP6_STATS_INC(ip6.drop);
+    return ERR_OK;
+  }
+
   /* identify the IP header */
   ip6hdr = (struct ip6_hdr *)p->payload;
   if (IP6H_V(ip6hdr) != 6) {
