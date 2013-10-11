@@ -1397,13 +1397,13 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
 }
 
 /** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
- * In the list below, devices which verified to be stable against LEDs manipulation.
- * If you want to add new device, then add it here. Currently, we only filter devices by Vendor ID.
+ * In the list below, devices that known to have such issues. If you want to add new device,
+ * then add it here. Currently, we only filter devices by Vendor ID.
  * In future it might make sense to take Product ID into account as well. */
 static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 {
 #ifndef VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
-    bool      fSupported = false;
+    bool      fSupported = true;
     CFTypeRef pNumberRef;
     uint32_t  vendorId = 0;
 
@@ -1418,10 +1418,8 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
             {
                 switch (vendorId)
                 {
-                    case kIOUSBVendorIDAppleComputer:   /** Apple devices always in the list */
-                    case 0x03F0:                        /** Hewlett-Packard (verified with model KU-0316) */
-                    case 0x0430:                        /** Sun keyboards */
-                        fSupported = true;
+                    case 0x05D5: /** Genius (detected with GK-04008/C keyboard) */
+                        fSupported = false;
                         break;
                 }
 
