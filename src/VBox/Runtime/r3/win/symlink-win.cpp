@@ -157,6 +157,16 @@ RTDECL(int) RTSymlinkCreate(const char *pszSymlink, const char *pszTarget, RTSYM
         rc = RTStrToUtf16(pszTarget, &pwszNativeTarget);
         if (RT_SUCCESS(rc))
         {
+            /* The link target path must use backslashes to work reliably. */
+            RTUTF16  wc;
+            PRTUTF16 pwsz = pwszNativeTarget;
+            while ((wc = *pwsz) != '\0')
+            {
+                if (wc == '/')
+                    *pwsz = '\\';
+                pwsz++;
+            }
+
             /*
              * Massage the target path, determin the link type.
              */
