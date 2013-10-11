@@ -147,7 +147,7 @@ public:
         if (cSize > 0)
             memcpy(&p[iTo], &p1[0], sizeof(T1) * cSize);
     }
-    static inline void      erase(T2 *p, size_t /* i */) { /* Nothing to do here. */ }
+    static inline void      erase(T2 * /* p */, size_t /* i */) { /* Nothing to do here. */ }
     static inline void      eraseRange(T2 * /* p */, size_t /* cFrom */, size_t /* cSize */) { /* Nothing to do here. */ }
 };
 
