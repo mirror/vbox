@@ -827,6 +827,42 @@ RTDECL(RTLDRENDIAN) RTLdrGetEndian(RTLDRMOD hLdrMod);
  */
 RTDECL(RTLDRARCH) RTLdrGetArch(RTLDRMOD hLdrMod);
 
+/**
+ * Loader properties that can be queried thru RTLdrQueryProp.
+ */
+typedef enum RTLDRPROP
+{
+    RTLDRPROP_INVALID = 0,
+    /** The image UUID (Mach-O).
+     * Returns a RTUUID in the buffer. */
+    RTLDRPROP_UUID,
+    /** The image timestamp in seconds, genrally since unix epoc.
+     * Returns a 32-bit or 64-bit signed integer value in the buffer. */
+    RTLDRPROP_TIMESTAMP_SECONDS,
+    /** End of valid properties.  */
+    RTLDRPROP_END,
+    /** Blow the type up to 32 bits. */
+    RTLDRPROP_32BIT_HACK = 0x7fffffff
+} RTLDRPROP;
+
+/**
+ * Generic method for querying image properties.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if the property query isn't supported (either all
+ *          or that specific property).  The caller must handle this result.
+ * @retval  VERR_NOT_FOUND the property was not found in the module.  The caller
+ *          must also normally deal with this.
+ * @retval  VERR_INVALID_FUNCTION if the function value is wrong.
+ * @retval  VERR_INVALID_PARAMETER if the buffer size is wrong.
+ * @retval  VERR_INVALID_HANDLE if the handle is invalid.
+ *
+ * @param   hLdrMod         The module handle.
+ * @param   enmLdrProp      The property to query.
+ * @param   pvBuf           Pointer to the return buffer.
+ * @param   cbBuf           The size of the return buffer.
+ */
+RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
 
 RT_C_DECLS_END
 

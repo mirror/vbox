@@ -1400,6 +1400,7 @@ static RTLDROPS RTLDRELF_MID(s_rtldrElf,Ops) =
     RTLDRELF_NAME(SegOffsetToRva),
     RTLDRELF_NAME(RvaToSegOffset),
     RTLDRELF_NAME(ReadDbgInfo),
+    NULL /*pfnQueryProp*/,
     42
 };
 

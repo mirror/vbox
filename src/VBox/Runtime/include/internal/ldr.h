@@ -311,6 +311,7 @@ typedef struct RTLDROPS
      *
      * @returns IPRT status code.
      *
+     * @param   pMod            Pointer to the loader module structure.
      * @param   pvBuf           The buffer to read into.
      * @param   iDbgInfo        The debug info ordinal number if the request
      *                          corresponds exactly to a debug info part from
@@ -320,6 +321,24 @@ typedef struct RTLDROPS
      * @param   pMod            Pointer to the loader module structure.
      */
     DECLCALLBACKMEMBER(int, pfnReadDbgInfo)(PRTLDRMODINTERNAL pMod, uint32_t iDbgInfo, RTFOFF off, size_t cb, void *pvBuf);
+
+
+
+    /**
+     * Generic method for querying image properties.
+     *
+     * @returns IPRT status code.
+     * @retval  VERR_NOT_SUPPORTED if the property query isn't supported (either all
+     *          or that specific property).
+     * @retval  VERR_NOT_FOUND the property was not found in the module.
+     *
+     * @param   pMod            Pointer to the loader module structure.
+     * @param   enmLdrProp      The property to query (valid).
+     * @param   pvBuf           Pointer to the return buffer (valid).
+     * @param   cbBuf           The size of the return buffer (valid as per
+     *                          property).
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
 
     /** Dummy entry to make sure we've initialized it all. */
     RTUINT uDummy;

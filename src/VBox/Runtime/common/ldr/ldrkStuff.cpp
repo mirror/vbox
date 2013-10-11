@@ -148,7 +148,7 @@ static int rtkldrConvertError(int krc)
         case KRDR_ERR_TOO_MANY_MAPPINGS:
         case KLDR_ERR_NOT_DLL:
         case KLDR_ERR_NOT_EXE:
-            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_LDR_GENERAL_FAILURE);
 
 
         case KLDR_ERR_PE_UNSUPPORTED_MACHINE:
@@ -159,7 +159,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_PE_FORWARDER_IMPORT_NOT_FOUND:
         case KLDR_ERR_PE_BAD_FIXUP:
         case KLDR_ERR_PE_BAD_IMPORT:
-            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_LDR_GENERAL_FAILURE);
 
         case KLDR_ERR_LX_BAD_HEADER:
         case KLDR_ERR_LX_BAD_LOADER_SECTION:
@@ -173,11 +173,11 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_LX_BAD_SONAME:
         case KLDR_ERR_LX_BAD_FORWARDER:
         case KLDR_ERR_LX_NRICHAIN_NOT_SUPPORTED:
-            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_LDR_GENERAL_FAILURE);
 
+        case KLDR_ERR_MACHO_UNSUPPORTED_FILE_TYPE:          return VERR_LDR_GENERAL_FAILURE;
         case KLDR_ERR_MACHO_OTHER_ENDIAN_NOT_SUPPORTED:
         case KLDR_ERR_MACHO_BAD_HEADER:
-        case KLDR_ERR_MACHO_UNSUPPORTED_FILE_TYPE:
         case KLDR_ERR_MACHO_UNSUPPORTED_MACHINE:
         case KLDR_ERR_MACHO_BAD_LOAD_COMMAND:
         case KLDR_ERR_MACHO_UNKNOWN_LOAD_COMMAND:
@@ -194,7 +194,7 @@ static int rtkldrConvertError(int krc)
         case KLDR_ERR_MACHO_BAD_OBJECT_FILE:
         case KLDR_ERR_MACHO_BAD_SYMBOL:
         case KLDR_ERR_MACHO_UNSUPPORTED_FIXUP_TYPE:
-            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_GENERAL_FAILURE);
+            AssertMsgFailedReturn(("krc=%d (%#x): %s\n", krc, krc, kErrName(krc)), VERR_LDR_GENERAL_FAILURE);
 
         default:
             if (RT_FAILURE(krc))
@@ -836,6 +836,27 @@ static DECLCALLBACK(int) rtkldr_ReadDbgInfo(PRTLDRMODINTERNAL pMod, uint32_t iDb
 }
 
 
+/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
+static DECLCALLBACK(int) rtkldr_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+{
+    PRTLDRMODKLDR pThis = (PRTLDRMODKLDR)pMod;
+    int           rc;
+    switch (enmProp)
+    {
+        case RTLDRPROP_UUID:
+            rc = kLdrModQueryImageUuid(pThis->pMod, /*pvBits*/ NULL, (uint8_t *)pvBuf, cbBuf);
+            if (rc == KLDR_ERR_NO_IMAGE_UUID)
+                return VERR_NOT_FOUND;
+            AssertReturn(rc == 0, VERR_INVALID_PARAMETER);
+            break;
+
+        default:
+            return VERR_NOT_FOUND;
+    }
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Operations for a kLdr module.
  */
@@ -858,6 +879,7 @@ static const RTLDROPS g_rtkldrOps =
     rtkldr_SegOffsetToRva,
     rtkldr_RvaToSegOffset,
     rtkldr_ReadDbgInfo,
+    rtkldr_QueryProp,
     42
 };
 

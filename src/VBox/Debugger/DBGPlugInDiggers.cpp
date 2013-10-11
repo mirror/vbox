@@ -31,6 +31,7 @@ DECLEXPORT(int) DBGCPlugInEntry(DBGCPLUGINOP enmOperation, PUVM pUVM, uintptr_t 
 {
     static PCDBGFOSREG s_aPlugIns[] =
     {
+        &g_DBGDiggerDarwin,
         //&g_DBGDiggerFreeBSD,
         &g_DBGDiggerLinux,
         &g_DBGDiggerOS2,
