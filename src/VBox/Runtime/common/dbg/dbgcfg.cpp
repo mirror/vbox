@@ -1360,6 +1360,7 @@ static int rtDbgCfgTryOpenDsumBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pLi
         /*
          * Process the path according to it's type.
          */
+        rc2 = VINF_SUCCESS;
         if (!strncmp(pszDir, RT_STR_TUPLE("srv*")))
         {
             /*
