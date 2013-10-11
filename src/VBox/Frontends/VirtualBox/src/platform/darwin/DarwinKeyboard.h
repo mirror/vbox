@@ -48,7 +48,7 @@ void     DarwinReleaseKeyboard(void);
 
 void   * DarwinHidDevicesKeepLedsState(void);
 int      DarwinHidDevicesApplyAndReleaseLedsState(void *pState);
-void     DarwinHidDevicesBroadcastLeds(bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
+void     DarwinHidDevicesBroadcastLeds(void *pState, bool fNumLockOn, bool fCapsLockOn, bool fScrollLockOn);
 
 RT_C_DECLS_END
 
