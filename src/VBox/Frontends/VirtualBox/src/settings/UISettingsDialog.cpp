@@ -325,8 +325,8 @@ void UISettingsDialog::revalidate(UIPageValidator *pValidator)
         }
         /* Remember text: */
         pValidator->setLastMessage(text.join("<br><br>"));
-        LogRel(("Settings Dialog:  Page validation FAILED: {%s}\n",
-                pValidator->lastMessage().toUtf8().constData()));
+        LogRelFlow(("Settings Dialog:  Page validation FAILED: {%s}\n",
+                    pValidator->lastMessage().toUtf8().constData()));
     }
 }
 
@@ -346,8 +346,8 @@ void UISettingsDialog::revalidate()
         {
             /* What page is it related to? */
             UISettingsPage *pFailedSettingsPage = pValidator->page();
-            LogRel(("Settings Dialog:  Dialog validation FAILED: Page *%s*\n",
-                    pFailedSettingsPage->internalName().toUtf8().constData()));
+            LogRelFlow(("Settings Dialog:  Dialog validation FAILED: Page *%s*\n",
+                        pFailedSettingsPage->internalName().toUtf8().constData()));
 
             /* Show error first: */
             if (!pValidator->isValid())
@@ -383,8 +383,8 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
         /* Determine settings-page name: */
         const QString strPageName(pSettingsPage->internalName());
 
-        LogRel(("Settings Dialog: %s Page: Revalidation in progress..\n",
-                strPageName.toUtf8().constData()));
+        LogRelFlow(("Settings Dialog: %s Page: Revalidation in progress..\n",
+                    strPageName.toUtf8().constData()));
 
         /* Perform page revalidation: */
         revalidate(pValidator);
@@ -393,14 +393,14 @@ void UISettingsDialog::sltHandleValidityChange(UIPageValidator *pValidator)
         /* Perform dialog revalidation: */
         revalidate();
 
-        LogRel(("Settings Dialog: %s Page: Revalidation complete.\n",
-                strPageName.toUtf8().constData()));
+        LogRelFlow(("Settings Dialog: %s Page: Revalidation complete.\n",
+                    strPageName.toUtf8().constData()));
     }
 }
 
 void UISettingsDialog::sltHandleWarningPaneHovered(UIPageValidator *pValidator)
 {
-    LogRel(("Settings Dialog: Warning-icon hovered: %s.\n", pValidator->internalName().toUtf8().constData()));
+    LogRelFlow(("Settings Dialog: Warning-icon hovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Show corresponding popup: */
     if (!m_fValid || !m_fSilent)
@@ -412,7 +412,7 @@ void UISettingsDialog::sltHandleWarningPaneHovered(UIPageValidator *pValidator)
 
 void UISettingsDialog::sltHandleWarningPaneUnhovered(UIPageValidator *pValidator)
 {
-    LogRel(("Settings Dialog: Warning-icon unhovered: %s.\n", pValidator->internalName().toUtf8().constData()));
+    LogRelFlow(("Settings Dialog: Warning-icon unhovered: %s.\n", pValidator->internalName().toUtf8().constData()));
 
     /* Recall corresponding popup: */
     popupCenter().recall(m_pStack, "SettingsDialogWarning");
