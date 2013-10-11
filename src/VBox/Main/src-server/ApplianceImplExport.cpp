@@ -325,7 +325,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
             rc = pHDA->COMGETTER(Device)(&lDevice);
             if (FAILED(rc)) throw rc;
 
-            Utf8Str strTargetVmdkName;
+            Utf8Str strTargetImageName;
             Utf8Str strLocation;
             LONG64  llSize = 0;
 
@@ -333,6 +333,7 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 && pMedium)
             {
                 Bstr bstrLocation;
+
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
                 if (FAILED(rc)) throw rc;
                 strLocation = bstrLocation;
@@ -347,15 +348,11 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                         // returns pMedium if there are no diff images
                 if (FAILED(rc)) throw rc;
 
-                Bstr bstrBaseName;
-                rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
-                if (FAILED(rc)) throw rc;
-
-                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                strTargetVmdkName = Utf8StrFmt("%s-disk%d.vmdk", strTargetName.c_str(), ++pAppliance->m->cDisks);
-                if (strTargetVmdkName.length() > RTTAR_NAME_MAX)
+                Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
+                strTargetImageName = Utf8StrFmt("%s-disk%d.vmdk", strName.c_str(), ++pAppliance->m->cDisks);
+                if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                tr("Cannot attach disk '%s' -- file name too long"), strTargetVmdkName.c_str());
+                                tr("Cannot attach disk '%s' -- file name too long"), strTargetImageName.c_str());
 
                 // force reading state, or else size will be returned as 0
                 MediumState_T ms;
@@ -368,37 +365,50 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
             else if (   deviceType == DeviceType_DVD
                      && pMedium)
             {
+                /*
+                 * check the minimal rules to grant access to export an image
+                 * 1. no host drive CD/DVD image
+                 * 2. the image must be accessible and readable
+                 * 3. only ISO image is exported
+                 */
+
+                //1. no host drive CD/DVD image 
+                BOOL fHostDrive = false;
+                rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
+                if (FAILED(rc)) throw rc;
+
+                if(fHostDrive)
+                    continue;
+
+                //2. the image must be accessible and readable 
+                MediumState_T ms;
+                rc = pMedium->RefreshState(&ms);
+                if (FAILED(rc)) throw rc;
+
+                if (ms != MediumState_Created)
+                    continue;
+
+                //3. only ISO image is exported 
                 Bstr bstrLocation;
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
                 if (FAILED(rc)) throw rc;
+
                 strLocation = bstrLocation;
 
-                // find the source's base medium for two things:
-                // 1) we'll use its name to determine the name of the target disk, which is readable,
-                //    as opposed to the UUID filename of a differencing image, if pMedium is one
-                // 2) we need the size of the base image so we can give it to addEntry(), and later
-                //    on export, the progress will be based on that (and not the diff image)
-                ComPtr<IMedium> pBaseMedium;
-                rc = pMedium->COMGETTER(Base)(pBaseMedium.asOutParam());
-                        // returns pMedium if there are no diff images
-                if (FAILED(rc)) throw rc;
+                Utf8Str ext = strLocation;
+                ext.assignEx(RTPathSuffix(ext.c_str()));//returns extension with dot (".iso")
 
-                Bstr bstrBaseName;
-                rc = pBaseMedium->COMGETTER(Name)(bstrBaseName.asOutParam());
-                if (FAILED(rc)) throw rc;
+                int eq = ext.compare(".iso", Utf8Str::CaseInsensitive);
+                if (eq != 0)
+                    continue;
 
-                Utf8Str strTargetName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
-                strTargetVmdkName = Utf8StrFmt("%s-disk%d.iso", strTargetName.c_str(), ++pAppliance->m->cDisks);
-                if (strTargetVmdkName.length() > RTTAR_NAME_MAX)
+                Utf8Str strName = Utf8Str(locInfo.strPath).stripPath().stripSuffix();
+                strTargetImageName = Utf8StrFmt("%s-disk%d.iso", strName.c_str(), ++pAppliance->m->cDisks);
+                if (strTargetImageName.length() > RTTAR_NAME_MAX)
                     throw setError(VBOX_E_NOT_SUPPORTED,
-                                tr("Cannot attach image '%s' -- file name too long"), strTargetVmdkName.c_str());
+                                tr("Cannot attach image '%s' -- file name too long"), strTargetImageName.c_str());
 
-                // force reading state, or else size will be returned as 0
-                MediumState_T ms;
-                rc = pBaseMedium->RefreshState(&ms);
-                if (FAILED(rc)) throw rc;
-
-                rc = pBaseMedium->COMGETTER(Size)(&llSize);
+                rc = pMedium->COMGETTER(Size)(&llSize);
                 if (FAILED(rc)) throw rc;
             }
             // and how this translates to the virtual system
@@ -468,31 +478,21 @@ STDMETHODIMP Machine::ExportTo(IAppliance *aAppliance, IN_BSTR location, IVirtua
                 case DeviceType_HardDisk:
                     Log(("Adding VirtualSystemDescriptionType_HardDiskImage, disk size: %RI64\n", llSize));
                     pNewDesc->addEntry(VirtualSystemDescriptionType_HardDiskImage,
-                                       strTargetVmdkName,   // disk ID: let's use the name
-                                       strTargetVmdkName,   // OVF value:
+                                       strTargetImageName,   // disk ID: let's use the name
+                                       strTargetImageName,   // OVF value:
                                        strLocation, // vbox value: media path
                                        (uint32_t)(llSize / _1M),
                                        strExtra);
                 break;
 
                 case DeviceType_DVD:
-                {
-                    if (!pMedium)
-                        break;
-
-                    /* get info about whether medium is a real drive/device or not */
-                    BOOL fHostDrive = false;
-                    rc = pMedium->COMGETTER(HostDrive)(&fHostDrive);
-
-                    /* Only virtual CD-ROM is exported, the real device/drive isn't exported */
-                    if(!fHostDrive)
-                        pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
-                                           strTargetVmdkName,   // disk ID
-                                           strTargetVmdkName,   // OVF value
-                                           strLocation, // vbox value
-                                           (uint32_t)(llSize / _1M),// ulSize
-                                           strExtra);
-                }
+                    Log(("Adding VirtualSystemDescriptionType_CDROM, disk size: %RI64\n", llSize));
+                    pNewDesc->addEntry(VirtualSystemDescriptionType_CDROM,
+                                       strTargetImageName,   // disk ID
+                                       strTargetImageName,   // OVF value
+                                       strLocation, // vbox value
+                                       (uint32_t)(llSize / _1M),// ulSize
+                                       strExtra);
                 break;
 
                 case DeviceType_Floppy:
@@ -1812,6 +1812,7 @@ void Appliance::buildXMLForOneVirtualSystem(AutoWriteLockBase& writeLock,
         AutoWriteLock machineLock(vsdescThis->m->pMachine COMMA_LOCKVAL_SRC_POS);
         // fill the machine config
         vsdescThis->m->pMachine->copyMachineDataToSettings(*pConfig);
+
         // write the machine config to the vbox:Machine element
         pConfig->buildMachineXML(*pelmVBoxMachine,
                                    settings::MachineConfigFile::BuildMachineXML_WriteVboxVersionAttribute
@@ -2130,7 +2131,7 @@ HRESULT Appliance::writeFSImpl(TaskOVF *pTask, AutoWriteLockBase& writeLock, PVD
                     // now wait for the background disk operation to complete; this throws HRESULTs on error
                     waitForAsyncProgress(pTask->pProgress, pProgress3);
                 }
-                else
+                else//pDiskEntry->type == VirtualSystemDescriptionType_CDROM
                 {
                     //copy/clone CD/DVD image
                     /* Read the ISO file and add one to OVA/OVF package */
