@@ -30,6 +30,8 @@ struct ip4_lomap_desc
 };
 
 struct proxy_options {
+    int ipv6_enabled;
+    int ipv6_defroute;
     const char *tftp_root;
     const struct sockaddr_in *src4;
     const struct sockaddr_in6 *src6;
