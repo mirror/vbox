@@ -794,8 +794,6 @@ static int rtDbgCfgTryOpenCache(PRTDBGCFGINT pThis, char *pszPath, size_t cchCac
         return VWRN_NOT_FOUND;
     }
 
-    size_t cchPath = strlen(pszPath);
-
     /*
      * If we got a UUID mapping option, try it first as we can hopefully
      * dispense with case folding.
@@ -806,16 +804,28 @@ static int rtDbgCfgTryOpenCache(PRTDBGCFGINT pThis, char *pszPath, size_t cchCac
         if (   RT_SUCCESS(rc)
             && RTFileExists(pszPath))
         {
+            /* Try resolve the path before presenting it to the client, a
+               12 digit filename is of little worth. */
+            char szBackup[RTPATH_MAX];
+            strcpy(szBackup, pszPath);
+            rc = RTPathAbs(szBackup, pszPath, RTPATH_MAX);
+            if (RT_FAILURE(rc))
+                strcpy(pszPath, szBackup);
+
+            /* Do the callback thing. */
             rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
             int rc2 = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
             if (rc2 == VINF_CALLBACK_RETURN)
-                rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
+                rtDbgCfgLog1(pThis, "Found '%s' via uuid mapping.\n", pszPath);
             else if (rc2 == VERR_CALLBACK_RETURN)
                 rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
             else
                 rtDbgCfgLog1(pThis, "Error %Rrc opening '%s'.\n", rc2, pszPath);
             if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
                 return rc2;
+
+            /* Failed, restore the cache path. */
+            memcpy(pszPath, szBackup, cchCachePath);
         }
         pszPath[cchCachePath] = '\0';
     }
