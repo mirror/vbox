@@ -875,6 +875,7 @@ struct Hardware
                         fUnrestrictedExecution,
                         fHardwareVirtForce,
                         fSyntheticCpu,
+                        fTripleFaultReset,
                         fPAE;
     typedef enum LongModeType { LongMode_Enabled, LongMode_Disabled, LongMode_Legacy } LongModeType;
     LongModeType        enmLongMode;

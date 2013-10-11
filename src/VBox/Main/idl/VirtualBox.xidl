@@ -920,7 +920,7 @@
 
   <enum
     name="CPUPropertyType"
-    uuid="24d356a6-2f45-4abd-b977-1cbe9c4701f5"
+    uuid="52bc41f4-a279-45da-88ab-3a1d86fb73eb"
     >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
@@ -946,6 +946,12 @@
       <desc>
         This setting determines whether VirtualBox will advertise long mode
         (i.e. 64-bit guest support) and let the guest enter it.
+      </desc>
+    </const>
+    <const name="TripleFaultReset"     value="4">
+      <desc>
+        This setting determines whether a triple fault within a guest will trigger an internal
+        error condition and stop the VM (default) or reset the virtual CPU and continue execution.
       </desc>
     </const>
   </enum>
