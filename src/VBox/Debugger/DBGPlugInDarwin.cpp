@@ -271,7 +271,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg32->segname, sizeof(uLCmd.pSeg32->segname)))
                     return VERR_INVALID_NAME;
                 if (!strcmp(uLCmd.pSeg32->segname, "__LINKEDIT"))
-                    continue; /* This usually is discarded or not loaded at all. */
+                    break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
                     return VERR_BUFFER_OVERFLOW;
                 aSegs[cSegs].Address = uLCmd.pSeg32->vmaddr;
@@ -290,7 +290,7 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
                 if (!dbgDiggerDarwinIsValidSegOrSectName(uLCmd.pSeg64->segname, sizeof(uLCmd.pSeg64->segname)))
                     return VERR_INVALID_NAME;
                 if (!strcmp(uLCmd.pSeg64->segname, "__LINKEDIT"))
-                    continue; /* This usually is discarded or not loaded at all. */
+                    break; /* This usually is discarded or not loaded at all. */
                 if (cSegs >= RT_ELEMENTS(aSegs))
                     return VERR_BUFFER_OVERFLOW;
                 aSegs[cSegs].Address = uLCmd.pSeg64->vmaddr;
@@ -387,10 +387,24 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     {
         uint64_t uRvaNext = 0;
         uint32_t cLinked  = 0;
-        for (iSeg = 0; iSeg < cSegs; iSeg++)
+        iSeg = cSegs;
+        while (iSeg-- > 0) /* HACK: Map in reverse order to avoid replacing __TEXT. */
             if (aSegs[iSeg].cb)
             {
-                int rc2 = RTDbgAsModuleLinkSeg(hAs, hMod, iSeg, aSegs[iSeg].Address, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
+                /* Find matching segment in the debug module. */
+                uint32_t iDbgSeg = 0;
+                while (iDbgSeg < cSegs)
+                {
+                    RTDBGSEGMENT SegInfo;
+                    int rc3 = RTDbgModSegmentByIndex(hMod, iDbgSeg, &SegInfo);
+                    if (RT_SUCCESS(rc3) && !strcmp(SegInfo.szName, aSegs[iSeg].szName))
+                        break;
+                    iDbgSeg++;
+                }
+                AssertMsgStmt(iDbgSeg < cSegs, ("%s\n", aSegs[iSeg].szName), continue);
+
+                /* Map it. */
+                int rc2 = RTDbgAsModuleLinkSeg(hAs, hMod, iDbgSeg, aSegs[iSeg].Address, RTDBGASLINK_FLAGS_REPLACE /*fFlags*/);
                 if (RT_SUCCESS(rc2))
                     cLinked++;
                 else if (RT_SUCCESS(rc))

@@ -183,6 +183,66 @@ static const RTDBGCFGU64MNEMONIC g_aDbgCfgFlags[] =
 };
 
 
+/** Interesting bundle suffixes. */
+static const char * const g_apszBundleSuffixes[] =
+{
+    ".kext",
+    ".app",
+    ".framework",
+    ".component",
+    ".action",
+    ".caction",
+    ".bundle",
+    ".sourcebundle",
+    ".menu",
+    ".plugin",
+    ".ppp",
+    ".monitorpanel",
+    ".scripting",
+    ".prefPane",
+    ".qlgenerator",
+    ".brailledriver",
+    ".saver",
+    ".SpeechVoice",
+    ".SpeechRecognizer",
+    ".SpeechSynthesizer",
+    ".mdimporter",
+    ".spreporter",
+    ".xpc",
+    NULL
+};
+
+/** Debug bundle suffixes. (Same as above + .dSYM) */
+static const char * const g_apszDSymBundleSuffixes[] =
+{
+    ".dSYM",
+    ".kext.dSYM",
+    ".app.dSYM",
+    ".framework.dSYM",
+    ".component.dSYM",
+    ".action.dSYM",
+    ".caction.dSYM",
+    ".bundle.dSYM",
+    ".sourcebundle.dSYM",
+    ".menu.dSYM",
+    ".plugin.dSYM",
+    ".ppp.dSYM",
+    ".monitorpanel.dSYM",
+    ".scripting.dSYM",
+    ".prefPane.dSYM",
+    ".qlgenerator.dSYM",
+    ".brailledriver.dSYM",
+    ".saver.dSYM",
+    ".SpeechVoice.dSYM",
+    ".SpeechRecognizer.dSYM",
+    ".SpeechSynthesizer.dSYM",
+    ".mdimporter.dSYM",
+    ".spreporter.dSYM",
+    ".xpc.dSYM",
+    NULL
+};
+
+
 
 /**
  * Runtime logging, level 1.
@@ -373,6 +433,52 @@ static bool rtDbgCfgIsDirAndFixCase(char *pszPath, const char *pszSubDir, bool f
      */
     if (fCaseInsensitive)
         return rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, RTDIRENTRYTYPE_DIRECTORY);
+
+    pszPath[cchPath] = '\0';
+    return false;
+}
+
+
+/**
+ * Appends @a pszSubDir1 and @a pszSuffix to @a pszPath and check whether it
+ * exists and is a directory.
+ *
+ * If @a fCaseInsensitive is set, we will do a case insensitive search for a
+ * matching sub directory.
+ *
+ * @returns true / false
+ * @param   pszPath             The path buffer containing an existing
+ *                              directory.  RTPATH_MAX in size.
+ * @param   pszSubDir           The sub directory to append.
+ * @param   fCaseInsensitive    Whether case insensitive searching is required.
+ */
+static bool rtDbgCfgIsDirAndFixCase2(char *pszPath, const char *pszSubDir, const char *pszSuffix, bool fCaseInsensitive)
+{
+    Assert(!strpbrk(pszSuffix, ":/\\"));
+
+    /* Save the length of the input path so we can restore it in the case
+       insensitive branch further down. */
+    size_t const cchPath = strlen(pszPath);
+
+    /*
+     * Append the subdirectory and suffix, then check if we got a hit.
+     */
+    int rc = RTPathAppend(pszPath, RTPATH_MAX, pszSubDir);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrCat(pszPath, RTPATH_MAX, pszSuffix);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTDirExists(pszPath))
+                return true;
+
+            /*
+             * Do case insensitive lookup if requested.
+             */
+            if (fCaseInsensitive)
+                return rtDbgCfgIsXxxxAndFixCaseWorker(pszPath, cchPath, RTDIRENTRYTYPE_DIRECTORY);
+        }
+    }
 
     pszPath[cchPath] = '\0';
     return false;
@@ -1250,8 +1356,9 @@ RTDECL(int) RTDbgCfgOpenDwo(RTDBGCFG hDbgCfg, const char *pszFilename, uint32_t 
 /**
  * Very similar to rtDbgCfgTryOpenDir.
  */
-static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pSplitFn, const char *pszDsymName,
-                                          uint32_t fFlags, PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRTPATHSPLIT pSplitFn,
+                                          const char * const *papszSuffixes, uint32_t fFlags,
+                                          PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2;
@@ -1277,7 +1384,9 @@ static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRT
 
     /*
      * Look for the file with less and less of the original path given.
+     * Also try out typical bundle extension variations.
      */
+    const char *pszName = pSplitFn->apszComps[pSplitFn->cComps - 1];
     for (unsigned i = RTPATH_PROP_HAS_ROOT_SPEC(pSplitFn->fProps); i < pSplitFn->cComps; i++)
     {
         pszPath[cchPath] = '\0';
@@ -1286,28 +1395,33 @@ static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRT
         for (unsigned j = i; j < pSplitFn->cComps - 1U && RT_SUCCESS(rc2); j++)
             if (!rtDbgCfgIsDirAndFixCase(pszPath, pSplitFn->apszComps[i], fCaseInsensitive))
                 rc2 = VERR_FILE_NOT_FOUND;
-        if (    RT_SUCCESS(rc2)
-            && !rtDbgCfgIsDirAndFixCase(pszPath, pszDsymName, fCaseInsensitive)
-            && !rtDbgCfgIsDirAndFixCase(pszPath, "Contents", fCaseInsensitive)
-            && !rtDbgCfgIsDirAndFixCase(pszPath, "Resources", fCaseInsensitive)
-            && !rtDbgCfgIsDirAndFixCase(pszPath, "DWARF", fCaseInsensitive))
+        if (RT_SUCCESS(rc2))
         {
-            if (rtDbgCfgIsFileAndFixCase(pszPath, pSplitFn->apszComps[pSplitFn->cComps - 1], NULL /*pszSuffix*/,
-                                         fCaseInsensitive, false, NULL))
+            size_t cchCurPath = cchPath + strlen(&pszPath[cchPath]);
+            for (uint32_t iSuffix = 0; papszSuffixes[iSuffix]; iSuffix++)
             {
-                rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
-                rc2 = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
-                if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
+                if (   !rtDbgCfgIsDirAndFixCase2(pszPath, pszName, papszSuffixes[iSuffix], fCaseInsensitive)
+                    && !rtDbgCfgIsDirAndFixCase(pszPath, "Contents", fCaseInsensitive)
+                    && !rtDbgCfgIsDirAndFixCase(pszPath, "Resources", fCaseInsensitive)
+                    && !rtDbgCfgIsDirAndFixCase(pszPath, "DWARF", fCaseInsensitive))
                 {
-                    if (rc2 == VINF_CALLBACK_RETURN)
-                        rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
-                    else
-                        rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
-                    return rc2;
+                    if (rtDbgCfgIsFileAndFixCase(pszPath, pszName, NULL /*pszSuffix*/, fCaseInsensitive, false, NULL))
+                    {
+                        rtDbgCfgLog1(pThis, "Trying '%s'...\n", pszPath);
+                        rc2 = pfnCallback(pThis, pszPath, pvUser1, pvUser2);
+                        if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
+                        {
+                            if (rc2 == VINF_CALLBACK_RETURN)
+                                rtDbgCfgLog1(pThis, "Found '%s'.\n", pszPath);
+                            else
+                                rtDbgCfgLog1(pThis, "Error opening '%s'.\n", pszPath);
+                            return rc2;
+                        }
+                        rtDbgCfgLog1(pThis, "Error %Rrc opening '%s'.\n", rc2, pszPath);
+                        if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
+                            rcRet = rc2;
+                    }
                 }
-                rtDbgCfgLog1(pThis, "Error %Rrc opening '%s'.\n", rc2, pszPath);
-                if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
-                    rcRet = rc2;
             }
         }
         rc2 = VERR_FILE_NOT_FOUND;
@@ -1329,10 +1443,11 @@ static int rtDbgCfgTryOpenDsymBundleInDir(PRTDBGCFGINT pThis, char *pszPath, PRT
 /**
  * Very similar to rtDbgCfgTryOpenList.
  */
-static int rtDbgCfgTryOpenDsumBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHSPLIT pSplitFn,
-                                           const char *pszDsymName, const char *pszCacheSubDir, const char *pszCacheSuffix,
-                                           const char *pszUuidMappingSubDir, uint32_t fFlags, char *pszPath,
-                                           PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+static int rtDbgCfgTryOpenBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pList, PRTPATHSPLIT pSplitFn,
+                                       const char * const *papszSuffixes, const char *pszCacheSubDir,
+                                       const char *pszCacheSuffix, const char *pszUuidMappingSubDir,
+                                       uint32_t fFlags, char *pszPath,
+                                       PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     int rcRet = VWRN_NOT_FOUND;
     int rc2;
@@ -1458,7 +1573,7 @@ static int rtDbgCfgTryOpenDsumBundleInList(PRTDBGCFGINT pThis, PRTLISTANCHOR pLi
             pszPath[cchDir] = '\0';
             RTPathChangeToUnixSlashes(pszPath, false);
 
-            rc2 = rtDbgCfgTryOpenDsymBundleInDir(pThis, pszPath, pSplitFn, pszDsymName, fFlagsDir,
+            rc2 = rtDbgCfgTryOpenDsymBundleInDir(pThis, pszPath, pSplitFn, papszSuffixes, fFlagsDir,
                                                  pfnCallback, pvUser1, pvUser2);
             if (rc2 == VINF_CALLBACK_RETURN || rc2 == VERR_CALLBACK_RETURN)
             {
@@ -1522,14 +1637,17 @@ static int rtDbgCfgConstructUuidMappingSubDir(char *pszSubDir, size_t cbSubDir, 
 }
 
 
-RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTUUID pUuid,
-                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+static int rtDbgCfgOpenBundleFile(RTDBGCFG hDbgCfg, const char *pszImage, const char * const *papszSuffixes,
+                                  const char *pszBundleSubDir, PCRTUUID pUuid, const char *pszUuidMapDirName,
+                                  const char *pszCacheSuffix, bool fOpenImage,
+                                  PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
 {
     /*
      * Bundles are directories, means we can forget about sharing code much
      * with the other RTDbgCfgOpenXXX methods.  Thus we're duplicating a lot of
-     * code from rtDbgCfgOpenWithSubDir with .dSYM related adjustments, so, a bug
-     * found here or there probably means the other version needs updating.
+     * code from rtDbgCfgOpenWithSubDir with .dSYM/.kext/.dylib/.app/.* related
+     * adjustments, so, a bug found here or there probably means the other
+     * version needs updating.
      */
     int rcRet = VINF_SUCCESS;
     int rc2;
@@ -1560,8 +1678,7 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
         RTUuidToStr(pUuid, szCacheSubDir, sizeof(szCacheSubDir));
         pszCacheSubDir = szCacheSubDir;
 
-        rc2 = rtDbgCfgConstructUuidMappingSubDir(szUuidMappingSubDir, sizeof(szUuidMappingSubDir),
-                                                 RTDBG_CACHE_UUID_MAP_DIR_DSYMS, pUuid);
+        rc2 = rtDbgCfgConstructUuidMappingSubDir(szUuidMappingSubDir, sizeof(szUuidMappingSubDir), pszUuidMapDirName, pUuid);
         AssertRCReturn(rc2, rc2);
     }
 
@@ -1584,10 +1701,6 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
         return rc2;
     AssertReturnStmt(pSplitFn->fProps & RTPATH_PROP_FILENAME, RTPathSplitFree(pSplitFn), VERR_IS_A_DIRECTORY);
 
-
-/** @todo Extend this to look for pszFilename*.dSYM as well as detecting a
- *        bundle and looking for a .dSYM bundle outside the image bundle. */
-
     /*
      * Try the image directory first.
      */
@@ -1595,12 +1708,15 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
     if (pSplitFn->cComps > 0)
     {
         rc2 = RTPathSplitReassemble(pSplitFn, RTPATH_STR_F_STYLE_HOST, szPath, sizeof(szPath));
-        if (RT_SUCCESS(rc2))
-            rc2 = RTStrCat(szPath, sizeof(szPath),
-                           ".dSYM" RTPATH_SLASH_STR "Contents" RTPATH_SLASH_STR "Resources" RTPATH_SLASH_STR "DWARF");
-        if (RT_SUCCESS(rc2))
-            rc2 = RTPathAppend(szPath, sizeof(szPath), pSplitFn->apszComps[pSplitFn->cComps - 1]);
-        if (RT_SUCCESS(rc2))
+        if (fOpenImage && RT_SUCCESS(rc2))
+        {
+            rc2 = RTStrCat(szPath, sizeof(szPath), papszSuffixes[0]);
+            if (RT_SUCCESS(rc2))
+                rc2 = RTStrCat(szPath, sizeof(szPath), pszBundleSubDir);
+            if (RT_SUCCESS(rc2))
+                rc2 = RTPathAppend(szPath, sizeof(szPath), pSplitFn->apszComps[pSplitFn->cComps - 1]);
+        }
+        if (RT_SUCCESS(rc2) && RTPathExists(szPath))
         {
             RTPathChangeToUnixSlashes(szPath, false);
             rtDbgCfgLog1(pThis, "Trying '%s'...\n", szPath);
@@ -1616,9 +1732,6 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
     if (   rc2 != VINF_CALLBACK_RETURN
         && rc2 != VERR_CALLBACK_RETURN)
     {
-        char *pszDsymName = (char *)alloca(strlen(pSplitFn->apszComps[pSplitFn->cComps - 1]) + sizeof(".dSYM"));
-        strcat(strcpy(pszDsymName, pSplitFn->apszComps[pSplitFn->cComps - 1]), ".dSYM");
-
         /*
          * Try the current directory (will take cover relative paths
          * skipped above).
@@ -1628,7 +1741,8 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
             strcpy(szPath, ".");
         RTPathChangeToUnixSlashes(szPath, false);
 
-        rc2 = rtDbgCfgTryOpenDsymBundleInDir(pThis, szPath, pSplitFn, pszDsymName, fFlags, pfnCallback, pvUser1, pvUser2);
+        rc2 = rtDbgCfgTryOpenDsymBundleInDir(pThis, szPath, pSplitFn, g_apszDSymBundleSuffixes,
+                                             fFlags, pfnCallback, pvUser1, pvUser2);
         if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
             rcRet = rc2;
 
@@ -1642,10 +1756,10 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
                 /*
                  * Run the applicable lists.
                  */
-                rc2 = rtDbgCfgTryOpenDsumBundleInList(pThis, &pThis->PathList, pSplitFn, pszDsymName,
-                                                      pszCacheSubDir, RTDBG_CACHE_DSYM_FILE_SUFFIX,
-                                                      pszUuidMappingSubDir, fFlags, szPath,
-                                                      pfnCallback, pvUser1, pvUser2);
+                rc2 = rtDbgCfgTryOpenBundleInList(pThis, &pThis->PathList, pSplitFn, g_apszDSymBundleSuffixes,
+                                                  pszCacheSubDir, pszCacheSuffix,
+                                                  pszUuidMappingSubDir, fFlags, szPath,
+                                                  pfnCallback, pvUser1, pvUser2);
                 if (RT_FAILURE(rc2) && RT_SUCCESS_NP(rcRet))
                     rcRet = rc2;
 
@@ -1663,6 +1777,26 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
     else if (RT_SUCCESS(rcRet))
         rcRet = VERR_NOT_FOUND;
     return rcRet;
+}
+
+
+RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTUUID pUuid,
+                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return rtDbgCfgOpenBundleFile(hDbgCfg, pszImage, g_apszDSymBundleSuffixes,
+                                  "Contents" RTPATH_SLASH_STR "Resources" RTPATH_SLASH_STR "DWARF",
+                                  pUuid, RTDBG_CACHE_UUID_MAP_DIR_DSYMS, RTDBG_CACHE_DSYM_FILE_SUFFIX, false /* fOpenImage */,
+                                  pfnCallback, pvUser1, pvUser2);
+}
+
+
+RTDECL(int) RTDbgCfgOpenMachOImage(RTDBGCFG hDbgCfg, const char *pszImage, PCRTUUID pUuid,
+                                   PFNDBGCFGOPEN pfnCallback, void *pvUser1, void *pvUser2)
+{
+    return rtDbgCfgOpenBundleFile(hDbgCfg, pszImage, g_apszBundleSuffixes,
+                                  "Contents" RTPATH_SLASH_STR "MacOS",
+                                  pUuid, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, NULL /*pszCacheSuffix*/, true /* fOpenImage */,
+                                  pfnCallback, pvUser1, pvUser2);
 }
 
 

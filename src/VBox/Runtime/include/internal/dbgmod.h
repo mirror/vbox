@@ -640,27 +640,6 @@ typedef struct RTDBGMODINT
 typedef RTDBGMODINT *PRTDBGMODINT;
 
 
-/**
- * Special segment package used passing segment order information for mach-o
- * images (mainly mach_kernel, really).
- *
- * Passes to rtDbgModDwarf_TryOpen via RTDBGMODINF::pvDbgPriv.
- */
-typedef struct RTDBGDWARFSEGPKG
-{
-    /** Pointer to the segment array. */
-    PCRTDBGSEGMENT      paSegs;
-    /** Number of segments. */
-    uint32_t            cSegs;
-    /** For use more internal use in file locator callbacks. */
-    RTLDRARCH           enmArch;
-    /** For use more internal use in file locator callbacks. */
-    PCRTUUID            pUuid;
-} RTDBGDWARFSEGPKG;
-/** Pointer to a const segment package. */
-typedef RTDBGDWARFSEGPKG const *PCRTDBGDWARFSEGPKG;
-
-
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgCodeView;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;

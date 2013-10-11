@@ -379,6 +379,7 @@
 # define RTDbgCfgQueryUInt                              RT_MANGLER(RTDbgCfgQueryUInt)
 # define RTDbgCfgOpenDbg                                RT_MANGLER(RTDbgCfgOpenDbg)
 # define RTDbgCfgOpenDsymBundle                         RT_MANGLER(RTDbgCfgOpenDsymBundle)
+# define RTDbgCfgOpenMachOImage                         RT_MANGLER(RTDbgCfgOpenMachOImage)
 # define RTDbgCfgOpenDwo                                RT_MANGLER(RTDbgCfgOpenDwo)
 # define RTDbgCfgOpenPdb70                              RT_MANGLER(RTDbgCfgOpenPdb70)
 # define RTDbgCfgOpenPdb20                              RT_MANGLER(RTDbgCfgOpenPdb20)
