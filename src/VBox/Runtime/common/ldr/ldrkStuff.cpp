@@ -108,7 +108,7 @@ static int rtkldrConvertError(int krc)
         case KERR_INVALID_PARAMETER:                        return VERR_INVALID_PARAMETER;
         case KERR_INVALID_HANDLE:                           return VERR_INVALID_HANDLE;
         case KERR_NO_MEMORY:                                return VERR_NO_MEMORY;
-
+        case KLDR_ERR_CPU_ARCH_MISMATCH:                    return VERR_LDR_ARCH_MISMATCH;
 
         case KLDR_ERR_UNKNOWN_FORMAT:
         case KLDR_ERR_MZ_NOT_SUPPORTED:                     return VERR_MZ_EXE_NOT_SUPPORTED;
