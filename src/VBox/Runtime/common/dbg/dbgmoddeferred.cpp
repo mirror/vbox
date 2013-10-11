@@ -439,6 +439,15 @@ DECL_HIDDEN_CONST(RTDBGMODVTDBG) const g_rtDbgModVtDbgDeferred =
  *
  */
 
+/** @interface_method_impl{RTDBGMODVTIMG,pfnQueryProp} */
+static DECLCALLBACK(int ) rtDbgModDeferredImg_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+{
+    int rc = rtDbgModDeferredDoIt(pMod, false /*fForceRetry*/);
+    if (RT_SUCCESS(rc))
+        rc = pMod->pImgVt->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf);
+    return rc;
+}
+
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetArch} */
 static DECLCALLBACK(RTLDRARCH) rtDbgModDeferredImg_GetArch(PRTDBGMODINT pMod)
@@ -592,6 +601,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
     /*.pfnReadAt = */                   rtDbgModDeferredImg_ReadAt,
     /*.pfnGetFormat = */                rtDbgModDeferredImg_GetFormat,
     /*.pfnGetArch = */                  rtDbgModDeferredImg_GetArch,
+    /*.pfnQueryProp = */                rtDbgModDeferredImg_QueryProp,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };
@@ -607,14 +617,18 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgDeferred =
  * @param   cbImage             The size of the image.
  * @param   hDbgCfg             The debug config handle.  Can be NIL.  A
  *                              reference will be retained.
+ * @param   cbDeferred          The size of the deferred instance data, 0 if the
+ *                              default structure is good enough.
  * @param   ppDeferred          Where to return the instance data. Can be NULL.
  */
 DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED pfnDeferred, RTUINTPTR cbImage,
-                                       RTDBGCFG hDbgCfg, PRTDBGMODDEFERRED *ppDeferred)
+                                       RTDBGCFG hDbgCfg, size_t cbDeferred, PRTDBGMODDEFERRED *ppDeferred)
 {
     AssertReturn(!pDbgMod->pDbgVt, VERR_DBG_MOD_IPE);
 
-    PRTDBGMODDEFERRED pDeferred = (PRTDBGMODDEFERRED)RTMemAllocZ(sizeof(*pDeferred));
+    if (cbDeferred < sizeof(RTDBGMODDEFERRED))
+        cbDeferred = sizeof(RTDBGMODDEFERRED);
+    PRTDBGMODDEFERRED pDeferred = (PRTDBGMODDEFERRED)RTMemAllocZ(cbDeferred);
     if (!pDeferred)
         return VERR_NO_MEMORY;
 

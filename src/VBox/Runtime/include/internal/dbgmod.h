@@ -227,6 +227,18 @@ typedef struct RTDBGMODVTIMG
      */
     DECLCALLBACKMEMBER(RTLDRARCH, pfnGetArch)(PRTDBGMODINT pMod);
 
+    /**
+     * Generic method for querying image properties.
+     *
+     * @returns IPRT status code.
+     * @param   pMod            Pointer to the module structure.
+     * @param   enmLdrProp      The property to query.
+     * @param   pvBuf           Pointer to the return buffer.
+     * @param   cbBuf           The size of the return buffer.
+     * @sa      RTLdrQueryProp
+     */
+    DECLCALLBACKMEMBER(int, pfnQueryProp)(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf);
+
     /** For catching initialization errors (RTDBGMODVTIMG_MAGIC). */
     uint32_t    u32EndMagic;
 } RTDBGMODVTIMG;
@@ -558,6 +570,18 @@ typedef struct RTDBGMODDEFERRED
             /** The CRC-32 value found in the .gnu_debuglink section. */
             uint32_t    uCrc32;
         }   GnuDebugLink;
+
+        struct
+        {
+            /** The image UUID. */
+            RTUUID          Uuid;
+            /** Image architecture. */
+            RTLDRARCH       enmArch;
+            /** Number of segment mappings. */
+            uint32_t        cSegs;
+            /** Segment mappings. */
+            RTDBGSEGMENT    aSegs[1];
+        }   MachO;
     } u;
 } RTDBGMODDEFERRED;
 /** Pointer to the deferred loading data. */
@@ -616,6 +640,27 @@ typedef struct RTDBGMODINT
 typedef RTDBGMODINT *PRTDBGMODINT;
 
 
+/**
+ * Special segment package used passing segment order information for mach-o
+ * images (mainly mach_kernel, really).
+ *
+ * Passes to rtDbgModDwarf_TryOpen via RTDBGMODINF::pvDbgPriv.
+ */
+typedef struct RTDBGDWARFSEGPKG
+{
+    /** Pointer to the segment array. */
+    PCRTDBGSEGMENT      paSegs;
+    /** Number of segments. */
+    uint32_t            cSegs;
+    /** For use more internal use in file locator callbacks. */
+    RTLDRARCH           enmArch;
+    /** For use more internal use in file locator callbacks. */
+    PCRTUUID            pUuid;
+} RTDBGDWARFSEGPKG;
+/** Pointer to a const segment package. */
+typedef RTDBGDWARFSEGPKG const *PCRTDBGDWARFSEGPKG;
+
+
 extern DECLHIDDEN(RTSTRCACHE)           g_hDbgModStrCache;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgCodeView;
 extern DECLHIDDEN(RTDBGMODVTDBG const)  g_rtDbgModVtDbgDwarf;
@@ -636,7 +681,7 @@ DECLHIDDEN(int) rtDbgModContainer_RemoveAll(PRTDBGMODINT pMod);
 
 DECLHIDDEN(int) rtDbgModCreateForExports(PRTDBGMODINT pDbgMod);
 DECLHIDDEN(int) rtDbgModDeferredCreate(PRTDBGMODINT pDbgMod, PFNRTDBGMODDEFERRED pfnDeferred, RTUINTPTR cbImage,
-                                       RTDBGCFG hDbgCfg, PRTDBGMODDEFERRED *ppDeferred);
+                                       RTDBGCFG hDbgCfg, size_t cbDeferred, PRTDBGMODDEFERRED *ppDeferred);
 
 DECLHIDDEN(int) rtDbgModLdrOpenFromHandle(PRTDBGMODINT pDbgMod, RTLDRMOD hLdrMod);
 

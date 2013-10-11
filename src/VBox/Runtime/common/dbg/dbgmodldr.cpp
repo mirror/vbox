@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2011 Oracle Corporation
+ * Copyright (C) 2011-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -58,6 +58,14 @@ typedef struct RTDBGMODLDR
 /** Pointer to instance data NM map reader. */
 typedef RTDBGMODLDR *PRTDBGMODLDR;
 
+
+
+/** @interface_method_impl{RTDBGMODVTIMG,pfnQueryProp} */
+static DECLCALLBACK(int) rtDbgModLdr_QueryProp(PRTDBGMODINT pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+{
+    PRTDBGMODLDR pThis = (PRTDBGMODLDR)pMod->pvImgPriv;
+    return RTLdrQueryProp(pThis->hLdrMod, enmProp, pvBuf, cbBuf);
+}
 
 
 /** @interface_method_impl{RTDBGMODVTIMG,pfnGetArch} */
@@ -215,6 +223,7 @@ DECL_HIDDEN_CONST(RTDBGMODVTIMG) const g_rtDbgModVtImgLdr =
     /*.pfnReadAt = */                   rtDbgModLdr_ReadAt,
     /*.pfnGetFormat = */                rtDbgModLdr_GetFormat,
     /*.pfnGetArch = */                  rtDbgModLdr_GetArch,
+    /*.pfnQueryProp = */                rtDbgModLdr_QueryProp,
 
     /*.u32EndMagic = */                 RTDBGMODVTIMG_MAGIC
 };

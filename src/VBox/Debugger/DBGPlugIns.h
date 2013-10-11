@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2008-2010 Oracle Corporation
+ * Copyright (C) 2008-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,7 +25,8 @@
 
 RT_C_DECLS_BEGIN
 
-extern const DBGFOSREG g_DBGDiggerFreeBSD;
+//extern const DBGFOSREG g_DBGDiggerFreeBSD;
+extern const DBGFOSREG g_DBGDiggerDarwin;
 extern const DBGFOSREG g_DBGDiggerLinux;
 extern const DBGFOSREG g_DBGDiggerOS2;
 extern const DBGFOSREG g_DBGDiggerSolaris;

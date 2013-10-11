@@ -46,6 +46,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/strcache.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include "internal/dbgmod.h"
 #include "internal/magics.h"
 
@@ -325,7 +326,7 @@ RTDECL(int) RTDbgModCreate(PRTDBGMOD phDbgMod, const char *pszName, RTUINTPTR cb
     *phDbgMod = NIL_RTDBGMOD;
     AssertPtrReturn(pszName, VERR_INVALID_POINTER);
     AssertReturn(*pszName, VERR_INVALID_PARAMETER);
-    AssertReturn(fFlags == 0, VERR_INVALID_PARAMETER);
+    AssertReturn(fFlags == 0 || fFlags == RTDBGMOD_F_NOT_DEFERRED, VERR_INVALID_PARAMETER);
 
     int rc = rtDbgModLazyInit();
     if (RT_FAILURE(rc))
@@ -1134,7 +1135,8 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
                     else
                     {
                         PRTDBGMODDEFERRED pDeferred;
-                        rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromPeImageDeferredCallback, cbImage, hDbgCfg, &pDeferred);
+                        rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromPeImageDeferredCallback, cbImage, hDbgCfg, 0,
+                                                    &pDeferred);
                         if (RT_SUCCESS(rc))
                             pDeferred->u.PeImage.uTimestamp = uTimestamp;
                     }
@@ -1167,6 +1169,302 @@ RTDECL(int) RTDbgModCreateFromPeImage(PRTDBGMOD phDbgMod, const char *pszFilenam
     return rc;
 }
 RT_EXPORT_SYMBOL(RTDbgModCreateFromPeImage);
+
+
+
+
+/*
+ *
+ *  M a c h - O   I M A G E
+ *  M a c h - O   I M A G E
+ *  M a c h - O   I M A G E
+ *
+ */
+
+/** @callback_method_impl{FNRTDBGCFGOPEN} */
+static DECLCALLBACK(int)
+rtDbgModFromMachOImageOpenMachOCallback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
+    PCRTDBGDWARFSEGPKG  pSegPkg   = (PCRTDBGDWARFSEGPKG)pvUser2;
+
+    /** @todo  */
+
+    return VERR_OPEN_FAILED;
+}
+
+
+/** @callback_method_impl{FNRTDBGCFGOPEN} */
+static DECLCALLBACK(int)
+rtDbgModFromMachOImageOpenDsymCallback(RTDBGCFG hDbgCfg, const char *pszFilename, void *pvUser1, void *pvUser2)
+{
+    PRTDBGMODINT        pDbgMod   = (PRTDBGMODINT)pvUser1;
+    PCRTDBGDWARFSEGPKG  pSegPkg   = (PCRTDBGDWARFSEGPKG)pvUser2;
+
+    Assert(!pDbgMod->pDbgVt);
+    Assert(!pDbgMod->pvDbgPriv);
+    Assert(!pDbgMod->pszDbgFile);
+    Assert(!pDbgMod->pImgVt);
+    Assert(!pDbgMod->pvDbgPriv);
+    Assert(pDbgMod->pszImgFile);
+    Assert(pDbgMod->pszImgFileSpecified);
+
+    const char *pszImgFileOrg = pDbgMod->pszImgFile;
+    pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+    if (!pDbgMod->pszImgFile)
+        return VERR_NO_STR_MEMORY;
+    RTStrCacheRetain(pDbgMod->pszImgFile);
+    pDbgMod->pszDbgFile = pDbgMod->pszImgFile;
+
+    /*
+     * Try image interpreters as the dwarf file inside the dSYM bundle is a
+     * Mach-O file with dwarf debug sections insides it and no code or data.
+     */
+    int rc = RTSemRWRequestRead(g_hDbgModRWSem, RT_INDEFINITE_WAIT);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VERR_DBG_NO_MATCHING_INTERPRETER;
+        PRTDBGMODREGIMG pImg;
+        for (pImg = g_pImgHead; pImg; pImg = pImg->pNext)
+        {
+            pDbgMod->pImgVt    = pImg->pVt;
+            pDbgMod->pvImgPriv = NULL;
+            rc = pImg->pVt->pfnTryOpen(pDbgMod, pSegPkg->enmArch);
+            if (RT_SUCCESS(rc))
+                break;
+            pDbgMod->pImgVt    = NULL;
+            Assert(pDbgMod->pvImgPriv == NULL);
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Check the UUID if one was given.
+             */
+            if (pSegPkg->pUuid)
+            {
+                RTUUID UuidOpened;
+                rc = pDbgMod->pImgVt->pfnQueryProp(pDbgMod, RTLDRPROP_UUID, &UuidOpened, sizeof(UuidOpened));
+                if (RT_SUCCESS(rc))
+                {
+                    if (RTUuidCompare(&UuidOpened, pSegPkg->pUuid) != 0)
+                        rc = VERR_DBG_FILE_MISMATCH;
+                }
+                else if (rc == VERR_NOT_FOUND || rc == VERR_NOT_IMPLEMENTED)
+                    rc = VERR_DBG_FILE_MISMATCH;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Pass it to the DWARF reader(s).
+                 */
+                for (PRTDBGMODREGDBG pDbg = g_pDbgHead; pDbg; pDbg = pDbg->pNext)
+                {
+                    if (pDbg->pVt->fSupports & RT_DBGTYPE_DWARF)
+                    {
+                        pDbgMod->pDbgVt    = pDbg->pVt;
+                        pDbgMod->pvDbgPriv = pSegPkg->cSegs ? (void *)pSegPkg : NULL;
+                        rc = pDbg->pVt->pfnTryOpen(pDbgMod, pDbgMod->pImgVt->pfnGetArch(pDbgMod));
+                        if (RT_SUCCESS(rc))
+                        {
+                            /*
+                             * Got it!
+                             */
+                            ASMAtomicIncU32(&pDbg->cUsers);
+                            RTSemRWReleaseRead(g_hDbgModRWSem);
+                            RTStrCacheRelease(g_hDbgModStrCache, pszImgFileOrg);
+                            return VINF_CALLBACK_RETURN;
+                        }
+                        pDbgMod->pDbgVt    = NULL;
+                        Assert(pDbgMod->pvDbgPriv == NULL);
+                    }
+                }
+            }
+
+            pDbgMod->pImgVt->pfnClose(pDbgMod);
+            pDbgMod->pImgVt    = NULL;
+            pDbgMod->pvImgPriv = NULL;
+        }
+    }
+
+    /* No joy. */
+    RTSemRWReleaseRead(g_hDbgModRWSem);
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
+    pDbgMod->pszImgFile = pszImgFileOrg;
+    RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszDbgFile);
+    pDbgMod->pszDbgFile = NULL;
+    return rc;
+}
+
+
+static int rtDbgModFromMachOImageWorker(PRTDBGMODINT pDbgMod, RTLDRARCH enmArch, uint32_t cbImage,
+                                        uint32_t cSegs, PCRTDBGSEGMENT paSegs, PCRTUUID pUuid, RTDBGCFG hDbgCfg)
+{
+    RTDBGDWARFSEGPKG SegPkg;
+    SegPkg.cSegs    = cSegs;
+    SegPkg.paSegs   = paSegs;
+    SegPkg.enmArch  = enmArch;
+    SegPkg.pUuid    = pUuid && RTUuidIsNull(pUuid) ? pUuid : NULL;
+
+    /*
+     * Search for the .dSYM bundle first, since that's generally all we need.
+     */
+    int rc = RTDbgCfgOpenDsymBundle(hDbgCfg, pDbgMod->pszImgFile, pUuid,
+                                    rtDbgModFromMachOImageOpenDsymCallback, pDbgMod, &SegPkg);
+    if (RT_FAILURE(rc))
+    {
+        /*
+         * If we cannot get at the .dSYM, try the executable image.
+         */
+        //rc = RTDbgCfgOpenMachOImage(hDbgCfg, pDbgMod->pszImgFile, pUuid,
+        //                            rtDbgModFromMachOImageOpenMachOCallback, pDbgMod, &SegPkg);
+    }
+    return rc;
+}
+
+
+/** @callback_method_impl{FNRTDBGMODDEFERRED}  */
+static DECLCALLBACK(int) rtDbgModFromMachOImageDeferredCallback(PRTDBGMODINT pDbgMod, PRTDBGMODDEFERRED pDeferred)
+{
+    return rtDbgModFromMachOImageWorker(pDbgMod, pDeferred->u.MachO.enmArch, pDeferred->cbImage,
+                                        pDeferred->u.MachO.cSegs, pDeferred->u.MachO.aSegs,
+                                        &pDeferred->u.MachO.Uuid, pDeferred->hDbgCfg);
+}
+
+
+RTDECL(int) RTDbgModCreateFromMachOImage(PRTDBGMOD phDbgMod, const char *pszFilename, const char *pszName,
+                                         RTLDRARCH enmArch, uint32_t cbImage, uint32_t cSegs, PCRTDBGSEGMENT paSegs,
+                                         PCRTUUID pUuid, RTDBGCFG hDbgCfg, uint32_t fFlags)
+{
+    /*
+     * Input validation and lazy initialization.
+     */
+    AssertPtrReturn(phDbgMod, VERR_INVALID_POINTER);
+    *phDbgMod = NIL_RTDBGMOD;
+    AssertPtrReturn(pszFilename, VERR_INVALID_POINTER);
+    AssertReturn(*pszFilename, VERR_INVALID_PARAMETER);
+    if (!pszName)
+        pszName = RTPathFilenameEx(pszFilename, RTPATH_STR_F_STYLE_HOST);
+    AssertPtrReturn(pszName, VERR_INVALID_POINTER);
+    if (cSegs)
+    {
+        AssertReturn(cSegs < 1024, VERR_INVALID_PARAMETER);
+        AssertPtrReturn(paSegs, VERR_INVALID_POINTER);
+        AssertReturn(!cbImage, VERR_INVALID_PARAMETER);
+    }
+    AssertReturn(cbImage || cSegs, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pUuid, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~(RTDBGMOD_F_NOT_DEFERRED)), VERR_INVALID_PARAMETER);
+
+    int rc = rtDbgModLazyInit();
+    if (RT_FAILURE(rc))
+        return rc;
+
+    uint64_t fDbgCfg = 0;
+    if (hDbgCfg)
+    {
+        rc = RTDbgCfgQueryUInt(hDbgCfg, RTDBGCFGPROP_FLAGS, &fDbgCfg);
+        AssertRCReturn(rc, rc);
+    }
+
+    /*
+     * Allocate a new module instance.
+     */
+    PRTDBGMODINT pDbgMod = (PRTDBGMODINT)RTMemAllocZ(sizeof(*pDbgMod));
+    if (!pDbgMod)
+        return VERR_NO_MEMORY;
+    pDbgMod->u32Magic = RTDBGMOD_MAGIC;
+    pDbgMod->cRefs = 1;
+    rc = RTCritSectInit(&pDbgMod->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pDbgMod->pszName = RTStrCacheEnterLower(g_hDbgModStrCache, pszName);
+        if (pDbgMod->pszName)
+        {
+            pDbgMod->pszImgFile = RTStrCacheEnter(g_hDbgModStrCache, pszFilename);
+            if (pDbgMod->pszImgFile)
+            {
+                RTStrCacheRetain(pDbgMod->pszImgFile);
+                pDbgMod->pszImgFileSpecified = pDbgMod->pszImgFile;
+
+                /*
+                 * Load it immediately?
+                 */
+                if (   !(fDbgCfg & RTDBGCFG_FLAGS_DEFERRED)
+                    || (!cbImage && !cSegs)
+                    || (fFlags & RTDBGMOD_F_NOT_DEFERRED) )
+                    rc = rtDbgModFromMachOImageWorker(pDbgMod, enmArch, cbImage, cSegs, paSegs, pUuid, hDbgCfg);
+                else
+                {
+                    /*
+                     * Procrastinate.  Need image size atm.
+                     */
+                    uint32_t uRvaMax = cbImage;
+                    if (!uRvaMax)
+                        for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                        {
+                            if (   paSegs[iSeg].uRva > uRvaMax
+                                && paSegs[iSeg].uRva - uRvaMax < _1M)
+                                uRvaMax = paSegs[iSeg].uRva;
+                            uRvaMax += paSegs[iSeg].cb;
+                        }
+
+                    PRTDBGMODDEFERRED pDeferred;
+                    rc = rtDbgModDeferredCreate(pDbgMod, rtDbgModFromMachOImageDeferredCallback, uRvaMax, hDbgCfg,
+                                                RT_OFFSETOF(RTDBGMODDEFERRED, u.MachO.aSegs[cSegs]),
+                                                &pDeferred);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pDeferred->u.MachO.Uuid    = *pUuid;
+                        pDeferred->u.MachO.enmArch = enmArch;
+                        pDeferred->u.MachO.cSegs   = cSegs;
+                        if (cSegs)
+                        {
+                            memcpy(&pDeferred->u.MachO.aSegs, paSegs, cSegs * sizeof(paSegs[0]));
+                            if (!cbImage)
+                            {
+                                /* If we calculated a cbImage above, do corresponding RVA adjustments. */
+                                uRvaMax = 0;
+                                for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                                {
+                                    if (   paSegs[iSeg].uRva > uRvaMax
+                                        && paSegs[iSeg].uRva - uRvaMax < _1M)
+                                        uRvaMax = paSegs[iSeg].uRva;
+                                    else
+                                        pDeferred->u.MachO.aSegs[iSeg].uRva = uRvaMax;
+                                    uRvaMax += paSegs[iSeg].cb;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    *phDbgMod = pDbgMod;
+                    return VINF_SUCCESS;
+                }
+
+                /* Failed, bail out. */
+                RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszName);
+            }
+            else
+                rc = VERR_NO_STR_MEMORY;
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFileSpecified);
+            RTStrCacheRelease(g_hDbgModStrCache, pDbgMod->pszImgFile);
+        }
+        else
+            rc = VERR_NO_STR_MEMORY;
+        RTCritSectDelete(&pDbgMod->CritSect);
+    }
+
+    RTMemFree(pDbgMod);
+    return rc;
+}
+
+
+
+RT_EXPORT_SYMBOL(RTDbgModCreateFromMachOImage);
+
 
 
 /**

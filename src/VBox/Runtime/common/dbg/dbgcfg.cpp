@@ -1424,8 +1424,6 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
     int rcRet = VINF_SUCCESS;
     int rc2;
 
-    //RTStrPrintf(szFile, sizeof(szFile), "%s.dSYM/Contents/Resources/DWARF/%s", pszFilename, pszFilename);
-
     /*
      * Do a little validating first.
      */
@@ -1542,8 +1540,6 @@ RTDECL(int) RTDbgCfgOpenDsymBundle(RTDBGCFG hDbgCfg, const char *pszImage, PCRTU
     else if (RT_SUCCESS(rcRet))
         rcRet = VERR_NOT_FOUND;
     return rcRet;
-
-
 }
 
 

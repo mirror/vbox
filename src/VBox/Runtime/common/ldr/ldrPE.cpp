@@ -1489,6 +1489,28 @@ static DECLCALLBACK(int) rtldrPE_RvaToSegOffset(PRTLDRMODINTERNAL pMod, RTLDRADD
 }
 
 
+/** @interface_method_impl{RTLDROPS,pfnQueryProp} */
+static DECLCALLBACK(int) rtldrPE_QueryProp(PRTLDRMODINTERNAL pMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+{
+    PRTLDRMODPE pModPe = (PRTLDRMODPE)pMod;
+    switch (enmProp)
+    {
+        case RTLDRPROP_TIMESTAMP_SECONDS:
+            if (cbBuf == sizeof(int32_t))
+                *(int32_t *)pvBuf = pModPe->uTimestamp;
+            else if (cbBuf == sizeof(int64_t))
+                *(int64_t *)pvBuf = pModPe->uTimestamp;
+            else
+                return VERR_INVALID_PARAMETER;
+            break;
+
+        default:
+            return VERR_NOT_FOUND;
+    }
+    return VINF_SUCCESS;
+}
+
+
 /** @copydoc RTLDROPS::pfnDone */
 static DECLCALLBACK(int) rtldrPEDone(PRTLDRMODINTERNAL pMod)
 {
@@ -1542,6 +1564,7 @@ static const RTLDROPSPE s_rtldrPE32Ops =
         rtldrPE_SegOffsetToRva,
         rtldrPE_RvaToSegOffset,
         NULL,
+        rtldrPE_QueryProp,
         42
     },
     rtldrPEResolveImports32,
@@ -1572,6 +1595,7 @@ static const RTLDROPSPE s_rtldrPE64Ops =
         rtldrPE_SegOffsetToRva,
         rtldrPE_RvaToSegOffset,
         NULL,
+        rtldrPE_QueryProp,
         42
     },
     rtldrPEResolveImports64,

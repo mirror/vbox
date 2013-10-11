@@ -60,6 +60,7 @@ DLLS += DBGCPlugInDiggers
 DBGCPlugInDiggers_TEMPLATE = VBOXR3
 DBGCPlugInDiggers_SOURCES = \
 	DBGPlugInDiggers.cpp \
+	DBGPlugInDarwin.cpp \
 	DBGPlugInLinux.cpp \
 	DBGPlugInSolaris.cpp \
 	DBGPlugInWinNt.cpp \

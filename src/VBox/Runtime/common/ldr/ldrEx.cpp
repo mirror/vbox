@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2011 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -537,6 +537,37 @@ RTDECL(int) RTLdrRvaToSegOffset(RTLDRMOD hLdrMod, RTLDRADDR Rva, uint32_t *piSeg
     return rc;
 }
 RT_EXPORT_SYMBOL(RTLdrRvaToSegOffset);
+
+
+RTDECL(int) RTLdrQueryProp(RTLDRMOD hLdrMod, RTLDRPROP enmProp, void *pvBuf, size_t cbBuf)
+{
+    AssertMsgReturn(rtldrIsValid(hLdrMod), ("hLdrMod=%p\n", hLdrMod), RTLDRENDIAN_INVALID);
+    PRTLDRMODINTERNAL pMod = (PRTLDRMODINTERNAL)hLdrMod;
+
+    /*
+     * Do some pre screening of the input
+     */
+    switch (enmProp)
+    {
+        case RTLDRPROP_UUID:
+            AssertReturn(cbBuf == sizeof(RTUUID), VERR_INVALID_PARAMETER);
+            break;
+        case RTLDRPROP_TIMESTAMP_SECONDS:
+            AssertReturn(cbBuf == sizeof(int32_t) || cbBuf == sizeof(int64_t), VERR_INVALID_PARAMETER);
+            break;
+        default:
+            AssertFailedReturn(VERR_INVALID_FUNCTION);
+    }
+    AssertPtrReturn(pvBuf, VERR_INVALID_POINTER);
+
+    /*
+     * Call the image specific worker, if there is one.
+     */
+    if (!pMod->pOps->pfnQueryProp)
+        return VERR_NOT_SUPPORTED;
+    return pMod->pOps->pfnQueryProp(pMod, enmProp, pvBuf, cbBuf);
+}
+RT_EXPORT_SYMBOL(RTLdrQueryProp);
 
 
 /**
