@@ -27,9 +27,6 @@ ifdef VBOX_WITH_DEBUGGER
   PROGRAMS += tstDBGCParser
  endif
 endif # VBOX_WITH_DEBUGGER
-ifndef VBOX_OSE
- INSTALLS.win.x86 += dbghelp
-endif
 
 
 #
@@ -134,14 +131,6 @@ tstVBoxDbg_LIBS        += \
   endif
  endif # TESTCASES
 endif # Qt4
-
-
-#
-# Install the dbghelp.dll binary.
-#
-dbghelp_INST = bin/
-dbghelp_SOURCES.x86 = win32/dbghelp.dll
-dbghelp_SOURCES.amd64 = win64/dbghelp.dll
 
 
 include $(FILE_KBUILD_SUB_FOOTER)
