@@ -278,6 +278,7 @@ public:
         BOOL                mPAEEnabled;
         settings::Hardware::LongModeType mLongMode;
         BOOL                mSyntheticCpu;
+        BOOL                mTripleFaultReset;
         ULONG               mCPUCount;
         BOOL                mCPUHotPlugEnabled;
         ULONG               mCpuExecutionCap;
