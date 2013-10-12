@@ -138,6 +138,11 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgEM, "TripleFaultReset", &fEnabled, false);
     AssertLogRelRCReturn(rc, rc);
     pVM->em.s.fGuruOnTripleFault = !fEnabled;
+    if (!pVM->em.s.fGuruOnTripleFault && pVM->cCpus > 1)
+    {
+        LogRel(("EM: Overriding /EM/TripleFaultReset, must be false on SMP.\n"));
+        pVM->em.s.fGuruOnTripleFault = true;
+    }
 
     Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
          pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
@@ -2387,6 +2392,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_TRIPLE_FAULT:
                     if (!pVM->em.s.fGuruOnTripleFault)
                     {
+                        Assert(pVM->cCpus == 1);
                         REMR3Reset(pVM);
                         PGMR3ResetCpu(pVM, pVCpu);
                         TRPMR3ResetCpu(pVCpu);
