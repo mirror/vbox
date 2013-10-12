@@ -374,7 +374,7 @@ bool ConfigurationManager::isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppL
     return false;
 }
 
-NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *pCfg,
+NetworkConfigEntity *ConfigurationManager::addNetwork(NetworkConfigEntity *,
                                     const RTNETADDRIPV4& networkId,
                                     const RTNETADDRIPV4& netmask,
                                     RTNETADDRIPV4& LowerAddress,
