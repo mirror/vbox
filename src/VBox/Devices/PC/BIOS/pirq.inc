@@ -467,6 +467,6 @@ ifdef VBOX
 endif ; VBOX
 pci_routing_table_end:
 ;; Size of the table
-pci_routing_table_size dw	pci_routing_table_end - pci_routing_table
+_pci_routing_table_size dw	pci_routing_table_end - pci_routing_table
 
 endif   ; BX_PCIBIOS
