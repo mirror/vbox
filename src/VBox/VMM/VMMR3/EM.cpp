@@ -2392,6 +2392,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case VINF_EM_TRIPLE_FAULT:
                     if (!pVM->em.s.fGuruOnTripleFault)
                     {
+                        Log(("EMR3ExecuteVM: VINF_EM_TRIPLE_FAULT: CPU reset...\n"));
                         Assert(pVM->cCpus == 1);
                         REMR3Reset(pVM);
                         PGMR3ResetCpu(pVM, pVCpu);
@@ -2400,6 +2401,7 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                         EMR3ResetCpu(pVCpu);
                         HMR3ResetCpu(pVCpu);
                         pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                        Log2(("EMR3ExecuteVM: VINF_EM_TRIPLE_FAULT: %d -> %d\n", rc, enmOldState, pVCpu->em.s.enmState));
                         break;
                     }
                     /* Else fall through and trigger a guru. */
