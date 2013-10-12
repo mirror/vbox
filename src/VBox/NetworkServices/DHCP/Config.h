@@ -474,48 +474,33 @@ private:
 class Lease
 {
 public:
-    Lease()
-    {
-        m_address.u = 0;
-        m_client = NULL;
-        fBinding = false;
-        u64TimestampBindingStarted = 0;
-        u64TimestampLeasingStarted = 0;
-        u32LeaseExpirationPeriod = 0;
-        u32BindExpirationPeriod = 0;
-        pCfg = NULL;
-    }
-    virtual ~Lease(){}
+    Lease():m(NULL){};
+    ~Lease();
+    void init();
 
-    bool isExpired()
-    {
-        if (!fBinding)
-            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampLeasingStarted, 1000)
-                    > u32LeaseExpirationPeriod);
-        else
-            return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - u64TimestampBindingStarted, 1000)
-                    > u32BindExpirationPeriod);
+    bool isExpired() const;
 
-    }
+    /* Depending on phase *Expiration and phaseStart initialize different values. */
+    void bindingPhase(bool);
+    void phaseStart(uint64_t u64Start);
+    bool isInBindingPhase() const;
 
-    /* XXX private: */
-    RTNETADDRIPV4 m_address;
+    void setExpiration(uint32_t);
+    uint32_t getExpiration() const;
 
-    /** lease isn't commited */
-    bool fBinding;
+    RTNETADDRIPV4 getAddress() const;
+    void setAddress(RTNETADDRIPV4);
 
-    /** Timestamp when lease commited. */
-    uint64_t u64TimestampLeasingStarted;
-    /** Period when lease is expired in secs. */
-    uint32_t u32LeaseExpirationPeriod;
+    const NetworkConfigEntity *getConfig() const;
+    void setConfig(NetworkConfigEntity *);
+   
+    Client *getClient() const;
+    void setClient(Client *);
 
-    /** timestamp when lease was bound */
-    uint64_t u64TimestampBindingStarted;
-    /* Period when binding is expired in secs. */
-    uint32_t u32BindExpirationPeriod;
-
-    NetworkConfigEntity *pCfg;
-    Client *m_client;
+    private:
+    class Data;
+    
+    Data *m;
 };
 
 

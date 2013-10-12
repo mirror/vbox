@@ -33,6 +33,45 @@
 
 #include "Config.h"
 
+/* types */
+class Lease::Data
+{
+public:
+    Data()
+    {
+        m_address.u = 0;
+        m_client = NULL;
+        fBinding = true;
+        u64TimestampBindingStarted = 0;
+        u64TimestampLeasingStarted = 0;
+        u32LeaseExpirationPeriod = 0;
+        u32BindExpirationPeriod = 0;
+        pCfg = NULL;
+
+    }
+    ~Data(){}
+    
+    RTNETADDRIPV4 m_address;
+
+    /** lease isn't commited */
+    bool fBinding;
+
+    /** Timestamp when lease commited. */
+    uint64_t u64TimestampLeasingStarted;
+    /** Period when lease is expired in secs. */
+    uint32_t u32LeaseExpirationPeriod;
+
+    /** timestamp when lease was bound */
+    uint64_t u64TimestampBindingStarted;
+    /* Period when binding is expired in secs. */
+    uint32_t u32BindExpirationPeriod;
+
+    NetworkConfigEntity *pCfg;
+    Client *m_client;
+};
+
+
+/* consts */
 
 const NullConfigEntity *g_NullConfig = new NullConfigEntity();
 RootConfigEntity *g_RootConfig = new RootConfigEntity(std::string("ROOT"), 1200 /* 20 min. */);
@@ -240,7 +279,7 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
             expireLease4Client(client);
         else
         {
-            AssertReturn(client->m_lease->m_address.u != 0,NULL);
+            AssertReturn(client->m_lease->getAddress().u != 0,NULL);
             return client->m_lease;
         }
     }
@@ -268,10 +307,11 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
         && !isAddressTaken(hintAddress, NULL))
     {
         please = new Lease();
-        please->pCfg = pNetCfg;
-        please->m_client = client;
+        please->init();
+        please->setConfig(pNetCfg);
+        please->setClient(client);
         client->m_lease = please;
-        client->m_lease->m_address = hintAddress;
+        client->m_lease->setAddress(hintAddress);
         m_allocations[please] = hintAddress;
         return please;
     }
@@ -286,11 +326,14 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
         if (!isAddressTaken(address, NULL))
         {
             please = new Lease();
-            please->pCfg = pNetCfg;
-            please->m_client = client;
+            please->init();
+            please->setConfig(pNetCfg);
+            please->setClient(client);
+            please->setAddress(address);
+
             client->m_lease = please;
-            client->m_lease->m_address = address;
-            m_allocations[please] = client->m_lease->m_address;
+
+            m_allocations[please] = address;
             return please;
         }
     }
@@ -301,10 +344,11 @@ Lease *ConfigurationManager::allocateLease4Client(Client *client, PCRTNETBOOTP p
 
 int ConfigurationManager::commitLease4Client(Client *client)
 {
-    client->m_lease->u64TimestampBindingStarted = 0;
-    client->m_lease->u32LeaseExpirationPeriod = client->m_lease->pCfg->expirationPeriod();
-    client->m_lease->u64TimestampLeasingStarted = RTTimeMilliTS();
-    client->m_lease->fBinding = false;
+    client->m_lease->bindingPhase(false);
+
+    client->m_lease->setExpiration(client->m_lease->getConfig()->expirationPeriod());
+    client->m_lease->phaseStart(RTTimeMilliTS());
+
     return VINF_SUCCESS;
 }
 
@@ -485,7 +529,7 @@ int NetworkManager::offer4Client(Client *client, uint32_t u32Xid,
     prepareReplyPacket4Client(client, u32Xid);
 
 
-    RTNETADDRIPV4 address = client->m_lease->m_address;
+    RTNETADDRIPV4 address = client->m_lease->getAddress();
     BootPReplyMsg.BootPHeader.bp_yiaddr =  address;
 
     /* Ubuntu ???*/
@@ -508,7 +552,7 @@ int NetworkManager::offer4Client(Client *client, uint32_t u32Xid,
     client->rawOptions.push_back(opt);
 
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
-    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->pCfg->expirationPeriod());
+    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->getConfig()->expirationPeriod());
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
@@ -531,7 +575,7 @@ int NetworkManager::ack(Client *client, uint32_t u32Xid,
 
     prepareReplyPacket4Client(client, u32Xid);
 
-    address = client->m_lease->m_address;
+    address = client->m_lease->getAddress();
     BootPReplyMsg.BootPHeader.bp_ciaddr =  address;
 
 
@@ -539,8 +583,8 @@ int NetworkManager::ack(Client *client, uint32_t u32Xid,
      * DHCPREQUEST or 0 ...
      * XXX: Using addressHint is not correct way to initialize [cy]iaddress...
      */
-    BootPReplyMsg.BootPHeader.bp_ciaddr = client->m_lease->m_address;
-    BootPReplyMsg.BootPHeader.bp_yiaddr = client->m_lease->m_address;
+    BootPReplyMsg.BootPHeader.bp_ciaddr = address;
+    BootPReplyMsg.BootPHeader.bp_yiaddr = address;
 
     Assert(BootPReplyMsg.BootPHeader.bp_yiaddr.u);
 
@@ -562,7 +606,7 @@ int NetworkManager::ack(Client *client, uint32_t u32Xid,
      * else on dhcpinform it mustn't.
      */
     opt.u8OptId = RTNET_DHCP_OPT_LEASE_TIME;
-    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->u32LeaseExpirationPeriod);
+    *(uint32_t *)opt.au8RawOpt = RT_H2N_U32(client->m_lease->getExpiration());
     opt.cbRawOpt = sizeof(RTNETADDRIPV4);
     client->rawOptions.push_back(opt);
 
@@ -628,7 +672,7 @@ int NetworkManager::prepareReplyPacket4Client(Client *client, uint32_t u32Xid)
 
     BootPReplyMsg.BootPHeader.bp_chaddr.Mac = client->m_mac;
 
-    BootPReplyMsg.BootPHeader.bp_yiaddr = client->m_lease->m_address;
+    BootPReplyMsg.BootPHeader.bp_yiaddr = client->m_lease->getAddress();
     BootPReplyMsg.BootPHeader.bp_siaddr.u = 0;
 
 
@@ -721,7 +765,7 @@ int NetworkManager::processParameterReqList(Client* client, uint8_t *pu8ReqList,
 
     uint8_t *pReqList = pu8ReqList;
 
-    const NetworkConfigEntity *pNetCfg = client->m_lease->pCfg;
+    const NetworkConfigEntity *pNetCfg = client->m_lease->getConfig();
 
     for (idxParam = 0; idxParam < cReqList; ++idxParam)
     {
@@ -776,4 +820,105 @@ int NetworkManager::processParameterReqList(Client* client, uint8_t *pu8ReqList,
     }
 
     return VINF_SUCCESS;
+}
+
+
+Lease::~Lease()
+{
+    if (m)
+        delete m;
+}
+
+
+void Lease::init()
+{
+    if (!m)
+        m = new Lease::Data();
+}
+
+
+bool Lease::isExpired() const
+{
+    AssertPtrReturn(m, false);
+
+    if (!m->fBinding)
+        return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - m->u64TimestampLeasingStarted, 1000)
+                > m->u32LeaseExpirationPeriod);
+    else
+        return (ASMDivU64ByU32RetU32(RTTimeMilliTS() - m->u64TimestampBindingStarted, 1000)
+                > m->u32BindExpirationPeriod);
+}
+
+
+void Lease::phaseStart(uint64_t u64Start)
+{
+    if (m->fBinding)
+        m->u64TimestampBindingStarted = u64Start;
+    else
+        m->u64TimestampLeasingStarted = u64Start;
+}
+
+
+void Lease::bindingPhase(bool fOnOff)
+{
+    m->fBinding = fOnOff;
+}
+
+
+bool Lease::isInBindingPhase() const
+{
+    return m->fBinding;
+}
+
+
+void Lease::setExpiration(uint32_t exp)
+{
+    if (m->fBinding)
+        m->u32BindExpirationPeriod = exp;
+    else
+        m->u32LeaseExpirationPeriod = exp;
+}
+
+
+uint32_t Lease::getExpiration() const
+{
+    if (m->fBinding)
+        return m->u32BindExpirationPeriod;
+    else
+        return m->u32LeaseExpirationPeriod;
+}
+
+
+RTNETADDRIPV4 Lease::getAddress() const
+{
+    return m->m_address;
+}
+
+
+void Lease::setAddress(RTNETADDRIPV4 address)
+{
+    m->m_address = address;
+}
+
+
+const NetworkConfigEntity *Lease::getConfig() const
+{
+    return m->pCfg;
+}
+
+
+void Lease::setConfig(NetworkConfigEntity *pCfg)
+{
+    m->pCfg = pCfg;
+}
+
+
+Client *Lease::getClient() const
+{
+    return m->m_client;
+}
+
+void Lease::setClient(Client *client)
+{
+    m->m_client = client;
 }
