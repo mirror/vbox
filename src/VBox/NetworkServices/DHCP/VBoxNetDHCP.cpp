@@ -800,7 +800,7 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
  * @param   pDhcpMsg    The message.
  * @param   cb          The message size.
  */
-bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
+bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP, size_t)
 {
     /** @todo Probably need to match the server IP here to work correctly with
      *        other servers. */
@@ -825,7 +825,7 @@ bool VBoxNetDhcp::handleDhcpReqDecline(PCRTNETBOOTP pDhcpMsg, size_t cb)
  * @param   pDhcpMsg    The message.
  * @param   cb          The message size.
  */
-bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP pDhcpMsg, size_t cb)
+bool VBoxNetDhcp::handleDhcpReqRelease(PCRTNETBOOTP, size_t)
 {
     /** @todo Probably need to match the server IP here to work correctly with
      *        other servers. */
@@ -931,7 +931,7 @@ void VBoxNetDhcp::debugPrintV(int iMinLevel, bool fMsg, const char *pszFmt, va_l
 /**
  *  Entry point.
  */
-extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
 {
     /*
      * Instantiate the DHCP server and hand it the options.
@@ -975,13 +975,13 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
 #ifndef VBOX_WITH_HARDENING
 
-int main(int argc, char **argv, char **envp)
+int main(int argc, char **argv)
 {
     int rc = RTR3InitExe(argc, &argv, RTR3INIT_FLAGS_SUPLIB);
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-    return TrustedMain(argc, argv, envp);
+    return TrustedMain(argc, argv);
 }
 
 # ifdef RT_OS_WINDOWS
@@ -1078,7 +1078,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if(hThread != NULL)
         CloseHandle(hThread);
 
-    return main(__argc, __argv, environ);
+    return main(__argc, __argv);
 }
 # endif /* RT_OS_WINDOWS */
 
