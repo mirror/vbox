@@ -4,16 +4,6 @@
  * XXX: license.
  */
 
-#include <VBox/com/com.h>
-#include <VBox/com/listeners.h>
-#include <VBox/com/string.h>
-#include <VBox/com/Guid.h>
-#include <VBox/com/array.h>
-#include <VBox/com/ErrorInfo.h>
-#include <VBox/com/errorprint.h>
-#include <VBox/com/EventQueue.h>
-#include <VBox/com/VirtualBox.h>
-
 #include <iprt/asm.h>
 #include <iprt/net.h>
 #include <iprt/time.h>
