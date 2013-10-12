@@ -387,9 +387,9 @@ void BIOSCALL PCIxx(function)(volatile pci_regs_t r)
         break;
     case GET_IRQ_ROUTING:
         route_buf = ES :> (void *)DI;
-        BX_DEBUG_PCI("PCI: Route Buf %04X:%04X size %04X (at %04X:%04X)\n",
+        BX_DEBUG_PCI("PCI: Route Buf %04X:%04X size %04X, need %04X (at %04X:%04X)\n",
                      FP_SEG(route_buf->buf_ptr), FP_OFF(route_buf->buf_ptr),
-                     route_buf->buf_size, ES, DI);
+                     route_buf->buf_size, pci_routing_table_size, ES, DI);
         if (pci_routing_table_size > route_buf->buf_size) {
             SET_AH(BUFFER_TOO_SMALL);
             SET_CF();
