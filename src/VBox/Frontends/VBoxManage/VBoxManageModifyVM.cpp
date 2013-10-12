@@ -60,6 +60,7 @@ enum
     MODIFYVM_PAE,
     MODIFYVM_LONGMODE,
     MODIFYVM_SYNTHCPU,
+    MODIFYVM_TFRESET,
     MODIFYVM_HWVIRTEX,
     MODIFYVM_NESTEDPAGING,
     MODIFYVM_LARGEPAGES,
@@ -219,6 +220,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--pae",                      MODIFYVM_PAE,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--longmode",                 MODIFYVM_LONGMODE,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--synthcpu",                 MODIFYVM_SYNTHCPU,                  RTGETOPT_REQ_BOOL_ONOFF },
+    { "--triplefaultreset",         MODIFYVM_TFRESET,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--hwvirtex",                 MODIFYVM_HWVIRTEX,                  RTGETOPT_REQ_BOOL_ONOFF },
     { "--nestedpaging",             MODIFYVM_NESTEDPAGING,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--largepages",               MODIFYVM_LARGEPAGES,                RTGETOPT_REQ_BOOL_ONOFF },
@@ -617,6 +619,12 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_SYNTHCPU:
             {
                 CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_Synthetic, ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_TFRESET:
+            {
+                CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_TripleFaultReset, ValueUnion.f));
                 break;
             }
 

@@ -1026,6 +1026,15 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         }
         InsertConfigInteger(pRoot, "HMEnabled", fHMEnabled);
 
+        /* /EM/xzy */
+        PCFGMNODE pEM;
+        InsertConfigNode(pRoot, "EM", &pEM);
+
+        /* Triple fault behavior. */
+        BOOL fTripleFaultReset = false;
+        hrc = pMachine->GetCPUProperty(CPUPropertyType_TripleFaultReset, &fTripleFaultReset); H();
+        InsertConfigInteger(pEM, "TripleFaultReset", fTripleFaultReset);
+
         /* /HM/xzy */
         PCFGMNODE pHM;
         InsertConfigNode(pRoot, "HM", &pHM);
