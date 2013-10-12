@@ -135,8 +135,12 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
     rc = CFGMR3QueryBoolDef(pCfgEM, "IemExecutesAll", &pVM->em.s.fIemExecutesAll, false);
     AssertLogRelRCReturn(rc, rc);
 
-    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool\n",
-         pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll));
+    rc = CFGMR3QueryBoolDef(pCfgEM, "TripleFaultReset", &fEnabled, false);
+    AssertLogRelRCReturn(rc, rc);
+    pVM->em.s.fGuruOnTripleFault = !fEnabled;
+
+    Log(("EMR3Init: fRecompileUser=%RTbool fRecompileSupervisor=%RTbool fRawRing1Enabled=%RTbool fIemExecutesAll=%RTbool fGuruOnTripleFault=%RTbool\n",
+         pVM->fRecompileUser, pVM->fRecompileSupervisor, pVM->fRawRing1Enabled, pVM->em.s.fIemExecutesAll, pVM->em.s.fGuruOnTripleFault));
 
 #ifdef VBOX_WITH_REM
     /*
@@ -2380,8 +2384,20 @@ VMMR3_INT_DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 /*
                  * Guru mediations.
                  */
-                case VERR_VMM_RING0_ASSERTION:
                 case VINF_EM_TRIPLE_FAULT:
+                    if (!pVM->em.s.fGuruOnTripleFault)
+                    {
+                        REMR3Reset(pVM);
+                        PGMR3ResetCpu(pVM, pVCpu);
+                        TRPMR3ResetCpu(pVCpu);
+                        CPUMR3ResetCpu(pVCpu);
+                        EMR3ResetCpu(pVCpu);
+                        HMR3ResetCpu(pVCpu);
+                        pVCpu->em.s.enmState = emR3Reschedule(pVM, pVCpu, pVCpu->em.s.pCtx);
+                        break;
+                    }
+                    /* Else fall through and trigger a guru. */
+                case VERR_VMM_RING0_ASSERTION:
                     Log(("EMR3ExecuteVM: %Rrc: %d -> %d (EMSTATE_GURU_MEDITATION)\n", rc, enmOldState, EMSTATE_GURU_MEDITATION));
                     pVCpu->em.s.enmState = EMSTATE_GURU_MEDITATION;
                     break;
