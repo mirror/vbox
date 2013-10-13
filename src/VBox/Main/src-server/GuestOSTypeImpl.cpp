@@ -499,4 +499,17 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedUSB)(BOOL *aRecommendedUSB)
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedTFReset)(BOOL *aRecommendedTFReset)
+{
+    CheckComArgOutPointerValid(aRecommendedTFReset);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* recommended triple fault behavior is constant during life time, no need to lock */
+    *aRecommendedTFReset = !!(mOSHint & VBOXOSHINT_TFRESET);
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

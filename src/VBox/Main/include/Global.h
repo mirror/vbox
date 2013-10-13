@@ -39,6 +39,7 @@
 #define VBOXOSHINT_ACCEL3D              RT_BIT(10)
 #define VBOXOSHINT_FLOPPY               RT_BIT(11)
 #define VBOXOSHINT_NOUSB                RT_BIT(12)
+#define VBOXOSHINT_TFRESET              RT_BIT(13)
 
 /** The VBoxVRDP kludge extension pack name.
  *

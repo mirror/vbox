@@ -3971,6 +3971,7 @@ void VBoxGlobal::prepare()
         {"OS2Warp4",        ":/os_os2warp4.png"},
         {"OS2Warp45",       ":/os_os2warp45.png"},
         {"OS2eCS",          ":/os_os2ecs.png"},
+        {"OS21x",           ":/os_os2_other.png"},
         {"OS2",             ":/os_os2_other.png"},
         {"Linux22",         ":/os_linux22.png"},
         {"Linux24",         ":/os_linux24.png"},

@@ -75,6 +75,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedAudioController))(AudioControllerType_T *aAudioController);
     STDMETHOD(COMGETTER(RecommendedFloppy))(BOOL *aRecommendedFloppy);
     STDMETHOD(COMGETTER(RecommendedUSB))(BOOL *aRecommendedUSB);
+    STDMETHOD(COMGETTER(RecommendedTFReset))(BOOL *aRecommendedTFReset);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
