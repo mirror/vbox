@@ -74,6 +74,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_OS2Warp4         = 0x42000,
     VBOXOSTYPE_OS2Warp45        = 0x43000,
     VBOXOSTYPE_ECS              = 0x44000,
+    VBOXOSTYPE_OS21x            = 0x48000,
     VBOXOSTYPE_Linux            = 0x50000,
     VBOXOSTYPE_Linux_x64        = 0x50100,
     VBOXOSTYPE_Linux22          = 0x51000,

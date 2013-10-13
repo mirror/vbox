@@ -9322,7 +9322,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="6d968f9a-858b-4c50-bf17-241f069e94c2"
+    uuid="ced74f7e-4c08-4d19-883a-017496ada2e1"
     wsmap="struct"
     >
     <desc>
@@ -9434,6 +9434,10 @@
 
     <attribute name="recommendedUSB" type="boolean" readonly="yes">
       <desc>Returns @c true a USB controller is recommended for this OS type.</desc>
+    </attribute>
+
+    <attribute name="recommendedTFReset" type="boolean" readonly="yes">
+      <desc>Returns @c true if using VCPU reset on triple fault is recommended for this OS type.</desc>
     </attribute>
 
   </interface>
