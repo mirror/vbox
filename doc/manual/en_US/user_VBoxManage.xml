@@ -582,6 +582,14 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--triplefaultreset on|off</computeroutput>:
+            This setting allows to reset the guest instead of triggering a
+            Guru Meditation. Some guests raise a triple fault to reset the
+            CPU so sometimes this is desired behavior. Works only for non-SMP
+            guests.</para>
+          </listitem>
+
+          <listitem>
             <para><computeroutput>--nestedpaging on|off</computeroutput>: If
             hardware virtualization is enabled, this additional setting
             enables or disables the use of the nested paging feature in the
