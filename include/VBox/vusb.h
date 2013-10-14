@@ -772,9 +772,18 @@ typedef struct VUSBIDEVICE
      */
     DECLR3CALLBACKMEMBER(VUSBDEVICESTATE, pfnGetState,(PVUSBIDEVICE pInterface));
 
+    /**
+     * Returns whether the device is completely emulated.
+     *
+     * @returns true if the device is fully emulated and doesn't pass through
+     *          a host device, false otherwise.
+     * @param   pInterface      Pointer to the device interface structure.
+     */
+    DECLR3CALLBACKMEMBER(bool, pfnIsEmulated,(PVUSBIDEVICE pInterface));
+
 } VUSBIDEVICE;
 /** VUSBIDEVICE interface ID. */
-#define VUSBIDEVICE_IID                         "88732dd3-0ccd-4625-b040-48804ac7a217"
+#define VUSBIDEVICE_IID                         "f3facb2b-edd3-4b5b-b07e-2cc4d52a471e"
 
 
 #ifdef IN_RING3
@@ -839,6 +848,18 @@ DECLINLINE(int) VUSBIDevPowerOff(PVUSBIDEVICE pInterface)
 DECLINLINE(VUSBDEVICESTATE) VUSBIDevGetState(PVUSBIDEVICE pInterface)
 {
     return pInterface->pfnGetState(pInterface);
+}
+
+/**
+ * Returns whether the device is completely emulated.
+ *
+ * @returns true if the device is fully emulated and doesn't pass through
+ *          a host device, false otherwise.
+ * @param   pInterface      Pointer to the device interface structure.
+ */
+DECLINLINE(bool) VUSBIDevIsEmulated(PVUSBIDEVICE pInterface)
+{
+    return pInterface->pfnIsEmulated(pInterface);
 }
 #endif /* IN_RING3 */
 

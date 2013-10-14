@@ -5002,19 +5002,24 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * Detach all proxied devices.
      */
     PDMCritSectEnter(pThis->pDevInsR3->pCritSectRoR3, VERR_IGNORED);
-    /** @todo we a) can't tell which are proxied, and b) this won't work well when continuing after saving! */
+    /** @todo this won't work well when continuing after saving! */
     for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         PVUSBIDEVICE pDev = pRh->aPorts[i].pDev;
         if (pDev)
         {
-            VUSBIRhDetachDevice(pRh->pIRhConn, pDev);
-            /*
-             * Save the device pointers here so we can reattach them afterwards.
-             * This will work fine even if the save fails since the Done handler is
-             * called unconditionally if the Prep handler was called.
-             */
-            pRh->aPorts[i].pDev = pDev;
+            if (!VUSBIDevIsEmulated(pDev))
+            {
+                VUSBIRhDetachDevice(pRh->pIRhConn, pDev);
+                /*
+                 * Save the device pointers here so we can reattach them afterwards.
+                 * This will work fine even if the save fails since the Done handler is
+                 * called unconditionally if the Prep handler was called.
+                 */
+                pRh->aPorts[i].pDev = pDev;
+            }
+            else /* Reap URBs one last time to make sure the lists are empty. */
+                VUSBIRhReapAsyncUrbs(pEhci->RootHub.pIRhConn, 0);
         }
     }
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
@@ -5079,7 +5084,8 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         PVUSBIDEVICE pDev = Rh.aPorts[i].pDev;
-        if (pDev)
+        if (   pDev
+            && !VUSBIDevIsEmulated(pDev))
             VUSBIRhAttachDevice(pRh->pIRhConn, pDev);
     }
 
@@ -5117,7 +5123,8 @@ static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         for (i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
         {
             PVUSBIDEVICE pDev = pRh->aPorts[i].pDev;
-            if (pDev)
+            if (   pDev
+                && !VUSBIDevIsEmulated(pDev))
             {
                 Load.apDevs[Load.cDevs++] = pDev;
                 VUSBIRhDetachDevice(pRh->pIRhConn, pDev);
