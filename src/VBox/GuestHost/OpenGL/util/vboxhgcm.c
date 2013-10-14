@@ -1998,25 +1998,30 @@ _crVBoxHGSMIWriteReadExact(CRConnection *conn, PCRVBOXHGSMI_CLIENT pClient, void
             else if (VERR_BUFFER_OVERFLOW == rc)
             {
                 VBOXUHGSMI_BUFFER_TYPE_FLAGS Flags = {0};
-                PVBOXUHGSMI_BUFFER pOldBuf = pClient->pHGBuffer;
+                PVBOXUHGSMI_BUFFER pNewBuf;
                 CRASSERT(!pClient->pvHGBuffer);
                 CRASSERT(cbWriteback>pClient->pHGBuffer->cbBuffer);
                 crDebug("Reallocating host buffer from %d to %d bytes", conn->cbHostBufferAllocated, cbWriteback);
 
-                rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback), Flags, &pClient->pHGBuffer);
+                rc = pClient->pHgsmi->pfnBufferCreate(pClient->pHgsmi, CRVBOXHGSMI_PAGE_ALIGN(cbWriteback), Flags, &pNewBuf);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = pOldBuf->pfnDestroy(pOldBuf);
+                    rc = pClient->pHGBuffer->pfnDestroy(pClient->pHGBuffer);
                     CRASSERT(RT_SUCCESS(rc));
+
+                    pClient->pHGBuffer = pNewBuf;
 
                     _crVBoxHGSMIReadExact(conn, pClient/*, cbWriteback*/);
                 }
                 else
                 {
                     crWarning("_crVBoxHGSMIWriteReadExact: pfnBufferCreate(%d) failed!", CRVBOXHGSMI_PAGE_ALIGN(cbWriteback));
-                    crFree(conn->pHostBuffer);
-                    conn->cbHostBufferAllocated = cbWriteback;
-                    conn->pHostBuffer = crAlloc(conn->cbHostBufferAllocated);
+                    if (conn->cbHostBufferAllocated < cbWriteback)
+                    {
+                        crFree(conn->pHostBuffer);
+                        conn->cbHostBufferAllocated = cbWriteback;
+                        conn->pHostBuffer = crAlloc(conn->cbHostBufferAllocated);
+                    }
                     crVBoxHGCMReadExact(conn, NULL, cbWriteback);
                 }
             }
