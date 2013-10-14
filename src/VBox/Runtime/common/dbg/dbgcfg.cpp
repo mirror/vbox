@@ -1680,6 +1680,7 @@ static int rtDbgCfgOpenBundleFile(RTDBGCFG hDbgCfg, const char *pszImage, const 
 
         rc2 = rtDbgCfgConstructUuidMappingSubDir(szUuidMappingSubDir, sizeof(szUuidMappingSubDir), pszUuidMapDirName, pUuid);
         AssertRCReturn(rc2, rc2);
+        pszUuidMappingSubDir = szUuidMappingSubDir;
     }
 
     /*

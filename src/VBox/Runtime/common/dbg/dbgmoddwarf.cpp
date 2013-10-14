@@ -4801,8 +4801,9 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
     pThis->pImgMod     = pMod;
     RTListInit(&pThis->CompileUnitList);
     /** @todo better fUseLinkAddress heuristics! */
-    if (   (pMod->pszDbgFile && strstr(pMod->pszDbgFile, "mach_kernel"))
-        || (pMod->pszImgFile && strstr(pMod->pszImgFile, "mach_kernel")) )
+    if (   (pMod->pszDbgFile          && strstr(pMod->pszDbgFile,          "mach_kernel"))
+        || (pMod->pszImgFile          && strstr(pMod->pszImgFile,          "mach_kernel"))
+        || (pMod->pszImgFileSpecified && strstr(pMod->pszImgFileSpecified, "mach_kernel")) )
         pThis->fUseLinkAddress = true;
 
 #ifdef RTDBGMODDWARF_WITH_MEM_CACHE
