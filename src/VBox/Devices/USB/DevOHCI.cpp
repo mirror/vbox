@@ -5019,7 +5019,7 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                 pRh->aPorts[i].pDev = pDev;
             }
             else /* Reap URBs one last time to make sure the lists are empty. */
-                VUSBIRhReapAsyncUrbs(pEhci->RootHub.pIRhConn, 0);
+                VUSBIRhReapAsyncUrbs(pRh->pIRhConn, 0);
         }
     }
     PDMCritSectLeave(pThis->pDevInsR3->pCritSectRoR3);
