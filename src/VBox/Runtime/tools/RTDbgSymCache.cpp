@@ -219,7 +219,7 @@ static int rtDbgSymCacheAddCreateUuidMapping(const char *pszCacheFile, PRTUUID p
         szMapPath[cch] = '\0';
         if (!RTDirExists(szMapPath))
         {
-            rc = RTDirCreate(szMapPath, 0755, 0/*fFlags*/);
+            rc = RTDirCreate(szMapPath, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
             if (RT_FAILURE(rc))
                 return RTMsgErrorRc(rc, "RTDirCreate failed on '%s' (UUID map path): %Rrc", szMapPath, rc);
         }
@@ -322,7 +322,7 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
 
     if (!RTDirExists(szDstPath))
     {
-        rc = RTDirCreate(szDstPath, 0755, 0 /*fFlags*/);
+        rc = RTDirCreate(szDstPath, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
         if (RT_FAILURE(rc))
             return RTMsgErrorRc(rc, "Error creating '%s': %Rrc", szDstPath, rc);
     }
@@ -333,7 +333,7 @@ static int rtDbgSymCacheAddOneFile(const char *pszSrcPath, const char *pszDstNam
 
     if (!RTDirExists(szDstPath))
     {
-        rc = RTDirCreate(szDstPath, 0755, 0 /*fFlags*/);
+        rc = RTDirCreate(szDstPath, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
         if (RT_FAILURE(rc))
             return RTMsgErrorRc(rc, "Error creating '%s': %Rrc", szDstPath, rc);
     }
@@ -1158,7 +1158,7 @@ static RTEXITCODE rtDbgSymCacheCmdAdd(const char *pszArg0, int cArgs, char **pap
                     pszCache = ValueUnion.psz;
                     if (!RTPathExists(pszCache))
                     {
-                        rc = RTDirCreate(pszCache, 0755, 0 /*fFlags*/);
+                        rc = RTDirCreate(pszCache, 0755, RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL);
                         if (RT_FAILURE(rc))
                             return RTMsgErrorExit(RTEXITCODE_SYNTAX, "Error creating cache directory '%s': %Rrc", pszCache, rc);
                     }
