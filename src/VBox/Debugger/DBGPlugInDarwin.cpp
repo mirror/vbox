@@ -109,7 +109,7 @@ typedef DBGDIGGERDARWIN *PDBGDIGGERDARWIN;
 /** Validates a 32-bit darwin kernel address */
 #define OSX32_VALID_ADDRESS(Addr)    ((Addr) > UINT32_C(0x00001000) && (Addr) < UINT32_C(0xfffff000))
 /** Validates a 64-bit darwin kernel address */
-#define OSX64_VALID_ADDRESS(Addr)    ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT32_C(0xfffffffffffff000))
+#define OSX64_VALID_ADDRESS(Addr)    ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT64_C(0xfffffffffffff000))
 /** Validates a 32-bit or 64-bit darwin kernel address. */
 #define OSX_VALID_ADDRESS(a_f64Bits, a_Addr) \
     ((a_f64Bits) ? OSX64_VALID_ADDRESS(a_Addr) : OSX32_VALID_ADDRESS(a_Addr))
@@ -203,7 +203,7 @@ static bool dbgDiggerDarwinIsValidSegOrSectName(const char *pszName, size_t cbNa
     size_t off = 0;
     while (off < cbName && (ch = pszName[off]))
     {
-        if (RT_C_IS_CNTRL(ch) || ch > 127)
+        if (RT_C_IS_CNTRL(ch) || ch >= 127)
             return false;
         off++;
     }
@@ -635,7 +635,7 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
                     /*
                      * Try add the module.
                      */
-                    Log(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx\n",
+                    Log(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx\n", AddrModInfo.FlatPtr,
                          pszName, pszVersion, uImageAddr, cbImage, cbHdr));
                     rc = dbgDiggerDarwinAddModule(pThis, pUVM, uImageAddr, pszName, NULL);
 
