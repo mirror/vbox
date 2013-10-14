@@ -664,31 +664,44 @@ static int rtDbgSymCacheAddDebugFile(const char *pszPath, PCRTDBGSYMCACHEADDCFG 
 static int rtDbgSymCacheConstructBundlePath(char *pszPath, size_t cchPath, size_t cchName, const char *pszSubDir,
                                             const char * const *papszSuffixes)
 {
-    int rc = RTPathAppend(pszPath, RTPATH_MAX, pszSubDir);
-    if (RT_SUCCESS(rc))
+    /*
+     * Calc the name without the bundle extension.
+     */
+    size_t const cchOrgName = cchName;
+    const char  *pszEnd     = &pszPath[cchPath + cchName];
+    for (unsigned i = 0; papszSuffixes[i]; i++)
     {
-        /* Strip off the bundle suffix. */
-        const char *pszEnd = &pszPath[cchPath + cchName];
-        for (unsigned i = 0; papszSuffixes[i]; i++)
+        Assert(papszSuffixes[i][0] == '.');
+        size_t cchSuff = strlen(papszSuffixes[i]);
+        if (   cchSuff < cchName
+            && !memcmp(&pszEnd[-(ssize_t)cchSuff], papszSuffixes[i], cchSuff))
         {
-            Assert(papszSuffixes[i][0] == '.');
-            size_t cchSuff = strlen(papszSuffixes[i]);
-            if (   cchSuff < cchName
-                && !memcmp(&pszEnd[-(ssize_t)cchSuff], papszSuffixes[i], cchSuff))
-            {
-                cchName -= cchSuff;
-                break;
-            }
+            cchName -= cchSuff;
+            break;
         }
+    }
 
-        /* Add the name. */
-        rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName);
-    }
-    if (RT_FAILURE(rc))
+    /*
+     * Check the immediate directory first, in case it's layed out like
+     * IOPCIFamily.kext.
+     */
+    int rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName);
+    if (RT_FAILURE(rc) || !RTFileExists(pszPath))
     {
-        pszPath[cchPath + cchName] = '\0';
-        return RTMsgErrorRc(rc, "Error constructing image bundle path for '%s': %Rrc", pszPath, rc);
+        /*
+         * Not there, ok then try the given subdirectory + name.
+         */
+        pszPath[cchPath + cchOrgName] = '\0';
+        rc = RTPathAppend(pszPath, RTPATH_MAX, pszSubDir);
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppendEx(pszPath, RTPATH_MAX, &pszPath[cchPath], cchName);
+        if (RT_FAILURE(rc))
+        {
+            pszPath[cchPath + cchOrgName] = '\0';
+            return RTMsgErrorRc(rc, "Error constructing image bundle path for '%s': %Rrc", pszPath, rc);
+        }
     }
+
     return VINF_SUCCESS;
 }
 
