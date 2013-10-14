@@ -72,9 +72,17 @@ RTDECL(int) RTDirCreate(const char *pszPath, RTFMODE fMode, uint32_t fCreate)
             /*
              * Turn off indexing of directory through Windows Indexing Service
              */
-            if (RT_SUCCESS(rc))
+            /** @todo This FILE_ATTRIBUTE_NOT_CONTENT_INDEXED hack (for .VDI files,
+             *        really) may cause failures on samba shares.  That really sweet and
+             *        need to be addressed differently.  We shouldn't be doing this
+             *        unless the caller actually asks for it, must less returning failure,
+             *        for crying out loud!  This is only important a couple of places in
+             *        main, if important is the right way to put it... */
+            if (   RT_SUCCESS(rc)
+                && !(fCreate & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET))
             {
-                if (SetFileAttributesW((LPCWSTR)pwszString, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED))
+                if (   SetFileAttributesW((LPCWSTR)pwszString, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED)
+                    || (fCreate & RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL) )
                     rc = VINF_SUCCESS;
                 else
                     rc = RTErrConvertFromWin32(GetLastError());
