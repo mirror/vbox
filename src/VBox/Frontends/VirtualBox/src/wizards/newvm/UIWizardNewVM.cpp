@@ -141,10 +141,6 @@ bool UIWizardNewVM::createVM()
         m_machine.AddStorageController(strHDName, ctrHDBus);
         hdCtr = m_machine.GetStorageControllerByName(strHDName);
         hdCtr.SetControllerType(hdStorageControllerType);
-
-        /* Set the port count to 1 if SATA is used. */
-        if (hdStorageControllerType == KStorageControllerType_IntelAhci)
-            hdCtr.SetPortCount(1);
     }
     else
     {
@@ -152,6 +148,14 @@ bool UIWizardNewVM::createVM()
         hdCtr = dvdCtr;
         strHDName = strDVDName;
     }
+
+    /* Liomit the AHCI port count if it's used because windows has trouble with
+       too many ports and other guest (OS X in particular) may take extra long
+       to boot: */
+    if (hdStorageControllerType == KStorageControllerType_IntelAhci)
+        hdCtr.SetPortCount(1 + (dvdStorageControllerType == KStorageControllerType_IntelAhci));
+    else if (dvdStorageControllerType == KStorageControllerType_IntelAhci)
+        dvdCtr.SetPortCount(1);
 
     /* Turn on PAE, if recommended: */
     m_machine.SetCPUProperty(KCPUPropertyType_PAE, type.GetRecommendedPAE());
