@@ -37,6 +37,48 @@
 /** @name Internal Darwin structures
  * @{ */
 
+/**
+ * 32-bit darwin kernel module info structure (kmod_info_t).
+ */
+typedef struct OSX32_kmod_info
+{
+    uint32_t    next;
+    int32_t     info_version;
+    uint32_t    id;
+    char        name[64];
+    char        version[64];
+    int32_t     reference_count;
+    uint32_t    reference_list;         /**< Points to kmod_reference_t. */
+    uint32_t    address;                /**< Where in memory the kext is loaded. */
+    uint32_t    size;
+    uint32_t    hdr_size;
+    uint32_t    start;                  /**< Address of kmod_start_func_t. */
+    uint32_t    stop;                   /**< Address of kmod_stop_func_t. */
+} OSX32_kmod_info_t;
+
+/**
+ * 32-bit darwin kernel module info structure (kmod_info_t).
+ */
+#pragma pack(1)
+typedef struct OSX64_kmod_info
+{
+    uint64_t    next;
+    int32_t     info_version;
+    uint32_t    id;
+    char        name[64];
+    char        version[64];
+    int32_t     reference_count;
+    uint64_t    reference_list;         /**< Points to kmod_reference_t. Misaligned, duh. */
+    uint64_t    address;                /**< Where in memory the kext is loaded. */
+    uint64_t    size;
+    uint64_t    hdr_size;
+    uint64_t    start;                  /**< Address of kmod_start_func_t. */
+    uint64_t    stop;                   /**< Address of kmod_stop_func_t. */
+} OSX64_kmod_info_t;
+#pragma pack()
+
+/** The value of the info_version field. */
+#define OSX_KMOD_INFO_VERSION   INT32_C(1)
 
 /** @} */
 
@@ -64,11 +106,13 @@ typedef DBGDIGGERDARWIN *PDBGDIGGERDARWIN;
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-/** Validates a 32-bit linux kernel address */
-#define DARWIN32_VALID_ADDRESS(Addr)    ((Addr) > UINT32_C(0x80000000) && (Addr) < UINT32_C(0xfffff000))
-
-/** The max kernel size. */
-#define DARWIN_MAX_KERNEL_SIZE          0x0f000000
+/** Validates a 32-bit darwin kernel address */
+#define OSX32_VALID_ADDRESS(Addr)    ((Addr) > UINT32_C(0x00001000) && (Addr) < UINT32_C(0xfffff000))
+/** Validates a 64-bit darwin kernel address */
+#define OSX64_VALID_ADDRESS(Addr)    ((Addr) > UINT64_C(0xffff800000000000) && (Addr) < UINT32_C(0xfffffffffffff000))
+/** Validates a 32-bit or 64-bit darwin kernel address. */
+#define OSX_VALID_ADDRESS(a_f64Bits, a_Addr) \
+    ((a_f64Bits) ? OSX64_VALID_ADDRESS(a_Addr) : OSX32_VALID_ADDRESS(a_Addr))
 
 /** AppleOsX on little endian ASCII systems. */
 #define DIG_DARWIN_MOD_TAG              UINT64_C(0x58734f656c707041)
@@ -78,18 +122,6 @@ typedef DBGDIGGERDARWIN *PDBGDIGGERDARWIN;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData);
-
-
-/*******************************************************************************
-*   Global Variables                                                           *
-*******************************************************************************/
-/** Table of common linux kernel addresses. */
-static uint64_t g_au64LnxKernelAddresses[] =
-{
-    UINT64_C(0xc0100000),
-    UINT64_C(0x90100000),
-    UINT64_C(0xffffffff80200000)
-};
 
 
 /**
@@ -192,7 +224,7 @@ static bool dbgDiggerDarwinIsValidSegOrSectName(const char *pszName, size_t cbNa
 }
 
 
-static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t uModAddr, const char *pszName)
+static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t uModAddr, const char *pszName, bool *pf64Bit)
 {
     union
     {
@@ -415,11 +447,39 @@ static int dbgDiggerDarwinAddModule(PDBGDIGGERDARWIN pThis, PUVM pUVM, uint64_t 
     }
     else
         rc = VERR_INTERNAL_ERROR;
+
     RTDbgModRelease(hMod);
     RTDbgAsRelease(hAs);
 
+    if (pf64Bit)
+        *pf64Bit = f64Bit;
     return rc;
 }
+
+
+static bool dbgDiggerDarwinIsValidName(const char *pszName)
+{
+    char ch;
+    while ((ch = *pszName++) != '\0')
+    {
+        if (ch < 0x20 || ch >= 127)
+            return false;
+    }
+    return true;
+}
+
+
+static bool dbgDiggerDarwinIsValidVersion(const char *pszVersion)
+{
+    char ch;
+    while ((ch = *pszVersion++) != '\0')
+    {
+        if (ch < 0x20 || ch >= 127)
+            return false;
+    }
+    return true;
+}
+
 
 /**
  * @copydoc DBGFOSREG::pfnInit
@@ -430,12 +490,168 @@ static DECLCALLBACK(int)  dbgDiggerDarwinInit(PUVM pUVM, void *pvData)
     Assert(!pThis->fValid);
 
     /*
-     * Add the kernel module (and later the other kernel modules we can find).
+     * Add the kernel module.
      */
-    int rc = dbgDiggerDarwinAddModule(pThis, pUVM, pThis->AddrKernel.FlatPtr, "mach_kernel");
+    bool f64Bit;
+    int rc = dbgDiggerDarwinAddModule(pThis, pUVM, pThis->AddrKernel.FlatPtr, "mach_kernel", &f64Bit);
     if (RT_SUCCESS(rc))
     {
-        /** @todo  */
+        /*
+         * The list of modules can be found at the 'kmod' symbol, that means
+         * that we currently require some kind of symbol file for the kernel
+         * to be loaded at this point.
+         *
+         * Note! Could also use the 'gLoadedKextSummaries', but I don't think
+         *       it's any easier to find without any kernel map than 'kmod'.
+         */
+        RTDBGSYMBOL SymInfo;
+        rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!kmod", &SymInfo, NULL);
+        if (RT_FAILURE(rc))
+            rc = DBGFR3AsSymbolByName(pUVM, DBGF_AS_KERNEL, "mach_kernel!_kmod", &SymInfo, NULL);
+        if (RT_SUCCESS(rc))
+        {
+            DBGFADDRESS AddrModInfo;
+            DBGFR3AddrFromFlat(pUVM, &AddrModInfo, SymInfo.Value);
+
+            /* Read the variable. */
+            RTUINT64U uKmodValue = { 0 };
+            if (f64Bit)
+                rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.u, sizeof(uKmodValue.u));
+            else
+                rc = DBGFR3MemRead (pUVM, 0 /*idCpu*/, &AddrModInfo, &uKmodValue.s.Lo, sizeof(uKmodValue.s.Lo));
+            if (RT_SUCCESS(rc))
+            {
+                DBGFR3AddrFromFlat(pUVM, &AddrModInfo, uKmodValue.u);
+
+                /* Walk the list of modules. */
+                uint32_t cIterations = 0;
+                while (AddrModInfo.FlatPtr != 0)
+                {
+                    /* Some extra loop conditions... */
+                    if (!OSX_VALID_ADDRESS(f64Bit, AddrModInfo.FlatPtr))
+                    {
+                        Log(("OSXDig: Invalid kmod_info pointer: %RGv\n", AddrModInfo.FlatPtr));
+                        break;
+                    }
+                    if (AddrModInfo.FlatPtr == uKmodValue.u && cIterations != 0)
+                    {
+                        Log(("OSXDig: kmod_info list looped back to the start.\n"));
+                        break;
+                    }
+                    if (cIterations++ >= 2048)
+                    {
+                        Log(("OSXDig: Too many mod_info loops (%u)\n", cIterations));
+                        break;
+                    }
+
+                    /*
+                     * Read the kmod_info_t structure.
+                     */
+                    union
+                    {
+                        OSX64_kmod_info_t   Info64;
+                        OSX32_kmod_info_t   Info32;
+                    } uMod;
+                    RT_ZERO(uMod);
+                    rc = DBGFR3MemRead(pUVM, 0 /*idCpu*/, &AddrModInfo, &uMod,
+                                       f64Bit ? sizeof(uMod.Info64) : sizeof(uMod.Info64));
+                    if (RT_FAILURE(rc))
+                    {
+                        Log(("OSXDig: Error reading kmod_info structure at %RGv: %Rrc\n", AddrModInfo.FlatPtr, rc));
+                        break;
+                    }
+
+                    /*
+                     * Validate the kmod_info_t structure.
+                     */
+                    int32_t iInfoVer = f64Bit ? uMod.Info64.info_version : uMod.Info32.info_version;
+                    if (iInfoVer != OSX_KMOD_INFO_VERSION)
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad info_version %d\n", AddrModInfo.FlatPtr, iInfoVer));
+                        break;
+                    }
+
+                    const char *pszName = f64Bit ? uMod.Info64.name : uMod.Info32.name;
+                    if (   !*pszName
+                        || !RTStrEnd(pszName, sizeof(uMod.Info64.name))
+                        || !dbgDiggerDarwinIsValidName(pszName) )
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad name '%.*s'\n", AddrModInfo.FlatPtr,
+                             sizeof(uMod.Info64.name), pszName));
+                        break;
+                    }
+
+                    const char *pszVersion = f64Bit ? uMod.Info64.version : uMod.Info32.version;
+                    if (   !RTStrEnd(pszVersion, sizeof(uMod.Info64.version))
+                        || !dbgDiggerDarwinIsValidVersion(pszVersion) )
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad version '%.*s'\n", AddrModInfo.FlatPtr,
+                             sizeof(uMod.Info64.version), pszVersion));
+                        break;
+                    }
+
+                    int32_t cRefs = f64Bit ? uMod.Info64.reference_count : uMod.Info32.reference_count;
+                    if (cRefs < -1 || cRefs > 16384)
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad reference_count %d\n", AddrModInfo.FlatPtr, cRefs));
+                        break;
+                    }
+
+                    uint64_t uImageAddr = f64Bit ? uMod.Info64.address : uMod.Info32.address;
+                    if (!OSX_VALID_ADDRESS(f64Bit, uImageAddr))
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad address %#llx\n", AddrModInfo.FlatPtr, uImageAddr));
+                        break;
+                    }
+
+                    uint64_t cbImage = f64Bit ? uMod.Info64.size : uMod.Info32.size;
+                    if (cbImage > 64U*_1M)
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad size %#llx\n", AddrModInfo.FlatPtr, cbImage));
+                        break;
+                    }
+
+                    uint64_t cbHdr = f64Bit ? uMod.Info64.hdr_size : uMod.Info32.hdr_size;
+                    if (cbHdr > 16U*_1M)
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad hdr_size %#llx\n", AddrModInfo.FlatPtr, cbHdr));
+                        break;
+                    }
+
+                    uint64_t uStartAddr = f64Bit ? uMod.Info64.start : uMod.Info32.start;
+                    if (!uStartAddr && !OSX_VALID_ADDRESS(f64Bit, uStartAddr))
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad start function %#llx\n", AddrModInfo.FlatPtr, uStartAddr));
+                        break;
+                    }
+
+                    uint64_t uStopAddr = f64Bit ? uMod.Info64.stop : uMod.Info32.stop;
+                    if (!uStopAddr && !OSX_VALID_ADDRESS(f64Bit, uStopAddr))
+                    {
+                        Log(("OSXDig: kmod_info @%RGv: Bad stop function %#llx\n", AddrModInfo.FlatPtr, uStopAddr));
+                        break;
+                    }
+
+                    /*
+                     * Try add the module.
+                     */
+                    Log(("OSXDig: kmod_info @%RGv: '%s' ver '%s', image @%#llx LB %#llx cbHdr=%#llx\n",
+                         pszName, pszVersion, uImageAddr, cbImage, cbHdr));
+                    rc = dbgDiggerDarwinAddModule(pThis, pUVM, uImageAddr, pszName, NULL);
+
+
+                    /*
+                     * Advance to the next kmod_info entry.
+                     */
+                    DBGFR3AddrFromFlat(pUVM, &AddrModInfo, f64Bit ? uMod.Info64.next : uMod.Info32.next);
+                }
+            }
+            else
+                Log(("OSXDig: Error reading the 'kmod' variable: %Rrc\n", rc));
+        }
+        else
+            Log(("OSXDig: Failed to locate the 'kmod' variable in mach_kernel.\n"));
+
         pThis->fValid = true;
         return VINF_SUCCESS;
     }
