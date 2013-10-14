@@ -209,8 +209,6 @@ private:
 
 
 typedef ListenerImpl<NATNetworkListener, VBoxNetLwipNAT *> NATNetworkListenerImpl;
-
-
 VBOX_LISTENER_DECLARE(NATNetworkListenerImpl)
 
 
@@ -882,7 +880,6 @@ int VBoxNetLwipNAT::init()
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     com::SafeArray<VBoxEventType_T> events;
-
     events.push_back(VBoxEventType_OnNATNetworkPortForward);
 
     hrc = pES->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
