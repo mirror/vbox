@@ -449,6 +449,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_ECX_OSXSAVE   RT_BIT(27)
 /** ECX Bit 28 - AVX. */
 #define X86_CPUID_FEATURE_ECX_AVX       RT_BIT(28)
+/** ECX Bit 29 - F16C - Half-precision convert instruction support. */
+#define X86_CPUID_FEATURE_ECX_F16C      RT_BIT(29)
 /** ECX Bit 31 - Hypervisor Present (software only). */
 #define X86_CPUID_FEATURE_ECX_HVP       RT_BIT(31)
 
