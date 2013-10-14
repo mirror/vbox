@@ -9787,6 +9787,7 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
     PVM pVM                 = pVCpu->CTX_SUFF(pVM);
     if (fIOString)
     {
+#if 0       /* Not yet ready. IEM gurus with debian 32-bit guest without NP (on ATA reads). See @bugref{5752#c158}*/
         /*
          * INS/OUTS - I/O String instruction.
          *
@@ -9831,6 +9832,30 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
         /** @todo IEM needs to be setting these flags somehow. */
         VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
         fUpdateRipAlready = true;
+#else
+        PDISCPUSTATE pDis = &pVCpu->hm.s.DisState;
+        rcStrict = EMInterpretDisasCurrent(pVM, pVCpu, pDis, NULL);
+        if (RT_SUCCESS(rcStrict))
+        {
+            if (fIOWrite)
+            {
+                rcStrict = IOMInterpretOUTSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
+                                              (DISCPUMODE)pDis->uAddrMode, cbValue);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringWrite);
+            }
+            else
+            {
+                rcStrict = IOMInterpretINSEx(pVM, pVCpu, CPUMCTX2CORE(pMixedCtx), uIOPort, pDis->fPrefix,
+                                             (DISCPUMODE)pDis->uAddrMode, cbValue);
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatExitIOStringRead);
+            }
+        }
+        else
+        {
+            AssertMsg(rcStrict == VERR_EM_INTERPRETER, ("rcStrict=%Rrc RIP %#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pMixedCtx->rip));
+            rcStrict = VINF_EM_RAW_EMULATE_INSTR;
+        }
+#endif
     }
     else
     {
