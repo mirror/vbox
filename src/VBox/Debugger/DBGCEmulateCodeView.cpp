@@ -881,17 +881,17 @@ static void dbgcCmdUnassambleHelpListNear(PUVM pUVM, PDBGCCMDHLP pCmdHlp, RTDBGA
         if (!offDispSym)
         {
             DBGCCmdHlpPrintf(pCmdHlp, "%s:\n", Symbol.szName);
-            *pcbCallAgain = Symbol.cb;
+            *pcbCallAgain = !Symbol.cb ? 64 : Symbol.cb;
         }
         else if (offDispSym > 0)
         {
             DBGCCmdHlpPrintf(pCmdHlp, "%s+%#llx:\n", Symbol.szName, (uint64_t)offDispSym);
-            *pcbCallAgain = Symbol.cb > (RTGCUINTPTR)offDispSym ? Symbol.cb - (RTGCUINTPTR)offDispSym : 1;
+            *pcbCallAgain = !Symbol.cb ? 64 : Symbol.cb > (RTGCUINTPTR)offDispSym ? Symbol.cb - (RTGCUINTPTR)offDispSym : 1;
         }
         else
         {
             DBGCCmdHlpPrintf(pCmdHlp, "%s-%#llx:\n", Symbol.szName, (uint64_t)-offDispSym);
-            *pcbCallAgain = (RTGCUINTPTR)-offDispSym + Symbol.cb;
+            *pcbCallAgain = !Symbol.cb ? 64 : (RTGCUINTPTR)-offDispSym + Symbol.cb;
         }
     }
     else
