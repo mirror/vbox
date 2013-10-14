@@ -117,6 +117,9 @@ typedef const PDMUSBDESCCACHE *PCPDMUSBDESCCACHE;
  * @{ */
 /** A high-speed capable USB 2.0 device (also required to support full-speed). */
 #define PDM_USBREG_HIGHSPEED_CAPABLE        RT_BIT(0)
+/** Indicates that the device is fully emulated and is not used to pass through
+ * a host device. */
+#define PDM_USBREG_EMULATED_DEVICE          RT_BIT(1)
 /** @} */
 
 /** PDM USB Device Registration Structure,
@@ -988,6 +991,20 @@ DECLINLINE(int) PDMUsbHlpTMTimerCreate(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFN
                                        uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     return pUsbIns->pHlpR3->pfnTMTimerCreate(pUsbIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnSSMRegister
+ */
+DECLINLINE(int) PDMUsbHlpSSMRegister(PPDMUSBINS pUsbIns, uint32_t uVersion, size_t cbGuess,
+                                     PFNSSMUSBLIVEPREP pfnLivePrep, PFNSSMUSBLIVEEXEC pfnLiveExec, PFNSSMUSBLIVEVOTE pfnLiveVote,
+                                     PFNSSMUSBSAVEPREP pfnSavePrep, PFNSSMUSBSAVEEXEC pfnSaveExec, PFNSSMUSBSAVEDONE pfnSaveDone,
+                                     PFNSSMUSBLOADPREP pfnLoadPrep, PFNSSMUSBLOADEXEC pfnLoadExec, PFNSSMUSBLOADDONE pfnLoadDone)
+{
+    return pUsbIns->pHlpR3->pfnSSMRegister(pUsbIns, uVersion, cbGuess,
+                                           pfnLivePrep, pfnLiveExec, pfnLiveVote,
+                                           pfnSavePrep, pfnSaveExec, pfnSaveDone,
+                                           pfnLoadPrep, pfnLoadExec, pfnLoadDone);
 }
 
 #endif /* IN_RING3 */

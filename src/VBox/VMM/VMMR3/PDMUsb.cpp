@@ -226,7 +226,7 @@ static DECLCALLBACK(int) pdmR3UsbReg_Register(PCPDMUSBREGCB pCallbacks, PCPDMUSB
                     &&  pdmR3IsValidName(pReg->szName),
                     ("Invalid name '%.s'\n", sizeof(pReg->szName), pReg->szName),
                     VERR_PDM_INVALID_USB_REGISTRATION);
-    AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE)) == 0,
+    AssertMsgReturn((pReg->fFlags & ~(PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_EMULATED_DEVICE)) == 0,
                     ("fFlags=%#x\n", pReg->fFlags), VERR_PDM_INVALID_USB_REGISTRATION);
     AssertMsgReturn(pReg->cMaxInstances > 0,
                     ("Max instances %u! (USB Device %s)\n", pReg->cMaxInstances, pReg->szName),
