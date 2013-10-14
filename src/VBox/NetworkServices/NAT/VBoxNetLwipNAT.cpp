@@ -119,11 +119,11 @@ typedef std::vector<NATSEVICEPORTFORWARDRULE> VECNATSERVICEPF;
 typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
-class PortForwardListener;
+class NATNetworkListener;
 
 class VBoxNetLwipNAT: public VBoxNetBaseService
 {
-    friend class PortForwardListener;
+    friend class NATNetworkListener;
   public:
     VBoxNetLwipNAT();
     virtual ~VBoxNetLwipNAT();
@@ -174,10 +174,10 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 };
 
 
-class PortForwardListener
+class NATNetworkListener
 {
 public:
-    PortForwardListener():m_pNAT(NULL){}
+    NATNetworkListener():m_pNAT(NULL){}
 
     HRESULT init(VBoxNetLwipNAT *pNAT)
     {
@@ -208,10 +208,10 @@ private:
 };
 
 
-typedef ListenerImpl<PortForwardListener, VBoxNetLwipNAT *> PortForwardListenerImpl;
+typedef ListenerImpl<NATNetworkListener, VBoxNetLwipNAT *> NATNetworkListenerImpl;
 
 
-VBOX_LISTENER_DECLARE(PortForwardListenerImpl)
+VBOX_LISTENER_DECLARE(NATNetworkListenerImpl)
 
 
 
@@ -874,11 +874,11 @@ int VBoxNetLwipNAT::init()
     hrc = net->COMGETTER(EventSource)(pES.asOutParam());
     AssertComRC(hrc);
 
-    ComObjPtr<PortForwardListenerImpl> listener;
+    ComObjPtr<NATNetworkListenerImpl> listener;
     hrc = listener.createObject();
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    hrc = listener->init(new PortForwardListener(), this);
+    hrc = listener->init(new NATNetworkListener(), this);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     com::SafeArray<VBoxEventType_T> events;
