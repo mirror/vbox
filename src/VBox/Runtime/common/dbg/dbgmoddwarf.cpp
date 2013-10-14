@@ -4402,6 +4402,97 @@ static int rtDwarfInfo_LoadAll(PRTDBGMODDWARF pThis)
 
 
 
+/*
+ *
+ * Public and image level symbol handling.
+ * Public and image level symbol handling.
+ * Public and image level symbol handling.
+ * Public and image level symbol handling.
+ *
+ *
+ */
+
+#define RTDBGDWARF_SYM_ENUM_BASE_ADDRESS  UINT32_C(0x200000)
+
+/** @callback_method_impl{FNRTLDRENUMSYMS,
+ *  Adds missing symbols from the image symbol table.} */
+static DECLCALLBACK(int) rtDwarfSyms_EnumSymbolsCallback(RTLDRMOD hLdrMod, const char *pszSymbol, unsigned uSymbol,
+                                                         RTLDRADDR Value, void *pvUser)
+{
+    PRTDBGMODDWARF pThis = (PRTDBGMODDWARF)pvUser;
+    NOREF(hLdrMod);
+    Assert(pThis->iWatcomPass != 1);
+
+    RTLDRADDR uRva = Value - RTDBGDWARF_SYM_ENUM_BASE_ADDRESS;
+    if (   Value >= RTDBGDWARF_SYM_ENUM_BASE_ADDRESS
+        && uRva  <  _1G)
+    {
+        RTDBGSYMBOL SymInfo;
+        RTINTPTR    offDisp;
+        int rc = RTDbgModSymbolByAddr(pThis->hCnt, RTDBGSEGIDX_RVA, uRva, RTDBGSYMADDR_FLAGS_LESS_OR_EQUAL, &offDisp, &SymInfo);
+        if (   RT_FAILURE(rc)
+            || offDisp != 0)
+        {
+            rc = RTDbgModSymbolAdd(pThis->hCnt, pszSymbol, RTDBGSEGIDX_RVA, uRva, 1, 0 /*fFlags*/, NULL /*piOrdinal*/);
+            Log6(("Dwarf: Symbol #%05u %#018x %s [%Rrc]\n", uSymbol, Value, pszSymbol, rc)); NOREF(rc);
+        }
+    }
+    else
+        Log6(("Dwarf: Symbol #%05u %#018x %s [SKIPPED - INVALID ADDRESS]\n", uSymbol, Value, pszSymbol));
+    return VINF_SUCCESS;
+}
+
+
+
+/**
+ * Loads additional symbols from the pubnames section and the executable image.
+ *
+ * The symbols are insered into the debug info container.
+ *
+ * @returns IPRT status code
+ * @param   pThis               The DWARF instance.
+ */
+static int rtDwarfSyms_LoadAll(PRTDBGMODDWARF pThis)
+{
+    /*
+     * pubnames.
+     */
+    int rc = VINF_SUCCESS;
+    if (pThis->aSections[krtDbgModDwarfSect_pubnames].fPresent)
+    {
+//        RTDWARFCURSOR Cursor;
+//        int rc = rtDwarfCursor_Init(&Cursor, pThis, krtDbgModDwarfSect_info);
+//        if (RT_SUCCESS(rc))
+//        {
+//            while (   !rtDwarfCursor_IsAtEnd(&Cursor)
+//                   && RT_SUCCESS(rc))
+//                rc = rtDwarfInfo_LoadUnit(pThis, &Cursor, false /* fKeepDies */);
+//
+//            rc = rtDwarfCursor_Delete(&Cursor, rc);
+//        }
+//        return rc;
+    }
+
+    /*
+     * The executable image.
+     */
+    if (   pThis->pImgMod
+        && pThis->pImgMod->pImgVt->pfnEnumSymbols
+        && pThis->iWatcomPass != 1
+        && RT_SUCCESS(rc))
+    {
+        rc = pThis->pImgMod->pImgVt->pfnEnumSymbols(pThis->pImgMod,
+                                                    RTLDR_ENUM_SYMBOL_FLAGS_ALL | RTLDR_ENUM_SYMBOL_FLAGS_NO_FWD,
+                                                    RTDBGDWARF_SYM_ENUM_BASE_ADDRESS,
+                                                    rtDwarfSyms_EnumSymbolsCallback,
+                                                    pThis);
+    }
+
+    return rc;
+}
+
+
+
 
 /*
  *
@@ -4766,6 +4857,8 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
                 if (RT_SUCCESS(rc))
                     rc = rtDwarfInfo_LoadAll(pThis);
                 if (RT_SUCCESS(rc))
+                    rc = rtDwarfSyms_LoadAll(pThis);
+                if (RT_SUCCESS(rc))
                     rc = rtDwarfLine_ExplodeAll(pThis);
                 if (RT_SUCCESS(rc) && pThis->iWatcomPass == 1)
                 {
@@ -4773,6 +4866,8 @@ static DECLCALLBACK(int) rtDbgModDwarf_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enmA
                     pThis->iWatcomPass = 2;
                     if (RT_SUCCESS(rc))
                         rc = rtDwarfInfo_LoadAll(pThis);
+                    if (RT_SUCCESS(rc))
+                        rc = rtDwarfSyms_LoadAll(pThis);
                     if (RT_SUCCESS(rc))
                         rc = rtDwarfLine_ExplodeAll(pThis);
                 }
