@@ -114,12 +114,12 @@ EFI_STATUS
     IN OUT UINT32                  *BufferSize);
 
 
-struct _APPLE_GETVAR_PROTOCOL {
+struct _APPLE_GETVAR_PROTOCOL
+{
+    UINT64      Magic;
     EFI_STATUS(EFIAPI *Unknown0)(IN VOID *);
     EFI_STATUS(EFIAPI *Unknown1)(IN VOID *);
     EFI_STATUS(EFIAPI *Unknown2)(IN VOID *);
-    EFI_STATUS(EFIAPI *Unknown3)(IN VOID *);
-    EFI_STATUS(EFIAPI *Unknown4)(IN VOID *);
     APPLE_GETVAR_PROTOCOL_GET_DEVICE_PROPS  GetDevProps;
 };
 
@@ -129,14 +129,14 @@ struct _APPLE_GETVAR_PROTOCOL {
     iface##Unknown##num(IN  VOID   *This)                       \
     {                                                           \
         Print(L"Unknown%d of %a called", num, #iface);          \
+        /*DebugAssert(__FILE__, __LINE__, __FUNCTION__);*/      \
         return EFI_SUCCESS;                                     \
     }
 
 IMPL_STUB(GetVar, 0)
 IMPL_STUB(GetVar, 1)
 IMPL_STUB(GetVar, 2)
-IMPL_STUB(GetVar, 3)
-IMPL_STUB(GetVar, 4)
+
 
 EFI_STATUS EFIAPI
 GetDeviceProps(IN     APPLE_GETVAR_PROTOCOL   *This,
@@ -156,11 +156,10 @@ GetDeviceProps(IN     APPLE_GETVAR_PROTOCOL   *This,
 
 APPLE_GETVAR_PROTOCOL gPrivateVarHandler =
 {
+    /* Magic = */ 0, /** @todo figure out what's here on a real system? */
     GetVarUnknown0,
     GetVarUnknown1,
     GetVarUnknown2,
-    GetVarUnknown3,
-    GetVarUnknown4,
     GetDeviceProps
 };
 
