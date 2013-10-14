@@ -177,6 +177,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
 #endif
                      "                            [--ioapic on|off]\n"
                      "                            [--hpet on|off]\n"
+                     "                            [--triplefaultreset on|off]\n"
                      "                            [--hwvirtex on|off]\n"
                      "                            [--nestedpaging on|off]\n"
                      "                            [--largepages on|off]\n"
