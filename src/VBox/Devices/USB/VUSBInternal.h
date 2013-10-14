@@ -213,6 +213,10 @@ typedef struct VUSBDEV
     void               *pvResetArgs;
     /** The reset timer handle. */
     PTMTIMER            pResetTimer;
+#if HC_ARCH_BITS == 32
+    /** Align the size to a 8 byte boundary. */
+    uint32_t            Alignment0;
+#endif
 } VUSBDEV;
 
 
@@ -296,6 +300,7 @@ typedef struct VUSBHUB
     /** Name of the hub. Used for logging. */
     char               *pszName;
 } VUSBHUB;
+AssertCompileMemberAlignment(VUSBHUB, pOps, 8);
 
 /** @} */
 
