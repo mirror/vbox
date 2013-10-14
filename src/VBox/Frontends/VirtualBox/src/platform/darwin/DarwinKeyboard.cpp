@@ -310,7 +310,7 @@ typedef struct VBoxLedState_t {
 typedef struct VBoxKbdState_t {
     IOHIDDeviceRef    pDevice;              /** A reference to IOKit HID device */
     VBoxLedState_t    LED;                  /** LED states */
-    CFMutableArrayRef pStorageArray;        /** A reference to array where VBoxKbdState_t instance is stored */
+    void             *pParentContainer;     /** A pointer to a VBoxHidsState_t instance where VBoxKbdState_t instance is stored */
     CFIndex           idxPosition;          /** Position in global storage (used to simplify CFArray navigation when removing detached device) */
 } VBoxKbdState_t;
 
@@ -1475,10 +1475,26 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
         key == kHIDUsage_KeypadNumLock)
     {
         Log2(("carbon event: caps=%s, num=%s\n", VBOX_BOOL_TO_STR_STATE(fCaps), VBOX_BOOL_TO_STR_STATE(fNum)));
-        if (g_LastTouchedState)
+
+        VBoxKbdState_t  *pKbd = g_LastTouchedState;
+        if (pKbd)
         {
-            g_LastTouchedState->LED.fCapsLockOn = fCaps;
-            g_LastTouchedState->LED.fNumLockOn  = fNum;
+            pKbd->LED.fCapsLockOn = fCaps;
+            pKbd->LED.fNumLockOn  = fNum;
+
+            /* Silently resync last touched KBD device */
+            VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer;
+            if (pHidState)
+            {
+                CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
+                if (elementMatchingDict)
+                {
+                    (void)darwinSetDeviceLedsState(pKbd->pDevice, elementMatchingDict, pHidState->guestState.fNumLockOn,
+                        pHidState->guestState.fCapsLockOn, pHidState->guestState.fScrollLockOn);
+
+                    CFRelease(elementMatchingDict);
+                }
+            }
 
             /* Forget device */
             g_LastTouchedState = NULL;
@@ -1494,13 +1510,13 @@ static void darwinHidRemovalCallback(void *pData, IOReturn unused, void *unused1
     (void)unused;
     (void)unused1;
 
-    VBoxKbdState_t *pKbd = (VBoxKbdState_t *)pData;
+    VBoxKbdState_t  *pKbd      = (VBoxKbdState_t  *)pData;                  AssertReturnVoid(pKbd);
+    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer; AssertReturnVoid(pHidState);
 
-    AssertReturnVoid(pKbd);
-    AssertReturnVoid(pKbd->pStorageArray);
+    AssertReturnVoid(pHidState->pDeviceCollection);
 
     Log2(("Forget KBD %d\n", (int)pKbd->idxPosition));
-    CFArrayRemoveValueAtIndex(pKbd->pStorageArray, pKbd->idxPosition);
+    CFArrayRemoveValueAtIndex(pHidState->pDeviceCollection, pKbd->idxPosition);
     free(pKbd);
 }
 
@@ -1534,7 +1550,7 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
             if (pKbd)
             {
                 pKbd->pDevice = pDevice;
-                pKbd->pStorageArray = pHidState->pDeviceCollection;
+                pKbd->pParentContainer = (void *)pHidState;
                 pKbd->idxPosition = CFArrayGetCount(pHidState->pDeviceCollection);
 
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
