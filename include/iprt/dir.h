@@ -54,7 +54,13 @@ RTDECL(bool) RTDirExists(const char *pszPath);
  * @{ */
 /** Don't allow symbolic links as part of the path.
  * @remarks this flag is currently not implemented and will be ignored. */
-#define RTDIRCREATE_FLAGS_NO_SYMLINKS  RT_BIT(0)
+#define RTDIRCREATE_FLAGS_NO_SYMLINKS                       RT_BIT(0)
+/** Set the not-content-indexed flag (default).  Windows only atm. */
+#define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET      RT_BIT(1)
+/** Do not set the not-content-indexed flag.  Windows only atm. */
+#define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_DONT_SET      RT_BIT(1)
+/** Ignore errors setting the not-content-indexed flag.  Windows only atm. */
+#define RTDIRCREATE_FLAGS_NOT_CONTENT_INDEXED_NOT_CRITICAL  RT_BIT(2)
 /** @} */
 
 /**
