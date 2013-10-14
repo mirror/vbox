@@ -49,6 +49,9 @@
 #define USBMSD_PID_CD               0x0031
 /** @} */
 
+/** Saved state version. */
+#define USB_MSD_SAVED_STATE_VERSION 1
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -125,7 +128,9 @@ typedef enum USBMSDREQSTATE
      * and the only reference to this request will be with DrvSCSI. */
     USBMSDREQSTATE_DESTROY_ON_COMPLETION,
     /** The end of the valid states. */
-    USBMSDREQSTATE_END
+    USBMSDREQSTATE_END,
+    /** 32bit blow up hack. */
+    USBMSDREQSTATE_32BIT_HACK = 0x7fffffff
 } USBMSDREQSTATE;
 
 
@@ -954,6 +959,235 @@ static DECLCALLBACK(void *) usbMsdLun0QueryInterface(PPDMIBASE pInterface, const
 
 
 /**
+ * Checks if all asynchronous I/O is finished.
+ *
+ * Used by usbMsdVMReset, usbMsdVMSuspend and usbMsdVMPowerOff.
+ *
+ * @returns true if quiesced, false if busy.
+ * @param   pUsbIns         The USB device instance.
+ */
+static bool usbMsdAllAsyncIOIsFinished(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    if (   VALID_PTR(pThis->pReq)
+        && pThis->pReq->enmState == USBMSDREQSTATE_EXECUTING)
+        return false;
+
+    return true;
+}
+
+/**
+ * @callback_method_impl{FNPDMDEVASYNCNOTIFY,
+ * Callback employed by usbMsdVMSuspend and usbMsdVMPowerOff.}
+ */
+static DECLCALLBACK(bool) usbMsdIsAsyncSuspendOrPowerOffDone(PPDMUSBINS pUsbIns)
+{
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        return false;
+
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    return true;
+}
+
+/**
+ * Common worker for usbMsdVMSuspend and usbMsdVMPowerOff.
+ */
+static void usbMsdSuspendOrPowerOff(PPDMUSBINS pUsbIns)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
+        PDMUsbHlpSetAsyncNotification(pUsbIns, usbMsdIsAsyncSuspendOrPowerOffDone);
+    else
+        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+}
+
+
+/* -=-=-=-=- Saved State -=-=-=-=- */
+
+/**
+ * @copydoc FNUSBSSMSAVEPREP
+ */
+static DECLCALLBACK(int) usbMsdSavePrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    Assert(usbMsdAllAsyncIOIsFinished(pUsbIns));
+    Assert(usbMsdQueueIsEmpty(&pThis->ToHostQueue));
+    Assert(usbMsdQueueIsEmpty(&pThis->DoneQueue));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @copydoc FNUSBSSMLOADPREP
+ */
+static DECLCALLBACK(int) usbMsdLoadPrep(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    Assert(usbMsdAllAsyncIOIsFinished(pUsbIns));
+    Assert(usbMsdQueueIsEmpty(&pThis->ToHostQueue));
+    Assert(usbMsdQueueIsEmpty(&pThis->DoneQueue));
+    return VINF_SUCCESS;
+}
+
+/**
+ * @copydoc FNUSBSSMLIVEEXEC
+ */
+static DECLCALLBACK(int) usbMsdLiveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uPass)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+
+    /* config. */
+    SSMR3PutBool(pSSM, pThis->Lun0.pIBase != NULL);
+    return VINF_SSM_DONT_CALL_AGAIN;
+}
+
+/**
+ * @copydoc FNUSBSSMSAVEEXEC
+ */
+static DECLCALLBACK(int) usbMsdSaveExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+    uint32_t i;
+    int rc;
+
+    /* The config */
+    rc = usbMsdLiveExec(pUsbIns, pSSM, SSM_PASS_FINAL);
+    AssertRCReturn(rc, rc);
+
+    SSMR3PutU8(pSSM, pThis->bConfigurationValue);
+    SSMR3PutBool(pSSM, pThis->aEps[0].fHalted);
+    SSMR3PutBool(pSSM, pThis->aEps[1].fHalted);
+    SSMR3PutBool(pSSM, pThis->aEps[2].fHalted);
+    SSMR3PutBool(pSSM, pThis->pReq != NULL);
+
+    if (pThis->pReq)
+    {
+        PUSBMSDREQ pReq = pThis->pReq;
+
+        SSMR3PutU32(pSSM, pReq->enmState);
+        SSMR3PutU32(pSSM, pReq->cbBuf);
+        if (pReq->cbBuf)
+        {
+            AssertPtr(pReq->pbBuf);
+            SSMR3PutMem(pSSM, pReq->pbBuf, pReq->cbBuf);
+        }
+
+        SSMR3PutU32(pSSM, pReq->offBuf);
+        SSMR3PutMem(pSSM, &pReq->Cbw, sizeof(pReq->Cbw));
+        SSMR3PutU32(pSSM, pReq->ScsiReq.uLogicalUnit);
+        SSMR3PutU32(pSSM, pReq->ScsiReq.uDataDirection);
+        SSMR3PutU32(pSSM, pReq->ScsiReq.cbCDB);
+        SSMR3PutU32(pSSM, pReq->ScsiReq.cbScatterGather);
+        SSMR3PutMem(pSSM, &pReq->ScsiReqSense[0], sizeof(pReq->ScsiReqSense));
+        SSMR3PutS32(pSSM, pReq->iScsiReqStatus);
+    }
+
+    return SSMR3PutU32(pSSM, UINT32_MAX); /* sanity/terminator */
+}
+
+/**
+ * @copydoc FNUSBSSMLOADEXEC
+ */
+static DECLCALLBACK(int) usbMsdLoadExec(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+{
+    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
+    uint32_t u32;
+    int rc;
+
+    if (uVersion > USB_MSD_SAVED_STATE_VERSION)
+        return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
+
+    /* Verify config. */
+    bool fInUse;
+    rc = SSMR3GetBool(pSSM, &fInUse);
+    AssertRCReturn(rc, rc);
+    if (fInUse != (pThis->Lun0.pIBase != NULL))
+        return SSMR3SetCfgError(pSSM, RT_SRC_POS,
+                                N_("The %s VM is missing a USB mass storage device. Please make sure the source and target VMs have compatible storage configurations"),
+                                fInUse ? "target" : "source");
+
+    if (uPass == SSM_PASS_FINAL)
+    {
+        /* Restore data. */
+        bool fReqAlloc = false;
+
+        Assert(!pThis->pReq);
+
+        SSMR3GetU8(pSSM, &pThis->bConfigurationValue);
+        SSMR3GetBool(pSSM, &pThis->aEps[0].fHalted);
+        SSMR3GetBool(pSSM, &pThis->aEps[1].fHalted);
+        SSMR3GetBool(pSSM, &pThis->aEps[2].fHalted);
+        SSMR3GetBool(pSSM, &fReqAlloc);
+
+        if (fReqAlloc)
+        {
+            PUSBMSDREQ pReq = usbMsdReqAlloc(pUsbIns);
+
+            if (pReq)
+            {
+                uint32_t cbBuf = 0;
+
+                pThis->pReq = pReq;
+
+                SSMR3GetU32(pSSM, (uint32_t *)&pReq->enmState);
+                SSMR3GetU32(pSSM, &cbBuf);
+                if (cbBuf)
+                {
+                    if (usbMsdReqEnsureBuffer(pReq, cbBuf))
+                    {
+                        AssertPtr(pReq->pbBuf);
+                        Assert(cbBuf = pReq->cbBuf);
+                        SSMR3GetMem(pSSM, pReq->pbBuf, pReq->cbBuf);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    SSMR3GetU32(pSSM, &pReq->offBuf);
+                    SSMR3GetMem(pSSM, &pReq->Cbw, sizeof(pReq->Cbw));
+                    SSMR3GetU32(pSSM, &pReq->ScsiReq.uLogicalUnit);
+                    SSMR3GetU32(pSSM, (uint32_t *)&pReq->ScsiReq.uDataDirection);
+                    SSMR3GetU32(pSSM, &pReq->ScsiReq.cbCDB);
+                    SSMR3GetU32(pSSM, &pReq->ScsiReq.cbScatterGather);
+                    SSMR3GetMem(pSSM, &pReq->ScsiReqSense[0], sizeof(pReq->ScsiReqSense));
+                    SSMR3GetS32(pSSM, &pReq->iScsiReqStatus);
+
+                    /* Setup the rest of the SCSI request. */
+                    pReq->ScsiReq.cbCDB             = pReq->Cbw.bCBWCBLength;
+                    pReq->ScsiReq.pbCDB             = &pReq->Cbw.CBWCB[0];
+                    pReq->ScsiReqSeg.pvSeg          = pReq->pbBuf;
+                    pReq->ScsiReqSeg.cbSeg          = pReq->ScsiReq.cbScatterGather;
+                    pReq->ScsiReq.cScatterGatherEntries = 1;
+                    pReq->ScsiReq.paScatterGatherHead = &pReq->ScsiReqSeg;
+                    pReq->ScsiReq.cbSenseBuffer     = sizeof(pReq->ScsiReqSense);
+                    pReq->ScsiReq.pbSenseBuffer     = &pReq->ScsiReqSense[0];
+                    pReq->ScsiReq.pvUser            = NULL;
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+            rc = SSMR3GetU32(pSSM, &u32);
+
+        if (RT_FAILURE(rc))
+            return rc;
+        AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
  * @copydoc PDMUSBREG::pfnUrbReap
  */
 static DECLCALLBACK(PVUSBURB) usbMsdUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMillies)
@@ -1651,54 +1885,6 @@ static DECLCALLBACK(int) usbMsdUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 
 
 /**
- * Checks if all asynchronous I/O is finished.
- *
- * Used by usbMsdVMReset, usbMsdVMSuspend and usbMsdVMPowerOff.
- *
- * @returns true if quiesced, false if busy.
- * @param   pUsbIns         The USB device instance.
- */
-static bool usbMsdAllAsyncIOIsFinished(PPDMUSBINS pUsbIns)
-{
-    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
-
-    if (   VALID_PTR(pThis->pReq)
-        && pThis->pReq->enmState == USBMSDREQSTATE_EXECUTING)
-        return false;
-
-    return true;
-}
-
-/**
- * @callback_method_impl{FNPDMDEVASYNCNOTIFY,
- * Callback employed by usbMsdVMSuspend and usbMsdVMPowerOff.}
- */
-static DECLCALLBACK(bool) usbMsdIsAsyncSuspendOrPowerOffDone(PPDMUSBINS pUsbIns)
-{
-    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
-        return false;
-
-    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
-    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-    return true;
-}
-
-/**
- * Common worker for usbMsdVMSuspend and usbMsdVMPowerOff.
- */
-static void usbMsdSuspendOrPowerOff(PPDMUSBINS pUsbIns)
-{
-    PUSBMSD pThis = PDMINS_2_DATA(pUsbIns, PUSBMSD);
-
-    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
-    if (!usbMsdAllAsyncIOIsFinished(pUsbIns))
-        PDMUsbHlpSetAsyncNotification(pUsbIns, usbMsdIsAsyncSuspendOrPowerOffDone);
-    else
-        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-}
-
-
-/**
  * @copydoc PDMUSBREG::pfnVMSuspend
  */
 static DECLCALLBACK(void) usbMsdVMSuspend(PPDMUSBINS pUsbIns)
@@ -1899,6 +2085,17 @@ static DECLCALLBACK(int) usbMsdConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
         return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS,
                                    N_("MSD failed to query the PDMISCSICONNECTOR from the driver below it"));
 
+    /*
+     * Register the saved state data unit.
+     */
+    rc = PDMUsbHlpSSMRegister(pUsbIns, USB_MSD_SAVED_STATE_VERSION, sizeof(*pThis),
+                              NULL,           usbMsdLiveExec, NULL,
+                              usbMsdSavePrep, usbMsdSaveExec, NULL,
+                              usbMsdLoadPrep, usbMsdLoadExec, NULL);
+    if (RT_FAILURE(rc))
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS,
+                                   N_("MSD failed to register SSM save state handlers"));
+
     return VINF_SUCCESS;
 }
 
@@ -1915,7 +2112,7 @@ const PDMUSBREG g_UsbMsd =
     /* pszDescription */
     "USB Mass Storage Device, one LUN.",
     /* fFlags */
-    PDM_USBREG_HIGHSPEED_CAPABLE,
+    PDM_USBREG_HIGHSPEED_CAPABLE | PDM_USBREG_EMULATED_DEVICE,
     /* cMaxInstances */
     ~0U,
     /* cbInstance */
