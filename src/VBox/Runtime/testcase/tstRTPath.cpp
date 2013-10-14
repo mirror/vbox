@@ -597,9 +597,9 @@ int main()
         "D:\\",                 "D:\\",
         "D:\\/\\",              "D:\\",
         "D:/\\/\\",             "D:/",
-        "C:/Temp",              "D:/Temp",
-        "C:/Temp/",             "D:/Temp/",
-        "C:/Temp\\/",           "D:/Temp",
+        "C:/Temp",              "C:/Temp",
+        "C:/Temp/",             "C:/Temp",
+        "C:/Temp\\/",           "C:/Temp",
 #endif
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_apszStripTrailingSlash); i += 2)
@@ -716,7 +716,7 @@ int main()
         { "filename.ext",               "filename" },
         { "filename.ext1.ext2.ext3",    "filename.ext1.ext2" },
         { "filename..ext",              "filename." },
-        { "filename.ext.",              "filename.ext" }, /** @todo This is a bit weird/wrong, but not half as weird as the way Windows+OS/2 deals with a trailing dots. */
+        { "filename.ext.",              "filename.ext." },
     };
     for (unsigned i = 0; i < RT_ELEMENTS(s_aStripExt); i++)
     {
@@ -747,8 +747,8 @@ int main()
     {
         { "/home/test.ext", "/home/test2.ext", VINF_SUCCESS, "test2.ext"},
         { "/dir/test.ext", "/dir/dir2/test2.ext", VINF_SUCCESS, "dir2/test2.ext"},
-        { "/dir/dir2/test.ext", "/dir/test2.ext", VINF_SUCCESS, "../test2.ext"},
-        { "/dir/dir2/test.ext", "/dir/dir3/test2.ext", VINF_SUCCESS, "../dir3/test2.ext"},
+        { "/dir/dir2/test.ext", "/dir/test2.ext", VINF_SUCCESS, ".." RTPATH_SLASH_STR "test2.ext"},
+        { "/dir/dir2/test.ext", "/dir/dir3/test2.ext", VINF_SUCCESS, ".." RTPATH_SLASH_STR "dir3/test2.ext"},
 #if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
         { "\\\\server\\share\\test.ext", "\\\\server\\share2\\test2.ext", VERR_NOT_SUPPORTED, ""},
         { "c:\\dir\\test.ext", "f:\\dir\\test.ext", VERR_NOT_SUPPORTED, ""}
