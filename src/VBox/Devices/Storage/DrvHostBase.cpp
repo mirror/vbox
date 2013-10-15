@@ -1486,7 +1486,7 @@ static LRESULT CALLBACK DeviceChangeWindowProc(HWND hwnd, UINT uMsg, WPARAM wPar
     Log2(("DeviceChangeWindowProc: hwnd=%08x uMsg=%08x\n", hwnd, uMsg));
     if (uMsg == WM_DESTROY)
     {
-        PDRVHOSTBASE pThis = (PDRVHOSTBASE)GetWindowLong(hwnd, GWLP_USERDATA);
+        PDRVHOSTBASE pThis = (PDRVHOSTBASE)GetWindowLongPtr(hwnd, GWLP_USERDATA);
         if (pThis)
             ASMAtomicXchgSize(&pThis->hwndDeviceChange, NULL);
         PostQuitMessage(0);
