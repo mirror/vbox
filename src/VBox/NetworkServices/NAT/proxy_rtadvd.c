@@ -55,8 +55,11 @@ static struct raw_pcb *rtadvd_pcb;
 void
 proxy_rtadvd_start(struct netif *proxy_netif)
 {
-
+#if 0 /* XXX */
     ndefaults = rtmon_get_defaults();
+#else
+    ndefaults = g_proxy_options->ipv6_defroute;
+#endif
     if (ndefaults < 0) {
         DPRINTF0(("rtadvd: failed to read IPv6 routing table, aborting\n"));
         return;
@@ -89,7 +92,11 @@ proxy_rtadvd_timer(void *arg)
     int newdefs;
     u32_t delay;
 
+#if 0 /* XXX */
     newdefs = rtmon_get_defaults();
+#else
+    newdefs = g_proxy_options->ipv6_defroute;
+#endif
     if (newdefs != ndefaults && newdefs != -1) {
         ndefaults = newdefs;
         proxy_rtadvd_fill_payload(proxy_netif, ndefaults > 0);
