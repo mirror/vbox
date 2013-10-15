@@ -863,17 +863,20 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
       <title>Using a host webcam in the guest</title>
 
       <para>VirtualBox 4.3 includes an experimental feature which allows a guest to use
-      a host webcam.</para>
+      a host webcam. This complements the general USB passthrough support which was the
+      typical way of using host webcams in ealier versions. The webcam passthrough support
+      can handle non-USB video sources in theory, but this is completely untested.</para>
 
       <note>
-        <para>The webcam passthrough module is shipped as a VirtualBox extension
-        package, which must be installed separately. See <xref
+        <para>The webcam passthrough module is shipped as part of the Oracle VM VirtualBox
+        extension pack, which must be installed separately. See <xref
         linkend="intro-installing" /> for more information.</para>
       </note>
 
-      <para>VBoxManage command line tool must be used to enable webcam passthrough. Currently
-      some commands are not supported on all hosts, please see host specific sections below
-      for additional details. The following commands are available:<itemizedlist>
+      <para>The VBoxManage command line tool must be used to enable webcam passthrough.
+      Currently some commands are not supported on all hosts, please see the host specific
+      sections below for additional details. The following commands are available:
+        <itemizedlist>
           <listitem><para>Get a list of host webcams (or other video input devices):
             <screen>VBoxManage list webcams</screen>
             The output format:
@@ -904,30 +907,30 @@ host path or identifier</screen>
 
       <para>All of VBoxManage commands are implemented.</para>
 
-      <para>When webcam device is detached from the host, the emulated webcam device is
+      <para>When the webcam device is detached from the host, the emulated webcam device is
       automatically detached from the guest.</para>
     </sect2>
 
     <sect2>
       <title>Mac OS X host</title>
 
-      <para><computeroutput>VBoxManage list webcams</computeroutput> is not implemented.</para>
+      <para><computeroutput>VBoxManage list webcams</computeroutput> is not yet implemented.</para>
 
-      <para>When webcam device is detached from the host, the emulated webcam device remains
-      attached to the guest and must be manually detached using
+      <para>When the webcam device is detached from the host, the emulated webcam device
+      remains attached to the guest and must be manually detached using
       <computeroutput>VBoxManage controlvm VMNAME webcam detach ...</computeroutput> command.</para>
     </sect2>
 
     <sect2>
       <title>Linux host</title>
 
-      <para><computeroutput>VBoxManage list webcams</computeroutput> is not implemented.</para>
+      <para><computeroutput>VBoxManage list webcams</computeroutput> is not yet implemented.</para>
 
       <para>Aliases do not work. The host webcam path such as
       <computeroutput>/dev/video0</computeroutput> must be used in
       attach and detach commands.</para>
 
-      <para>When webcam device is detached from the host, the emulated webcam device remains
+      <para>When the webcam device is detached from the host, the emulated webcam device remains
       attached to the guest and must be manually detached using
       <computeroutput>VBoxManage controlvm VMNAME webcam detach ...</computeroutput> command.</para>
     </sect2>
