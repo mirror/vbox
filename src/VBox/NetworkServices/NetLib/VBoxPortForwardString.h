@@ -37,16 +37,16 @@ RT_C_DECLS_BEGIN
 
 typedef struct PORTFORWARDRULE
 {
-    char aszPfrName[PF_NAMELEN];
+    char       szPfrName[PF_NAMELEN];
     /* true if ipv6 and false otherwise */
-    int fPfrIPv6;
+    int        fPfrIPv6;
     /* IPPROTO_{UDP,TCP} */
-    int iPfrProto;
+    int        iPfrProto;
     RTNETADDRU uPfrHostAddr;
-    char       aszPfrHostAddr[INET6_ADDRSTRLEN];
+    char       szPfrHostAddr[INET6_ADDRSTRLEN];
     uint16_t   u16PfrHostPort;
     RTNETADDRU uPfrGuestAddr;
-    char       aszPfrGuestAddr[INET6_ADDRSTRLEN];
+    char       szPfrGuestAddr[INET6_ADDRSTRLEN];
     uint16_t   u16PfrGuestPort;
 } PORTFORWARDRULE, *PPORTFORWARDRULE;
 

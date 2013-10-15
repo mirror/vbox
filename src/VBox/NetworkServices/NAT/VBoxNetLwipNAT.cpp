@@ -294,7 +294,7 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
 
             RT_ZERO(r);
 
-            if (name.length() > RT_ELEMENTS(r.Pfr.aszPfrName))
+            if (name.length() > sizeof(r.Pfr.szPfrName))
             {
                 hrc = E_INVALIDARG;
                 goto port_forward_done;
@@ -313,20 +313,17 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             }
 
 
-            RTStrPrintf(r.Pfr.aszPfrName, RT_ELEMENTS(r.Pfr.aszPfrName),
-                      "%s",
-                      com::Utf8Str(name).c_str());
+            RTStrPrintf(r.Pfr.szPfrName, sizeof(r.Pfr.szPfrName),
+                      "%s", com::Utf8Str(name).c_str());
 
-            RTStrPrintf(r.Pfr.aszPfrHostAddr, RT_ELEMENTS(r.Pfr.aszPfrHostAddr),
-                      "%s",
-                      com::Utf8Str(strHostAddr).c_str());
+            RTStrPrintf(r.Pfr.szPfrHostAddr, sizeof(r.Pfr.szPfrHostAddr),
+                      "%s", com::Utf8Str(strHostAddr).c_str());
 
             /* XXX: limits should be checked */
             r.Pfr.u16PfrHostPort = (uint16_t)lHostPort;
 
-            RTStrPrintf(r.Pfr.aszPfrGuestAddr, RT_ELEMENTS(r.Pfr.aszPfrGuestAddr),
-                      "%s",
-                      com::Utf8Str(strGuestAddr).c_str());
+            RTStrPrintf(r.Pfr.szPfrGuestAddr, sizeof(r.Pfr.szPfrGuestAddr),
+                      "%s", com::Utf8Str(strGuestAddr).c_str());
 
             /* XXX: limits should be checked */
             r.Pfr.u16PfrGuestPort = (uint16_t)lGuestPort;
@@ -346,9 +343,9 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                     NATSEVICEPORTFORWARDRULE& natFw = *it;
                     if (   natFw.Pfr.iPfrProto == r.Pfr.iPfrProto
                         && natFw.Pfr.u16PfrHostPort == r.Pfr.u16PfrHostPort
-                        && (strncmp(natFw.Pfr.aszPfrHostAddr, r.Pfr.aszPfrHostAddr, INET6_ADDRSTRLEN) == 0)
+                        && (strncmp(natFw.Pfr.szPfrHostAddr, r.Pfr.szPfrHostAddr, INET6_ADDRSTRLEN) == 0)
                         && natFw.Pfr.u16PfrGuestPort == r.Pfr.u16PfrGuestPort
-                        && (strncmp(natFw.Pfr.aszPfrGuestAddr, r.Pfr.aszPfrGuestAddr, INET6_ADDRSTRLEN) == 0))
+                        && (strncmp(natFw.Pfr.szPfrGuestAddr, r.Pfr.szPfrGuestAddr, INET6_ADDRSTRLEN) == 0))
                     {
                         fwspec *pFwCopy = (fwspec *)RTMemAllocZ(sizeof(fwspec));
                         if (!pFwCopy)
@@ -814,7 +811,7 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
             return VERR_IGNORED; /* Ah, just ignore the garbage */
     }
 
-    pszHostAddr = natPf.Pfr.aszPfrHostAddr;
+    pszHostAddr = natPf.Pfr.szPfrHostAddr;
 
     /* XXX: workaround for inet_pton and an empty ipv4 address
      * in rule declaration.
@@ -829,7 +826,7 @@ int VBoxNetLwipNAT::natServicePfRegister(NATSEVICEPORTFORWARDRULE& natPf)
                      socketSpec,
                      pszHostAddr,
                      natPf.Pfr.u16PfrHostPort,
-                     natPf.Pfr.aszPfrGuestAddr,
+                     natPf.Pfr.szPfrGuestAddr,
                      natPf.Pfr.u16PfrGuestPort);
 
     AssertReturn(!lrc, VERR_IGNORED);
@@ -859,7 +856,7 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
         int rc = natServicePfRegister((*it));
         if (RT_FAILURE(rc))
         {
-            LogRel(("PF: %s is ignored\n", (*it).Pfr.aszPfrName));
+            LogRel(("PF: %s is ignored\n", (*it).Pfr.szPfrName));
             continue;
         }
     }
@@ -979,14 +976,14 @@ int VBoxNetLwipNAT::init()
 
         for (i = 0; i < count_strs && j < RT_ELEMENTS(m_lo2off); ++i)
         {
-            char aszAddr[17];
+            char szAddr[17];
             RTNETADDRIPV4 ip4addr;
             char *pszTerm;
             uint32_t u32Off;
             com::Utf8Str strLo2Off(strs[i]);
             const char *pszLo2Off = strLo2Off.c_str();
 
-            RT_ZERO(aszAddr);
+            RT_ZERO(szAddr);
 
             pszTerm = RTStrStr(pszLo2Off, "=");
 
@@ -994,8 +991,8 @@ int VBoxNetLwipNAT::init()
                 || (pszTerm - pszLo2Off) >= 17)
                 continue;
 
-            memcpy(aszAddr, pszLo2Off, (pszTerm - pszLo2Off));
-            rc = RTNetStrToIPv4Addr(aszAddr, &ip4addr);
+            memcpy(szAddr, pszLo2Off, (pszTerm - pszLo2Off));
+            rc = RTNetStrToIPv4Addr(szAddr, &ip4addr);
             if (RT_FAILURE(rc))
                 continue;
 
