@@ -709,10 +709,11 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
     alock.release();
 
 #ifdef NAT_XML_SERIALIZATION
-    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
-    ComAssertComRCRetRC(rc);
-    vboxLock.release();
+    {
+        AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+        HRESULT rc = mVirtualBox->saveSettings();
+        ComAssertComRCRetRC(rc);
+    }
 #endif
 
     mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6,
@@ -751,10 +752,11 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
     alock.release();
 
 #ifdef NAT_XML_SERIALIZATION
-    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    HRESULT rc = mVirtualBox->saveSettings();
-    ComAssertComRCRetRC(rc);
-    vboxLock.release();
+    {
+        AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+        HRESULT rc = mVirtualBox->saveSettings();
+        ComAssertComRCRetRC(rc);
+    }
 #endif
 
     mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6,
