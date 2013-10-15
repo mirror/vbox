@@ -84,7 +84,7 @@ static const RTGETOPTDEF g_aNATNetworkIPOptions[]
 
 typedef struct PFNAME2DELETE
 {
-    char aszName[PF_NAMELEN];
+    char szName[PF_NAMELEN];
     bool fIPv6;
 } PFNAME2DELETE, *PPFNAME2DELETE;
 
@@ -245,7 +245,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                                            "Port-forward rule name is too long\n");
 
                     RT_ZERO(Name2Delete);
-                    RTStrCopy(Name2Delete.aszName, PF_NAMELEN, NamePf2DeleteUnion.psz);
+                    RTStrCopy(Name2Delete.szName, PF_NAMELEN, NamePf2DeleteUnion.psz);
                     Name2Delete.fIPv6 = (c == 'P');
 
                     vPfName2Delete.push_back(Name2Delete);
@@ -347,7 +347,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                 for (it = vPfName2Delete.begin(); it != vPfName2Delete.end(); ++it)
                 {
                     CHECK_ERROR(net, RemovePortForwardRule((BOOL)(*it).fIPv6,
-                                                           Bstr((*it).aszName).raw()));
+                                                           Bstr((*it).szName).raw()));
                     if (FAILED(rc))
                         return errorArgument("Failed to delete pf");
                 }
@@ -367,11 +367,11 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
                         continue; /* XXX: warning here. */
 
                     CHECK_ERROR(net, AddPortForwardRule((BOOL)(*it).fPfrIPv6,
-                                                        Bstr((*it).aszPfrName).raw(),
+                                                        Bstr((*it).szPfrName).raw(),
                                                         proto,
-                                                        Bstr((*it).aszPfrHostAddr).raw(),
+                                                        Bstr((*it).szPfrHostAddr).raw(),
                                                         (*it).u16PfrHostPort,
-                                                        Bstr((*it).aszPfrGuestAddr).raw(),
+                                                        Bstr((*it).szPfrGuestAddr).raw(),
                                                         (*it).u16PfrGuestPort));
                     if (FAILED(rc))
                         return errorArgument("Failed to add pf");
