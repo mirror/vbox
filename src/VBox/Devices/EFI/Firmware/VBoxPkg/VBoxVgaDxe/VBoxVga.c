@@ -997,6 +997,7 @@ InitializeGraphicsMode (
   ClearScreen (Private);
 }
 
+/** Aka know as AppleGraphInfoProtocolGuid in other sources. */
 #define EFI_UNKNOWN_2_PROTOCOL_GUID \
   { 0xE316E100, 0x0751, 0x4C49, {0x90, 0x56, 0x48, 0x6C, 0x7E, 0x47, 0x29, 0x03} }
 

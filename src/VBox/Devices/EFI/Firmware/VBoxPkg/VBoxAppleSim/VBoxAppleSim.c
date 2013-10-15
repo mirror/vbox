@@ -32,6 +32,7 @@
 #include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiLib.h>
+#include <Library/PrintLib.h>
 
 #include <Protocol/DevicePathToText.h>
 
@@ -63,92 +64,124 @@ InitializeConsoleSim (IN EFI_HANDLE           ImageHandle,
 
 
 /*
- *   Internal Functions                                                        *
+ * Internal Functions
  */
 static UINT32
-GetVmVariable(UINT32 Variable, CHAR8* Buffer, UINT32 Size )
+GetVmVariable(UINT32 Variable, CHAR8 *pbBuf, UINT32 cbBuf)
 {
-    UINT32 VarLen, i;
-
+    UINT32 cbVar, offBuf;
 
     ASMOutU32(EFI_INFO_PORT, Variable);
-    VarLen = ASMInU32(EFI_INFO_PORT);
+    cbVar = ASMInU32(EFI_INFO_PORT);
 
-    for (i=0; i < VarLen && i < Size; i++)
-    {
-        Buffer[i] = ASMInU8(EFI_INFO_PORT);
-    }
+    for (offBuf = 0; offBuf < cbVar && offBuf < cbBuf; offBuf++)
+        pbBuf[offBuf] = ASMInU8(EFI_INFO_PORT);
 
-    return VarLen;
+    return cbVar;
 }
 
 /*
  * GUIDs
  */
+/** The EFI variable GUID for the 'FirmwareFeatures' and friends.
+ * Also known as AppleFirmwareVariableGuid in other sources. */
 EFI_GUID gEfiAppleNvramGuid = {
     0x4D1EDE05, 0x38C7, 0x4A6A, {0x9C, 0xC6, 0x4B, 0xCC, 0xA8, 0xB3, 0x8C, 0x14 }
 };
 
+/** The EFI variable GUID for the 'boot-args' variable and others.
+ * Also known as AppleNVRAMVariableGuid in other sources. */
 EFI_GUID gEfiAppleBootGuid = {
     0x7C436110, 0xAB2A, 0x4BBB, {0xA8, 0x80, 0xFE, 0x41, 0x99, 0x5C, 0x9F, 0x82}
 };
 
+
+/*
+ * Device Properoty protocol implementation hack.
+ */
+
+/** gEfiAppleVarGuid is aka AppleDevicePropertyProtocolGuid in other sources. */
 EFI_GUID gEfiAppleVarGuid = {
     0x91BD12FE, 0xF6C3, 0x44FB, {0xA5, 0xB7, 0x51, 0x22, 0xAB, 0x30, 0x3A, 0xE0}
 };
 
-EFI_GUID gEfiUnknown1ProtocolGuid = {
-    0xDD8E06AC, 0x00E2, 0x49A9, {0x88, 0x8F, 0xFA, 0x46, 0xDE, 0xD4, 0x0A, 0x52}
-};
-
-/*
- * Typedefs
- */
+/** APPLE_GETVAR_PROTOCOL is aka APPLE_DEVICE_PROPERTY_PROTOCOL in other sources. */
 typedef struct _APPLE_GETVAR_PROTOCOL APPLE_GETVAR_PROTOCOL;
-
-typedef
-EFI_STATUS
-(EFIAPI *APPLE_GETVAR_PROTOCOL_GET_DEVICE_PROPS) (
-    IN     APPLE_GETVAR_PROTOCOL   *This,
-    IN     CHAR8                   *Buffer,
-    IN OUT UINT32                  *BufferSize);
-
 
 struct _APPLE_GETVAR_PROTOCOL
 {
-    UINT64      Magic;
-    EFI_STATUS(EFIAPI *Unknown0)(IN VOID *);
-    EFI_STATUS(EFIAPI *Unknown1)(IN VOID *);
-    EFI_STATUS(EFIAPI *Unknown2)(IN VOID *);
-    APPLE_GETVAR_PROTOCOL_GET_DEVICE_PROPS  GetDevProps;
+    /** Magic value or some version thingy. boot.efi doesn't check this, I think. */
+    UINT64  u64Magic;
+
+    EFI_STATUS (EFIAPI *pfnUnknown0)(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2,
+                                     IN VOID *pvArg3, IN VOID *pvArg4);
+    EFI_STATUS (EFIAPI *pfnUnknown1)(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2,
+                                     IN VOID *pvArg3, IN VOID *pvArg4);
+    EFI_STATUS (EFIAPI *pfnUnknown2)(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2);
+
+    EFI_STATUS (EFIAPI *pfnGetDevProps)(IN APPLE_GETVAR_PROTOCOL *This, IN CHAR8 *pbBuf, IN OUT UINT32 *pcbBuf);
 };
-
-
-#define IMPL_STUB(iface, num)                                   \
-    EFI_STATUS EFIAPI                                           \
-    iface##Unknown##num(IN  VOID   *This)                       \
-    {                                                           \
-        Print(L"Unknown%d of %a called", num, #iface);          \
-        /*DebugAssert(__FILE__, __LINE__, __FUNCTION__);*/      \
-        return EFI_SUCCESS;                                     \
-    }
-
-IMPL_STUB(GetVar, 0)
-IMPL_STUB(GetVar, 1)
-IMPL_STUB(GetVar, 2)
-
+/** The value of APPLE_GETVAR_PROTOCOL::u64Magic. */
+#define APPLE_GETVAR_PROTOCOL_MAGIC     0x10000
 
 EFI_STATUS EFIAPI
-GetDeviceProps(IN     APPLE_GETVAR_PROTOCOL   *This,
-               IN     CHAR8                   *Buffer,
-               IN OUT UINT32                  *BufferSize)
+AppleGetVar_Unknown0(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2,
+                     IN VOID *pvArg3, IN VOID *pvArg4)
 {
-    UINT32 BufLen = *BufferSize, DataLen;
+    CHAR8 szMsg[128];
+    AsciiSPrint(szMsg, sizeof(szMsg), "AppleGetVar_Unknown0: pvArg1=%p pvArg2=%p pvArg3=%p pvArg4=%p",
+                pvArg1, pvArg2, pvArg3, pvArg4);
+    DebugAssert(__FILE__, __LINE__, szMsg);
+    return EFI_UNSUPPORTED;
+}
 
-    DataLen = GetVmVariable(EFI_INFO_INDEX_DEVICE_PROPS, Buffer, BufLen);
-    *BufferSize = DataLen;
+EFI_STATUS EFIAPI
+AppleGetVar_Unknown1(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2,
+                     IN VOID *pvArg3, IN VOID *pvArg4)
+{
+    CHAR8 szMsg[128];
+    AsciiSPrint(szMsg, sizeof(szMsg), "AppleGetVar_Unknown1: pvArg1=%p pvArg2=%p pvArg3=%p pvArg4=%p",
+                pvArg1, pvArg2, pvArg3, pvArg4);
+    DebugAssert(__FILE__, __LINE__, szMsg);
+    return EFI_UNSUPPORTED;
+}
 
-    if (DataLen > BufLen)
+EFI_STATUS EFIAPI
+AppleGetVar_Unknown2(IN APPLE_GETVAR_PROTOCOL *This, IN VOID *pvArg1, IN VOID *pvArg2)
+{
+    CHAR8 szMsg[80];
+    AsciiSPrint(szMsg, sizeof(szMsg), "AppleGetVar_Unknown2: pvArg1=%p pvArg2=%p", pvArg1, pvArg2);
+    DebugAssert(__FILE__, __LINE__, szMsg);
+    return EFI_UNSUPPORTED;
+}
+
+
+/**
+ * This method obtains the 'device-properties' that get exposed by
+ * AppleEFIFirmware and parsed by AppleACPIPlatform.
+ *
+ * Check out the data in the IORegisteryExplorer, the device-properties property
+ * under IODeviceTree:/efi.
+ *
+ * @retval  EFI_SUCCESS, check *pcbBuf or the number of bytes actually returned.
+ * @retval  EFI_BUFFER_TOO_SMALL, check *pcbBuf for the necessary buffer size.
+ * @param   pThis   Not used.
+ * @param   pbBuf   The output buffer.
+ * @param   pcbBuf  On input, the varible pointed to contains the size of the
+ *                  buffer.  The size is generally 4KB from what we've observed.
+ *                  On output, it contains the amount of data available, this
+ *                  is always set.
+ */
+EFI_STATUS EFIAPI
+AppleGetVar_GetDeviceProps(IN APPLE_GETVAR_PROTOCOL *pThis, OUT CHAR8 *pbBuf, IN OUT UINT32 *pcbBuf)
+{
+    UINT32 cbBuf = *pcbBuf;
+    UINT32 cbActual;
+
+    cbActual = GetVmVariable(EFI_INFO_INDEX_DEVICE_PROPS, pbBuf, cbBuf);
+    *pcbBuf = cbActual;
+
+    if (cbActual > cbBuf)
         return EFI_BUFFER_TOO_SMALL;
 
     return EFI_SUCCESS;
@@ -156,16 +189,30 @@ GetDeviceProps(IN     APPLE_GETVAR_PROTOCOL   *This,
 
 APPLE_GETVAR_PROTOCOL gPrivateVarHandler =
 {
-    /* Magic = */ 0, /** @todo figure out what's here on a real system? */
-    GetVarUnknown0,
-    GetVarUnknown1,
-    GetVarUnknown2,
-    GetDeviceProps
+    /* Magic = */ APPLE_GETVAR_PROTOCOL_MAGIC,
+    AppleGetVar_Unknown0,
+    AppleGetVar_Unknown1,
+    AppleGetVar_Unknown2,
+    AppleGetVar_GetDeviceProps
+};
+
+
+/* 
+ * Unknown Protocol #1.
+ */
+
+/** This seems to be related to graphics/display... */
+EFI_GUID gEfiUnknown1ProtocolGuid = 
+{
+    0xDD8E06AC, 0x00E2, 0x49A9, {0x88, 0x8F, 0xFA, 0x46, 0xDE, 0xD4, 0x0A, 0x52}
 };
 
 EFI_STATUS EFIAPI
 UnknownHandlerImpl()
 {
+#ifdef DEBUG
+    ASSERT(0);
+#endif
     Print(L"Unknown called\n");
     return EFI_SUCCESS;
 }
@@ -192,22 +239,6 @@ EFI_STATUS (EFIAPI *gUnknownProtoHandler[])() =
     UnknownHandlerImpl,
     UnknownHandlerImpl
 };
-
-EFI_STATUS EFIAPI
-SetPrivateVarProto(IN EFI_HANDLE ImageHandle, EFI_BOOT_SERVICES * bs)
-{
-    EFI_STATUS  rc;
-
-    rc = gBS->InstallMultipleProtocolInterfaces (
-        &ImageHandle,
-        &gEfiAppleVarGuid,
-        &gPrivateVarHandler,
-        NULL
-                                                 );
-    ASSERT_EFI_ERROR (rc);
-
-    return EFI_SUCCESS;
-}
 
 EFI_STATUS EFIAPI
 SetProperVariables(IN EFI_HANDLE ImageHandle, EFI_RUNTIME_SERVICES * rs)
@@ -273,28 +304,23 @@ VBoxInitAppleSim(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *SystemTable)
     UINT64              CPUFrequency;
 
     rc = SetProperVariables(ImageHandle, SystemTable->RuntimeServices);
-    ASSERT_EFI_ERROR (rc);
+    ASSERT_EFI_ERROR(rc);
 
-    rc = SetPrivateVarProto(ImageHandle, gBS);
-    ASSERT_EFI_ERROR (rc);
+    rc = gBS->InstallMultipleProtocolInterfaces(&ImageHandle, &gEfiAppleVarGuid, &gPrivateVarHandler, NULL);
+    ASSERT_EFI_ERROR(rc);
 
-    GetVmVariable(EFI_INFO_INDEX_FSB_FREQUENCY, (CHAR8*)&FSBFrequency, sizeof FSBFrequency);
-    GetVmVariable(EFI_INFO_INDEX_TSC_FREQUENCY, (CHAR8*)&TSCFrequency, sizeof TSCFrequency);
-    GetVmVariable(EFI_INFO_INDEX_CPU_FREQUENCY, (CHAR8*)&CPUFrequency, sizeof CPUFrequency);
+    GetVmVariable(EFI_INFO_INDEX_FSB_FREQUENCY, (CHAR8 *)&FSBFrequency, sizeof(FSBFrequency));
+    GetVmVariable(EFI_INFO_INDEX_TSC_FREQUENCY, (CHAR8 *)&TSCFrequency, sizeof(TSCFrequency));
+    GetVmVariable(EFI_INFO_INDEX_CPU_FREQUENCY, (CHAR8 *)&CPUFrequency, sizeof(CPUFrequency));
 
     rc = CpuUpdateDataHub(gBS, FSBFrequency, TSCFrequency, CPUFrequency);
-    ASSERT_EFI_ERROR (rc);
+    ASSERT_EFI_ERROR(rc);
 
     rc = InitializeConsoleSim(ImageHandle, SystemTable);
-    ASSERT_EFI_ERROR (rc);
+    ASSERT_EFI_ERROR(rc);
 
-    rc = gBS->InstallMultipleProtocolInterfaces (
-                                                 &ImageHandle,
-                                                 &gEfiUnknown1ProtocolGuid,
-                                                 gUnknownProtoHandler,
-                                                 NULL
-                                                 );
-    ASSERT_EFI_ERROR (rc);
+    rc = gBS->InstallMultipleProtocolInterfaces(&ImageHandle, &gEfiUnknown1ProtocolGuid, gUnknownProtoHandler, NULL);
+    ASSERT_EFI_ERROR(rc);
 
     return EFI_SUCCESS;
 }
