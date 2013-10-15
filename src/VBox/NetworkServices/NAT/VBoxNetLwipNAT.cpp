@@ -320,9 +320,9 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             /* XXX: limits should be checked */
             r.Pfr.u16PfrHostPort = (uint16_t)lHostPort;
 
-            RTStrPrintf(r.Pfr.aszPfrHostAddr, RT_ELEMENTS(r.Pfr.aszPfrGuestAddr),
+            RTStrPrintf(r.Pfr.aszPfrGuestAddr, RT_ELEMENTS(r.Pfr.aszPfrGuestAddr),
                       "%s",
-                      com::Utf8Str(strHostAddr).c_str());
+                      com::Utf8Str(strGuestAddr).c_str());
 
             /* XXX: limits should be checked */
             r.Pfr.u16PfrGuestPort = (uint16_t)lGuestPort;
