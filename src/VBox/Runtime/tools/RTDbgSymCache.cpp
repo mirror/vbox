@@ -142,6 +142,12 @@ static const char * const g_apszDSymBundleSuffixes[] =
 };
 
 
+/*******************************************************************************
+*   Internal Functions                                                         *
+*******************************************************************************/
+static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYEX pDirEntry, PCRTDBGSYMCACHEADDCFG pCfg);
+
+
 
 /**
  * Display the version of the cache program.
@@ -716,16 +722,48 @@ static int rtDbgSymCacheConstructBundlePath(char *pszPath, size_t cchPath, size_
  *                              interested in.
  * @param   cchPath             The length of the path up to the bundle name.
  * @param   cchName             The length of the bundle name.
+ * @param   pDirEntry           The directory entry buffer, for handling bundle
+ *                              within bundle recursion.
  * @param   pCfg                The configuration.
  */
-static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cchName, PCRTDBGSYMCACHEADDCFG pCfg)
+static int rtDbgSymCacheAddImageBundle(char *pszPath, size_t cchPath, size_t cchName,
+                                       PRTDIRENTRYEX pDirEntry, PCRTDBGSYMCACHEADDCFG pCfg)
 {
-    /* Assuming these are kexts or simple applications, we only add the image
-       file itself to the cache. No Info.plist or other files. */
+    /*
+     * Assuming these are kexts or simple applications, we only add the image
+     * file itself to the cache.  No Info.plist or other files.
+     */
     /** @todo consider looking for Frameworks and handling framework bundles. */
     int rc = rtDbgSymCacheConstructBundlePath(pszPath, cchPath, cchName, "Contents/MacOS/", g_apszBundleSuffixes);
     if (RT_SUCCESS(rc))
         rc = rtDbgSymCacheAddImageFile(pszPath, NULL, RTDBG_CACHE_UUID_MAP_DIR_IMAGES, pCfg);
+
+    /*
+     * Look for plugins and other sub-bundles.
+     */
+    if (pCfg->fRecursive)
+    {
+        static char const * const s_apszSubBundleDirs[] =
+        {
+            "Contents/Plugins",
+            /** @todo Frameworks ++ */
+        };
+        for (uint32_t i = 0; i < RT_ELEMENTS(s_apszSubBundleDirs); i++)
+        {
+            pszPath[cchPath + cchName] = '\0';
+            int rc2 = RTPathAppend(pszPath, RTPATH_MAX, s_apszSubBundleDirs[i]);
+            if (RT_SUCCESS(rc2))
+                rc2 = rtDbgSymCacheAddDirWorker(pszPath, strlen(pszPath), pDirEntry, pCfg);
+            else
+            {
+                pszPath[cchPath + cchName] = '\0';
+                RTMsgError("Error constructing bundle subdir path for '%s' + '%s': %Rrc", pszPath, s_apszSubBundleDirs[i], rc);
+            }
+            if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+                rc = rc2;
+        }
+    }
+
     return rc;
 }
 
@@ -976,7 +1014,7 @@ static int rtDbgSymCacheAddDirWorker(char *pszPath, size_t cchPath, PRTDIRENTRYE
                 break;
 
             case RTDBGSYMCACHEFILETYPE_IMAGE_BUNDLE:
-                rc2 = rtDbgSymCacheAddImageBundle(pszPath, cchPath, pDirEntry->cbName, pCfg);
+                rc2 = rtDbgSymCacheAddImageBundle(pszPath, cchPath, pDirEntry->cbName, pDirEntry, pCfg);
                 break;
 
             case RTDBGSYMCACHEFILETYPE_DIR_FILTER:
@@ -1094,7 +1132,10 @@ static RTEXITCODE rtDbgSymCacheAddFileOrDir(const char *pszPath, const char *psz
                 if (enmType == RTDBGSYMCACHEFILETYPE_DEBUG_BUNDLE)
                     rc = rtDbgSymCacheAddDebugBundle(szPathBuf, cchPath - cchFilename, cchFilename, &Cfg);
                 else
-                    rc = rtDbgSymCacheAddImageBundle(szPathBuf, cchPath - cchFilename, cchFilename, &Cfg);
+                {
+                    RTDIRENTRYEX DirEntry;
+                    rc = rtDbgSymCacheAddImageBundle(szPathBuf, cchPath - cchFilename, cchFilename, &DirEntry, &Cfg);
+                }
             }
             else
                 rc = RTMsgErrorRc(VERR_FILENAME_TOO_LONG, "Filename too long: '%s'", pszPath);
