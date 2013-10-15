@@ -39,6 +39,8 @@
 // ConsoleVRDPServer
 ///////////////////////////////////////////////////////////////////////////////
 
+class EmWebcam;
+
 typedef struct _VRDPInputSynch
 {
     int cGuestNumLockAdaptions;
@@ -151,6 +153,8 @@ public:
     int VideoInGetDeviceDesc(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle);
     int VideoInControl(void *pvUser, const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle,
                        const VRDEVIDEOINCTRLHDR *pReq, uint32_t cbReq);
+
+    Console *getConsole(void) { return mConsole; }
 
 private:
     /* Note: This is not a ComObjPtr here, because the ConsoleVRDPServer object
@@ -338,6 +342,7 @@ private:
                                                        void *pDeviceCtx,
                                                        const VRDEVIDEOINPAYLOADHDR *pFrame,
                                                        uint32_t cbFrame);
+    EmWebcam *mEmWebcam;
 
     /* Input interface. */
     VRDEINPUTINTERFACE m_interfaceInput;

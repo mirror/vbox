@@ -57,7 +57,6 @@
 #include "SharedFolderImpl.h"
 #include "AudioSnifferInterface.h"
 #include "Nvram.h"
-#include "UsbWebcamInterface.h"
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
 #endif
@@ -385,7 +384,6 @@ Console::Console()
     , m_pVMMDev(NULL)
     , mAudioSniffer(NULL)
     , mNvram(NULL)
-    , mEmWebcam(NULL)
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
 #endif
@@ -558,8 +556,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
             AssertReturn(mNvram, E_FAIL);
         }
 
-        unconst(mEmWebcam) = new EmWebcam(this);
-        AssertReturn(mEmWebcam, E_FAIL);
 #ifdef VBOX_WITH_USB_CARDREADER
         unconst(mUsbCardReader) = new UsbCardReader(this);
         AssertReturn(mUsbCardReader, E_FAIL);
@@ -655,12 +651,6 @@ void Console::uninit()
     {
         delete mNvram;
         unconst(mNvram) = NULL;
-    }
-
-    if (mEmWebcam)
-    {
-        delete mEmWebcam;
-        unconst(mEmWebcam) = NULL;
     }
 
 #ifdef VBOX_WITH_USB_CARDREADER

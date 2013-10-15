@@ -20,28 +20,33 @@
 #include "UsbWebcamInterface.h"
 #include "ConsoleImpl.h"
 #include "ConsoleVRDPServer.h"
+#include "EmulatedUSBImpl.h"
 
 #include <VBox/vmm/pdmwebcaminfs.h>
 
-
-typedef struct EMWEBCAMDRV
-{
-    EmWebcam *pEmWebcam;
-    PPDMIWEBCAMUP  pIWebcamUp;
-    PDMIWEBCAMDOWN IWebcamDown;
-} EMWEBCAMDRV, *PEMWEBCAMDRV;
 
 typedef struct EMWEBCAMREMOTE
 {
     EmWebcam *pEmWebcam;
 
     VRDEVIDEOINDEVICEHANDLE deviceHandle; /* The remote identifier. */
+
+    /* Received from the remote client. */
     uint32_t u32Version;                  /* VRDE_VIDEOIN_NEGOTIATE_VERSION */
     uint32_t fu32Capabilities;            /* VRDE_VIDEOIN_NEGOTIATE_CAP_* */
+    VRDEVIDEOINDEVICEDESC *pDeviceDesc;
+    uint32_t cbDeviceDesc;
 
     /* The device identifier for the PDM device.*/
     uint64_t u64DeviceId;
 } EMWEBCAMREMOTE;
+
+typedef struct EMWEBCAMDRV
+{
+    EMWEBCAMREMOTE *pRemote;
+    PPDMIWEBCAMUP  pIWebcamUp;
+    PDMIWEBCAMDOWN IWebcamDown;
+} EMWEBCAMDRV, *PEMWEBCAMDRV;
 
 typedef struct EMWEBCAMREQCTX
 {
@@ -53,9 +58,22 @@ typedef struct EMWEBCAMREQCTX
 static DECLCALLBACK(void) drvEmWebcamReady(PPDMIWEBCAMDOWN pInterface,
                                            bool fReady)
 {
-    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDown);
-    NOREF(pThis);
     NOREF(fReady);
+
+    PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDown);
+    EMWEBCAMREMOTE *pRemote = pThis->pRemote;
+
+    LogFlowFunc(("pRemote:%p\n", pThis->pRemote));
+
+    if (pThis->pIWebcamUp)
+    {
+        pThis->pIWebcamUp->pfnWebcamUpAttached(pThis->pIWebcamUp,
+                                               pRemote->u64DeviceId,
+                                               (const PDMIWEBCAM_DEVICEDESC *)pRemote->pDeviceDesc,
+                                               pRemote->cbDeviceDesc,
+                                               pRemote->u32Version,
+                                               pRemote->fu32Capabilities);
+    }
 }
 
 static DECLCALLBACK(int) drvEmWebcamControl(PPDMIWEBCAMDOWN pInterface,
@@ -65,16 +83,17 @@ static DECLCALLBACK(int) drvEmWebcamControl(PPDMIWEBCAMDOWN pInterface,
                                             uint32_t cbCtrl)
 {
     PEMWEBCAMDRV pThis = RT_FROM_MEMBER(pInterface, EMWEBCAMDRV, IWebcamDown);
+    EMWEBCAMREMOTE *pRemote = pThis->pRemote;
 
-    LogFlowFunc(("pEmWebcam:%p, u64DeviceId %lld\n", pThis->pEmWebcam, u64DeviceId));
+    LogFlowFunc(("pRemote:%p, u64DeviceId %lld\n", pRemote, u64DeviceId));
 
-    return pThis->pEmWebcam->SendControl(pThis, pvUser, u64DeviceId, (const VRDEVIDEOINCTRLHDR *)pCtrl, cbCtrl);
+    return pRemote->pEmWebcam->SendControl(pThis, pvUser, u64DeviceId, (const VRDEVIDEOINCTRLHDR *)pCtrl, cbCtrl);
 }
 
 
-EmWebcam::EmWebcam(Console *console)
+EmWebcam::EmWebcam(ConsoleVRDPServer *pServer)
     :
-    mParent(console),
+    mParent(pServer),
     mpDrv(NULL),
     mpRemote(NULL),
     mu64DeviceIdSrc(0)
@@ -85,7 +104,7 @@ EmWebcam::~EmWebcam()
 {
     if (mpDrv)
     {
-        mpDrv->pEmWebcam = NULL;
+        mpDrv->pRemote = NULL;
         mpDrv = NULL;
     }
 }
@@ -103,11 +122,17 @@ void EmWebcam::EmWebcamDestruct(EMWEBCAMDRV *pDrv)
 
     if (mpRemote)
     {
-        mParent->consoleVRDPServer()->VideoInDeviceDetach(&mpRemote->deviceHandle);
+        mParent->VideoInDeviceDetach(&mpRemote->deviceHandle);
+
+        RTMemFree(mpRemote->pDeviceDesc);
+        mpRemote->pDeviceDesc = NULL;
+        mpRemote->cbDeviceDesc = 0;
+
         RTMemFree(mpRemote);
         mpRemote = NULL;
     }
 
+    mpDrv->pRemote = NULL;
     mpDrv = NULL;
 }
 
@@ -158,12 +183,14 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             pRemote->deviceHandle     = p->deviceHandle;
             pRemote->u32Version       = u32Version;
             pRemote->fu32Capabilities = fu32Capabilities;
+            pRemote->pDeviceDesc      = NULL;
+            pRemote->cbDeviceDesc     = 0;
             pRemote->u64DeviceId      = ASMAtomicIncU64(&mu64DeviceIdSrc);
 
             mpRemote = pRemote;
 
             /* Tell the server that this webcam will be used. */
-            rc = mParent->consoleVRDPServer()->VideoInDeviceAttach(&mpRemote->deviceHandle, mpRemote);
+            rc = mParent->VideoInDeviceAttach(&mpRemote->deviceHandle, mpRemote);
             if (RT_FAILURE(rc))
             {
                 RTMemFree(mpRemote);
@@ -172,11 +199,11 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
             }
 
             /* Get the device description. */
-            rc = mParent->consoleVRDPServer()->VideoInGetDeviceDesc(NULL, &mpRemote->deviceHandle);
+            rc = mParent->VideoInGetDeviceDesc(NULL, &mpRemote->deviceHandle);
 
             if (RT_FAILURE(rc))
             {
-                mParent->consoleVRDPServer()->VideoInDeviceDetach(&mpRemote->deviceHandle);
+                mParent->VideoInDeviceDetach(&mpRemote->deviceHandle);
                 RTMemFree(mpRemote);
                 mpRemote = NULL;
                 break;
@@ -200,10 +227,7 @@ void EmWebcam::EmWebcamCbNotify(uint32_t u32Id, const void *pvData, uint32_t cbD
                     mpDrv->pIWebcamUp->pfnWebcamUpDetached(mpDrv->pIWebcamUp,
                                                            mpRemote->u64DeviceId);
                 }
-
-                /* No need to tell the server by calling VideoInDeviceDetach because the server is telling. */
-                RTMemFree(mpRemote);
-                mpRemote = NULL;
+                /* mpRemote is deallocated in EmWebcamDestruct */
             }
         } break;
 
@@ -227,19 +251,18 @@ void EmWebcam::EmWebcamCbDeviceDesc(int rcRequest, void *pDeviceCtx, void *pvUse
 
     if (RT_SUCCESS(rcRequest))
     {
-        if (mpDrv && mpDrv->pIWebcamUp)
-        {
-            mpDrv->pIWebcamUp->pfnWebcamUpAttached(mpDrv->pIWebcamUp,
-                                                   pRemote->u64DeviceId,
-                                                   (const PDMIWEBCAM_DEVICEDESC *)pDeviceDesc,
-                                                   cbDeviceDesc,
-                                                   pRemote->u32Version,
-                                                   pRemote->fu32Capabilities);
-        }
+        /* Save device description. */
+        Assert(pRemote->pDeviceDesc == NULL);
+        pRemote->pDeviceDesc = (VRDEVIDEOINDEVICEDESC *)RTMemDup(pDeviceDesc, cbDeviceDesc);
+        pRemote->cbDeviceDesc = cbDeviceDesc;
+
+        /* Try to attach the device. */
+        EmulatedUSB *pEUSB = mParent->getConsole()->getEmulatedUSB();
+        pEUSB->webcamAttachInternal("", "", "EmWebcam", pRemote);
     }
     else
     {
-        mParent->consoleVRDPServer()->VideoInDeviceDetach(&mpRemote->deviceHandle);
+        mParent->VideoInDeviceDetach(&mpRemote->deviceHandle);
         RTMemFree(mpRemote);
         mpRemote = NULL;
     }
@@ -323,7 +346,7 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
         pCtx->pRemote = mpRemote;
         pCtx->pvUser = pvUser;
 
-        rc = mParent->consoleVRDPServer()->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
+        rc = mParent->VideoInControl(pCtx, &mpRemote->deviceHandle, pControl, cbControl);
 
         if (RT_FAILURE(rc))
         {
@@ -350,14 +373,14 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
 {
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
     PEMWEBCAMDRV pThis = PDMINS_2_DATA(pDrvIns, PEMWEBCAMDRV);
+    EMWEBCAMREMOTE *pRemote = pThis->pRemote;
 
-    LogFlowFunc(("iInstance %d, pEmWebcam %p, pIWebcamUp %p\n",
-                 pDrvIns->iInstance, pThis->pEmWebcam, pThis->pIWebcamUp));
+    LogFlowFunc(("iInstance %d, pRemote %p, pIWebcamUp %p\n",
+                 pDrvIns->iInstance, pRemote, pThis->pIWebcamUp));
 
-    if (pThis->pEmWebcam)
+    if (pRemote && pRemote->pEmWebcam)
     {
-        pThis->pEmWebcam->EmWebcamDestruct(pThis);
-        pThis->pEmWebcam = NULL;
+        pRemote->pEmWebcam->EmWebcamDestruct(pThis);
     }
 }
 
@@ -367,9 +390,6 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
     LogFlowFunc(("iInstance:%d, pCfg:%p, fFlags:%x\n", pDrvIns->iInstance, pCfg, fFlags));
 
     PEMWEBCAMDRV pThis = PDMINS_2_DATA(pDrvIns, PEMWEBCAMDRV);
-
-    if (!CFGMR3AreValuesValid(pCfg, "Object\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -391,8 +411,8 @@ int EmWebcam::SendControl(EMWEBCAMDRV *pDrv, void *pvUser, uint64_t u64DeviceId,
                     ("Configuration error: No/bad \"Object\" %p value! rc=%Rrc\n", pv, rc), rc);
 
     /* Everything ok. Initialize. */
-    pThis->pEmWebcam = (EmWebcam *)pv;
-    pThis->pEmWebcam->EmWebcamConstruct(pThis);
+    pThis->pRemote = (EMWEBCAMREMOTE *)pv;
+    pThis->pRemote->pEmWebcam->EmWebcamConstruct(pThis);
 
     pDrvIns->IBase.pfnQueryInterface = drvQueryInterface;
 
