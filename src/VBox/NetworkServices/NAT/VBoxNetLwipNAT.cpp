@@ -25,6 +25,7 @@
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
 #include <VBox/com/VirtualBox.h>
+#include <VBox/com/NativeEventQueue.h>
 
 #include <iprt/net.h>
 #include <iprt/initterm.h>
@@ -119,7 +120,39 @@ typedef std::vector<NATSEVICEPORTFORWARDRULE> VECNATSERVICEPF;
 typedef VECNATSERVICEPF::iterator ITERATORNATSERVICEPF;
 typedef VECNATSERVICEPF::const_iterator CITERATORNATSERVICEPF;
 
-class NATNetworkListener;
+
+class VBoxNetLwipNAT;
+
+
+class NATNetworkListener
+{
+public:
+    NATNetworkListener():m_pNAT(NULL){}
+
+    HRESULT init(VBoxNetLwipNAT *pNAT)
+    {
+        AssertPtrReturn(pNAT, E_INVALIDARG);
+
+        m_pNAT = pNAT;
+        return S_OK;
+    }
+
+    HRESULT init()
+    {
+        m_pNAT = NULL;
+        return S_OK;
+    }
+
+    void uninit() { m_pNAT = NULL; }
+
+    STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
+
+private:
+    VBoxNetLwipNAT *m_pNAT;
+};
+typedef ListenerImpl<NATNetworkListener, VBoxNetLwipNAT *> NATNetworkListenerImpl;
+VBOX_LISTENER_DECLARE(NATNetworkListenerImpl)
+
 
 class VBoxNetLwipNAT: public VBoxNetBaseService
 {
@@ -152,6 +185,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     /* Our NAT network descriptor in Main */
     ComPtr<INATNetwork> net;
+    ComPtr<NATNetworkListenerImpl> m_listener;
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
     RTSEMEVENT hSemSVC;
@@ -174,46 +208,16 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 };
 
 
-class NATNetworkListener
-{
-public:
-    NATNetworkListener():m_pNAT(NULL){}
-
-    HRESULT init(VBoxNetLwipNAT *pNAT)
-    {
-        AssertPtrReturn(pNAT, E_INVALIDARG);
-
-        m_pNAT = pNAT;
-        return S_OK;
-    }
-
-    HRESULT init()
-    {
-        m_pNAT = NULL;
-        return S_OK;
-    }
-
-    void uninit() { m_pNAT = NULL; }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent)
-    {
-        if (m_pNAT)
-            return m_pNAT->HandleEvent(aEventType, pEvent);
-        else
-            return E_FAIL;
-    }
-
-private:
-    VBoxNetLwipNAT *m_pNAT;
-};
-
-
-typedef ListenerImpl<NATNetworkListener, VBoxNetLwipNAT *> NATNetworkListenerImpl;
-VBOX_LISTENER_DECLARE(NATNetworkListenerImpl)
-
-
-
 static VBoxNetLwipNAT *g_pLwipNat;
+
+STDMETHODIMP NATNetworkListener::HandleEvent(VBoxEventType_T aEventType, IEvent *pEvent)
+{
+    if (m_pNAT)
+        return m_pNAT->HandleEvent(aEventType, pEvent);
+    else
+        return E_FAIL;
+}
+
 
 
 STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
@@ -911,6 +915,8 @@ int VBoxNetLwipNAT::init()
 
     hrc = pES->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    m_listener = listener;
 #endif
 
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
