@@ -1558,6 +1558,26 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
 }
 
 /**
+ * Private method; delete all records from the list 
+ * m->llDescriptions that match the given type. 
+ * @param aType
+ * @return
+ */
+void VirtualSystemDescription::removeByType(VirtualSystemDescriptionType_T aType)
+{
+    std::list<VirtualSystemDescriptionEntry*> vsd;
+
+    list<VirtualSystemDescriptionEntry>::iterator it = m->llDescriptions.begin();
+    while (it != m->llDescriptions.end())
+    {
+        if (it->type == aType)
+            it = m->llDescriptions.erase(it);
+        else
+            ++it;
+    }
+}
+
+/**
  * Private method; looks thru the member hardware items for the IDE, SATA, or SCSI controller with
  * the given reference ID. Useful when needing the controller for a particular
  * virtual disk.

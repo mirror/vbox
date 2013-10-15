@@ -409,6 +409,7 @@ void printUsage(USAGECATEGORY u64Cmd, PRTSTREAM pStrm)
                            "%s export %s          <machines> --output|-o <name>.<ovf/ova>\n"
                      "                            [--legacy09|--ovf09|--ovf10|--ovf20]\n"
                      "                            [--manifest]\n"
+                     "                            [--iso]\n"
                      "                            [--vsys <number of virtual system>]\n"
                      "                                    [--product <product name>]\n"
                      "                                    [--producturl <product url>]\n"

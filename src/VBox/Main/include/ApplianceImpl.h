@@ -338,6 +338,8 @@ public:
     void importVboxMachineXML(const xml::ElementNode &elmMachine);
     const settings::MachineConfigFile* getMachineConfig() const;
 
+    void removeByType(VirtualSystemDescriptionType_T aType);
+
     /* private instance data */
 private:
     struct Data;

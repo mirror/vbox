@@ -596,7 +596,21 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, ComSafeArrayIn(ImportOptions_T, op
     if (options != NULL)
         m->optListExport = com::SafeArray<ExportOptions_T>(ComSafeArrayInArg(options)).toList();
 
-    AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
+//    AssertReturn(!(m->optListExport.contains(ExportOptions_CreateManifest) && m->optListExport.contains(ExportOptions_ExportDVDImages)), E_INVALIDARG);
+
+    m->fExportISOImages = m->optListExport.contains(ExportOptions_ExportDVDImages);
+
+    if (!m->fExportISOImages)/* remove all ISO images from VirtualSystemDescription */
+    {
+        list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
+        for (it = m->virtualSystemDescriptions.begin();
+             it != m->virtualSystemDescriptions.end();
+             ++it)
+        {
+            ComObjPtr<VirtualSystemDescription> vsdescThis = (*it);
+            vsdescThis->removeByType(VirtualSystemDescriptionType_CDROM);
+        }
+    }
 
     // do not allow entering this method if the appliance is busy reading or writing
     if (!isApplianceIdle())
