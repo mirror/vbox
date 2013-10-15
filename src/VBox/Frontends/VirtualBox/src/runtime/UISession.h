@@ -233,7 +233,11 @@ private slots:
     void sltVideoCaptureChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
-    /* Handlers: Host callback stuff: */
+    /* Handlers: Display reconfiguration stuff: */
+#ifdef RT_OS_DARWIN
+    void sltHandleHostDisplayAboutToChange();
+    void sltCheckIfHostDisplayChanged();
+#endif /* RT_OS_DARWIN */
     void sltHandleHostScreenCountChange();
     void sltHandleHostScreenGeometryChange();
 
@@ -269,6 +273,11 @@ private:
     void adjustGuestView();
     int countOfVisibleWindows();
 
+#ifdef Q_WS_MAC
+    /* Helper: Display reconfiguration stuff: */
+    void recacheDisplayData();
+#endif /* Q_WS_MAC */
+
 #ifdef VBOX_GUI_WITH_KEYS_RESET_HANDLER
     static void signalHandlerSIGUSR1(int sig, siginfo_t *pInfo, void *pSecret);
 #endif /* VBOX_GUI_WITH_KEYS_RESET_HANDLER */
@@ -292,6 +301,15 @@ private:
 #if defined(Q_WS_WIN)
     HCURSOR m_alphaCursor;
 #endif
+#ifdef Q_WS_MAC
+    /** @name MacOS X: Display reconfiguration variables.
+     * @{ */
+    /** MacOS X: Watchdog timer looking for display reconfiguration. */
+    QTimer *m_pWatchdogDisplayChange;
+    /** MacOS X: A list of display geometries we currently have. */
+    QList<QRect> m_screens;
+    /** @} */
+#endif /* Q_WS_MAC */
 
     /* Common flags: */
     bool m_fIsFirstTimeStarted : 1;
