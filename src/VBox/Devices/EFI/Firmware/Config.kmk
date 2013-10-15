@@ -70,29 +70,29 @@ endif
 # Make a build program template of our own.
 #
 TEMPLATE_VBoxEfiBldProg = EFI build program.
-TEMPLATE_VBoxEfiBldProg_EXTENDS = VBOXBLDPROG
+TEMPLATE_VBoxEfiBldProg_EXTENDS = VBoxBldProg
 TEMPLATE_VBoxEfiBldProg_INST = EfiBldProgs/
 TEMPLATE_VBoxEfiBldProg_INSTTYPE = stage
-TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBOXBLDPROG_INCS) \
+TEMPLATE_VBoxEfiBldProg_INCS = $(TEMPLATE_VBoxBldProg_INCS) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IndustryStandard \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Common \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C
 
-TEMPLATE_VBoxEfiBldProg_INCS.x86 = $(TEMPLATE_VBOXBLDPROG_INCS.x86) \
+TEMPLATE_VBoxEfiBldProg_INCS.x86 = $(TEMPLATE_VBoxBldProg_INCS.x86) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/IA32
 
-TEMPLATE_VBoxEfiBldProg_INCS.amd64 = $(TEMPLATE_VBOXBLDPROG_INCS.amd64) \
+TEMPLATE_VBoxEfiBldProg_INCS.amd64 = $(TEMPLATE_VBoxBldProg_INCS.amd64) \
 	$(VBOX_PATH_EFI_FIRMWARE)/BaseTools/Source/C/Include/X64
 
 TEMPLATE_VBoxEfiBldProg_LIBS = \
 	$(VBOX_PATH_STAGE_EFI_BLDPROGS)/EfiBldCommonLib$(VBOX_SUFF_LIB) \
-	$(TEMPLATE_VBOXBLDPROG_LIBS)
+	$(TEMPLATE_VBoxBldProg_LIBS)
 ifn1of ($(KBUILD_HOST),win) # This stuff isn't up to our standard at all! :/
- TEMPLATE_VBoxEfiBldProg_CFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBOXBLDPROG_CFLAGS)) \
+ TEMPLATE_VBoxEfiBldProg_CFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBoxBldProg_CFLAGS)) \
  	-Wno-sign-compare -Wno-missing-prototypes -Wno-strict-prototypes \
 	-Wno-implicit-function-declaration -Wno-missing-declarations -Wno-shadow -Wno-format -Wno-empty-body
- TEMPLATE_VBoxEfiBldProg_CXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBOXBLDPROG_CXXFLAGS)) \
+ TEMPLATE_VBoxEfiBldProg_CXXFLAGS = $(filter-out -pedantic,$(TEMPLATE_VBoxBldProg_CXXFLAGS)) \
  	-Wno-all -Wno-shadow -Wno-empty-body
 endif
 

@@ -85,7 +85,7 @@ VBox-kStuffStatic_EXTENDS = VBox-kStuff
 
 
 LIBRARIES += VBox-kStuffStaticBldProg
-VBox-kStuffStaticBldProg_TEMPLATE = VBOXBLDPROG
+VBox-kStuffStaticBldProg_TEMPLATE = VBoxBldProg
 VBox-kStuffStaticBldProg_EXTENDS = VBox-kStuff
 
 

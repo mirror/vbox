@@ -115,7 +115,7 @@ $$(VgaBiosBin_0_OUTDIR)/vbetables.h: $(MAKEFILE_CURRENT) $$(vbetables-gen_1_TARG
 # The VBE tables.
 #
 BLDPROGS += vbetables-gen
-vbetables-gen_TEMPLATE = VBOXBLDPROG
+vbetables-gen_TEMPLATE = VBoxBldProg
 vbetables-gen_SOURCES  = vbetables-gen.c
 vbetables-gen_CLEAN    = $(vbetables-gen)
 

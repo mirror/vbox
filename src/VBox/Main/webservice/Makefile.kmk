@@ -228,7 +228,7 @@ ifdef VBOX_GSOAP_INSTALLED
 	$(VBOXWEB_OUT_DIR)/soapC.cpp
  else
   BLDPROGS += split-soapC
-  split-soapC_TEMPLATE = VBOXBLDPROG
+  split-soapC_TEMPLATE = VBoxBldProg
   split-soapC_SOURCES = split-soapC.cpp
 
   vboxsoap_SOURCES = \

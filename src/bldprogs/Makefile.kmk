@@ -20,16 +20,16 @@ include $(KBUILD_PATH)/subheader.kmk
 
 BLDPROGS += bin2c biossums filesplitter VBoxCmp
 
-bin2c_TEMPLATE = VBOXBLDPROG
+bin2c_TEMPLATE = VBoxBldProg
 bin2c_SOURCES = bin2c.c
 
-biossums_TEMPLATE = VBOXBLDPROG
+biossums_TEMPLATE = VBoxBldProg
 biossums_SOURCES = biossums.c
 
-filesplitter_TEMPLATE = VBOXBLDPROG
+filesplitter_TEMPLATE = VBoxBldProg
 filesplitter_SOURCES = filesplitter.cpp
 
-VBoxCmp_TEMPLATE = VBOXBLDPROG
+VBoxCmp_TEMPLATE = VBoxBldProg
 VBoxCmp_SOURCES = VBoxCmp.cpp
 
 ifndef VBOX_ONLY_BUILD
@@ -58,12 +58,12 @@ if !defined(VBOX_ONLY_BUILD) || defined(VBOX_ONLY_EXTPACKS)
 endif
 
 BLDPROGS.win += VBoxPeSetVersion
-VBoxPeSetVersion_TEMPLATE = VBOXBLDPROG
+VBoxPeSetVersion_TEMPLATE = VBoxBldProg
 VBoxPeSetVersion_SOURCES  = VBoxPeSetVersion.cpp
 
 
 BLDPROGS += VBoxDef2LazyLoad
-VBoxDef2LazyLoad_TEMPLATE = VBOXBLDPROG
+VBoxDef2LazyLoad_TEMPLATE = VBoxBldProg
 VBoxDef2LazyLoad_SOURCES  = VBoxDef2LazyLoad.cpp
 
 

@@ -353,7 +353,7 @@ endif
  # ipxezbin - Compressor?
  #
  BLDPROGS += ipxezbin
- ipxezbin_TEMPLATE = VBOXBLDPROG
+ ipxezbin_TEMPLATE = VBoxBldProg
  ipxezbin_CFLAGS   = -Wno-format
  ipxezbin_SOURCES  = src/util/zbin.c
 
