@@ -659,7 +659,6 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
                                             IN_BSTR aGuestIp,
                                             USHORT aGuestPort)
 {
-    int rc = S_OK;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -708,6 +707,14 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
     mapRules.insert(std::make_pair(name, r));
 
     alock.release();
+
+#ifdef NAT_XML_SERIALIZATION
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+    vboxLock.release();
+#endif
+
     mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6,
                                          aPortForwardRuleName, aProto,
                                          aHostIp, aHostPort,
@@ -718,12 +725,7 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
                                    aIsIpv6, aPortForwardRuleName, aProto,
                                    aHostIp, aHostPort,
                                    aGuestIp, aGuestPort);
-
-#ifdef NAT_XML_SERIALIZATION
-    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwardRuleName)
@@ -748,6 +750,13 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
 
     alock.release();
 
+#ifdef NAT_XML_SERIALIZATION
+    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+    vboxLock.release();
+#endif
+
     mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6,
                                          aPortForwardRuleName, proto,
                                          Bstr(strHostIP).raw(), u16HostPort,
@@ -758,13 +767,7 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
                                    aIsIpv6, aPortForwardRuleName, proto,
                                    Bstr(strHostIP).raw(), u16HostPort,
                                    Bstr(strGuestIP).raw(), u16GuestPort);
-    HRESULT rc = S_OK;
-#ifdef NAT_XML_SERIALIZATION
-    AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-
-    return rc;
+    return S_OK;
 }
 
 
