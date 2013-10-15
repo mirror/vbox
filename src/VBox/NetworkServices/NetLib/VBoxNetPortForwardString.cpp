@@ -133,13 +133,13 @@ static int netPfStrPortParse(char *pszRaw, int cbRaw, uint16_t *pu16Port)
 
     Assert(cbRest || pszRaw[idxRaw - 1] == PF_FIELD_SEPARATOR); /* we are 1 char ahead */
 
-    char aszPort[10];
-    RT_ZERO(aszPort);
+    char szPort[10];
+    RT_ZERO(szPort);
 
     Assert(idxRaw > 0);
-    RTStrCopy(aszPort, RT_MIN(RT_ELEMENTS(aszPort), (size_t)(cbPort) + 1), pszRaw);
+    RTStrCopy(szPort, RT_MIN(sizeof(szPort), (size_t)(cbPort) + 1), pszRaw);
 
-    if (!(u16Port = RTStrToUInt16(aszPort)))
+    if (!(u16Port = RTStrToUInt16(szPort)))
         return -1;
 
     *pu16Port = u16Port;
@@ -235,9 +235,9 @@ int netPfStrToPf(const char *pcszStrPortForward, int fIPv6, PPORTFORWARDRULE pPf
 
     memset(pPfr, 0, sizeof(PORTFORWARDRULE));
 
-    pszHostAddr = &pPfr->aszPfrHostAddr[0];
-    pszGuestAddr = &pPfr->aszPfrGuestAddr[0];
-    pszName = &pPfr->aszPfrName[0];
+    pszHostAddr = &pPfr->szPfrHostAddr[0];
+    pszGuestAddr = &pPfr->szPfrGuestAddr[0];
+    pszName = &pPfr->szPfrName[0];
 
     cbRaw = strlen(pcszStrPortForward);
 
