@@ -54,6 +54,7 @@ struct Appliance::Data
       : state(ApplianceIdle)
       , fManifest(true)
       , fSha256(false)
+      , fExportISOImages(false)
       , pReader(NULL)
       , ulWeightForXmlOperation(0)
       , ulWeightForManifestOperation(0)
@@ -77,6 +78,8 @@ struct Appliance::Data
     bool                fManifest;      // Create a manifest file on export
     bool                fSha256;        // true = SHA256 (OVF 2.0), false = SHA1 (OVF 1.0)
     Utf8Str             strOVFSHADigest;//SHA digest of OVf file. It is stored here after reading OVF file (before import)
+
+    bool                fExportISOImages;// when 1 the ISO images are exported
 
     RTCList<ImportOptions_T> optListImport;
     RTCList<ExportOptions_T> optListExport;
