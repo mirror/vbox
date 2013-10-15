@@ -1122,7 +1122,7 @@ $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui: \
 
 # Do the actual job.
 $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui: $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui $$(QTGUI_DOXYFILE_INPUT) | $(QTGUI_DOXYFILE_OUTPUT)/
-	$(RM) -f $(wildcard $(QTGUI_DOXYFILE_OUTPUT)/html/*) $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
+	$(RM) -Rf -- $(QTGUI_DOXYFILE_OUTPUT)/html/
 	doxygen $(QTGUI_DOXYFILE_OUTPUT)/Doxyfile.qtgui
 	$(APPEND) $(QTGUI_DOXYFILE_OUTPUT)/docs.qtgui
 
