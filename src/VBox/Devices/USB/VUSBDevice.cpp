@@ -1502,6 +1502,21 @@ DECLCALLBACK(VUSBDEVICESTATE) vusbDevGetState(PVUSBIDEVICE pInterface)
 
 
 /**
+ * @interface_method_impl{VUSBIDEVICE,pfnIsEmulated}
+ */
+DECLCALLBACK(bool) vusbDevIsEmulated(PVUSBIDEVICE pInterface)
+{
+    PVUSBDEV pDev = (PVUSBDEV)pInterface;
+    bool fEmulated = !!(pDev->pUsbIns->pReg->fFlags & PDM_USBREG_EMULATED_DEVICE);
+
+    LogFlowFunc(("pInterface=%p\n", pInterface));
+
+    LogFlowFunc(("returns %RTbool\n", fEmulated));
+    return fEmulated;
+}
+
+
+/**
  * The maximum number of interfaces the device can have in all of it's configuration.
  *
  * @returns Number of interfaces.
@@ -1542,6 +1557,8 @@ int vusbDevInit(PVUSBDEV pDev, PPDMUSBINS pUsbIns)
     pDev->IDevice.pfnPowerOff = vusbDevPowerOff;
     Assert(!pDev->IDevice.pfnGetState);
     pDev->IDevice.pfnGetState = vusbDevGetState;
+    Assert(!pDev->IDevice.pfnIsEmulated);
+    pDev->IDevice.pfnIsEmulated = vusbDevIsEmulated;
     pDev->pUsbIns = pUsbIns;
     pDev->pNext = NULL;
     pDev->pNextHash = NULL;
