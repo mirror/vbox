@@ -37,7 +37,7 @@ DisasmR3_SOURCES        = \
 	DisasmFormatYasm.cpp
 
 LIBRARIES              += DisasmBldProg
-DisasmBldProg_TEMPLATE  = VBOXBLDPROG
+DisasmBldProg_TEMPLATE  = VBoxBldProg
 DisasmBldProg_EXTENDS   = DisasmR3
 
 LIBRARIES              += DisasmCoreR3

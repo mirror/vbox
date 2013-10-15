@@ -159,7 +159,7 @@ common/misc/buildconfig.cpp_DEFS = \
 #
 # Unicode Specification reader used to regenerate unidata.cpp.
 #
-uniread_TEMPLATE = VBOXBLDPROG
+uniread_TEMPLATE = VBoxBldProg
 uniread_SOURCES  = common/string/uniread.cpp
 uniread_INCS = include
 
@@ -1405,7 +1405,7 @@ VBoxRT_INSTTYPE = none
 VBoxRT_DEBUG_INSTTYPE = both
 
 DLLS += VBoxRTDummy
-VBoxRTDummy_TEMPLATE = VBOXR3
+VBoxRTDummy_TEMPLATE = VBoxR3Dll
 VBoxRTDummy_INSTTYPE = none
 VBoxRTDummy_LIBS  = $(PATH_STAGE_BIN)/VBoxRT.so
 VBoxRTDummy_CLEAN = $(PATH_STAGE_BIN)/VBoxRT.so
@@ -1503,7 +1503,7 @@ endif
 # This is used together with VBoxRT.
 #
 ## @todo the *_alias.c stuff is busted, remove and use RT_WITH_NOCRT_ALIASES instead.
-RuntimeR3NoCRTGCC_TEMPLATE = VBOXNOCRTGCC
+RuntimeR3NoCRTGCC_TEMPLATE = VBoxNoCrtGccLib
 RuntimeR3NoCRTGCC_LIBSUFF = $(VBOX_SUFF_LIB)
 ifn1of ($(KBUILD_TARGET_ARCH), amd64 x86)
  RuntimeR3NoCRTGCC_DEFS  += RT_NO_GIP
@@ -1574,8 +1574,6 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 	common/math/gcc/umoddi3.c \
 	common/math/gcc/xordi3.c
 
-
-## @todo stop using the old memcpy.c and memset.c code.
 
 #
 # RuntimeR0 - Ring-0 library for VMMR0.
