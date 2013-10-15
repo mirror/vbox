@@ -222,6 +222,32 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
     HRESULT hrc = S_OK;
     switch (aEventType)
     {
+        case VBoxEventType_OnNATNetworkSetting:
+        {
+            ComPtr<INATNetworkSettingEvent> evSettings(pEvent);
+            // XXX: only handle IPv6 default route for now
+
+            if (!m_ProxyOptions.ipv6_enabled)
+            {
+                break;
+            }
+
+            BOOL fIPv6DefaultRoute = FALSE;
+            hrc = evSettings->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
+            AssertReturn(SUCCEEDED(hrc), hrc);
+
+            if (m_ProxyOptions.ipv6_defroute == fIPv6DefaultRoute)
+            {
+                break;
+            }
+
+            // XXX: TODO: should prod rtadvd for immediate unsolicited
+            // advertisement with new router lifetime
+            m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
+
+            break;
+        }
+        
         case VBoxEventType_OnNATNetworkPortForward:
         {
             com::Bstr name, strHostAddr, strGuestAddr;
@@ -881,6 +907,7 @@ int VBoxNetLwipNAT::init()
 
     com::SafeArray<VBoxEventType_T> events;
     events.push_back(VBoxEventType_OnNATNetworkPortForward);
+    events.push_back(VBoxEventType_OnNATNetworkSetting);
 
     hrc = pES->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
