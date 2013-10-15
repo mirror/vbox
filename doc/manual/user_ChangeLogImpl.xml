@@ -38,6 +38,10 @@
       </listitem>
 
       <listitem>
+        <para>Added host webcam passthrough</para>
+      </listitem>
+
+      <listitem>
         <para>Added SCSI CD-ROM emulation, including boot support</para>
       </listitem>
 
