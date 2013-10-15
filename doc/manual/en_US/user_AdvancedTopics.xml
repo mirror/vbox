@@ -874,7 +874,7 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
       </note>
 
       <para>The VBoxManage command line tool must be used to enable webcam passthrough.
-      Currently some commands are not supported on all hosts, please see the host specific
+      Currently some commands are not supported on all hosts, please see the host-specific
       sections below for additional details. The following commands are available:
         <itemizedlist>
           <listitem><para>Get a list of host webcams (or other video input devices):
@@ -884,17 +884,17 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
 host path or identifier</screen>
             The alias can be used as a shortcut in other commands. Alias '.0' means
             default video input device on the host, '.1', '.2', etc mean first, second, etc
-            video input device. The device order is host specific.
+            video input device. The device order is host-specific.
           </para></listitem>
           <listitem><para>Attach a webcam to a running VM:
-            <screen>VBoxManage controlvm VMNAME webcam attach [host_path|alias]</screen>
+            <screen>VBoxManage controlvm "VM name" webcam attach [host_path|alias]</screen>
             This will attach a USB webcam device to the guest.
           </para></listitem>
           <listitem><para>Detach a webcam from a running VM:
-            <screen>VBoxManage controlvm VMNAME webcam detach [host_path|alias]</screen>
+            <screen>VBoxManage controlvm "VM name" webcam detach [host_path|alias]</screen>
           </para></listitem>
           <listitem><para>List webcams attached to a running VM:
-            <screen>VBoxManage controlvm VMNAME webcam list</screen>
+            <screen>VBoxManage controlvm "VM name" webcam list</screen>
             The output contains path or alias which was used in 'webcam attach' command for
             each attached webcam.
           </para></listitem>
@@ -903,7 +903,7 @@ host path or identifier</screen>
     </sect2>
 
     <sect2>
-      <title>Windows host</title>
+      <title>Windows hosts</title>
 
       <para>All of VBoxManage commands are implemented.</para>
 
@@ -912,17 +912,17 @@ host path or identifier</screen>
     </sect2>
 
     <sect2>
-      <title>Mac OS X host</title>
+      <title>Mac OS X hosts</title>
 
       <para><computeroutput>VBoxManage list webcams</computeroutput> is not yet implemented.</para>
 
       <para>When the webcam device is detached from the host, the emulated webcam device
-      remains attached to the guest and must be manually detached using
-      <computeroutput>VBoxManage controlvm VMNAME webcam detach ...</computeroutput> command.</para>
+      remains attached to the guest and must be manually detached using the
+      <computeroutput>VBoxManage controlvm "VM name" webcam detach ...</computeroutput> command.</para>
     </sect2>
 
     <sect2>
-      <title>Linux host</title>
+      <title>Linux hosts</title>
 
       <para><computeroutput>VBoxManage list webcams</computeroutput> is not yet implemented.</para>
 
@@ -931,8 +931,8 @@ host path or identifier</screen>
       attach and detach commands.</para>
 
       <para>When the webcam device is detached from the host, the emulated webcam device remains
-      attached to the guest and must be manually detached using
-      <computeroutput>VBoxManage controlvm VMNAME webcam detach ...</computeroutput> command.</para>
+      attached to the guest and must be manually detached using the
+      <computeroutput>VBoxManage controlvm "VM name" webcam detach ...</computeroutput> command.</para>
     </sect2>
   </sect1>
 

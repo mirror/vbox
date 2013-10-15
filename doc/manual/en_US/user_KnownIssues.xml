@@ -213,12 +213,6 @@
               </listitem>
     
               <listitem>
-                <para>Even when idle, Mac OS X guests currently burn 100% CPU.
-                This is a power management issue that will be addressed in a
-                future release.</para>
-              </listitem>
-    
-              <listitem>
                 <para>Mac OS X guests only work with one CPU assigned to the
                 VM. Support for SMP will be provided in a future release.</para>
               </listitem>
