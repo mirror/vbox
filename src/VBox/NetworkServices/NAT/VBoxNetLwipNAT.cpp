@@ -300,6 +300,8 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                 goto port_forward_done;
             }
 
+	    r.Pfr.fPfrIPv6 = fIPv6FW;
+
             switch (proto)
             {
                 case NATProtocol_TCP:
