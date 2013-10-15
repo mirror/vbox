@@ -53,7 +53,9 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         EUSBSettingsMap mDevSettings;
         EUSBSettingsMap mDrvSettings;
 
-        static DECLCALLBACK(int) emulatedWebcamAttach(PUVM pUVM, EUSBWEBCAM *pThis);
+        void *mpvObject;
+
+        static DECLCALLBACK(int) emulatedWebcamAttach(PUVM pUVM, EUSBWEBCAM *pThis, const char *pszDriver);
         static DECLCALLBACK(int) emulatedWebcamDetach(PUVM pUVM, EUSBWEBCAM *pThis);
 
         HRESULT settingsParse(void);
@@ -67,7 +69,8 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
             :
             mcRefs(1),
             mpEmulatedUSB(NULL),
-            enmStatus(EUSBDEVICE_CREATED)
+            enmStatus(EUSBDEVICE_CREATED),
+            mpvObject(NULL)
         {
             RT_ZERO(mUuid);
             RT_ZERO(mszUuid);
@@ -90,9 +93,11 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         HRESULT Initialize(Console *pConsole,
                            EmulatedUSB *pEmulatedUSB,
                            const com::Utf8Str *aPath,
-                           const com::Utf8Str *aSettings);
+                           const com::Utf8Str *aSettings,
+                           void *pvObject);
         HRESULT Attach(Console *pConsole,
-                       PUVM pUVM);
+                       PUVM pUVM,
+                       const char *pszDriver);
         HRESULT Detach(Console *pConsole,
                        PUVM pUVM);
 
@@ -102,7 +107,7 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
 };
 
 
-/* static */ DECLCALLBACK(int) EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, EUSBWEBCAM *pThis)
+/* static */ DECLCALLBACK(int) EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, EUSBWEBCAM *pThis, const char *pszDriver)
 {
     EUSBSettingsMap::const_iterator it;
 
@@ -119,9 +124,10 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
 
     PCFGMNODE pLunL0;
     CFGMR3InsertNode(pInstance,   "LUN#0", &pLunL0);
-    CFGMR3InsertString(pLunL0,      "Driver", "HostWebcam");
+    CFGMR3InsertString(pLunL0,      "Driver", pszDriver);
     CFGMR3InsertNode(pLunL0,        "Config", &pConfig);
     CFGMR3InsertString(pConfig,       "DevicePath", pThis->mPath.c_str());
+    CFGMR3InsertInteger(pConfig,      "Object", (uintptr_t)pThis->mpvObject);
     for (it = pThis->mDrvSettings.begin(); it != pThis->mDrvSettings.end(); ++it)
         CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
 
@@ -139,7 +145,8 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
 HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
                                EmulatedUSB *pEmulatedUSB,
                                const com::Utf8Str *aPath,
-                               const com::Utf8Str *aSettings)
+                               const com::Utf8Str *aSettings,
+                               void *pvObject)
 {
     HRESULT hrc = S_OK;
 
@@ -160,6 +167,7 @@ HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
             if (SUCCEEDED(hrc))
             {
                 mpEmulatedUSB = pEmulatedUSB;
+                mpvObject = pvObject;
             }
         }
     }
@@ -182,13 +190,14 @@ HRESULT EUSBWEBCAM::settingsParse(void)
 }
 
 HRESULT EUSBWEBCAM::Attach(Console *pConsole,
-                           PUVM pUVM)
+                           PUVM pUVM,
+                           const char *pszDriver)
 {
     HRESULT hrc = S_OK;
 
     int  vrc = VMR3ReqCallWaitU(pUVM, 0 /* idDstCpu (saved state, see #6232) */,
-                                (PFNRT)emulatedWebcamAttach, 2,
-                                pUVM, this);
+                                (PFNRT)emulatedWebcamAttach, 3,
+                                pUVM, this, pszDriver);
 
     if (SUCCEEDED(hrc) && RT_FAILURE(vrc))
     {
@@ -321,6 +330,14 @@ static const Utf8Str s_pathDefault(".0");
 HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
                                   const com::Utf8Str &aSettings)
 {
+    return webcamAttachInternal(aPath, aSettings, "HostWebcam", NULL);
+}
+
+HRESULT EmulatedUSB::webcamAttachInternal(const com::Utf8Str &aPath,
+                                          const com::Utf8Str &aSettings,
+                                          const char *pszDriver,
+                                          void *pvObject)
+{
     HRESULT hrc = S_OK;
 
     const Utf8Str &path = aPath.isEmpty() || aPath == "."? s_pathDefault: aPath;
@@ -331,7 +348,7 @@ HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
         EUSBWEBCAM *p = new EUSBWEBCAM();
         if (p)
         {
-            hrc = p->Initialize(m.pConsole, this, &path, &aSettings);
+            hrc = p->Initialize(m.pConsole, this, &path, &aSettings, pvObject);
             if (SUCCEEDED(hrc))
             {
                 AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -361,7 +378,7 @@ HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
 
             if (SUCCEEDED(hrc))
             {
-                hrc = p->Attach(m.pConsole, ptrVM.rawUVM());
+                hrc = p->Attach(m.pConsole, ptrVM.rawUVM(), pszDriver);
             }
 
             AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -394,6 +411,11 @@ HRESULT EmulatedUSB::webcamAttach(const com::Utf8Str &aPath,
 }
 
 HRESULT EmulatedUSB::webcamDetach(const com::Utf8Str &aPath)
+{
+    return webcamDetachInternal(aPath);
+}
+
+HRESULT EmulatedUSB::webcamDetachInternal(const com::Utf8Str &aPath)
 {
     HRESULT hrc = S_OK;
 

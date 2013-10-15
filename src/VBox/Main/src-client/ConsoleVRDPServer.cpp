@@ -1406,6 +1406,9 @@ ConsoleVRDPServer::ConsoleVRDPServer(Console *console)
 
     rc = RTCritSectInit(&mTSMFLock);
     AssertRC(rc);
+
+    mEmWebcam = new EmWebcam(this);
+    AssertPtr(mEmWebcam);
 }
 
 ConsoleVRDPServer::~ConsoleVRDPServer()
@@ -1428,6 +1431,12 @@ ConsoleVRDPServer::~ConsoleVRDPServer()
             maFramebuffers[i]->Release();
             maFramebuffers[i] = NULL;
         }
+    }
+
+    if (mEmWebcam)
+    {
+        delete mEmWebcam;
+        mEmWebcam = NULL;
     }
 
     if (RTCritSectIsInitialized(&mCritSect))
@@ -2646,8 +2655,10 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                        uint32_t cbData)
 {
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
-    EmWebcam *pWebcam = pThis->mConsole->getEmWebcam();
-    pWebcam->EmWebcamCbNotify(u32Id, pvData, cbData);
+    if (pThis->mEmWebcam)
+    {
+        pThis->mEmWebcam->EmWebcamCbNotify(u32Id, pvData, cbData);
+    }
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInDeviceDesc(void *pvCallback,
@@ -2658,8 +2669,10 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                                  uint32_t cbDevice)
 {
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
-    EmWebcam *pWebcam = pThis->mConsole->getEmWebcam();
-    pWebcam->EmWebcamCbDeviceDesc(rcRequest, pDeviceCtx, pvUser, pDeviceDesc, cbDevice);
+    if (pThis->mEmWebcam)
+    {
+        pThis->mEmWebcam->EmWebcamCbDeviceDesc(rcRequest, pDeviceCtx, pvUser, pDeviceDesc, cbDevice);
+    }
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInControl(void *pvCallback,
@@ -2670,8 +2683,10 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                               uint32_t cbControl)
 {
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
-    EmWebcam *pWebcam = pThis->mConsole->getEmWebcam();
-    pWebcam->EmWebcamCbControl(rcRequest, pDeviceCtx, pvUser, pControl, cbControl);
+    if (pThis->mEmWebcam)
+    {
+        pThis->mEmWebcam->EmWebcamCbControl(rcRequest, pDeviceCtx, pvUser, pControl, cbControl);
+    }
 }
 
 /* static */ DECLCALLBACK(void) ConsoleVRDPServer::VRDECallbackVideoInFrame(void *pvCallback,
@@ -2681,8 +2696,10 @@ void ConsoleVRDPServer::setupTSMF(void)
                                                                             uint32_t cbFrame)
 {
     ConsoleVRDPServer *pThis = static_cast<ConsoleVRDPServer*>(pvCallback);
-    EmWebcam *pWebcam = pThis->mConsole->getEmWebcam();
-    pWebcam->EmWebcamCbFrame(rcRequest, pDeviceCtx, pFrame, cbFrame);
+    if (pThis->mEmWebcam)
+    {
+        pThis->mEmWebcam->EmWebcamCbFrame(rcRequest, pDeviceCtx, pFrame, cbFrame);
+    }
 }
 
 int ConsoleVRDPServer::VideoInDeviceAttach(const VRDEVIDEOINDEVICEHANDLE *pDeviceHandle, void *pvDeviceCtx)

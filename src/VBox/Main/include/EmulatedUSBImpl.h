@@ -45,6 +45,12 @@ public:
     static DECLCALLBACK(int) eusbCallback(void *pv, const char *pszId, uint32_t iEvent,
                                           const void *pvData, uint32_t cbData);
 
+    HRESULT webcamAttachInternal(const com::Utf8Str &aPath,
+                                 const com::Utf8Str &aSettings,
+                                 const char *pszDriver,
+                                 void *pvObject);
+    HRESULT webcamDetachInternal(const com::Utf8Str &aPath);
+
 private:
 
     static DECLCALLBACK(int) eusbCallbackEMT(EmulatedUSB *pThis, char *pszId, uint32_t iEvent,
