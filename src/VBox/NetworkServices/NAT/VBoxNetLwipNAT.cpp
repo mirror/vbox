@@ -1080,15 +1080,18 @@ int VBoxNetLwipNAT::parseOpt(int rc, const RTGETOPTUNION& Val)
 
 int VBoxNetLwipNAT::run()
 {
-
+    /* EventQueue processing from VBoxHeadless.cpp */
+    com::NativeEventQueue         *gEventQ = NULL;
+    gEventQ = com::NativeEventQueue::getMainEventQueue();
     while(true)
     {
-        RTSemEventWait(g_pLwipNat->hSemSVC, RT_INDEFINITE_WAIT);
+        /* XXX:todo: graceful termination */
+        gEventQ->processEventQueue(0);
+        gEventQ->processEventQueue(500);
     }
 
     vboxLwipCoreFinalize(VBoxNetLwipNAT::onLwipTcpIpFini, this);
 
-    /* @todo: clean up of port-forward rules */
     m_vecPortForwardRule4.clear();
     m_vecPortForwardRule6.clear();
 
