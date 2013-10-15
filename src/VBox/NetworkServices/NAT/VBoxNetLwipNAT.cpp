@@ -892,7 +892,6 @@ int VBoxNetLwipNAT::init()
     m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
     m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
 
-#if !defined(RT_OS_WINDOWS)
     /* XXX: Temporaly disabled this code on Windows for further debugging */
     ComPtr<IEventSource> pES;
 
@@ -914,7 +913,6 @@ int VBoxNetLwipNAT::init()
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     m_listener = listener;
-#endif
 
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
     com::Bstr bstrSourceIpX;
