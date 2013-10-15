@@ -249,6 +249,15 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
                                      data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
                                      data.fNeedDhcpServer ? TRUE : FALSE);
 
+    /* Notify listerners listening on this network only */
+    fireNATNetworkSettingEvent(m->pEventSource,
+                                     mName.raw(),
+                                     data.fEnabled ? TRUE : FALSE,
+                                     m->IPv4NetworkCidr.raw(),
+                                     m->IPv4Gateway.raw(),
+                                     data.fAdvertiseDefaultIPv6Route ? TRUE : FALSE,
+                                     data.fNeedDhcpServer ? TRUE : FALSE);
+
     return S_OK;
 }
 #endif /* NAT_XML_SERIALIZATION */
