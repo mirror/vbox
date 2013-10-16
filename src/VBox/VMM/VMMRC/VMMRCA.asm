@@ -243,7 +243,7 @@ TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
 
     mov     ecx, [ebp + 0ch]            ; Where to store the result.
     mov     [ecx], eax
-    mov     [ecx], edx
+    mov     [ecx + 4], edx
 
     popad
     mov     eax, 1
