@@ -208,7 +208,6 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     return S_OK;
 }
 
-#ifdef NAT_XML_SERIALIZATION
 HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
 {
     AutoCaller autoCaller(this);
@@ -260,7 +259,6 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
 
     return S_OK;
 }
-#endif /* NAT_XML_SERIALIZATION */
 
 STDMETHODIMP NATNetwork::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
@@ -290,8 +288,6 @@ STDMETHODIMP NATNetwork::COMGETTER(NetworkName)(BSTR *aName)
 STDMETHODIMP NATNetwork::COMSETTER(NetworkName)(IN_BSTR aName)
 {
     CheckComArgOutPointerValid(aName);
-
-    HRESULT rc = S_OK;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -302,12 +298,11 @@ STDMETHODIMP NATNetwork::COMSETTER(NetworkName)(IN_BSTR aName)
     unconst(mName) = aName;
 
     alock.release();
-
-#ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+
+    return S_OK;
 }
 
 
@@ -328,7 +323,6 @@ STDMETHODIMP NATNetwork::COMSETTER(Enabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    HRESULT rc = S_OK;
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     
     if (aEnabled == m->fEnabled)
@@ -338,11 +332,11 @@ STDMETHODIMP NATNetwork::COMSETTER(Enabled)(BOOL aEnabled)
 
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
-#ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(Gateway)(BSTR *aIPv4Gateway)
@@ -371,7 +365,6 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
 {
     CheckComArgOutPointerValid(aIPv4NetworkCidr);
 
-    HRESULT rc = S_OK;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -387,12 +380,11 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
         recalculateIpv4AddressAssignments();
         alock.release();
 
-#ifdef NAT_XML_SERIALIZATION
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        rc = mVirtualBox->saveSettings();
-#endif
+        HRESULT rc = mVirtualBox->saveSettings();
+        ComAssertComRCRetRC(rc);
     }
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aIPv6Enabled)
@@ -421,12 +413,11 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
 
-    HRESULT rc = S_OK;
-#ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(IPv6Prefix) (BSTR *aIPv6Prefix)
@@ -446,7 +437,6 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
 {
     CheckComArgOutPointerValid(aIPv6Prefix);
 
-    HRESULT rc = S_OK;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -462,12 +452,12 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
         /* @todo: do we need recalculation ? */
         alock.release();
 
-#ifdef NAT_XML_SERIALIZATION
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-        rc = mVirtualBox->saveSettings();
-#endif
+        HRESULT rc = mVirtualBox->saveSettings();
+        ComAssertComRCRetRC(rc);
     }
-    return rc;
+
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL *aAdvertiseDefaultIPv6Route)
@@ -496,12 +486,11 @@ STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdver
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
 
-    HRESULT rc = S_OK;
-#ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+
+    return S_OK;
 }
 
 STDMETHODIMP NATNetwork::COMGETTER(NeedDhcpServer)(BOOL *aNeedDhcpServer)
@@ -532,12 +521,11 @@ STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
     // save the global settings; for that we should hold only the VirtualBox lock
     alock.release();
 
-    HRESULT rc = S_OK;
-#ifdef NAT_XML_SERIALIZATION
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
-    rc = mVirtualBox->saveSettings();
-#endif
-    return rc;
+    HRESULT rc = mVirtualBox->saveSettings();
+    ComAssertComRCRetRC(rc);
+
+    return S_OK;
 }
 
 
@@ -750,13 +738,11 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
 
     alock.release();
 
-#ifdef NAT_XML_SERIALIZATION
     {
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         HRESULT rc = mVirtualBox->saveSettings();
         ComAssertComRCRetRC(rc);
     }
-#endif
 
     mVirtualBox->onNATNetworkPortForward(mName.raw(), TRUE, aIsIpv6,
                                          aPortForwardRuleName, aProto,
@@ -793,13 +779,11 @@ STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwar
 
     alock.release();
 
-#ifdef NAT_XML_SERIALIZATION
     {
         AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         HRESULT rc = mVirtualBox->saveSettings();
         ComAssertComRCRetRC(rc);
     }
-#endif
 
     mVirtualBox->onNATNetworkPortForward(mName.raw(), FALSE, aIsIpv6,
                                          aPortForwardRuleName, proto,

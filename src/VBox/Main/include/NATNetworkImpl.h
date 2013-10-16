@@ -24,10 +24,6 @@
 struct NETIFINFO;
 #endif
 
-#ifdef VBOX_WITH_NAT_SERVICE
-# define NAT_XML_SERIALIZATION 1
-#endif
-
 namespace settings
 {
     struct NATNetwork;
@@ -82,9 +78,7 @@ public:
 
     HRESULT init(VirtualBox *aVirtualBox,
                  const settings::NATNetwork &data);
-#ifdef NAT_XML_SERIALIZATION
     HRESULT saveSettings(settings::NATNetwork &data);
-#endif
     void uninit();
     // INATNetwork::EventSource
     STDMETHOD(COMGETTER(EventSource))(IEventSource **IEventSource);
