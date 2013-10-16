@@ -148,6 +148,7 @@ public:
     bool        callVmPowerOffHook(IConsole *a_pConsole, PVM a_pVM, AutoWriteLock *a_pLock);
     HRESULT     checkVrde(void);
     HRESULT     getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary);
+    HRESULT     getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary);
     bool        wantsToBeDefaultVrde(void) const;
     HRESULT     refresh(bool *pfCanDelete);
     /** @}  */
@@ -231,6 +232,7 @@ class ATL_NO_VTABLE ExtPackManager :
     void        callAllVmPowerOffHooks(IConsole *a_pConsole, PVM a_pVM);
     HRESULT     checkVrdeExtPack(Utf8Str const *a_pstrExtPack);
     int         getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrVrdeLibrary);
+    HRESULT     getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrLibrary);
     HRESULT     getDefaultVrdeExtPack(Utf8Str *a_pstrExtPack);
     bool        isExtPackUsable(const char *a_pszExtPack);
     void        dumpAllToReleaseLog(void);

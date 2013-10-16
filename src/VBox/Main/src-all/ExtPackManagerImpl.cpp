@@ -1115,6 +1115,28 @@ HRESULT ExtPack::getVrdpLibraryName(Utf8Str *a_pstrVrdeLibrary)
 }
 
 /**
+ * Resolves the path to the module.
+ *
+ * @returns S_OK or COM error status with error information.
+ * @param   a_pszModuleName  The library.
+ * @param   a_pstrLibrary  Where to return the path on success.
+ *
+ * @remarks Caller holds the extension manager lock for reading, no locking
+ *          necessary.
+ */
+HRESULT ExtPack::getLibraryName(const char *a_pszModuleName, Utf8Str *a_pstrLibrary)
+{
+    HRESULT hrc;
+    if (findModule(a_pszModuleName, NULL, VBOXEXTPACKMODKIND_R3,
+                   a_pstrLibrary, NULL /*a_pfNative*/, NULL /*a_pObjInfo*/))
+        hrc = S_OK;
+    else
+        hrc = setError(E_FAIL, tr("Failed to locate the module '%s' in extension pack '%s'"),
+                       a_pszModuleName, m->Desc.strName.c_str());
+    return hrc;
+}
+
+/**
  * Check if this extension pack wishes to be the default VRDE provider.
  *
  * @returns @c true if it wants to and it is in a usable state, otherwise
@@ -3070,6 +3092,33 @@ int ExtPackManager::getVrdeLibraryPathForExtPack(Utf8Str const *a_pstrExtPack, U
         ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
         if (pExtPack)
             hrc = pExtPack->getVrdpLibraryName(a_pstrVrdeLibrary);
+        else
+            hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
+    }
+
+    return hrc;
+}
+
+/**
+ * Gets the full path to the specified library of the specified extension pack.
+ *
+ * @returns S_OK if a path is returned, COM error status and message return if
+ *          not.
+ * @param   a_pszModuleName     The library.
+ * @param   a_pstrExtPack       The extension pack.
+ * @param   a_pstrVrdeLibrary   Where to return the path.
+ */
+HRESULT ExtPackManager::getLibraryPathForExtPack(const char *a_pszModuleName, Utf8Str const *a_pstrExtPack, Utf8Str *a_pstrLibrary)
+{
+    AutoCaller autoCaller(this);
+    HRESULT hrc = autoCaller.rc();
+    if (SUCCEEDED(hrc))
+    {
+        AutoReadLock autoLock(this COMMA_LOCKVAL_SRC_POS);
+
+        ExtPack *pExtPack = findExtPack(a_pstrExtPack->c_str());
+        if (pExtPack)
+            hrc = pExtPack->getLibraryName(a_pszModuleName, a_pstrLibrary);
         else
             hrc = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No extension pack by the name '%s' was found"), a_pstrExtPack->c_str());
     }
