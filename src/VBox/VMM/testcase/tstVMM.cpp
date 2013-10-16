@@ -54,7 +54,8 @@ static uint32_t g_cCpus = 1;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-VMMR3DECL(int) VMMDoTest(PVM pVM); /* Linked into VMM, see ../VMMTests.cpp. */
+VMMR3DECL(int) VMMDoTest(PVM pVM);    /* Linked into VMM, see ../VMMTests.cpp. */
+VMMR3DECL(int) VMMDoBruteForceMsrs(PVM pVM); /* Ditto. */
 
 
 /** Dummy timer callback. */
@@ -209,7 +210,7 @@ int main(int argc, char **argv)
     };
     enum
     {
-        kTstVMMTest_VMM,  kTstVMMTest_TM
+        kTstVMMTest_VMM,  kTstVMMTest_TM, kTstVMMTest_MSRs
     } enmTestOpt = kTstVMMTest_VMM;
 
     int ch;
@@ -229,6 +230,8 @@ int main(int argc, char **argv)
                     enmTestOpt = kTstVMMTest_VMM;
                 else if (!strcmp("tm", ValueUnion.psz))
                     enmTestOpt = kTstVMMTest_TM;
+                else if (!strcmp("msr", ValueUnion.psz) || !strcmp("msrs", ValueUnion.psz))
+                    enmTestOpt = kTstVMMTest_MSRs;
                 else
                 {
                     RTPrintf("tstVMM: unknown test: '%s'\n", ValueUnion.psz);
@@ -237,7 +240,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("usage: tstVMM [--cpus|-c cpus] [--test <vmm|tm>]\n");
+                RTPrintf("usage: tstVMM [--cpus|-c cpus] [--test <vmm|tm|msr>]\n");
                 return 1;
 
             case 'V':
@@ -273,6 +276,7 @@ int main(int argc, char **argv)
                 rc = VMR3ReqCallWaitU(pUVM, VMCPUID_ANY, (PFNRT)VMMDoTest, 1, pVM);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
+                STAMR3Dump(pUVM, "*");
                 break;
             }
 
@@ -289,11 +293,24 @@ int main(int argc, char **argv)
                 rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)tstTMWorker, 2, pVM, hTest);
                 if (RT_FAILURE(rc))
                     RTTestFailed(hTest, "VMMDoTest failed: rc=%Rrc\n", rc);
+                STAMR3Dump(pUVM, "*");
+                break;
+            }
+
+            case kTstVMMTest_MSRs:
+            {
+                RTTestSub(hTest, "MSRs");
+                if (g_cCpus == 1)
+                {
+                    rc = VMR3ReqCallWaitU(pUVM, 0 /*idDstCpu*/, (PFNRT)VMMDoBruteForceMsrs, 1, pVM);
+                    if (RT_FAILURE(rc))
+                        RTTestFailed(hTest, "VMMDoBruteForceMsrs failed: rc=%Rrc\n", rc);
+                }
+                else
+                    RTTestFailed(hTest, "The MSR test can only be run with one VCpu!\n");
                 break;
             }
         }
-
-        STAMR3Dump(pUVM, "*");
 
         /*
          * Cleanup.

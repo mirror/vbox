@@ -525,6 +525,23 @@ typedef enum VMMGCOPERATION
 } VMMGCOPERATION;
 
 
+
+/**
+ * MSR test result entry.
+ */
+typedef struct VMMTESTMSRENTRY
+{
+    /** The MSR number, including padding.
+     * Set to UINT64_MAX if invalid MSR. */
+    uint64_t    uMsr;
+    /** The register value. */
+    uint64_t    uValue;
+} VMMTESTMSRENTRY;
+/** Pointer to an MSR test result entry. */
+typedef VMMTESTMSRENTRY *PVMMTESTMSRENTRY;
+
+
+
 RT_C_DECLS_BEGIN
 
 int  vmmInitFormatTypes(void);
