@@ -41,26 +41,26 @@
     { \
      AssertMsg(RTCritSectIsOwner(&Cache->CritSect), \
                ("Thread does not own critical section\n"));\
-    } while(0)
+    } while (0)
 
 # define PDMACFILECACHE_EP_IS_SEMRW_WRITE_OWNER(pEpCache) \
     do \
     { \
         AssertMsg(RTSemRWIsWriteOwner(pEpCache->SemRWEntries), \
                   ("Thread is not exclusive owner of the per endpoint RW semaphore\n")); \
-    } while(0)
+    } while (0)
 
 # define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) \
     do \
     { \
         AssertMsg(RTSemRWIsReadOwner(pEpCache->SemRWEntries), \
                   ("Thread is not read owner of the per endpoint RW semaphore\n")); \
-    } while(0)
+    } while (0)
 
 #else
-# define PDMACFILECACHE_IS_CRITSECT_OWNER(Cache) do { } while(0)
-# define PDMACFILECACHE_EP_IS_SEMRW_WRITE_OWNER(pEpCache) do { } while(0)
-# define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) do { } while(0)
+# define PDMACFILECACHE_IS_CRITSECT_OWNER(Cache) do { } while (0)
+# define PDMACFILECACHE_EP_IS_SEMRW_WRITE_OWNER(pEpCache) do { } while (0)
+# define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) do { } while (0)
 #endif
 
 #define PDM_BLK_CACHE_SAVED_STATE_VERSION 1

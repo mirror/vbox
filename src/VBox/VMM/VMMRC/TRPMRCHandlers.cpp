@@ -66,7 +66,7 @@
 # define TRPM_ENTER_DBG_HOOK(a_iVector) \
     uint32_t const fDbgEFlags1 = CPUMRawGetEFlags(pVCpu); \
     if (!(fDbgEFlags1 & X86_EFL_IF)) Log(("%s: IF=0 ##\n", __FUNCTION__)); \
-    else do {} while(0)
+    else do {} while (0)
 # define TRPM_EXIT_DBG_HOOK(a_iVector) \
     do { \
         uint32_t const fDbgEFlags2 = CPUMRawGetEFlags(pVCpu); \
