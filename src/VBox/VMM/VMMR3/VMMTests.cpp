@@ -678,11 +678,7 @@ VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
             /*
              * The MSRs.
              */
-#ifdef RT_OS_WINDOWS /* Paranoia: Avoid DPC and other watchdogs. */
-            uint32_t const      cMsrsPerCall = 1024;
-#else
-            uint32_t const      cMsrsPerCall = 4096;
-#endif
+            uint32_t const      cMsrsPerCall = 16384;
             uint32_t            cbResults = cMsrsPerCall * sizeof(VMMTESTMSRENTRY);
             PVMMTESTMSRENTRY    paResults;
             rc = MMHyperAlloc(pVM, cbResults, 0, MM_TAG_VMM, (void **)&paResults);
@@ -703,7 +699,7 @@ VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
                         RTPrintf("... %#010x [%u ns/msr] ...\n", uCurMsr, (RTTimeNanoTS() - uNsTsStart) / uCurMsr);
                     }
 
-                    RT_BZERO(paResults, cbResults);
+                    /*RT_BZERO(paResults, cbResults);*/
                     rc = VMMR3CallRC(pVM, RCPtrEP, 4, pVM->pVMRC, uCurMsr, cMsrsPerCall, RCPtrResults);
                     if (RT_FAILURE(rc))
                     {
@@ -714,8 +710,18 @@ VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
                     for (uint32_t i = 0; i < cMsrsPerCall; i++)
                         if (paResults[i].uMsr != UINT64_MAX)
                         {
-                            RTStrmPrintf(pOutStrm, "%#010x = %#llx\n", paResults[i].uMsr, paResults[i].uValue);
-                            RTPrintf("%#010x = %#llx\n", paResults[i].uMsr, paResults[i].uValue);
+                            if (paResults[i].uValue == 0)
+                            {
+                                RTStrmPrintf(pOutStrm, "%#010llx = 0\n", paResults[i].uMsr);
+                                RTPrintf("%#010llx = 0\n", paResults[i].uMsr);
+                            }
+                            else
+                            {
+                                RTStrmPrintf(pOutStrm, "%#010llx = %#x`%08x\n", paResults[i].uMsr,
+                                             (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                                RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
+                                         (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                            }
                             cMsrsFound++;
                             uLastMsr = paResults[i].uMsr;
                         }
