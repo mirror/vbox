@@ -372,7 +372,10 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
     if (aIPv4NetworkCidr == m->IPv4NetworkCidr)
         return S_OK;
         
-    /* silently ignore network cidr update */
+    /* silently ignore network cidr update for now. 
+     * todo: keep internally guest address of port forward rule 
+     * as offset from network id.
+     */
     if (m->mapName2PortForwardRule4.empty())
     {
 
@@ -444,7 +447,9 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
     if (aIPv6Prefix == m->IPv6Prefix)
         return S_OK;
 
-    /* silently ignore network cidr update */
+    /* silently ignore network IPv6 prefix update. 
+     * todo: see similar todo in NATNetwork::COMSETTER(Network)(IN_BSTR)
+     */
     if (m->mapName2PortForwardRule6.empty())
     {
 
