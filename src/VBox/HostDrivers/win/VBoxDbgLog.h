@@ -40,7 +40,7 @@
 #ifdef DEBUG_misha
 # define BP_WARN() AssertFailed()
 #else
-# define BP_WARN() do {} while (0)
+# define BP_WARN() do { } while (0)
 #endif
 
 #define _LOGMSG_EXACT(_logger, _a)                                          \
