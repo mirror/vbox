@@ -49,7 +49,6 @@
 
 UIFrameBufferQuartz2D::UIFrameBufferQuartz2D(UIMachineView *pMachineView)
     : UIFrameBuffer(pMachineView)
-    , m_pMachineLogic(pMachineView->machineLogic())
     , m_fUsesGuestVRAM(false)
     , m_pDataAddress(NULL)
     , m_pBitmapData(NULL)
@@ -250,7 +249,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     CGContextScaleCTM(ctx, 1.0, -1.0);
 
     /* We handle the seamless mode as a special case. */
-    if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
+    if (m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Seamless)
     {
         /* Determine current visible region: */
         RegionRects *pRgnRcts = ASMAtomicXchgPtrT(&mRegion, NULL, RegionRects*);
@@ -345,7 +344,7 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             CGImageRelease(subImage);
         }
     }
-    else if (   m_pMachineLogic->visualStateType() == UIVisualStateType_Scale
+    else if (   m_pMachineView->machineLogic()->visualStateType() == UIVisualStateType_Scale
              && m_scaledSize.isValid())
     {
         /* Here we paint if we didn't care about any masks */
@@ -496,16 +495,6 @@ void UIFrameBufferQuartz2D::clean(bool fPreserveRegions)
         mRegionUnused = NULL;
     }
 }
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-void UIFrameBufferQuartz2D::setView(UIMachineView *pView)
-{
-    if (pView)
-        m_pMachineLogic = pView->machineLogic();
-
-    UIFrameBuffer::setView(pView);
-}
-#endif
 
 #endif /* VBOX_GUI_USE_QUARTZ2D */
 
