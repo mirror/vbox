@@ -87,19 +87,23 @@ struct NATNetwork::Data
     uint32_t offDhcp;
 };
 
+
 NATNetwork::NATNetwork()
     : mVirtualBox(NULL)
 {
 }
 
+
 NATNetwork::~NATNetwork()
 {
 }
+
 
 HRESULT NATNetwork::FinalConstruct()
 {
     return BaseFinalConstruct();
 }
+
 
 void NATNetwork::FinalRelease()
 {
@@ -107,6 +111,7 @@ void NATNetwork::FinalRelease()
 
     BaseFinalRelease();
 }
+
 
 void NATNetwork::uninit()
 {
@@ -118,6 +123,7 @@ void NATNetwork::uninit()
     m = NULL;
     unconst(mVirtualBox) = NULL;
 }
+
 
 HRESULT NATNetwork::init(VirtualBox *aVirtualBox, IN_BSTR aName)
 {
@@ -208,6 +214,7 @@ HRESULT NATNetwork::init(VirtualBox *aVirtualBox,
     return S_OK;
 }
 
+
 HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
 {
     AutoCaller autoCaller(this);
@@ -260,6 +267,7 @@ HRESULT NATNetwork::saveSettings(settings::NATNetwork &data)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
     CheckComArgOutPointerValid(aEventSource);
@@ -273,6 +281,7 @@ STDMETHODIMP NATNetwork::COMGETTER(EventSource)(IEventSource ** aEventSource)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(NetworkName)(BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
@@ -284,6 +293,7 @@ STDMETHODIMP NATNetwork::COMGETTER(NetworkName)(BSTR *aName)
 
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(NetworkName)(IN_BSTR aName)
 {
@@ -323,6 +333,7 @@ STDMETHODIMP NATNetwork::COMGETTER(Enabled)(BOOL *aEnabled)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMSETTER(Enabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
@@ -345,6 +356,7 @@ STDMETHODIMP NATNetwork::COMSETTER(Enabled)(BOOL aEnabled)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(Gateway)(BSTR *aIPv4Gateway)
 {
     CheckComArgOutPointerValid(aIPv4Gateway);
@@ -357,6 +369,7 @@ STDMETHODIMP NATNetwork::COMGETTER(Gateway)(BSTR *aIPv4Gateway)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(Network)(BSTR *aIPv4NetworkCidr)
 {
     CheckComArgOutPointerValid(aIPv4NetworkCidr);
@@ -366,6 +379,7 @@ STDMETHODIMP NATNetwork::COMGETTER(Network)(BSTR *aIPv4NetworkCidr)
     m->IPv4NetworkCidr.cloneTo(aIPv4NetworkCidr);
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
 {
@@ -399,6 +413,7 @@ STDMETHODIMP NATNetwork::COMSETTER(Network)(IN_BSTR aIPv4NetworkCidr)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aIPv6Enabled)
 {
     CheckComArgOutPointerValid(aIPv6Enabled);
@@ -410,6 +425,7 @@ STDMETHODIMP NATNetwork::COMGETTER(IPv6Enabled)(BOOL *aIPv6Enabled)
 
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
 {
@@ -433,6 +449,7 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(IPv6Prefix) (BSTR *aIPv6Prefix)
 {
     CheckComArgOutPointerValid(aIPv6Prefix);
@@ -445,6 +462,7 @@ STDMETHODIMP NATNetwork::COMGETTER(IPv6Prefix) (BSTR *aIPv6Prefix)
 
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
 {
@@ -476,6 +494,7 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Prefix) (IN_BSTR aIPv6Prefix)
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL *aAdvertiseDefaultIPv6Route)
 {
     CheckComArgOutPointerValid(aAdvertiseDefaultIPv6Route);
@@ -487,6 +506,7 @@ STDMETHODIMP NATNetwork::COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL *aAdve
 
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdvertiseDefaultIPv6Route)
 {
@@ -511,6 +531,7 @@ STDMETHODIMP NATNetwork::COMSETTER(AdvertiseDefaultIPv6RouteEnabled)(BOOL aAdver
     return S_OK;
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(NeedDhcpServer)(BOOL *aNeedDhcpServer)
 {
     CheckComArgOutPointerValid(aNeedDhcpServer);
@@ -522,6 +543,7 @@ STDMETHODIMP NATNetwork::COMGETTER(NeedDhcpServer)(BOOL *aNeedDhcpServer)
 
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::COMSETTER(NeedDhcpServer)(BOOL aNeedDhcpServer)
 {
@@ -678,6 +700,7 @@ STDMETHODIMP NATNetwork::COMSETTER(LoopbackIp6)(LONG aLoopbackIp6)
     return mVirtualBox->saveSettings();
 }
 
+
 STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules4)(ComSafeArrayOut(BSTR, aPortForwardRules4))
 {
     CheckComArgOutSafeArrayPointerValid(aPortForwardRules4);
@@ -703,6 +726,7 @@ STDMETHODIMP NATNetwork::COMGETTER(PortForwardRules6)(ComSafeArrayOut(BSTR,
     GetPortForwardRulesFromMap(ComSafeArrayInArg(aPortForwardRules6), m->mapName2PortForwardRule6);
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
                                             IN_BSTR aPortForwardRuleName,
@@ -780,6 +804,7 @@ STDMETHODIMP NATNetwork::AddPortForwardRule(BOOL aIsIpv6,
                                    aGuestIp, aGuestPort);
     return S_OK;
 }
+
 
 STDMETHODIMP NATNetwork::RemovePortForwardRule(BOOL aIsIpv6, IN_BSTR aPortForwardRuleName)
 {
@@ -929,6 +954,7 @@ STDMETHODIMP NATNetwork::Start(IN_BSTR aTrunkType)
 #endif
 }
 
+
 STDMETHODIMP NATNetwork::Stop()
 {
 #ifdef VBOX_WITH_NAT_SERVICE
@@ -946,6 +972,7 @@ STDMETHODIMP NATNetwork::Stop()
     ReturnComNotImplemented();
 #endif
 }
+
 
 void NATNetwork::GetPortForwardRulesFromMap(ComSafeArrayOut(BSTR, aPortForwardRules), NATRuleMap& aRules)
 {
@@ -1024,6 +1051,7 @@ int NATNetwork::findFirstAvailableOffset(ADDRESSLOOKUPTYPE addrType, uint32_t *p
 
     return VINF_SUCCESS;
 }
+
 
 int NATNetwork::recalculateIpv4AddressAssignments()
 {
