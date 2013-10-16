@@ -505,7 +505,7 @@ static int rtTarExtractFileToFile(RTTARFILE hFile, const char *pszTargetName, co
             cbOverallWritten += cbRead;
         }
 
-    } while(0);
+    } while (0);
 
     /* Cleanup */
     if (pvTmp)
@@ -960,7 +960,7 @@ RTR3DECL(int) RTTarFileClose(RTTARFILE hFile)
             if (RT_FAILURE(rc))
                 break;
         }
-        while(0);
+        while (0);
     }
 
     /* Now cleanup and delete the handle */
@@ -1368,7 +1368,7 @@ RTR3DECL(int) RTTarList(const char *pszTarFile, char ***ppapszFiles, size_t *pcF
             if (RT_FAILURE(rc))
                 break;
         }
-    } while(0);
+    } while (0);
 
     if (rc == VERR_TAR_END_OF_FILE)
         rc = VINF_SUCCESS;
