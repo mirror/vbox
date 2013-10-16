@@ -50,15 +50,10 @@ public:
     void resizeEvent(UIResizeEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    void setView(UIMachineView *pView);
-#endif
-
 private:
 
     void clean(bool fPreserveRegions);
 
-    UIMachineLogic *m_pMachineLogic;
     bool m_fUsesGuestVRAM;
     uchar *m_pDataAddress;
     void *m_pBitmapData;
@@ -87,7 +82,6 @@ private:
     /** For keeping the unused region and thus avoid some RTMemAlloc/RTMemFree calls.
      * This is operated with atomic cmpxchg and atomic xchg. */
     RegionRects * volatile mRegionUnused;
-
 };
 
 #endif /* !___UIFrameBufferQuartz2D_h___ */
