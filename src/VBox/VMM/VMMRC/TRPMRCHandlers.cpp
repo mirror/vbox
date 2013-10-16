@@ -1451,3 +1451,19 @@ DECLCALLBACK(int) trpmRCTrapInGeneric(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t
     return VERR_TRPM_IPE_3;
 }
 
+
+/**
+ * Generic hyper trap handler that sets the EIP to @a uUser.
+ *
+ * @returns VBox status code.  (Anything but VINF_SUCCESS will cause guru.)
+ * @param   pVM         Pointer to the cross context VM structure.
+ * @param   pRegFrame   Pointer to the register frame (within VM)
+ * @param   uUser       The user arg, which should be the new EIP address.
+ */
+extern "C" DECLCALLBACK(int) TRPMRCTrapHyperHandlerSetEIP(PVM pVM, PCPUMCTXCORE pRegFrame, uintptr_t uUser)
+{
+    AssertReturn(MMHyperIsInsideArea(pVM, uUser), VERR_TRPM_IPE_3);
+    pRegFrame->eip = uUser;
+    return VINF_SUCCESS;
+}
+

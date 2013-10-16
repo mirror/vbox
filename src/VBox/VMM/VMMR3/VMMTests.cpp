@@ -617,3 +617,120 @@ VMMR3DECL(int) VMMDoHmTest(PVM pVM)
     return rc;
 }
 
+
+#ifdef VBOX_WITH_RAW_MODE
+
+/**
+ * Used by VMMDoBruteForceMsrs to dump the CPUID info of the host CPU as a
+ * prefix to the MSR report.
+ */
+static DECLCALLBACK(void) vmmDoPrintfVToStream(PCDBGFINFOHLP pHlp, const char *pszFormat, va_list va)
+{
+    PRTSTREAM pOutStrm = ((PRTSTREAM *)pHlp)[-1];
+    RTStrmPrintfV(pOutStrm, pszFormat, va);
+}
+
+/**
+ * Used by VMMDoBruteForceMsrs to dump the CPUID info of the host CPU as a
+ * prefix to the MSR report.
+ */
+static DECLCALLBACK(void) vmmDoPrintfToStream(PCDBGFINFOHLP pHlp, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    vmmDoPrintfVToStream(pHlp, pszFormat, va);
+    va_end(va);
+}
+
+#endif
+
+
+/**
+ * Uses raw-mode to query all possible MSRs on the real hardware.
+ *
+ * This generates a msr-report.txt file (appending, no overwriting) as well as
+ * writing the values and process to stdout.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ */
+VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
+{
+#ifdef VBOX_WITH_RAW_MODE
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestReadMsrs", &RCPtrEP);
+    if (RT_SUCCESS(rc))
+    {
+        RTPrintf("VMM: VMMRCTestReadMsrs=%RRv\n", RCPtrEP);
+        PRTSTREAM pOutStrm;
+        rc = RTStrmOpen("msr-report.txt", "a", &pOutStrm);
+        if (RT_SUCCESS(rc))
+        {
+            /* Header */
+            struct
+            {
+                PRTSTREAM   pOutStrm;
+                DBGFINFOHLP Hlp;
+            } MyHlp = { pOutStrm, { vmmDoPrintfToStream, vmmDoPrintfVToStream } };
+            DBGFR3Info(pVM->pUVM, "cpuid", "verbose", &MyHlp.Hlp);
+            RTStrmPrintf(pOutStrm, "\n");
+
+            /*
+             * The MSRs.
+             */
+            uint32_t const      cMsrsPerCall = 1024;
+            uint32_t            cbResults = cMsrsPerCall * sizeof(VMMTESTMSRENTRY);
+            PVMMTESTMSRENTRY    paResults;
+            rc = MMHyperAlloc(pVM, cbResults, 0, MM_TAG_VMM, (void **)&paResults);
+            if (RT_SUCCESS(rc))
+            {
+                RTRCPTR  RCPtrResults = MMHyperR3ToRC(pVM, paResults);
+                uint32_t cMsrsFound   = 0;
+                uint32_t uLastMsr     = 0;
+                uint64_t uNsTsStart   = RTTimeNanoTS();
+
+                for (uint32_t uCurMsr = 0; ; uCurMsr += cMsrsPerCall)
+                {
+                    if (   uCurMsr - uLastMsr > _64K
+                        && (uCurMsr & (_4M - 1)) == 0)
+                    {
+                        if (uCurMsr - uLastMsr < 16U*_1M)
+                            RTStrmFlush(pOutStrm);
+                        RTPrintf("... %#010x [%u ns/msr] ...\n", uCurMsr, (RTTimeNanoTS() - uNsTsStart) / uCurMsr);
+                    }
+
+                    RT_BZERO(paResults, cbResults);
+                    rc = VMMR3CallRC(pVM, RCPtrEP, 4, pVM->pVMRC, uCurMsr, cMsrsPerCall, RCPtrResults);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTPrintf("VMM: VMMR3CallRC failed rc=%Rrc, uCurMsr=%#x\n", rc, uCurMsr);
+                        break;
+                    }
+
+                    for (uint32_t i = 0; i < cMsrsPerCall; i++)
+                        if (paResults[i].uMsr != UINT64_MAX)
+                        {
+                            RTStrmPrintf(pOutStrm, "%#010x = %#llx\n", paResults[i].uMsr, paResults[i].uValue);
+                            RTPrintf("%#010x = %#llx\n", paResults[i].uMsr, paResults[i].uValue);
+                            cMsrsFound++;
+                            uLastMsr = paResults[i].uMsr;
+                        }
+                    if (uCurMsr + cMsrsPerCall < uCurMsr)
+                        break;
+                }
+
+                RTStrmPrintf(pOutStrm, "Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
+                RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
+                MMHyperFree(pVM, paResults);
+            }
+            RTStrmClose(pOutStrm);
+        }
+    }
+    else
+        AssertMsgFailed(("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc));
+    return rc;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+

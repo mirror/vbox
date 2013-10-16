@@ -47,6 +47,7 @@ extern "C" DECLIMPORT(RTLOGGERRC)   g_RelLogger;
 static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg);
 static DECLCALLBACK(int) vmmGCTestTmpPFHandler(PVM pVM, PCPUMCTXCORE pRegFrame);
 static DECLCALLBACK(int) vmmGCTestTmpPFHandlerCorruptFS(PVM pVM, PCPUMCTXCORE pRegFrame);
+DECLASM(bool)   vmmRCSafeMsrRead(uint32_t uMsr, uint64_t *pu64Value);
 
 
 
@@ -341,6 +342,37 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
 
     return rc;
 }
+
+
+
+/**
+ * Reads a range of MSRs.
+ *
+ * This is called directly via VMMR3CallRC.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   uMsr            The MSR to start at.
+ * @param   cMsrs           The number of MSRs to read.
+ * @param   paResults       Where to store the results.  This must be large
+ *                          enough to hold at least @a cMsrs result values.
+ */
+extern "C" VMMRCDECL(int)
+VMMRCTestReadMsrs(PVM pVM, uint32_t uMsr, uint32_t cMsrs, PVMMTESTMSRENTRY paResults)
+{
+    AssertReturn(cMsrs <= 4096, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(paResults, VERR_INVALID_POINTER);
+
+    for (uint32_t i = 0; i < cMsrs; i++, uMsr++)
+    {
+        if (vmmRCSafeMsrRead(uMsr, &paResults[i].uValue))
+            paResults[i].uMsr = uMsr;
+        else
+            paResults[i].uMsr = UINT64_MAX;
+    }
+    return VINF_SUCCESS;
+}
+
 
 
 /**

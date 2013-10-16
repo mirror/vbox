@@ -23,6 +23,7 @@
 %include "VBox/sup.mac"
 %include "VBox/vmm/vm.mac"
 %include "VMMInternal.mac"
+%include "VMMRC.mac"
 
 
 ;*******************************************************************************
@@ -56,6 +57,7 @@ extern IMPNAME(g_Logger)
 extern IMPNAME(g_RelLogger)
 extern NAME(RTLogLogger)
 extern NAME(vmmRCProbeFireHelper)
+extern NAME(TRPMRCTrapHyperHandlerSetEIP)
 
 
 BEGINCODE
@@ -218,6 +220,42 @@ EXPORTEDNAME vmmGCTestTrap0e_ResumeEIP
     xor     eax, eax
     ret
 ENDPROC vmmGCTestTrap0e
+
+
+
+;;
+; Safely reads an MSR.
+; @returns  boolean
+; @param    uMsr        The MSR to red.
+; @param    pu64Value   Where to return the value on success.
+;
+GLOBALNAME vmmRCSafeMsrRead
+    push    ebp
+    mov     ebp, esp
+    pushad
+
+    mov     ecx, [ebp + 8]              ; the MSR to read.
+    mov     eax, 0deadbeefh
+    mov     edx, 0deadbeefh
+
+TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
+    rdmsr
+
+    mov     ecx, [ebp + 0ch]            ; Where to store the result.
+    mov     [ecx], eax
+    mov     [ecx], edx
+
+    popad
+    mov     eax, 1
+    leave
+    ret
+
+.trapped:
+    popad
+    mov     eax, 0
+    leave
+    ret
+ENDPROC vmmRCSafeMsrRead
 
 
 
