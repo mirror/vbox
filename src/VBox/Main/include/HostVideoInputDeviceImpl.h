@@ -42,7 +42,7 @@ public:
     HRESULT init(const com::Utf8Str &name, const com::Utf8Str &path, const com::Utf8Str &alias);
     void uninit();
 
-    static HRESULT queryHostDevices(HostVideoInputDeviceList *pList);
+    static HRESULT queryHostDevices(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList);
 
 private:
 
