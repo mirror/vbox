@@ -18,10 +18,15 @@
 
 #include "HostVideoInputDeviceImpl.h"
 #include "Logging.h"
-
-#ifdef RT_OS_WINDOWS
-#include <dshow.h>
+#include "VirtualBoxImpl.h"
+#ifdef VBOX_WITH_EXTPACK
+# include "ExtPackManagerImpl.h"
 #endif
+
+#include <iprt/ldr.h>
+#include <iprt/path.h>
+
+#include <VBox/sup.h>
 
 /*
  * HostVideoInputDevice implementation.
@@ -95,111 +100,129 @@ static HRESULT hostVideoInputDeviceAdd(HostVideoInputDeviceList *pList,
     return hr;
 }
 
-#ifdef RT_OS_WINDOWS
-static HRESULT hvcdCreateEnumerator(IEnumMoniker **ppEnumMoniker)
+static DECLCALLBACK(int) hostWebcamAdd(void *pvUser,
+                                       const char *pszName,
+                                       const char *pszPath,
+                                       const char *pszAlias,
+                                       uint64_t *pu64Result)
 {
-    ICreateDevEnum *pCreateDevEnum = NULL;
-    HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
-                                  IID_PPV_ARGS(&pCreateDevEnum));
-    if (SUCCEEDED(hr))
+    HostVideoInputDeviceList *pList = (HostVideoInputDeviceList *)pvUser;
+    HRESULT hr = hostVideoInputDeviceAdd(pList, pszName, pszPath, pszAlias);
+    if (FAILED(hr))
     {
-        hr = pCreateDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, ppEnumMoniker, 0);
-        pCreateDevEnum->Release();
+        *pu64Result = (uint64_t)hr;
+        return VERR_NOT_SUPPORTED;
     }
-    return hr;
+    return VINF_SUCCESS;
 }
 
-static HRESULT hvcdFillList(HostVideoInputDeviceList *pList, IEnumMoniker *pEnumMoniker)
+/** @todo These typedefs must be in a header. */
+typedef DECLCALLBACK(int) FNVBOXHOSTWEBCAMADD(void *pvUser,
+                                              const char *pszName,
+                                              const char *pszPath,
+                                              const char *pszAlias,
+                                              uint64_t *pu64Result);
+typedef FNVBOXHOSTWEBCAMADD *PFNVBOXHOSTWEBCAMADD;
+
+typedef DECLCALLBACK(int) FNVBOXHOSTWEBCAMLIST(PFNVBOXHOSTWEBCAMADD pfnWebcamAdd,
+                                               void *pvUser,
+                                               uint64_t *pu64WebcamAddResult);
+typedef FNVBOXHOSTWEBCAMLIST *PFNVBOXHOSTWEBCAMLIST;
+
+static int loadHostWebcamLibrary(const char *pszPath, RTLDRMOD *phmod, PFNVBOXHOSTWEBCAMLIST *ppfn)
 {
-    int iDevice = 0;
-    IMoniker *pMoniker = NULL;
-    while (pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK)
+    int rc = VINF_SUCCESS;
+    RTLDRMOD hmod = NIL_RTLDRMOD;
+
+    RTERRINFOSTATIC ErrInfo;
+    RTErrInfoInitStatic(&ErrInfo);
+    if (RTPathHavePath(pszPath))
+        rc = SUPR3HardenedLdrLoadPlugIn(pszPath, &hmod, &ErrInfo.Core);
+    else
+        rc = VERR_INVALID_PARAMETER;
+    if (RT_SUCCESS(rc))
     {
-        IPropertyBag *pPropBag = NULL;
-        HRESULT hr = pMoniker->BindToStorage(0, 0, IID_PPV_ARGS(&pPropBag));
-        if (FAILED(hr))
+        static const char *pszSymbol = "VBoxHostWebcamList";
+        rc = RTLdrGetSymbol(hmod, pszSymbol, (void **)ppfn);
+
+        if (RT_FAILURE(rc) && rc != VERR_SYMBOL_NOT_FOUND)
+            LogRel(("Resolving symbol '%s': %Rrc\n", pszSymbol, rc));
+    }
+    else
+    {
+        LogRel(("Loading the library '%s': %Rrc\n", pszPath, rc));
+        if (RTErrInfoIsSet(&ErrInfo.Core))
+            LogRel(("  %s\n", ErrInfo.Core.pszMsg));
+
+        hmod = NIL_RTLDRMOD;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        *phmod = hmod;
+    }
+    else
+    {
+        if (hmod != NIL_RTLDRMOD)
         {
-            pMoniker->Release();
-            continue;
+            RTLdrClose(hmod);
+            hmod = NIL_RTLDRMOD;
+        }
+    }
+
+    return rc;
+}
+
+static const Utf8Str strExtPackPuel("Oracle VM VirtualBox Extension Pack");
+
+static HRESULT fillDeviceList(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList)
+{
+    HRESULT hr;
+    Utf8Str strLibrary;
+
+#ifdef VBOX_WITH_EXTPACK
+    ExtPackManager *pExtPackMgr = pVirtualBox->getExtPackManager();
+    hr = pExtPackMgr->getLibraryPathForExtPack("VBoxHostWebcam", &strExtPackPuel, &strLibrary);
+#else
+    hr = E_NOTIMPL;
+#endif
+
+    if (SUCCEEDED(hr))
+    {
+        PFNVBOXHOSTWEBCAMLIST pfn = NULL;
+        RTLDRMOD hmod = NIL_RTLDRMOD;
+        int rc = loadHostWebcamLibrary(strLibrary.c_str(), &hmod, &pfn);
+
+        LogRel(("Load [%s] rc %Rrc\n", strLibrary.c_str(), rc));
+
+        if (RT_SUCCESS(rc))
+        {
+            uint64_t u64Result = S_OK;
+            rc = pfn(hostWebcamAdd, pList, &u64Result);
+            Log(("VBoxHostWebcamList rc %Rrc, result 0x%08X\n", rc, u64Result));
+            if (RT_FAILURE(rc))
+            {
+                hr = (HRESULT)u64Result;
+            }
+
+            RTLdrClose(hmod);
+            hmod = NIL_RTLDRMOD;
         }
 
-        VARIANT var;
-        VariantInit(&var);
-
-        hr = pPropBag->Read(L"DevicePath", &var, 0);
-        if (FAILED(hr))
-        {
-            /* Can't use a device without path. */
-            pMoniker->Release();
-            continue;
-        }
-
-        ++iDevice;
-
-        com::Utf8Str path = var.bstrVal;
-        VariantClear(&var);
-
-        hr = pPropBag->Read(L"FriendlyName", &var, 0);
-        if (FAILED(hr))
-        {
-            hr = pPropBag->Read(L"Description", &var, 0);
-        }
-
-        com::Utf8Str name;
         if (SUCCEEDED(hr))
         {
-            name = var.bstrVal;
-            VariantClear(&var);
-        }
-        else
-        {
-            name = com::Utf8StrFmt("Video Input Device #%d", iDevice);
-        }
-
-        com::Utf8Str alias = com::Utf8StrFmt(".%d", iDevice);
-
-        hr = hostVideoInputDeviceAdd(pList, name, path, alias);
-
-        pPropBag->Release();
-        pMoniker->Release();
-
-        if (FAILED(hr))
-            return hr;
-    }
-
-    return S_OK;
-}
-
-static HRESULT fillDeviceList(HostVideoInputDeviceList *pList)
-{
-    IEnumMoniker *pEnumMoniker = NULL;
-    HRESULT hr = hvcdCreateEnumerator(&pEnumMoniker);
-    if (SUCCEEDED(hr))
-    {
-        if (hr != S_FALSE)
-        {
-            /* List not empty */
-            hr = hvcdFillList(pList, pEnumMoniker);
-            pEnumMoniker->Release();
-        }
-        else
-        {
-            hr = S_OK; /* Return empty list. */
+            if (RT_FAILURE(rc))
+                hr = pVirtualBox->setError(VBOX_E_IPRT_ERROR,
+                         "Failed to get webcam list: %Rrc", rc);
         }
     }
+
     return hr;
 }
-#else
-static HRESULT fillDeviceList(HostVideoInputDeviceList *pList)
-{
-    NOREF(pList);
-    return E_NOTIMPL;
-}
-#endif /* RT_OS_WINDOWS */
 
-/* static */ HRESULT HostVideoInputDevice::queryHostDevices(HostVideoInputDeviceList *pList)
+/* static */ HRESULT HostVideoInputDevice::queryHostDevices(VirtualBox *pVirtualBox, HostVideoInputDeviceList *pList)
 {
-    HRESULT hr = fillDeviceList(pList);
+    HRESULT hr = fillDeviceList(pVirtualBox, pList);
 
     if (FAILED(hr))
     {

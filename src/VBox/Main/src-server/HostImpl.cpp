@@ -1759,7 +1759,7 @@ STDMETHODIMP Host::COMGETTER(VideoInputDevices)(ComSafeArrayOut(IHostVideoInputD
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     HostVideoInputDeviceList list;
 
-    HRESULT hr = HostVideoInputDevice::queryHostDevices(&list);
+    HRESULT hr = HostVideoInputDevice::queryHostDevices(m->pParent, &list);
 
     if (SUCCEEDED(hr))
     {
