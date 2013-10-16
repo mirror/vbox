@@ -360,8 +360,9 @@ static int vmmGCTest(PVM pVM, unsigned uOperation, unsigned uArg)
 extern "C" VMMRCDECL(int)
 VMMRCTestReadMsrs(PVM pVM, uint32_t uMsr, uint32_t cMsrs, PVMMTESTMSRENTRY paResults)
 {
-    AssertReturn(cMsrs <= 4096, VERR_INVALID_PARAMETER);
+    AssertReturn(cMsrs <= 16384, VERR_INVALID_PARAMETER);
     AssertPtrReturn(paResults, VERR_INVALID_POINTER);
+    ASMIntEnable(); /* Run with interrupts enabled, so we can query more MSRs in one block. */
 
     for (uint32_t i = 0; i < cMsrs; i++, uMsr++)
     {
@@ -370,6 +371,8 @@ VMMRCTestReadMsrs(PVM pVM, uint32_t uMsr, uint32_t cMsrs, PVMMTESTMSRENTRY paRes
         else
             paResults[i].uMsr = UINT64_MAX;
     }
+
+    ASMIntDisable();
     return VINF_SUCCESS;
 }
 
