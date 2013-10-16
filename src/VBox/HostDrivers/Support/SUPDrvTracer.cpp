@@ -339,6 +339,7 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
                         u64Tmp, pVtgHdr->uProbeLocs.u64, pVtgHdr->uProbeLocsEnd.u64);
             return VERR_SUPDRV_VTG_BAD_HDR_TOO_MUCH;
         }
+        /*SUPR0Printf("supdrvVtgValidateHdr: cbProbeLocs %#x -> %#x\n", pVtgHdr->cbProbeLocs, (uint32_t)u64Tmp);*/
         pVtgHdr->cbProbeLocs  = (uint32_t)u64Tmp;
 
         u64Tmp = pVtgHdr->uProbeLocs.u64 - uVtgHdrAddr;
@@ -355,6 +356,7 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
             && !fUmod)
         {
             uint64_t offDelta = uVtgHdrAddr - pVtgHdr->u64VtgObjSectionStart;
+            /*SUPR0Printf("supdrvVtgValidateHdr: offDelta=%#llx\n", offDelta);*/
             pVtgHdr->uProbeLocs.u64        += offDelta;
             pVtgHdr->uProbeLocsEnd.u64     += offDelta;
             u64Tmp += offDelta;
@@ -366,6 +368,7 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
                         u64Tmp, pVtgHdr->uProbeLocs.u64, uVtgHdrAddr);
             return VERR_SUPDRV_VTG_BAD_HDR_PTR;
         }
+        /*SUPR0Printf("supdrvVtgValidateHdr: offProbeLocs %#x -> %#x\n", pVtgHdr->offProbeLocs, (int32_t)u64Tmp);*/
         pVtgHdr->offProbeLocs = (int32_t)u64Tmp;
     }
 
@@ -373,7 +376,10 @@ static int supdrvVtgValidateHdr(PVTGOBJHDR pVtgHdr, RTUINTPTR uVtgHdrAddr, const
      * The non-area description fields.
      */
     if (memcmp(pVtgHdr->szMagic, VTGOBJHDR_MAGIC, sizeof(pVtgHdr->szMagic)))
+    {
+        SUPR0Printf("supdrvVtgValidateHdr: %p: %.16Rhxs\n", pVtgHdr, pVtgHdr->szMagic);
         return VERR_SUPDRV_VTG_MAGIC;
+    }
     if (   pVtgHdr->cBits != ARCH_BITS
         && (   !fUmod
             || (   pVtgHdr->cBits != 32
