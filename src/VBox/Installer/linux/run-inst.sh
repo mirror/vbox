@@ -301,6 +301,9 @@ rm -f "$CONFIG_DIR/$CONFIG_FILES"
 rmdir "$CONFIG_DIR" 2>/dev/null
 test "$ACTION" = "install" || exit 0
 
+# Choose a proper umask
+umask 022
+
 # Set installer modules directory
 INSTALLATION_MODULES_DIR="$INSTALLATION_DIR/installer/"
 
