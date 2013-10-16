@@ -395,17 +395,17 @@ extern RTMAC g_vboxNetFltWinVerifyMACGuest;
     do { \
         Assert(!vboxNetFltWinCheckMACs(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
         Assert(!vboxNetFltWinCheckMACs(_p, NULL, &(_pnf)->u.s.MacAddr)); \
-    } while(0)
+    } while (0)
 
 # define VBOXNETFLT_LBVERIFYSG(_pnf, _p) \
     do { \
         Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &g_vboxNetFltWinVerifyMACGuest)); \
         Assert(!vboxNetFltWinCheckMACsSG(_p, NULL, &(_pnf)->u.s.MacAddr)); \
-    } while(0)
+    } while (0)
 
 #else
-# define VBOXNETFLT_LBVERIFY(_pnf, _p) do{}while(0)
-# define VBOXNETFLT_LBVERIFYSG(_pnf, _p) do{}while(0)
+# define VBOXNETFLT_LBVERIFY(_pnf, _p) do { } while (0)
+# define VBOXNETFLT_LBVERIFYSG(_pnf, _p) do { } while (0)
 #endif
 
 /** initializes the list */
@@ -420,14 +420,14 @@ extern RTMAC g_vboxNetFltWinVerifyMACGuest;
     do { \
         INIT_SINGLE_LIST(&(_pList)->List); \
         NdisAllocateSpinLock(&(_pList)->Lock); \
-    } while(0)
+    } while (0)
 
 /** delete the packet queue */
 #define FINI_INTERLOCKED_SINGLE_LIST(_pList) \
     do { \
         Assert(vboxNetFltWinSListIsEmpty(&(_pList)->List)); \
         NdisFreeSpinLock(&(_pList)->Lock) \
-    } while(0)
+    } while (0)
 
 
 /**************************************************************************
