@@ -46,7 +46,7 @@ AssertCompile(sizeof (ENMVBOXUSB_PNPSTATE) == sizeof (uint32_t));
 DECLHIDDEN(VOID) vboxUsbPnPStateGbgChange(ENMVBOXUSB_PNPSTATE enmOld, ENMVBOXUSB_PNPSTATE enmNew);
 # define VBOXUSB_PNP_GBG_STATE_CHANGE(_old, _new) vboxUsbPnPStateGbgChange((_old), (_new))
 #else
-# define VBOXUSB_PNP_GBG_STATE_CHANGE(_old, _new) do {} while(0)
+# define VBOXUSB_PNP_GBG_STATE_CHANGE(_old, _new) do { } while (0)
 #endif
 
 

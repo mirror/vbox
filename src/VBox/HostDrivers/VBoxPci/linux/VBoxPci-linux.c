@@ -80,7 +80,7 @@ MODULE_VERSION(VBOX_VERSION_STRING);
 # define PCI_DEV_GET_SLOT(bus, devfn)  pci_get_bus_and_slot(bus, devfn)
 #else
 # define PCI_DEV_GET(v,d,p)            pci_find_device(v,d,p)
-# define PCI_DEV_PUT(x)                do {} while(0)
+# define PCI_DEV_PUT(x)                do { } while (0)
 # define PCI_DEV_GET_SLOT(bus, devfn)  pci_find_slot(bus, devfn)
 #endif
 
