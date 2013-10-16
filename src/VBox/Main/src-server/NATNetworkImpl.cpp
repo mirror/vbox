@@ -426,7 +426,6 @@ STDMETHODIMP NATNetwork::COMSETTER(IPv6Enabled)(BOOL aIPv6Enabled)
         m->fIPv6Enabled = aIPv6Enabled;
     }
 
-
     AutoWriteLock vboxLock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = mVirtualBox->saveSettings();
     ComAssertComRCRetRC(rc);
