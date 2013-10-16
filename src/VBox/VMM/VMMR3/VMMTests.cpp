@@ -717,7 +717,7 @@ VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
                             }
                             else
                             {
-                                RTStrmPrintf(pOutStrm, "%#010llx = %#x`%08x\n", paResults[i].uMsr,
+                                RTStrmPrintf(pOutStrm, "%#010llx = %#010x`%08x\n", paResults[i].uMsr,
                                              (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
                                 RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
                                          (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
