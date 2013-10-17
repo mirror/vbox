@@ -90,7 +90,7 @@ typedef struct RTDIR
 # ifdef RT_OS_WINDOWS
     /** Handle to the opened directory search. */
     HANDLE              hDir;
-#  ifndef RT_USE_NATIVE_NT
+#  ifndef RTNT_USE_NATIVE_NT
     /** Find data buffer.
      * fDataUnread indicates valid data. */
     WIN32_FIND_DATAW    Data;

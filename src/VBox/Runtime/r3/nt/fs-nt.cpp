@@ -52,7 +52,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
      * Open the file/dir/whatever.
      */
     HANDLE hFile;
-    int rc = rtNtPathOpen(pszFsPath,
+    int rc = RTNtPathOpen(pszFsPath,
                           GENERIC_READ,
                           FILE_ATTRIBUTE_NORMAL,
                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -67,7 +67,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
          * Get the volume information.
          */
         FILE_FS_SIZE_INFORMATION FsSizeInfo;
-        IO_STATUS_BLOCK Ios = MY_IO_STATUS_BLOCK_INITIALIZER;
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios, &FsSizeInfo, sizeof(FsSizeInfo), FileFsSizeInformation);
         if (NT_SUCCESS(rcNt))
         {
@@ -107,7 +107,7 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
         else
             rc = RTErrConvertFromNtStatus(rcNt);
 
-        rtNtPathClose(hFile);
+        RTNtPathClose(hFile);
     }
     return rc;
 }
@@ -125,7 +125,7 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
      * Open the file/dir/whatever.
      */
     HANDLE hFile;
-    int rc = rtNtPathOpen(pszFsPath,
+    int rc = RTNtPathOpen(pszFsPath,
                           GENERIC_READ,
                           FILE_ATTRIBUTE_NORMAL,
                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -144,14 +144,14 @@ RTR3DECL(int) RTFsQuerySerial(const char *pszFsPath, uint32_t *pu32Serial)
              FILE_FS_VOLUME_INFORMATION FsVolInfo;
              uint8_t abBuf[sizeof(FILE_FS_VOLUME_INFORMATION) + 4096];
         } u;
-        IO_STATUS_BLOCK Ios = MY_IO_STATUS_BLOCK_INITIALIZER;
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios, &u, sizeof(u), FileFsVolumeInformation);
         if (NT_SUCCESS(rcNt))
             *pu32Serial = u.FsVolInfo.VolumeSerialNumber;
         else
             rc = RTErrConvertFromNtStatus(rcNt);
 
-        rtNtPathClose(hFile);
+        RTNtPathClose(hFile);
     }
     return rc;
 }
@@ -169,7 +169,7 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
      * Open the file/dir/whatever.
      */
     HANDLE hFile;
-    int rc = rtNtPathOpen(pszFsPath,
+    int rc = RTNtPathOpen(pszFsPath,
                           GENERIC_READ,
                           FILE_ATTRIBUTE_NORMAL,
                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -188,7 +188,7 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
             FILE_FS_ATTRIBUTE_INFORMATION FsAttrInfo;
             uint8_t abBuf[sizeof(FILE_FS_ATTRIBUTE_INFORMATION) + 4096];
         } u;
-        IO_STATUS_BLOCK Ios = MY_IO_STATUS_BLOCK_INITIALIZER;
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios, &u, sizeof(u), FileFsAttributeInformation);
         if (NT_SUCCESS(rcNt))
         {
@@ -219,7 +219,7 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
         else
             rc = RTErrConvertFromNtStatus(rcNt);
 
-        rtNtPathClose(hFile);
+        RTNtPathClose(hFile);
     }
     return rc;
 }
@@ -239,7 +239,7 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
      * Open the file/dir/whatever.
      */
     HANDLE hFile;
-    int rc = rtNtPathOpen(pszFsPath,
+    int rc = RTNtPathOpen(pszFsPath,
                           GENERIC_READ,
                           FILE_ATTRIBUTE_NORMAL,
                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
@@ -258,7 +258,7 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
             FILE_FS_ATTRIBUTE_INFORMATION FsAttrInfo;
             uint8_t abBuf[sizeof(FILE_FS_ATTRIBUTE_INFORMATION) + 4096];
         } u;
-        IO_STATUS_BLOCK Ios = MY_IO_STATUS_BLOCK_INITIALIZER;
+        IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         NTSTATUS rcNt = NtQueryVolumeInformationFile(hFile, &Ios, &u, sizeof(u), FileFsAttributeInformation);
         if (NT_SUCCESS(rcNt))
         {
@@ -277,7 +277,7 @@ RTR3DECL(int) RTFsQueryType(const char *pszFsPath, PRTFSTYPE penmType)
         else
             rc = RTErrConvertFromNtStatus(rcNt);
 
-        rtNtPathClose(hFile);
+        RTNtPathClose(hFile);
     }
     return rc;
 }
