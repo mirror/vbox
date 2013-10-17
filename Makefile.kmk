@@ -1057,7 +1057,6 @@ extpacks-fetch:
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux    VBOX_ONLY_EXTPACKS=1
 #	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2      VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris  VBOX_ONLY_EXTPACKS=1
-	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris  VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win	     VBOX_ONLY_EXTPACKS=1
 	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win	     VBOX_ONLY_EXTPACKS=1
 
@@ -1205,7 +1204,7 @@ endif
 
 extpacks-packing:
 	+ $(KMK) VBOX_ONLY_EXTPACKS=1 \
-		VBOX_WITH_EXTPACK_OS_ARCHS="darwin.amd64 darwin.x86 linux.amd64 linux.x86 solaris.amd64 solaris.x86 win.amd64 win.x86" \
+		VBOX_WITH_EXTPACK_OS_ARCHS="darwin.amd64 darwin.x86 linux.amd64 linux.x86 solaris.amd64 win.amd64 win.x86" \
 		packing
 # +++ freebsd.amd64 freebsd.x86 os2.x86 ^^^
 
