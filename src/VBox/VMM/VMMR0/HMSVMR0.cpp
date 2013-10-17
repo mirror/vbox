@@ -1055,7 +1055,7 @@ VMMR0DECL(int) SVMR0Execute64BitsHandler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, H
  * Adds an exception to the intercept exception bitmap in the VMCB and updates
  * the corresponding VMCB Clean Bit.
  *
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
  */
 DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
@@ -1072,7 +1072,7 @@ DECLINLINE(void) hmR0SvmAddXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
  * Removes an exception from the intercept-exception bitmap in the VMCB and
  * updates the corresponding VMCB Clean Bit.
  *
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   u32Xcpt     The value of the exception (X86_XCPT_*).
  */
 DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
@@ -1094,7 +1094,7 @@ DECLINLINE(void) hmR0SvmRemoveXcptIntercept(PSVMVMCB pVmcb, uint32_t u32Xcpt)
  *
  * @returns VBox status code.
  * @param   pVM         Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -1168,7 +1168,7 @@ static void hmR0SvmLoadSharedCR0(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -1268,7 +1268,7 @@ static int hmR0SvmLoadGuestControlRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pC
  *
  * @returns VBox status code.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -1327,7 +1327,7 @@ static void hmR0SvmLoadGuestSegmentRegs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
  * Loads the guest MSRs into the VMCB.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -1383,7 +1383,7 @@ static void hmR0SvmLoadGuestMsrs(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
  * accordingly.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -1549,9 +1549,9 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
  * Loads the guest APIC state (currently just the TPR).
  *
  * @returns VBox status code.
- * @param   pVCpu   Pointer to the VMCPU.
- * @param   pVmcb   Pointer to the VMCB.
- * @param   pCtx    Pointer to the guest-CPU context.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pVmcb       Pointer to the VM control block.
+ * @param   pCtx        Pointer to the guest-CPU context.
  */
 static int hmR0SvmLoadGuestApicState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx)
 {
@@ -1817,7 +1817,7 @@ static int hmR0SvmLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  * VMCB.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the VMCB.
+ * @param   pVmcb       Pointer to the VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  *
  * @remarks No-long-jump zone!!!
@@ -2241,7 +2241,7 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
  * in the VMCB.
  *
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pVmcb       Pointer to the guest VMCB.
+ * @param   pVmcb       Pointer to the guest VM control block.
  * @param   pCtx        Pointer to the guest-CPU context.
  * @param   pEvent      Pointer to the event.
  *
@@ -2427,7 +2427,7 @@ DECLINLINE(uint32_t) hmR0SvmGetGuestIntrShadow(PVMCPU pVCpu, PCPUMCTX pCtx)
  * instructs AMD-V to cause a #VMEXIT as soon as the guest is in a state to
  * receive interrupts.
  *
- * @param pVmcb         Pointer to the VMCB.
+ * @param pVmcb         Pointer to the VM control block.
  */
 DECLINLINE(void) hmR0SvmSetVirtIntrIntercept(PSVMVMCB pVmcb)
 {
@@ -3109,6 +3109,11 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMV
         if (rc != VINF_SUCCESS)
             break;
 
+        /*
+         * No longjmps to ring-3 from this point on!!!
+         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+         * This also disables flushing of the R0-logger instance (if any).
+         */
         hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
         rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
 
@@ -3153,7 +3158,7 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMV
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pVmcb       The VM control block.
+ * @param   pVmcb       Pointer to the VM control block.
  */
 static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
 {
@@ -3171,7 +3176,8 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
                   ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
                   (unsigned)RTMpCpuId(), cLoops));
 
-        /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
+        /* Preparatory work for running guest code, this may force us to return
+           to ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
         rc = hmR0SvmPreRunGuest(pVM, pVCpu, pCtx, &SvmTransient);
         if (rc != VINF_SUCCESS)
@@ -3231,7 +3237,7 @@ static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMC
     }
 
     /*
-     * Clear the X86_EFL_TF if necessary .
+     * Clear the X86_EFL_TF if necessary.
      */
     if (pVCpu->hm.s.fClearTrapFlag)
     {
