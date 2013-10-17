@@ -6422,18 +6422,7 @@ static int hmR0VmxExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, int rcE
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
     }
 
-    /*
-     * Clear the X86_EFL_TF if necessary.
-     */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        Assert(pVCpu->hm.s.vmx.fUpdatedGuestState & HMVMX_UPDATED_GUEST_RFLAGS);
-        pMixedCtx->eflags.Bits.u1TF = 0;
-        pVCpu->hm.s.fClearTrapFlag = false;
-    }
-    /** @todo there seems to be issues with the resume flag when the monitor trap
-     *        flag is pending without being used. Seen early in bios init when
-     *        accessing APIC page in prot mode. */
+    Assert(!pVCpu->hm.s.fClearTrapFlag);
 
     /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
     if (rcExit != VINF_EM_RAW_INTERRUPT)
@@ -7983,6 +7972,20 @@ static int hmR0VmxRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         }
         VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_DEBUG);
     }
+
+    /*
+     * Clear the X86_EFL_TF if necessary.
+     */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        int rc2 = hmR0VmxSaveGuestRflags(pVCpu, pCtx);
+        AssertRCReturn(rc2, rc2);
+        pVCpu->hm.s.fClearTrapFlag = false;
+        pCtx->eflags.Bits.u1TF = 0;
+    }
+    /** @todo there seems to be issues with the resume flag when the monitor trap
+     *        flag is pending without being used. Seen early in bios init when
+     *        accessing APIC page in prot mode. */
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
     return rc;
