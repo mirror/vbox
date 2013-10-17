@@ -79,7 +79,6 @@ private:
     static int downloadCertificatePca3(RTHTTP pHttp, QFile &file);
     static int verifyCertificatePca3G5(RTHTTP pHttp, QByteArray &certificate);
     static int verifyCertificatePca3(RTHTTP pHttp, QByteArray &certificate);
-    static int verifyCertificatePca3IntG3(RTHTTP pHttp, QByteArray &certificate);
     static int verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512);
     static int saveCertificate(QFile &file, const QByteArray &certificate);
 
@@ -291,22 +290,30 @@ int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &
         /* Parse the file content: */
         QString strData(file.readAll());
 #ifdef Q_WS_WIN
-        QRegExp regExp("(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\r\\n]+-{5}END CERTIFICATE-{5})\\r\\n"
-# ifndef VBOX_OSE
-                       "(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\r\\n]+-{5}END CERTIFICATE-{5})\\r\\n"
-# endif
-                       "(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\r\\n]+-{5}END CERTIFICATE-{5})");
-#else /* Q_WS_WIN */
-        QRegExp regExp("(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5})\\n"
-# ifndef VBOX_OSE
-                       "(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5})\\n"
-# endif
-                       "(-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5})");
-#endif /* !Q_WS_WIN */
+# define CERT   "-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\r\\n]+-{5}END CERTIFICATE-{5}"
+# define REOLD  "(" CERT ")\\r\\n(" CERT ")\\r\\n(" CERT ")"
+# define RENEW  "(" CERT ")\\r\\n(" CERT ")"
+#else
+# define CERT   "-{5}BEGIN CERTIFICATE-{5}[\\s\\S\\n]+-{5}END CERTIFICATE-{5}"
+# define REOLD  "(" CERT ")\\n(" CERT ")\\n(" CERT ")"
+# define RENEW  "(" CERT ")\\n(" CERT ")"
+#endif
+        /* First check if we have the old format with three certificates: */
+        QRegExp regExp(REOLD);
         regExp.setMinimal(true);
-        int iIndex = regExp.indexIn(strData);
-        if (iIndex == -1)
-            rc = VERR_FILE_IO_ERROR;
+
+        /* If so, fake an error to force re-downloading */
+        if (regExp.indexIn(strData) != -1)
+            rc = VERR_HTTP_CACERT_WRONG_FORMAT;
+
+        /* Otherwise, check for two certificates: */
+        if (RT_SUCCESS(rc))
+        {
+            regExp.setPattern(RENEW);
+            regExp.setMinimal(true);
+            if (regExp.indexIn(strData) == -1)
+                rc = VERR_FILE_IO_ERROR;
+        }
 
         /* Verify certificates: */
         if (RT_SUCCESS(rc))
@@ -319,13 +326,9 @@ int UINetworkReplyPrivateThread::checkCertificates(RTHTTP pHttp, const QString &
             QByteArray certificate = regExp.cap(2).toAscii();
             rc = verifyCertificatePca3(pHttp, certificate);
         }
-#ifndef VBOX_OSE
-        if (RT_SUCCESS(rc))
-        {
-            QByteArray certificate = regExp.cap(3).toAscii();
-            rc = verifyCertificatePca3IntG3(pHttp, certificate);
-        }
-#endif
+#undef CERT
+#undef REOLD
+#undef RENEW
     }
 
     /* Close certificates file: */
@@ -350,23 +353,6 @@ int UINetworkReplyPrivateThread::downloadCertificates(RTHTTP pHttp, const QStrin
     /* Download PCA-3 certificate: */
     if (RT_SUCCESS(rc))
         rc = downloadCertificatePca3(pHttp, file);
-#ifndef VBOX_OSE
-    /* Write the intermediate certificate: */
-    if (RT_SUCCESS(rc))
-    {
-        /* Unfortunately the "VeriSign Class 3 International Server CA - G3" certificate
-         * cannot be downloaded directly so we include a static copy here. */
-        extern const char *g_pcszIntermediateCert;
-        rc = file.write(g_pcszIntermediateCert) != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
-    }
-    /* Add 'new-line' character: */
-    if (RT_SUCCESS(rc))
-# ifdef Q_WS_WIN
-        rc = file.write("\r\n") != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
-# else /* Q_WS_WIN */
-        rc = file.write("\n") != -1 ? VINF_SUCCESS : VERR_WRITE_ERROR;
-# endif /* !Q_WS_WIN */
-#endif
 
     /* Close certificates file: */
     if (fFileOpened)
@@ -471,34 +457,6 @@ int UINetworkReplyPrivateThread::verifyCertificatePca3(RTHTTP pHttp, QByteArray 
     /* Verify certificate: */
     return verifyCertificate(pHttp, certificate, pca3sha1, pca3sha512);
 }
-
-#ifndef VBOX_OSE
-int UINetworkReplyPrivateThread::verifyCertificatePca3IntG3(RTHTTP pHttp, QByteArray &certificate)
-{
-    /* PCA 3 secure hash algorithm 1: */
-    const unsigned char baSha1PCA3Int[] =
-    {
-        0xb1, 0x8d, 0x9d, 0x19, 0x56, 0x69, 0xba, 0x0f, 0x78, 0x29,
-        0x51, 0x75, 0x66, 0xc2, 0x5f, 0x42, 0x2a, 0x27, 0x71, 0x04
-    };
-    /* PCA 3 secure hash algorithm 512: */
-    const unsigned char baSha512PCA3Int[] =
-    {
-        0x43, 0x5a, 0xca, 0x67, 0x0a, 0xe4, 0x17, 0xfc,
-        0x2d, 0xcd, 0xe9, 0x6c, 0x40, 0xde, 0x66, 0xed,
-        0x39, 0x63, 0xfb, 0xe4, 0xd5, 0x60, 0xb8, 0xcc,
-        0x83, 0x37, 0xc8, 0x50, 0x03, 0x2d, 0xb9, 0x1f,
-        0x58, 0x02, 0x92, 0xcd, 0x2f, 0x66, 0xe8, 0x7c,
-        0x2a, 0x70, 0x52, 0xce, 0x6d, 0xeb, 0x4d, 0x52,
-        0x8a, 0x2a, 0x32, 0xc1, 0x15, 0x26, 0x63, 0x0c,
-        0xbb, 0xc1, 0x64, 0x76, 0x9d, 0x54, 0x09, 0x0f
-    };
-    QByteArray pca3intsha1 = QByteArray::fromRawData((const char *)baSha1PCA3Int, sizeof(baSha1PCA3Int));
-    QByteArray pca3intsha512 = QByteArray::fromRawData((const char *)baSha512PCA3Int, sizeof(baSha512PCA3Int));
-
-    return verifyCertificate(pHttp, certificate, pca3intsha1, pca3intsha512);
-}
-#endif
 
 /* static */
 int UINetworkReplyPrivateThread::verifyCertificate(RTHTTP pHttp, QByteArray &certificate, const QByteArray &sha1, const QByteArray &sha512)
