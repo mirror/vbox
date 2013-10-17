@@ -694,11 +694,6 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIWizardFirstRun.cpp \
 	src/wizards/firstrun/UIWizardFirstRunPageBasic.cpp
 
-ifndef VBOX_OSE
- VirtualBox_SOURCES += \
-	src/net/Intermediate.cpp
-endif
-
 VirtualBox_SOURCES.darwin += \
 	src/platform/darwin/UIAbstractDockIconPreview.cpp \
 	src/platform/darwin/UICocoaDockIconPreview.mm \
