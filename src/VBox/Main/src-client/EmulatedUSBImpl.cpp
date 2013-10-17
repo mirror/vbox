@@ -69,8 +69,8 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
             :
             mcRefs(1),
             mpEmulatedUSB(NULL),
-            enmStatus(EUSBDEVICE_CREATED),
-            mpvObject(NULL)
+            mpvObject(NULL),
+            enmStatus(EUSBDEVICE_CREATED)
         {
             RT_ZERO(mUuid);
             RT_ZERO(mszUuid);
