@@ -440,7 +440,7 @@ extra_setup()
     # Add a group "vboxsf" for Shared Folders access
     # All users which want to access the auto-mounted Shared Folders have to
     # be added to this group.
-    groupadd -f vboxsf >/dev/null 2>&1
+    groupadd -r -f vboxsf >/dev/null 2>&1
 
     # Create udev description file
     if [ -d /etc/udev/rules.d ]; then
