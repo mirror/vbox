@@ -245,9 +245,8 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
                 break;
             }
 
-            // XXX: TODO: should prod rtadvd for immediate unsolicited
-            // advertisement with new router lifetime
             m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
+            tcpip_callback_with_block(proxy_rtadvd_do_quick, &m_LwipNetIf, 0);
 
             break;
         }

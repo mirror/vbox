@@ -85,6 +85,22 @@ proxy_rtadvd_start(struct netif *proxy_netif)
 
 static int quick_ras = 2;
 
+
+/**
+ * lwIP thread callback invoked when we start/stop advertising default
+ * route.
+ */
+void
+proxy_rtadvd_do_quick(void *arg)
+{
+    struct netif *proxy_netif = (struct netif *)arg;
+
+    quick_ras = 2;
+    sys_untimeout(proxy_rtadvd_timer, proxy_netif);
+    proxy_rtadvd_timer(proxy_netif); /* sends and re-arms */
+}
+
+
 static void
 proxy_rtadvd_timer(void *arg)
 {
