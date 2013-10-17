@@ -1340,6 +1340,8 @@ HRESULT CDECL wined3d_device_uninit_3d(struct wined3d_device *device)
     context = context_acquire(device, NULL);
     gl_info = context->gl_info;
 
+    zv_destroy(device);
+
     if (device->logo_surface)
         wined3d_surface_decref(device->logo_surface);
 
@@ -5707,4 +5709,127 @@ HRESULT CDECL wined3d_device_get_host_id(struct wined3d_device *device, int32_t 
     *pid = id;
     return WINED3D_OK;
 }
+#endif
+
+
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+static GLuint zv_value_el_size(GLenum enmzvValue)
+{
+    switch (enmzvValue)
+    {
+        case GL_FLOAT:
+            return 4;
+        case GL_UNSIGNED_SHORT:
+        case GL_SHORT:
+            return 2;
+        case GL_BYTE:
+        case GL_UNSIGNED_BYTE:
+            return 1;
+        default:
+            ERR("unexpected value type %#x\n", enmzvValue);
+            return 0;
+    }
+}
+
+static void zv_create(struct wined3d_device *device, GLenum enmzvValue, GLuint czvValue, GLuint czvValueElements, const GLvoid *pzvValue)
+{
+    const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+    GLuint cbValel = zv_value_el_size(enmzvValue);
+    GLuint cbVal = cbValel * czvValueElements;
+    GLuint cbBuf = cbVal * czvValue;
+    GLvoid *pvBuf;
+    GLubyte *pubBuf;
+    GLuint i;
+
+    /* quickly sort out if we can use the current value */
+    if (device->zvBuffer
+            && device->enmzvValue == enmzvValue
+            && device->czvValue >= czvValue
+            && device->czvValueElements == czvValueElements
+            && !memcmp(pzvValue, &device->zvValue, cbVal))
+        return;
+
+    if (czvValueElements > 4)
+    {
+        ERR("invalid czvValueElements %d\n", czvValueElements);
+        return;
+    }
+
+    pvBuf = HeapAlloc(GetProcessHeap(), 0, cbBuf);
+    pubBuf = (GLubyte*)pvBuf;
+
+    for (i = 0; i < czvValue; ++i)
+    {
+        memcpy(pubBuf, pzvValue, cbVal);
+        pubBuf += cbVal;
+    }
+
+    /* */
+    if (!device->zvBuffer)
+    {
+        GL_EXTCALL(glGenBuffersARB(1, &device->zvBuffer));
+        Assert(device->zvBuffer);
+    }
+
+    GL_EXTCALL(glBindBufferARB(GL_ARRAY_BUFFER_ARB, device->zvBuffer));
+
+    if (device->cbzvBuffer < cbBuf)
+    {
+        GL_EXTCALL(glBufferDataARB(GL_ARRAY_BUFFER_ARB, cbBuf, pvBuf, GL_DYNAMIC_DRAW_ARB));
+        device->cbzvBuffer = cbBuf;
+    }
+    else
+    {
+        GL_EXTCALL(glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, cbBuf, pvBuf));
+    }
+
+    device->enmzvValue = enmzvValue;
+    device->czvValue = czvValue;
+    device->czvValueElements = czvValueElements;
+    memcpy(&device->zvValue, pzvValue, cbVal);
+
+    HeapFree(GetProcessHeap(), 0, pvBuf);
+}
+
+void zv_destroy(struct wined3d_device *device)
+{
+    if (device->zvBuffer)
+    {
+        const struct wined3d_gl_info *gl_info = &device->adapter->gl_info;
+        GL_EXTCALL(glDeleteBuffersARB(1, &device->zvBuffer));
+    }
+
+    device->zvBuffer = 0;
+    device->cbzvBuffer = 0;
+}
+
+void zv_bind(struct wined3d_context *context, GLenum enmzvValue, GLuint czvValue, GLuint czvValueElements, GLboolean bzvNormalized, const GLvoid *pzvValue)
+{
+    struct wined3d_device *device = context->swapchain->device;
+    const struct wined3d_gl_info *gl_info = context->gl_info;
+
+    zv_create(device, enmzvValue, czvValue, czvValueElements, pzvValue);
+
+    Assert(device->zvBuffer);
+
+    GL_EXTCALL(glBindBufferARB(GL_ARRAY_BUFFER_ARB, device->zvBuffer));
+
+    GL_EXTCALL(glVertexAttribPointerARB(0, czvValueElements,
+            enmzvValue,
+            bzvNormalized,
+            0, /*stride*/
+            NULL /*addr*/));
+
+    if (!(context->numbered_array_mask & (1 << 0)))
+    {
+        GL_EXTCALL(glEnableVertexAttribArrayARB(0));
+        context->numbered_array_mask |= (1 << 0);
+    }
+}
+
+void zv_bind_by_element(struct wined3d_context *context, const struct wined3d_stream_info_element *element, GLuint czvValue, const GLvoid *pzvValue)
+{
+    zv_bind(context, element->format->gl_vtx_type, czvValue, element->format->gl_vtx_format, element->format->gl_normalized, pzvValue);
+}
+
 #endif
