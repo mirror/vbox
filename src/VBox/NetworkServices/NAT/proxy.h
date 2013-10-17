@@ -51,6 +51,7 @@ const char *proxy_lwip_strerr(err_t);
 
 /* proxy_rtadvd.c */
 void proxy_rtadvd_start(struct netif *);
+void proxy_rtadvd_do_quick(void *);
 
 /* rtmon_*.c */
 int rtmon_get_defaults(void);
