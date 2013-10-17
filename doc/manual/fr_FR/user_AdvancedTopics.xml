@@ -894,6 +894,93 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
       </orderedlist></para>
   </sect1>
 
+   <sect1>
+    <title>Webcam passthrough</title>
+
+    <sect2>
+      <title>Utilisation d'une webcam hôte dans l'invité</title>
+
+      <para>VirtualBox 4.3 inclut une fonction expérimentale permettant à un 
+      invité d'utiliser une webcam hôte. Ceci complète le support génçral du
+      passthrough USB qui était la façon dont on utilisait généralement les webcams
+      dans les anciennes versions. Le support de webcam passthrough peut gérer
+      théoriquement des sources graphiques non USB, mais cela n'a pas été testé du
+      tout.</para>
+
+      <note>
+        <para>Le module webcam passthrough fait partie du pack d'extension Oracle VM VirtualBox
+        que vous devez installer séparément. Voir <xref
+        linkend="intro-installing" /> pour plus d'informations.</para>
+      </note>
+
+      <para>Il faut utiliser l'outil en ligne de commandes VBoxManage pour
+      activer le passthrough webcam. A ce jour, certaines commandes ne sont
+      pas supportées sur to% les hôtes ; merci de voir les
+      sections ci-dessous spécifiques aux hôtes pour des détails complémentaires.
+      Les commandes suivantes sont disponibles :
+        <itemizedlist>
+          <listitem><para>Obtenir une liste des webcams hôtes (ou d'autres
+          périphériques d'entrée vidéos):
+            <screen>VBoxManage list webcams</screen>
+            Le format de sortie est :
+            <screen>alias "nom lisible par l'utilisateur"chemin sur l'hôte ou identifiant</screen>
+            L'alias est utilisable en tant que raccourci dans d'autres commandes.
+            L'alias '.0' signifie le périphérique d'entrée vidéo par défaut sur
+            l'hôte, '.1', '.2', etc renvoient au premier, au deuxième, etc.
+            périphérique d'entrée vidéo. L'ordre des périphériques dépend de
+            l'hôte. 
+          </para></listitem>
+          <listitem><para>Connecter une webcam à une VM en fonction :
+            <screen>VBoxManage controlvm "nom VM" webcam attach [chemin_hôte_|alias]</screen>
+            Ceci connectera une webcam à l'invité.
+          </para></listitem>
+          <listitem><para>Déconnecter une webcam d'une VM en fonction :
+            <screen>VBoxManage controlvm "nom VM" webcam detach [chemin_hôte|alias]</screen>
+          </para></listitem>
+          <listitem><para>Lister les webcams connectées à une VM en fonction :
+            <screen>VBoxManage controlvm "nom VM" webcam list</screen>
+            La sortie comprend le chemin ou l'alias utilisés dans la commande
+             'webcam attach' pour chaque webcam connectée
+          </para></listitem>
+        </itemizedlist>
+      </para>
+    </sect2>
+
+    <sect2>
+      <title>Hôtes Windows</title>
+
+      <para>Toutes les commandes de VBoxManage sont implémentées.</para>
+
+      <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée est
+      automatiquement déconnectée de l'invité.</para>
+    </sect2>
+
+    <sect2>
+      <title>Hôtes Mac OS X</title>
+
+      <para><computeroutput>VBoxManage list webcams</computeroutput> n'est pa´; enc*¨;e implémentée.</para>
+
+      <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée
+      reste connectée à l'invité et vous devez la déconnecter à la main en
+      utilisant la commande <computeroutput>VBoxManage controlvm "nom VM" webcam detach ...</computeroutput>.</para>
+    </sect2>
+
+    <sect2>
+      <title>Hôtes Linux</title>
+
+      <para><computeroutput>VBoxManage list webcams</computeroutput> n'est pas encore
+      implémentée.</para>
+
+      <para>Les alias ne fonctionnent pas. Le chemin de l'hôte de la webcam tel 
+      que <computeroutput>/dev/video0</computeroutput> doit être utilisé dans les
+      commandes attach et detach.</para>
+
+      <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée reste connectée
+      à l'invité et il faut la déconnecter à la main en utilisant la commande
+      <computeroutput>VBoxManage controlvm "nom VM" webcam detach ...</computeroutput>.</para>
+    </sect2>
+  </sect1>
+
   <sect1>
     <title>Configuration d'affichage avancée</title>
 
@@ -1218,81 +1305,6 @@ VBoxManage setextradata "nom VM" VBoxInternal/Devices/IntNetIP/0/LUN#0/Config/Is
     </sect2>
   </sect1>
 
-  <sect1>
-    <title>Lancer plus de 128 VMs sur des hôtes Linux</title>
-$
-    <para>Les hôtes Linux ont un nombre figé d'IDs de sémaphores IPC par processus
-    qui empêche les utilisateurs de lancer énormément de VMs. Le nombre exact
-    peut varier selon la distribution Linux. En essayant de lancer trop de VMs, 
-    vous verriez s'afficher une erreur "Cannot create IPC semaphore". Pour lancer
-    plus de VMs, vous devrez augmenter la limite d'IDs de sémaphore du processus
-    VBoxSVC. Cherchez les limites du sémaphore imposé par le noyau en exécutant
-    en tant que root&#xA0;:<screen>#/sbin/sysctl kernel.sem
-kernel.sem = 250  32000  32  128</screen></para>
-
-    <para>Le paramètre "kernel.sem" rassemble 4 valeurs, celle qui nous intéresse
-    s'appelle "SEMMNI", le nombre maximum d'IDs de sémaphore, qui est de 128 dans
-    l'exemple ci-dessus. Augmentez cette limite d'ID de sémaphore en exécutant
-    en tant que rooténbsp;:<screen>echo "kernel.sem = 250 32000 32 2048" &gt;&gt; /etc/sysctl.conf
-/sbin/sysctl -p</screen></para>
-
-    <para>Les commandes ci-dessus ajouteront les nouvelles limites au fichier
-    de configuration, prolongeant l'effet au cours des redémarrages, et elles
-    activeront les nouvelles limites dans le noyau en cours d'exécution.</para>
-  </sect1>
-
-  <sect1>
-    <title>Lancer plus de 120 VMs sur les hôtes Solaris</title>
-
-    <para>Les hôtes Linux ont un nombre figé d'IDs de sémaphores IPC par processus
-    qui empêche les utilisateurs de lancer énormément de VMs. En essayant de 
-    lancer trop de VMs, vous verriez s'afficher une erreur "Cannot create IPC 
-    semaphore". Pour lancer plus de VMs, vous devrez augmenter la limite d'IDs 
-    de sémaphore du processus VBoxSVC.</para>
-
-    <sect2>
-      <title>Solution temporaire quand VirtualBox est en fonction</title>
-
-      <para>Exécutez, en tant qu'administrateur, la commande
-      <computeroutput>prctl</computeroutput> comme indiqué ci-dessous pour le
-      processus VBoxSVC actuellement en fonction. Vous pouvez savoir l'ID du 
-      processus en utilisant la commande <computeroutput>ps</computeroutput>.</para>
-
-      <screen>prctl -r -n project.max-sem-ids -v 2048 &lt;pid-of-VBoxSVC&gt;</screen>
-
-      <para>Cela augmentera immédiatement la limite  sémaphore du processus
-      VBoxSVC actuellement en fonction et vous permettra de lancer davantage de
-      VMs. Cependant, cette modification ne reste pas au redémarrage de VBoxSVC.</para>
-    </sect2>
-
-    <sect2>
-      <title>Solution permanente, exige que l'utilisateur se re-connecte</title>
-
-      <para>Si l'utilisateur qui lance VirtualBox est l'administrateur, exécutez
-     la  commande suivante&#xA0;:</para>
-
-      <screen>prctl -n project.max-sem-ids -v 2048 -r -i project user.root</screen>
-
-      <para>À partir de là, le démarrage de nouveaux processus tiendra compte
-      de la limite de 2048. Vous pouvez alors vous reconnecter ou fermer toutes
-      les VMs et redémarrer VBoxSVC. Vous pouvez vérifier la limite actuelle d'ID
-      de sémaphore pour VBoxSVC en utilisant la commande suivante&#xA0;:</para>
-
-      <screen>prctl -n project.max-sem-ids -i process &lt;pid-of-VBoxSVC&gt;</screen>
-
-      <para>Si l'utilisateur qui exécute VirtualBox n'est pas administrateur,
-      vous devez ajouter la propriété au projet par défaut de l'utilisateur.
-      Créez le projet par défaut et réglez la limite en exécutant en tant
-      qu'administrateur&#xA0;:</para>
-
-      <screen>projadd -U &lt;nomutilisateur&gt; user.&lt;nomutilisateur&gt;
-projmod -s -K "project.max-sem-ids=(priv,2048,deny)" user.&lt;nomutilisateur&gt;</screen>
-
-      <para>Remplacez "&lt;nomutilisateur&gt;" avec le nom d'utilisateur exécutant
-      VirtualBox. Puis reconnectez-vous sous le nom de cet utilisateur qui pourra
-      exécuter plus de 120 VMs.</para>
-    </sect2>
-  </sect1>
 
   <sect1>
     <title>Commandes de base pour utiliser les ports série</title>
@@ -1836,7 +1848,7 @@ VBoxManage setextradata "nom VM"
         <para>Le support du réseau bridgé basé sur Crossbow a été introduit avec
         VirtualBox 4.1 et il exige Solaris 11 construction 159 ou supérieur.</para>
       </footnote> Un échantillon VNIC de VirtualBox est un VNIC dont le nom
-      commence par "vboxvnic_template".</para>
+      commence par "vboxvnic_template" (sensible à la casse).</para>
 
     <para>Voici un exemple de la façon d'utiliser un échantillon VNIC pour
     configurer un VLAN pour des VMs. Créez un échantillon VNIC de VirtualBox en
@@ -2449,7 +2461,7 @@ passer au moins une des deux commandes ci-dessus si vous avez activé les CoreDu
                 <entry>ouvre la boîte de dialogue des paramètres de la VM</entry>
               </row>
               <row>
-                <entry><computeroutput>InformationsDialog</computeroutput></entry>
+                <entry><computeroutput>InformationDialog</computeroutput></entry>
                 <entry>N</entry>
                 <entry>affiche la fenêtre d'informations sur la VM</entry>
               </row>

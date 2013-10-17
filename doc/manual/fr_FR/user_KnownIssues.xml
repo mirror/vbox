@@ -214,13 +214,6 @@
                 <xref linkend="efividmode" /> pour plus d'informations sur la façon
                 de modifier les modes graphiques EFI.</para>
               </listitem>
-    
-              <listitem>
-                <para>Même quand il est inactif, un invité Mac OS X consomme
-                100% du processeur. C'est un problème de gestion d'énergie qui
-                sera corrigé dans une prochaine version.</para>
-              </listitem>
-    
               <listitem>
                 <para>Les invités Mac OS X ne fonctionnent qu'avec un processeur
                 sur une VM. Le support du SMP sera fourni dans une version

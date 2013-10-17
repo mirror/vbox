@@ -16,7 +16,7 @@
   construction contient un numéro de révision.</para>
 
   <sect1>
-    <title>Version 4.3.0 Beta 2 (2013-xx-xx)</title>
+    <title>Version 4.3.0 (2013-10-15)</title>
 
     <para>C'est une mise à jour majeure. Les nouvelles fonctions suivantes ont
     été ajoutées :</para>
@@ -28,7 +28,10 @@
          de nombreuses corrections de bogues et des améliorations de performance
          (par exemple bogue #9659)</para>
        </listitem>
- 
+       <listitem>
+         <para>VMM : introduction d'un petit interpréteur d'instructions pour les
+         situations que ne gère pas la  virtualisation matérielle</para>
+       </listitem>
        <listitem>
         <para>GUI : mécanisme de messages étendus (utilisation des nouvelles
         couches d'affichage non modales pour afficher des avertissements non
@@ -49,6 +52,9 @@
         <para>Ajout de l'émulation d'un pavé tactile USB</para>
       </listitem>
 
+      <listitem>
+        <para>Ajout du webcam passthrough de la webcam de l'hôte.</para>
+      </listitem>
       <listitem>
         <para>Ajout de l'émulation d'un CD-ROM SCSI, incluant le support au
         démarrage</para>
@@ -79,10 +85,6 @@
 
     <itemizedlist>
 
-      <listitem>
-        <para>VMM : gestion de la propriété NMIs sur les hôtes Linux où X2APIC
-          est activé</para>
-      </listitem>
 
       <listitem>
         <para>VMM : amélioration significative des performances des invités
@@ -112,6 +114,12 @@
         (bogue #10311)</para>
       </listitem>
 
+      <listitem>
+        <para>GUI : utilisation du nombre de coeurs de processeurs physiques
+        présentés au lieu du nombre de coeurs de processeurs logiques pour
+        vérifier si les utilisateurs ont affecté trop de processeurs virtuels à
+        l'invité</para>
+      </listitem>
       <listitem>
         <para>Instantanés : les instantanés en direct fonctionnent de nouveau 
         (bogue #9255)</para>
@@ -155,11 +163,22 @@
       </listitem>
 
       <listitem>
+        <para>Principal : élimination des sémaphores SysV sur tous les OS hôtes
+        autres que Windows, à savoir Linux, Solaris et Mac OS X, d'où il s'ensuit
+        qu'aucune reconfiguration du système n'est nécessaire pour lancer 
+        environ plus de 100 VMs</para>
+      </listitem>
+      <listitem>
         <para>Principal : utilisatiod du dossier de configuration standard
         de XDG au lieu de .VirtualBox sur des systèmes où c'est nécessaire (bogue
         #5099)</para>
       </listitem>
 
+      <listitem>
+        <para>Principal : l'environnement de développement du pack d'extension
+        peut maintenant supporter le chargement des modules HGCM produits par
+        Jeff Westphal</para>
+      </listitem>
       <listitem>
         <para>VBoxManage : listage de davantage d'informations sur le disque
         dur//DVD/amovible et support de l'option 
@@ -228,6 +247,10 @@
       </listitem>
 
       <listitem>
+        <para>Installeur des packs d'extension : cela fonctionne si le dossier
+        contient des caractères spéciaux</para>
+      </listitem>
+      <listitem>
         <para>Clavier : correction de séquences de touches de renvoi comme
        Ctrl+Alt+Supp pour l'émulation d'un clavier USB</para>
       </listitem>
@@ -242,7 +265,7 @@
        </listitem>
        <listitem>
          <para>Hôtes Windows : prise en compte des liens symboliques dans la 
-         récupération des informations sur le volume (bug #11962)</para>
+         récupération des informations sur le volume (bogue #11962)</para>
        </listitem>
 
        <listitem>
@@ -251,6 +274,11 @@
          seulement ; bogue #11170)</para>
        </listitem>
 
+       <listitem>
+         <para>Suppléments Windows : correction d'une fuite de mémoire à cause
+         d'un WTSQuerySessionInformation() sur les invités Windows 2000
+         (bogue #12072)</para>
+       </listitem>
        <listitem>
          <para>Suppléments Linux : correction de la détection par udev dans le
          script de démarrage avec les noyaux 3.x</para>
@@ -265,6 +293,114 @@ d'inactivité
 
     </itemizedlist>
 
+  </sect1>
+
+   <sect1>
+    <title>Version 4.2.18 (09-06-2013)</title>
+
+    <para>C'est une version de maintenance. Les éléments suivants ont été
+    corrigés et/ou ajoutés :</para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>VMM : gestion correcte des NMIs sur les hôtes Linux où X2APIC est
+          activé</para>
+      </listitem>
+
+      <listitem>
+        <para>VMM : correction de plantages potentiels avec les invités 64 bits
+        sur des hôtes 32 bits (bogue #11979)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI / transparence : gestion correcte du défilement via la roulette
+     de la souris</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI, VBoxManage : quand on désenregistre une VM, désenregistrement
+        également des images de disque dur utilisées exclusivement par cette VM
+        (bogue #10311)</para>
+      </listitem>
+
+      <listitem>
+        <para>GUI : on empêche des plantages dans certaines conditions sur les
+        hôtes X11</para>
+      </listitem>
+
+      <listitem>
+        <para>3D : corrections du multiécrans (mauvais positionnement de la souris,
+        morcellements)</para>
+      </listitem>
+
+      <listitem>
+        <para>Support 3D : plusieurs corrections du pilote graphique WDDM de Windows
+        (multiécrans, transparence)</para>
+      </listitem>
+
+      <listitem>
+        <para>Instantanés : la prise d'instantanés en direct fonctionne de nouveau
+        (bogue #9255)</para>
+      </listitem>
+
+      <listitem>
+        <para>Téléportation : elle fonctionne à nouveau (bogue #9455)</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxManage : avec <emphasis>snapshot take</emphasis>, <emphasis>
+            --pause</emphasis> est par défaut et <emphasis>--live</emphasis>
+          correspond à la prise d'instantanés en direct</para>
+      </listitem>
+
+      <listitem>
+        <para>VBoxSVC : pas de plantage sur les systèmes ayant de nombreuses
+        interfaces
+          (hôtes Solaris seulement)</para>
+      </listitem>
+
+      <listitem>
+        <para>Réseau : après le réveil de l'hôte d'une suspension, déconnexion
+        et reconnexion des câbles réseaux virtuels pour forcer le renouvellement
+          des baux DHCP de l'invité. Jusque-là, seuls les hôtes Mac OS X et
+          Windows le faisaient (bogue #10063).</para>
+      </listitem>
+
+      <listitem>
+        <para>NAT : lors des changements de noms des serveurs, on force la notification
+        de la reconnexion du câble réseau virtuel (hôtes Mac OS X seulement)</para>
+      </listitem>
+
+      <listitem>
+        <para>Installeur Mac OS X : on laisse les packs d'extension précédemment
+        installés lors des mises à jour de VirtualBox</para>
+      </listitem>
+
+      <listitem>
+        <para>Hôtes / invités Linux : corrections pour Linux 3.11 (bogue #12001)</para>
+      </listitem>
+
+      <listitem>
+        <para>Hôtes Solaris : correction d'un kernel panic potentiel à cause
+        d'une préemption imprévue due à la journalisation.</para>
+      </listitem>
+
+      <listitem>
+        <para>Hôtes Windows : correction d'un problème où les périphériques USB2
+        étaient inaccessibles si on les branchait à des ports USB3</para>
+      </listitem>
+      <listitem>
+        <para>Suppléments Linux : ajout de l'identifiant de périphérique PCI
+        à vboxvideo.ko pour corriger l'initialisation du DRI sous certaines conditions (bogue #11957)</para>
+      </listitem>
+
+      <listitem>
+        <para>Suppléments Linux : correction de la détection par udev dans le
+        script de démarrage avec les noyaux Linux 3.x</para>
+      </listitem>
+
+    </itemizedlist>
   </sect1>
 
   <sect1>

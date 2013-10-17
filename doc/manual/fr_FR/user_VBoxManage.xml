@@ -589,6 +589,12 @@ Statistics update:  disabled
           </listitem>
 
           <listitem>
+            <para><computeroutput>--triplefaultreset on|off</computeroutput> : ce
+            paramètre permet de relancer l'invité au lieu de récupérer une Guru Meditation. Certains invités échouent par une triple erreur lors de la réinitialisation
+            du processeur, donc on peut parfois souhaiter ce comportement. Cela
+            ne fonctionne que sur les invités non SMP.</para>
+          </listitem>
+          <listitem>
             <para><computeroutput>--nestedpaging on|off</computeroutput>&#xA0;: Si
             la virtualisation matérielle est activée, ce paramètre supplémentaire
             active ou désactive l'utilisation de la fonction de pagination nested
@@ -613,6 +619,12 @@ Statistics update:  disabled
             voir see <xref linkend="hwvirt" />.</para>
           </listitem>
 
+          <listitem>
+            <para><computeroutput>--vtxux on|off</computeroutput> : Si vous avez
+            activé la virtualisation matérielle, seulement pour VT-x d'Intel, ce
+            paramètre active ou désactive l'utilisation de la fonction mode invité
+            sans restriction pour faire tourner votre invité.</para>
+          </listitem>
           <listitem>
             <para><computeroutput>--accelerate3d on|off</computeroutput>&#xA0;: 
             Ceci active, si vous avez installé les suppléments invité, la disponibilité
