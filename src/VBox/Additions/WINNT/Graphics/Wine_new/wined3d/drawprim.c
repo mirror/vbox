@@ -498,7 +498,19 @@ static void drawStridedSlowVs(const struct wined3d_gl_info *gl_info, const struc
 
         for (i = MAX_ATTRIBS - 1; i >= 0; i--)
         {
-            if (!(si->use_map & (1 << i))) continue;
+            if (!(si->use_map & (1 << i)))
+            {
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+                if (i == 0)
+                {
+# ifdef DEBUG_misha
+                    ERR("Test it!\n");
+# endif
+                    GL_EXTCALL(glVertexAttrib4fARB(0, 0.0f, 0.0f, 0.0f, 0.0f));
+                }
+#endif
+                continue;
+            }
 
             ptr = si->elements[i].data.addr + si->elements[i].stride * SkipnStrides;
 
@@ -666,12 +678,25 @@ void draw_primitive(struct wined3d_device *device, UINT start_idx, UINT index_co
         }
     }
 
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+    Assert(device->czvDrawVertices == 0);
+    device->czvDrawVertices = index_count;
+#endif
+
     if (!context_apply_draw_state(context, device))
     {
         context_release(context);
         WARN("Unable to apply draw state, skipping draw.\n");
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+    device->czvDrawVertices = 0;
+#endif
         return;
     }
+
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+    device->czvDrawVertices = 0;
+#endif
+
 
 #ifdef DEBUG_misha
     DBGL_CHECK_DRAWPRIM(context->gl_info, device);

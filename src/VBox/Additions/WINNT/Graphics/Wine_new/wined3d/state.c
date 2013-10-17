@@ -4118,10 +4118,31 @@ static void load_numbered_arrays(struct wined3d_context *context,
 
         if (!(stream_info->use_map & (1 << i)))
         {
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+            if (i == 0)
+            {
+                GLfloat af[4] = {0., 0., 0., 0.,};
+# ifdef DEBUG_misha
+                ERR("Test it!\n");
+# endif
+                Assert(device->czvDrawVertices);
+                zv_bind(context, GL_FLOAT, device->czvDrawVertices, 4, GL_FALSE, af);
+# ifdef VBOX_WITH_WINE_FIX_CURVBO
+                /* we need to invalidate the curVBO state, since buffer_get_sysmem maay change the current buffer */
+                curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
+# endif
+            }
+            else
+#endif
+            {
+
             if (context->numbered_array_mask & (1 << i))
                 unload_numbered_array(context, i);
             if (state->vertex_shader->reg_maps.input_registers & (1 << i))
                 GL_EXTCALL(glVertexAttrib4fARB(i, 0.0f, 0.0f, 0.0f, 0.0f));
+
+            }
+
             continue;
         }
 
@@ -4189,6 +4210,20 @@ static void load_numbered_arrays(struct wined3d_context *context,
                 curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
 #endif
             }
+
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+            if (i == 0)
+            {
+                Assert(device->czvDrawVertices);
+                zv_bind_by_element(context, &stream_info->elements[i], device->czvDrawVertices, ptr);
+# ifdef VBOX_WITH_WINE_FIX_CURVBO
+                /* we need to invalidate the curVBO state, since buffer_get_sysmem maay change the current buffer */
+                curVBO = gl_info->supported[ARB_VERTEX_BUFFER_OBJECT] ? ~0U : 0;
+# endif
+            }
+            else
+#endif
+            {
 
             if (context->numbered_array_mask & (1 << i)) unload_numbered_array(context, i);
 
@@ -4273,6 +4308,8 @@ static void load_numbered_arrays(struct wined3d_context *context,
                 default:
                     ERR("Unexpected declaration in stride 0 attributes\n");
                     break;
+
+            }
 
             }
         }

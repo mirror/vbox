@@ -1958,6 +1958,31 @@ struct wined3d_device
     struct wined3d_context **contexts;
     UINT context_count;
 
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+    /* number of vertices in the current draw operation */
+    GLuint czvDrawVertices;
+    /* ogl 2.1 requires 0 vertattr to be present
+     * GL_ARRAY_BUFFER_ARB buffer */
+    GLuint zvBuffer;
+    /* buffer length */
+    GLuint cbzvBuffer;
+    /* current buffer value type */
+    GLenum enmzvValue;
+    /* number of values stored in the buffer currently */
+    GLuint czvValue;
+    /* number of elements in a value */
+    GLuint czvValueElements;
+    /* current buffer value */
+    union
+    {
+        GLfloat f[4];
+        GLuint ui[4];
+        GLubyte ub[4];
+        GLshort s[4];
+        GLushort us[4];
+    } zvValue;
+#endif
+
 #ifdef VBOX_WITH_WDDM
     struct VBOXUHGSMI *pHgsmi;
 #endif
@@ -3022,6 +3047,12 @@ struct wined3d_shader * vertexshader_check_cached(struct wined3d_device *device,
 struct wined3d_shader * pixelshader_check_cached(struct wined3d_device *device, struct wined3d_shader *object) DECLSPEC_HIDDEN;
 void shader_chaches_init(struct wined3d_device *device) DECLSPEC_HIDDEN;
 void shader_chaches_term(struct wined3d_device *device) DECLSPEC_HIDDEN;
+#endif
+
+#ifdef VBOX_WITH_WINE_FIX_ZEROVERTATTR
+void zv_destroy(struct wined3d_device *device);
+void zv_bind(struct wined3d_context *context, GLenum enmzvValue, GLuint czvValue, GLuint czvValueElements, GLboolean bzvNormalized, const GLvoid *pzvValue);
+void zv_bind_by_element(struct wined3d_context *context, const struct wined3d_stream_info_element *element, GLuint czvValue, const GLvoid *pzvValue);
 #endif
 
 struct wined3d_palette
