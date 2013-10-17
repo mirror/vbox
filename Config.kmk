@@ -339,6 +339,8 @@ VBOX_WITH_DOCS_PACKING = 1
 ifn1of ($(KBUILD_TARGET), linux)
  VBOX_WITH_DOCS_CHM = 1
 endif
+# Include translations
+VBOX_WITH_DOCS_TRANSLATIONS = 1
 # Don't bother with documentation, overrides VBOX_WITH_DOCS.
 # This is not used by makefiles, only Config.kmk, see below.
 #VBOX_WITHOUT_DOCS = 1
