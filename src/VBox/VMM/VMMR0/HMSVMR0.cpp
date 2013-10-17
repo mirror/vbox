@@ -2159,13 +2159,6 @@ static void hmR0SvmExitToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rcExit)
         CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_GLOBAL_TLB_FLUSH);
     }
 
-    /* Make sure we've undo the trap flag if we tried to single step something. */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        pCtx->eflags.Bits.u1TF = 0;
-        pVCpu->hm.s.fClearTrapFlag = false;
-    }
-
     /* On our way back from ring-3 reload the guest state if there is a possibility of it being changed. */
     if (rcExit != VINF_EM_RAW_INTERRUPT)
         VMCPU_HMCF_SET(pVCpu, HM_CHANGED_ALL_GUEST);
@@ -3097,16 +3090,11 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
  */
-VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
 {
-    Assert(VMMRZCallRing3IsEnabled(pVCpu));
-    HMSVM_ASSERT_PREEMPT_SAFE();
-    VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
-
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
     uint32_t cLoops = 0;
-    PSVMVMCB pVmcb  = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     int      rc     = VERR_INTERNAL_ERROR_5;
 
     for (;; cLoops++)
@@ -3154,6 +3142,129 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+
+
+/**
+ * Runs the guest code using AMD-V in single step mode.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ * @param   pVmcb       The VM control block.
+ */
+static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
+{
+    SVMTRANSIENT SvmTransient;
+    SvmTransient.fUpdateTscOffsetting = true;
+    uint32_t cLoops  = 0;
+    int      rc      = VERR_INTERNAL_ERROR_5;
+    uint16_t uCsStart  = pCtx->cs.Sel;
+    uint64_t uRipStart = pCtx->rip;
+
+    for (;; cLoops++)
+    {
+        Assert(!HMR0SuspendPending());
+        AssertMsg(pVCpu->hm.s.idEnteredCpu == RTMpCpuId(),
+                  ("Illegal migration! Entered on CPU %u Current %u cLoops=%u\n", (unsigned)pVCpu->hm.s.idEnteredCpu,
+                  (unsigned)RTMpCpuId(), cLoops));
+
+        /* Preparatory work for running guest code, this may return to ring-3 for some last minute updates. */
+        STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
+        rc = hmR0SvmPreRunGuest(pVM, pVCpu, pCtx, &SvmTransient);
+        if (rc != VINF_SUCCESS)
+            break;
+
+        /*
+         * No longjmps to ring-3 from this point on!!!
+         * Asserts() will still longjmp to ring-3 (but won't return), which is intentional, better than a kernel panic.
+         * This also disables flushing of the R0-logger instance (if any).
+         */
+        VMMRZCallRing3Disable(pVCpu);
+        VMMRZCallRing3RemoveNotification(pVCpu);
+        hmR0SvmPreRunGuestCommitted(pVM, pVCpu, pCtx, &SvmTransient);
+
+        rc = hmR0SvmRunGuest(pVM, pVCpu, pCtx);
+
+        /*
+         * Restore any residual host-state and save any bits shared between host and guest into the guest-CPU state.
+         * This will also re-enable longjmps to ring-3 when it has reached a safe point!!!
+         */
+        hmR0SvmPostRunGuest(pVM, pVCpu, pCtx, &SvmTransient, rc);
+        if (RT_UNLIKELY(   rc != VINF_SUCCESS                                         /* Check for VMRUN errors. */
+                        || SvmTransient.u64ExitCode == (uint64_t)SVM_EXIT_INVALID))   /* Check for invalid guest-state errors. */
+        {
+            if (rc == VINF_SUCCESS)
+                rc = VERR_SVM_INVALID_GUEST_STATE;
+            STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit1, x);
+            hmR0SvmReportWorldSwitchError(pVM, pVCpu, rc, pCtx);
+            return rc;
+        }
+
+        /* Handle the #VMEXIT. */
+        HMSVM_EXITCODE_STAM_COUNTER_INC(SvmTransient.u64ExitCode);
+        STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatExit1, &pVCpu->hm.s.StatExit2, x);
+        rc = hmR0SvmHandleExit(pVCpu, pCtx, &SvmTransient);
+        STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExit2, x);
+        if (rc != VINF_SUCCESS)
+            break;
+        else if (cLoops > pVM->hm.s.cMaxResumeLoops)
+        {
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatExitMaxResume);
+            rc = VINF_EM_RAW_INTERRUPT;
+            break;
+        }
+
+        /*
+         * Did the RIP change, if so, consider it a single step.
+         * Otherwise, make sure one of the TFs gets set.
+         */
+        if (   pCtx->rip    != uRipStart
+            || pCtx->cs.Sel != uCsStart)
+        {
+            rc = VINF_EM_DBG_STEPPED;
+            break;
+        }
+        pVCpu->hm.s.fContextUseFlags |= HM_CHANGED_GUEST_DEBUG;
+    }
+
+    /*
+     * Clear the X86_EFL_TF if necessary .
+     */
+    if (pVCpu->hm.s.fClearTrapFlag)
+    {
+        pVCpu->hm.s.fClearTrapFlag = false;
+        pCtx->eflags.Bits.u1TF = 0;
+    }
+
+    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
+    return rc;
+}
+
+
+/**
+ * Runs the guest code using AMD-V.
+ *
+ * @returns VBox status code.
+ * @param   pVM         Pointer to the VM.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   pCtx        Pointer to the guest-CPU context.
+ */
+VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    Assert(VMMRZCallRing3IsEnabled(pVCpu));
+    HMSVM_ASSERT_PREEMPT_SAFE();
+    VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
+
+    int rc;
+    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
+    if (!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu))
+        rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx, pVmcb);
+    else
+        rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx, pVmcb);
+
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
     else if (rc == VINF_EM_RESET)
@@ -4893,12 +5004,6 @@ HMSVM_EXIT_DECL hmR0SvmExitXcptDB(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSv
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitGuestDB);
 
-    /* If we set the trap flag above, we have to clear it. */
-    if (pVCpu->hm.s.fClearTrapFlag)
-    {
-        pVCpu->hm.s.fClearTrapFlag = false;
-        pCtx->eflags.Bits.u1TF = 0;
-    }
 
     /* This can be a fault-type #DB (instruction breakpoint) or a trap-type #DB (data breakpoint). However, for both cases
        DR6 and DR7 are updated to what the exception handler expects. See AMD spec. 15.12.2 "#DB (Debug)". */
