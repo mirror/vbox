@@ -487,8 +487,11 @@ extern unsigned long g_CrDbgDumpDrawFramesSettings;
 extern unsigned long g_CrDbgDumpDrawFramesAppliedSettings;
 extern unsigned long g_CrDbgDumpDrawFramesCount;
 
+extern uint32_t g_CrDbgDumpVertattrFixupOn;
+
 bool crServerDumpFilterDmp(unsigned long event, CR_DUMPER *pDumper);
-bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
+bool crServerDumpFilterOpEnter(unsigned long event, CR_DUMPER *pDumper);
+void crServerDumpFilterOpLeave(unsigned long event, CR_DUMPER *pDumper);
 
 //#define CR_SERVER_DUMP_MASK_OP                  0x0000fffc
 //#define CR_SERVER_DUMP_OFF_OP                   2
@@ -580,7 +583,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
                 && (!g_CrDbgDumpPid \
                         || (g_CrDbgDumpPid > 0 && ((uint64_t)g_CrDbgDumpPid) == cr_server.curClient->pid) \
                         || (g_CrDbgDumpPid < 0 && ((uint64_t)(-g_CrDbgDumpPid)) != cr_server.curClient->pid)) \
-                && crServerDumpFilterOp((_ev), (_pDumper)))
+                && crServerDumpFilterOpEnter((_ev), (_pDumper)))
 #define CR_SERVER_DUMP_FILTER_DMP(_ev, _pDumper) (crServerDumpFilterDmp((_ev), (_pDumper)))
 
 #define CR_SERVER_DUMP_DRAW_ENTER() do { \
@@ -594,6 +597,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_TEX_ENTER, cr_server.Recorder.pDumper)) { crServerDumpTextures(); } \
             if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_BUFF_ENTER, cr_server.Recorder.pDumper)) { crServerDumpBuffer(-1); } \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done ENTER[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_DRAW_ENTER_ALL, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_DRAW_LEAVE() do { \
@@ -607,6 +611,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_PROGRAM_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpCurrentProgram(); } \
             if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_DRAW_STATE_LEAVE, cr_server.Recorder.pDumper)) { crServerDumpState(); } \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done LEAVE[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_DRAW_LEAVE_ALL, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_COMPILE_SHADER(_id) do { \
@@ -615,6 +620,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
             crServerDumpShader((_id)); \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_COMPILE_SHADER, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_SHADER_SOURCE(_id) do { \
@@ -623,6 +629,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
             crServerDumpShader((_id)); \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_SHADER_SOURCE, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_LINK_PROGRAM(_id) do { \
@@ -631,6 +638,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
             crServerDumpProgram((_id)); \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_LINK_PROGRAM, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_SWAPBUFFERS_ENTER() do { \
@@ -640,6 +648,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             if (CR_SERVER_DUMP_FILTER_DMP(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER, cr_server.Recorder.pDumper)) { crServerDumpBuffer(CR_SERVER_FBO_BB_IDX(cr_server.currentMural)); } \
             if (g_CrDbgDumpDrawFramesCount) { crServerDumpFramesCheck(); } \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done ENTER[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_SWAPBUFFERS_ENTER, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_TEXPRESENT(_pTex) do { \
@@ -647,6 +656,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crServerDumpCheckInit(); \
             crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
             crServerDumpTexture((_pTex)); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_TEXPRESENT, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_SWAPBUFFERS_LEAVE() do { \
@@ -654,6 +664,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
             crDmpStrF(cr_server.Recorder.pDumper, "==LEAVE[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
             crServerDumpCheckInit(); \
             crDmpStrF(cr_server.Recorder.pDumper, "==Done LEAVE[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
+            crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_SWAPBUFFERS_LEAVE, cr_server.Recorder.pDumper); \
         } while (0)
 
 #define CR_SERVER_DUMP_DRAWEL_F(_msg) do { \
@@ -661,6 +672,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
         crServerDumpCheckInit(); \
         crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
         crServerDumpDrawel _msg; \
+        crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_DRAWEL, cr_server.Recorder.pDumper); \
     } while (0)
 
 #define CR_SERVER_DUMP_DRAWEL_V(_index, _pszElFormat, _cbEl, _pvVal, _cVal) do { \
@@ -668,6 +680,7 @@ bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper);
         crServerDumpCheckInit(); \
         crDmpStrF(cr_server.Recorder.pDumper, "==[%d] %s==", (uint32_t)cr_server.curClient->pid, __FUNCTION__); \
         crServerDumpDrawelv((_index), (_pszElFormat), (_cbEl), (_pvVal), (_cVal)); \
+        crServerDumpFilterOpLeave(CR_SERVER_DUMP_F_DRAWEL, cr_server.Recorder.pDumper); \
     } while (0)
 #else /* if !defined VBOX_WITH_CRSERVER_DUMPER */
 #define CR_SERVER_DUMP_DRAW_ENTER() do {} while (0)

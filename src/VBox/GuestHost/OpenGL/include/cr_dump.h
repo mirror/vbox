@@ -158,6 +158,10 @@ VBOXDUMPDECL(void) crRecDumpTexParam(CR_RECORDER *pRec, CRContext *ctx, GLenum e
 VBOXDUMPDECL(void) crRecDumpTexEnv(CR_RECORDER *pRec, CRContext *ctx);
 VBOXDUMPDECL(void) crRecDumpTexGen(CR_RECORDER *pRec, CRContext *ctx);
 
+VBOXDUMPDECL(int) crRecAlphaImgCreate(const CR_BLITTER_IMG *pImg, CR_BLITTER_IMG *pAlphaImg);
+VBOXDUMPDECL(void) crRecAlphaImgDestroy(CR_BLITTER_IMG *pImg);
+
+
 typedef DECLCALLBACKPTR(GLuint, PFNCRDUMPGETHWID)(void *pvObj);
 void* crDmpHashtableSearchByHwid(CRHashTable *pHash, GLuint hwid, PFNCRDUMPGETHWID pfnGetHwid, unsigned long *pKey);
 
