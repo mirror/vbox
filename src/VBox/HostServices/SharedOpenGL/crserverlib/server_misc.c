@@ -129,13 +129,13 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
         break;
 
     case GL_GATHER_CONNECT_CR:
-        /* 
+        /*
          * We want the last connect to go through,
          * otherwise we might deadlock in CheckWindowSize()
          * in the readback spu
          */
         gather_connect_count++;
-        if (cr_server.only_swap_once && (gather_connect_count != cr_server.numClients)) 
+        if (cr_server.only_swap_once && (gather_connect_count != cr_server.numClients))
         {
             break;
         }
@@ -155,8 +155,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
             const GLfloat *v = (const GLfloat *) values;
             const int eye = v[1] == 0.0 ? 0 : 1;
             crMatrixInitFromFloats(&cr_server.viewMatrix[eye], v + 2);
-            
-            crDebug("Got GL_SERVER_VIEW_MATRIX_CR:\n" 
+
+            crDebug("Got GL_SERVER_VIEW_MATRIX_CR:\n"
                             "  %f %f %f %f\n"
                             "  %f %f %f %f\n"
                             "  %f %f %f %f\n"
@@ -193,8 +193,8 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
             const GLfloat *v = (const GLfloat *) values;
             const int eye = v[1] == 0.0 ? 0 : 1;
             crMatrixInitFromFloats(&cr_server.projectionMatrix[eye], v + 2);
-      
-            crDebug("Got GL_SERVER_PROJECTION_MATRIX_CR:\n" 
+
+            crDebug("Got GL_SERVER_PROJECTION_MATRIX_CR:\n"
                             "  %f %f %f %f\n"
                             "  %f %f %f %f\n"
                             "  %f %f %f %f\n"
@@ -229,7 +229,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchChromiumParametervCR(GLenum target
                 float right = 2.0f * znear / x + left;
                 float bottom = znear * (b - 1.0f) / y;
               float top = 2.0f * znear / y + bottom;
-              crDebug("Frustum: left, right, bottom, top, near, far: %f, %f, %f, %f, %f, %f", left, right, bottom, top, znear, zfar);   
+              crDebug("Frustum: left, right, bottom, top, near, far: %f, %f, %f, %f, %f, %f", left, right, bottom, top, znear, zfar);
             }
             else {
                 /* Todo: Add debug output for orthographic projection*/
@@ -322,7 +322,7 @@ static int copynum=0;
 # endif
 
 
-void SERVER_DISPATCH_APIENTRY 
+void SERVER_DISPATCH_APIENTRY
 crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
     /*@todo pbo/fbo disabled for now as it's slower, check on other gpus*/
@@ -423,7 +423,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
             gl->CopyTexImage2D(target, level, GL_RGBA, x, y, width, -height, 0);
             gl->GenFramebuffersEXT(1, &fboID);
             gl->BindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboID);
-            gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target, 
+            gl->FramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, target,
                                         ctx->texture.unit[ctx->texture.curTextureUnit].currentTexture2D->hwid, level);
             status = gl->CheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
             if (status != GL_FRAMEBUFFER_COMPLETE_EXT)
@@ -491,7 +491,7 @@ crServerDispatchCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 
                 gl->GetTexImage(target, level, GL_BGRA, GL_UNSIGNED_BYTE, img1);
 
-            
+
                 for (dRow=yoffset, sRow=y-height-1; dRow<yoffset-height; dRow++, sRow--)
                 {
                     gl->CopyTexSubImage2D(target, level, xoffset, dRow, x, sRow, width, 1);
@@ -878,9 +878,9 @@ int crServerVBoxBlitterBlitCurrentCtx(GLint srcX0, GLint srcY0, GLint srcX1, GLi
     return rc;
 }
 
-void SERVER_DISPATCH_APIENTRY 
+void SERVER_DISPATCH_APIENTRY
 crServerDispatchBlitFramebufferEXT(GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1,
-                                   GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, 
+                                   GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1,
                                    GLbitfield mask, GLenum filter)
 {
     CRContext *ctx = crStateGetCurrent();
@@ -1627,7 +1627,11 @@ void crServerDumpTextures()
     crRecDumpTextures(&cr_server.Recorder, ctx, &BltCtx, &BltWin);
 }
 
-bool crServerDumpFilterOp(unsigned long event, CR_DUMPER *pDumper)
+void crServerDumpFilterOpLeave(unsigned long event, CR_DUMPER *pDumper)
+{
+}
+
+bool crServerDumpFilterOpEnter(unsigned long event, CR_DUMPER *pDumper)
 {
     return CR_SERVER_DUMP_DEFAULT_FILTER_OP(event);
 }
