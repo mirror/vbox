@@ -1149,12 +1149,12 @@ void UISession::cleanupFramebuffers()
         UIFrameBuffer *pFb = m_frameBufferVector[i];
         if (pFb)
         {
-            /* Warn framebuffer about its no more necessary: */
-            pFb->setScheduledToDelete(true);
+            /* Mark framebuffer as unused: */
+            pFb->setMarkAsUnused(true);
             /* Detach framebuffer from Display: */
             CDisplay display = session().GetConsole().GetDisplay();
             display.SetFramebuffer(i, CFramebuffer(NULL));
-            /* Release the reference: */
+            /* Release framebuffer reference: */
             pFb->Release();
         }
     }

@@ -1,7 +1,5 @@
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIFrameBuffer class and subclasses declarations
+ * VBox Qt GUI - UIFrameBuffer class declaration.
  */
 
 /*
@@ -105,7 +103,9 @@ public:
     UIFrameBuffer(UIMachineView *aView);
     virtual ~UIFrameBuffer();
 
-    void setScheduledToDelete(bool fIsScheduledToDelete) { m_fIsScheduledToDelete = fIsScheduledToDelete; }
+    /* API: [Un]used status stuff: */
+    bool isMarkedAsUnused() const;
+    void setMarkAsUnused(bool fIsMarkAsUnused);
 
     NS_DECL_ISUPPORTS
 
@@ -179,8 +179,8 @@ public:
         return false;
     }
 
-    void lock() { RTCritSectEnter(&m_critSect); }
-    void unlock() { RTCritSectLeave(&m_critSect); }
+    void lock() const { RTCritSectEnter(&m_critSect); }
+    void unlock() const { RTCritSectLeave(&m_critSect); }
 
     virtual uchar *address() = 0;
     virtual ulong bitsPerPixel() = 0;
@@ -208,12 +208,12 @@ public:
 protected:
 
     UIMachineView *m_pMachineView;
-    RTCRITSECT m_critSect;
+    mutable RTCRITSECT m_critSect;
     ulong m_width;
     ulong m_height;
     QSize m_scaledSize;
     int64_t m_WinId;
-    bool m_fIsScheduledToDelete;
+    bool m_fIsMarkedAsUnused;
 
     /* To avoid a seamless flicker,
      * which caused by the latency between the
