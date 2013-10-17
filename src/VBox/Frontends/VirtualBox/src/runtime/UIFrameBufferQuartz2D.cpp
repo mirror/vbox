@@ -73,7 +73,7 @@ UIFrameBufferQuartz2D::~UIFrameBufferQuartz2D()
 STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aCount)
 {
     LogRel2(("UIFrameBufferQuartz2D::SetVisibleRegion: Rectangle count=%lu\n",
-             (unsigned long)uCount));
+             (unsigned long)aCount));
 
     /* Make sure frame-buffer is used: */
     if (isMarkedAsUnused())
