@@ -154,14 +154,14 @@
 
       <listitem>
         <para>VirtualBox contient libxml qui est soumis à la licence dans
-        <xref linkend="licLibXML" /> et</para>
+        <xref linkend="licLibXML" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) 1998-2003 Daniel Veillard.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contient libxslt qui est soumis à la licence in
-        <xref linkend="licLibXSLT" /> et</para>
+        <xref linkend="licLibXSLT" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) 2001-2002 Daniel Veillard and Copyright (C)
         2001-2002 Thomas Broyer, Charlie Bozeman and Daniel Veillard.</para>
@@ -170,7 +170,7 @@
       <listitem>
         <para>VirtualBox contient du code des outils de services Web gSOAP XML
         sous licence <xref
-        linkend="licgSOAP" /> et</para>
+        linkend="licgSOAP" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) 2000-2007, Robert van Engelen, Genivia Inc., et
         autres.</para>
@@ -188,7 +188,7 @@
       <listitem>
         <para>VirtualBox contient du code de Chromium, implémentation OpenGL
         soumise à la licence dans <xref
-        linkend="licChromium" /> et</para>
+        linkend="licChromium" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) Stanford University, The Regents of the University
         of California, Red Hat, et autres.</para>
@@ -196,28 +196,28 @@
 
       <listitem>
         <para>VirtualBox contient libcurl qui est soumis à la licence dans
-        <xref linkend="licLibCurl" /> et</para>
+        <xref linkend="licLibCurl" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) 1996-2009, Daniel Stenberg.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contient dnsproxy qui est soumis à la licence dans
-        <xref linkend="licMIT" /> et</para>
+        <xref linkend="licMIT" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (c) 2003, 2004, 2005 Armin Wolfermann.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox peut contenir iniparser soumis à la licence dans
-        <xref linkend="licMIT" /> et</para>
+        <xref linkend="licMIT" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (c) 2000-2008 by Nicolas Devillard.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contient du code de libgd soumis à la licence de
-        <xref linkend="licLibgd" /> et</para>
+        <xref linkend="licLibgd" xrefstyle="template: %n"/> et</para>
 
         <para>Copyright 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007
         Pierre-Alain Joye (pierre@libgd.org).</para>
@@ -226,21 +226,22 @@
       <listitem>
         <para>VirtualBox contient du code du kit de développement EFI  
           qui est soumis à la licence dans
-          <xref linkend="licBsdIntel" /> et</para>
+          <xref linkend="licBsdIntel" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (c) 2004-2008, Intel Corporation.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox contient libjpeg soumis à la licence dans
-        <xref linkend="licJPEG" /> et</para>
+        <xref linkend="licJPEG" xrefstyle="template: %n" /> et</para>
 
         <para>Copyright (C) 1991-2010, Thomas G. Lane, Guido Vollbeding.</para>
       </listitem>
 
       <listitem>
         <para>VirtualBox peut contenir l'extension x86 SIMD de la bibliothèque
-        IJG JPEG, soumis à la licence dans <xref linkend="licJPEGSIMD" /> et</para>
+        IJG JPEG, soumis à la licence dans <xref linkend="licJPEGSIMD"
+        xrefstyle="template: %n" /> et</para>
 
         <para>Copyright 2009 Pierre Ossman &lt;ossman@cendio.se&gt; pour Cendio AB;
         Copyright 2010 D. R. Commander; Copyright (C) 1999-2006, MIYASAKA Masaru.
@@ -257,11 +258,11 @@
       
       <listitem>
         <para>VirtualBox contient ces morceaux du noyau FreeBSD soumis à la
-        licence dans <xref linkend="licFreeBsd" />.</para>
+        licence dans <xref linkend="licFreeBsd" xrefstyle="template: %n" />.</para>
       </listitem>
       <listitem>
         <para>VirtualBox contient des morceaux du noyau NetBSD soumis à la licence
-        dans <xref linkend="licNetBsd" />.</para>
+        dans <xref linkend="licNetBsd" xrefstyle="template: %n" />.</para>
       </listitem>
 
       <listitem>
@@ -280,7 +281,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de PCRE soumis à la
-          licence dans <xref linkend="licPcre" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licPcre" xrefstyle="template: %n" /> et</para>
         <para>Copyright (c) 1997-2012 University of Cambridge;
           Copyright(c) 2009-2012 Zoltan Herczeg;
           Copyright (c) 2007-2012, Google Inc.
@@ -289,7 +290,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de libffi soumis à la
-          licence dans <xref linkend="licLibffi" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licLibffi" xrefstyle="template: %n" /> et</para>
         <para>
           Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc et autres.
           Voir les fichiers du source pour les détails.
@@ -298,8 +299,8 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de FLTK soumis aux
-          licences dans <xref linkend="licFltk" xrefstyle="template :%n" /> ainsi que
-          dans <xref linkend="licLGPL" xrefstyle="template :%n"/> et  </para>
+          licences dans <xref linkend="licFltk" xrefstyle="template: %n" /> et
+          <xref linkend="licLGPL" xrefstyle="template: %n"/> et  </para>
         <para>
           Copyright (C) 1991-2012  L'équipe FLTK
         </para>
@@ -307,7 +308,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux d'Expat soumis à la
-          licence dans <xref linkend="licExpat" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licExpat" xrefstyle="template: %n" /> et</para>
         <para>
           Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
           et Clark Cooper; Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 
@@ -317,7 +318,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de Fontconfig soumis à la
-          licence dans <xref linkend="licFontconfig" xrefstyle="template :%n" />
+          licence dans <xref linkend="licFontconfig" xrefstyle="template: %n" />
           et</para>
         <para>
           Copyright (C) 2001, 2003 Keith Packard
@@ -326,7 +327,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de Freetype soumis à la
-          licence dans <xref linkend="licFreetype" xrefstyle="template :%n" />
+          licence dans <xref linkend="licFreetype" xrefstyle="template: %n" />
           et</para>
         <para>
           Copyright 2012 Le projet FreeType (www.freetype.org). Tous droits
@@ -336,7 +337,7 @@
 
       <listitem>
         <para>VirtualBox peut contenir du code du SDK  WebM VP8 Codec soumis à la
-        licence dans <xref linkend="licVPX" xrefstyle="template :%n" />
+        licence dans <xref linkend="licVPX" xrefstyle="template: %n" />
           et </para>
         <para>
           Copyright (c) 2010, The WebM Project authors. Tous droits réservés.
@@ -359,7 +360,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de PCRE soumis à la
-          licence dans <xref linkend="licPcre" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licPcre" xrefstyle="template: %n" /> et</para>
         <para>Copyright (c) 1997-2012 University of Cambridge;
           Copyright(c) 2009-2012 Zoltan Herczeg;
           Copyright (c) 2007-2012, Google Inc.
@@ -368,7 +369,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de libffi soumis à la
-          licence dans <xref linkend="licLibffi" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licLibffi" xrefstyle="template: %n" /> et</para>
         <para>
           Copyright (c) 1996-2012  Anthony Green, Red Hat, Inc et autres.
           Voir les fichiers du source pour les détails.
@@ -377,8 +378,8 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de FLTK soumis aux
-          licences dans <xref linkend="licFltk" xrefstyle="template :%n" /> ainsi que
-          dans <xref linkend="licLGPL" xrefstyle="template :%n"/> et  </para>
+          licences dans <xref linkend="licFltk" xrefstyle="template: %n" /> ainsi que
+          dans <xref linkend="licLGPL" xrefstyle="template: %n"/> et  </para>
         <para>
           Copyright (C) 1991-2012  L'équipe FLTK
         </para>
@@ -386,7 +387,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux d'Expat soumis à la
-          licence dans <xref linkend="licExpat" xrefstyle="template :%n" /> et</para>
+          licence dans <xref linkend="licExpat" xrefstyle="template: %n" /> et</para>
         <para>
           Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
           et Clark Cooper; Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 
@@ -396,7 +397,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de Fontconfig soumis à la
-          licence dans <xref linkend="licFontconfig" xrefstyle="template :%n" />
+          licence dans <xref linkend="licFontconfig" xrefstyle="template: %n" />
           et</para>
         <para>
           Copyright (C) 2001, 2003 Keith Packard
@@ -405,7 +406,7 @@
 
       <listitem>
         <para>VirtualBox contient des morceaux de Freetype soumis à la
-          licence dans <xref linkend="licFreetype" xrefstyle="template :%n" />
+          licence dans <xref linkend="licFreetype" xrefstyle="template: %n" />
           et</para>
         <para>
           Copyright 2012 Le projet FreeType (www.freetype.org). Tous droits
@@ -415,7 +416,7 @@
 
       <listitem>
         <para>VirtualBox peut contenir du code du SDK  WebM VP8 Codec soumis à la
-        licence dans <xref linkend="licVPX" xrefstyle="template :%n" />
+        licence dans <xref linkend="licVPX" xrefstyle="template: %n" />
           et </para>
         <para>
           Copyright (c) 2010, The WebM Project authors. Tous droits réservés.

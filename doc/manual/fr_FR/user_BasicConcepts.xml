@@ -409,6 +409,19 @@
             </glossdef>
           </glossentry>
 
+       <glossentry>
+            <glossterm>Drag'n'Drop</glossterm>
+            <glossdef>
+              <para>Ce paramètre permet d'activer le glisser/déplacer : sélectionnez
+              un fichier sur le bureau, cliquez sur le bouton gauche, amenez la
+              souris dans la fenêtre de la VM et cliquez de nouveau pur le bouton
+              de la souris. Le fichier est copié de l'hôte à l'invité. C'est
+              fonction n'est actuellement implémentée que pour la copie de fichiers
+              de l'hôte vers l'invité.<footnote><para>Le support du glisser/déplacer
+              a été ajouté avec VirtualBox 4.2</para></footnote></para>
+            </glossdef>
+          </glossentry>
+
           <glossentry>
             <glossterm>Média amovible&#xA0;: se rappeler des changements au moment
             de l'exécution</glossterm>
@@ -432,6 +445,8 @@
               le mode plein écran et transparent, contrôler l'exécution de la 
               machine ou activer certains périphériques. Si vous ne voulez pas voir
               la barre d'outils, désactivez ce paramètre.</para>
+              <para>Le deuxième paramètre permet d'afficher la barre d'outil en haut
+              de l'écran et non en bas.</para>
             </glossdef>
           </glossentry>
         </glosslist></para>
@@ -445,6 +460,8 @@
       mais pourriez trouver cet espace utile pour y noter des choses comme
       la configuration d'une machine virtuelle et le logiciel 
       installé dedans.</para>
+      <para>Pour insérer un saut de ligne dans la zone de texte de la
+      description, appuyez sur <emphasis>Majuscule+Entrée</emphasis>.</para>
     </sect2>
   </sect1>
 
@@ -523,6 +540,35 @@
           </glossentry>
 
           <glossentry>
+            <glossterm>Pointage de périphériques</glossterm>
+
+            <glossdef>
+              <para>Le périphérique de pointage par défaut des invités anciens 
+              est une souris PS/2 traditionnelle. Avec <emphasis>USB tablet</emphasis>,
+              VirtualBox indique à la machine virtuelle qu'une tablette USB est
+              connectée et il envoie les événements de souris à la machine
+              virtuelle via ce périphérique. Le troisième paramètre est un
+              <emphasis>USB Multi-Touch Tablet</emphasis> adapté aux invités 
+              Windows récents.</para>
+
+              <para>L'utilisation de la tablette USB virtuelle a l'avantage que les
+              mouvements sont envoyés avec une synchronisation absolue (et non
+              seulement les changements relatifs), ce qui permet à VirtualBox de
+              traduire les événements de souris dans la fenêtre de la VM en
+              événements de la tablette sans devoir "capturer" la souris dans l'invité,
+              comme décrit au
+<xref
+              linkend="keyb_mouse_normal" />. Cela rend l'utilisation de la
+              VM moins pénible même si les suppléments invité ne sont pas 
+              installés.<footnote>
+                  <para>La tablette USB virtuelle a été ajoutée avec VirtualBox
+                   3.2. Selon le système d'exploitation choisi, elle est maintenant
+                activée par défaut pour les nouvelles machines virtuelles.</para>
+                </footnote></para>
+            </glossdef>
+          </glossentry>
+
+          <glossentry>
             <glossterm>Activer I/O APIC</glossterm>
 
             <glossdef>
@@ -576,31 +622,6 @@
             </glossdef>
           </glossentry>
 
-          <glossentry>
-            <glossterm>Activer le pointage absolu des périphériques</glossterm>
-
-            <glossdef>
-              <para>Si vous l'activez, VirtualBox signale à la machine virtuelle
-              qu'une tablette USB est présente et il communique les événements de
-              la souris à la machine virtuelle par ce périphérique. Si vous le 
-              désactivez, les événements de la souris sont communiqués par le périphérique
-              virtuel traditionnel de souris PS/2.</para>
-
-              <para>L'utilisation de la tablette USB virtuelle présente l'avantage
-              que les mouvements sont transmis avec une coordination totale (et
-              non comme des modifications de position relatives), ce qui permet
-              à VirtualBox de traduire les événements de la souris dans la fenêtre
-              de la VM en événements de tablette sans devoir "capturer" la souris
-              pour vinvité comme décrit au <xref
-              linkend="keyb_mouse_normal" />. Ceci rend l'utilisation de la VM 
-              moins pénible même si les suppléments invité ne sont pas installés.<footnote>
-                  <para>The virtual USB tablet was added with VirtualBox 3.2.
-                  Selon le système d'exploitation invité sélectionné, ceci est
-                  maintenant activé par défaut pour les nouvellesmachines
-                  virtuelles.</para>
-                </footnote></para>
-            </glossdef>
-          </glossentry>
         </glosslist></para>
 
       <para>De plus, vous pouvez désactiver <emphasis role="bold">Advanced
@@ -631,9 +652,10 @@
      c&#x153;urs de processeur virtuels à chaque machine virtuelle.</para>
 
       <para>Vous ne devriez quand même pas configurer une machines virtuelles
-      pour utiliser plus de c&#x153;urs de processeur que vous n'en avez physiquement.</para>
+      pour utiliser plus de c&#x153;urs de processeur que vous n'en avez physiquement
+      (coeurs réels, pas d'hyperthreads).</para>
 
-      <para>Dans cet onglet, vous pouvez aussi définir le exécution du processeur.
+      <para>Dans cet onglet, vous pouvez aussi définir le <emphasis role="bold">"CPU execution cap"</emphasis>.
       Ce paramètre limite la quantité de temps qu'en processeur hôte peut donner
       pour émuler un processeur virtuel. Le réglage par défaut est de 100%
       ce qui veut dire qu'il n'y a aucune limite. Un réglage à 50% implique
@@ -788,6 +810,16 @@
           <xref linkend="vrde" />.</para>
         </glossdef>
       </glossentry>
+      <glossentry>
+        <glossterm>Capture graphique</glossterm>
+
+        <glossdef>
+          <para>Dans l'onglet "Capture graphique", vous pouvez activer la capture
+          graphique d'une VM. Remarquez que cette fonction peut être activée/désactivée aussi
+          pendant l'exécution de la VM.</para>
+        </glossdef>
+      </glossentry>
+
     </glosslist>
   </sect1>
 
@@ -980,7 +1012,7 @@
 
     <para>Sur un hôte Linux, selon votre configuration hôte, vous pouvez aussi
     choisir entre les sous-systèmes OSS, ALSA ou the PulseAudio sur les
-    distributions Linux récentes (Fedora 8 et supérieur, Ubuntu 8.04 et supérieur) 
+    distributions Linux récentes (Fedora 8 et supérieur, Ubuntu 8.04 et supérieur),
     le sous-système PulseAudio devrait être privilégié.</para>
   </sect1>
 

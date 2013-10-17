@@ -512,7 +512,7 @@
             </listitem>
 
             <listitem>
-              <para>Fedora Core 4 à 17</para>
+              <para>Fedora Core 6 à 17</para>
             </listitem>
 
             <listitem>
@@ -1021,7 +1021,13 @@ x            </itemizedlist>Vraisemblablement, si vous utilisez VirtualBox pour
             de touches (comme Alt-Tab par exemple) ne seront plus vues par l'hôte,
             mais iront plutôt à l'invité. Après avoir appuyé sur la touche hôte
             pour réactiver le clavier hôte, tous les appuis iront de nouveau à
-            l'hôte pour que les séquences comme Alt-Tab ne touchent plus l'invité.</para>
+            l'hôte pour que les séquences comme Alt-Tab ne touchent plus l'invité.
+            Pour des raisons techniques, il se peut qu'il ne soit pas possible,
+            pour une VM, de récupérer toutes les entrées du clavier même si elle
+            possède ce dernier. Par exemples, la séquence Alt-Ctrl-Suppr sur les
+            hôtes Windows ou des touches uniques utilisées par certaines applications
+            sur les hôtes X11 comme la fonction "La touche Contrôle souligne le
+            pointeur de la souris" du bureau GNOME.</para>
           </listitem>
 
           <listitem>

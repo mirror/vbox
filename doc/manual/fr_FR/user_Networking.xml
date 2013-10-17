@@ -142,6 +142,17 @@
         </glossentry>
 
         <glossentry>
+          <glossterm>Réseau NAT</glossterm>
+
+          <glossdef>
+            <para>Le réseau NAT est une nouvelle forme de NAT introduite dans
+              VirtualBox 4.3. Voir
+              <xref linkend="network_nat_service" xrefstyle="template: %n" />
+              pour les détails.</para>
+          </glossdef>
+        </glossentry>
+
+        <glossentry>
           <glossterm>Réseau avec pont</glossterm>
 
           <glossdef>
@@ -437,9 +448,9 @@
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -h on</screen></para>
     <para>Pour le désactiver à nouveau, utilisez :</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -h off</screen></para>
-    <para>Une limite actuellement du serveur DHCP est qu'il ne fournit pas d'informations
-    nameserver, les szstèmes qui l'utilisent devraient donc être configurés explicitement
-    pour utiliser les bons serveurs de DNS.</para>
+    <para>Le serveur DHCP fournit la liste des noms de serveurs enregistrés 
+    mais elle n'identifie pas les serveurs du réseau 127/8.</para>
+
     <para>Pour démarrer le service NAT, utilisez la commande suivante :</para>
     <para><screen>VBoxManage natnetwork start -t nat-int-network</screen></para>
     <para>Si un serveur DHCP est connecté au réseau, il démarrera avec le
@@ -458,6 +469,8 @@
     l'hôte vers le 22 de l'invité ayant l'adresse IP 192.168.15.15.  Pour
      effacer la règle, utilisez :</para>
     <para><screen>VBoxManage natnetwork modify -t nat-int-network -p delete ssh</screen></para>
+    <para>Il est possible d'associer un service NAT à l'interface désirée :</para>
+    <screen>VBoxManage setextradata global "NAT/win-nat-test-0/SourceIp4" 192.168.1.185</screen>
     <para>Pour voir la liste des réseaux NAT enregistrés, utilisez :</para>
     <para><screen>VBoxManage list natnetworks</screen></para>
   </sect1>
@@ -564,7 +577,9 @@
           159 et supérieur), il est possible d'utiliser les Crossbow Virtual Network
           Interfaces (VNICs) de Solaris directement, avec VirtualBox, sans 
           configuration dépassant l'exclusivité de chaque VNIC pour chaque
-          interface réseau de l'invité. Avec VirtualBox 2.0.4 et supérieur, VNICs
+          interface réseau de l'invité.</para>
+
+          <para>De VirtualBox 2.0.4 à VirtualBox 4.0, VNICs
           peuvent être utilisés, mais avec les précautions suivantes&#xA0;:</para>
 
           <itemizedlist>
