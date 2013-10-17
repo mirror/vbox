@@ -1174,9 +1174,9 @@ int main()
     GEN_CHECK_OFF(AHCIPort, regSERR);
     GEN_CHECK_OFF(AHCIPort, regSACT);
     GEN_CHECK_OFF(AHCIPort, regCI);
+    GEN_CHECK_OFF(AHCIPort, cTasksActive);
     GEN_CHECK_OFF(AHCIPort, GCPhysAddrClb);
     GEN_CHECK_OFF(AHCIPort, GCPhysAddrFb);
-    GEN_CHECK_OFF(AHCIPort, cTasksActive);
     GEN_CHECK_OFF(AHCIPort, fPoweredOn);
     GEN_CHECK_OFF(AHCIPort, fSpunUp);
     GEN_CHECK_OFF(AHCIPort, fFirstD2HFisSend);
@@ -1185,6 +1185,7 @@ int main()
     GEN_CHECK_OFF(AHCIPort, fPortReset);
     GEN_CHECK_OFF(AHCIPort, fAsyncInterface);
     GEN_CHECK_OFF(AHCIPort, fResetDevice);
+    GEN_CHECK_OFF(AHCIPort, fHotpluggable);
     GEN_CHECK_OFF(AHCIPort, fAsyncIOThreadIdle);
     GEN_CHECK_OFF(AHCIPort, fRedo);
     GEN_CHECK_OFF(AHCIPort, fWrkThreadSleeping);
