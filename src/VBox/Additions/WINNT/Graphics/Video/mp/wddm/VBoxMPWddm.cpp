@@ -4668,7 +4668,7 @@ DxgkDdiCommitVidPn(
                     break;
                 }
 
-                /* this will zero up visible height for all targets of the fiven source, see above comment */
+                /* this will zero up visible height for all targets of the given source, see above comment */
                 Status = vboxVidPnEnumTargetsForSource(pDevExt, hVidPnTopology, pVidPnTopologyInterface,
                                 pCommitVidPnArg->AffectedVidPnSourceId,
                                 vboxWddmVidPnCleanupTargetsForSrcEnum, NULL);
