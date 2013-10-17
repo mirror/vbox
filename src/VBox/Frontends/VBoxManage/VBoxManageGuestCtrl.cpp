@@ -20,6 +20,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "VBoxManage.h"
+#include "VBoxManageGuestCtrl.h"
 
 #ifndef VBOX_ONLY_DOCS
 
@@ -61,620 +62,78 @@
 
 using namespace com;
 
-/** @todo Move this into a helper module. */
-static const char *ctrlFileStatusToText(FileStatus_T enmStatus);
-static const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus);
-static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus);
-
-class GuestFileEventListener;
-typedef ListenerImpl<GuestFileEventListener> GuestFileEventListenerImpl;
-VBOX_LISTENER_DECLARE(GuestFileEventListenerImpl)
-
-class GuestProcessEventListener;
-typedef ListenerImpl<GuestProcessEventListener> GuestProcessEventListenerImpl;
-VBOX_LISTENER_DECLARE(GuestProcessEventListenerImpl)
-
-class GuestSessionEventListener;
-typedef ListenerImpl<GuestSessionEventListener> GuestSessionEventListenerImpl;
-VBOX_LISTENER_DECLARE(GuestSessionEventListenerImpl)
-
-/** Simple statistics class for binding locally
- *  held data to a specific guest object. */
-class GuestEventStats
-{
-
-public:
-
-    GuestEventStats(void)
-        : uLastUpdatedMS(RTTimeMilliTS())
-    {
-    }
-
-    /** @todo Make this more a class than a structure. */
-public:
-
-    uint64_t uLastUpdatedMS;
-};
-
-class GuestFileStats : public GuestEventStats
-{
-
-public:
-
-    GuestFileStats(void) { }
-
-    GuestFileStats(ComObjPtr<GuestFileEventListenerImpl> pListenerImpl)
-        : mListener(pListenerImpl)
-    {
-    }
-
-public: /** @todo */
-
-    ComObjPtr<GuestFileEventListenerImpl> mListener;
-};
-
-class GuestProcStats : public GuestEventStats
-{
-
-public:
-
-    GuestProcStats(void) { }
-
-    GuestProcStats(ComObjPtr<GuestProcessEventListenerImpl> pListenerImpl)
-        : mListener(pListenerImpl)
-    {
-    }
-
-public: /** @todo */
-
-    ComObjPtr<GuestProcessEventListenerImpl> mListener;
-};
-
-class GuestSessionStats : public GuestEventStats
-{
-
-public:
-
-    GuestSessionStats(void) { }
-
-    GuestSessionStats(ComObjPtr<GuestSessionEventListenerImpl> pListenerImpl)
-        : mListener(pListenerImpl)
-    {
-    }
-
-public: /** @todo */
-
-    ComObjPtr<GuestSessionEventListenerImpl> mListener;
-};
-
-/** Map containing all watched guest files. */
-typedef std::map< ComPtr<IGuestFile>, GuestFileStats > GuestEventFiles;
-/** Map containing all watched guest processes. */
-typedef std::map< ComPtr<IGuestProcess>, GuestProcStats > GuestEventProcs;
-/** Map containing all watched guest sessions. */
-typedef std::map< ComPtr<IGuestSession>, GuestSessionStats > GuestEventSessions;
-
-class GuestListenerBase
-{
-public:
-
-    GuestListenerBase(void)
-        : mfVerbose(false)
-    {
-    }
-
-    virtual ~GuestListenerBase(void)
-    {
-    }
-
-    HRESULT init(bool fVerbose = false)
-    {
-        mfVerbose = fVerbose;
-        return S_OK;
-    }
-
-protected:
-
-    /** Verbose flag. */
-    bool mfVerbose;
-};
-
-/**
- *  Handler for guest process events.
- */
-class GuestFileEventListener : public GuestListenerBase
-{
-public:
-
-    GuestFileEventListener(void)
-    {
-    }
-
-    virtual ~GuestFileEventListener(void)
-    {
-    }
-
-    void uninit(void)
-    {
-
-    }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
-    {
-        switch (aType)
-        {
-            case VBoxEventType_OnGuestFileStateChanged:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestFileStateChangedEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-
-                    ComPtr<IGuestFile> pProcess;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(File)(pProcess.asOutParam()));
-                    AssertBreak(!pProcess.isNull());
-                    FileStatus_T fileSts;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Status)(&fileSts));
-                    Bstr strPath;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(FileName)(strPath.asOutParam()));
-                    ULONG uID;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(Id)(&uID));
-
-                    RTPrintf("File ID=%RU32 \"%s\" changed status to [%s]\n",
-                             uID, Utf8Str(strPath).c_str(),
-                             ctrlFileStatusToText(fileSts));
-
-                } while (0);
-                break;
-            }
-
-            default:
-                AssertFailed();
-        }
-
-        return S_OK;
-    }
-
-protected:
-
-};
-
-/**
- *  Handler for guest process events.
- */
-class GuestProcessEventListener : public GuestListenerBase
-{
-public:
-
-    GuestProcessEventListener(void)
-    {
-    }
-
-    virtual ~GuestProcessEventListener(void)
-    {
-    }
-
-    void uninit(void)
-    {
-
-    }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
-    {
-        switch (aType)
-        {
-            case VBoxEventType_OnGuestProcessStateChanged:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestProcessStateChangedEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-
-                    ComPtr<IGuestProcess> pProcess;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Process)(pProcess.asOutParam()));
-                    AssertBreak(!pProcess.isNull());
-                    ProcessStatus_T procSts;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Status)(&procSts));
-                    Bstr strPath;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExecutablePath)(strPath.asOutParam()));
-                    ULONG uPID;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
-
-                    RTPrintf("Process PID=%RU32 \"%s\" changed status to [%s]\n",
-                             uPID, Utf8Str(strPath).c_str(),
-                             ctrlProcessStatusToText(procSts));
-
-                } while (0);
-                break;
-            }
-
-            default:
-                AssertFailed();
-        }
-
-        return S_OK;
-    }
-
-protected:
-
-};
-
-/**
- *  Handler for guest session events.
- */
-class GuestSessionEventListener : public GuestListenerBase
-{
-public:
-
-    GuestSessionEventListener(void)
-    {
-    }
-
-    virtual ~GuestSessionEventListener(void)
-    {
-    }
-
-    void uninit(void)
-    {
-        GuestEventProcs::iterator itProc = mProcs.begin();
-        while (itProc != mProcs.end())
-        {
-            if (!itProc->first.isNull())
-            {
-                HRESULT rc;
-                do
-                {
-                    /* Listener unregistration. */
-                    ComPtr<IEventSource> pES;
-                    CHECK_ERROR_BREAK(itProc->first, COMGETTER(EventSource)(pES.asOutParam()));
-                    if (!pES.isNull())
-                        CHECK_ERROR_BREAK(pES, UnregisterListener(itProc->second.mListener));
-                } while (0);
-                itProc->first->Release();
-            }
-
-            itProc++;
-        }
-        mProcs.clear();
-
-        GuestEventFiles::iterator itFile = mFiles.begin();
-        while (itFile != mFiles.end())
-        {
-            if (!itFile->first.isNull())
-            {
-                HRESULT rc;
-                do
-                {
-                    /* Listener unregistration. */
-                    ComPtr<IEventSource> pES;
-                    CHECK_ERROR_BREAK(itFile->first, COMGETTER(EventSource)(pES.asOutParam()));
-                    if (!pES.isNull())
-                        CHECK_ERROR_BREAK(pES, UnregisterListener(itFile->second.mListener));
-                } while (0);
-                itFile->first->Release();
-            }
-
-            itFile++;
-        }
-        mFiles.clear();
-    }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
-    {
-        switch (aType)
-        {
-            case VBoxEventType_OnGuestFileRegistered:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestFileRegisteredEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-
-                    ComPtr<IGuestFile> pFile;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(File)(pFile.asOutParam()));
-                    AssertBreak(!pFile.isNull());
-                    BOOL fRegistered;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
-                    Bstr strPath;
-                    CHECK_ERROR_BREAK(pFile, COMGETTER(FileName)(strPath.asOutParam()));
-
-                    RTPrintf("File \"%s\" %s\n",
-                             Utf8Str(strPath).c_str(),
-                             fRegistered ? "registered" : "unregistered");
-                    if (fRegistered)
-                    {
-                        if (mfVerbose)
-                            RTPrintf("Registering ...\n");
-
-                        /* Register for IGuestFile events. */
-                        ComObjPtr<GuestFileEventListenerImpl> pListener;
-                        pListener.createObject();
-                        CHECK_ERROR_BREAK(pListener, init(new GuestFileEventListener()));
-
-                        ComPtr<IEventSource> es;
-                        CHECK_ERROR_BREAK(pFile, COMGETTER(EventSource)(es.asOutParam()));
-                        com::SafeArray<VBoxEventType_T> eventTypes;
-                        eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
-                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
-                                                               true /* Active listener */));
-
-                        GuestFileStats fileStats(pListener);
-                        mFiles[pFile] = fileStats;
-                    }
-                    else
-                    {
-                        GuestEventFiles::iterator itFile = mFiles.find(pFile);
-                        if (itFile != mFiles.end())
-                        {
-                            if (mfVerbose)
-                                RTPrintf("Unregistering file ...\n");
-
-                            if (!itFile->first.isNull())
-                            {
-                                /* Listener unregistration. */
-                                ComPtr<IEventSource> pES;
-                                CHECK_ERROR(itFile->first, COMGETTER(EventSource)(pES.asOutParam()));
-                                if (!pES.isNull())
-                                    CHECK_ERROR(pES, UnregisterListener(itFile->second.mListener));
-                                itFile->first->Release();
-                            }
-
-                            mFiles.erase(itFile);
-                        }
-                    }
-
-                } while (0);
-                break;
-            }
-
-            case VBoxEventType_OnGuestProcessRegistered:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestProcessRegisteredEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-
-                    ComPtr<IGuestProcess> pProcess;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Process)(pProcess.asOutParam()));
-                    AssertBreak(!pProcess.isNull());
-                    BOOL fRegistered;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
-                    Bstr strPath;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExecutablePath)(strPath.asOutParam()));
-
-                    RTPrintf("Process \"%s\" %s\n",
-                             Utf8Str(strPath).c_str(),
-                             fRegistered ? "registered" : "unregistered");
-                    if (fRegistered)
-                    {
-                        if (mfVerbose)
-                            RTPrintf("Registering ...\n");
-
-                        /* Register for IGuestProcess events. */
-                        ComObjPtr<GuestProcessEventListenerImpl> pListener;
-                        pListener.createObject();
-                        CHECK_ERROR_BREAK(pListener, init(new GuestProcessEventListener()));
-
-                        ComPtr<IEventSource> es;
-                        CHECK_ERROR_BREAK(pProcess, COMGETTER(EventSource)(es.asOutParam()));
-                        com::SafeArray<VBoxEventType_T> eventTypes;
-                        eventTypes.push_back(VBoxEventType_OnGuestProcessStateChanged);
-                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
-                                                               true /* Active listener */));
-
-                        GuestProcStats procStats(pListener);
-                        mProcs[pProcess] = procStats;
-                    }
-                    else
-                    {
-                        GuestEventProcs::iterator itProc = mProcs.find(pProcess);
-                        if (itProc != mProcs.end())
-                        {
-                            if (mfVerbose)
-                                RTPrintf("Unregistering process ...\n");
-
-                            if (!itProc->first.isNull())
-                            {
-                                /* Listener unregistration. */
-                                ComPtr<IEventSource> pES;
-                                CHECK_ERROR(itProc->first, COMGETTER(EventSource)(pES.asOutParam()));
-                                if (!pES.isNull())
-                                    CHECK_ERROR(pES, UnregisterListener(itProc->second.mListener));
-                                itProc->first->Release();
-                            }
-
-                            mProcs.erase(itProc);
-                        }
-                    }
-
-                } while (0);
-                break;
-            }
-
-            case VBoxEventType_OnGuestSessionStateChanged:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestSessionStateChangedEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-                    ComPtr<IGuestSession> pSession;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(pSession.asOutParam()));
-                    AssertBreak(!pSession.isNull());
-
-                    GuestSessionStatus_T sessSts;
-                    CHECK_ERROR_BREAK(pSession, COMGETTER(Status)(&sessSts));
-                    ULONG uID;
-                    CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
-                    Bstr strName;
-                    CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
-
-                    RTPrintf("Session ID=%RU32 \"%s\" changed status to [%s]\n",
-                             uID, Utf8Str(strName).c_str(),
-                             ctrlSessionStatusToText(sessSts));
-
-                } while (0);
-                break;
-            }
-
-            default:
-                AssertFailed();
-        }
-
-        return S_OK;
-    }
-
-protected:
-
-    GuestEventFiles mFiles;
-    GuestEventProcs mProcs;
-};
-
-/**
- *  Handler for guest events.
- */
-class GuestEventListener : public GuestListenerBase
-{
-public:
-    GuestEventListener(void)
-    {
-    }
-
-    virtual ~GuestEventListener(void)
-    {
-    }
-
-    void uninit(void)
-    {
-        GuestEventSessions::iterator itSession = mSessions.begin();
-        while (itSession != mSessions.end())
-        {
-            if (!itSession->first.isNull())
-            {
-                HRESULT rc;
-                do
-                {
-                    /* Listener unregistration. */
-                    ComPtr<IEventSource> pES;
-                    CHECK_ERROR_BREAK(itSession->first, COMGETTER(EventSource)(pES.asOutParam()));
-                    if (!pES.isNull())
-                        CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
-
-                } while (0);
-                itSession->first->Release();
-            }
-
-            itSession++;
-        }
-        mSessions.clear();
-    }
-
-    STDMETHOD(HandleEvent)(VBoxEventType_T aType, IEvent *aEvent)
-    {
-        switch (aType)
-        {
-            case VBoxEventType_OnGuestSessionRegistered:
-            {
-                HRESULT rc;
-                do
-                {
-                    ComPtr<IGuestSessionRegisteredEvent> pEvent = aEvent;
-                    Assert(!pEvent.isNull());
-
-                    ComPtr<IGuestSession> pSession;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Session)(pSession.asOutParam()));
-                    AssertBreak(!pSession.isNull());
-                    BOOL fRegistered;
-                    CHECK_ERROR_BREAK(pEvent, COMGETTER(Registered)(&fRegistered));
-                    Bstr strName;
-                    CHECK_ERROR_BREAK(pSession, COMGETTER(Name)(strName.asOutParam()));
-                    ULONG uID;
-                    CHECK_ERROR_BREAK(pSession, COMGETTER(Id)(&uID));
-
-                    RTPrintf("Session ID=%RU32 \"%s\" %s\n",
-                             uID, Utf8Str(strName).c_str(),
-                             fRegistered ? "registered" : "unregistered");
-                    if (fRegistered)
-                    {
-                        if (mfVerbose)
-                            RTPrintf("Registering ...\n");
-
-                        /* Register for IGuestSession events. */
-                        ComObjPtr<GuestSessionEventListenerImpl> pListener;
-                        pListener.createObject();
-                        CHECK_ERROR_BREAK(pListener, init(new GuestSessionEventListener()));
-
-                        ComPtr<IEventSource> es;
-                        CHECK_ERROR_BREAK(pSession, COMGETTER(EventSource)(es.asOutParam()));
-                        com::SafeArray<VBoxEventType_T> eventTypes;
-                        eventTypes.push_back(VBoxEventType_OnGuestFileRegistered);
-                        eventTypes.push_back(VBoxEventType_OnGuestProcessRegistered);
-                        CHECK_ERROR_BREAK(es, RegisterListener(pListener, ComSafeArrayAsInParam(eventTypes),
-                                                               true /* Active listener */));
-
-                        GuestSessionStats sessionStats(pListener);
-                        mSessions[pSession] = sessionStats;
-                    }
-                    else
-                    {
-                        GuestEventSessions::iterator itSession = mSessions.find(pSession);
-                        if (itSession != mSessions.end())
-                        {
-                            if (mfVerbose)
-                                RTPrintf("Unregistering ...\n");
-
-                            if (!itSession->first.isNull())
-                            {
-                                /* Listener unregistration. */
-                                ComPtr<IEventSource> pES;
-                                CHECK_ERROR_BREAK(itSession->first, COMGETTER(EventSource)(pES.asOutParam()));
-                                if (!pES.isNull())
-                                    CHECK_ERROR_BREAK(pES, UnregisterListener(itSession->second.mListener));
-                                itSession->first->Release();
-                            }
-
-                            mSessions.erase(itSession);
-                        }
-                    }
-
-                } while (0);
-                break;
-            }
-
-            default:
-                AssertFailed();
-        }
-
-        return S_OK;
-    }
-
-protected:
-
-    GuestEventSessions mSessions;
-};
-typedef ListenerImpl<GuestEventListener> GuestEventListenerImpl;
-VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
-
 /** Set by the signal handler. */
 static volatile bool         g_fGuestCtrlCanceled = false;
 /** Our global session object which is also used in the
  *  signal handler to abort operations properly. */
 static ComPtr<IGuestSession> g_pGuestSession;
 
+/**
+ * Command context flags.
+ */
+/** No flags set. */
+#define CTLCMDCTX_FLAGS_NONE                0
+/** Don't install a signal handler (CTRL+C trap). */
+#define CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER   RT_BIT(0)
+/** No guest session needed. */
+#define CTLCMDCTX_FLAGS_SESSION_ANONYMOUS   RT_BIT(1)
+/** Detach the guest session. That is, don't close the
+ *  guest session automatically on exit. */
+#define CTLCMDCTX_FLAGS_SESSION_DETACH      RT_BIT(2)
+
+/**
+ * Context for handling a specific command.
+ */
+typedef struct GCTLCMDCTX
+{
+    HandlerArg handlerArg;
+    /** Command-specific argument count. */
+    int iArgc;
+    /** Command-specific argument vector. */
+    char **ppaArgv;
+    /** First argv to start parsing with. */
+    int iFirstArgc;
+    /** Command context flags. */
+    uint32_t uFlags;
+    /** Verbose flag. */
+    bool fVerbose;
+    /** User name. */
+    Utf8Str strUsername;
+    /** Password. */
+    Utf8Str strPassword;
+    /** Domain. */
+    Utf8Str strDomain;
+    /** Pointer to the IGuest interface. */
+    ComPtr<IGuest> pGuest;
+    /** Pointer to the to be used guest session. */
+    ComPtr<IGuestSession> pGuestSession;
+
+} GCTLCMDCTX, *PGCTLCMDCTX;
+
+typedef struct GCTLCMD
+{
+    /**
+     * Actual command handler callback.
+     *
+     * @param   pCtx            Pointer to command context to use.
+     */
+    DECLR3CALLBACKMEMBER(RTEXITCODE, pfnHandler, (PGCTLCMDCTX pCtx));
+
+} GCTLCMD, *PGCTLCMD;
+
 typedef struct COPYCONTEXT
 {
-    COPYCONTEXT() : fVerbose(false), fDryRun(false), fHostToGuest(false)
+    COPYCONTEXT()
+        : fDryRun(false),
+          fHostToGuest(false)
     {
     }
 
+    PGCTLCMDCTX pCmdCtx;
     ComPtr<IGuestSession> pGuestSession;
-    bool fVerbose;
     bool fDryRun;
     bool fHostToGuest;
+
 } COPYCONTEXT, *PCOPYCONTEXT;
 
 /**
@@ -771,6 +230,15 @@ enum EXITCODEEXEC
     EXITCODEEXEC_CANCELED       = 22
 };
 
+/*
+ * Common getopt definitions, starting at 1000.
+ * Specific command definitions will start all at 2000.
+ */
+enum GETOPTDEF_COMMON
+{
+    GETOPTDEF_COMMON_PASSWORD = 1000
+};
+
 /**
  * RTGetOpt-IDs for the guest execution control command line.
  */
@@ -781,7 +249,6 @@ enum GETOPTDEF_EXEC
     GETOPTDEF_EXEC_OUTPUTFORMAT,
     GETOPTDEF_EXEC_DOS2UNIX,
     GETOPTDEF_EXEC_UNIX2DOS,
-    GETOPTDEF_EXEC_PASSWORD,
     GETOPTDEF_EXEC_WAITFOREXIT,
     GETOPTDEF_EXEC_WAITFORSTDOUT,
     GETOPTDEF_EXEC_WAITFORSTDERR
@@ -791,23 +258,29 @@ enum GETOPTDEF_COPY
 {
     GETOPTDEF_COPY_DRYRUN = 1000,
     GETOPTDEF_COPY_FOLLOW,
-    GETOPTDEF_COPY_PASSWORD,
     GETOPTDEF_COPY_TARGETDIR
 };
 
 enum GETOPTDEF_MKDIR
 {
-    GETOPTDEF_MKDIR_PASSWORD = 1000
+};
+
+enum GETOPTDEF_RM
+{
+};
+
+enum GETOPTDEF_RMDIR
+{
+    GETOPTDEF_RMDIR_RECURSIVE = 2000
 };
 
 enum GETOPTDEF_SESSIONCLOSE
 {
-    GETOPTDEF_SESSIONCLOSE_ALL = 1000
+    GETOPTDEF_SESSIONCLOSE_ALL = 2000
 };
 
 enum GETOPTDEF_STAT
 {
-    GETOPTDEF_STAT_PASSWORD = 1000
 };
 
 enum OUTPUTTYPE
@@ -853,6 +326,17 @@ void usageGuestControl(PRTSTREAM pStrm, const char *pcszSep1, const char *pcszSe
                  "                            [--passwordfile <file> | --password <password>]\n"
                  "                            [--domain <domain>] [--verbose]\n"
                  "                            [--parents] [--mode <mode>]\n"
+                 "\n"
+                 "                            removedir[ectory]|rmdir|rm\n"
+                 "                            <guest directory>... --username <name>\n"
+                 "                            [--passwordfile <file> | --password <password>]\n"
+                 "                            [--domain <domain>] [--verbose]\n"
+                 "                            [--recursive|-R|-r]\n"
+                 "\n"
+                 "                            removefile|rm\n"
+                 "                            <guest file>... --username <name>\n"
+                 "                            [--passwordfile <file> | --password <password>]\n"
+                 "                            [--domain <domain>] [--verbose]\n"
                  "\n"
                  "                            createtemp[orary]|mktemp\n"
                  "                            <template> --username <name>\n"
@@ -982,7 +466,7 @@ static int ctrlSignalHandlerUninstall(void)
  * Translates a process status to a human readable
  * string.
  */
-static const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus)
+const char *ctrlProcessStatusToText(ProcessStatus_T enmStatus)
 {
     switch (enmStatus)
     {
@@ -1065,7 +549,7 @@ static int ctrlExecProcessStatusToExitCode(ProcessStatus_T enmStatus, ULONG uExi
  * Translates a guest session status to a human readable
  * string.
  */
-static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus)
+const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus)
 {
     switch (enmStatus)
     {
@@ -1095,7 +579,7 @@ static const char *ctrlSessionStatusToText(GuestSessionStatus_T enmStatus)
  * Translates a guest file status to a human readable
  * string.
  */
-static const char *ctrlFileStatusToText(FileStatus_T enmStatus)
+const char *ctrlFileStatusToText(FileStatus_T enmStatus)
 {
     switch (enmStatus)
     {
@@ -1172,29 +656,69 @@ static int ctrlPrintProgressError(ComPtr<IProgress> pProgress)
 
 /**
  * Un-initializes the VM after guest control usage.
+ * @param   pCmdCtx                 Pointer to command context.
+ * @param   uFlags                  Command context flags.
  */
-static void ctrlUninitVM(HandlerArg *pArg)
+static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
 {
-    AssertPtrReturnVoid(pArg);
-    if (pArg->session)
-        pArg->session->UnlockMachine();
+    AssertPtrReturnVoid(pCtx);
+
+    if (!(pCtx->uFlags & CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER))
+        ctrlSignalHandlerUninstall();
+
+    HRESULT rc;
+
+    do
+    {
+        if (!pCtx->pGuestSession.isNull())
+        {
+            if (   !(pCtx->uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS)
+                && !(pCtx->uFlags & CTLCMDCTX_FLAGS_SESSION_DETACH))
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Closing guest session ...\n");
+
+                CHECK_ERROR(pCtx->pGuestSession, Close());
+                /* Keep going - don't break here. Try to unlock the
+                 * machine down below. */
+            }
+            else if (pCtx->fVerbose)
+                RTPrintf("Guest session detached\n");
+        }
+
+        if (pCtx->handlerArg.session)
+            CHECK_ERROR(pCtx->handlerArg.session, UnlockMachine());
+
+    } while (0);
+
+    for (int i = 0; i < pCtx->iArgc; i++)
+        RTStrFree(pCtx->ppaArgv[i]);
+    RTMemFree(pCtx->ppaArgv);
 }
 
 /**
  * Initializes the VM for IGuest operations.
  *
  * That is, checks whether it's up and running, if it can be locked (shared
- * only) and returns a valid IGuest pointer on success.
+ * only) and returns a valid IGuest pointer on success. Also, it does some
+ * basic command line processing and opens a guest session, if required.
  *
- * @return  IPRT status code.
- * @param   pArg            Our command line argument structure.
- * @param   pszNameOrId     The VM's name or UUID.
- * @param   pGuest          Where to return the IGuest interface pointer.
+ * @return  RTEXITCODE status code.
+ * @param   pArg                    Pointer to command line argument structure.
+ * @param   pCmdCtx                 Pointer to command context.
+ * @param   uFlags                  Command context flags.
  */
-static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> *pGuest)
+static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
+                             PGCTLCMDCTX pCtx, uint32_t uFlags)
 {
-    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszNameOrId, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pArg, RTEXITCODE_FAILURE);
+    AssertReturn(pArg->argc > 1, RTEXITCODE_FAILURE);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
+
+    const char *pszNameOrId = pArg->argv[0];
+    const char *pszCmd = pArg->argv[1];
 
     /* Lookup VM. */
     ComPtr<IMachine> machine;
@@ -1202,36 +726,186 @@ static int ctrlInitVM(HandlerArg *pArg, const char *pszNameOrId, ComPtr<IGuest> 
     HRESULT rc;
     CHECK_ERROR(pArg->virtualBox, FindMachine(Bstr(pszNameOrId).raw(),
                                               machine.asOutParam()));
-    if (FAILED(rc))
-        return VERR_NOT_FOUND;
-
-    /* Machine is running? */
-    MachineState_T machineState;
-    CHECK_ERROR_RET(machine, COMGETTER(State)(&machineState), 1);
-    if (machineState != MachineState_Running)
+    if (SUCCEEDED(rc))
     {
-        RTMsgError("Machine \"%s\" is not running (currently %s)!\n",
-                   pszNameOrId, machineStateToName(machineState, false));
-        return VERR_VM_INVALID_VM_STATE;
+        /* Machine is running? */
+        MachineState_T machineState;
+        CHECK_ERROR(machine, COMGETTER(State)(&machineState));
+        if (   SUCCEEDED(rc)
+            && (machineState != MachineState_Running))
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Machine \"%s\" is not running (currently %s)!\n",
+                                    pszNameOrId, machineStateToName(machineState, false));
+    }
+    else
+        rcExit = RTEXITCODE_FAILURE;
+
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Process standard options which are served by all commands.
+         */
+        static const RTGETOPTDEF s_aOptions[] =
+        {
+            { "--username",            'u',                             RTGETOPT_REQ_STRING  },
+            { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
+            { "--password",            GETOPTDEF_COMMON_PASSWORD,       RTGETOPT_REQ_STRING  },
+            { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
+            { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        };
+
+        /*
+         * Allocate per-command argv. This then only contains the specific arguments
+         * the command needs.
+         */
+        pCtx->ppaArgv = (char**)RTMemAlloc(pArg->argc * sizeof(char*) + 1);
+        if (!pCtx->ppaArgv)
+        {
+            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Not enough memory for per-command argv\n");
+        }
+        else
+        {
+            pCtx->iArgc = 0;
+
+            int ch;
+            RTGETOPTUNION ValueUnion;
+            RTGETOPTSTATE GetState;
+            RTGetOptInit(&GetState, pArg->argc, pArg->argv,
+                         s_aOptions, RT_ELEMENTS(s_aOptions),
+                         2, /* Skip VM name and guest control command */
+                         RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+            while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+                   && (rcExit == RTEXITCODE_SUCCESS))
+            {
+                /* For options that require an argument, ValueUnion has received the value. */
+                switch (ch)
+                {
+                    case 'u': /* User name */
+                        if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+                            pCtx->strUsername = ValueUnion.psz;
+                        break;
+
+                    case GETOPTDEF_COMMON_PASSWORD: /* Password */
+                        if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+                        {
+                            if (pCtx->strPassword.isEmpty())
+                                pCtx->strPassword = ValueUnion.psz;
+                        }
+                        break;
+
+                    case 'p': /* Password file */
+                    {
+                        if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+                            rcExit = readPasswordFile(ValueUnion.psz, &pCtx->strPassword);
+                        break;
+                    }
+
+                    case 'd': /* domain */
+                        if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+                            pCtx->strDomain = ValueUnion.psz;
+                        break;
+
+                    case 'v': /* Verbose */
+                        pCtx->fVerbose = true;
+                        break;
+
+                    case VINF_GETOPT_NOT_OPTION:
+                        /* Fall through is intentional. */
+                    default:
+                    {
+                        Assert(GetState.iNext);
+                        char *pszArg = RTStrDup(pArg->argv[GetState.iNext - 1]);
+                        if (!pszArg)
+                        {
+                            rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE,
+                                                    "Not enough memory for command line handling\n");
+                            break;
+                        }
+                        pCtx->ppaArgv[pCtx->iArgc] = pszArg;
+                        pCtx->iArgc++;
+                        break;
+                    }
+
+                } /* switch */
+            } /* while RTGetOpt */
+        }
     }
 
-    do
+    /*
+     * Check for mandatory stuff.
+     */
+    if (rcExit == RTEXITCODE_SUCCESS)
     {
-        /* Open a session for the VM. */
-        CHECK_ERROR_BREAK(machine, LockMachine(pArg->session, LockType_Shared));
-        /* Get the associated console. */
-        ComPtr<IConsole> console;
-        CHECK_ERROR_BREAK(pArg->session, COMGETTER(Console)(console.asOutParam()));
-        /* ... and session machine. */
-        ComPtr<IMachine> sessionMachine;
-        CHECK_ERROR_BREAK(pArg->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
-        /* Get IGuest interface. */
-        CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pGuest->asOutParam()));
-    } while (0);
+#if 0
+        RTPrintf("argc=%d\n", pCtx->iArgc);
+        for (int i = 0; i < pCtx->iArgc; i++)
+            RTPrintf("argv[%d]=%s\n", i, pCtx->ppaArgv[i]);
+#endif
+        if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+        {
+            if (pCtx->strUsername.isEmpty())
+                rcExit = errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
+        }
+    }
 
-    if (FAILED(rc))
-        ctrlUninitVM(pArg);
-    return SUCCEEDED(rc) ? VINF_SUCCESS : VERR_GENERAL_FAILURE;
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /*
+         * Build up a reasonable guest session name. Useful for identifying
+         * a specific session when listing / searching for them.
+         */
+        char *pszSessionName;
+        if (0 >= RTStrAPrintf(&pszSessionName,
+                              "[%RU32] VBoxManage Guest Control [%s] - %s",
+                              RTProcSelf(), pszNameOrId, pszCmd))
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "No enough memory for session name\n");
+
+        do
+        {
+            /* Open a session for the VM. */
+            CHECK_ERROR_BREAK(machine, LockMachine(pArg->session, LockType_Shared));
+            /* Get the associated console. */
+            ComPtr<IConsole> console;
+            CHECK_ERROR_BREAK(pArg->session, COMGETTER(Console)(console.asOutParam()));
+            /* ... and session machine. */
+            ComPtr<IMachine> sessionMachine;
+            CHECK_ERROR_BREAK(pArg->session, COMGETTER(Machine)(sessionMachine.asOutParam()));
+            /* Get IGuest interface. */
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(pCtx->pGuest.asOutParam()));
+            if (!(uFlags & CTLCMDCTX_FLAGS_SESSION_ANONYMOUS))
+            {
+                if (pCtx->fVerbose)
+                    RTPrintf("Opening guest session as user '%s' ...\n", pCtx->strUsername.c_str());
+
+                /* Open a guest session. */
+                Assert(!pCtx->pGuest.isNull());
+                CHECK_ERROR_BREAK(pCtx->pGuest, CreateSession(Bstr(pCtx->strUsername).raw(),
+                                                              Bstr(pCtx->strPassword).raw(),
+                                                              Bstr(pCtx->strDomain).raw(),
+                                                              Bstr(pszSessionName).raw(),
+                                                              pCtx->pGuestSession.asOutParam()));
+            }
+
+            if (!(uFlags & CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER))
+                ctrlSignalHandlerInstall();
+
+        } while (0);
+
+        if (FAILED(rc))
+            rcExit = RTEXITCODE_FAILURE;
+
+        RTStrFree(pszSessionName);
+    }
+
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        pCtx->handlerArg = *pArg;
+        pCtx->uFlags = uFlags;
+    }
+    else /* Clean up on failure. */
+        ctrlUninitVM(pCtx, uFlags);
+
+    return rcExit;
 }
 
 /**
@@ -1329,10 +1003,9 @@ inline RTMSINTERVAL ctrlExecGetRemainingTime(uint64_t u64StartMs, RTMSINTERVAL c
     return cMsTimeout - (RTMSINTERVAL)u64ElapsedMs;
 }
 
-/* <Missing documentation> */
-static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
      * Parse arguments.
@@ -1345,13 +1018,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         { "--ignore-operhaned-processes",   GETOPTDEF_EXEC_IGNOREORPHANEDPROCESSES,   RTGETOPT_REQ_NOTHING },
         { "--image",                        'i',                                      RTGETOPT_REQ_STRING  },
         { "--no-profile",                   GETOPTDEF_EXEC_NO_PROFILE,                RTGETOPT_REQ_NOTHING },
-        { "--username",                     'u',                                      RTGETOPT_REQ_STRING  },
-        { "--passwordfile",                 'p',                                      RTGETOPT_REQ_STRING  },
-        { "--password",                     GETOPTDEF_EXEC_PASSWORD,                  RTGETOPT_REQ_STRING  },
-        { "--domain",                       'd',                                      RTGETOPT_REQ_STRING  },
         { "--timeout",                      't',                                      RTGETOPT_REQ_UINT32  },
         { "--unix2dos",                     GETOPTDEF_EXEC_UNIX2DOS,                  RTGETOPT_REQ_NOTHING },
-        { "--verbose",                      'v',                                      RTGETOPT_REQ_NOTHING },
         { "--wait-exit",                    GETOPTDEF_EXEC_WAITFOREXIT,               RTGETOPT_REQ_NOTHING },
         { "--wait-stdout",                  GETOPTDEF_EXEC_WAITFORSTDOUT,             RTGETOPT_REQ_NOTHING },
         { "--wait-stderr",                  GETOPTDEF_EXEC_WAITFORSTDERR,             RTGETOPT_REQ_NOTHING }
@@ -1360,20 +1028,16 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     int                     ch;
     RTGETOPTUNION           ValueUnion;
     RTGETOPTSTATE           GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv, s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, 0);
 
     Utf8Str                              strCmd;
     com::SafeArray<ProcessCreateFlag_T>  aCreateFlags;
     com::SafeArray<ProcessWaitForFlag_T> aWaitFlags;
     com::SafeArray<IN_BSTR>              aArgs;
     com::SafeArray<IN_BSTR>              aEnv;
-    Utf8Str                              strUsername;
-    Utf8Str                              strPassword;
-    Utf8Str                              strDomain;
     RTMSINTERVAL                         cMsTimeout      = 0;
     OUTPUTTYPE                           eOutputType     = OUTPUTTYPE_UNDEFINED;
     bool                                 fDetached       = true;
-    bool                                 fVerbose        = false;
     int                                  vrc             = VINF_SUCCESS;
 
     try
@@ -1423,26 +1087,6 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
                 /** @todo Add a hidden flag. */
 
-                case 'u': /* User name */
-                    strUsername = ValueUnion.psz;
-                    break;
-
-                case GETOPTDEF_EXEC_PASSWORD: /* Password */
-                    strPassword = ValueUnion.psz;
-                    break;
-
-                case 'p': /* Password file */
-                {
-                    RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                    if (rcExit != RTEXITCODE_SUCCESS)
-                        return rcExit;
-                    break;
-                }
-
-                case 'd': /* domain */
-                    strDomain = ValueUnion.psz;
-                    break;
-
                 case 't': /* Timeout */
                     cMsTimeout = ValueUnion.u32;
                     break;
@@ -1451,10 +1095,6 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     if (eOutputType != OUTPUTTYPE_UNDEFINED)
                         return errorSyntax(USAGE_GUESTCONTROL, "More than one output type (dos2unix/unix2dos) specified!");
                     eOutputType = OUTPUTTYPE_UNIX2DOS;
-                    break;
-
-                case 'v': /* Verbose */
-                    fVerbose = true;
                     break;
 
                 case GETOPTDEF_EXEC_WAITFOREXIT:
@@ -1475,16 +1115,15 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
-                {
                     if (aArgs.size() == 0 && strCmd.isEmpty())
                         strCmd = ValueUnion.psz;
                     else
                         aArgs.push_back(Bstr(ValueUnion.psz).raw());
                     break;
-                }
 
                 default:
                     return RTGetOptPrintError(ch, &ValueUnion);
+                    break;
 
             } /* switch */
         } /* while RTGetOpt */
@@ -1500,41 +1139,17 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (strCmd.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL, "No command to execute specified!");
 
-    if (strUsername.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
-
     /** @todo Any output conversion not supported yet! */
     if (eOutputType != OUTPUTTYPE_UNDEFINED)
         return errorSyntax(USAGE_GUESTCONTROL, "Output conversion not implemented yet!");
 
-    ctrlSignalHandlerInstall();
-
-    /*
-     * Start with the real work.
-     */
-    HRESULT rc = S_OK;
-    if (fVerbose)
-        RTPrintf("Opening guest session as user '%s' ...\n", strUsername.c_str());
-
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-
-    /** @todo This eventually needs a bit of revamping so that a valid session gets passed
-     *        into this function already so that we don't need to mess around with closing
-     *        the session all over the places below again. Later. */
+    HRESULT rc;
 
     try
     {
         do
         {
-            Utf8Str strVBoxManage;
-            strVBoxManage.printf("VBoxManage Guest Control (PID %RU32)", RTProcSelf());
-
-            CHECK_ERROR_BREAK(pGuest, CreateSession(Bstr(strUsername).raw(),
-                                      Bstr(strPassword).raw(),
-                                      Bstr(strDomain).raw(),
-                                      Bstr(strVBoxManage).raw(),
-                                      g_pGuestSession.asOutParam()));
-
             /* Adjust process creation flags if we don't want to wait for process termination. */
             if (fDetached)
                 aCreateFlags.push_back(ProcessCreateFlag_WaitForProcessStartOnly);
@@ -1545,7 +1160,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
             /*
              * Wait for guest session to start.
              */
-            if (fVerbose)
+            if (pCtx->fVerbose)
             {
                 if (cMsTimeout == 0)
                     RTPrintf("Waiting for guest session to start ...\n");
@@ -1565,7 +1180,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                  *       support dedicated guest sessions. */
                 || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported)
             {
-                if (fVerbose)
+                if (pCtx->fVerbose)
                     RTPrintf("Guest session (ID %RU32) has been started\n", uSessionID);
             }
             else
@@ -1574,7 +1189,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 break;
             }
 
-            if (fVerbose)
+            if (pCtx->fVerbose)
             {
                 if (cMsTimeout == 0)
                     RTPrintf("Waiting for guest process to start ...\n");
@@ -1620,7 +1235,7 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                     {
                         ULONG uPID = 0;
                         CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
-                        if (fVerbose)
+                        if (pCtx->fVerbose)
                         {
                             RTPrintf("Process '%s' (PID %RU32) started\n",
                                      strCmd.c_str(), uPID);
@@ -1707,18 +1322,18 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 {
                     LONG exitCode;
                     CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&exitCode));
-                    if (fVerbose)
+                    if (pCtx->fVerbose)
                         RTPrintf("Exit code=%u (Status=%u [%s])\n",
                                  exitCode, procStatus, ctrlProcessStatusToText(procStatus));
 
                     rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
                 }
-                else if (fVerbose)
+                else if (pCtx->fVerbose)
                     RTPrintf("Process now is in status [%s]\n", ctrlProcessStatusToText(procStatus));
             }
             else
             {
-                if (fVerbose)
+                if (pCtx->fVerbose)
                     RTPrintf("Process execution aborted!\n");
 
                 rcExit = (RTEXITCODE)EXITCODEEXEC_TERM_ABEND;
@@ -1730,8 +1345,6 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     {
         rc = E_OUTOFMEMORY;
     }
-
-    ctrlSignalHandlerUninstall();
 
     bool fCloseSession = false;
     if (SUCCEEDED(rc))
@@ -1746,15 +1359,8 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     else /* Close session on error. */
         fCloseSession = true;
 
-    if (   fCloseSession
-        && !g_pGuestSession.isNull())
-    {
-        if (fVerbose)
-            RTPrintf("Closing guest session ...\n");
-        rc = g_pGuestSession->Close();
-    }
-    else if (!fCloseSession && fVerbose)
-        RTPrintf("Guest session detached\n");
+    if (!fCloseSession)
+        pCtx->uFlags |= CTLCMDCTX_FLAGS_SESSION_DETACH;
 
     if (   rcExit == RTEXITCODE_SUCCESS
         && FAILED(rc))
@@ -1771,37 +1377,31 @@ static RTEXITCODE handleCtrlProcessExec(ComPtr<IGuest> pGuest, HandlerArg *pArg)
  * guest control copy functions. Needs to be free'd with ctrlCopyContextFree().
  *
  * @return  IPRT status code.
- * @param   pGuest                  Pointer to IGuest interface to use.
- * @param   fVerbose                Flag indicating if we want to run in verbose mode.
+ * @param   pCtx                    Pointer to command context.
  * @param   fDryRun                 Flag indicating if we want to run a dry run only.
  * @param   fHostToGuest            Flag indicating if we want to copy from host to guest
  *                                  or vice versa.
- * @param   strUsername             Username of account to use on the guest side.
- * @param   strPassword             Password of account to use.
- * @param   strDomain               Domain of account to use.
  * @param   strSessionName          Session name (only for identification purposes).
  * @param   ppContext               Pointer which receives the allocated copy context.
  */
-static int ctrlCopyContextCreate(IGuest *pGuest, bool fVerbose, bool fDryRun,
-                                 bool fHostToGuest, const Utf8Str &strUsername,
-                                 const Utf8Str &strPassword, const Utf8Str &strDomain,
+static int ctrlCopyContextCreate(PGCTLCMDCTX pCtx, bool fDryRun, bool fHostToGuest,
                                  const Utf8Str &strSessionName,
                                  PCOPYCONTEXT *ppContext)
 {
-    AssertPtrReturn(pGuest, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
     PCOPYCONTEXT pContext = new COPYCONTEXT();
     AssertPtrReturn(pContext, VERR_NO_MEMORY); /**< @todo r=klaus cannot happen with new */
     ComPtr<IGuestSession> pGuestSession;
-    HRESULT rc = pGuest->CreateSession(Bstr(strUsername).raw(),
-                                       Bstr(strPassword).raw(),
-                                       Bstr(strDomain).raw(),
-                                       Bstr(strSessionName).raw(),
-                                       pGuestSession.asOutParam());
+    HRESULT rc = pCtx->pGuest->CreateSession(Bstr(pCtx->strUsername).raw(),
+                                             Bstr(pCtx->strPassword).raw(),
+                                             Bstr(pCtx->strDomain).raw(),
+                                             Bstr(strSessionName).raw(),
+                                             pGuestSession.asOutParam());
     if (FAILED(rc))
-        return ctrlPrintError(pGuest, COM_IIDOF(IGuest));
+        return ctrlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
 
-    pContext->fVerbose = fVerbose;
+    pContext->pCmdCtx = pCtx;
     pContext->fDryRun = fDryRun;
     pContext->fHostToGuest = fHostToGuest;
     pContext->pGuestSession = pGuestSession;
@@ -1977,7 +1577,7 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     if (   RT_SUCCESS(vrc)
         && fDirExists)
     {
-        if (pContext->fVerbose)
+        if (pContext->pCmdCtx->fVerbose)
             RTPrintf("Directory \"%s\" already exists\n", pszDir);
         return VINF_SUCCESS;
     }
@@ -1987,7 +1587,7 @@ static int ctrlCopyDirCreate(PCOPYCONTEXT pContext, const char *pszDir)
     if (RT_FAILURE(vrc))
         return vrc;
 
-    if (pContext->fVerbose)
+    if (pContext->pCmdCtx->fVerbose)
         RTPrintf("Creating directory \"%s\" ...\n", pszDir);
 
     if (pContext->fDryRun)
@@ -2163,7 +1763,7 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     AssertPtrReturn(pszFileDest, VERR_INVALID_POINTER);
     AssertReturn(!fFlags, VERR_INVALID_POINTER); /* No flags supported yet. */
 
-    if (pContext->fVerbose)
+    if (pContext->pCmdCtx->fVerbose)
         RTPrintf("Copying \"%s\" to \"%s\" ...\n",
                  pszFileSource, pszFileDest);
 
@@ -2195,7 +1795,7 @@ static int ctrlCopyFileToDest(PCOPYCONTEXT pContext, const char *pszFileSource,
     }
     else
     {
-        if (pContext->fVerbose)
+        if (pContext->pCmdCtx->fVerbose)
             rc = showProgress(pProgress);
         else
             rc = pProgress->WaitForCompletion(-1 /* No timeout */);
@@ -2238,7 +1838,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
     if (RT_SUCCESS(vrc) && pszSubDir)
         vrc = RTPathAppend(szCurDir, sizeof(szCurDir), pszSubDir);
 
-    if (pContext->fVerbose)
+    if (pContext->pCmdCtx->fVerbose)
         RTPrintf("Processing host directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
@@ -2283,7 +1883,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                         || !strcmp(DirEntry.szName, ".."))
                         break;
 
-                    if (pContext->fVerbose)
+                    if (pContext->pCmdCtx->fVerbose)
                         RTPrintf("Directory: %s\n", DirEntry.szName);
 
                     if (fFlags & CopyFileFlag_Recursive)
@@ -2327,7 +1927,7 @@ static int ctrlCopyDirToGuest(PCOPYCONTEXT pContext,
                         break; /* Filter does not match. */
                     }
 
-                    if (pContext->fVerbose)
+                    if (pContext->pCmdCtx->fVerbose)
                         RTPrintf("File: %s\n", DirEntry.szName);
 
                     if (!fDirCreated)
@@ -2410,7 +2010,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
     if (RT_FAILURE(vrc))
         return vrc;
 
-    if (pContext->fVerbose)
+    if (pContext->pCmdCtx->fVerbose)
         RTPrintf("Processing guest directory: %s\n", szCurDir);
 
     /* Flag indicating whether the current directory was created on the
@@ -2447,7 +2047,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                     || !strName.compare(Bstr("..")))
                     break;
 
-                if (pContext->fVerbose)
+                if (pContext->pCmdCtx->fVerbose)
                 {
                     Utf8Str strDir(strName);
                     RTPrintf("Directory: %s\n", strDir.c_str());
@@ -2497,7 +2097,7 @@ static int ctrlCopyDirToHost(PCOPYCONTEXT pContext,
                     break; /* Filter does not match. */
                 }
 
-                if (pContext->fVerbose)
+                if (pContext->pCmdCtx->fVerbose)
                     RTPrintf("File: %s\n", strFile.c_str());
 
                 if (!fDirCreated)
@@ -2654,10 +2254,9 @@ static void ctrlCopyFreeSourceRoot(char *pszSourceRoot)
     RTStrFree(pszSourceRoot);
 }
 
-static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
-                                 bool fHostToGuest)
+static RTEXITCODE handleCtrlCopy(PGCTLCMDCTX pCtx, bool fHostToGuest)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /** @todo r=bird: This command isn't very unix friendly in general. mkdir
      * is much better (partly because it is much simpler of course).  The main
@@ -2677,28 +2276,19 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
     {
         { "--dryrun",              GETOPTDEF_COPY_DRYRUN,           RTGETOPT_REQ_NOTHING },
         { "--follow",              GETOPTDEF_COPY_FOLLOW,           RTGETOPT_REQ_NOTHING },
-        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
-        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
-        { "--password",            GETOPTDEF_COPY_PASSWORD,         RTGETOPT_REQ_STRING  },
-        { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
         { "--recursive",           'R',                             RTGETOPT_REQ_NOTHING },
-        { "--target-directory",    GETOPTDEF_COPY_TARGETDIR,        RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--target-directory",    GETOPTDEF_COPY_TARGETDIR,        RTGETOPT_REQ_STRING  }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     Utf8Str strSource;
     Utf8Str strDest;
-    Utf8Str strUsername;
-    Utf8Str strPassword;
-    Utf8Str strDomain;
     uint32_t fFlags = CopyFileFlag_None;
-    bool fVerbose = false;
     bool fCopyRecursive = false;
     bool fDryRun = false;
 
@@ -2718,26 +2308,6 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
                 fFlags |= CopyFileFlag_FollowLinks;
                 break;
 
-            case 'u': /* User name */
-                strUsername = ValueUnion.psz;
-                break;
-
-            case GETOPTDEF_COPY_PASSWORD: /* Password */
-                strPassword = ValueUnion.psz;
-                break;
-
-            case 'p': /* Password file */
-            {
-                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'd': /* domain */
-                strDomain = ValueUnion.psz;
-                break;
-
             case 'R': /* Recursive processing */
                 fFlags |= CopyFileFlag_Recursive;
                 break;
@@ -2746,16 +2316,12 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
                 strDest = ValueUnion.psz;
                 break;
 
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
             {
                 /* Last argument and no destination specified with
                  * --target-directory yet? Then use the current
                  * (= last) argument as destination. */
-                if (   pArg->argc == GetState.iNext
+                if (  pCtx->iArgc == GetState.iNext
                     && strDest.isEmpty())
                 {
                     strDest = ValueUnion.psz;
@@ -2770,6 +2336,7 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -2781,14 +2348,10 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
         return errorSyntax(USAGE_GUESTCONTROL,
                            "No destination specified!");
 
-    if (strUsername.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL,
-                           "No user name specified!");
-
     /*
      * Done parsing arguments, do some more preparations.
      */
-    if (fVerbose)
+    if (pCtx->fVerbose)
     {
         if (fHostToGuest)
             RTPrintf("Copying from host to guest ...\n");
@@ -2801,8 +2364,7 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
     /* Create the copy context -- it contains all information
      * the routines need to know when handling the actual copying. */
     PCOPYCONTEXT pContext = NULL;
-    vrc = ctrlCopyContextCreate(guest, fVerbose, fDryRun, fHostToGuest,
-                                strUsername, strPassword, strDomain,
+    vrc = ctrlCopyContextCreate(pCtx, fDryRun, fHostToGuest,
                                 "VBoxManage Guest Control Copy", &pContext);
     if (RT_FAILURE(vrc))
     {
@@ -2861,7 +2423,7 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
                 break;
             }
 
-            if (fVerbose)
+            if (pCtx->fVerbose)
                 RTPrintf("Source: %s\n", pszSource);
 
             /** @todo Files with filter?? */
@@ -2948,9 +2510,19 @@ static RTEXITCODE handleCtrlCopy(ComPtr<IGuest> guest, HandlerArg *pArg,
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static RTEXITCODE handleCtrlCreateDirectory(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlCopyFrom(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    return handleCtrlCopy(pCtx, false /* Guest to host */);
+}
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlCopyTo(PGCTLCMDCTX pCtx)
+{
+    return handleCtrlCopy(pCtx, true /* Host to guest */);
+}
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlCreateDirectory(PGCTLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
      * Parse arguments.
@@ -2961,27 +2533,17 @@ static RTEXITCODE handleCtrlCreateDirectory(ComPtr<IGuest> pGuest, HandlerArg *p
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--mode",                'm',                             RTGETOPT_REQ_UINT32  },
-        { "--parents",             'P',                             RTGETOPT_REQ_NOTHING },
-        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
-        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
-        { "--password",            GETOPTDEF_MKDIR_PASSWORD,        RTGETOPT_REQ_STRING  },
-        { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--parents",             'P',                             RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    Utf8Str strUsername;
-    Utf8Str strPassword;
-    Utf8Str strDomain;
     SafeArray<DirectoryCreateFlag_T> dirCreateFlags;
     uint32_t fDirMode = 0; /* Default mode. */
-    bool fVerbose = false;
-
     DESTDIRMAP mapDirs;
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
@@ -2997,38 +2559,13 @@ static RTEXITCODE handleCtrlCreateDirectory(ComPtr<IGuest> pGuest, HandlerArg *p
                 dirCreateFlags.push_back(DirectoryCreateFlag_Parents);
                 break;
 
-            case 'u': /* User name */
-                strUsername = ValueUnion.psz;
-                break;
-
-            case GETOPTDEF_MKDIR_PASSWORD: /* Password */
-                strPassword = ValueUnion.psz;
-                break;
-
-            case 'p': /* Password file */
-            {
-                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'd': /* domain */
-                strDomain = ValueUnion.psz;
-                break;
-
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
-            {
                 mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
                 break;
-            }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -3036,53 +2573,188 @@ static RTEXITCODE handleCtrlCreateDirectory(ComPtr<IGuest> pGuest, HandlerArg *p
     if (!cDirs)
         return errorSyntax(USAGE_GUESTCONTROL, "No directory to create specified!");
 
-    if (strUsername.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
-
     /*
      * Create the directories.
      */
-    HRESULT hrc = S_OK;
-    if (fVerbose && cDirs)
-        RTPrintf("Creating %u directories ...\n", cDirs);
-
-    ComPtr<IGuestSession> pGuestSession;
-    hrc = pGuest->CreateSession(Bstr(strUsername).raw(),
-                                Bstr(strPassword).raw(),
-                                Bstr(strDomain).raw(),
-                                Bstr("VBoxManage Guest Control MkDir").raw(),
-                                pGuestSession.asOutParam());
-    if (FAILED(hrc))
-    {
-        ctrlPrintError(pGuest, COM_IIDOF(IGuest));
-        return RTEXITCODE_FAILURE;
-    }
+    HRESULT rc = S_OK;
+    if (pCtx->fVerbose && cDirs)
+        RTPrintf("Creating %RU32 directories ...\n", cDirs);
 
     DESTDIRMAPITER it = mapDirs.begin();
-    while (it != mapDirs.end())
+    while (   (it != mapDirs.end())
+           && !g_fGuestCtrlCanceled)
     {
-        if (fVerbose)
+        if (pCtx->fVerbose)
             RTPrintf("Creating directory \"%s\" ...\n", it->first.c_str());
 
-        hrc = pGuestSession->DirectoryCreate(Bstr(it->first).raw(), fDirMode, ComSafeArrayAsInParam(dirCreateFlags));
-        if (FAILED(hrc))
+        CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryCreate(Bstr(it->first).raw(),
+                                               fDirMode, ComSafeArrayAsInParam(dirCreateFlags)));
+        it++;
+    }
+
+    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+}
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveDirectory(PGCTLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--recursive",           GETOPTDEF_RMDIR_RECURSIVE,       RTGETOPT_REQ_NOTHING }
+    };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    bool fRecursive = false;
+    DESTDIRMAP mapDirs;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
         {
-            ctrlPrintError(pGuest, COM_IIDOF(IGuestSession)); /* Return code ignored, save original rc. */
+            case GETOPTDEF_RMDIR_RECURSIVE:
+                fRecursive = true;
+                break;
+
+            case VINF_GETOPT_NOT_OPTION:
+                mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+                break;
+        }
+    }
+
+    uint32_t cDirs = mapDirs.size();
+    if (!cDirs)
+        return errorSyntax(USAGE_GUESTCONTROL, "No directory to remove specified!");
+
+    /*
+     * Remove the directories.
+     */
+    HRESULT rc = S_OK;
+    if (pCtx->fVerbose && cDirs)
+        RTPrintf("Removing %RU32 directories ...\n", cDirs);
+
+    DESTDIRMAPITER it = mapDirs.begin();
+    while (   (it != mapDirs.end())
+           && !g_fGuestCtrlCanceled)
+    {
+        if (pCtx->fVerbose)
+            RTPrintf("%s directory \"%s\" ...\n",
+                     fRecursive ? "Recursively removing" : "Removing",
+                     it->first.c_str());
+        try
+        {
+            if (fRecursive)
+            {
+                com::SafeArray<DirectoryRemoveRecFlag_T> aRemRecFlags;
+                /** @todo Make flags configurable. */
+                aRemRecFlags.push_back(DirectoryRemoveRecFlag_ContentAndDir);
+
+                ComPtr<IProgress> pProgress;
+                CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRemoveRecursive(Bstr(it->first).raw(),
+                                                                                ComSafeArrayAsInParam(aRemRecFlags),
+                                                                                pProgress.asOutParam()));
+                if (pCtx->fVerbose)
+                    rc = showProgress(pProgress);
+                else
+                    rc = pProgress->WaitForCompletion(-1 /* No timeout */);
+                if (SUCCEEDED(rc))
+                    CHECK_PROGRESS_ERROR(pProgress, ("Directory deletion failed"));
+            }
+            else
+                CHECK_ERROR_BREAK(pCtx->pGuestSession, DirectoryRemove(Bstr(it->first).raw()));
+        }
+        catch (std::bad_alloc)
+        {
+            rc = E_OUTOFMEMORY;
             break;
         }
 
         it++;
     }
 
-    if (!pGuestSession.isNull())
-        pGuestSession->Close();
-
-    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
-static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlRemoveFile(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
+
+    /*
+     * Parse arguments.
+     *
+     * Note! No direct returns here, everyone must go thru the cleanup at the
+     *       end of this function.
+     */
+    static const RTGETOPTDEF s_aOptions[] = { 0 };
+
+    int ch;
+    RTGETOPTUNION ValueUnion;
+    RTGETOPTSTATE GetState;
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+
+    DESTDIRMAP mapDirs;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
+        {
+            case VINF_GETOPT_NOT_OPTION:
+                mapDirs[ValueUnion.psz]; /* Add destination directory to map. */
+                break;
+
+            default:
+                return RTGetOptPrintError(ch, &ValueUnion);
+                break;
+        }
+    }
+
+    uint32_t cFiles = mapDirs.size();
+    if (!cFiles)
+        return errorSyntax(USAGE_GUESTCONTROL, "No file to remove specified!");
+
+    /*
+     * Create the directories.
+     */
+    HRESULT rc = S_OK;
+    if (pCtx->fVerbose && cFiles)
+        RTPrintf("Removing %RU32 file(s) ...\n", cFiles);
+
+    DESTDIRMAPITER it = mapDirs.begin();
+    while (   (it != mapDirs.end())
+           && !g_fGuestCtrlCanceled)
+    {
+        if (pCtx->fVerbose)
+            RTPrintf("Removing file \"%s\" ...\n", it->first.c_str());
+
+        CHECK_ERROR_BREAK(pCtx->pGuestSession, FileRemove(Bstr(it->first).raw()));
+
+        it++;
+    }
+
+    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+}
+
+static DECLCALLBACK(RTEXITCODE) handleCtrlCreateTemp(PGCTLCMDCTX pCtx)
+{
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
      * Parse arguments.
@@ -3095,29 +2767,20 @@ static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         { "--mode",                'm',                             RTGETOPT_REQ_UINT32  },
         { "--directory",           'D',                             RTGETOPT_REQ_NOTHING },
         { "--secure",              's',                             RTGETOPT_REQ_NOTHING },
-        { "--tmpdir",              't',                             RTGETOPT_REQ_STRING  },
-        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
-        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
-        { "--password",            GETOPTDEF_MKDIR_PASSWORD,        RTGETOPT_REQ_STRING  },
-        { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--tmpdir",              't',                             RTGETOPT_REQ_STRING  }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    Utf8Str strUsername;
-    Utf8Str strPassword;
-    Utf8Str strDomain;
     Utf8Str strTemplate;
     uint32_t fMode = 0; /* Default mode. */
     bool fDirectory = false;
     bool fSecure = false;
     Utf8Str strTempDir;
-    bool fVerbose = false;
 
     DESTDIRMAP mapDirs;
 
@@ -3142,30 +2805,6 @@ static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                 strTempDir = ValueUnion.psz;
                 break;
 
-            case 'u': /* User name */
-                strUsername = ValueUnion.psz;
-                break;
-
-            case GETOPTDEF_MKDIR_PASSWORD: /* Password */
-                strPassword = ValueUnion.psz;
-                break;
-
-            case 'p': /* Password file */
-            {
-                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'd': /* domain */
-                strDomain = ValueUnion.psz;
-                break;
-
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
             {
                 if (strTemplate.isEmpty())
@@ -3178,14 +2817,12 @@ static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
     if (strTemplate.isEmpty())
         return errorSyntax(USAGE_GUESTCONTROL, "No template specified!");
-
-    if (strUsername.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
 
     if (!fDirectory)
         return errorSyntax(USAGE_GUESTCONTROL, "Creating temporary files is currently not supported!");
@@ -3193,8 +2830,7 @@ static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     /*
      * Create the directories.
      */
-    HRESULT hrc = S_OK;
-    if (fVerbose)
+    if (pCtx->fVerbose)
     {
         if (fDirectory && !strTempDir.isEmpty())
             RTPrintf("Creating temporary directory from template '%s' in directory '%s' ...\n",
@@ -3210,93 +2846,49 @@ static RTEXITCODE handleCtrlCreateTemp(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                      strTemplate.c_str());
     }
 
-    ComPtr<IGuestSession> pGuestSession;
-    hrc = pGuest->CreateSession(Bstr(strUsername).raw(),
-                                Bstr(strPassword).raw(),
-                                Bstr(strDomain).raw(),
-                                Bstr("VBoxManage Guest Control MkTemp").raw(),
-                                pGuestSession.asOutParam());
-    if (FAILED(hrc))
-    {
-        ctrlPrintError(pGuest, COM_IIDOF(IGuest));
-        return RTEXITCODE_FAILURE;
-    }
-
+    HRESULT rc = S_OK;
     if (fDirectory)
     {
         Bstr directory;
-        hrc = pGuestSession->DirectoryCreateTemp(Bstr(strTemplate).raw(),
-                                                 fMode, Bstr(strTempDir).raw(),
-                                                 fSecure,
-                                                 directory.asOutParam());
-        if (SUCCEEDED(hrc))
+        CHECK_ERROR(pCtx->pGuestSession, DirectoryCreateTemp(Bstr(strTemplate).raw(),
+                                                             fMode, Bstr(strTempDir).raw(),
+                                                             fSecure,
+                                                             directory.asOutParam()));
+        if (SUCCEEDED(rc))
             RTPrintf("Directory name: %ls\n", directory.raw());
     }
     // else - temporary file not yet implemented
-    if (FAILED(hrc))
-        ctrlPrintError(pGuest, COM_IIDOF(IGuestSession)); /* Return code ignored, save original rc. */
 
-    if (!pGuestSession.isNull())
-        pGuestSession->Close();
-
-    return FAILED(hrc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
+    return FAILED(rc) ? RTEXITCODE_FAILURE : RTEXITCODE_SUCCESS;
 }
 
-static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlStat(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--dereference",         'L',                             RTGETOPT_REQ_NOTHING },
         { "--file-system",         'f',                             RTGETOPT_REQ_NOTHING },
         { "--format",              'c',                             RTGETOPT_REQ_STRING },
-        { "--username",            'u',                             RTGETOPT_REQ_STRING  },
-        { "--passwordfile",        'p',                             RTGETOPT_REQ_STRING  },
-        { "--password",            GETOPTDEF_STAT_PASSWORD,         RTGETOPT_REQ_STRING  },
-        { "--domain",              'd',                             RTGETOPT_REQ_STRING  },
-        { "--terse",               't',                             RTGETOPT_REQ_NOTHING },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--terse",               't',                             RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
-    Utf8Str strUsername;
-    Utf8Str strPassword;
-    Utf8Str strDomain;
-
-    bool fVerbose = false;
     DESTDIRMAP mapObjs;
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
+                        RTPrintf("val: %s=%d\n", ValueUnion.psz, ch);
+
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case 'u': /* User name */
-                strUsername = ValueUnion.psz;
-                break;
-
-            case GETOPTDEF_STAT_PASSWORD: /* Password */
-                strPassword = ValueUnion.psz;
-                break;
-
-            case 'p': /* Password file */
-            {
-                RTEXITCODE rcExit = readPasswordFile(ValueUnion.psz, &strPassword);
-                if (rcExit != RTEXITCODE_SUCCESS)
-                    return rcExit;
-                break;
-            }
-
-            case 'd': /* domain */
-                strDomain = ValueUnion.psz;
-                break;
-
             case 'L': /* Dereference */
             case 'f': /* File-system */
             case 'c': /* Format */
@@ -3305,18 +2897,13 @@ static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
                                    ValueUnion.psz);
                 break; /* Never reached. */
 
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
-            {
                 mapObjs[ValueUnion.psz]; /* Add element to check to map. */
                 break;
-            }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -3324,38 +2911,28 @@ static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
     if (!cObjs)
         return errorSyntax(USAGE_GUESTCONTROL, "No element(s) to check specified!");
 
-    if (strUsername.isEmpty())
-        return errorSyntax(USAGE_GUESTCONTROL, "No user name specified!");
-
-    ComPtr<IGuestSession> pGuestSession;
-    HRESULT hrc = pGuest->CreateSession(Bstr(strUsername).raw(),
-                                        Bstr(strPassword).raw(),
-                                        Bstr(strDomain).raw(),
-                                        Bstr("VBoxManage Guest Control Stat").raw(),
-                                        pGuestSession.asOutParam());
-    if (FAILED(hrc))
-        return ctrlPrintError(pGuest, COM_IIDOF(IGuest));
+    HRESULT rc;
 
     /*
-     * Create the directories.
+     * Doing the checks.
      */
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
     DESTDIRMAPITER it = mapObjs.begin();
     while (it != mapObjs.end())
     {
-        if (fVerbose)
+        if (pCtx->fVerbose)
             RTPrintf("Checking for element \"%s\" ...\n", it->first.c_str());
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
-        hrc = pGuestSession->FileQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
-        if (FAILED(hrc))
-            hrc = pGuestSession->DirectoryQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
+        rc = pCtx->pGuestSession->FileQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
+        if (FAILED(rc))
+            rc = pCtx->pGuestSession->DirectoryQueryInfo(Bstr(it->first).raw(), pFsObjInfo.asOutParam());
 
-        if (FAILED(hrc))
+        if (FAILED(rc))
         {
             /* If there's at least one element which does not exist on the guest,
              * drop out with exitcode 1. */
-            if (fVerbose)
+            if (pCtx->fVerbose)
                 RTPrintf("Cannot stat for element \"%s\": No such element\n",
                          it->first.c_str());
             rcExit = RTEXITCODE_FAILURE;
@@ -3363,9 +2940,7 @@ static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         else
         {
             FsObjType_T objType;
-            hrc = pFsObjInfo->COMGETTER(Type)(&objType);
-            if (FAILED(hrc))
-                return ctrlPrintError(pGuest, COM_IIDOF(IGuestFsObjInfo));
+            pFsObjInfo->COMGETTER(Type)(&objType);
             switch (objType)
             {
                 case FsObjType_File:
@@ -3391,15 +2966,12 @@ static int handleCtrlStat(ComPtr<IGuest> pGuest, HandlerArg *pArg)
         it++;
     }
 
-    if (!pGuestSession.isNull())
-        pGuestSession->Close();
-
     return rcExit;
 }
 
-static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlUpdateAdditions(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
      * Check the syntax.  We can deduce the correct syntax from the number of
@@ -3407,20 +2979,18 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
      */
     Utf8Str strSource;
     com::SafeArray<IN_BSTR> aArgs;
-    bool fVerbose = false;
     bool fWaitStartOnly = false;
 
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--source",              's',         RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',         RTGETOPT_REQ_NOTHING },
         { "--wait-start",          'w',         RTGETOPT_REQ_NOTHING }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv, s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, 0);
 
     int vrc = VINF_SUCCESS;
     while (   (ch = RTGetOpt(&GetState, &ValueUnion))
@@ -3432,36 +3002,31 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
                 strSource = ValueUnion.psz;
                 break;
 
-            case 'v':
-                fVerbose = true;
-                break;
-
             case 'w':
                 fWaitStartOnly = true;
                 break;
 
             case VINF_GETOPT_NOT_OPTION:
-            {
                 if (aArgs.size() == 0 && strSource.isEmpty())
                     strSource = ValueUnion.psz;
                 else
                     aArgs.push_back(Bstr(ValueUnion.psz).raw());
                 break;
-            }
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
-    if (fVerbose)
+    if (pCtx->fVerbose)
         RTPrintf("Updating Guest Additions ...\n");
 
     HRESULT rc = S_OK;
     while (strSource.isEmpty())
     {
         ComPtr<ISystemProperties> pProperties;
-        CHECK_ERROR_BREAK(pArg->virtualBox, COMGETTER(SystemProperties)(pProperties.asOutParam()));
+        CHECK_ERROR_BREAK(pCtx->handlerArg.virtualBox, COMGETTER(SystemProperties)(pProperties.asOutParam()));
         Bstr strISO;
         CHECK_ERROR_BREAK(pProperties, COMGETTER(DefaultAdditionsISO)(strISO.asOutParam()));
         strSource = strISO;
@@ -3482,28 +3047,28 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
 
     if (RT_SUCCESS(vrc))
     {
-        if (fVerbose)
+        if (pCtx->fVerbose)
             RTPrintf("Using source: %s\n", strSource.c_str());
 
         com::SafeArray<AdditionsUpdateFlag_T> aUpdateFlags;
         if (fWaitStartOnly)
         {
             aUpdateFlags.push_back(AdditionsUpdateFlag_WaitForUpdateStartOnly);
-            if (fVerbose)
+            if (pCtx->fVerbose)
                 RTPrintf("Preparing and waiting for Guest Additions installer to start ...\n");
         }
 
         ComPtr<IProgress> pProgress;
-        CHECK_ERROR(guest, UpdateGuestAdditions(Bstr(strSource).raw(),
+        CHECK_ERROR(pCtx->pGuest, UpdateGuestAdditions(Bstr(strSource).raw(),
                                                 ComSafeArrayAsInParam(aArgs),
                                                 /* Wait for whole update process to complete. */
                                                 ComSafeArrayAsInParam(aUpdateFlags),
                                                 pProgress.asOutParam()));
         if (FAILED(rc))
-            vrc = ctrlPrintError(guest, COM_IIDOF(IGuest));
+            vrc = ctrlPrintError(pCtx->pGuest, COM_IIDOF(IGuest));
         else
         {
-            if (fVerbose)
+            if (pCtx->fVerbose)
                 rc = showProgress(pProgress);
             else
                 rc = pProgress->WaitForCompletion(-1 /* No timeout */);
@@ -3512,7 +3077,7 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
                 CHECK_PROGRESS_ERROR(pProgress, ("Guest additions update failed"));
             vrc = ctrlPrintProgressError(pProgress);
             if (   RT_SUCCESS(vrc)
-                && fVerbose)
+                && pCtx->fVerbose)
             {
                 RTPrintf("Guest Additions update successful\n");
             }
@@ -3522,11 +3087,11 @@ static int handleCtrlUpdateAdditions(ComPtr<IGuest> guest, HandlerArg *pArg)
     return RT_SUCCESS(vrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlList(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    if (pArg->argc < 1)
+    if (pCtx->iArgc < 1)
         return errorSyntax(USAGE_GUESTCONTROL, "Must specify a listing category");
 
     RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
@@ -3537,15 +3102,15 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
     bool fListSessions = false;
     bool fListProcesses = false;
     bool fListFiles = false;
-    if (   !RTStrICmp(pArg->argv[0], "sessions")
-        || !RTStrICmp(pArg->argv[0], "sess"))
+    if (   !RTStrICmp(pCtx->ppaArgv[0], "sessions")
+        || !RTStrICmp(pCtx->ppaArgv[0], "sess"))
         fListSessions = true;
-    else if (   !RTStrICmp(pArg->argv[0], "processes")
-             || !RTStrICmp(pArg->argv[0], "procs"))
+    else if (   !RTStrICmp(pCtx->ppaArgv[0], "processes")
+             || !RTStrICmp(pCtx->ppaArgv[0], "procs"))
         fListSessions = fListProcesses = true; /* Showing processes implies showing sessions. */
-    else if (   !RTStrICmp(pArg->argv[0], "files"))
+    else if (   !RTStrICmp(pCtx->ppaArgv[0], "files"))
         fListSessions = fListFiles = true;     /* Showing files implies showing sessions. */
-    else if (!RTStrICmp(pArg->argv[0], "all"))
+    else if (!RTStrICmp(pCtx->ppaArgv[0], "all"))
         fListAll = true;
 
     /** @todo Handle "--verbose" using RTGetOpt. */
@@ -3561,7 +3126,7 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
             size_t cTotalFiles = 0;
 
             SafeIfaceArray <IGuestSession> collSessions;
-            CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+            CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
             size_t cSessions = collSessions.size();
 
             if (cSessions)
@@ -3651,16 +3216,16 @@ static RTEXITCODE handleCtrlList(ComPtr<IGuest> guest, HandlerArg *pArg)
             rcExit = RTEXITCODE_FAILURE;
     }
     else
-        return errorSyntax(USAGE_GUESTCONTROL, "Invalid listing category '%s", pArg->argv[0]);
+        return errorSyntax(USAGE_GUESTCONTROL, "Invalid listing category '%s", pCtx->ppaArgv[0]);
 
     return rcExit;
 }
 
-static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcessClose(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    if (pArg->argc < 1)
+    if (pCtx->iArgc < 1)
         return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a PID to close");
 
     /*
@@ -3672,20 +3237,18 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--session-id",          'i',                             RTGETOPT_REQ_UINT32  },
-        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     std::vector < uint32_t > vecPID;
     ULONG ulSessionID = UINT32_MAX;
     Utf8Str strSessionName;
-    bool fVerbose = false;
 
     int vrc = VINF_SUCCESS;
 
@@ -3703,12 +3266,8 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                 ulSessionID = ValueUnion.u32;
                 break;
 
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
-                if (pArg->argc == GetState.iNext)
+                if (pCtx->iArgc == GetState.iNext)
                 {
                     /* Treat every else specified as a PID to kill. */
                     try
@@ -3729,6 +3288,7 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -3758,7 +3318,7 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
         bool fSessionFound = false;
 
         SafeIfaceArray <IGuestSession> collSessions;
-        CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+        CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
         size_t cSessions = collSessions.size();
 
         uint32_t uSessionsHandled = 0;
@@ -3809,7 +3369,7 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 
                     if (fProcFound)
                     {
-                        if (fVerbose)
+                        if (pCtx->fVerbose)
                             RTPrintf("Terminating process (PID %RU32) (session ID %RU32) ...\n",
                                      uPID, uID);
                         CHECK_ERROR_BREAK(pProcess, Terminate());
@@ -3844,34 +3404,31 @@ static RTEXITCODE handleCtrlProcessClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static RTEXITCODE handleCtrlProcess(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlProcess(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    if (pArg->argc < 1)
+    if (pCtx->iArgc < 1)
         return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
 
     /** Use RTGetOpt here when handling command line args gets more complex. */
 
-    HandlerArg argSub = *pArg;
-    argSub.argc = pArg->argc - 1; /* Skip session action. */
-    argSub.argv = pArg->argv + 1; /* Same here. */
-
-    if (   !RTStrICmp(pArg->argv[0], "close")
-        || !RTStrICmp(pArg->argv[0], "kill")
-        || !RTStrICmp(pArg->argv[0], "terminate"))
+    if (   !RTStrICmp(pCtx->ppaArgv[0], "close")
+        || !RTStrICmp(pCtx->ppaArgv[0], "kill")
+        || !RTStrICmp(pCtx->ppaArgv[0], "terminate"))
     {
-        return handleCtrlProcessClose(guest, &argSub);
+        pCtx->iFirstArgc++; /* Skip process action. */
+        return handleCtrlProcessClose(pCtx);
     }
 
-    return errorSyntax(USAGE_GUESTCONTROL, "Invalid process action '%s'", pArg->argv[0]);
+    return errorSyntax(USAGE_GUESTCONTROL, "Invalid process action '%s'", pCtx->ppaArgv[0]);
 }
 
-static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlSessionClose(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    if (pArg->argc < 1)
+    if (pCtx->iArgc < 1)
         return errorSyntax(USAGE_GUESTCONTROL, "Must specify at least a session ID to close");
 
     /*
@@ -3884,19 +3441,17 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     {
         { "--all",                 GETOPTDEF_SESSIONCLOSE_ALL,      RTGETOPT_REQ_NOTHING  },
         { "--session-id",          'i',                             RTGETOPT_REQ_UINT32  },
-        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  },
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
+        { "--session-name",        'n',                             RTGETOPT_REQ_STRING  }
     };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     ULONG ulSessionID = UINT32_MAX;
     Utf8Str strSessionName;
-    bool fVerbose = false;
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
@@ -3911,10 +3466,6 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                 ulSessionID = ValueUnion.u32;
                 break;
 
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case GETOPTDEF_SESSIONCLOSE_ALL:
                 strSessionName = "*";
                 break;
@@ -3925,6 +3476,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -3948,7 +3500,7 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
         size_t cSessionsHandled = 0;
 
         SafeIfaceArray <IGuestSession> collSessions;
-        CHECK_ERROR_BREAK(guest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
+        CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(Sessions)(ComSafeArrayAsOutParam(collSessions)));
         size_t cSessions = collSessions.size();
 
         for (size_t i = 0; i < cSessions; i++)
@@ -3977,11 +3529,11 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
                 cSessionsHandled++;
 
                 Assert(!pSession.isNull());
-                if (fVerbose)
+                if (pCtx->fVerbose)
                     RTPrintf("Closing guest session ID=#%RU32 \"%s\" ...\n",
                              uID, strNameUtf8.c_str());
                 CHECK_ERROR_BREAK(pSession, Close());
-                if (fVerbose)
+                if (pCtx->fVerbose)
                     RTPrintf("Guest session successfully closed\n");
 
                 pSession->Release();
@@ -3999,63 +3551,52 @@ static RTEXITCODE handleCtrlSessionClose(ComPtr<IGuest> guest, HandlerArg *pArg)
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
-static RTEXITCODE handleCtrlSession(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlSession(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
-    if (pArg->argc < 1)
+    if (pCtx->iArgc < 1)
         return errorSyntax(USAGE_GUESTCONTROL, "Must specify an action");
 
     /** Use RTGetOpt here when handling command line args gets more complex. */
 
-    HandlerArg argSub = *pArg;
-    argSub.argc = pArg->argc - 1; /* Skip session action. */
-    argSub.argv = pArg->argv + 1; /* Same here. */
-
-    if (   !RTStrICmp(pArg->argv[0], "close")
-        || !RTStrICmp(pArg->argv[0], "kill")
-        || !RTStrICmp(pArg->argv[0], "terminate"))
+    if (   !RTStrICmp(pCtx->ppaArgv[0], "close")
+        || !RTStrICmp(pCtx->ppaArgv[0], "kill")
+        || !RTStrICmp(pCtx->ppaArgv[0], "terminate"))
     {
-        return handleCtrlSessionClose(guest, &argSub);
+        pCtx->iFirstArgc++; /* Skip session action. */
+        return handleCtrlSessionClose(pCtx);
     }
 
-    return errorSyntax(USAGE_GUESTCONTROL, "Invalid session action '%s'", pArg->argv[0]);
+    return errorSyntax(USAGE_GUESTCONTROL, "Invalid session action '%s'", pCtx->ppaArgv[0]);
 }
 
-static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
+static DECLCALLBACK(RTEXITCODE) handleCtrlWatch(PGCTLCMDCTX pCtx)
 {
-    AssertPtrReturn(pArg, RTEXITCODE_SYNTAX);
+    AssertPtrReturn(pCtx, RTEXITCODE_FAILURE);
 
     /*
      * Parse arguments.
      */
-    static const RTGETOPTDEF s_aOptions[] =
-    {
-        { "--verbose",             'v',                             RTGETOPT_REQ_NOTHING }
-    };
+    static const RTGETOPTDEF s_aOptions[] = { 0 };
 
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, pArg->argc, pArg->argv,
-                 s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_OPTS_FIRST);
-
-    bool fVerbose = false;
+    RTGetOptInit(&GetState, pCtx->iArgc, pCtx->ppaArgv,
+                 s_aOptions, RT_ELEMENTS(s_aOptions), pCtx->iFirstArgc, RTGETOPTINIT_FLAGS_OPTS_FIRST);
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
-            case 'v': /* Verbose */
-                fVerbose = true;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
                 break;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);
+                break;
         }
     }
 
@@ -4075,7 +3616,7 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
 
             /* Register for IGuest events. */
             ComPtr<IEventSource> es;
-            CHECK_ERROR_BREAK(guest, COMGETTER(EventSource)(es.asOutParam()));
+            CHECK_ERROR_BREAK(pCtx->pGuest, COMGETTER(EventSource)(es.asOutParam()));
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnGuestSessionRegistered);
             /** @todo Also register for VBoxEventType_OnGuestUserStateChanged on demand? */
@@ -4086,9 +3627,7 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
 
         } while (0);
 
-        ctrlSignalHandlerInstall();
-
-        if (fVerbose)
+        if (pCtx->fVerbose)
             RTPrintf("Waiting for events ...\n");
 
         while (!g_fGuestCtrlCanceled)
@@ -4097,16 +3636,14 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
             RTThreadSleep(10);
         }
 
-        if (fVerbose)
+        if (pCtx->fVerbose)
             RTPrintf("Signal caught, exiting ...\n");
-
-        ctrlSignalHandlerUninstall();
 
         if (!pGuestListener.isNull())
         {
             /* Guest callback unregistration. */
             ComPtr<IEventSource> pES;
-            CHECK_ERROR(guest, COMGETTER(EventSource)(pES.asOutParam()));
+            CHECK_ERROR(pCtx->pGuest, COMGETTER(EventSource)(pES.asOutParam()));
             if (!pES.isNull())
                 CHECK_ERROR(pES, UnregisterListener(pGuestListener));
             pGuestListener.setNull();
@@ -4128,70 +3665,104 @@ static RTEXITCODE handleCtrlWatch(ComPtr<IGuest> guest, HandlerArg *pArg)
  */
 int handleGuestControl(HandlerArg *pArg)
 {
-    AssertPtrReturn(pArg, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pArg, VERR_INVALID_POINTER);
 
 #ifdef DEBUG_andy_disabled
     if (RT_FAILURE(tstTranslatePath()))
         return RTEXITCODE_FAILURE;
 #endif
 
-    HandlerArg arg = *pArg;
-    arg.argc = pArg->argc - 2; /* Skip VM name and sub command. */
-    arg.argv = pArg->argv + 2; /* Same here. */
+    /* pArg->argv[0] contains the VM name. */
+    /* pArg->argv[1] contains the guest control command. */
+    if (pArg->argc < 2)
+        return errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
 
-    ComPtr<IGuest> guest;
-    int vrc = ctrlInitVM(pArg, pArg->argv[0] /* VM Name */, &guest);
-    if (RT_SUCCESS(vrc))
+    uint32_t uCmdCtxFlags = 0;
+    GCTLCMD gctlCmd;
+    if (   !RTStrICmp(pArg->argv[1], "exec")
+        || !RTStrICmp(pArg->argv[1], "execute"))
+        gctlCmd.pfnHandler = handleCtrlProcessExec;
+    else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
+        gctlCmd.pfnHandler = handleCtrlCopyFrom;
+    else if (   !RTStrICmp(pArg->argv[1], "copyto")
+             || !RTStrICmp(pArg->argv[1], "cp"))
+        gctlCmd.pfnHandler = handleCtrlCopyTo;
+    else if (   !RTStrICmp(pArg->argv[1], "createdirectory")
+             || !RTStrICmp(pArg->argv[1], "createdir")
+             || !RTStrICmp(pArg->argv[1], "mkdir")
+             || !RTStrICmp(pArg->argv[1], "md"))
+        gctlCmd.pfnHandler = handleCtrlCreateDirectory;
+    else if (   !RTStrICmp(pArg->argv[1], "removedirectory")
+             || !RTStrICmp(pArg->argv[1], "removedir")
+             || !RTStrICmp(pArg->argv[1], "rmdir"))
+        gctlCmd.pfnHandler = handleCtrlRemoveDirectory;
+    else if (   !RTStrICmp(pArg->argv[1], "rm")
+             || !RTStrICmp(pArg->argv[1], "removefile"))
+        gctlCmd.pfnHandler = handleCtrlRemoveFile;
+    else if (   !RTStrICmp(pArg->argv[1], "createtemporary")
+             || !RTStrICmp(pArg->argv[1], "createtemp")
+             || !RTStrICmp(pArg->argv[1], "mktemp"))
+        gctlCmd.pfnHandler = handleCtrlCreateTemp;
+    else if (   !RTStrICmp(pArg->argv[1], "kill")    /* Linux. */
+             || !RTStrICmp(pArg->argv[1], "pkill")   /* Solaris / *BSD. */
+             || !RTStrICmp(pArg->argv[1], "pskill")) /* SysInternals version. */
     {
-        int rcExit;
-        if (pArg->argc < 2)
-            rcExit = errorSyntax(USAGE_GUESTCONTROL, "No sub command specified!");
-        else if (   !RTStrICmp(pArg->argv[1], "exec")
-                 || !RTStrICmp(pArg->argv[1], "execute"))
-            rcExit = handleCtrlProcessExec(guest, &arg);
-        else if (!RTStrICmp(pArg->argv[1], "copyfrom"))
-            rcExit = handleCtrlCopy(guest, &arg, false /* Guest to host */);
-        else if (   !RTStrICmp(pArg->argv[1], "copyto")
-                 || !RTStrICmp(pArg->argv[1], "cp"))
-            rcExit = handleCtrlCopy(guest, &arg, true /* Host to guest */);
-        else if (   !RTStrICmp(pArg->argv[1], "createdirectory")
-                 || !RTStrICmp(pArg->argv[1], "createdir")
-                 || !RTStrICmp(pArg->argv[1], "mkdir")
-                 || !RTStrICmp(pArg->argv[1], "md"))
-            rcExit = handleCtrlCreateDirectory(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "createtemporary")
-                 || !RTStrICmp(pArg->argv[1], "createtemp")
-                 || !RTStrICmp(pArg->argv[1], "mktemp"))
-            rcExit = handleCtrlCreateTemp(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "kill")    /* Linux. */
-                 || !RTStrICmp(pArg->argv[1], "pkill")   /* Solaris / *BSD. */
-                 || !RTStrICmp(pArg->argv[1], "pskill")) /* SysInternals version. */
-        {
-            /** @todo What about "taskkill" on Windows? */
-            rcExit = handleCtrlProcessClose(guest, &arg);
-        }
-        /** @todo Implement "killall"? */
-        else if (   !RTStrICmp(pArg->argv[1], "stat"))
-            rcExit = handleCtrlStat(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "updateadditions")
-                 || !RTStrICmp(pArg->argv[1], "updateadds"))
-            rcExit = handleCtrlUpdateAdditions(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "list"))
-            rcExit = handleCtrlList(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "session"))
-            rcExit = handleCtrlSession(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "process"))
-            rcExit = handleCtrlProcess(guest, &arg);
-        else if (   !RTStrICmp(pArg->argv[1], "watch"))
-            rcExit = handleCtrlWatch(guest, &arg);
-        else
-            rcExit = errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
+        /** @todo What about "taskkill" on Windows? */
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlProcessClose;
+    }
+    /** @todo Implement "killall"? */
+    else if (   !RTStrICmp(pArg->argv[1], "stat"))
+        gctlCmd.pfnHandler = handleCtrlStat;
+    else if (   !RTStrICmp(pArg->argv[1], "updateadditions")
+             || !RTStrICmp(pArg->argv[1], "updateadds"))
+    {
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlUpdateAdditions;
+    }
+    else if (   !RTStrICmp(pArg->argv[1], "list"))
+    {
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlList;
+    }
+    else if (   !RTStrICmp(pArg->argv[1], "session"))
+    {
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlSession;
+    }
+    else if (   !RTStrICmp(pArg->argv[1], "process"))
+    {
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlProcess;
+    }
+    else if (   !RTStrICmp(pArg->argv[1], "watch"))
+    {
+        uCmdCtxFlags = CTLCMDCTX_FLAGS_SESSION_ANONYMOUS
+                     | CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER;
+        gctlCmd.pfnHandler = handleCtrlWatch;
+    }
+    else
+        return errorSyntax(USAGE_GUESTCONTROL, "Unknown sub command '%s' specified!", pArg->argv[1]);
 
-        ctrlUninitVM(pArg);
+    GCTLCMDCTX cmdCtx;
+    RT_ZERO(cmdCtx);
+
+    RTEXITCODE rcExit = ctrlInitVM(pArg, &cmdCtx, uCmdCtxFlags);
+    if (rcExit == RTEXITCODE_SUCCESS)
+    {
+        /* Kick off the actual command handler. */
+        rcExit = gctlCmd.pfnHandler(&cmdCtx);
+
+        ctrlUninitVM(&cmdCtx, cmdCtx.uFlags);
         return rcExit;
     }
-    return RTEXITCODE_FAILURE;
-}
 
+    return rcExit;
+}
 #endif /* !VBOX_ONLY_DOCS */
 
