@@ -568,6 +568,7 @@ RuntimeR3_SOURCES += \
 	$(if $(VBOX_WITH_DBUS),VBox/dbus.cpp,)
 endif
 
+VBOX_WITH_NT_DIRENUM = 1
 RuntimeR3_SOURCES.win = \
 	common/dbg/dbgmoddbghelp.cpp \
 	generic/cdrom-generic.cpp \
