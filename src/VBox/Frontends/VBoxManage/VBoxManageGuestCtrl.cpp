@@ -69,6 +69,14 @@ static volatile bool         g_fGuestCtrlCanceled = false;
 static ComPtr<IGuestSession> g_pGuestSession;
 
 /**
+ * Listener declarations.
+ */
+VBOX_LISTENER_DECLARE(GuestFileEventListenerImpl)
+VBOX_LISTENER_DECLARE(GuestProcessEventListenerImpl)
+VBOX_LISTENER_DECLARE(GuestSessionEventListenerImpl)
+VBOX_LISTENER_DECLARE(GuestEventListenerImpl)
+
+/**
  * Command context flags.
  */
 /** No flags set. */
