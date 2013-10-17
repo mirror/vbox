@@ -171,3 +171,10 @@ NTSYSAPI NTSTATUS NTAPI NtClose(IN HANDLE Handle)
     return -1;
 }
 
+NTSYSAPI NTSTATUS NTAPI NtDeviceIoControlFile(HANDLE FileHandle, HANDLE Event, PIO_APC_ROUTINE ApcRoutine, PVOID ApcContext,
+                                              PIO_STATUS_BLOCK IoStatusBlock, ULONG IoControlCode, PVOID InputBuffer,
+                                              LONG InputBufferLength, PVOID OutputBuffer, ULONG OutputBufferLength)
+{
+    return -1;
+}
+

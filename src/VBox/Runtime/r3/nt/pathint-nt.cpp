@@ -202,19 +202,19 @@ void rtNtPathFreeNative(struct _UNICODE_STRING *pNtName, PHANDLE phRootDir)
  * @param   phHandle            Where to return the handle.
  * @param   puAction            Where to return the action taken. Optional.
  */
-int  rtNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fFileAttribs, ULONG fShareAccess,
-                  ULONG fCreateDisposition, ULONG fCreateOptions, ULONG fObjAttribs,
-                  PHANDLE phHandle, PULONG_PTR puAction)
+RTDECL(int) RTNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fFileAttribs, ULONG fShareAccess,
+                         ULONG fCreateDisposition, ULONG fCreateOptions, ULONG fObjAttribs,
+                         PHANDLE phHandle, PULONG_PTR puAction)
 {
-    *phHandle = MY_INVALID_HANDLE_VALUE;
+    *phHandle = RTNT_INVALID_HANDLE_VALUE;
 
     HANDLE         hRootDir;
     UNICODE_STRING NtName;
     int rc = rtNtPathToNative(&NtName, &hRootDir, pszPath);
     if (RT_SUCCESS(rc))
     {
-        HANDLE              hFile = MY_INVALID_HANDLE_VALUE;
-        IO_STATUS_BLOCK     Ios   = MY_IO_STATUS_BLOCK_INITIALIZER;
+        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         OBJECT_ATTRIBUTES   ObjAttr;
         InitializeObjectAttributes(&ObjAttr, &NtName, fObjAttribs, hRootDir, NULL);
 
@@ -262,18 +262,18 @@ int  rtNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fFileAt
  *                              @c false if we opened an directory file (normal
  *                              directory).
  */
-int  rtNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fShareAccess, ULONG fCreateOptions,
-                     ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir)
+RTDECL(int) RTNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fShareAccess, ULONG fCreateOptions,
+                            ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir)
 {
-    *phHandle = MY_INVALID_HANDLE_VALUE;
+    *phHandle = RTNT_INVALID_HANDLE_VALUE;
 
     HANDLE         hRootDir;
     UNICODE_STRING NtName;
     int rc = rtNtPathToNative(&NtName, &hRootDir, pszPath);
     if (RT_SUCCESS(rc))
     {
-        HANDLE              hFile = MY_INVALID_HANDLE_VALUE;
-        IO_STATUS_BLOCK     Ios   = MY_IO_STATUS_BLOCK_INITIALIZER;
+        HANDLE              hFile = RTNT_INVALID_HANDLE_VALUE;
+        IO_STATUS_BLOCK     Ios   = RTNT_IO_STATUS_BLOCK_INITIALIZER;
         OBJECT_ATTRIBUTES   ObjAttr;
         InitializeObjectAttributes(&ObjAttr, &NtName, fObjAttribs, hRootDir, NULL);
 
@@ -346,7 +346,7 @@ int  rtNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fSha
  * @returns IPRT status code
  * @param   hHandle             The handle value.
  */
-int rtNtPathClose(HANDLE hHandle)
+RTDECL(int) RTNtPathClose(HANDLE hHandle)
 {
     NTSTATUS rcNt = NtClose(hHandle);
     if (NT_SUCCESS(rcNt))

@@ -104,7 +104,7 @@ int rtDirNativeOpen(PRTDIR pDir, char *pszPathBuf)
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU
     bool fObjDir;
 #endif
-    rc = rtNtPathOpenDir(pszPathBuf,
+    rc = RTNtPathOpenDir(pszPathBuf,
                          FILE_READ_DATA | SYNCHRONIZE,
                          FILE_SHARE_READ | FILE_SHARE_WRITE,
                          FILE_DIRECTORY_FILE | FILE_OPEN_FOR_BACKUP_INTENT | FILE_SYNCHRONOUS_IO_NONALERT,
@@ -148,11 +148,11 @@ RTDECL(int) RTDirClose(PRTDIR pDir)
      * Close the handle.
      */
     pDir->u32Magic = ~RTDIR_MAGIC;
-    if (pDir->hDir != MY_INVALID_HANDLE_VALUE)
+    if (pDir->hDir != RTNT_INVALID_HANDLE_VALUE)
     {
-        int rc = rtNtPathClose(pDir->hDir);
+        int rc = RTNtPathClose(pDir->hDir);
         AssertRC(rc);
-        pDir->hDir = MY_INVALID_HANDLE_VALUE;
+        pDir->hDir = RTNT_INVALID_HANDLE_VALUE;
     }
     RTStrFree(pDir->pszName);
     pDir->pszName = NULL;
@@ -280,7 +280,7 @@ static int rtDirNtFetchMore(PRTDIR pThis)
      * Read more.
      */
     NTSTATUS rcNt;
-    IO_STATUS_BLOCK Ios = MY_IO_STATUS_BLOCK_INITIALIZER;
+    IO_STATUS_BLOCK Ios = RTNT_IO_STATUS_BLOCK_INITIALIZER;
     if (pThis->enmInfoClass != (FILE_INFORMATION_CLASS)0)
     {
 #ifdef IPRT_WITH_NT_PATH_PASSTHRU

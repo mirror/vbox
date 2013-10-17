@@ -37,7 +37,12 @@
 # define LogRelIt(pvInst, fFlags, iGroup, fmtargs) do { } while (0)
 #endif
 
-#include <Windows.h>
+#define USE_NT_DEVICE_IO_CONTROL_FILE
+#ifdef USE_NT_DEVICE_IO_CONTROL_FILE
+# include <iprt/nt/nt-and-windows.h>
+#else
+# include <Windows.h>
+#endif
 
 #include <VBox/sup.h>
 #include <VBox/types.h>
@@ -74,7 +79,11 @@ static int suplibOsCreateService(void);
 static int suplibOsDeleteService(void);
 static int suplibOsStartService(void);
 static int suplibOsStopService(void);
+#ifdef USE_NT_DEVICE_IO_CONTROL_FILE
+static int suplibConvertNtStatus(NTSTATUS rcNt);
+#else
 static int suplibConvertWin32Err(int);
+#endif
 
 
 
@@ -495,10 +504,28 @@ int suplibOsIOCtl(PSUPLIBDATA pThis, uintptr_t uFunction, void *pvReq, size_t cb
      */
     PSUPREQHDR pHdr = (PSUPREQHDR)pvReq;
     Assert(cbReq == RT_MAX(pHdr->cbIn, pHdr->cbOut));
+# ifdef USE_NT_DEVICE_IO_CONTROL_FILE
+    IO_STATUS_BLOCK Ios;
+    Ios.Status = -1;
+    Ios.Information = 0;
+    NTSTATUS rcNt = NtDeviceIoControlFile((HANDLE)pThis->hDevice, NULL /*hEvent*/, NULL /*pfnApc*/, NULL /*pvApcCtx*/, &Ios,
+                                          (ULONG)uFunction,
+                                          pvReq /*pvInput */, pHdr->cbIn /* cbInput */,
+                                          pvReq /*pvOutput*/, pHdr->cbOut /* cbOutput */);
+    if (NT_SUCCESS(rcNt))
+    {
+        if (NT_SUCCESS(Ios.Status))
+            return VINF_SUCCESS;
+        rcNt = Ios.Status;
+    }
+    return suplibConvertNtStatus(rcNt);
+
+# else
     DWORD cbReturned = (ULONG)pHdr->cbOut;
     if (DeviceIoControl((HANDLE)pThis->hDevice, uFunction, pvReq, pHdr->cbIn, pvReq, cbReturned, &cbReturned, NULL))
         return 0;
     return suplibConvertWin32Err(GetLastError());
+# endif
 }
 
 
@@ -507,10 +534,27 @@ int suplibOsIOCtlFast(PSUPLIBDATA pThis, uintptr_t uFunction, uintptr_t idCpu)
     /*
      * Issue device I/O control.
      */
+# ifdef USE_NT_DEVICE_IO_CONTROL_FILE
+    IO_STATUS_BLOCK Ios;
+    Ios.Status = -1;
+    Ios.Information = 0;
+    NTSTATUS rcNt = NtDeviceIoControlFile((HANDLE)pThis->hDevice, NULL /*hEvent*/, NULL /*pfnApc*/, NULL /*pvApcCtx*/, &Ios,
+                                          (ULONG)uFunction,
+                                          (PVOID)idCpu /*pvInput */, 0 /* cbInput */,
+                                          NULL /*pvOutput*/, 0 /* cbOutput */);
+    if (NT_SUCCESS(rcNt))
+    {
+        if (NT_SUCCESS(Ios.Status))
+            return VINF_SUCCESS;
+        rcNt = Ios.Status;
+    }
+    return suplibConvertNtStatus(rcNt);
+# else
     DWORD cbReturned = 0;
     if (DeviceIoControl((HANDLE)pThis->hDevice, uFunction, NULL, 0, (LPVOID)idCpu, 0, &cbReturned, NULL))
         return VINF_SUCCESS;
     return suplibConvertWin32Err(GetLastError());
+# endif
 }
 
 
@@ -520,7 +564,7 @@ int suplibOsPageAlloc(PSUPLIBDATA pThis, size_t cPages, void **ppvPages)
     *ppvPages = VirtualAlloc(NULL, (size_t)cPages << PAGE_SHIFT, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
     if (*ppvPages)
         return VINF_SUCCESS;
-    return suplibConvertWin32Err(GetLastError());
+    return RTErrConvertFromWin32(GetLastError());
 }
 
 
@@ -529,10 +573,11 @@ int suplibOsPageFree(PSUPLIBDATA pThis, void *pvPages, size_t /* cPages */)
     NOREF(pThis);
     if (VirtualFree(pvPages, 0, MEM_RELEASE))
         return VINF_SUCCESS;
-    return suplibConvertWin32Err(GetLastError());
+    return RTErrConvertFromWin32(GetLastError());
 }
 
 
+# ifndef USE_NT_DEVICE_IO_CONTROL_FILE
 /**
  * Converts a supdrv win32 error code to an IPRT status code.
  *
@@ -584,6 +629,32 @@ static int suplibConvertWin32Err(int rc)
     /* fall back on the default conversion. */
     return RTErrConvertFromWin32(rc);
 }
+# else
+/**
+ * Reverse of VBoxDrvNtErr2NtStatus
+ * returns VBox status code.
+ * @param   rcNt    NT status code.
+ */
+static int suplibConvertNtStatus(NTSTATUS rcNt)
+{
+    switch (rcNt)
+    {
+        case STATUS_SUCCESS:                    return VINF_SUCCESS;
+        case STATUS_NOT_SUPPORTED:              return VERR_GENERAL_FAILURE;
+        case STATUS_INVALID_PARAMETER:          return VERR_INVALID_PARAMETER;
+        case STATUS_UNKNOWN_REVISION:           return VERR_INVALID_MAGIC;
+        case STATUS_INVALID_HANDLE:             return VERR_INVALID_HANDLE;
+        case STATUS_INVALID_ADDRESS:            return VERR_INVALID_POINTER;
+        case STATUS_NOT_LOCKED:                 return VERR_LOCK_FAILED;
+        case STATUS_IMAGE_ALREADY_LOADED:       return VERR_ALREADY_LOADED;
+        case STATUS_ACCESS_DENIED:              return VERR_PERMISSION_DENIED;
+        case STATUS_REVISION_MISMATCH:          return VERR_VERSION_MISMATCH;
+    }
+
+    /* Fall back on IPRT for the rest. */
+    return RTErrConvertFromNtStatus(rcNt);
+}
+# endif
 
 #endif /* !IN_SUP_HARDENED_R3 */
 

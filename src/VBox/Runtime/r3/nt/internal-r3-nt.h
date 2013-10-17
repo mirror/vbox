@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2010-2012 Oracle Corporation
+ * Copyright (C) 2010-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,53 +29,15 @@
 #define ___internal_r3_nt_h___
 
 
-/*******************************************************************************
-*   Header Files                                                               *
-*******************************************************************************/
-#include <ntstatus.h>
-#ifdef IPRT_NT_USE_WINTERNL
-# define WIN32_NO_STATUS
-# include <windef.h>
-# include <winnt.h>
-# include <winternl.h>
-# define IPRT_NT_NEED_API_GROUP_1
-
-#elif defined(IPRT_NT_USE_WDM)
-# include <wdm.h>
-# define IPRT_NT_NEED_API_GROUP_1
-
-#else
-# include <ntifs.h>
-#endif
+#include <iprt/nt/nt.h>
 #include "internal/iprt.h"
 
-
-/*******************************************************************************
-*   Defined Constants And Macros                                               *
-*******************************************************************************/
-/** Indicates that we're targetting native NT in the current source. */
-#define RT_USE_NATIVE_NT                1
-/** Initializes a IO_STATUS_BLOCK. */
-#define MY_IO_STATUS_BLOCK_INITIALIZER  { STATUS_FAILED_DRIVER_ENTRY, ~(uintptr_t)42 }
-/** Similar to INVALID_HANDLE_VALUE in the Windows environment. */
-#define MY_INVALID_HANDLE_VALUE         ( (HANDLE)~(uintptr_t)0 )
 
 #ifdef DEBUG_bird
 /** Enables the "\\!\" NT path pass thru as well as hacks for listing NT object
  * directories. */
 # define IPRT_WITH_NT_PATH_PASSTHRU 1
 #endif
-
-
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-int  rtNtPathOpen(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fFileAttribs, ULONG fShareAccess,
-                  ULONG fCreateDisposition, ULONG fCreateOptions, ULONG fObjAttribs,
-                  PHANDLE phHandle, PULONG_PTR puDisposition);
-int  rtNtPathOpenDir(const char *pszPath, ACCESS_MASK fDesiredAccess, ULONG fShareAccess, ULONG fCreateOptions,
-                     ULONG fObjAttribs, PHANDLE phHandle, bool *pfObjDir);
-int  rtNtPathClose(HANDLE hHandle);
 
 
 /**
@@ -100,41 +62,6 @@ DECLINLINE(bool) rtNtCompWideStrAndAscii(WCHAR const *pwsz1, size_t cch1, const 
     }
     return true;
 }
-
-
-/*******************************************************************************
-*   NT APIs                                                                    *
-*******************************************************************************/
-
-RT_C_DECLS_BEGIN
-
-#ifdef IPRT_NT_NEED_API_GROUP_1
-
-typedef struct _FILE_FS_ATTRIBUTE_INFORMATION
-{
-    ULONG   FileSystemAttributes;
-    LONG    MaximumComponentNameLength;
-    ULONG   FileSystemNameLength;
-    WCHAR   FileSystemName[1];
-} FILE_FS_ATTRIBUTE_INFORMATION;
-typedef FILE_FS_ATTRIBUTE_INFORMATION *PFILE_FS_ATTRIBUTE_INFORMATION;
-extern "C" NTSTATUS NTAPI NtQueryVolumeInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, ULONG, FS_INFORMATION_CLASS);
-
-#endif
-
-NTSTATUS NTAPI NtOpenDirectoryObject(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES);
-
-typedef struct _OBJECT_DIRECTORY_INFORMATION
-{
-    UNICODE_STRING Name;
-    UNICODE_STRING TypeName;
-} OBJECT_DIRECTORY_INFORMATION;
-typedef OBJECT_DIRECTORY_INFORMATION *POBJECT_DIRECTORY_INFORMATION;
-
-NTSTATUS NTAPI NtQueryDirectoryObject(HANDLE, PVOID, ULONG, BOOLEAN, BOOLEAN, PULONG, PULONG);
-
-
-RT_C_DECLS_END
 
 #endif
 
