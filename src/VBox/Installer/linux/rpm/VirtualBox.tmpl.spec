@@ -280,7 +280,7 @@ if [ "$INSTALL_NO_GROUP" != "1" ]; then
   echo
   echo "Creating group 'vboxusers'. VM users must be member of that group!"
   echo
-  groupadd -f vboxusers 2> /dev/null
+  groupadd -r -f vboxusers 2> /dev/null
 fi
 
 # install udev rule (disable with INSTALL_NO_UDEV=1 in /etc/default/virtualbox)
