@@ -52,6 +52,112 @@ static void vmmR3TestClearStack(PVMCPU pVCpu)
 
 #ifdef VBOX_WITH_RAW_MODE
 
+static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM pReportStrm, uint32_t *pcMsrsFound)
+{
+    /*
+     * Preps.
+     */
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestReadMsrs", &RCPtrEP);
+    AssertMsgRCReturn(rc, ("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc), rc);
+
+    uint32_t const      cMsrsPerCall = 16384;
+    uint32_t            cbResults = cMsrsPerCall * sizeof(VMMTESTMSRENTRY);
+    PVMMTESTMSRENTRY    paResults;
+    rc = MMHyperAlloc(pVM, cbResults, 0, MM_TAG_VMM, (void **)&paResults);
+    AssertMsgRCReturn(rc, ("Error allocating %#x bytes off the hyper heap: %Rrc\n", cbResults, rc), rc);
+    /*
+     * The loop.
+     */
+    RTRCPTR  RCPtrResults = MMHyperR3ToRC(pVM, paResults);
+    uint32_t cMsrsFound   = 0;
+    uint32_t uLastMsr     = uMsr;
+    uint64_t uNsTsStart   = RTTimeNanoTS();
+
+    for (;;)
+    {
+        if (   pReportStrm
+            && uMsr - uLastMsr > _64K
+            && (uMsr & (_4M - 1)) == 0)
+        {
+            if (uMsr - uLastMsr < 16U*_1M)
+                RTStrmFlush(pReportStrm);
+            RTPrintf("... %#010x [%u ns/msr] ...\n", uMsr, (RTTimeNanoTS() - uNsTsStart) / uMsr);
+        }
+
+        /*RT_BZERO(paResults, cbResults);*/
+        uint32_t const cBatch = RT_MIN(cMsrsPerCall, cMsrs);
+        rc = VMMR3CallRC(pVM, RCPtrEP, 4, pVM->pVMRC, uMsr, cBatch, RCPtrResults);
+        if (RT_FAILURE(rc))
+        {
+            RTPrintf("VMM: VMMR3CallRC failed rc=%Rrc, uMsr=%#x\n", rc, uMsr);
+            break;
+        }
+
+        for (uint32_t i = 0; i < cBatch; i++)
+            if (paResults[i].uMsr != UINT64_MAX)
+            {
+                if (paResults[i].uValue == 0)
+                {
+                    if (pReportStrm)
+                        RTStrmPrintf(pReportStrm, "%#010llx = 0\n", paResults[i].uMsr);
+                    RTPrintf("%#010llx = 0\n", paResults[i].uMsr);
+                }
+                else
+                {
+                    if (pReportStrm)
+                        RTStrmPrintf(pReportStrm, "%#010llx = %#010x`%08x\n", paResults[i].uMsr,
+                                     (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                    RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
+                             (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                }
+                cMsrsFound++;
+                uLastMsr = paResults[i].uMsr;
+            }
+
+        /* Advance. */
+        if (cMsrs <= cMsrsPerCall)
+            break;
+        cMsrs -= cMsrsPerCall;
+        uMsr  += cMsrsPerCall;
+    }
+
+    *pcMsrsFound += cMsrsFound;
+    MMHyperFree(pVM, paResults);
+    return rc;
+}
+
+
+/**
+ * Produces a quick report of MSRs.
+ *
+ * @returns VBox status code.
+ * @param   pVM     Pointer to the cross context VM structure.
+ */
+static int vmmR3DoMsrQuickReport(PVM pVM)
+{
+    uint64_t uTsStart = RTTimeNanoTS();
+    RTPrintf("=== MSR Quick Report Start ===\n");
+    RTStrmFlush(g_pStdOut);
+    DBGFR3InfoStdErr(pVM->pUVM, "cpuid", "verbose");
+    RTPrintf("\n");
+    uint32_t cMsrsFound = 0;
+    int rc  = vmmR3ReportMsrRange(pVM, 0x00000000, 0x00042000, NULL, &cMsrsFound);
+    int rc2 = vmmR3ReportMsrRange(pVM, 0x40000000, 0x00012000, NULL, &cMsrsFound);
+    int rc3 = vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, NULL, &cMsrsFound);
+    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, NULL, &cMsrsFound);
+    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
+        rc = rc2;
+    if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
+        rc = rc3;
+    if (RT_FAILURE(rc4) && RT_SUCCESS(rc))
+        rc = rc4;
+    RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
+    RTPrintf("=== MSR Quick Report End (rc=%Rrc, %'llu ns) ===\n", rc, RTTimeNanoTS() - uTsStart);
+    return rc;
+}
+
+
 /**
  * Performs a testcase.
  *
@@ -467,6 +573,11 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
              i, Elapsed, cTicksElapsed, PerIteration, cTicksPerIteration, TickMin));
 
         rc = VINF_SUCCESS;
+
+        /*
+         * A quick MSR report.
+         */
+        vmmR3DoMsrQuickReport(pVM);
     }
     else
         AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Rrc\n", rc));
@@ -657,87 +768,27 @@ static DECLCALLBACK(void) vmmDoPrintfToStream(PCDBGFINFOHLP pHlp, const char *ps
 VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
 {
 #ifdef VBOX_WITH_RAW_MODE
-    RTRCPTR RCPtrEP;
-    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestReadMsrs", &RCPtrEP);
+    PRTSTREAM pOutStrm;
+    int rc = RTStrmOpen("msr-report.txt", "a", &pOutStrm);
     if (RT_SUCCESS(rc))
     {
-        RTPrintf("VMM: VMMRCTestReadMsrs=%RRv\n", RCPtrEP);
-        PRTSTREAM pOutStrm;
-        rc = RTStrmOpen("msr-report.txt", "a", &pOutStrm);
-        if (RT_SUCCESS(rc))
+        /* Header */
+        struct
         {
-            /* Header */
-            struct
-            {
-                PRTSTREAM   pOutStrm;
-                DBGFINFOHLP Hlp;
-            } MyHlp = { pOutStrm, { vmmDoPrintfToStream, vmmDoPrintfVToStream } };
-            DBGFR3Info(pVM->pUVM, "cpuid", "verbose", &MyHlp.Hlp);
-            RTStrmPrintf(pOutStrm, "\n");
+            PRTSTREAM   pOutStrm;
+            DBGFINFOHLP Hlp;
+        } MyHlp = { pOutStrm, { vmmDoPrintfToStream, vmmDoPrintfVToStream } };
+        DBGFR3Info(pVM->pUVM, "cpuid", "verbose", &MyHlp.Hlp);
+        RTStrmPrintf(pOutStrm, "\n");
 
-            /*
-             * The MSRs.
-             */
-            uint32_t const      cMsrsPerCall = 16384;
-            uint32_t            cbResults = cMsrsPerCall * sizeof(VMMTESTMSRENTRY);
-            PVMMTESTMSRENTRY    paResults;
-            rc = MMHyperAlloc(pVM, cbResults, 0, MM_TAG_VMM, (void **)&paResults);
-            if (RT_SUCCESS(rc))
-            {
-                RTRCPTR  RCPtrResults = MMHyperR3ToRC(pVM, paResults);
-                uint32_t cMsrsFound   = 0;
-                uint32_t uLastMsr     = 0;
-                uint64_t uNsTsStart   = RTTimeNanoTS();
+        uint32_t cMsrsFound = 0;
+        vmmR3ReportMsrRange(pVM, 0, _4G, pOutStrm, &cMsrsFound);
 
-                for (uint32_t uCurMsr = 0; ; uCurMsr += cMsrsPerCall)
-                {
-                    if (   uCurMsr - uLastMsr > _64K
-                        && (uCurMsr & (_4M - 1)) == 0)
-                    {
-                        if (uCurMsr - uLastMsr < 16U*_1M)
-                            RTStrmFlush(pOutStrm);
-                        RTPrintf("... %#010x [%u ns/msr] ...\n", uCurMsr, (RTTimeNanoTS() - uNsTsStart) / uCurMsr);
-                    }
+        RTStrmPrintf(pOutStrm, "Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
+        RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
 
-                    /*RT_BZERO(paResults, cbResults);*/
-                    rc = VMMR3CallRC(pVM, RCPtrEP, 4, pVM->pVMRC, uCurMsr, cMsrsPerCall, RCPtrResults);
-                    if (RT_FAILURE(rc))
-                    {
-                        RTPrintf("VMM: VMMR3CallRC failed rc=%Rrc, uCurMsr=%#x\n", rc, uCurMsr);
-                        break;
-                    }
-
-                    for (uint32_t i = 0; i < cMsrsPerCall; i++)
-                        if (paResults[i].uMsr != UINT64_MAX)
-                        {
-                            if (paResults[i].uValue == 0)
-                            {
-                                RTStrmPrintf(pOutStrm, "%#010llx = 0\n", paResults[i].uMsr);
-                                RTPrintf("%#010llx = 0\n", paResults[i].uMsr);
-                            }
-                            else
-                            {
-                                RTStrmPrintf(pOutStrm, "%#010llx = %#010x`%08x\n", paResults[i].uMsr,
-                                             (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
-                                RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
-                                         (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
-                            }
-                            cMsrsFound++;
-                            uLastMsr = paResults[i].uMsr;
-                        }
-                    if (uCurMsr + cMsrsPerCall < uCurMsr)
-                        break;
-                }
-
-                RTStrmPrintf(pOutStrm, "Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
-                RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
-                MMHyperFree(pVM, paResults);
-            }
-            RTStrmClose(pOutStrm);
-        }
+        RTStrmClose(pOutStrm);
     }
-    else
-        AssertMsgFailed(("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc));
     return rc;
 #else
     return VERR_NOT_SUPPORTED;
