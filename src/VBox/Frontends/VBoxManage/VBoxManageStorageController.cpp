@@ -54,6 +54,7 @@ static const RTGETOPTDEF g_aStorageAttachOptions[] =
     { "--tempeject",        'e', RTGETOPT_REQ_STRING },
     { "--nonrotational",    'n', RTGETOPT_REQ_STRING },
     { "--discard",          'u', RTGETOPT_REQ_STRING },
+    { "--hotpluggable",     'o', RTGETOPT_REQ_STRING },
     { "--bandwidthgroup",   'b', RTGETOPT_REQ_STRING },
     { "--forceunmount",     'f', RTGETOPT_REQ_NOTHING },
     { "--comment",          'C', RTGETOPT_REQ_STRING },
@@ -90,6 +91,7 @@ int handleStorageAttach(HandlerArg *a)
     const char *pszTempEject = NULL;
     const char *pszNonRotational = NULL;
     const char *pszDiscard = NULL;
+    const char *pszHotPluggable = NULL;
     const char *pszBandwidthGroup = NULL;
     Bstr bstrNewUuid;
     Bstr bstrNewParentUuid;
@@ -198,6 +200,15 @@ int handleStorageAttach(HandlerArg *a)
             {
                 if (ValueUnion.psz)
                     pszDiscard = ValueUnion.psz;
+                else
+                    rc = E_FAIL;
+                break;
+            }
+
+            case 'o':   // hotpluggable <on|off>
+            {
+                if (ValueUnion.psz)
+                    pszHotPluggable = ValueUnion.psz;
                 else
                     rc = E_FAIL;
                 break;
@@ -852,6 +863,31 @@ int handleStorageAttach(HandlerArg *a)
                 throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
         }
 
+        if (   pszHotPluggable
+            && (SUCCEEDED(rc)))
+        {
+            ComPtr<IMediumAttachment> mattach;
+            CHECK_ERROR(machine, GetMediumAttachment(Bstr(pszCtl).raw(), port,
+                                                     device, mattach.asOutParam()));
+
+            if (SUCCEEDED(rc))
+            {
+                if (!RTStrICmp(pszHotPluggable, "on"))
+                {
+                    CHECK_ERROR(machine, SetHotPluggableForDevice(Bstr(pszCtl).raw(),
+                                                                  port, device, TRUE));
+                }
+                else if (!RTStrICmp(pszHotPluggable, "off"))
+                {
+                    CHECK_ERROR(machine, SetHotPluggableForDevice(Bstr(pszCtl).raw(),
+                                                                  port, device, FALSE));
+                }
+                else
+                    throw Utf8StrFmt("Invalid --hotpluggable argument '%s'", pszHotPluggable);
+            }
+            else
+                throw Utf8StrFmt("Couldn't find the controller attachment for the controller '%s'\n", pszCtl);
+        }
 
         if (   pszBandwidthGroup
             && !fRunTime

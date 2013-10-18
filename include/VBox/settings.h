@@ -958,6 +958,8 @@ struct AttachedDevice
           fPassThrough(false),
           fTempEject(false),
           fNonRotational(false),
+          fDiscard(false),
+          fHotPluggable(false),
           lPort(0),
           lDevice(0)
     {}

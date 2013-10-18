@@ -1947,6 +1947,19 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                                     lPortUsed[u32HDSataPortCount++] = lPortNum;
                                     LogFlowFunc(("HD Sata port Count=%d\n", u32HDSataPortCount));
                                 }
+
+                                /* Configure the hotpluggable flag for the port. */
+                                BOOL fHotPluggable = FALSE;
+                                hrc = pMediumAtt->COMGETTER(HotPluggable)(&fHotPluggable); H();
+                                if (SUCCEEDED(hrc))
+                                {
+                                    PCFGMNODE pPortCfg;
+                                    char szName[24];
+                                    RTStrPrintf(szName, sizeof(szName), "Port%d", lPortNum);
+
+                                    InsertConfigNode(pCfg, szName, &pPortCfg);
+                                    InsertConfigInteger(pPortCfg, "Hotpluggable", fHotPluggable ? 1 : 0);
+                                }
                              }
                         }
 
