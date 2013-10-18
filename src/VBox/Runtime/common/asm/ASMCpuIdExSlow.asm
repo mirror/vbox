@@ -117,7 +117,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r11, r11
         jz      .done
-        mov     [r11], ecx
+        mov     [r11], edx
 %else
         mov     edi, [ebp + 24h]
         test    edi, edi
