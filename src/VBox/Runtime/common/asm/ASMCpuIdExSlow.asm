@@ -72,7 +72,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
         mov     ebx, [ebp + 0ch]
         mov     ecx, [ebp + 10h]
         mov     edx, [ebp + 14h]
-        mov     edi  [ebp + 18h]
+        mov     edi, [ebp + 18h]
 %else
  %error unsupported arch
 %endif
