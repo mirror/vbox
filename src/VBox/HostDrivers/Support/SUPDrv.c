@@ -3412,24 +3412,52 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                  && (fFeaturesEDX & X86_CPUID_FEATURE_EDX_FXSR)
                )
             {
-                bool fInSmxMode;
-                bool fMsrLocked;
-                bool fSmxVmxAllowed;
-                bool fVmxAllowed;
-                bool fAllowed;
+                /** @todo Unify code with hmR0InitIntelCpu(). */
+                uint64_t   u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                bool const fInSmxMode     = RT_BOOL(ASMGetCR4() & X86_CR4_SMXE);
+                bool       fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+                bool       fSmxVmxAllowed = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+                bool       fVmxAllowed    = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
 
-                /*
-                 * We require the lock bit and the appropriate VMXON bit to be set otherwise VMXON will generate a #GP
-                 * This is a simplified check (assumes BIOS does it job and properly locks the control bit). For the more
-                 * extensive procedure see hmR0InitIntelCpu().
-                 */
-                u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-                fInSmxMode     = !!(ASMGetCR4() & X86_CR4_SMXE);
-                fMsrLocked     = !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
-                fSmxVmxAllowed = fMsrLocked && !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
-                fVmxAllowed    = fMsrLocked && !!(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
-                fAllowed       = fInSmxMode ? fSmxVmxAllowed : fVmxAllowed;
-                if (fAllowed)
+                /* Check if the LOCK bit is set but excludes the required VMXON bit. */
+                int rc = VERR_HM_IPE_1;
+                if (fMsrLocked)
+                {
+                    if (fInSmxMode && !fSmxVmxAllowed)
+                        rc = VERR_VMX_MSR_SMX_VMXON_DISABLED;
+                    else if (!fVmxAllowed)
+                        rc = VERR_VMX_MSR_VMXON_DISABLED;
+                    else
+                        rc = VINF_SUCCESS;
+                }
+                else
+                {
+                    /*
+                     * MSR is not yet locked; we can change it ourselves here.
+                     * Once the lock bit is set, this MSR can no longer be modified.
+                     */
+                    bool fAllowed;
+                    u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_LOCK;
+                    if (fInSmxMode)
+                        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_SMX_VMXON;
+                    else
+                        u64FeatMsr |= MSR_IA32_FEATURE_CONTROL_VMXON;
+
+                    ASMWrMsr(MSR_IA32_FEATURE_CONTROL, u64FeatMsr);
+
+                    /* Verify. */
+                    u64FeatMsr     = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+                    fMsrLocked     = RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_LOCK);
+                    fSmxVmxAllowed = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_SMX_VMXON);
+                    fVmxAllowed    = fMsrLocked && RT_BOOL(u64FeatMsr & MSR_IA32_FEATURE_CONTROL_VMXON);
+                    fAllowed       = fInSmxMode ? fSmxVmxAllowed : fVmxAllowed;
+                    if (fAllowed)
+                        rc = VINF_SUCCESS;
+                    else
+                        rc = VERR_VMX_MSR_LOCKING_FAILED;
+                }
+
+                if (rc == VINF_SUCCESS)
                 {
                     VMX_CAPABILITY vtCaps;
 
@@ -3444,7 +3472,7 @@ SUPR0DECL(int) SUPR0QueryVTCaps(PSUPDRVSESSION pSession, uint32_t *pfCaps)
                     }
                     return VINF_SUCCESS;
                 }
-                return fInSmxMode ? VERR_VMX_MSR_SMX_VMXON_DISABLED : VERR_VMX_MSR_VMXON_DISABLED;
+                return rc;
             }
             return VERR_VMX_NO_VMX;
         }
