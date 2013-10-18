@@ -161,7 +161,6 @@ ifneq ($(KBUILD_TARGET), linux)
 DLLS += vboxmouse_drv_17
 vboxmouse_drv_17_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_17_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_17_INCS := \
 	$(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.7.7 \
@@ -176,7 +175,6 @@ vboxmouse_drv_17_SOURCES = \
 DLLS += vboxmouse_drv_18
 vboxmouse_drv_18_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_18_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_18_INCS := \
 	$(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.8.0 \
@@ -191,7 +189,6 @@ vboxmouse_drv_18_SOURCES = \
 DLLS += vboxmouse_drv_19
 vboxmouse_drv_19_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_19_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_19_INCS := \
 	$(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.9.0 \
@@ -206,7 +203,6 @@ vboxmouse_drv_19_SOURCES = \
 DLLS += vboxmouse_drv_110
 vboxmouse_drv_110_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_110_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_110_INCS := \
 	$(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.10.0 \
@@ -217,7 +213,6 @@ vboxmouse_drv_110_SOURCES = \
 DLLS += vboxmouse_drv_111
 vboxmouse_drv_111_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_111_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_111_INCS := \
 	$(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.11.0 \
@@ -228,7 +223,6 @@ vboxmouse_drv_111_SOURCES = \
 DLLS += vboxmouse_drv_112
 vboxmouse_drv_112_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_112_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
-## @todo replace $(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0-local
 vboxmouse_drv_112_INCS := \
     $(vboxmouse_xorg_INCS) \
 	$(VBOX_PATH_X11_ROOT)/xorg-server-1.12.0 \
