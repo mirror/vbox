@@ -2,8 +2,8 @@
 #include <dix-config.h>
 #endif
 
-#ifndef _glxcmds_h_
-#define _glxcmds_h_
+#ifndef _GLX_drawable_h_
+#define _GLX_drawable_h_
 
 /*
  * SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
@@ -35,24 +35,44 @@
  * Silicon Graphics, Inc.
  */
 
-/* relate contexts with drawables */
-extern void __glXAssociateContext(__GLXcontext *glxc);
-extern void __glXDeassociateContext(__GLXcontext *glxc);
+#include <damage.h>
 
-/* drawable management */
-extern void __glXRefDrawable(__GLXdrawable *glxPriv);
-extern void __glXUnrefDrawable(__GLXdrawable *glxPriv);
+/* We just need to avoid clashing with DRAWABLE_{WINDOW,PIXMAP} */
+enum {
+    GLX_DRAWABLE_WINDOW,
+    GLX_DRAWABLE_PIXMAP,
+    GLX_DRAWABLE_PBUFFER
+};
 
-extern GLboolean __glXDrawableInit(__GLXdrawable *drawable,
-				   __GLXscreen *screen,
-				   DrawablePtr pDraw, int type, XID drawID,
-				   __GLXconfig *config);
+struct __GLXdrawable {
+    void (*destroy)(__GLXdrawable *private);
+    GLboolean (*swapBuffers)(__GLXdrawable *);
+    void      (*copySubBuffer)(__GLXdrawable *drawable,
+			       int x, int y, int w, int h);
+    void      (*waitX)(__GLXdrawable *);
+    void      (*waitGL)(__GLXdrawable *);
 
-/* context helper routines */
-extern __GLXcontext *__glXLookupContextByTag(__GLXclientState*, GLXContextTag);
+    DrawablePtr pDraw;
+    XID drawId;
 
-/* init helper routines */
-extern void *__glXglDDXScreenInfo(void);
-extern void *__glXglDDXExtensionInfo(void);
+    /*
+    ** Either GLX_DRAWABLE_PIXMAP, GLX_DRAWABLE_WINDOW or
+    ** GLX_DRAWABLE_PBUFFER.
+    */
+    int type;
 
-#endif /* _glxcmds_h_ */
+    /*
+    ** Configuration of the visual to which this drawable was created.
+    */
+    __GLXconfig *config;
+
+    GLenum target;
+    GLenum format;
+
+    /*
+    ** Event mask
+    */
+    unsigned long eventMask;
+};
+
+#endif /* !__GLX_drawable_h__ */

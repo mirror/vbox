@@ -2,8 +2,8 @@
 #include <dix-config.h>
 #endif
 
-#ifndef _glxext_h_
-#define _glxext_h_
+#ifndef _glxcmds_h_
+#define _glxcmds_h_
 
 /*
  * SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
@@ -35,18 +35,17 @@
  * Silicon Graphics, Inc.
  */
 
-extern GLboolean __glXFreeContext(__GLXcontext *glxc);
-extern void __glXFlushContextCache(void);
+extern GLboolean __glXDrawableInit(__GLXdrawable *drawable,
+				   __GLXscreen *screen,
+				   DrawablePtr pDraw, int type, XID drawID,
+				   __GLXconfig *config);
+extern void __glXDrawableRelease(__GLXdrawable *drawable);
 
-extern void __glXErrorCallBack(GLenum code);
-extern void __glXClearErrorOccured(void);
-extern GLboolean __glXErrorOccured(void);
-extern void __glXResetLargeCommandStatus(__GLXclientState*);
+/* context helper routines */
+extern __GLXcontext *__glXLookupContextByTag(__GLXclientState*, GLXContextTag);
 
-extern void GlxExtensionInit(void);
+/* init helper routines */
+extern void *__glXglDDXScreenInfo(void);
+extern void *__glXglDDXExtensionInfo(void);
 
-extern const char GLServerVersion[];
-extern int DoGetString(__GLXclientState *cl, GLbyte *pc, GLboolean need_swap);
-
-#endif /* _glxext_h_ */
-
+#endif /* _glxcmds_h_ */

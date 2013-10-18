@@ -2,8 +2,8 @@
 #include <dix-config.h>
 #endif
 
-#ifndef _GLX_drawable_h_
-#define _GLX_drawable_h_
+#ifndef _glxext_h_
+#define _glxext_h_
 
 /*
  * SGI FREE SOFTWARE LICENSE B (Version 2.0, Sept. 18, 2008)
@@ -35,46 +35,19 @@
  * Silicon Graphics, Inc.
  */
 
-#include <damage.h>
+extern GLboolean __glXFreeContext(__GLXcontext *glxc);
+extern void __glXFlushContextCache(void);
 
-/* We just need to avoid clashing with DRAWABLE_{WINDOW,PIXMAP} */
-enum {
-    GLX_DRAWABLE_WINDOW,
-    GLX_DRAWABLE_PIXMAP,
-    GLX_DRAWABLE_PBUFFER
-};
+extern void __glXAddToContextList(__GLXcontext *cx);
+extern void __glXErrorCallBack(GLenum code);
+extern void __glXClearErrorOccured(void);
+extern GLboolean __glXErrorOccured(void);
+extern void __glXResetLargeCommandStatus(__GLXclientState*);
 
-struct __GLXdrawable {
-    void (*destroy)(__GLXdrawable *private);
-    GLboolean (*swapBuffers)(__GLXdrawable *);
-    void      (*copySubBuffer)(__GLXdrawable *drawable,
-			       int x, int y, int w, int h);
+extern void GlxExtensionInit(void);
 
-    DrawablePtr pDraw;
-    XID drawId;
+extern const char GLServerVersion[];
+extern int DoGetString(__GLXclientState *cl, GLbyte *pc, GLboolean need_swap);
 
-    /*
-    ** Either GLX_DRAWABLE_PIXMAP, GLX_DRAWABLE_WINDOW or
-    ** GLX_DRAWABLE_PBUFFER.
-    */
-    int type;
+#endif /* _glxext_h_ */
 
-    /*
-    ** Configuration of the visual to which this drawable was created.
-    */
-    __GLXconfig *config;
-
-    /*
-    ** reference count
-    */
-    int refCount;
-
-    GLenum target;
-
-    /*
-    ** Event mask
-    */
-    unsigned long eventMask;
-};
-
-#endif /* !__GLX_drawable_h__ */
