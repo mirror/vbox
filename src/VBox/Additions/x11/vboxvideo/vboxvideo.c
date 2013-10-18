@@ -827,10 +827,16 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     if (!xf86LoadSubModule(pScrn, "vgahw"))
         return FALSE;
 
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
     /* Load the dri module. */
     if (!xf86LoadSubModule(pScrn, "dri"))
         return FALSE;
+#else
+# ifdef VBOX_DRI
+    /* Load the dri module. */
+    if (!xf86LoadSubModule(pScrn, "dri2"))
+        return FALSE;
+# endif
 #endif
 
 #ifndef PCIACCESS
@@ -1159,7 +1165,7 @@ static Bool VBOXScreenInit(ScreenPtr pScreen, int argc, char **argv)
         xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
                    "Unable to start the VirtualBox mouse pointer integration with the host system.\n");
 
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         pVBox->useDRI = VBOXDRIFinishScreenInit(pScreen);
 #endif
@@ -1174,7 +1180,7 @@ static Bool VBOXEnterVT(ScrnInfoPtr pScrn)
     vboxClearVRAM(pScrn, 0, 0);
     if (pVBox->fHaveHGSMI)
         vboxEnableVbva(pScrn);
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRIUnlock(xf86ScrnToScreen(pScrn));
 #endif
@@ -1203,7 +1209,7 @@ static void VBOXLeaveVT(ScrnInfoPtr pScrn)
     vboxClearVRAM(pScrn, 0, 0);
     VBOXRestoreMode(pScrn);
     vboxDisableGraphicsCap(pVBox);
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         DRILock(xf86ScrnToScreen(pScrn), 0);
 #endif

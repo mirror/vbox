@@ -105,7 +105,7 @@ if (!(expr)) \
 #define VBOX_NAME               "VBoxVideo"
 #define VBOX_DRIVER_NAME        "vboxvideo"
 
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
 /* DRI support */
 #define _XF86DRI_SERVER_
 /* Hack to work around a libdrm header which is broken on Solaris */
@@ -191,10 +191,12 @@ typedef struct VBOXRec
     Bool fAnyX;
 #ifdef VBOX_DRI
     Bool useDRI;
+#ifdef VBOX_DRI_OLD
     int cVisualConfigs;
     __GLXvisualConfig *pVisualConfigs;
     DRIInfoRec *pDRIInfo;
     int drmFD;
+# endif
 #endif
 } VBOXRec, *VBOXPtr;
 

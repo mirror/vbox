@@ -170,7 +170,7 @@ Bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, int width, int height)
     pScrn->virtualY = height;
     pScrn->displayWidth = displayWidth;
     pVBox->cbLine = cbLine;
-#ifdef VBOX_DRI
+#ifdef VBOX_DRI_OLD
     if (pVBox->useDRI)
         VBOXDRIUpdateStride(pScrn, pVBox);
 #endif
