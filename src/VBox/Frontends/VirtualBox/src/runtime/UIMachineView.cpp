@@ -199,6 +199,9 @@ void UIMachineView::sltPerformGuestResize(const QSize &toSize)
     QSize newSize(toSize.isValid() ? toSize : machineWindow()->centralWidget()->size());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
+    /* Expand current limitations: */
+    setMaxGuestSize(newSize);
+
     /* Send new size-hint to the guest: */
     LogRelFlow(("UIMachineView: Sending guest size-hint to screen %d: %dx%d\n",
                 (int)screenId(), newSize.width(), newSize.height()));
@@ -287,7 +290,7 @@ void UIMachineView::sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
     LogRelFlow(("UIMachineView::ResizeHandled: "
                 "Screen=%d, Format=%d, "
                 "BitsPerPixel=%d, BytesPerLine=%d, "
-                "Size=%dx%d.\n\n",
+                "Size=%dx%d.\n",
                 (unsigned long)m_uScreenId, iPixelFormat,
                 iBitsPerPixel, iBytesPerLine, iWidth, iHeight));
 }
@@ -702,7 +705,7 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
-void UIMachineView::setMaxGuestSize()
+void UIMachineView::setMaxGuestSize(const QSize &minimumSizeHint /*= QSize()*/)
 {
     QSize maxSize;
     switch (m_maxGuestSizePolicy)
@@ -711,7 +714,7 @@ void UIMachineView::setMaxGuestSize()
             maxSize = m_fixedMaxGuestSize;
             break;
         case MaxGuestSizePolicy_Automatic:
-            maxSize = calculateMaxGuestSize();
+            maxSize = calculateMaxGuestSize().expandedTo(minimumSizeHint);
             break;
         case MaxGuestSizePolicy_Any:
         default:
