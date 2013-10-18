@@ -59,11 +59,6 @@ private:
     void prepareFilters();
     void prepareConsoleConnections();
     //void loadMachineViewSettings();
-    /** If the last guest size hint was sent to switch to fullscreen or
-     * seamless mode then send one to restore the old view size.
-     * @note This method also does some hacks to suppress intermediary resizes
-     *        to the old fullscreen size. */
-    void maybeResendResizeHint();
 
     /* Cleanup helpers: */
     void saveMachineViewSettings();
@@ -75,6 +70,7 @@ private:
     void setGuestAutoresizeEnabled(bool bEnabled);
 
     /* Private helpers: */
+    void maybeResendResizeHint();
     void normalizeGeometry(bool fAdjustPosition);
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
