@@ -798,6 +798,7 @@ VMMR0_INT_DECL(int) HMR0Term(void)
  */
 static DECLCALLBACK(void) hmR0InitIntelCpu(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    /** @todo Unify code with SUPR0QueryVTCaps(). */
     PHMR0FIRSTRC pFirstRc = (PHMR0FIRSTRC)pvUser1;
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
     Assert(idCpu == (RTCPUID)RTMpCpuIdToSetIndex(idCpu)); /** @todo fix idCpu == index assumption (rainy day) */
