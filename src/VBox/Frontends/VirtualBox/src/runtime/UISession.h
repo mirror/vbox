@@ -270,7 +270,6 @@ private:
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
     void reinitMenuPool();
     bool preparePowerUp();
-    void adjustGuestView();
     int countOfVisibleWindows();
 
 #ifdef Q_WS_MAC

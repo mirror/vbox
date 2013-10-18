@@ -164,8 +164,8 @@ void UIMachineWindowFullscreen::placeOnScreen()
     move(workingArea.topLeft());
     /* Resize to the appropriate size: */
     resize(workingArea.size());
-    /* Adjust guest if necessary: */
-    machineView()->normalizeGeometry(false);
+    /* Adjust guest screen size if necessary: */
+    machineView()->maybeAdjustGuestScreenSize();
     /* Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)
         m_pMiniToolBar->adjustGeometry();

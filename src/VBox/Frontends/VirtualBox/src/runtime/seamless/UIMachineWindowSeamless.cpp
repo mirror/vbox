@@ -196,8 +196,8 @@ void UIMachineWindowSeamless::placeOnScreen()
     move(workingArea.topLeft());
     /* Resize to the appropriate size: */
     resize(workingArea.size());
-    /* Adjust guest if necessary: */
-    machineView()->normalizeGeometry(false);
+    /* Adjust guest screen size if necessary: */
+    machineView()->maybeAdjustGuestScreenSize();
 #ifndef Q_WS_MAC
     /* Move mini-toolbar into appropriate place: */
     if (m_pMiniToolBar)

@@ -42,6 +42,11 @@ protected:
 
 private slots:
 
+#ifdef Q_WS_X11
+    /** X11: Performs machine-window async geometry normalization. */
+    void sltNormalizeGeometry() { normalizeGeometry(true); }
+#endif /* Q_WS_X11 */
+
     /* Session event-handlers: */
     void sltMachineStateChanged();
     void sltMediumChange(const CMediumAttachment &attachment);
@@ -80,6 +85,9 @@ private:
 
     /* Show stuff: */
     void showInNecessaryMode();
+
+    /* Helper: Machine-window geometry stuff: */
+    void normalizeGeometry(bool fAdjustPosition);
 
     /* Update stuff: */
     void updateAppearanceOf(int aElement);

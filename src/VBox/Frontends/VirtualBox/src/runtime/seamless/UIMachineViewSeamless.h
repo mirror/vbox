@@ -63,8 +63,8 @@ private:
     //void cleanupFilters() {}
     //void cleanupCommon() {}
 
-    /* Private helpers: */
-    void normalizeGeometry(bool fAdjustPosition);
+    /* Helpers: Geometry stuff: */
+    void maybeAdjustGuestScreenSize();
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 

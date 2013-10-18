@@ -205,22 +205,6 @@ UISession::~UISession()
 #endif /* Q_WS_WIN */
 }
 
-void UISession::adjustGuestView()
-{
-    foreach(UIMachineWindow *pMachineWindow, machineLogic()->machineWindows())
-    {
-        bool fAdjustPosition = false;
-        UIVisualStateType visualStateType = machineLogic()->visualStateType();
-
-        if (visualStateType == UIVisualStateType_Normal ||
-            visualStateType == UIVisualStateType_Scale)
-            fAdjustPosition = true;
-
-        /* Normalize view's geometry: */
-        pMachineWindow->machineView()->normalizeGeometry(fAdjustPosition);
-    }
-}
-
 void UISession::powerUp()
 {
     /* Do nothing if we had started already: */
@@ -275,9 +259,8 @@ void UISession::powerUp()
     if (isSaved())
     {
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_state_restore_90px.png", 0, 0);
-        /* If restoring from saved state, guest MachineView
-           should be notified about host MachineWindow geometry change */
-        adjustGuestView();
+        /* After restoring from 'saved' state, guest screen size should be adjusted: */
+        machineLogic()->maybeAdjustGuestScreenSize();
     }
     else
         msgCenter().showModalProgressDialog(progress, machine.GetName(), ":/progress_start_90px.png");
