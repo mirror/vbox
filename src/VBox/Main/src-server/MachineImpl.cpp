@@ -4511,7 +4511,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
                           false /* fTempEject */,
                           false /* fNonRotational */,
                           false /* fDiscard */,
-                          false /* fHotPluggable */,
+                          fHotplug /* fHotPluggable */,
                           Utf8Str::Empty);
     if (FAILED(rc)) return rc;
 
@@ -4638,6 +4638,11 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
     if (!pAttach)
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
+                        aDevice, aControllerPort, aControllerName);
+
+    if (fHotplug && !pAttach->getHotPluggable())
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("The device slot %d on port %d of controller '%ls' does not support hotplugging"),
                         aDevice, aControllerPort, aControllerName);
 
     /*
@@ -4875,8 +4880,19 @@ STDMETHODIMP Machine::SetHotPluggableForDevice(IN_BSTR aControllerName, LONG aCo
                         tr("No storage device attached to device slot %d on port %d of controller '%ls'"),
                         aDevice, aControllerPort, aControllerName);
 
-    /** @todo remove this blocker and add the missing code to support this
-     * flag properly in all code areas, with proper support checks below. */
+    /* Check for an existing controller. */
+    ComObjPtr<StorageController> ctl;
+    rc = getStorageControllerByName(aControllerName, ctl, true /* aSetError */);
+    if (FAILED(rc)) return rc;
+
+    StorageControllerType_T ctrlType;
+    rc = ctl->COMGETTER(ControllerType)(&ctrlType);
+    if (FAILED(rc))
+        return setError(E_FAIL,
+                        tr("Could not get type of controller '%ls'"),
+                        aControllerName);
+
+    if (!isControllerHotplugCapable(ctrlType))
     return setError(VBOX_E_NOT_SUPPORTED,
                     tr("Controller '%ls' does not support changing the hot-pluggable device flag"),
                     aControllerName);
@@ -9780,8 +9796,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                                dev.fTempEject,
                                dev.fNonRotational,
                                dev.fDiscard,
-        /// @todo load setting once the hot-pluggable flag works
-                               false /*dev.fHotPluggable*/,
+                               dev.fHotPluggable,
                                pBwGroup.isNull() ? Utf8Str::Empty : pBwGroup->getName());
         if (FAILED(rc)) break;
 
@@ -10886,8 +10901,7 @@ HRESULT Machine::saveStorageDevices(ComObjPtr<StorageController> aStorageControl
         dev.lPort = pAttach->getPort();
         dev.lDevice = pAttach->getDevice();
         dev.fPassThrough = pAttach->getPassthrough();
-        /// @todo save setting once the hot-pluggable flag works
-        dev.fHotPluggable = false /* pAttach->getHotPluggable()*/;
+        dev.fHotPluggable = pAttach->getHotPluggable();
         if (pMedium)
         {
             if (pMedium->isHostDrive())
