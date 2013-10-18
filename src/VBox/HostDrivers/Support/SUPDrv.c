@@ -3372,6 +3372,7 @@ SUPR0DECL(void) SUPR0ResumeVTxOnCpu(bool fSuspended)
  * @retval  VERR_VMX_NO_VMX
  * @retval  VERR_VMX_MSR_SMX_VMXON_DISABLED
  * @retval  VERR_VMX_MSR_VMXON_DISABLED
+ * @retval  VERR_VMX_MSR_LOCKING_FAILED
  * @retval  VERR_SVM_NO_SVM
  * @retval  VERR_SVM_DISABLED
  * @retval  VERR_UNSUPPORTED_CPU if not identifiable as an AMD, Intel or VIA
