@@ -4070,10 +4070,9 @@ static int hmR0VmxLoadGuestMsrs(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
 
         /*
          * RDTSCP requires the TSC_AUX MSR. Host and guest share the physical MSR. So we have to
-         * load the guest's copy if the guest can execute RDTSCP without causing VM-exits.
+         * load the guest's copy always (since the MSR bitmap allows passthru unconditionally).
          */
-        if (   CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP)
-            && (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP))
+        if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_RDTSCP))
         {
             pGuestMsr->u32Msr      = MSR_K8_TSC_AUX;
             pGuestMsr->u32Reserved = 0;
@@ -9503,6 +9502,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
     rc  = hmR0VmxSaveGuestCR0(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestRflags(pVCpu, pMixedCtx);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     Log4(("ecx=%#RX32\n", pMixedCtx->ecx));
 
@@ -9524,11 +9524,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIENT
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_APIC_STATE);
         }
         else if (pMixedCtx->ecx == MSR_K6_EFER)         /* EFER is the only MSR we auto-load but don't allow write-passthrough. */
-        {
-            rc = hmR0VmxSaveGuestAutoLoadStoreMsrs(pVCpu, pMixedCtx);
-            AssertRCReturn(rc, rc);
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_VMX_GUEST_AUTO_MSRS);
-        }
         else if (pMixedCtx->ecx == MSR_IA32_TSC)        /* Windows 7 does this during bootup. See @bugref{6398}. */
             pVmxTransient->fUpdateTscOffsettingAndPreemptTimer = true;
 
