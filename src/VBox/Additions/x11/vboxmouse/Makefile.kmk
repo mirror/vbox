@@ -147,7 +147,7 @@ vboxmouse_drv_16_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxmouse_drv_16_DEFS := $(vboxmouse_drv_70_DEFS) NO_ANSIC
 vboxmouse_drv_16_INCS := \
 	$(vboxmouse_xorg_INCS) \
-	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.0 \
+	$(VBOX_PATH_X11_ROOT)/xorg-server-1.6.5 \
 	$(PATH_SUB_CURRENT)
 vboxmouse_drv_16_SOURCES = \
 	vboxmouse.c
