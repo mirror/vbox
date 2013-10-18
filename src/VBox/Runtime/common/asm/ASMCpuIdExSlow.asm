@@ -82,7 +82,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r8, r8
         jz      .store_ebx
-        mov     [r8], rax
+        mov     [r8], eax
 %else
         test    edi, edi
         jz      .store_ebx
@@ -93,7 +93,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r9, r9
         jz      .store_ecx
-        mov     [r9], rbx
+        mov     [r9], eax
 %else
         mov     edi, [ebp + 1ch]
         test    edi, edi
@@ -105,7 +105,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r10, r10
         jz      .store_edx
-        mov     [r10], rcx
+        mov     [r10], ecx
 %else
         mov     edi, [ebp + 20h]
         test    edi, edi
@@ -117,7 +117,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r11, r11
         jz      .done
-        mov     [r11], rdx
+        mov     [r11], ecx
 %else
         mov     edi, [ebp + 24h]
         test    edi, edi
