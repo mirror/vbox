@@ -270,6 +270,13 @@ UIMachineWindow* UIMachineLogic::activeMachineWindow() const
     return mainMachineWindow();
 }
 
+/** Adjusts guest screen size for each the machine-window we have. */
+void UIMachineLogic::maybeAdjustGuestScreenSize()
+{
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->machineView()->maybeAdjustGuestScreenSize();
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogic::updateDockIcon()
 {
@@ -1119,8 +1126,8 @@ void UIMachineLogic::sltAdjustWindow()
         if (pMachineWindow->isMaximized())
             pMachineWindow->showNormal();
 
-        /* Normalize view's geometry: */
-        pMachineWindow->machineView()->normalizeGeometry(true);
+        /* Normalize window geometry: */
+        pMachineWindow->normalizeGeometry(true);
     }
 }
 

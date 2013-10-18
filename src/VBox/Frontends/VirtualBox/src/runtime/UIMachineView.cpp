@@ -274,7 +274,7 @@ void UIMachineView::sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
 
             /* Normalize machine-window geometry: */
             if (visualStateType() == UIVisualStateType_Normal)
-                normalizeGeometry(true /* Adjust Position? */);
+                machineWindow()->normalizeGeometry(true /* adjust position */);
         }
     }
 

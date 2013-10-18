@@ -43,12 +43,6 @@ private slots:
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
-#ifdef Q_WS_X11
-    /* Slot to perform synchronized geometry normalization.
-     * Currently its only required under X11 as of its async nature: */
-    virtual void sltNormalizeGeometry() { normalizeGeometry(true); }
-#endif /* Q_WS_X11 */
-
 private:
 
     /* Event handlers: */
@@ -71,7 +65,7 @@ private:
 
     /* Private helpers: */
     void maybeResendResizeHint();
-    void normalizeGeometry(bool fAdjustPosition);
+    void maybeAdjustGuestScreenSize();
     QRect workingArea() const;
     QSize calculateMaxGuestSize() const;
 

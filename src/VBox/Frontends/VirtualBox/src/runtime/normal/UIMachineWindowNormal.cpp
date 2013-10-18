@@ -456,8 +456,8 @@ void UIMachineWindowNormal::loadSettings()
                 /* Restore only window position: */
                 m_normalGeometry = QRect(x, y, width(), height());
                 setGeometry(m_normalGeometry);
-                if (machineView())
-                    machineView()->normalizeGeometry(false);
+                /* Normalize to the optimal size: */
+                normalizeGeometry(false);
             }
             /* Maximize if needed: */
             if (max)
@@ -465,22 +465,20 @@ void UIMachineWindowNormal::loadSettings()
         }
         else
         {
-            /* Normalize view early to the optimal size: */
-            if (machineView())
-                machineView()->normalizeGeometry(true);
+            /* Normalize to the optimal size: */
+            normalizeGeometry(true);
             /* Move newly created window to the screen center: */
             m_normalGeometry = geometry();
             m_normalGeometry.moveCenter(ar.center());
             setGeometry(m_normalGeometry);
         }
 
-        /* Normalize view to the optimal size: */
-        if (machineView())
+        /* Normalize to the optimal size: */
 #ifdef Q_WS_X11
-            QTimer::singleShot(0, machineView(), SLOT(sltNormalizeGeometry()));
-#else /* Q_WS_X11 */
-            machineView()->normalizeGeometry(true);
-#endif
+        QTimer::singleShot(0, this, SLOT(sltNormalizeGeometry()));
+#else /* !Q_WS_X11 */
+        normalizeGeometry(true);
+#endif /* !Q_WS_X11 */
     }
 
     /* Load availability settings: */
@@ -608,6 +606,58 @@ void UIMachineWindowNormal::showInNecessaryMode()
     /* Else hide window: */
     else
         hide();
+}
+
+/**
+ * Adjusts machine-window size to correspond current guest screen size.
+ * @param fAdjustPosition determines whether is it necessary to adjust position too.
+ */
+void UIMachineWindowNormal::normalizeGeometry(bool fAdjustPosition)
+{
+#ifndef VBOX_GUI_WITH_CUSTOMIZATIONS1
+    /* Skip if maximized: */
+    if (isMaximized())
+        return;
+
+    /* Calculate client window offsets: */
+    QRect frameGeo = frameGeometry();
+    QRect geo = geometry();
+    int dl = geo.left() - frameGeo.left();
+    int dt = geo.top() - frameGeo.top();
+    int dr = frameGeo.right() - geo.right();
+    int db = frameGeo.bottom() - geo.bottom();
+
+    /* Get the best size w/o scroll-bars: */
+    QSize s = sizeHint();
+
+    /* Resize the frame to fit the contents: */
+    s -= size();
+    frameGeo.setRight(frameGeo.right() + s.width());
+    frameGeo.setBottom(frameGeo.bottom() + s.height());
+
+    /* Adjust position if necessary: */
+    if (fAdjustPosition)
+    {
+        QRegion availableGeo;
+        QDesktopWidget *dwt = QApplication::desktop();
+        if (dwt->isVirtualDesktop())
+            /* Compose complex available region: */
+            for (int i = 0; i < dwt->numScreens(); ++i)
+                availableGeo += dwt->availableGeometry(i);
+        else
+            /* Get just a simple available rectangle */
+            availableGeo = dwt->availableGeometry(pos());
+
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo);
+    }
+
+    /* Finally, set the frame geometry: */
+    setGeometry(frameGeo.left() + dl, frameGeo.top() + dt,
+                frameGeo.width() - dl - dr, frameGeo.height() - dt - db);
+
+#else /* !VBOX_GUI_WITH_CUSTOMIZATIONS1 */
+    Q_UNUSED(fAdjustPosition);
+#endif /* VBOX_GUI_WITH_CUSTOMIZATIONS1 */
 }
 
 void UIMachineWindowNormal::updateAppearanceOf(int iElement)
