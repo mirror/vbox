@@ -145,6 +145,30 @@ void UIMachineViewNormal::prepareConsoleConnections()
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
+void UIMachineViewNormal::saveMachineViewSettings()
+{
+    /* Store guest size in case we are switching to fullscreen: */
+    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
+}
+
+void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
+{
+    if (m_bIsGuestAutoresizeEnabled != fEnabled)
+    {
+        m_bIsGuestAutoresizeEnabled = fEnabled;
+
+        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+            sltPerformGuestResize();
+    }
+}
+
+/**
+ * Resends guest size-hint if necessary.
+ * If the last guest size hint was sent to switch to
+ * fullscreen or seamless mode then send one to restore the old view size.
+ * @note This method also does some hacks to suppress intermediary resizes
+ *       to the old fullscreen size.
+ */
 void UIMachineViewNormal::maybeResendResizeHint()
 {
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
@@ -166,23 +190,6 @@ void UIMachineViewNormal::maybeResendResizeHint()
             m_sizeHintOverride = hint;
             sltPerformGuestResize(hint);
         }
-    }
-}
-
-void UIMachineViewNormal::saveMachineViewSettings()
-{
-    /* Store guest size in case we are switching to fullscreen: */
-    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
-}
-
-void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
-{
-    if (m_bIsGuestAutoresizeEnabled != fEnabled)
-    {
-        m_bIsGuestAutoresizeEnabled = fEnabled;
-
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
-            sltPerformGuestResize();
     }
 }
 
