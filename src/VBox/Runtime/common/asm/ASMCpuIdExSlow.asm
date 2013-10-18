@@ -56,8 +56,8 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef ASM_CALL64_MSC
         mov     eax, ecx
         mov     ebx, edx
-        mov     ecx, r8
-        mov     edx, r9
+        mov     ecx, r8d
+        mov     edx, r9d
         mov     r8,  [rbp + 30h]
         mov     r9,  [rbp + 38h]
         mov     r10, [rbp + 40h]
@@ -93,7 +93,7 @@ BEGINPROC_EXPORTED ASMCpuIdExSlow
 %ifdef RT_ARCH_AMD64
         test    r9, r9
         jz      .store_ecx
-        mov     [r9], eax
+        mov     [r9], ebx
 %else
         mov     edi, [ebp + 1ch]
         test    edi, edi
