@@ -1,3 +1,5 @@
+DRI2CloseScreen
+DRI2ScreenInit
 DRICloseScreen
 DRICreateInfoRec
 DRICreatePCIBusID
