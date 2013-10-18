@@ -674,6 +674,23 @@ DECLINLINE(void) ASMCpuId_Idx_ECX(uint32_t uOperator, uint32_t uIdxECX, void *pv
 
 
 /**
+ * CPUID variant that initializes all 4 registers before the CPUID instruction.
+ *
+ * @returns The EAX result value.
+ * @param   uOperator   CPUID operation (eax).
+ * @param   uInitEBX    The value to assign EBX prior to the CPUID instruction.
+ * @param   uInitECX    The value to assign ECX prior to the CPUID instruction.
+ * @param   uInitEDX    The value to assign EDX prior to the CPUID instruction.
+ * @param   pvEAX       Where to store eax. Optional.
+ * @param   pvEBX       Where to store ebx. Optional.
+ * @param   pvECX       Where to store ecx. Optional.
+ * @param   pvEDX       Where to store edx. Optional.
+ */
+DECLASM(uint32_t) ASMCpuIdExSlow(uint32_t uOperator, uint32_t uInitEBX, uint32_t uInitECX, uint32_t uInitEDX,
+                                 void *pvEAX, void *pvEBX, void *pvECX, void *pvEDX);
+
+
+/**
  * Performs the cpuid instruction returning ecx and edx.
  *
  * @param   uOperator   CPUID operation (eax).

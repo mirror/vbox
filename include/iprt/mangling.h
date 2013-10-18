@@ -57,6 +57,8 @@
 # define ASMAtomicUoReadU64_EndProc                     RT_MANGLER(ASMAtomicUoReadU64_EndProc)
 # define ASMAtomicXchgU64                               RT_MANGLER(ASMAtomicXchgU64)        /* not-some-systems... */
 # define ASMAtomicXchgU64_EndProc                       RT_MANGLER(ASMAtomicXchgU64_EndProc)
+# define ASMCpuIdExSlow                                 RT_MANGLER(ASMCpuIdExSlow)
+# define ASMCpuIdExSlow_EndProc                         RT_MANGLER(ASMCpuIdExSlow_EndProc)
 # define RTAssertAreQuiet                               RT_MANGLER(RTAssertAreQuiet)
 # define RTAssertMayPanic                               RT_MANGLER(RTAssertMayPanic)
 # define RTAssertMsg1                                   RT_MANGLER(RTAssertMsg1)

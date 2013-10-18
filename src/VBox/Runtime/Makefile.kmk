@@ -542,6 +542,12 @@ ifdef IPRT_WITH_LZJB
  RuntimeR3_SOURCES += common/misc/lzjb.c
 endif
 
+# AMD64 / x86 assembly code.
+RuntimeR3_SOURCES.x86 += \
+	common/asm/ASMCpuIdExSlow.asm
+RuntimeR3_SOURCES.amd64 += \
+	common/asm/ASMCpuIdExSlow.asm
+
 # Some versions of GCC might require this.
 RuntimeR3_SOURCES.x86 += \
 	common/asm/ASMAtomicXchgU64.asm \

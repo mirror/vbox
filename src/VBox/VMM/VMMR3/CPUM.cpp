@@ -549,15 +549,12 @@ static const SSMFIELD g_aCpumCtxFieldsV16[] =
  */
 static void cpumR3CheckLeakyFpu(PVM pVM)
 {
-    uint32_t u32CpuVersion;
-    uint32_t u32Dummy;
-    ASMCpuId(1, &u32CpuVersion, &u32Dummy, &u32Dummy, &u32Dummy);
+    uint32_t u32CpuVersion = ASMCpuId_EAX(1);
     uint32_t const u32Family = u32CpuVersion >> 8;
     if (   u32Family >= 6      /* K7 and higher */
         && ASMIsAmdCpu())
     {
-        uint32_t cExt = 0;
-        ASMCpuId(0x80000000, &cExt, &u32Dummy, &u32Dummy, &u32Dummy);
+        uint32_t cExt = ASMCpuId_EAX(0x80000000);
         if (ASMIsValidExtRange(cExt))
         {
             uint32_t fExtFeaturesEDX = ASMCpuId_EDX(0x80000001);
@@ -809,7 +806,7 @@ static int cpumR3CpuIdInitHostSet(uint32_t uStart, PCPUMCPUID paLeaves, uint32_t
 {
     /* Using the ECX variant for all of them can't hurt... */
     for (uint32_t i = 0; i < cLeaves; i++)
-        ASMCpuId_Idx_ECX(uStart + i, 0, &paLeaves[i].eax, &paLeaves[i].ebx, &paLeaves[i].ecx, &paLeaves[i].edx);
+        ASMCpuIdExSlow(uStart + i, 0, 0, 0, &paLeaves[i].eax, &paLeaves[i].ebx, &paLeaves[i].ecx, &paLeaves[i].edx);
 
     /* Load CPUID leaf override; we currently don't care if the user
        specifies features the host CPU doesn't support. */
@@ -890,9 +887,9 @@ static int cpumR3CpuIdInit(PVM pVM)
      * returns zeros. VIA on the other hand seems to returning nothing or
      * perhaps some random garbage, we don't try to duplicate this behavior.
      */
-    ASMCpuId(pCPUM->aGuestCpuIdStd[0].eax + 10, /** @todo r=bird: Use the host value here in case of overrides and more than 10 leaves being stripped already. */
-             &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
-             &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
+    ASMCpuIdExSlow(pCPUM->aGuestCpuIdStd[0].eax + 10, 0, 0, 0, /** @todo r=bird: Use the host value here in case of overrides and more than 10 leaves being stripped already. */
+                   &pCPUM->GuestCpuIdDef.eax, &pCPUM->GuestCpuIdDef.ebx,
+                   &pCPUM->GuestCpuIdDef.ecx, &pCPUM->GuestCpuIdDef.edx);
 
     /** @cfgm{/CPUM/CMPXCHG16B, boolean, false}
      * Expose CMPXCHG16B to the guest if supported by the host.
@@ -1718,13 +1715,13 @@ static void cpumR3SaveCpuId(PVM pVM, PSSMHANDLE pSSM)
      */
     CPUMCPUID   aRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawStd); i++)
-        ASMCpuId(i, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawStd));
     SSMR3PutMem(pSSM, &aRawStd[0], sizeof(aRawStd));
 
     CPUMCPUID   aRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aRawExt); i++)
-        ASMCpuId(i | UINT32_C(0x80000000), &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
     SSMR3PutU32(pSSM, RT_ELEMENTS(aRawExt));
     SSMR3PutMem(pSSM, &aRawExt[0], sizeof(aRawExt));
 }
@@ -1979,21 +1976,22 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
         aGuestCpuIdCentaur[i] = GuestCpuIdDef;
 
     for (uint32_t i = cRawStd; i < RT_ELEMENTS(aRawStd); i++)
-        ASMCpuId(i, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aRawStd[i].eax, &aRawStd[i].ebx, &aRawStd[i].ecx, &aRawStd[i].edx);
 
     for (uint32_t i = cRawExt; i < RT_ELEMENTS(aRawExt); i++)
-        ASMCpuId(i | UINT32_C(0x80000000), &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
+        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0, &aRawExt[i].eax, &aRawExt[i].ebx, &aRawExt[i].ecx, &aRawExt[i].edx);
 
     /*
      * Get the raw CPU IDs for the current host.
      */
     CPUMCPUID   aHostRawStd[16];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawStd); i++)
-        ASMCpuId(i, &aHostRawStd[i].eax, &aHostRawStd[i].ebx, &aHostRawStd[i].ecx, &aHostRawStd[i].edx);
+        ASMCpuIdExSlow(i, 0, 0, 0, &aHostRawStd[i].eax, &aHostRawStd[i].ebx, &aHostRawStd[i].ecx, &aHostRawStd[i].edx);
 
     CPUMCPUID   aHostRawExt[32];
     for (unsigned i = 0; i < RT_ELEMENTS(aHostRawExt); i++)
-        ASMCpuId(i | UINT32_C(0x80000000), &aHostRawExt[i].eax, &aHostRawExt[i].ebx, &aHostRawExt[i].ecx, &aHostRawExt[i].edx);
+        ASMCpuIdExSlow(i | UINT32_C(0x80000000), 0, 0, 0,
+                       &aHostRawExt[i].eax, &aHostRawExt[i].ebx, &aHostRawExt[i].ecx, &aHostRawExt[i].edx);
 
     /*
      * Get the host and guest overrides so we don't reject the state because
@@ -2699,8 +2697,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
      */
     /** @todo we should check the 64 bits capabilities too! */
     uint32_t au32CpuId[8] = {0,0,0,0, 0,0,0,0};
-    ASMCpuId(0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
-    ASMCpuId(1, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
+    ASMCpuIdExSlow(0, 0, 0, 0, &au32CpuId[0], &au32CpuId[1], &au32CpuId[2], &au32CpuId[3]);
+    ASMCpuIdExSlow(1, 0, 0, 0, &au32CpuId[4], &au32CpuId[5], &au32CpuId[6], &au32CpuId[7]);
     uint32_t au32CpuIdSaved[8];
     rc = SSMR3GetMem(pSSM, &au32CpuIdSaved[0], sizeof(au32CpuIdSaved));
     if (RT_SUCCESS(rc))
@@ -3384,7 +3382,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     uint32_t    cStdHstMax;
     uint32_t    dummy;
-    ASMCpuId_Idx_ECX(0, 0, &cStdHstMax, &dummy, &dummy, &dummy);
+    ASMCpuIdExSlow(0, 0, 0, 0, &cStdHstMax, &dummy, &dummy, &dummy);
 
     unsigned    cStdLstMax = RT_MAX(RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd), cStdHstMax);
 
@@ -3396,7 +3394,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         if (i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdStd))
         {
             Guest = pVM->cpum.s.aGuestCpuIdStd[i];
-            ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+            ASMCpuIdExSlow(i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
             pHlp->pfnPrintf(pHlp,
                             "Gst: %08x  %08x %08x %08x %08x%s\n"
@@ -3407,7 +3405,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         }
         else
         {
-            ASMCpuId_Idx_ECX(i, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+            ASMCpuIdExSlow(i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
             pHlp->pfnPrintf(pHlp,
                             "Hst: %08x  %08x %08x %08x %08x\n",
@@ -3533,7 +3531,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         }
         else
         {
-            ASMCpuId(1, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+            ASMCpuIdExSlow(1, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
             X86CPUIDFEATEDX EdxHost  = *(PX86CPUIDFEATEDX)&Host.edx;
             X86CPUIDFEATECX EcxHost  = *(PX86CPUIDFEATECX)&Host.ecx;
@@ -3625,7 +3623,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdExt); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdExt[i];
-        ASMCpuId(0x80000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        ASMCpuIdExSlow(0x80000000 | i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         pHlp->pfnPrintf(pHlp,
                         "Gst: %08x  %08x %08x %08x %08x%s\n"
@@ -3722,7 +3720,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         }
         else
         {
-            ASMCpuId(0x80000001, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+            ASMCpuIdExSlow(0x80000001, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
             uint32_t uEdxGst = Guest.edx;
             uint32_t uEdxHst = Host.edx;
@@ -3917,7 +3915,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     for (unsigned i = 0; i < RT_ELEMENTS(pVM->cpum.s.aGuestCpuIdCentaur); i++)
     {
         Guest = pVM->cpum.s.aGuestCpuIdCentaur[i];
-        ASMCpuId(0xc0000000 | i, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        ASMCpuIdExSlow(0xc0000000 | i, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
 
         pHlp->pfnPrintf(pHlp,
                         "Gst: %08x  %08x %08x %08x %08x%s\n"
@@ -3940,7 +3938,7 @@ static DECLCALLBACK(void) cpumR3CpuIdInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
 
     if (iVerbosity && cCentaurMax >= 1)
     {
-        ASMCpuId(0xc0000001, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
+        ASMCpuIdExSlow(0xc0000001, 0, 0, 0, &Host.eax, &Host.ebx, &Host.ecx, &Host.edx);
         uint32_t uEdxGst = pVM->cpum.s.aGuestCpuIdExt[1].edx;
         uint32_t uEdxHst = Host.edx;
 
