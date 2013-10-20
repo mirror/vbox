@@ -878,20 +878,6 @@ int VBoxNetLwipNAT::init()
                                                   m_net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 
-    BOOL fIPv6Enabled = FALSE;
-    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
-    AssertComRCReturn(hrc, VERR_NOT_FOUND);
-
-    BOOL fIPv6DefaultRoute = FALSE;
-    if (fIPv6Enabled)
-    {
-        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
-        AssertComRCReturn(hrc, VERR_NOT_FOUND);
-    }
-
-    m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
-    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
-
     ComPtr<IEventSource> pES;
     hrc = m_net->COMGETTER(EventSource)(pES.asOutParam());
     AssertComRC(hrc);
@@ -911,6 +897,22 @@ int VBoxNetLwipNAT::init()
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
     m_listener = listener;
+
+
+    BOOL fIPv6Enabled = FALSE;
+    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
+    AssertComRCReturn(hrc, VERR_NOT_FOUND);
+
+    BOOL fIPv6DefaultRoute = FALSE;
+    if (fIPv6Enabled)
+    {
+        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
+        AssertComRCReturn(hrc, VERR_NOT_FOUND);
+    }
+
+    m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
+    m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
+
 
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
     com::Bstr bstrSourceIpX;
