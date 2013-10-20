@@ -867,14 +867,13 @@ int VBoxNetLwipNAT::natServiceProcessRegisteredPf(VECNATSERVICEPF& vecRules){
 
 int VBoxNetLwipNAT::init()
 {
-    com::Bstr bstr;
     int rc = VINF_SUCCESS;
+    HRESULT hrc;
     LogFlowFuncEnter();
 
 
     /* virtualbox initialized in super class */
 
-    HRESULT hrc;
     hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
                                                   m_net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
@@ -915,10 +914,10 @@ int VBoxNetLwipNAT::init()
 
     com::Bstr bstrSourceIp4Key = com::BstrFmt("NAT/%s/SourceIp4",m_Network.c_str());
     com::Bstr bstrSourceIpX;
-    RTNETADDRIPV4 addr;
     hrc = virtualbox->GetExtraData(bstrSourceIp4Key.raw(), bstrSourceIpX.asOutParam());
     if (SUCCEEDED(hrc))
     {
+        RTNETADDRIPV4 addr;
         rc = RTNetStrToIPv4Addr(com::Utf8Str(bstrSourceIpX).c_str(), &addr);
         if (RT_SUCCESS(rc))
         {
@@ -1007,6 +1006,7 @@ int VBoxNetLwipNAT::init()
         m_ProxyOptions.lomap_desc = &m_loOptDescriptor;
     }
 
+    com::Bstr bstr;
     hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
     if (!bstr.isEmpty())
