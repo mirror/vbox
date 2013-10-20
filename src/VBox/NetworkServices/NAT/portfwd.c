@@ -4,6 +4,7 @@
 
 #ifndef RT_OS_WINDOWS
 #include <arpa/inet.h>
+#include <netdb.h>
 #include <poll.h>
 #else
 # include "winpoll.h"
@@ -132,8 +133,9 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
            const char *src_addr_str, uint16_t src_port,
            const char *dst_addr_str, uint16_t dst_port)
 {
+    struct addrinfo hints;
+    struct addrinfo *ai;
     int status;
-    int saf;
     void *src_addr, *dst_addr;
 
     LWIP_ASSERT1(sdom == PF_INET || sdom == PF_INET6);
@@ -142,59 +144,40 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
     fwspec->sdom = sdom;
     fwspec->stype = stype;
 
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = (sdom == PF_INET) ? AF_INET : AF_INET6;
+    hints.ai_socktype = stype;
+    hints.ai_flags = AI_NUMERICHOST;
+
+    status = getaddrinfo(src_addr_str, NULL, &hints, &ai);
+    if (status != 0) {
+        DPRINTF(("%s - %s\n", src_addr_str, gai_strerror(status)));
+        return -1;
+    }
+    LWIP_ASSERT1(ai != NULL);
+    LWIP_ASSERT1(ai->ai_addrlen <= sizeof(fwspec->src));
+    memcpy(&fwspec->src, ai->ai_addr, ai->ai_addrlen);
+    freeaddrinfo(ai);
+    ai = NULL;
+
+    status = getaddrinfo(dst_addr_str, NULL, &hints, &ai);
+    if (status != 0) {
+        DPRINTF(("%s - %s\n", dst_addr_str, gai_strerror(status)));
+        return -1;
+    }
+    LWIP_ASSERT1(ai != NULL);
+    LWIP_ASSERT1(ai->ai_addrlen <= sizeof(fwspec->dst));
+    memcpy(&fwspec->dst, ai->ai_addr, ai->ai_addrlen);
+    freeaddrinfo(ai);
+    ai = NULL;
+
     if (sdom == PF_INET) {
-        struct sockaddr_in *src = &fwspec->src.sin;
-        struct sockaddr_in *dst = &fwspec->dst.sin;
-
-        saf = AF_INET;
-
-        src->sin_family = saf;
-#if HAVE_SA_LEN
-        src->sin_len = sizeof(*src);
-#endif
-        src->sin_port = htons(src_port);
-        src_addr = &src->sin_addr;
-
-        dst->sin_family = saf;
-#if HAVE_SA_LEN
-        dst->sin_len = sizeof(*dst);
-#endif
-        dst->sin_port = htons(dst_port);
-        dst_addr = &dst->sin_addr;
+        fwspec->src.sin.sin_port = htons(src_port);
+        fwspec->dst.sin.sin_port = htons(dst_port); 
     }
     else { /* PF_INET6 */
-        struct sockaddr_in6 *src = &fwspec->src.sin6;
-        struct sockaddr_in6 *dst = &fwspec->dst.sin6;
-
-        saf = AF_INET6;
-
-        src->sin6_family = saf;
-#if HAVE_SA_LEN
-        src->sin6_len = sizeof(*src);
-#endif
-        src->sin6_port = htons(src_port);
-        src_addr = &src->sin6_addr;
-
-        dst->sin6_family = saf;
-#if HAVE_SA_LEN
-        dst->sin6_len = sizeof(*dst);
-#endif
-        dst->sin6_port = htons(dst_port);
-        dst_addr = &dst->sin6_addr;
-    }
-
-    status = inet_pton(saf, src_addr_str, src_addr);
-    LWIP_ASSERT1(status >= 0);
-    if (status == 0) {
-        DPRINTF(("bad address: %s\n", src_addr_str));
-        return -1;
-    }
-
-    status = inet_pton(saf, dst_addr_str, dst_addr);
-    LWIP_ASSERT1(status >= 0);
-    if (status == 0) {
-        DPRINTF(("bad address: %s\n", dst_addr_str));
-        return -1;
+        fwspec->src.sin6.sin6_port = htons(src_port);
+        fwspec->dst.sin6.sin6_port = htons(dst_port); 
     }
 
     return 0;
