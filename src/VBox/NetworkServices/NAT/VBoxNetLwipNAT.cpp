@@ -184,7 +184,7 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
     RTTHREAD hThrIntNetRecv;
 
     /* Our NAT network descriptor in Main */
-    ComPtr<INATNetwork> net;
+    ComPtr<INATNetwork> m_net;
     ComPtr<NATNetworkListenerImpl> m_listener;
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
@@ -876,27 +876,25 @@ int VBoxNetLwipNAT::init()
 
     HRESULT hrc;
     hrc = virtualbox->FindNATNetworkByName(com::Bstr(m_Network.c_str()).raw(),
-                                                  net.asOutParam());
+                                                  m_net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 
     BOOL fIPv6Enabled = FALSE;
-    hrc = net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
+    hrc = m_net->COMGETTER(IPv6Enabled)(&fIPv6Enabled);
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 
     BOOL fIPv6DefaultRoute = FALSE;
     if (fIPv6Enabled)
     {
-        hrc = net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
+        hrc = m_net->COMGETTER(AdvertiseDefaultIPv6RouteEnabled)(&fIPv6DefaultRoute);
         AssertComRCReturn(hrc, VERR_NOT_FOUND);
     }
 
     m_ProxyOptions.ipv6_enabled = fIPv6Enabled;
     m_ProxyOptions.ipv6_defroute = fIPv6DefaultRoute;
 
-    /* XXX: Temporaly disabled this code on Windows for further debugging */
     ComPtr<IEventSource> pES;
-
-    hrc = net->COMGETTER(EventSource)(pES.asOutParam());
+    hrc = m_net->COMGETTER(EventSource)(pES.asOutParam());
     AssertComRC(hrc);
 
     ComObjPtr<NATNetworkListenerImpl> listener;
@@ -937,7 +935,7 @@ int VBoxNetLwipNAT::init()
     {
         /* XXX: extract function and do not duplicate */
         com::SafeArray<BSTR> rules;
-        hrc = net->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
+        hrc = m_net->COMGETTER(PortForwardRules4)(ComSafeArrayAsOutParam(rules));
         Assert(SUCCEEDED(hrc));
 
         size_t idxRules = 0;
@@ -952,7 +950,7 @@ int VBoxNetLwipNAT::init()
         }
 
         rules.setNull();
-        hrc = net->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
+        hrc = m_net->COMGETTER(PortForwardRules6)(ComSafeArrayAsOutParam(rules));
         Assert(SUCCEEDED(hrc));
 
         for (idxRules = 0; idxRules < rules.size(); ++idxRules)
@@ -966,7 +964,7 @@ int VBoxNetLwipNAT::init()
 
     com::SafeArray<BSTR> strs;
     int count_strs;
-    hrc = net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
+    hrc = m_net->COMGETTER(LocalMappings)(ComSafeArrayAsOutParam(strs));
     if (   SUCCEEDED(hrc)
            && (count_strs = strs.size()))
     {
