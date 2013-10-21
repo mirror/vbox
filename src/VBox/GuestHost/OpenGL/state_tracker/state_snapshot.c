@@ -1406,6 +1406,54 @@ static int32_t crStateLoadCurrentBits(CRStateBits *pBits, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+static void crStateSaveKeysCB(unsigned long firstKey, unsigned long count, void *data)
+{
+    PSSMHANDLE pSSM = (PSSMHANDLE)data;
+    int rc;
+    CRASSERT(firstKey);
+    CRASSERT(count);
+    rc = SSMR3PutU32(pSSM, firstKey);
+    CRASSERT(RT_SUCCESS(rc));
+    rc = SSMR3PutU32(pSSM, count);
+    CRASSERT(RT_SUCCESS(rc));
+}
+
+static int32_t crStateSaveKeys(CRHashTable *pHash, PSSMHANDLE pSSM)
+{
+    crHashtableWalkKeys(pHash, crStateSaveKeysCB , pSSM);
+    /* use null terminator */
+    SSMR3PutU32(pSSM, 0);
+    return VINF_SUCCESS;
+}
+
+static int32_t crStateLoadKeys(CRHashTable *pHash, PSSMHANDLE pSSM)
+{
+    uint32_t u32Key, u32Count, i;
+    int rc;
+    for(;;)
+    {
+        rc = SSMR3GetU32(pSSM, &u32Key);
+        AssertRCReturn(rc, rc);
+
+        if (!u32Key)
+            return rc;
+
+        rc = SSMR3GetU32(pSSM, &u32Count);
+        AssertRCReturn(rc, rc);
+
+        CRASSERT(u32Count);
+
+        for (i = u32Key; i < u32Count + u32Key; ++i)
+        {
+            GLboolean fIsNew = crHashtableAllocRegisterKey(pHash, i);
+            CRASSERT(fIsNew);
+        }
+    }
+
+    return rc;
+}
+
+
 int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 {
     int32_t rc, i;
@@ -1502,6 +1550,8 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     if (bSaveShared)
     {
         CRASSERT(pContext->shared && pContext->shared->textureTable);
+        rc = crStateSaveKeys(pContext->shared->textureTable, pSSM);
+        AssertRCReturn(rc, rc);
         ui32 = crHashtableNumElements(pContext->shared->textureTable);
         rc = SSMR3PutU32(pSSM, ui32);
         AssertRCReturn(rc, rc);
@@ -1599,6 +1649,11 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
 
 #ifdef CR_ARB_vertex_buffer_object
     /* Save buffer objects */
+    if (bSaveShared)
+    {
+        rc = crStateSaveKeys(pContext->shared->buffersTable, pSSM);
+        AssertRCReturn(rc, rc);
+    }
     ui32 = bSaveShared? crHashtableNumElements(pContext->shared->buffersTable):0;
     rc = SSMR3PutU32(pSSM, ui32);
     AssertRCReturn(rc, rc);
@@ -1666,10 +1721,15 @@ int32_t crStateSaveContext(CRContext *pContext, PSSMHANDLE pSSM)
     /* Save FBOs */
     if (bSaveShared)
     {
+        rc = crStateSaveKeys(pContext->shared->fbTable, pSSM);
+        AssertRCReturn(rc, rc);
         ui32 = crHashtableNumElements(pContext->shared->fbTable);
         rc = SSMR3PutU32(pSSM, ui32);
         AssertRCReturn(rc, rc);
         crHashtableWalk(pContext->shared->fbTable, crStateSaveFramebuffersCB, pSSM);
+
+        rc = crStateSaveKeys(pContext->shared->rbTable, pSSM);
+        AssertRCReturn(rc, rc);
         ui32 = crHashtableNumElements(pContext->shared->rbTable);
         rc = SSMR3PutU32(pSSM, ui32);
         AssertRCReturn(rc, rc);
@@ -2168,6 +2228,13 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     {
         /* Load shared textures */
         CRASSERT(pContext->shared && pContext->shared->textureTable);
+
+        if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
+        {
+            rc = crStateLoadKeys(pContext->shared->buffersTable, pSSM);
+            AssertRCReturn(rc, rc);
+        }
+
         rc = SSMR3GetU32(pSSM, &uiNumElems);
         AssertRCReturn(rc, rc);
         for (ui=0; ui<uiNumElems; ++ui)
@@ -2270,6 +2337,15 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
 
     /* Load buffer objects */
 #ifdef CR_ARB_vertex_buffer_object
+    if (bLoadShared)
+    {
+        if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
+        {
+            rc = crStateLoadKeys(pContext->shared->textureTable, pSSM);
+            AssertRCReturn(rc, rc);
+        }
+    }
+
     rc = SSMR3GetU32(pSSM, &uiNumElems);
     AssertRCReturn(rc, rc);
     for (ui=0; ui<=uiNumElems; ++ui) /*ui<=uiNumElems to load nullBuffer in same loop*/
@@ -2392,6 +2468,12 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
     /* Load FBOs */
     if (bLoadShared)
     {
+        if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
+        {
+            rc = crStateLoadKeys(pContext->shared->fbTable, pSSM);
+            AssertRCReturn(rc, rc);
+        }
+
         rc = SSMR3GetU32(pSSM, &uiNumElems);
         AssertRCReturn(rc, rc);
         for (ui=0; ui<uiNumElems; ++ui)
@@ -2409,6 +2491,12 @@ int32_t crStateLoadContext(CRContext *pContext, CRHashTable * pCtxTable, PFNCRST
             Assert(key == pFBO->id);
 
             crHashtableAdd(pContext->shared->fbTable, key, pFBO);
+        }
+
+        if (u32Version >= SHCROGL_SSM_VERSION_WITH_ALLOCATED_KEYS)
+        {
+            rc = crStateLoadKeys(pContext->shared->rbTable, pSSM);
+            AssertRCReturn(rc, rc);
         }
 
         rc = SSMR3GetU32(pSSM, &uiNumElems);
