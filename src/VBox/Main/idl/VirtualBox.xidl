@@ -547,6 +547,12 @@
           Machine changes: default frontend, USB rework.
       -->
     </const>
+    <const name="v1_15" value="17">
+      <desc>Settings version "1.15", written by VirtualBox 4.4.x.</desc>
+      <!--
+          Machine changes: hot-plug flag for storage devices.
+      -->
+    </const>
 
     <const name="Future" value="99999">
       <desc>Settings version greater than "1.13", written by a future VirtualBox version.</desc>
