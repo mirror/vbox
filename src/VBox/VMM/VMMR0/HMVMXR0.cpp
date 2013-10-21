@@ -2607,6 +2607,15 @@ DECLINLINE(int) hmR0VmxSaveHostMsrs(PVM pVM, PVMCPU pVCpu)
     }
 # endif
 
+    /* Host TSC AUX MSR must be restored since we always load/store guest TSC AUX MSR. */
+    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
+    {
+        pHostMsr->u32Msr      = MSR_K8_TSC_AUX;
+        pHostMsr->u32Reserved = 0;
+        pHostMsr->u64Value    = ASMRdMsr(MSR_K8_TSC_AUX);
+        pHostMsr++; cHostMsrs++;
+    }
+
     /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
     if (RT_UNLIKELY(cHostMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVM->hm.s.vmx.Msrs.u64Misc)))
     {
