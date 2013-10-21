@@ -392,6 +392,7 @@ VBoxSVC_SOURCES.win = \
 
 VBoxSVC_SOURCES.linux = \
 	src-server/linux/HostHardwareLinux.cpp \
+	src-server/linux/HostDnsServiceLinux.cpp \
 	src-server/HostDnsServiceResolvConf.cpp
 
 VBoxSVC_SOURCES.solaris = \
