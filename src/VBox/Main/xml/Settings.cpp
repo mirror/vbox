@@ -3491,7 +3491,12 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
                 if (!pelmAttached->getAttributeValue("device", att.lDevice))
                     throw ConfigFileError(this, pelmImage, N_("Required AttachedDevice/@device attribute is missing"));
 
-                pelmAttached->getAttributeValue("hotpluggable", att.fHotPluggable);
+                /* AHCI controller ports are hotpluggable by default, keep compatibility with existing settings. */
+                if (m->sv >= SettingsVersion_v1_15)
+                    pelmAttached->getAttributeValue("hotpluggable", att.fHotPluggable);
+                else if (sctl.controllerType == StorageControllerType_IntelAhci)
+                    att.fHotPluggable = true;
+
                 pelmAttached->getAttributeValue("bandwidthGroup", att.strBwGroup);
                 sctl.llAttachedDevices.push_back(att);
             }
@@ -4918,7 +4923,7 @@ void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
 
             pelmDevice->setAttribute("type", pcszType);
 
-            if (att.fHotPluggable)
+            if (m->sv >= SettingsVersion_v1_15)
                 pelmDevice->setAttribute("hotpluggable", att.fHotPluggable);
 
             pelmDevice->setAttribute("port", att.lPort);
@@ -5333,6 +5338,43 @@ AudioDriverType_T MachineConfigFile::getHostDefaultAudioDriver()
  */
 void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
+    if (m->sv < SettingsVersion_v1_15)
+    {
+        /*
+         * Check whether the hotpluggable flag of all storage devices differs
+         * from the default for old settings.
+         * AHCI ports are hotpluggable by default every other device is not.
+         */
+        for (StorageControllersList::const_iterator it = storageMachine.llStorageControllers.begin();
+             it != storageMachine.llStorageControllers.end();
+             ++it)
+        {
+            bool fSettingsBumped = false;
+            const StorageController &sctl = *it;
+
+            for (AttachedDevicesList::const_iterator it2 = sctl.llAttachedDevices.begin();
+                 it2 != sctl.llAttachedDevices.end();
+                 ++it2)
+            {
+                const AttachedDevice &att = *it2;
+
+                if (   (   att.fHotPluggable
+                        && sctl.controllerType != StorageControllerType_IntelAhci)
+                    || (   !att.fHotPluggable
+                        && sctl.controllerType == StorageControllerType_IntelAhci))
+                {
+                    m->sv = SettingsVersion_v1_15;
+                    fSettingsBumped = true;
+                    break;
+                }
+            }
+
+            /* Abort early if possible. */
+            if (fSettingsBumped)
+                break;
+        }
+    }
+
     if (m->sv < SettingsVersion_v1_14)
     {
         // VirtualBox 4.3 adds default frontend setting, graphics controller
