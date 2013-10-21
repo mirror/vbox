@@ -51,8 +51,8 @@ protected:
 
 private:
     const VirtualBox *mParent;
-    HostDnsService(const HostDnsService& service){ NOREF(service); }
-    HostDnsService& operator =(const HostDnsService& service){ NOREF(service); return *this; }
+    HostDnsService(const HostDnsService&);
+    HostDnsService& operator =(const HostDnsService&);
 };
 
 # ifdef RT_OS_DARWIN
@@ -97,6 +97,7 @@ public:
     virtual ~HostDnsServiceResolvConf();
     virtual HRESULT init(const VirtualBox *aParent);
     virtual HRESULT update();
+    const com::Utf8Str resolvConf() {return m_ResolvConfFilename; }
 protected:
     com::Utf8Str m_ResolvConfFilename;
     RTFILE m_ResolvConfFile;
@@ -113,14 +114,15 @@ public:
     virtual ~HostDnsServiceSolaris(){}
 };
 #  elif defined(RT_OS_LINUX)
-/**
- * XXX: http://www.ibm.com/developerworks/linux/library/l-ubuntu-inotify/index.html
- */
 class HostDnsServiceLinux: public HostDnsServiceResolvConf
 {
 public:
     HostDnsServiceLinux(){}
     virtual ~HostDnsServiceLinux(){}
+    virtual HRESULT init(const VirtualBox *aParent);
+    virtual void stop(void);
+
+    static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser);
 };
 
 #  elif defined(RT_OS_OS2)
