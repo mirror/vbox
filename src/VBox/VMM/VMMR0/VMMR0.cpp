@@ -816,10 +816,18 @@ VMMR0DECL(int) VMMR0EntryInt(PVM pVM, VMMR0OPERATION enmOperation, void *pvArg)
  */
 VMMR0DECL(void) VMMR0EntryFast(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation)
 {
+    /*
+     * Validation.
+     */
     if (RT_UNLIKELY(idCpu >= pVM->cCpus))
         return;
     PVMCPU pVCpu = &pVM->aCpus[idCpu];
+    if (RT_UNLIKELY(pVCpu->hNativeThreadR0 != RTThreadNativeSelf()))
+        return;
 
+    /*
+     * Perform requested operation.
+     */
     switch (enmOperation)
     {
         /*
