@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -97,6 +97,30 @@
 # define supR3HardenedRecvPreInitData      supR3HardenedStaticRecvPreInitData
 /** @} */
 #endif /* IN_SUP_HARDENED_R3 */
+
+
+/** @name CRT function mappings (not using CRT on Windows).
+ * @{
+ */
+#if defined(IN_SUP_HARDENED_R3) && defined(RT_OS_WINDOWS)
+DECLHIDDEN(void *) suplibHardenedMemCopy(void *pvDst, const void *pvSrc, size_t cbToCopy);
+DECLHIDDEN(char *) suplibHardenedStrCopy(char *pszDst, const char *pszSrc);
+DECLHIDDEN(size_t) suplibHardenedStrLen(const char *psz);
+DECLHIDDEN(char *) suplibHardenedStrCat(char *pszDst, const char *pszSrc);
+DECLHIDDEN(int)    suplibHardenedStrCmp(const char *psz1, const char *psz2);
+DECLHIDDEN(int)    suplibHardenedStrNCmp(const char *psz1, const char *psz2, size_t cchMax);
+DECLHIDDEN(int)    suplibHardenedStrICmp(const char *psz1, const char *psz2);
+#else
+# define suplibHardenedMemCopy memcpy
+# define suplibHardenedStrCopy strcpy
+# define suplibHardenedStrLen  strlen
+# define suplibHardenedStrCat  strcat
+# define suplibHardenedStrCmp  strcmp
+# define suplibHardenedStrNCmp strncmp
+# define suplibHardenedStrICmp stricmp
+#endif
+DECLNORETURN(void) suplibHardenedExit(RTEXITCODE rcExit);
+/** @} */
 
 
 /*******************************************************************************

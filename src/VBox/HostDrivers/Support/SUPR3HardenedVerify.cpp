@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2012 Oracle Corporation
+ * Copyright (C) 2006-2013 Oracle Corporation
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -40,7 +40,9 @@
 
 #elif defined(RT_OS_WINDOWS)
 # include <Windows.h>
-# include <stdio.h>
+# ifndef IN_SUP_HARDENED_R3
+#  include <stdio.h>
+# endif
 
 #else /* UNIXes */
 # include <sys/types.h>
@@ -55,7 +57,6 @@
 # include <sys/stat.h>
 # include <sys/time.h>
 # include <sys/fcntl.h>
-# include <stdio.h>
 # include <pwd.h>
 # ifdef RT_OS_DARWIN
 #  include <mach-o/dyld.h>
@@ -243,9 +244,9 @@ static int supR3HardenedMakePath(SUPINSTDIR enmDir, char *pszDst, size_t cchDst,
             rc = supR3HardenedPathAppPrivateArch(pszDst, cchDst);
             if (RT_SUCCESS(rc))
             {
-                size_t off = strlen(pszDst);
+                size_t off = suplibHardenedStrLen(pszDst);
                 if (cchDst - off >= sizeof("/components"))
-                    memcpy(&pszDst[off], "/components", sizeof("/components"));
+                    suplibHardenedMemCopy(&pszDst[off], "/components", sizeof("/components"));
                 else
                     rc = VERR_BUFFER_OVERFLOW;
             }
@@ -285,12 +286,12 @@ static int supR3HardenedMakeFilePath(PCSUPINSTFILE pFile, char *pszDst, size_t c
     int rc = supR3HardenedMakePath(pFile->enmDir, pszDst, cchDst, fFatal);
     if (RT_SUCCESS(rc) && fWithFilename)
     {
-        size_t cchFile = strlen(pFile->pszFile);
-        size_t off = strlen(pszDst);
+        size_t cchFile = suplibHardenedStrLen(pFile->pszFile);
+        size_t off = suplibHardenedStrLen(pszDst);
         if (cchDst - off >= cchFile + 2)
         {
             pszDst[off++] = '/';
-            memcpy(&pszDst[off], pFile->pszFile, cchFile + 1);
+            suplibHardenedMemCopy(&pszDst[off], pFile->pszFile, cchFile + 1);
         }
         else
             rc = supR3HardenedError(VERR_BUFFER_OVERFLOW, fFatal,
@@ -580,9 +581,9 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
     if (RT_FAILURE(rc))
         return rc;
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    if (stricmp(szName, pszFilename))
+    if (suplibHardenedStrICmp(szName, pszFilename))
 #else
-    if (strcmp(szName, pszFilename))
+    if (suplibHardenedStrCmp(szName, pszFilename))
 #endif
     {
         /*
@@ -594,14 +595,14 @@ static int supR3HardenedVerifySameFile(int iFile, const char *pszFilename, bool 
         char szName2[RTPATH_MAX];
         if (    GetFullPathName(szName, RT_ELEMENTS(szName2), &szName2[0], &pszIgnored)
             &&  GetFullPathName(pszFilename, RT_ELEMENTS(szName), &szName[0], &pszIgnored))
-            if (!stricmp(szName2, szName))
+            if (!suplibHardenedStrICmp(szName2, szName))
                 rc = VINF_SUCCESS;
 #else
         AssertCompile(RTPATH_MAX >= PATH_MAX);
         char szName2[RTPATH_MAX];
         if (    realpath(szName, szName2) != NULL
             &&  realpath(pszFilename, szName) != NULL)
-            if (!strcmp(szName2, szName))
+            if (!suplibHardenedStrCmp(szName2, szName))
                 rc = VINF_SUCCESS;
 #endif
 
@@ -643,7 +644,7 @@ DECLHIDDEN(int) supR3HardenedVerifyFixedFile(const char *pszFilename, bool fFata
      */
     const char *pszName = supR3HardenedPathFilename(pszFilename);
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
-        if (!strcmp(pszName, g_aSupInstallFiles[iFile].pszFile))
+        if (!suplibHardenedStrCmp(pszName, g_aSupInstallFiles[iFile].pszFile))
         {
             int rc = supR3HardenedVerifySameFile(iFile, pszFilename, fFatal);
             if (RT_SUCCESS(rc))
@@ -670,12 +671,12 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
     int             rc = VINF_SUCCESS;
     bool            fExe = false;
     bool            fDll = false;
-    size_t const    cchProgName = strlen(pszProgName);
+    size_t const    cchProgName = suplibHardenedStrLen(pszProgName);
     for (unsigned iFile = 0; iFile < RT_ELEMENTS(g_aSupInstallFiles); iFile++)
-        if (!strncmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgName))
+        if (!suplibHardenedStrNCmp(pszProgName, g_aSupInstallFiles[iFile].pszFile, cchProgName))
         {
             if (    g_aSupInstallFiles[iFile].enmType == kSupIFT_Dll
-                &&  !strcmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_DLL_SUFF))
+                &&  !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_DLL_SUFF))
             {
                 /* This only has to be found (once). */
                 if (fDll)
@@ -684,7 +685,7 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                 fDll = true;
             }
             else if (   g_aSupInstallFiles[iFile].enmType == kSupIFT_Exe
-                     && !strcmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_EXE_SUFF))
+                     && !suplibHardenedStrCmp(&g_aSupInstallFiles[iFile].pszFile[cchProgName], SUPLIB_EXE_SUFF))
             {
                 /* Here we'll have to check that the specific program is the same as the entry. */
                 if (fExe)
@@ -696,8 +697,8 @@ static int supR3HardenedVerifyProgram(const char *pszProgName, bool fFatal)
                 int rc2 = supR3HardenedPathExecDir(szFilename, sizeof(szFilename) - cchProgName - sizeof(SUPLIB_EXE_SUFF));
                 if (RT_SUCCESS(rc2))
                 {
-                    strcat(szFilename, "/");
-                    strcat(szFilename, g_aSupInstallFiles[iFile].pszFile);
+                    suplibHardenedStrCat(szFilename, "/");
+                    suplibHardenedStrCat(szFilename, g_aSupInstallFiles[iFile].pszFile);
                     supR3HardenedVerifySameFile(iFile, szFilename, fFatal);
                 }
                 else
@@ -785,10 +786,10 @@ static int supR3HardenedSetErrorN(int rc, PRTERRINFO pErrInfo, unsigned cMsgs, .
         while (cMsgs-- > 0 && cbErr > 0)
         {
             const char *pszMsg = va_arg(va,  const char *);
-            size_t cchMsg = VALID_PTR(pszMsg) ? strlen(pszMsg) : 0;
+            size_t cchMsg = VALID_PTR(pszMsg) ? suplibHardenedStrLen(pszMsg) : 0;
             if (cchMsg >= cbErr)
                 cchMsg = cbErr - 1;
-            memcpy(pszErr, pszMsg, cchMsg);
+            suplibHardenedMemCopy(pszErr, pszMsg, cchMsg);
             pszErr[cchMsg] = '\0';
             pszErr += cchMsg;
             cbErr -= cchMsg;
@@ -1196,7 +1197,7 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
            full access. So, to work around we relax the hardening a bit and
            permit grand parents and beyond to be group writable by admin. */
         /** @todo dynamically resolve the admin group? */
-        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/ || strcmp(pszPath, "/Applications");
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 80 /*admin*/ || suplibHardenedStrCmp(pszPath, "/Applications");
 
 #elif defined(RT_OS_FREEBSD)
         /* HACK ALERT: PC-BSD 9 has group-writable /usr/pib directory which is
@@ -1204,7 +1205,7 @@ static int supR3HardenedVerifyFsObject(PCSUPR3HARDENEDFSOBJSTATE pFsObjState, bo
            On FreeBSD root is normally the only member of this group, on
            PC-BSD the default user is a member. */
         /** @todo dynamically resolve the operator group? */
-        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 5 /*operator*/ || strcmp(pszPath, "/usr/pbi");
+        bool fBad = !fRelaxed || pFsObjState->Stat.st_gid != 5 /*operator*/ || suplibHardenedStrCmp(pszPath, "/usr/pbi");
         NOREF(fRelaxed);
 #else
         NOREF(fRelaxed);
@@ -1335,14 +1336,14 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
          * Check the length and copy it into the path buffer so it can be
          * stat()'ed.
          */
-        size_t cchName = strlen(pEntry->d_name);
+        size_t cchName = suplibHardenedStrLen(pEntry->d_name);
         if (cchName + cchDirPath > SUPR3HARDENED_MAX_PATH)
         {
             rc = supR3HardenedSetErrorN(VERR_SUPLIB_PATH_TOO_LONG, pErrInfo,
                                         4, "Path grew too long during recursion: '", pszDirPath, pEntry->d_name, "'");
             break;
         }
-        memcpy(&pszDirPath[cchName], pEntry->d_name, cchName + 1);
+        suplibHardenedMemCopy(&pszDirPath[cchName], pEntry->d_name, cchName + 1);
 
         /*
          * Query the information about the entry and verify it.
@@ -1362,8 +1363,8 @@ static int supR3HardenedVerifyDirRecursive(char *pszDirPath, size_t cchDirPath, 
          */
         if (    fRecursive
             &&  S_ISDIR(pFsObjState->Stat.st_mode)
-            &&  strcmp(pEntry->d_name, ".")
-            &&  strcmp(pEntry->d_name, ".."))
+            &&  suplibHardenedStrCmp(pEntry->d_name, ".")
+            &&  suplibHardenedStrCmp(pEntry->d_name, ".."))
         {
             pszDirPath[cchDirPath + cchName]     = RTPATH_SLASH;
             pszDirPath[cchDirPath + cchName + 1] = '\0';
@@ -1527,7 +1528,7 @@ DECLHIDDEN(int) supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData)
         if (    g_aSupInstallFiles[iFile].enmDir    != paInstallFiles[iFile].enmDir
             ||  g_aSupInstallFiles[iFile].enmType   != paInstallFiles[iFile].enmType
             ||  g_aSupInstallFiles[iFile].fOptional != paInstallFiles[iFile].fOptional
-            ||  strcmp(g_aSupInstallFiles[iFile].pszFile, paInstallFiles[iFile].pszFile))
+            ||  suplibHardenedStrCmp(g_aSupInstallFiles[iFile].pszFile, paInstallFiles[iFile].pszFile))
             return VERR_VERSION_MISMATCH;
 
     /*
@@ -1541,7 +1542,7 @@ DECLHIDDEN(int) supR3HardenedRecvPreInitData(PCSUPPREINITDATA pPreInitData)
     /*
      * Copy the verification data over.
      */
-    memcpy(&g_aSupVerifiedFiles[0], pPreInitData->paVerifiedFiles, sizeof(g_aSupVerifiedFiles));
-    memcpy(&g_aSupVerifiedDirs[0], pPreInitData->paVerifiedDirs, sizeof(g_aSupVerifiedDirs));
+    suplibHardenedMemCopy(&g_aSupVerifiedFiles[0], pPreInitData->paVerifiedFiles, sizeof(g_aSupVerifiedFiles));
+    suplibHardenedMemCopy(&g_aSupVerifiedDirs[0], pPreInitData->paVerifiedDirs, sizeof(g_aSupVerifiedDirs));
     return VINF_SUCCESS;
 }
