@@ -185,7 +185,11 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     /* Our NAT network descriptor in Main */
     ComPtr<INATNetwork> m_net;
-    ComPtr<NATNetworkListenerImpl> m_listener;
+    ComObjPtr<NATNetworkListenerImpl> m_listener;
+
+    ComPtr<IHost> m_host;
+    ComObjPtr<NATNetworkListenerImpl> m_vboxListener;
+
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
     RTSEMEVENT hSemSVC;
@@ -878,25 +882,42 @@ int VBoxNetLwipNAT::init()
                                                   m_net.asOutParam());
     AssertComRCReturn(hrc, VERR_NOT_FOUND);
 
-    ComPtr<IEventSource> pES;
-    hrc = m_net->COMGETTER(EventSource)(pES.asOutParam());
+    hrc = m_listener.createObject();
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    hrc = m_listener->init(new NATNetworkListener(), this);
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    ComPtr<IEventSource> esNet;
+    hrc = m_net->COMGETTER(EventSource)(esNet.asOutParam());
     AssertComRC(hrc);
 
-    ComObjPtr<NATNetworkListenerImpl> listener;
-    hrc = listener.createObject();
+    com::SafeArray<VBoxEventType_T> aNetEvents;
+    aNetEvents.push_back(VBoxEventType_OnNATNetworkPortForward);
+    aNetEvents.push_back(VBoxEventType_OnNATNetworkSetting);
+    hrc = esNet->RegisterListener(m_listener, ComSafeArrayAsInParam(aNetEvents), true);
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    hrc = listener->init(new NATNetworkListener(), this);
+
+    // resolver changes are reported on vbox but are retrieved from
+    // host so stash a pointer for future lookups
+    hrc = virtualbox->COMGETTER(Host)(m_host.asOutParam());
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    com::SafeArray<VBoxEventType_T> events;
-    events.push_back(VBoxEventType_OnNATNetworkPortForward);
-    events.push_back(VBoxEventType_OnNATNetworkSetting);
-
-    hrc = pES->RegisterListener(listener, ComSafeArrayAsInParam(events), true);
+    hrc = m_vboxListener.createObject();
     AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
-    m_listener = listener;
+    hrc = m_vboxListener->init(new NATNetworkListener(), this);
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
+
+    ComPtr<IEventSource> esVBox;
+    hrc = virtualbox->COMGETTER(EventSource)(esVBox.asOutParam());
+    AssertComRC(hrc);
+
+    com::SafeArray<VBoxEventType_T> aVBoxEvents;
+    aVBoxEvents.push_back(VBoxEventType_OnHostNameResolutionConfigurationChange);
+    hrc = esVBox->RegisterListener(m_vboxListener, ComSafeArrayAsInParam(aVBoxEvents), true);
+    AssertComRCReturn(hrc, VERR_INTERNAL_ERROR);
 
 
     BOOL fIPv6Enabled = FALSE;
