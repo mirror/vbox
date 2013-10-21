@@ -7701,8 +7701,7 @@ static void hmR0VmxPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCt
      * Save the current Host TSC_AUX and write the guest TSC_AUX to the host, so that
      * RDTSCPs (that don't cause exits) reads the guest MSR. See @bugref{3324}.
      */
-    if (    (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
-        && !(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_RDTSC_EXIT))
+    if (pVCpu->hm.s.vmx.u32ProcCtls2 & VMX_VMCS_CTRL_PROC_EXEC2_RDTSCP)
     {
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64HostTscAux = 0;
