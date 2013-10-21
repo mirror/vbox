@@ -469,6 +469,10 @@ pxtcp_pmgr_chan_pollin(struct pollmgr_handler *handler, SOCKET fd, int revents)
     LWIP_ASSERT1(pxtcp->pmhdl.data == (void *)pxtcp);
     LWIP_ASSERT1(pxtcp->pmhdl.slot > 0);
 
+    if (pxtcp->inbound_close) {
+        return POLLIN;
+    }
+
     pxtcp->events |= POLLIN;
     pollmgr_update_events(pxtcp->pmhdl.slot, pxtcp->events);
 
