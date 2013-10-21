@@ -22,6 +22,8 @@ typedef struct CRHashTable CRHashTable;
 typedef void (*CRHashtableCallback)(void *data);
 /* Callback function used for walking through table entries */
 typedef void (*CRHashtableWalkCallback)(unsigned long key, void *data1, void *data2);
+/* Callback function used for walking through allocated keys */
+typedef void (*CRHashIdWalkKeys)(unsigned long firstKey, unsigned long count, void *data);
 
 DECLEXPORT(CRHashIdPool *) crAllocHashIdPool( void );
 DECLEXPORT(CRHashIdPool *) crAllocHashIdPoolEx( GLuint min, GLuint max );
@@ -31,6 +33,7 @@ DECLEXPORT(GLuint) crHashIdPoolAllocBlock( CRHashIdPool *pool, GLuint count );
 DECLEXPORT(void) crHashIdPoolFreeBlock( CRHashIdPool *pool, GLuint first, GLuint count );
 /* @return GL_TRUE if the id is allocated, and GL_FALSE if the id was already allocated */
 DECLEXPORT(GLboolean) crHashIdPoolAllocId( CRHashIdPool *pool, GLuint id );
+DECLEXPORT(void) crHashIdWalkKeys( CRHashIdPool *pool, CRHashIdWalkKeys walkFunc , void *data);
 
 DECLEXPORT(CRHashTable *) crAllocHashtable( void );
 DECLEXPORT(CRHashTable *) crAllocHashtableEx( GLuint min, GLuint max );
@@ -55,6 +58,7 @@ DECLEXPORT(void) crHashtableWalkUnlocked( CRHashTable *hash, CRHashtableWalkCall
 DECLEXPORT(GLboolean) crHashtableGetDataKey(CRHashTable *pHash, void *pData, unsigned long *pKey);
 DECLEXPORT(void) crHashtableLock(CRHashTable *h);
 DECLEXPORT(void) crHashtableUnlock(CRHashTable *h);
+DECLEXPORT(void) crHashtableWalkKeys(CRHashTable *hash, CRHashIdWalkKeys walkFunc , void *data);
 
 #ifdef __cplusplus
 } /* extern "C" */

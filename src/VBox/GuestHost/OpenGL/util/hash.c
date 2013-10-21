@@ -344,6 +344,29 @@ GLboolean crHashIdPoolIsIdFree( const CRHashIdPool *pool, GLuint id )
     return GL_FALSE;
 }
 
+void crHashIdWalkKeys( CRHashIdPool *pool, CRHashIdWalkKeys walkFunc , void *data)
+{
+    FreeElem *prev = NULL, *f;
+
+    RTListForEach(&pool->freeList, f, FreeElem, Node)
+    {
+        if (prev)
+        {
+            Assert(prev->max < (f->min - 1));
+            walkFunc(prev->max+1, f->min - 1, data);
+        }
+
+        prev = f;
+    }
+
+    Assert(prev->max <= pool->max);
+
+    if (prev->max < pool->max)
+    {
+        walkFunc(prev->max+1, pool->max, data);
+    }
+}
+
 CRHashTable *crAllocHashtableEx( GLuint min, GLuint max )
 {
     int i;
@@ -486,6 +509,17 @@ GLboolean crHashtableAllocRegisterKey( CRHashTable *h,  GLuint key)
     crUnlockMutex(&h->mutex);
 #endif
     return fAllocated;
+}
+
+void crHashtableWalkKeys( CRHashTable *h, CRHashIdWalkKeys walkFunc , void *data)
+{
+#ifdef CHROMIUM_THREADSAFE
+    crLockMutex(&h->mutex);
+#endif
+    crHashIdWalkKeys(h->idPool, walkFunc , data);
+#ifdef CHROMIUM_THREADSAFE
+    crUnlockMutex(&h->mutex);
+#endif
 }
 
 GLuint crHashtableAllocKeys( CRHashTable *h,  GLsizei range)
