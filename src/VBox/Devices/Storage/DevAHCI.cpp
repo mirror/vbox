@@ -7667,9 +7667,10 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     AssertRelease(!pAhciPort->pDrvBlockAsync);
     Assert(pAhciPort->iLUN == iLUN);
 
-    AssertMsgReturnVoid(   pAhciPort->fHotpluggable
-                        || (fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
-                        ("AHCI: Port %d is not marked hotpluggable\n", pAhciPort->iLUN));
+    AssertMsgReturn(   pAhciPort->fHotpluggable
+                    || (fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
+                    ("AHCI: Port %d is not marked hotpluggable\n", pAhciPort->iLUN),
+                    VERR_INVALID_PARAMETER);
 
     /*
      * Try attach the block device and get the interfaces,
