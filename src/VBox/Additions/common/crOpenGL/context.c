@@ -450,10 +450,6 @@ stubDestroyContextLocked( ContextInfo *context )
 
 #ifdef GLX
     crFreeHashtable(context->pGLXPixmapsHash, crFree);
-    if (context->damageDpy)
-    {
-        XCloseDisplay(context->damageDpy);
-    }
 #endif
 
     crHashtableDelete(stub.contextTable, contextId, NULL);
@@ -552,8 +548,7 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
 
 #ifdef GLX
     context->pGLXPixmapsHash = crAllocHashtable();
-    context->damageInitFailed = GL_FALSE;
-    context->damageDpy = NULL;
+    context->damageQueryFailed = GL_FALSE;
     context->damageEventsBase = 0;
 #endif
 

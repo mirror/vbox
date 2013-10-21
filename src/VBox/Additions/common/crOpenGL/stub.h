@@ -146,8 +146,7 @@ struct context_info_t
     Bool direct;
     GLXContext glxContext;
     CRHashTable *pGLXPixmapsHash;
-    Bool     damageInitFailed;
-    Display *damageDpy; /* second display connection to read xdamage extension data */
+    Bool     damageQueryFailed;
     int      damageEventsBase;
 #endif
 };

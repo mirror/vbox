@@ -57,7 +57,7 @@ struct VisualInfo {
 static struct VisualInfo *VisualInfoList = NULL;
 
 static void stubXshmUpdateImageRect(Display *dpy, GLXDrawable draw, GLX_Pixmap_t *pGlxPixmap, XRectangle *pRect);
-static void stubInitXDamageExtension(ContextInfo *pContext);
+static void stubQueryXDamageExtension(Display *dpy, ContextInfo *pContext);
 
 static void
 AddVisualInfo(Display *dpy, int screen, VisualID visualid, int visBits)
@@ -624,9 +624,7 @@ VBOXGLXTAG(glXCreateContext)(Display *dpy, XVisualInfo *vis, GLXContext share, B
     context->visual = vis;
     context->direct = direct;
 
-    /* This means that clients can't hold a server grab during
-     * glXCreateContext! */
-    stubInitXDamageExtension(context);
+    stubQueryXDamageExtension(dpy, context);
 
     return (GLXContext) context->id;
 }
@@ -1783,7 +1781,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXDestroyPixmap)(Display *dpy, GLXPixmap pixmap)
     if (parms.pGlxPixmap->hDamage>0)
     {
         //crDebug("Destroy: Damage for drawable 0x%x, handle 0x%x", (unsigned int) pixmap, (unsigned int) parms.pGlxPixmap->damage);
-        XDamageDestroy(parms.pCtx->damageDpy, parms.pGlxPixmap->hDamage);
+        XDamageDestroy(dpy, parms.pGlxPixmap->hDamage);
     }
 
     if (parms.pGlxPixmap->pDamageRegion)
@@ -2173,68 +2171,75 @@ static void stubInitXSharedMemory(Display *dpy)
 #endif
 }
 
-void stubInitXDamageExtension(ContextInfo *pContext)
+void stubQueryXDamageExtension(Display *dpy, ContextInfo *pContext)
 {
     int erb, vma, vmi;
 
     CRASSERT(pContext);
     
-    if (pContext->damageInitFailed || pContext->damageDpy)
+    if (pContext->damageQueryFailed)
         return;
 
-    pContext->damageInitFailed = True;
+    pContext->damageQueryFailed = True;
 
-    /* Open second xserver connection to make sure we'd receive all the xdamage messages 
-     * and those wouldn't be eaten by application even queue */
-    pContext->damageDpy = XOpenDisplay(DisplayString(pContext->dpy));
-
-    if (!pContext->damageDpy)
-    {
-        crWarning("XDamage: Can't connect to display %s", DisplayString(pContext->dpy));
-        return;
-    }
-
-    if (!XDamageQueryExtension(pContext->damageDpy, &pContext->damageEventsBase, &erb)
-        || !XDamageQueryVersion(pContext->damageDpy, &vma, &vmi))
+    if (!XDamageQueryExtension(dpy, &pContext->damageEventsBase, &erb)
+        || !XDamageQueryVersion(dpy, &vma, &vmi))
     {
         crWarning("XDamage not found or old version (%i.%i), going to run *very* slow", vma, vmi);
-        XCloseDisplay(pContext->damageDpy);
-        pContext->damageDpy = NULL;
         return;
     }
 
     crDebug("XDamage %i.%i", vma, vmi);
-    pContext->damageInitFailed = False;
+    pContext->damageQueryFailed = False;
 }
 
-static void stubCheckXDamageCB(unsigned long key, void *data1, void *data2)
+static void stubFetchDamageOnDrawable(Display *dpy, GLX_Pixmap_t *pGlxPixmap)
 {
-    GLX_Pixmap_t *pGlxPixmap = (GLX_Pixmap_t *) data1;
-    XDamageNotifyEvent *e = (XDamageNotifyEvent *) data2;
+    Damage damage = pGlxPixmap->hDamage;
 
-    if (pGlxPixmap->hDamage==e->damage)
+    if (damage)
     {
-        /*crDebug("Event: Damage for pixmap 0x%lx(drawable 0x%x), handle 0x%x (level=%i) [%i,%i,%i,%i]",
-                key, (unsigned int) e->drawable, (unsigned int) e->damage, (int) e->level,
-                e->area.x, e->area.y, e->area.width, e->area.height);*/
+        XRectangle *returnRects;
+        int        nReturnRects;
+
+        /* Get the damage region as a server region */ 
+        XserverRegion serverDamageRegion = XFixesCreateRegion (dpy, NULL, 0);
+
+        /* Unite damage region with server region and clear damage region */
+        XDamageSubtract (dpy,
+                         damage,
+                         None, /* subtract all damage from this region */
+                         serverDamageRegion /* save in serverDamageRegion */);
+
+        /* Fetch damage rectangles */
+        returnRects = XFixesFetchRegion (dpy, serverDamageRegion, &nReturnRects);
+
+        /* Delete region */
+        XFixesDestroyRegion (dpy, serverDamageRegion);
 
         if (pGlxPixmap->pDamageRegion)
         {
             /* If it's dirty and regions are empty, it marked for full update, so do nothing.*/
             if (!pGlxPixmap->bPixmapImageDirty || !XEmptyRegion(pGlxPixmap->pDamageRegion))
             {
-                if (CR_MAX_DAMAGE_REGIONS_TRACKED <= pGlxPixmap->pDamageRegion->numRects)
+                int i = 0;
+                for (; i < nReturnRects; ++i)
                 {
-                    /* Mark for full update */
-                    EMPTY_REGION(pGlxPixmap->pDamageRegion);
-                }
-                else
-                {
-                    /* Add to damage regions */
-                    XUnionRectWithRegion(&e->area, pGlxPixmap->pDamageRegion, pGlxPixmap->pDamageRegion);
+                    if (CR_MAX_DAMAGE_REGIONS_TRACKED <= pGlxPixmap->pDamageRegion->numRects)
+                    {
+                        /* Mark for full update */
+                        EMPTY_REGION(pGlxPixmap->pDamageRegion);
+                    }
+                    else
+                    {
+                        /* Add to damage regions */
+                        XUnionRectWithRegion(&returnRects[i], pGlxPixmap->pDamageRegion, pGlxPixmap->pDamageRegion);
+                    }
                 }
             }
         }
+
+        XFree(returnRects);
 
         pGlxPixmap->bPixmapImageDirty = True;
     }
@@ -2339,9 +2344,9 @@ static GLX_Pixmap_t* stubInitGlxPixmap(GLX_Pixmap_t* pCreateInfoPixmap, Display 
     XUNLOCK(dpy);
 
     /* If there's damage extension, then get handle for damage events related to this pixmap */
-    if (pContext->damageDpy)
+    if (!pContext->damageQueryFailed)
     {
-        pGlxPixmap->hDamage = XDamageCreate(pContext->damageDpy, (Pixmap)draw, XDamageReportRawRectangles);
+        pGlxPixmap->hDamage = XDamageCreate(dpy, (Pixmap)draw, XDamageReportNonEmpty);
         /*crDebug("Create: Damage for drawable 0x%x, handle 0x%x (level=%i)",
                  (unsigned int) draw, (unsigned int) pGlxPixmap->damage, (int) XDamageReportRawRectangles);*/
         pGlxPixmap->pDamageRegion = XCreateRegion();
@@ -2533,24 +2538,14 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     }
 
     /* If there's damage extension, then process incoming events as we need the information right now */
-    if (context->damageDpy)
+    if (!context->damageQueryFailed)
     {
-        /* Sync connections, note that order of syncs is important here.
-         * First make sure client commands are finished, then make sure we get all the damage events back*/
+        /* Sync connection */
         XLOCK(dpy);
         XSync(dpy, False);
         XUNLOCK(dpy);
-        XSync(context->damageDpy, False);
 
-        while (XPending(context->damageDpy))
-        {
-            XEvent event;
-            XNextEvent(context->damageDpy, &event);
-            if (event.type==context->damageEventsBase+XDamageNotify)
-            {
-                crHashtableWalk(context->pGLXPixmapsHash, stubCheckXDamageCB, &event);
-            }
-        }
+        stubFetchDamageOnDrawable(dpy, pGlxPixmap);
     }
 
     /* No shared memory? Rollback to use slow x protocol then */
@@ -2598,7 +2593,7 @@ DECLEXPORT(void) VBOXGLXTAG(glXBindTexImageEXT)(Display *dpy, GLXDrawable draw, 
     else /* Use shm to get pixmap data */
     {
         /* Check if we have damage extension */
-        if (context->damageDpy)
+        if (!context->damageQueryFailed)
         {
             if (pGlxPixmap->bPixmapImageDirty)
             {
