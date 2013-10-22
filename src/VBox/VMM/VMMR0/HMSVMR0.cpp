@@ -2919,10 +2919,6 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     VMCPU_HMCF_CLEAR(pVCpu, HM_CHANGED_HOST_CONTEXT);           /* Preemption might set this, nothing to do on AMD-V. */
     AssertMsg(!VMCPU_HMCF_VALUE(pVCpu), ("fContextUseFlags=%#RX32\n", VMCPU_HMCF_VALUE(pVCpu)));
 
-    /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
-    if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
-        pVmcb->ctrl.u64VmcbCleanBits = 0;
-
     /* Setup TSC offsetting. */
     if (   pSvmTransient->fUpdateTscOffsetting
         || HMR0GetCurrentCpu()->idCpu != pVCpu->hm.s.idLastCpu)
@@ -2966,16 +2962,21 @@ static void hmR0SvmPreRunGuestCommitted(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PS
     if (    (pVM->hm.s.cpuid.u32AMDFeatureEDX & X86_CPUID_EXT_FEATURE_EDX_RDTSCP)
         && !(pVmcb->ctrl.u32InterceptCtrl2 & SVM_CTRL2_INTERCEPT_RDTSCP))
     {
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_PASSTHRU_READ, SVMMSREXIT_PASSTHRU_WRITE);
         pVCpu->hm.s.u64HostTscAux = ASMRdMsr(MSR_K8_TSC_AUX);
         uint64_t u64GuestTscAux = 0;
         int rc2 = CPUMQueryGuestMsr(pVCpu, MSR_K8_TSC_AUX, &u64GuestTscAux);
         AssertRC(rc2);
         if (u64GuestTscAux != pVCpu->hm.s.u64HostTscAux)
-        {
             ASMWrMsr(MSR_K8_TSC_AUX, u64GuestTscAux);
-            pSvmTransient->fRestoreTscAuxMsr = true;
-        }
+        pSvmTransient->fRestoreTscAuxMsr = true;
     }
+    else
+        hmR0SvmSetMsrPermission(pVCpu, MSR_K8_TSC_AUX, SVMMSREXIT_INTERCEPT_READ, SVMMSREXIT_INTERCEPT_WRITE);
+
+    /* If VMCB Clean Bits isn't supported by the CPU, simply mark all state-bits as dirty, indicating (re)load-from-VMCB. */
+    if (!(pVM->hm.s.svm.u32Features & AMD_CPUID_SVM_FEATURE_EDX_VMCB_CLEAN))
+        pVmcb->ctrl.u64VmcbCleanBits = 0;
 }
 
 
@@ -4358,9 +4359,11 @@ HMSVM_EXIT_DECL hmR0SvmExitMsr(PVMCPU pVCpu, PCPUMCTX pCtx, PSVMTRANSIENT pSvmTr
         if (   pCtx->ecx >= MSR_IA32_X2APIC_START
             && pCtx->ecx <= MSR_IA32_X2APIC_END)
         {
-            /* We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest(). When full APIC register
+            /*
+             * We've already saved the APIC related guest-state (TPR) in hmR0SvmPostRunGuest(). When full APIC register
              * virtualization is implemented we'll have to make sure APIC state is saved from the VMCB before
-               EMInterpretWrmsr() changes it. */
+             * EMInterpretWrmsr() changes it.
+             */
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_SVM_GUEST_APIC_STATE);
         }
         else if (pCtx->ecx == MSR_K6_EFER)
