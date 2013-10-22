@@ -638,6 +638,8 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
     return rc;
 }
 
+/*#define VMDK_USE_BLOCK_DECOMP_API - test and enable */
+#ifndef VMDK_USE_BLOCK_DECOMP_API
 static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t cbBuf, size_t *pcbBuf)
 {
     VMDKCOMPRESSIO *pInflateState = (VMDKCOMPRESSIO *)pvUser;
@@ -667,6 +669,7 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
     *pcbBuf = cbBuf + cbInjected;
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * Internal: read from a file and inflate the compressed data,
@@ -678,7 +681,9 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                     uint64_t *puLBA, uint32_t *pcbMarkerData)
 {
     int rc;
+#ifndef VMDK_USE_BLOCK_DECOMP_API
     PRTZIPDECOMP pZip = NULL;
+#endif
     VMDKMARKER *pMarker = (VMDKMARKER *)pExtent->pvCompGrain;
     size_t cbCompSize, cbActuallyRead;
 
@@ -726,6 +731,11 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
                                   + RT_OFFSETOF(VMDKMARKER, uType),
                                   512);
 
+#ifdef VMDK_USE_BLOCK_DECOMP_API
+    rc = RTZipBlockDecompress(RTZIPTYPE_ZLIB, 0 /*fFlags*/,
+                              pExtent->pvCompGrain, cbCompSize + RT_OFFSETOF(VMDKMARKER, uType), NULL,
+                              pvBuf, cbToRead, &cbActuallyRead);
+#else
     VMDKCOMPRESSIO InflateState;
     InflateState.pImage = pImage;
     InflateState.iOffset = -1;
@@ -737,6 +747,7 @@ DECLINLINE(int) vmdkFileInflateSync(PVMDKIMAGE pImage, PVMDKEXTENT pExtent,
         return rc;
     rc = RTZipDecompress(pZip, pvBuf, cbToRead, &cbActuallyRead);
     RTZipDecompDestroy(pZip);
+#endif /* !VMDK_USE_BLOCK_DECOMP_API */
     if (RT_FAILURE(rc))
     {
         if (rc == VERR_ZIP_CORRUPTED)
