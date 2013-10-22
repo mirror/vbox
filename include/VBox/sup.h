@@ -424,7 +424,7 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 /** @see VMMR0_DO_RAW_RUN. */
 #define SUP_VMMR0_DO_RAW_RUN    0
 /** @see VMMR0_DO_HM_RUN. */
-#define SUP_VMMR0_DO_HM_RUN  1
+#define SUP_VMMR0_DO_HM_RUN     1
 /** @see VMMR0_DO_NOP */
 #define SUP_VMMR0_DO_NOP        2
 /** @} */
