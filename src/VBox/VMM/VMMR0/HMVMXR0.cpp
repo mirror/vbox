@@ -63,6 +63,16 @@ typedef RTHCUINTREG                   HMVMXHCUINTREG;
 /** Use the function table. */
 #define HMVMX_USE_FUNCTION_TABLE
 
+/**
+ * The maximum number of MSRs we are willing to swap during a world-switch.
+ * Intel claims 512/check capability MSR, we don't want to do anywhere close
+ * to that. See Intel spec. 24.7.2 "VM-Exit Controls for MSRs"
+ *
+ * Bump this count as and when required, there's no backward compatibility
+ * requirement.
+ */
+#define HMVMX_MAX_SWAP_MSR_COUNT                  5
+
 /** Determine which tagged-TLB flush handler to use. */
 #define HMVMX_FLUSH_TAGGED_TLB_EPT_VPID           0
 #define HMVMX_FLUSH_TAGGED_TLB_EPT                1
@@ -1149,6 +1159,173 @@ static void hmR0VmxSetMsrPermission(PVMCPU pVCpu, uint32_t uMsr, VMXMSREXITREAD 
     else
         ASMBitClear(pbMsrBitmap + 0x800, iBit);
 }
+
+
+#ifdef VBOX_WITH_AUTO_MSR_LOAD_RESTORE
+/**
+ * Updates the VMCS with the number of effective MSRs in the auto-load/store MSR
+ * area.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   cMsrs       The number of MSRs.
+ */
+DECLINLINE(int) hmR0VmxSetAutoLoadStoreMsrCount(PVMCPU pVCpu, uint32_t cMsrs)
+{
+    /* Update the VCPU's copy of the guest MSR count. */
+    pVCpu->hm.s.vmx.cGuestMsrs = cMsrs;
+
+    /* Update number of guest MSRs to load/store across the world-switch. */
+    int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_MSR_LOAD_COUNT, cMsrs);  AssertRCReturn(rc, rc);
+    rc     = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_STORE_COUNT, cMsrs);  AssertRCReturn(rc, rc);
+
+    /* Update number of host MSRs to load after the world-switch. Identical to guest-MSR count as it's always paired. */
+    rc     = VMXWriteVmcs32(VMX_VMCS32_CTRL_EXIT_MSR_LOAD_COUNT,  cMsrs);  AssertRCReturn(rc, rc);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Adds a guest/host MSR pair to be swapped during the world-switch as
+ * part of the auto-load/store MSR area in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uMsr        The MSR.
+ * @param   uGuestMsr   Value of the guest MSR.
+ * @param   uHostMsr    Value of the host MSR.
+ */
+static int hmR0VmxAddAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr, uint64_t uGuestMsrValue, uint64_t uHostMsrValue)
+{
+    AssertMsg(HMVMX_MAX_SWAP_MSR_COUNT < MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc),
+              ("MSR swap count exceeded. Cpu reports %#RX32, our limit %#RX32\n",
+               MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc), HMVMX_MAX_SWAP_MSR_COUNT));
+
+    PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cGuestMsrs = pVCpu->hm.s.vmx.cGuestMsrs;
+    uint32_t    i;
+    for (i = 0; i < cGuestMsrs; i++)
+    {
+        if (pGuestMsr->u32Msr == uMsr)
+            break;
+        pGuestMsr++;
+    }
+
+    AssertReturn(i < HMVMX_MAX_SWAP_MSR_COUNT, VERR_HM_MSR_SWAP_COUNT_EXCEEDED);
+    if (i == cGuestMsrs)
+    {
+        ++cGuestMsrs;
+        /* Shouldn't ever happen but there -is- a number. We're well within the recommended 512. */
+        if (RT_UNLIKELY(cGuestMsrs > MSR_IA32_VMX_MISC_MAX_MSR(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.u64Misc)))
+        {
+            LogRel(("CPU autoload/store MSR count in VMCS exceeded cGuestMsrs=%u.\n", cGuestMsrs));
+            pVCpu->hm.s.u32HMError = VMX_UFC_INSUFFICIENT_GUEST_MSR_STORAGE;
+            return VERR_HM_UNSUPPORTED_CPU_FEATURE_COMBO;
+        }
+
+        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cGuestMsrs);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* Update the MSR values in the auto-load/store MSR area. */
+    pGuestMsr->u32Msr    = uMsr;
+    pGuestMsr->u64Value  = uGuestMsrValue;
+
+    PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+    pHostMsr += i;
+    pHostMsr->u32Msr     = uMsr;
+    pHostMsr->u64Value   = uHostMsrValue;
+
+    /* Now that we're swapping MSRs during the world-switch, allow the guest to read/write them without causing VM-exits. */
+    Assert(pVCpu->hm.s.vmx.u32ProcCtls & VMX_VMCS_CTRL_PROC_EXEC_USE_MSR_BITMAPS);
+    hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_PASSTHRU_READ, VMXMSREXIT_PASSTHRU_WRITE);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Removes a guest/shost MSR pair to be swapped during the world-switch from the
+ * auto-load/store MSR area in the VMCS.
+ *
+ * Does not fail if the MSR in @a uMsr is not found in the auto-load/store MSR
+ * area.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu       Pointer to the VMCPU.
+ * @param   uMsr        The MSR.
+ */
+static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPU pVCpu, uint32_t uMsr)
+{
+    PVMXAUTOMSR pGuestMsr  = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+    uint32_t    cGuestMsrs = pVCpu->hm.s.vmx.cGuestMsrs;
+    uint32_t    i;
+    for (i = 0; i < cGuestMsrs; i++)
+    {
+        /* Find the MSR. */
+        if (pGuestMsr->u32Msr == uMsr)
+        {
+            /* If it's the last MSR, simply reduce the count. */
+            if (i == cGuestMsrs - 1)
+            {
+                --cGuestMsrs;
+                break;
+            }
+
+            /* Remove it by swapping the last MSR in place of it, and reducing the count. */
+            PVMXAUTOMSR pLastGuestMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvGuestMsr;
+            pLastGuestMsr            += cGuestMsrs;
+            pGuestMsr->u32Msr         = pLastGuestMsr->u32Msr;
+            pGuestMsr->u64Value       = pLastGuestMsr->u64Value;
+
+            PVMXAUTOMSR pHostMsr     = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+            PVMXAUTOMSR pLastHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+            pLastHostMsr            += cGuestMsrs;
+            pHostMsr->u32Msr         = pLastHostMsr->u32Msr;
+            pHostMsr->u64Value       = pLastHostMsr->u64Value;
+            --cGuestMsrs;
+            break;
+        }
+        pGuestMsr++;
+    }
+
+    /* Update the VMCS if the count changed (meaning the MSR was found). */
+    if (cGuestMsrs != pVCpu->hm.s.vmx.cGuestMsrs)
+    {
+        int rc = hmR0VmxSetAutoLoadStoreMsrCount(pVCpu, cGuestMsrs);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* We're no longer swapping MSRs during the world-switch, intercept guest read/writes to them. */
+    hmR0VmxSetMsrPermission(pVCpu, uMsr, VMXMSREXIT_INTERCEPT_READ, VMXMSREXIT_INTERCEPT_WRITE);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Updates the value of a host MSR in the auto-load/store area in the VMCS.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu               Pointer to the VMCPU.
+ * @param   uMsr                The MSR.
+ */
+static int hmR0VmxUpdateAutoLoadStoreHostMsr(PVMCPU pVCpu, uint32_t uMsr)
+{
+    PVMXAUTOMSR pHostMsr = (PVMXAUTOMSR)pVCpu->hm.s.vmx.pvHostMsr;
+    uint32_t    cMsrs    = pVCpu->hm.s.vmx.cGuestMsrs;
+
+    for (uint32_t i = 0; i < cMsrs; i++)
+    {
+        if (pHostMsr->u32Msr == uMsr)
+        {
+            pHostMsr->u64Value = ASMRdMsr(pHostMsr->u32Msr);
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+#endif /* VBOX_WITH_AUTO_MSR_LOAD_RESTORE */
 
 
 /**

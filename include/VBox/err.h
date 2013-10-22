@@ -2010,6 +2010,8 @@
 #define VERR_HM_INVALID_HM64ON32OP                  (-4116)
 /** Resume guest execution after injecting a double-fault. */
 #define VINF_HM_DOUBLE_FAULT                        4117
+/** MSR swap count exceeded. */
+#define VERR_HM_MSR_SWAP_COUNT_EXCEEDED             (-4118)
 /** @} */
 
 
