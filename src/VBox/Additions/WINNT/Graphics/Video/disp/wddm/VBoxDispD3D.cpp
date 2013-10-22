@@ -4177,7 +4177,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
             bCreateKMResource = true;
         }
 
-        if (pRc->RcDesc.fFlags.RenderTarget)
+        if (pRc->RcDesc.fFlags.RenderTarget || pRc->RcDesc.fFlags.Primary)
         {
             bIssueCreateResource = true;
             bSetHostID = true;
