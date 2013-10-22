@@ -116,7 +116,7 @@ HRESULT HostDnsServiceDarwin::init()
     if (!g_DnsWatcher)
         return E_OUTOFMEMORY;
 
-    HRESULT hrc = HostDnsService::init();
+    HRESULT hrc = HostDnsMonitor::init();
     AssertComRCReturn(hrc, hrc);
 
     int rc = RTSemEventCreate(&g_DnsInitEvent);
