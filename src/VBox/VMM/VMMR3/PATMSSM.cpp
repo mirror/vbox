@@ -732,7 +732,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      * Restore PATM structure
      */
     RT_ZERO(patmInfo);
-    rc = SSMR3GetStructEx(pSSM, &patmInfo, sizeof(patmInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmFields[0], NULL);
+    rc = SSMR3GetStructEx(pSSM, &patmInfo, sizeof(patmInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aPatmFields[0], NULL);
     AssertRCReturn(rc, rc);
 
     /* Relative calls are made to the helper functions. Therefor their relative location must not change! */
@@ -786,7 +786,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
      * Restore GC state memory
      */
     RT_BZERO(pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE));
-    rc = SSMR3GetStructEx(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmGCStateFields[0], NULL);
+    rc = SSMR3GetStructEx(pSSM, pVM->patm.s.pGCStateHC, sizeof(PATMGCSTATE), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aPatmGCStateFields[0], NULL);
     AssertRCReturn(rc, rc);
 
     /*
@@ -804,7 +804,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
         PATMPATCHREC *pPatchRec;
 
         RT_ZERO(patch);
-        rc = SSMR3GetStructEx(pSSM, &patch, sizeof(patch), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmPatchRecFields[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, &patch, sizeof(patch), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aPatmPatchRecFields[0], NULL);
         AssertRCReturn(rc, rc);
 
         Assert(!(patch.patch.flags & PATMFL_GLOBAL_FUNCTIONS));
@@ -853,7 +853,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             RTRCPTR *pFixup;
 
             RT_ZERO(rec);
-            rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmRelocRec[0], NULL);
+            rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aPatmRelocRec[0], NULL);
             AssertRCReturn(rc, rc);
 
             if (pPrivInstrHC)
@@ -901,7 +901,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             for (uint32_t j=0;j<nrPatch2GuestRecs;j++)
             {
                 RT_ZERO(rec);
-                rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aPatmRecPatchToGuest[0], NULL);
+                rc = SSMR3GetStructEx(pSSM, &rec, sizeof(rec), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aPatmRecPatchToGuest[0], NULL);
                 AssertRCReturn(rc, rc);
 
                 patmR3AddP2GLookupRecord(pVM, &pPatchRec->patch, (uintptr_t)rec.Core.Key + pVM->patm.s.pPatchMemHC, rec.pOrgInstrGC, rec.enmType, rec.fDirty);

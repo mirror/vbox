@@ -603,12 +603,8 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     /*
      * Restore CSAM structure
      */
-#if 0
-    rc = SSMR3GetMem(pSSM, &csamInfo, sizeof(csamInfo));
-#else
     RT_ZERO(csamInfo);
-    rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamFields[0], NULL);
-#endif
+    rc = SSMR3GetStructEx(pSSM, &csamInfo, sizeof(csamInfo), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamFields[0], NULL);
     AssertRCReturn(rc, rc);
 
     pVM->csam.s.fGatesChecked    = csamInfo.fGatesChecked;
@@ -624,12 +620,8 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
     memcpy(pVM->csam.s.pvPossibleCodePage,  csamInfo.pvPossibleCodePage, sizeof(pVM->csam.s.pvPossibleCodePage));
 
     /* Restore pgdir bitmap (we'll change the pointers next). */
-#if 0
-    rc = SSMR3GetMem(pSSM, pVM->csam.s.pPDBitmapHC, CSAM_PGDIRBMP_CHUNKS*sizeof(RTHCPTR));
-#else
     rc = SSMR3GetStructEx(pSSM, pVM->csam.s.pPDBitmapHC, sizeof(uint8_t *) * CSAM_PGDIRBMP_CHUNKS,
-                          SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamPDBitmapArray[0], NULL);
-#endif
+                          SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPDBitmapArray[0], NULL);
     AssertRCReturn(rc, rc);
 
     /*
@@ -668,12 +660,8 @@ static DECLCALLBACK(int) csamr3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         CSAMPAGEREC  page;
         PCSAMPAGE    pPage;
 
-#if 0
-        rc = SSMR3GetMem(pSSM, &page, sizeof(page));
-#else
         RT_ZERO(page);
-        rc = SSMR3GetStructEx(pSSM, &page, sizeof(page), SSMSTRUCT_FLAGS_MEM_BAND_AID, &g_aCsamPageRecFields[0], NULL);
-#endif
+        rc = SSMR3GetStructEx(pSSM, &page, sizeof(page), SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED, &g_aCsamPageRecFields[0], NULL);
         AssertRCReturn(rc, rc);
 
         /*

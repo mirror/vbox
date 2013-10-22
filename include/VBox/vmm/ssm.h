@@ -377,7 +377,11 @@ typedef struct SSMFIELD
 #define SSMSTRUCT_FLAGS_DONT_IGNORE         RT_BIT_32(2)
 /** Saved using SSMR3PutMem, don't be too strict. */
 #define SSMSTRUCT_FLAGS_SAVED_AS_MEM        RT_BIT_32(3)
-/** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers. */
+/** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host pointers.
+ * @remarks This type is normally only used up to the first changes to the
+ *          structures take place in order to make sure the conversion from
+ *          SSMR3PutMem to field descriptors went smoothly.  Replace with
+ *          SSMSTRUCT_FLAGS_MEM_BAND_AID_RELAXED when changing the structure. */
 #define SSMSTRUCT_FLAGS_MEM_BAND_AID        (  SSMSTRUCT_FLAGS_DONT_IGNORE | SSMSTRUCT_FLAGS_FULL_STRUCT \
                                              | SSMSTRUCT_FLAGS_NO_MARKERS  | SSMSTRUCT_FLAGS_SAVED_AS_MEM)
 /** Band-aid for old SSMR3PutMem/SSMR3GetMem of structurs with host
