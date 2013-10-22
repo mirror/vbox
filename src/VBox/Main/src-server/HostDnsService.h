@@ -171,7 +171,7 @@ class HostDnsServiceSolaris: public HostDnsServiceResolvConf
     public:
     HostDnsServiceSolaris(){}
     ~HostDnsServiceSolaris(){}
-    HRESULT init(){ return init("/etc/resolv.conf");}
+    HRESULT init(){ return HostDnsServiceResolvConf::init("/etc/resolv.conf");}
 };
 
 #  elif defined(RT_OS_LINUX)
