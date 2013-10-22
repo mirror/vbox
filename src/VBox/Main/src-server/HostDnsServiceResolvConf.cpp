@@ -2,7 +2,6 @@
 #include <VBox/com/string.h>
 #include <VBox/com/ptr.h>
 
-#include "HostDnsService.h"
 
 #ifdef RT_OS_OS2
 # include <sys/socket.h>
@@ -18,8 +17,28 @@ typedef int socklen_t;
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/file.h>
+#include <iprt/critsect.h>
 
 #include <VBox/log.h>
+
+#include <string>
+#include <vector>
+
+#include "HostDnsService.h"
+
+
+struct HostDnsServiceResolvConf::Data
+{
+    Data(const char *fileName):resolvConfFilename(fileName){};
+
+    std::string resolvConfFilename;
+};
+
+
+const std::string& HostDnsServiceResolvConf::resolvConf()
+{
+    return m->resolvConfFilename;
+}
 
 
 static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
@@ -50,50 +69,39 @@ static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
 }
 
 
-HostDnsServiceResolvConf::HostDnsServiceResolvConf(const char* aResolvConfFilename)
-{
-    m_ResolvConfFilename = com::Utf8Str(aResolvConfFilename);
-}
-
-
 HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
 {
-    m_ResolvConfFilename.setNull();
-    RTFileClose(m_ResolvConfFile);
+    if (m) delete m;
 }
 
-HRESULT HostDnsServiceResolvConf::init(const VirtualBox *aParent)
+
+HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
 {
-    HRESULT hrc;
+    HostDnsMonitor::init();
 
-    int rc = RTFileOpen(&m_ResolvConfFile, m_ResolvConfFilename.c_str(),
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    AssertRCReturn(rc, E_FAIL);
-
-
-    hrc = HostDnsService::init(aParent);
-    AssertComRCReturn(hrc, hrc);
-
-
-
-    hrc = update();
-    AssertComRCReturn(hrc, hrc);
+    m = new Data(aResolvConfFileName);
+    readResolvConf();
 
     return S_OK;
 }
 
 
-HRESULT HostDnsServiceResolvConf::update()
+HRESULT HostDnsServiceResolvConf::readResolvConf()
 {
     char buff[256];
     char buff2[256];
     int cNameserversFound = 0;
     bool fWarnTooManyDnsServers = false;
     struct in_addr tmp_addr;
-    int rc;
     size_t bytes;
+    HostDnsInformation info;
+    RTFILE resolvConfFile;
 
-    while (    RT_SUCCESS(rc = fileGets(m_ResolvConfFile, buff, sizeof(buff), &bytes))
+    int rc = RTFileOpen(&resolvConfFile, m->resolvConfFilename.c_str(),
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    AssertRCReturn(rc, E_FAIL);
+
+    while (    RT_SUCCESS(rc = fileGets(resolvConfFile, buff, sizeof(buff), &bytes))
             && rc != VERR_EOF)
     {
         if (   cNameserversFound == 4
@@ -109,7 +117,7 @@ HRESULT HostDnsServiceResolvConf::update()
             if (!inet_aton(buff2, &tmp_addr))
                 continue;
 
-            m_llNameServers.push_back(com::Utf8Str(buff2));
+            info.servers.push_back(std::string(buff2));
 
             cNameserversFound++;
         }
@@ -121,10 +129,13 @@ HRESULT HostDnsServiceResolvConf::update()
             tok = strtok_r(&buff[6], " \t\n", &saveptr);
 
             if (tok != NULL)
-                m_DomainName = com::Utf8Str(tok);
+                info.domain = std::string(tok);
         }
     }
 
-    return S_OK;
+    RTFileClose(resolvConfFile);
 
+    setInfo(info);
+
+    return S_OK;
 }

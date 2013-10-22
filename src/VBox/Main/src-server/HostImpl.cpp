@@ -22,7 +22,6 @@
 #include "VBox/com/ptr.h"
 
 #include "HostImpl.h"
-#include "HostDnsService.h"
 
 #ifdef VBOX_WITH_USB
 # include "HostUSBDeviceImpl.h"
@@ -171,6 +170,10 @@ typedef SOLARISDVD *PSOLARISDVD;
 #include <stdio.h>
 
 #include <algorithm>
+#include <string>
+#include <vector>
+
+#include "HostDnsService.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -224,7 +227,7 @@ struct Host::Data
 
     HostPowerService        *pHostPowerService;
     /** Host's DNS informaton fetching */
-    HostDnsService          *pHostDnsService;
+    HostDnsMonitorProxy         hostDnsMonitorProxy;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -291,25 +294,7 @@ HRESULT Host::init(VirtualBox *aParent)
     /* Create the list of network interfaces so their metrics get registered. */
     updateNetIfList();
 
-# if defined (RT_OS_DARWIN)
-    m->pHostDnsService = new HostDnsServiceDarwin();
-# elif defined(RT_OS_WINDOWS)
-    m->pHostDnsService = new HostDnsServiceWin();
-# elif defined(RT_OS_LINUX)
-    m->pHostDnsService = new HostDnsServiceLinux();
-# elif defined(RT_OS_SOLARIS)
-    m->pHostDnsService = new HostDnsServiceSolaris();
-# elif defined(RT_OS_OS2)
-    m->pHostDnsService = new HostDnsServiceOs2();
-# else
-    m->pHostDnsService = new HostDnsService();
-# endif
-
-    hrc = m->pHostDnsService->init(m->pParent);
-    AssertComRCReturn(hrc, hrc);
-
-    hrc = m->pHostDnsService->start();
-    AssertComRCReturn(hrc, hrc);
+    m->hostDnsMonitorProxy.init(HostDnsMonitor::getHostDnsMonitor(), m->pParent);
 
 #if defined (RT_OS_WINDOWS)
     m->pHostPowerService = new HostPowerServiceWin(m->pParent);
@@ -512,9 +497,6 @@ void Host::uninit()
     m->llUSBDeviceFilters.clear();
 #endif
 
-    m->pHostDnsService->stop();
-
-    delete m->pHostDnsService;
     delete m;
     m = NULL;
 }
@@ -850,7 +832,7 @@ STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return m->pHostDnsService->COMGETTER(NameServers)(ComSafeArrayOutArg(aNameServers));
+    return m->hostDnsMonitorProxy.COMGETTER(NameServers)(ComSafeArrayOutArg(aNameServers));
 }
 
 
@@ -865,7 +847,7 @@ STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return m->pHostDnsService->COMGETTER(DomainName)(aDomainName);
+    return m->hostDnsMonitorProxy.COMGETTER(DomainName)(aDomainName);
 }
 
 
@@ -881,7 +863,7 @@ STDMETHODIMP Host::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSearchStrings
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return m->pHostDnsService->COMGETTER(SearchStrings)(ComSafeArrayOutArg(aSearchStrings));
+    return m->hostDnsMonitorProxy.COMGETTER(SearchStrings)(ComSafeArrayOutArg(aSearchStrings));
 }
 
 
