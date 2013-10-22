@@ -2,12 +2,15 @@
 #include <VBox/com/string.h>
 #include <VBox/com/ptr.h>
 
-#include "../HostDnsService.h"
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
 
 #include <Windows.h>
+
+#include <string>
+#include <vector>
+#include "../HostDnsService.h"
 
 static HKEY g_hKeyTcpipParameters;
 
@@ -98,9 +101,9 @@ HRESULT HostDnsServiceWin::update()
     info.domain = static_cast<char*>(abDomain);
 
     /* server list */
-    strList2List(info.servers, static_cast<char *>(abNameServers));
+    strList2List(info.servers, static_cast<char *>(&abNameServers[0]));
     /* search list */
-    strList2List(info.searchList, static_cast<char *>(abSearchList));
+    strList2List(info.searchList, static_cast<char *>(&abSearchList[0]));
 
     setInfo(info);
 
