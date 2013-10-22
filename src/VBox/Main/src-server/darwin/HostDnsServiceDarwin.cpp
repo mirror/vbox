@@ -94,7 +94,7 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, v
     NOREF(arg0); /* SCDynamicStore */
     NOREF(arg1); /* CFArrayRef */
 
-    ALock l(this);
+    ALock l(pThis);
     pThis->updateInfo();
     pThis->notifyAll();
 }
