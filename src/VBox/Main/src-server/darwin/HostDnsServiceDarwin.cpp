@@ -69,12 +69,20 @@ static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
     return VINF_SUCCESS;
 }
 
+
 HostDnsServiceDarwin::HostDnsServiceDarwin(){}
+
+
 HostDnsServiceDarwin::~HostDnsServiceDarwin()
 {
+    if (g_RunLoopRef)
+        CFRunLoopStop(g_RunLoopRef);
+
     CFRelease(g_DnsWatcher);
+
     CFRelease(g_store);
 }
+
 
 void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, void *info)
 {
@@ -84,9 +92,11 @@ void HostDnsServiceDarwin::hostDnsServiceStoreCallback(void *arg0, void *arg1, v
     NOREF(arg1); /* CFArrayRef */
 
     RTCritSectEnter(&pThis->m_hCritSect);
-    pThis->update();
+    pThis->updateInfo();
+    pThis->notifyAll();
     RTCritSectLeave(&pThis->m_hCritSect);
 }
+
 
 HRESULT HostDnsServiceDarwin::init(const VirtualBox *aParent)
 {
@@ -110,37 +120,17 @@ HRESULT HostDnsServiceDarwin::init(const VirtualBox *aParent)
     int rc = RTSemEventCreate(&g_DnsInitEvent);
     AssertRCReturn(rc, E_FAIL);
 
-    return update();
-}
-
-
-
-HRESULT HostDnsServiceDarwin::start()
-{
-    int rc = RTThreadCreate(&g_DnsMonitoringThread, hostMonitoringRoutine,
-                            this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
+    rc = RTThreadCreate(&g_DnsMonitoringThread, hostMonitoringRoutine,
+                        this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
     AssertRCReturn(rc, E_FAIL);
 
     RTSemEventWait(g_DnsInitEvent, RT_INDEFINITE_WAIT);
-
-    return S_OK;
+    return updateInfo();
 }
 
 
-void HostDnsServiceDarwin::stop()
+HRESULT HostDnsServiceDarwin::updateInfo()
 {
-
-    if (g_RunLoopRef)
-        CFRunLoopStop(g_RunLoopRef);
-}
-
-
-HRESULT HostDnsServiceDarwin::update()
-{
-    m_llNameServers.clear();
-    m_llSearchStrings.clear();
-    m_DomainName.setNull();
-
     CFPropertyListRef propertyRef = SCDynamicStoreCopyValue(g_store,
                                                             kStateNetworkGlobalDNSKey);
     /**
@@ -164,6 +154,7 @@ HRESULT HostDnsServiceDarwin::update()
     if (!propertyRef)
         return S_OK;
 
+    HostDnsInformation info;
     CFStringRef domainNameRef = (CFStringRef)CFDictionaryGetValue(
       static_cast<CFDictionaryRef>(propertyRef), CFSTR("DomainName"));
     if (domainNameRef)
@@ -171,7 +162,7 @@ HRESULT HostDnsServiceDarwin::update()
         const char *pszDomainName = CFStringGetCStringPtr(domainNameRef,
                                                     CFStringGetSystemEncoding());
         if (pszDomainName)
-            m_DomainName = com::Utf8Str(pszDomainName);
+            info.domain = pszDomainName;
     }
 
     int i, arrayCount;
@@ -190,8 +181,8 @@ HRESULT HostDnsServiceDarwin::update()
                                                            CFStringGetSystemEncoding());
             if (!pszServerAddress)
                 continue;
-
-            m_llNameServers.push_back(com::Utf8Str(pszServerAddress));
+            
+            info.servers.push_back(std::string(pszServerAddress));
         }
     }
 
@@ -212,12 +203,13 @@ HRESULT HostDnsServiceDarwin::update()
             if (!pszSearchString)
                 continue;
 
-            m_llSearchStrings.push_back(com::Utf8Str(pszSearchString));
+            info.searchList.push_back(std::string(pszSearchString));
         }
     }
 
     CFRelease(propertyRef);
-    this->HostDnsService::update();
+
+    setInfo(info);
 
     return S_OK;
 }

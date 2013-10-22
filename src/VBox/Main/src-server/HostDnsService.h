@@ -53,99 +53,135 @@ class ALock
 };
 
 
-class HostDnsService
+struct HostDnsInformation
+{
+    std::vector<std::string> servers;
+    std::string domain;
+    std::vector<std::string> searchList;
+};
+
+
+class HostDnsMonitorProxy;
+
+/**
+ * This class supposed to be a real DNS monitor object it should be singleton,
+ * it lifecycle starts and ends together with VBoxSVC.
+ * 
+ */
+class HostDnsMonitor:public Lockee
 {
     public:
-    HostDnsService();
-    virtual ~HostDnsService();
-    virtual HRESULT init(const VirtualBox *aParent);
-    virtual HRESULT start(void);
-    virtual void stop(void);
+    static const HostDnsMonitor* getHostDnsMonitor();
+    static void shutdown();
+
+    void addMonitorProxy(const HostDnsMonitorProxy&) const;
+    void releaseMonitorProxy(const HostDnsMonitorProxy&) const;
+    const HostDnsInformation& getInfo() const;
+    virtual HRESULT init();
+
+
+    protected:
+    void notifyAll() const;
+    void setInfo(const HostDnsInformation&);
+    HostDnsMonitor();
+    virtual ~HostDnsMonitor();
+
+    private:
+    HostDnsMonitor(const HostDnsMonitor&);
+    HostDnsMonitor& operator= (const HostDnsMonitor&);
+
+    public:
+    struct Data;
+    Data *m;
+};
+
+/**
+ * This class supposed to be a proxy for events on changing Host Name Resolving configurations.
+ */
+class HostDnsMonitorProxy: public Lockee
+{
+    public:
+    HostDnsMonitorProxy();
+    ~HostDnsMonitorProxy();
+    void init(const HostDnsMonitor* mon, const VirtualBox* aParent);
+    void notify() const;
+    
     STDMETHOD(COMGETTER(NameServers))(ComSafeArrayOut(BSTR, aNameServers));
     STDMETHOD(COMGETTER(DomainName))(BSTR *aDomainName);
     STDMETHOD(COMGETTER(SearchStrings))(ComSafeArrayOut(BSTR, aSearchStrings));
 
-    protected:
-    virtual HRESULT update(void);
-
-    /* XXX: hide it with struct Data together with <list> */
-    Utf8StrList     m_llNameServers;
-    Utf8StrList     m_llSearchStrings;
-    com::Utf8Str    m_DomainName;
-    RTCRITSECT      m_hCritSect;
+    bool operator==(const HostDnsMonitorProxy&);
 
     private:
-    const VirtualBox *mParent;
-    HostDnsService(const HostDnsService&);
-    HostDnsService& operator =(const HostDnsService&);
+    void updateInfo();
+
+    private:
+    struct Data;
+    Data *m;
 };
 
 # ifdef RT_OS_DARWIN
-class HostDnsServiceDarwin: public HostDnsService
+class HostDnsServiceDarwin: public HostDnsMonitor
 {
     public:
     HostDnsServiceDarwin();
-    virtual ~HostDnsServiceDarwin();
-
-    virtual HRESULT init(const VirtualBox *aParent);
-    virtual HRESULT start(void);
-    virtual void stop(void);
-    virtual HRESULT update();
+    ~HostDnsServiceDarwin();
+    HRESULT init();
 
     private:
+    HRESULT updateInfo();
     static void hostDnsServiceStoreCallback(void *store, void *arrayRef, void *info);
-
 };
 # endif
-
 # ifdef RT_OS_WINDOWS
-class HostDnsServiceWin: public HostDnsService
+class HostDnsServiceWin: public HostDnsMonitor
 {
     public:
     HostDnsServiceWin();
-    virtual ~HostDnsServiceWin();
+    ~HostDnsServiceWin();
+    HRESULT init();
 
-    virtual HRESULT init(const VirtualBox *aParent);
-    virtual HRESULT start(void);
-    virtual void stop(void);
-    virtual HRESULT update();
-    void strList2List(Utf8StrList& lst, char *strLst);
+    private:
+    void strList2List(std::vector<std::string>& lst, char *strLst);
+    HRESULT updateInfo();
 };
 # endif
-
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2)
-
-class HostDnsServiceResolvConf: public HostDnsService
-{
-public:
-    HostDnsServiceResolvConf(const char *aResolvConfFileName = "/etc/resolv.conf");
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2)
+class HostDnsServiceResolvConf: public HostDnsMonitor
+{    
+    public:
+    HostDnsServiceResolvConf():m(NULL){}
     virtual ~HostDnsServiceResolvConf();
-    virtual HRESULT init(const VirtualBox *aParent);
-    virtual HRESULT update();
-    const com::Utf8Str resolvConf() {return m_ResolvConfFilename; }
-protected:
-    com::Utf8Str m_ResolvConfFilename;
-    RTFILE m_ResolvConfFile;
-};
+    virtual HRESULT init(const char *aResolvConfFileName);
+    const std::string& resolvConf();
 
+    protected:
+    HRESULT readResolvConf();
+
+    protected:
+    struct Data;
+    Data *m;
+};
 #  if defined(RT_OS_SOLARIS)
 /**
  * XXX: https://blogs.oracle.com/praks/entry/file_events_notification
  */
 class HostDnsServiceSolaris: public HostDnsServiceResolvConf
 {
-public:
+    public:
     HostDnsServiceSolaris(){}
-    virtual ~HostDnsServiceSolaris(){}
+    ~HostDnsServiceSolaris(){}
+    HRESULT init(){ return init("/etc/resolv.conf");}
 };
+
 #  elif defined(RT_OS_LINUX)
 class HostDnsServiceLinux: public HostDnsServiceResolvConf
 {
     public:
     HostDnsServiceLinux(){}
-    virtual ~HostDnsServiceLinux(){}
-    virtual HRESULT init(const VirtualBox *aParent);
-    virtual void stop(void);
+    ~HostDnsServiceLinux();
+    HRESULT init() {return init("/etc/resolv.conf");}
+    HRESULT init(const char *aResolvConfFileName);
 
     static int hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser);
 };
@@ -154,14 +190,13 @@ class HostDnsServiceLinux: public HostDnsServiceResolvConf
 class HostDnsServiceOs2: public HostDnsServiceResolvConf
 {
     public:
-    HostDnsServiceOs2()
-    {
-        /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
-        ::HostDnsServiceResolvConf("\\MPTN\\ETC\\RESOLV2");
-    }
-    virtual ~HostDnsServiceOs2(){}
+    HostDnsServiceOs2(){}
+    ~HostDnsServiceOs2(){}
+    /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
+    HRESULT init(){ return init("\\MPTN\\ETC\\RESOLV2");}
 };
+
 #  endif
-#endif
+# endif
 
 #endif /* !___H_DNSHOSTSERVICE */

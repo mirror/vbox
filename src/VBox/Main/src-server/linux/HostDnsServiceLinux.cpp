@@ -25,8 +25,6 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 
-#include "../HostDnsService.h"
-
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
@@ -39,6 +37,9 @@
 #include <sys/socket.h>
 
 #include <string>
+#include <vector>
+#include "../HostDnsService.h"
+
 
 static RTTHREAD g_DnsMonitoringThread;
 static RTSEMEVENT g_DnsInitEvent;
@@ -101,6 +102,12 @@ class AutoWatcher:public FileDescriptor
 };
 
 
+HostDnsServiceLinux::~HostDnsServiceLinux()
+{
+    send(g_DnsMonitorStop[0], "", 1, 0);
+}
+
+
 int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
 {
     AutoNotify a;
@@ -139,9 +146,10 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
         
         if (polls[0].revents & POLLIN)
         {
-            RTCritSectEnter(&dns->::HostDnsService::m_hCritSect);
-            dns->update();
-            RTCritSectLeave(&dns->::HostDnsService::m_hCritSect);
+            dns->readResolvConf();
+            /* notifyAll() takes required locks */
+            dns->notifyAll();
+
             polls[0].revents = 0;
 
             inotify_event ev;
@@ -152,9 +160,9 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
 }
 
 
-HRESULT HostDnsServiceLinux::init(const VirtualBox *aParent)
+HRESULT HostDnsServiceLinux::init(const char *aResolvConfFileName)
 {
-    HRESULT hrc = HostDnsServiceResolvConf::init(aParent);
+    HRESULT hrc = HostDnsServiceResolvConf::init(aResolvConfFileName);
     AssertComRCReturnRC(hrc);
 
     int rc = RTThreadCreate(&g_DnsMonitoringThread, HostDnsServiceLinux::hostMonitoringRoutine,
@@ -167,10 +175,4 @@ HRESULT HostDnsServiceLinux::init(const VirtualBox *aParent)
     RTSemEventWait(g_DnsInitEvent, RT_INDEFINITE_WAIT);
 
     return S_OK;
-}
-
-
-void HostDnsServiceLinux::stop()
-{
-    send(g_DnsMonitorStop[0], "", 1, 0);
 }
