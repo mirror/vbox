@@ -29,6 +29,30 @@
 typedef std::list<com::Utf8Str> Utf8StrList;
 typedef Utf8StrList::iterator Utf8StrListIterator;
 
+
+class Lockee
+{
+    public:
+    Lockee();
+    virtual ~Lockee();
+    const RTCRITSECT* lock() const;
+
+    private:
+    RTCRITSECT mLock;
+};
+
+
+class ALock
+{
+    public:
+    ALock(const Lockee *l);
+    ~ALock();
+
+    private:
+    const Lockee *lck;
+};
+
+
 class HostDnsService
 {
     public:

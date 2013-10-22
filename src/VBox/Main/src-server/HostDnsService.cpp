@@ -22,9 +22,31 @@
 #include <iprt/cpp/utils.h>
 
 #include "VirtualBoxImpl.h"
-#include "HostDnsService.h"
 #include <iprt/thread.h>
 #include <iprt/semaphore.h>
+#include <iprt/critsect.h>
+#include "HostDnsService.h"
+
+/* Lockee */
+Lockee::Lockee(){ RTCritSectInit(&mLock);}
+
+
+Lockee::~Lockee(){RTCritSectDelete(&mLock);}
+
+
+const RTCRITSECT* Lockee::lock() const {return &mLock;}
+
+/* ALock */
+ALock::ALock(const Lockee *l):lck(l) 
+{
+    RTCritSectEnter(const_cast<PRTCRITSECT>(lck->lock()));
+}
+
+ALock::~ALock()
+{
+    RTCritSectLeave(const_cast<PRTCRITSECT>(lck->lock()));
+}
+
 
 HostDnsService::HostDnsService(){}
 
