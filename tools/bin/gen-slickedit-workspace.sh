@@ -957,8 +957,8 @@ my_generate_project "kStuff"        "src/libs/kStuff"                       --be
 my_generate_project "VBoxHeaders"   "include"                               --begin-incs "include"                                          --end-includes "include/VBox"
 
 # Misc
-my_generate_project "misc"          "src/testcase"                          --begin-incs "include"                                          --end-includes \
-    "src/testcase" \
+my_generate_project "misc"          "src/tests"                             --begin-incs "include"                                          --end-includes \
+    "src/tests" \
     "configure" \
     "configure.vbs" \
     "Config.kmk" \
