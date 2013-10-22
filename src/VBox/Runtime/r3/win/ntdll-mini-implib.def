@@ -29,6 +29,7 @@ EXPORTS
     RtlNtStatusToDosError
     NtQueryTimerResolution
     NtQueryDirectoryFile
+    NtQueryDirectoryObject
     NtQueryInformationFile
     NtQueryInformationProcess
     NtSetInformationFile
@@ -38,3 +39,5 @@ EXPORTS
     NtCreateFile
     NtClose
     NtOpenDirectoryObject
+    NtDeviceIoControlFile
+
