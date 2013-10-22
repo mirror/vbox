@@ -896,37 +896,159 @@ NTSTATUS vboxVdmaCrRxGenericSync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRPACKER *pCrPac
      return STATUS_SUCCESS;
 }
 
-#if 0
-NTSTATUS vboxVdmaCrCmdGetChromiumParametervCR(PVBOXMP_DEVEXT pDevExt, uint32_t u32CrConClientID, GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid * values)
+typedef struct VBOXMP_CRHGSMIMGR
 {
-    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_GETCHROMIUMPARAMETERVCR;
-    uint32_t cCommands = 1;
-    void *pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
-    if (!pvCommandBuffer)
+    VBOXMP_CRPACKER CrPacker;
+    void *pvCommandBuffer;
+} VBOXMP_CRHGSMIMGR;
+
+DECLINLINE(CRPackContext*) vboxVdmaCrHmGetPackContext(VBOXMP_CRHGSMIMGR *pMgr)
+{
+    return &pMgr->CrPacker.CrPacker;
+}
+
+NTSTATUS vboxVdmaCrHmCreate(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRHGSMIMGR *pMgr, uint32_t cbCommandBuffer, uint32_t cCommands)
+{
+    pMgr->pvCommandBuffer = VBoxMpCrShgsmiTransportBufAlloc(&pDevExt->CrHgsmiTransport, cbCommandBuffer);
+    if (!pMgr->pvCommandBuffer)
     {
         WARN(("VBoxMpCrShgsmiTransportBufAlloc failed!"));
         return VERR_OUT_OF_RESOURCES;
     }
 
-    VBOXMP_CRPACKER CrPacker;
-    VBoxMpCrPackerInit(&CrPacker);
+    VBoxMpCrPackerInit(&pMgr->CrPacker);
 
-    VBoxMpCrPackerTxBufferInit(&CrPacker, pvCommandBuffer, cbCommandBuffer, cCommands);
+    VBoxMpCrPackerTxBufferInit(&pMgr->CrPacker, pMgr->pvCommandBuffer, cbCommandBuffer, cCommands);
 
-    int dummy = 1;
+    return STATUS_SUCCESS;
+}
 
-    crPackGetChromiumParametervCR(&CrPacker.CrPacker, target, index, type, count, values, &dummy);
-
-
-    NTSTATUS Status = vboxVdmaCrRxGenericSync(pDevExt, &CrPacker, u32CrConClientID);
+NTSTATUS vboxVdmaCrHmSubmitWrSync(PVBOXMP_DEVEXT pDevExt, VBOXMP_CRHGSMIMGR *pMgr, uint32_t u32CrConClientID)
+{
+    NTSTATUS Status = vboxVdmaCrRxGenericSync(pDevExt, &pMgr->CrPacker, u32CrConClientID);
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxVdmaCrRxGenericSync failed Status 0x%x", Status));
-        VBoxMpCrShgsmiTransportBufFree(&pDevExt->CrHgsmiTransport, pvCommandBuffer);
+        VBoxMpCrShgsmiTransportBufFree(&pDevExt->CrHgsmiTransport, pMgr->pvCommandBuffer);
         return Status;
     }
 
+    return STATUS_SUCCESS;
+}
+#if 0
+NTSTATUS vboxVdmaCrCmdGetChromiumParametervCR(PVBOXMP_DEVEXT pDevExt, uint32_t u32CrConClientID, GLenum target, GLuint index, GLenum type, GLsizei count, GLvoid * values)
+{
+    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_GETCHROMIUMPARAMETERVCR;
+    uint32_t cCommands = 1;
 
+    VBOXMP_CRHGSMIMGR Mgr;
+    NTSTATUS Status = vboxVdmaCrHmCreate(pDevExt, &Mgr, cbCommandBuffer, cCommands);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmCreate failed Status 0x%x", Status));
+        return Status;
+    }
+
+    int dummy = 1;
+
+    crPackGetChromiumParametervCR(vboxVdmaCrHmGetPackContext(&Mgr), target, index, type, count, values, &dummy);
+
+    Status = vboxVdmaCrHmSubmitWrSync(pDevExt, &Mgr, u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmSubmitWrSync failed Status 0x%x", Status));
+        return Status;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxVdmaCrCmdCreateContext(PVBOXMP_DEVEXT pDevExt, int32_t visualBits, int32_t *pi32CtxID)
+{
+    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_CREATECONTEXT;
+    uint32_t cCommands = 1;
+
+    VBOXMP_CRHGSMIMGR Mgr;
+    NTSTATUS Status = vboxVdmaCrHmCreate(pDevExt, &Mgr, cbCommandBuffer, cCommands);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmCreate failed Status 0x%x", Status));
+        return Status;
+    }
+
+    int dummy = 1;
+
+    crPackCreateContext(&CrPacker.CrPacker, "", visualBits, 0, &pi32CtxID, &dummy);
+
+    Status = vboxVdmaCrHmSubmitWrSync(pDevExt, &Mgr, u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmSubmitWrSync failed Status 0x%x", Status));
+        return Status;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxVdmaCrCmdWindowCreate(PVBOXMP_DEVEXT pDevExt, int32_t visualBits, int32_t *pi32WinID)
+{
+    uint32_t cbCommandBuffer = VBOXMP_CRCMD_HEADER_SIZE + VBOXMP_CRCMD_SIZE_WINDOWCREATE;
+    uint32_t cCommands = 1;
+
+    VBOXMP_CRHGSMIMGR Mgr;
+    NTSTATUS Status = vboxVdmaCrHmCreate(pDevExt, &Mgr, cbCommandBuffer, cCommands);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmCreate failed Status 0x%x", Status));
+        return Status;
+    }
+
+    int dummy = 1;
+
+    crPackWindowCreate(&CrPacker.CrPacker, "", visualBits, 0, &pi32CtxID, &dummy);
+
+    Status = vboxVdmaCrHmSubmitWrSync(pDevExt, &Mgr, u32CrConClientID);
+    if (!NT_SUCCESS(Status))
+    {
+        WARN(("vboxVdmaCrHmSubmitWrSync failed Status 0x%x", Status));
+        return Status;
+    }
+
+    return STATUS_SUCCESS;
+}
+
+static NTSTATUS vboxVdmaCrCtlGetDefaultCtxId(PVBOXMP_DEVEXT pDevExt, int32_t *pi32CtxID)
+{
+    if (!pDevExt->i32CrConDefaultCtxID)
+    {
+        if (!pDevExt->f3DEnabled)
+        {
+            WARN(("3D disabled, should not be here!"));
+            return STATUS_UNSUCCESSFUL;
+        }
+
+        uint32_t u32ClienID;
+        NTSTATUS Status = vboxVdmaCrCtlGetDefaultClientId(pDevExt, &u32ClienID);
+        if (!NT_SUCCESS(Status))
+        {
+            WARN(("vboxVdmaCrCtlGetDefaultClientId failed, Status %#x", Status));
+            return Status;
+        }
+
+        Status = vboxVdmaCrCmdWindowCreate(PVBOXMP_DEVEXT pDevExt, int32_t visualBits, int32_t *pi32WinID)
+
+        VBOXMP_CRPACKER CrPacker;
+        VBoxMpCrPackerInit(&CrPacker);
+
+        int rc = VBoxMpCrCtlConConnect(&pDevExt->CrCtlCon, CR_PROTOCOL_VERSION_MAJOR, CR_PROTOCOL_VERSION_MINOR, &pDevExt->u32CrConDefaultClientID);
+        if (!RT_SUCCESS(rc))
+        {
+            WARN(("VBoxMpCrCtlConConnect failed, rc %d", rc));
+            return STATUS_UNSUCCESSFUL;
+        }
+    }
+
+    *pi32CtxID = pDevExt->i32CrConDefaultCtxID;
     return STATUS_SUCCESS;
 }
 #endif

@@ -5747,7 +5747,8 @@ static HRESULT APIENTRY vboxWddmDDevOpenResource(HANDLE hDevice, D3DDDIARG_OPENR
             pRc->RcDesc.enmMultisampleType = D3DDDIMULTISAMPLE_NONE;
             pRc->RcDesc.MultisampleQuality = 0;
             pRc->RcDesc.MipLevels = 0;
-            pRc->RcDesc.Fvf;
+            /*pRc->RcDesc.Fvf;*/
+            pRc->RcDesc.fFlags.SharedResource = 1;
 
             if (pData->NumAllocations != 1)
             {

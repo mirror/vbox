@@ -40,8 +40,11 @@ HRESULT VBoxD3DIfLockRect(struct VBOXWDDMDISP_RESOURCE *pRc, UINT iAlloc,
 HRESULT VBoxD3DIfUnlockRect(struct VBOXWDDMDISP_RESOURCE *pRc, UINT iAlloc);
 void VBoxD3DIfLockUnlockMemSynch(struct VBOXWDDMDISP_ALLOCATION *pAlloc, D3DLOCKED_RECT *pLockInfo, RECT *pRect, bool bToLockInfo);
 
+IUnknown* vboxD3DIfCreateSharedPrimary(PVBOXWDDMDISP_ALLOCATION pAlloc);
+
+
 /* NOTE: does NOT increment a ref counter! NO Release needed!! */
-DECLINLINE(IUnknown*) VBoxD3DIfGet(PVBOXWDDMDISP_ALLOCATION pAlloc)
+DECLINLINE(IUnknown*) vboxD3DIfGet(PVBOXWDDMDISP_ALLOCATION pAlloc)
 {
     if (pAlloc->pD3DIf)
         return pAlloc->pD3DIf;
@@ -52,17 +55,7 @@ DECLINLINE(IUnknown*) VBoxD3DIfGet(PVBOXWDDMDISP_ALLOCATION pAlloc)
         return NULL;
     }
 
-    HRESULT hr = VBoxD3DIfCreateForRc(pAlloc->pRc);
-    if (!SUCCEEDED(hr))
-    {
-        WARN(("VBoxD3DIfCreateForRc failed, hr 0x%x", hr));
-        return NULL;
-    }
-
-    Assert(pAlloc->pD3DIf);
-    Assert(pAlloc->enmD3DIfType == VBOXDISP_D3DIFTYPE_SURFACE);
-
-    return pAlloc->pD3DIf;
+    return vboxD3DIfCreateSharedPrimary(pAlloc);
 }
 
 /* on success increments the surface ref counter,
@@ -72,7 +65,7 @@ DECLINLINE(HRESULT) VBoxD3DIfSurfGet(PVBOXWDDMDISP_RESOURCE pRc, UINT iAlloc, ID
     HRESULT hr = S_OK;
     Assert(pRc->cAllocations > iAlloc);
     *ppSurf = NULL;
-    IUnknown* pD3DIf = VBoxD3DIfGet(&pRc->aAllocations[iAlloc]);
+    IUnknown* pD3DIf = vboxD3DIfGet(&pRc->aAllocations[iAlloc]);
 
     switch (pRc->aAllocations[0].enmD3DIfType)
     {

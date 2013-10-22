@@ -56,12 +56,31 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+DECLINLINE(void) VBoxWddmOaHostIDReleaseLocked(PVBOXWDDM_OPENALLOCATION pOa)
+{
+    Assert(pOa->cHostIDRefs);
+    PVBOXWDDM_ALLOCATION pAllocation = pOa->pAllocation;
+    Assert(pAllocation->AllocData.cHostIDRefs >= pOa->cHostIDRefs);
+    Assert(pAllocation->AllocData.hostID);
+    --pOa->cHostIDRefs;
+    --pAllocation->AllocData.cHostIDRefs;
+    if (!pAllocation->AllocData.cHostIDRefs)
+        pAllocation->AllocData.hostID = 0;
+}
+
+DECLINLINE(void) VBoxWddmOaHostIDCheckReleaseLocked(PVBOXWDDM_OPENALLOCATION pOa)
+{
+    if (pOa->cHostIDRefs)
+        VBoxWddmOaHostIDReleaseLocked(pOa);
+}
+
 DECLINLINE(void) VBoxWddmOaRelease(PVBOXWDDM_OPENALLOCATION pOa)
 {
     PVBOXWDDM_ALLOCATION pAllocation = pOa->pAllocation;
     KIRQL OldIrql;
     KeAcquireSpinLock(&pAllocation->OpenLock, &OldIrql);
     Assert(pAllocation->cOpens);
+    VBoxWddmOaHostIDCheckReleaseLocked(pOa);
     --pAllocation->cOpens;
     uint32_t cOpens = --pOa->cOpens;
     Assert(cOpens < UINT32_MAX/2);
@@ -96,6 +115,47 @@ DECLINLINE(PVBOXWDDM_OPENALLOCATION) VBoxWddmOaSearch(PVBOXWDDM_DEVICE pDevice, 
     pOa = VBoxWddmOaSearchLocked(pDevice, pAllocation);
     KeReleaseSpinLock(&pAllocation->OpenLock, OldIrql);
     return pOa;
+}
+
+DECLINLINE(int) VBoxWddmOaSetHostID(PVBOXWDDM_DEVICE pDevice, PVBOXWDDM_ALLOCATION pAllocation, uint32_t hostID, uint32_t *pHostID)
+{
+    PVBOXWDDM_OPENALLOCATION pOa;
+    KIRQL OldIrql;
+    int rc = VINF_SUCCESS;
+    KeAcquireSpinLock(&pAllocation->OpenLock, &OldIrql);
+    pOa = VBoxWddmOaSearchLocked(pDevice, pAllocation);
+    if (!pOa)
+    {
+        KeReleaseSpinLock(&pAllocation->OpenLock, OldIrql);;
+        WARN(("no open allocation!"));
+        return VERR_INVALID_STATE;
+    }
+
+    if (hostID)
+    {
+        if (pAllocation->AllocData.hostID == 0)
+        {
+            pAllocation->AllocData.hostID = hostID;
+        }
+        else if (pAllocation->AllocData.hostID != hostID)
+        {
+            WARN(("hostID differ: alloc(%d), trying to assign(%d)", pAllocation->AllocData.hostID, hostID));
+            hostID = pAllocation->AllocData.hostID;
+            rc = VERR_NOT_EQUAL;
+        }
+
+        ++pAllocation->AllocData.cHostIDRefs;
+        ++pOa->cHostIDRefs;
+    }
+    else
+        VBoxWddmOaHostIDCheckReleaseLocked(pOa);
+
+    KeReleaseSpinLock(&pAllocation->OpenLock, OldIrql);
+
+    if (pHostID)
+        *pHostID = hostID;
+
+    return rc;
 }
 
 DECLINLINE(PVBOXWDDM_ALLOCATION) vboxWddmGetAllocationFromHandle(PVBOXMP_DEVEXT pDevExt, D3DKMT_HANDLE hAllocation)
@@ -4040,10 +4100,55 @@ DxgkDdiEscape(
                 Status = STATUS_SUCCESS;
                 break;
             }
+            case VBOXESC_SETALLOCHOSTID:
+            {
+                PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)pEscape->hDevice;
+                if (!pDevice)
+                {
+                    WARN(("VBOXESC_SETALLOCHOSTID called without no device specified, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_SETALLOCHOSTID))
+                {
+                    WARN(("invalid buffer size for VBOXDISPIFESCAPE_SHRC_REF, was(%d), but expected (%d)",
+                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SHRC_REF)));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                PVBOXDISPIFESCAPE_SETALLOCHOSTID pSetHostID = (PVBOXDISPIFESCAPE_SETALLOCHOSTID)pEscapeHdr;
+                PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromHandle(pDevExt, (D3DKMT_HANDLE)pSetHostID->hAlloc);
+                if (!pAlloc)
+                {
+                    WARN(("failed to get allocation from handle"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                if (pAlloc->enmType != VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE)
+                {
+                    WARN(("setHostID: invalid allocation type: %d", pAlloc->enmType));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
+                pSetHostID->rc = VBoxWddmOaSetHostID(pDevice, pAlloc, pSetHostID->hostID, &pSetHostID->EscapeHdr.u32CmdSpecific);
+                Status = STATUS_SUCCESS;
+                break;
+            }
             case VBOXESC_SHRC_ADDREF:
             case VBOXESC_SHRC_RELEASE:
             {
                 PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)pEscape->hDevice;
+                if (!pDevice)
+                {
+                    WARN(("VBOXESC_SHRC_ADDREF|VBOXESC_SHRC_RELEASE called without no device specified, failing"));
+                    Status = STATUS_INVALID_PARAMETER;
+                    break;
+                }
+
                 /* query whether the allocation represanted by the given [wine-generated] shared resource handle still exists */
                 if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_SHRC_REF))
                 {
@@ -5001,15 +5106,17 @@ DxgkDdiOpenAllocation(
     PVBOXWDDM_RCINFO pRcInfo = NULL;
     if (pOpenAllocation->PrivateDriverSize)
     {
-        Assert(pOpenAllocation->PrivateDriverSize == sizeof (VBOXWDDM_RCINFO));
         Assert(pOpenAllocation->pPrivateDriverData);
-        if (pOpenAllocation->PrivateDriverSize >= sizeof (VBOXWDDM_RCINFO))
+        if (pOpenAllocation->PrivateDriverSize == sizeof (VBOXWDDM_RCINFO))
         {
             pRcInfo = (PVBOXWDDM_RCINFO)pOpenAllocation->pPrivateDriverData;
             Assert(pRcInfo->cAllocInfos == pOpenAllocation->NumAllocations);
         }
         else
+        {
+            WARN(("Invalid PrivateDriverSize %d", pOpenAllocation->PrivateDriverSize));
             Status = STATUS_INVALID_PARAMETER;
+        }
     }
 
     if (Status == STATUS_SUCCESS)
