@@ -2903,8 +2903,6 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlStat(PGCTLCMDCTX pCtx)
 
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
-                        RTPrintf("val: %s=%d\n", ValueUnion.psz, ch);
-
         /* For options that require an argument, ValueUnion has received the value. */
         switch (ch)
         {
