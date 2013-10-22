@@ -115,6 +115,8 @@ typedef struct GCTLCMDCTX
     ComPtr<IGuest> pGuest;
     /** Pointer to the to be used guest session. */
     ComPtr<IGuestSession> pGuestSession;
+    /** The guest session ID. */
+    ULONG uSessionID;
 
 } GCTLCMDCTX, *PGCTLCMDCTX;
 
@@ -692,6 +694,9 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
             }
             else if (pCtx->fVerbose)
                 RTPrintf("Guest session detached\n");
+
+            pCtx->pGuestSession.setNull();
+            g_pGuestSession.setNull();
         }
 
         if (pCtx->handlerArg.session)
@@ -892,10 +897,48 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
                                                               Bstr(pCtx->strDomain).raw(),
                                                               Bstr(pszSessionName).raw(),
                                                               pCtx->pGuestSession.asOutParam()));
+
+                /*
+                 * Wait for guest session to start.
+                 */
+                if (pCtx->fVerbose)
+                    RTPrintf("Waiting for guest session to start ...\n");
+
+                com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
+                aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
+                GuestSessionWaitResult_T sessionWaitResult;
+                CHECK_ERROR_BREAK(pCtx->pGuestSession, WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags),
+                                                                    /** @todo Make session handling timeouts configurable. */
+                                                                    30 * 1000, &sessionWaitResult));
+
+                if (   sessionWaitResult == GuestSessionWaitResult_Start
+                    /* Note: This might happen when Guest Additions < 4.3 are installed which don't
+                     *       support dedicated guest sessions. */
+                    || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported)
+                {
+                    CHECK_ERROR_BREAK(pCtx->pGuestSession, COMGETTER(Id)(&pCtx->uSessionID));
+                    if (pCtx->fVerbose)
+                        RTPrintf("Guest session (ID %RU32) has been started\n", pCtx->uSessionID);
+                }
+                else
+                {
+                    GuestSessionStatus_T sessionStatus;
+                    CHECK_ERROR_BREAK(pCtx->pGuestSession, COMGETTER(Status)(&sessionStatus));
+                    rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Error starting guest session (current status is: %s)\n",
+                                            ctrlSessionStatusToText(sessionStatus));
+                    break;
+                }
             }
 
-            if (!(uFlags & CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER))
+            if (   SUCCEEDED(rc)
+                && !(uFlags & CTLCMDCTX_FLAGS_NO_SIGNAL_HANDLER))
+            {
+                /* Add session to global for being accessible by the
+                 * signal handler. */
+                g_pGuestSession = pCtx->pGuestSession;
+
                 ctrlSignalHandlerInstall();
+            }
 
         } while (0);
 
@@ -1165,38 +1208,6 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
             /* Get current time stamp to later calculate rest of timeout left. */
             uint64_t u64StartMS = RTTimeMilliTS();
 
-            /*
-             * Wait for guest session to start.
-             */
-            if (pCtx->fVerbose)
-            {
-                if (cMsTimeout == 0)
-                    RTPrintf("Waiting for guest session to start ...\n");
-                else
-                    RTPrintf("Waiting for guest session to start (within %ums)\n", cMsTimeout);
-            }
-
-            com::SafeArray<GuestSessionWaitForFlag_T> aSessionWaitFlags;
-            aSessionWaitFlags.push_back(GuestSessionWaitForFlag_Start);
-            GuestSessionWaitResult_T sessionWaitResult;
-            CHECK_ERROR_BREAK(g_pGuestSession, WaitForArray(ComSafeArrayAsInParam(aSessionWaitFlags), cMsTimeout, &sessionWaitResult));
-            ULONG uSessionID;
-            CHECK_ERROR_BREAK(g_pGuestSession, COMGETTER(Id)(&uSessionID));
-
-            if (   sessionWaitResult == GuestSessionWaitResult_Start
-                /* Note: This might happen when Guest Additions < 4.3 are installed which don't
-                 *       support dedicated guest sessions. */
-                || sessionWaitResult == GuestSessionWaitResult_WaitFlagNotSupported)
-            {
-                if (pCtx->fVerbose)
-                    RTPrintf("Guest session (ID %RU32) has been started\n", uSessionID);
-            }
-            else
-            {
-                RTPrintf("Error starting guest session\n");
-                break;
-            }
-
             if (pCtx->fVerbose)
             {
                 if (cMsTimeout == 0)
@@ -1209,12 +1220,12 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
              * Execute the process.
              */
             ComPtr<IGuestProcess> pProcess;
-            CHECK_ERROR_BREAK(g_pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
-                                                           ComSafeArrayAsInParam(aArgs),
-                                                           ComSafeArrayAsInParam(aEnv),
-                                                           ComSafeArrayAsInParam(aCreateFlags),
-                                                           cMsTimeout,
-                                                           pProcess.asOutParam()));
+            CHECK_ERROR_BREAK(pCtx->pGuestSession, ProcessCreate(Bstr(strCmd).raw(),
+                                                                 ComSafeArrayAsInParam(aArgs),
+                                                                 ComSafeArrayAsInParam(aEnv),
+                                                                 ComSafeArrayAsInParam(aCreateFlags),
+                                                                 cMsTimeout,
+                                                                 pProcess.asOutParam()));
 
             /** @todo does this need signal handling? there's no progress object etc etc */
 
@@ -1252,7 +1263,7 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                         {
                             /* Just print plain PID to make it easier for scripts
                              * invoking VBoxManage. */
-                            RTPrintf("%RU32, session ID %RU32\n", uPID, uSessionID);
+                            RTPrintf("%RU32, session ID %RU32\n", uPID, pCtx->uSessionID);
                         }
 
                         /* We're done here if we don't want to wait for termination. */
