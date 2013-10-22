@@ -37,14 +37,11 @@ HRESULT HostDnsServiceWin::init()
     HRESULT hrc = HostDnsMonitor::init(aParent);
     AssertComRCReturn(hrc, hrc);
 
-    hrc = update();
-    AssertComRCReturn(hrc, hrc);
-
-    return S_OK;
+    return updateInfo();
 }
 
 
-HRESULT HostDnsServiceWin::update()
+HRESULT HostDnsServiceWin::updateInfo()
 {
     HRESULT hrc;
     DWORD regIndex;
@@ -105,7 +102,7 @@ HRESULT HostDnsServiceWin::update()
     /* search list */
     strList2List(info.searchList, static_cast<char *>(&abSearchList[0]));
 
-    setInfo(info);
+    HostDnsMonitor::setInfo(info);
 
     return S_OK;
 }
