@@ -31,7 +31,7 @@ typedef Utf8StrList::iterator Utf8StrListIterator;
 
 class HostDnsService
 {
-    puvlic:
+    public:
     HostDnsService();
     virtual ~HostDnsService();
     virtual HRESULT init(const VirtualBox *aParent);
