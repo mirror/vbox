@@ -38,6 +38,7 @@
 # define VBOXESC_ADJUSTVIDEOMODES           0xABCD9011
 # define VBOXESC_SETCTXHOSTID               0xABCD9012
 # define VBOXESC_CONFIGURETARGETS           0xABCD9013
+# define VBOXESC_SETALLOCHOSTID             0xABCD9014
 #endif /* #ifdef VBOX_WITH_WDDM */
 
 # define VBOXESC_ISANYX                     0xABCD9200

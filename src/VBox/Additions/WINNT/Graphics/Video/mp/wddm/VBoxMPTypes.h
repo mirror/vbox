@@ -107,6 +107,7 @@ typedef struct VBOXWDDM_ALLOC_DATA
     VBOXWDDM_SURFACE_DESC SurfDesc;
     VBOXWDDM_ADDR Addr;
     uint32_t hostID;
+    uint32_t cHostIDRefs;
     struct VBOXWDDM_SWAPCHAIN *pSwapchain;
 } VBOXWDDM_ALLOC_DATA, *PVBOXWDDM_ALLOC_DATA;
 
@@ -319,6 +320,7 @@ typedef struct VBOXWDDM_OPENALLOCATION
     PVBOXWDDM_DEVICE pDevice;
     uint32_t cShRcRefs;
     uint32_t cOpens;
+    uint32_t cHostIDRefs;
 } VBOXWDDM_OPENALLOCATION, *PVBOXWDDM_OPENALLOCATION;
 
 #define VBOXWDDM_MAX_VIDEOMODES 128

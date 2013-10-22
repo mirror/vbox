@@ -235,12 +235,17 @@ int VBoxMpCrCmdRxHandler(CRMessageHeader *pRx, uint32_t cbRx);
 uint32_t VBoxMpCrGetHostCaps();
 
 #define VBOXMP_CRCMD_HEADER_SIZE sizeof (CRMessageOpcodes)
-/* last +4 below is 4-aligned comand opcode size (i.e. ((1 + 3) & ~3)) */
+/* last +4 below is 4-aligned command opcode size (i.e. ((1 + 3) & ~3)) */
 #define VBOXMP_CRCMD_SIZE_WINDOWPOSITION (20 + 4)
 #define VBOXMP_CRCMD_SIZE_WINDOWVISIBLEREGIONS(_cRects) (16 + (_cRects) * 4 * sizeof (GLint) + 4)
 #define VBOXMP_CRCMD_SIZE_VBOXTEXPRESENT(_cRects) (28 + (_cRects) * 4 * sizeof (GLint) + 4)
 #define VBOXMP_CRCMD_SIZE_WINDOWSHOW (16 + 4)
 #define VBOXMP_CRCMD_SIZE_WINDOWSIZE (20 + 4)
 #define VBOXMP_CRCMD_SIZE_GETCHROMIUMPARAMETERVCR (36 + 4)
+#define VBOXMP_CRCMD_SIZE_CHROMIUMPARAMETERICR (16 + 4)
+#define VBOXMP_CRCMD_SIZE_WINDOWCREATE (256 + 28 + 4)
+#define VBOXMP_CRCMD_SIZE_WINDOWDESTROY (12 + 4)
+#define VBOXMP_CRCMD_SIZE_CREATECONTEXT (256 + 32 + 4)
+#define VBOXMP_CRCMD_SIZE_DESTROYCONTEXT (12 + 4)
 
 #endif /* #ifndef ___VBoxMPCr_h__ */
