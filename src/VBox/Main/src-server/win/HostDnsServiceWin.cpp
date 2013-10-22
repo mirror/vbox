@@ -95,12 +95,12 @@ HRESULT HostDnsServiceWin::updateInfo()
     /* OK, now parse and update DNS structures. */
     /* domain name */
     HostDnsInformation info;
-    info.domain = static_cast<char*>(abDomain);
+    info.domain = (char*)abDomain;
 
     /* server list */
-    strList2List(info.servers, static_cast<char *>(&abNameServers[0]));
+    strList2List(info.servers, (char *)abNameServers);
     /* search list */
-    strList2List(info.searchList, static_cast<char *>(&abSearchList[0]));
+    strList2List(info.searchList, (char *)abSearchList);
 
     HostDnsMonitor::setInfo(info);
 
