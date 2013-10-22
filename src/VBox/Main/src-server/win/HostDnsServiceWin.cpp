@@ -34,7 +34,7 @@ HostDnsServiceWin::~HostDnsServiceWin()
 
 HRESULT HostDnsServiceWin::init()
 {
-    HRESULT hrc = HostDnsMonitor::init(aParent);
+    HRESULT hrc = HostDnsMonitor::init();
     AssertComRCReturn(hrc, hrc);
 
     return updateInfo();
