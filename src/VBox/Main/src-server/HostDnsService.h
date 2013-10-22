@@ -31,7 +31,7 @@ typedef Utf8StrList::iterator Utf8StrListIterator;
 
 class HostDnsService
 {
-public:
+    puvlic:
     HostDnsService();
     virtual ~HostDnsService();
     virtual HRESULT init(const VirtualBox *aParent);
@@ -40,7 +40,8 @@ public:
     STDMETHOD(COMGETTER(NameServers))(ComSafeArrayOut(BSTR, aNameServers));
     STDMETHOD(COMGETTER(DomainName))(BSTR *aDomainName);
     STDMETHOD(COMGETTER(SearchStrings))(ComSafeArrayOut(BSTR, aSearchStrings));
-protected:
+
+    protected:
     virtual HRESULT update(void);
 
     /* XXX: hide it with struct Data together with <list> */
@@ -49,7 +50,7 @@ protected:
     com::Utf8Str    m_DomainName;
     RTCRITSECT      m_hCritSect;
 
-private:
+    private:
     const VirtualBox *mParent;
     HostDnsService(const HostDnsService&);
     HostDnsService& operator =(const HostDnsService&);
@@ -58,7 +59,7 @@ private:
 # ifdef RT_OS_DARWIN
 class HostDnsServiceDarwin: public HostDnsService
 {
-public:
+    public:
     HostDnsServiceDarwin();
     virtual ~HostDnsServiceDarwin();
 
@@ -66,7 +67,8 @@ public:
     virtual HRESULT start(void);
     virtual void stop(void);
     virtual HRESULT update();
-private:
+
+    private:
     static void hostDnsServiceStoreCallback(void *store, void *arrayRef, void *info);
 
 };
@@ -75,7 +77,7 @@ private:
 # ifdef RT_OS_WINDOWS
 class HostDnsServiceWin: public HostDnsService
 {
-public:
+    public:
     HostDnsServiceWin();
     virtual ~HostDnsServiceWin();
 
@@ -83,7 +85,6 @@ public:
     virtual HRESULT start(void);
     virtual void stop(void);
     virtual HRESULT update();
-private:
     void strList2List(Utf8StrList& lst, char *strLst);
 };
 # endif
@@ -116,7 +117,7 @@ public:
 #  elif defined(RT_OS_LINUX)
 class HostDnsServiceLinux: public HostDnsServiceResolvConf
 {
-public:
+    public:
     HostDnsServiceLinux(){}
     virtual ~HostDnsServiceLinux(){}
     virtual HRESULT init(const VirtualBox *aParent);
@@ -128,7 +129,7 @@ public:
 #  elif defined(RT_OS_OS2)
 class HostDnsServiceOs2: public HostDnsServiceResolvConf
 {
-public:
+    public:
     HostDnsServiceOs2()
     {
         /* XXX: \\MPTN\\ETC should be taken from environment variable ETC  */
