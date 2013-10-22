@@ -35,7 +35,7 @@ void crServerReturnValue( const void *payload, unsigned int payload_len )
     rb = (CRMessageReadback *) crAlloc( msg_len );
 
     rb->header.type = CR_MESSAGE_READBACK;
-    CRDBGPTR_PRINTWB(cr_server.curClient->conn->u32ClientID, &cr_server.writeback_ptr);
+    CRDBGPTR_PRINTRB(cr_server.curClient->conn->u32ClientID, &cr_server.writeback_ptr);
     CRDBGPTR_CHECKNZ(&cr_server.writeback_ptr);
     CRDBGPTR_CHECKNZ(&cr_server.return_ptr);
     crMemcpy( &(rb->writeback_ptr), &(cr_server.writeback_ptr), sizeof( rb->writeback_ptr ) );
