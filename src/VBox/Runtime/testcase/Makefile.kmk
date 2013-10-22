@@ -135,7 +135,8 @@ PROGRAMS += \
 	tstRTCircBuf \
 	tstRTManifest \
 	tstRTUri \
-	tstVector
+	tstVector \
+       tstRTZip
 
 PROGRAMS.win += \
 	tstRTCritSectW32 \
@@ -604,6 +605,10 @@ tstRTCoreDump_SOURCES = tstRTCoreDump.cpp
 
 tstVector_TEMPLATE = VBOXR3TSTEXE
 tstVector_SOURCES = tstVector.cpp
+
+
+tstRTZip_TEMPLATE = VBOXR3TSTEXE
+tstRTZip_SOURCES = tstRTZip.cpp
 
 
 #
