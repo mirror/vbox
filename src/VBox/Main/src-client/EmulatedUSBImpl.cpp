@@ -106,16 +106,53 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
         EUSBDEVICESTATUS enmStatus;
 };
 
+static int emulatedWebcamInsertSettings(PCFGMNODE pConfig, EUSBSettingsMap *pSettings)
+{
+    int rc = VINF_SUCCESS;
+
+    EUSBSettingsMap::const_iterator it;
+    for (it = pSettings->begin(); it != pSettings->end(); ++it)
+    {
+        /* Convert some well known settings for backward compatibility. */
+        if (   RTStrCmp(it->first.c_str(), "MaxPayloadTransferSize") == 0
+            || RTStrCmp(it->first.c_str(), "MaxFramerate") == 0)
+        {
+            uint32_t u32 = 0;
+            rc = RTStrToUInt32Full(it->second.c_str(), 10, &u32);
+            if (rc == VINF_SUCCESS)
+            {
+                rc = CFGMR3InsertInteger(pConfig, it->first.c_str(), u32);
+            }
+            else
+            {
+                if (RT_SUCCESS(rc)) /* VWRN_* */
+                {
+                    rc = VERR_INVALID_PARAMETER;
+                }
+            }
+        }
+        else
+        {
+            rc = CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
+        }
+
+        if (RT_FAILURE(rc))
+        {
+            break;
+        }
+    }
+
+    return rc;
+}
 
 /* static */ DECLCALLBACK(int) EUSBWEBCAM::emulatedWebcamAttach(PUVM pUVM, EUSBWEBCAM *pThis, const char *pszDriver)
 {
-    EUSBSettingsMap::const_iterator it;
-
     PCFGMNODE pInstance = CFGMR3CreateTree(pUVM);
     PCFGMNODE pConfig;
     CFGMR3InsertNode(pInstance,   "Config", &pConfig);
-    for (it = pThis->mDevSettings.begin(); it != pThis->mDevSettings.end(); ++it)
-        CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
+    int rc = emulatedWebcamInsertSettings(pConfig, &pThis->mDevSettings);
+    if (RT_FAILURE(rc))
+        return rc;
     PCFGMNODE pEUSB;
     CFGMR3InsertNode(pConfig,       "EmulatedUSB", &pEUSB);
     CFGMR3InsertString(pEUSB,         "Id", pThis->mszUuid);
@@ -128,11 +165,12 @@ class EUSBWEBCAM /* : public EUSBDEVICE */
     CFGMR3InsertNode(pLunL0,        "Config", &pConfig);
     CFGMR3InsertString(pConfig,       "DevicePath", pThis->mPath.c_str());
     CFGMR3InsertInteger(pConfig,      "Object", (uintptr_t)pThis->mpvObject);
-    for (it = pThis->mDrvSettings.begin(); it != pThis->mDrvSettings.end(); ++it)
-        CFGMR3InsertString(pConfig, it->first.c_str(), it->second.c_str());
+    rc = emulatedWebcamInsertSettings(pConfig, &pThis->mDrvSettings);
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* pInstance will be used by PDM and deallocated on error. */
-    int rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid);
+    rc = PDMR3UsbCreateEmulatedDevice(pUVM, "Webcam", pInstance, &pThis->mUuid);
     LogRelFlowFunc(("PDMR3UsbCreateEmulatedDevice %Rrc\n", rc));
     return rc;
 }
@@ -184,9 +222,82 @@ HRESULT EUSBWEBCAM::Initialize(Console *pConsole,
 
 HRESULT EUSBWEBCAM::settingsParse(void)
 {
-    HRESULT hrc = S_OK;
+    HRESULT hr = S_OK;
 
-    return hrc;
+    /* Parse mSettings string:
+     * "[dev:|drv:]Name1=Value1;[dev:|drv:]Name2=Value2"
+     */
+    char *pszSrc = mSettings.mutableRaw();
+
+    if (pszSrc)
+    {
+        while (*pszSrc)
+        {
+            /* Does the setting belong to device of driver. Default is both. */
+            bool fDev = true;
+            bool fDrv = true;
+            if (RTStrNICmp(pszSrc, "drv:", strlen("drv:")) == 0)
+            {
+                pszSrc += strlen("drv:");
+                fDev = false;
+            }
+            else if (RTStrNICmp(pszSrc, "dev:", strlen("dev:")) == 0)
+            {
+                pszSrc += strlen("dev:");
+                fDrv = false;
+            }
+
+            char *pszEq = RTStrStr(pszSrc, "=");
+            if (!pszEq)
+            {
+                hr = E_INVALIDARG;
+                break;
+            }
+
+            char *pszEnd = RTStrStr(pszEq, ";");
+            if (!pszEnd)
+            {
+                pszEnd = pszEq + strlen(pszEq);
+            }
+
+            *pszEq = 0;
+            char chEnd = *pszEnd;
+            *pszEnd = 0;
+
+            /* Empty strings not allowed. */
+            if (*pszSrc != 0 && pszEq[1] != 0)
+            {
+                if (fDev)
+                {
+                    mDevSettings[pszSrc] = &pszEq[1];
+                }
+                if (fDrv)
+                {
+                    mDrvSettings[pszSrc] = &pszEq[1];
+                }
+            }
+
+            *pszEq = '=';
+            *pszEnd = chEnd;
+
+            pszSrc = pszEnd;
+            if (*pszSrc == ';')
+            {
+                pszSrc++;
+            }
+        }
+
+        if (SUCCEEDED(hr))
+        {
+            EUSBSettingsMap::const_iterator it;
+            for (it = mDevSettings.begin(); it != mDevSettings.end(); ++it)
+                LogRelFlowFunc(("[dev:%s] = [%s]\n", it->first.c_str(), it->second.c_str()));
+            for (it = mDrvSettings.begin(); it != mDrvSettings.end(); ++it)
+                LogRelFlowFunc(("[drv:%s] = [%s]\n", it->first.c_str(), it->second.c_str()));
+        }
+    }
+
+    return hr;
 }
 
 HRESULT EUSBWEBCAM::Attach(Console *pConsole,
