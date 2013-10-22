@@ -905,8 +905,6 @@ host path or identifier</screen>
     <sect2>
       <title>Windows hosts</title>
 
-      <para>All of VBoxManage commands are implemented.</para>
-
       <para>When the webcam device is detached from the host, the emulated webcam device is
       automatically detached from the guest.</para>
     </sect2>
@@ -924,14 +922,9 @@ host path or identifier</screen>
     <sect2>
       <title>Linux hosts</title>
 
-      <para><computeroutput>VBoxManage list webcams</computeroutput> is not yet implemented.</para>
-
-      <para>Aliases do not work. The host webcam path such as
-      <computeroutput>/dev/video0</computeroutput> must be used in
-      attach and detach commands.</para>
-
-      <para>When the webcam device is detached from the host, the emulated webcam device remains
-      attached to the guest and must be manually detached using the
+      <para>When the webcam is detached from the host the emulated webcam device is
+      automatically detached from the guest only if the webcam is streaming video.
+      If the emulated webcam is inactive it should be manually detached using the
       <computeroutput>VBoxManage controlvm "VM name" webcam detach ...</computeroutput> command.</para>
     </sect2>
   </sect1>
