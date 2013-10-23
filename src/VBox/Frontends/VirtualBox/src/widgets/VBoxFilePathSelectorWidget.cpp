@@ -282,7 +282,7 @@ void VBoxFilePathSelectorWidget::retranslateUi()
     {
         mNoneStr = tr ("<reset to default>");
         mNoneTip = tr ("The actual default path value will be displayed after "
-                       "accepting the changes and opening this dialog again.");
+                       "accepting the changes and opening this window again.");
     }
     else
     {

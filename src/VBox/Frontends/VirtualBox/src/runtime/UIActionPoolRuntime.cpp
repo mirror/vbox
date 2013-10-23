@@ -980,8 +980,8 @@ protected:
 
     void retranslateUi()
     {
-        setName(QApplication::translate("UIActionPool", "&Install Guest Additions..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Mount the Guest Additions installation image"));
+        setName(QApplication::translate("UIActionPool", "&Insert Guest Additions installer..."));
+        setStatusTip(QApplication::translate("UIActionPool", "Insert the Guest Additions disk file into the virtual drive"));
     }
 };
 
