@@ -145,8 +145,57 @@ void PACK_APIENTRY packspu_DeleteObjectARB(GLhandleARB obj)
     crPackDeleteObjectARB(obj);
 }
 
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+static void packspu_RecCheckInitRec()
+{
+    if (pack_spu.Recorder.pDumper)
+        return;
+
+    crDmpDbgPrintInit(&pack_spu.Dumper);
+
+    crRecInit(&pack_spu.Recorder, NULL /*pBlitter: we do not support blitter operations here*/, &pack_spu.self, &pack_spu.Dumper.Base);
+}
+#endif
+
 void PACKSPU_APIENTRY packspu_LinkProgram(GLuint program)
 {
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    GLint linkStatus = 0;
+#endif
+
     crStateLinkProgram(program);
     crPackLinkProgram(program);
+
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    pack_spu.self.GetObjectParameterivARB(program, GL_OBJECT_LINK_STATUS_ARB, &linkStatus);
+    Assert(linkStatus);
+    if (!linkStatus)
+    {
+        CRContext *ctx = crStateGetCurrent();
+        packspu_RecCheckInitRec();
+        crRecDumpProgram(&pack_spu.Recorder, ctx, program, program);
+    }
+#endif
 }
+
+void PACKSPU_APIENTRY packspu_CompileShader(GLuint shader)
+{
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    GLint compileStatus = 0;
+#endif
+
+//    crStateCompileShader(shader);
+    crPackCompileShader(shader);
+
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    pack_spu.self.GetObjectParameterivARB(shader, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus);
+    Assert(compileStatus);
+    if (!compileStatus)
+    {
+        CRContext *ctx = crStateGetCurrent();
+        packspu_RecCheckInitRec();
+        crRecDumpShader(&pack_spu.Recorder, ctx, shader, shader);
+    }
+#endif
+}
+
