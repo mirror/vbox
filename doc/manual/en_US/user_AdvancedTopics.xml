@@ -874,8 +874,8 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
       </note>
 
       <para>The VBoxManage command line tool must be used to enable webcam passthrough.
-      Currently some commands are not supported on all hosts, please see the host-specific
-      sections below for additional details. The following commands are available:
+      Please see the host-specific sections below for additional details.
+      The following commands are available:
         <itemizedlist>
           <listitem><para>Get a list of host webcams (or other video input devices):
             <screen>VBoxManage list webcams</screen>
@@ -887,8 +887,27 @@ host path or identifier</screen>
             video input device. The device order is host-specific.
           </para></listitem>
           <listitem><para>Attach a webcam to a running VM:
-            <screen>VBoxManage controlvm "VM name" webcam attach [host_path|alias]</screen>
-            This will attach a USB webcam device to the guest.
+            <screen>VBoxManage controlvm "VM name" webcam attach [host_path|alias [settings]]</screen>
+            This will attach a USB webcam device to the guest.</para>
+
+            <para>The <computeroutput>settings</computeroutput> parameter is a string
+            <computeroutput>Setting1=Value1;Setting2=Value2</computeroutput>, which allows to
+            configure the emulated webcam device. The following settings are supported:
+            <itemizedlist>
+              <listitem>
+                <computeroutput>MaxFramerate</computeroutput> The highest rate at which video frames
+                are sent to the guest. A higher frame rate requires more CPU power. Therefore sometimes
+                it is useful to set a lower limit. Default is no limit and allow the guest to use all
+                frame rates supported by the host webcam.
+              </listitem>
+              <listitem>
+                <computeroutput>MaxPayloadTransferSize</computeroutput> How many bytes the emulated
+                webcam can send to the guest at a time. Default value is 3060 bytes, which is used by
+                some webcams. Higher values can slightly reduce CPU load, if the guest is able to use
+                larger buffers. However a high <computeroutput>MaxPayloadTransferSize</computeroutput>
+                might be not supported by some guests.
+              </listitem>
+            </itemizedlist>
           </para></listitem>
           <listitem><para>Detach a webcam from a running VM:
             <screen>VBoxManage controlvm "VM name" webcam detach [host_path|alias]</screen>
@@ -926,6 +945,10 @@ host path or identifier</screen>
       automatically detached from the guest only if the webcam is streaming video.
       If the emulated webcam is inactive it should be manually detached using the
       <computeroutput>VBoxManage controlvm "VM name" webcam detach ...</computeroutput> command.</para>
+
+      <para>Aliases <computeroutput>.0</computeroutput> and <computeroutput>.1</computeroutput> are mapped
+      to <computeroutput>/dev/video0</computeroutput>, alias <computeroutput>.2</computeroutput> is mapped
+      to <computeroutput>/dev/video1</computeroutput> and so forth.</para>
     </sect2>
   </sect1>
 
