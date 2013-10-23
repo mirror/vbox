@@ -104,7 +104,6 @@ public:
     virtual ~UIFrameBuffer();
 
     /* API: [Un]used status stuff: */
-    bool isMarkedAsUnused() const;
     void setMarkAsUnused(bool fIsMarkAsUnused);
 
     NS_DECL_ISUPPORTS
