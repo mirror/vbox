@@ -139,7 +139,7 @@ void UIFrameBufferQImage::resizeEvent(UIResizeEvent *pEvent)
     }
 
     /* Remind if requested: */
-    if (bRemind)
+    if (bRemind && m_pMachineView->uisession()->isGuestAdditionsActive())
         popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
                                                       pEvent->bitsPerPixel(), 32);
     else
