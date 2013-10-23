@@ -75,19 +75,28 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aC
     LogRel2(("UIFrameBufferQuartz2D::SetVisibleRegion: Rectangle count=%lu\n",
              (unsigned long)aCount));
 
+    /* Make sure rectangles were passed: */
+    if (!pRectangles)
+    {
+        LogRel2(("UIFrameBufferQuartz2D::SetVisibleRegion: Invalid pRectangles pointer!\n"));
+
+        return E_POINTER;
+    }
+
+    /* Lock access to frame-buffer: */
+    lock();
+
     /* Make sure frame-buffer is used: */
-    if (isMarkedAsUnused())
+    if (m_fIsMarkedAsUnused)
     {
         LogRel2(("UIFrameBufferQuartz2D::SetVisibleRegion: Ignored!\n"));
+
+        /* Unlock access to frame-buffer: */
+        unlock();
 
         /* Ignore SetVisibleRegion: */
         return E_FAIL;
     }
-
-    /* Make sure rectangles were passed: */
-    PRTRECT rects = (PRTRECT)pRectangles;
-    if (!rects)
-        return E_POINTER;
 
     /** @todo r=bird: Is this thread safe? If I remember the code flow correctly, the
      * GUI thread could be happily jogging along paintEvent now on another cpu core.
@@ -107,13 +116,19 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aC
         allocated = RT_MAX (128, allocated);
         rgnRcts = (RegionRects *)RTMemAlloc(RT_OFFSETOF(RegionRects, rcts[allocated]));
         if (!rgnRcts)
+        {
+            /* Unlock access to frame-buffer: */
+            unlock();
+
             return E_OUTOFMEMORY;
+        }
         rgnRcts->allocated = allocated;
     }
     rgnRcts->used = 0;
 
     /* Compose region: */
     QRegion reg;
+    PRTRECT rects = (PRTRECT)pRectangles;
     QRect vmScreenRect(0, 0, width(), height());
     for (ULONG ind = 0; ind < aCount; ++ ind)
     {
@@ -152,6 +167,9 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *pRectangles, ULONG aC
     /* Send async signal to update asynchronous visible-region: */
     LogRel2(("UIFrameBufferQuartz2D::SetVisibleRegion: Sending to async-handler...\n"));
     emit sigSetVisibleRegion(reg);
+
+    /* Unlock access to frame-buffer: */
+    unlock();
 
     /* Confirm SetVisibleRegion: */
     return S_OK;
