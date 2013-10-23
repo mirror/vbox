@@ -49,11 +49,6 @@
 //#  define VBOXWDDMDISP_DEBUG_TIMER
 # endif
 
-/* log enable flags */
-extern DWORD g_VBoxVDbgFLogRel;
-extern DWORD g_VBoxVDbgFLog;
-extern DWORD g_VBoxVDbgFLogFlow;
-
 # ifndef IN_VBOXCRHGSMI
 /* debug config vars */
 extern DWORD g_VBoxVDbgFDumpSetTexture;
@@ -90,6 +85,13 @@ extern DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce;
 # endif /* #ifndef IN_VBOXCRHGSMI */
 #endif
 
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
+/* log enable flags */
+extern DWORD g_VBoxVDbgFLogRel;
+extern DWORD g_VBoxVDbgFLog;
+extern DWORD g_VBoxVDbgFLogFlow;
+#endif
+
 #ifdef VBOXWDDMDISP_DEBUG_VEHANDLER
 void vboxVDbgVEHandlerRegister();
 void vboxVDbgVEHandlerUnregister();
@@ -115,7 +117,7 @@ void vboxVDbgVEHandlerUnregister();
 # define DbgPrintUsrFlow(_m) do { } while (0)
 #endif
 
-#ifdef VBOXWDDMDISP_DEBUG
+#if defined(VBOXWDDMDISP_DEBUG) || defined(VBOX_WDDMDISP_WITH_PROFILE)
 #define vboxVDbgInternalLog(_p) if (g_VBoxVDbgFLog) { _p }
 #define vboxVDbgInternalLogFlow(_p) if (g_VBoxVDbgFLogFlow) { _p }
 #define vboxVDbgInternalLogRel(_p) if (g_VBoxVDbgFLogRel) { _p }
