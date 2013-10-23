@@ -159,7 +159,6 @@ void HostDnsMonitor::shutdown()
 
 const HostDnsInformation& HostDnsMonitor::getInfo() const
 {
-    ALock l(this);
     return m->info;
 }
 
