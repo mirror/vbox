@@ -602,11 +602,34 @@ static DECLCALLBACK(GLuint) crDmpGetHwidProgramCB(void *pvObj)
     return ((CRGLSLProgram*)pvObj)->hwid;
 }
 
+/* Context activation is done by the caller. */
+void crRecDumpLog(CR_RECORDER *pRec, GLint hwid)
+{
+    GLint cbLog = 0;
+    pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_INFO_LOG_LENGTH_ARB, &cbLog);
+
+    crDmpStrF(pRec->pDumper, "Log===%d===", hwid);
+
+    if (cbLog > 1)
+    {
+        GLchar *pszLog = (GLchar *) crAlloc(cbLog*sizeof (GLchar));
+
+        pRec->pDispatch->GetInfoLogARB(hwid, cbLog, NULL, pszLog);
+
+        crRecDumpStrByLine(pRec->pDumper, pszLog, cbLog);
+
+        crFree(pszLog);
+    }
+    crDmpStrF(pRec->pDumper, "End Log======");
+}
+
 void crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
 {
     GLint length = 0;
     GLint type = 0;
     GLint compileStatus = 0;
+
+#ifndef IN_GUEST
     CRGLSLShader *pShad;
 
     if (!id)
@@ -633,10 +656,22 @@ void crRecDumpShader(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
 
     Assert(pShad->hwid == hwid);
     Assert(pShad->id == id);
+#else
+    if (!id)
+        id = hwid;
+    else if (!hwid)
+        hwid = id;
+
+    Assert(id);
+    Assert(hwid);
+    Assert(hwid == id);
+#endif
 
     pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_SUBTYPE_ARB, &type);
     pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_COMPILE_STATUS_ARB, &compileStatus);
     crDmpStrF(pRec->pDumper, "SHADER ctx(%d) id(%d) hwid(%d) type(%s) status(%d):", ctx->id, id, hwid, crRecDumpShaderTypeString(type, pRec->pDumper), compileStatus);
+
+    crRecDumpLog(pRec, hwid);
 
     pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_SHADER_SOURCE_LENGTH_ARB, &length);
 
@@ -691,6 +726,8 @@ void crRecDumpProgram(CR_RECORDER *pRec, CRContext *ctx, GLint id, GLint hwid)
     pRec->pDispatch->GetObjectParameterivARB(hwid, GL_OBJECT_LINK_STATUS_ARB, &linkStatus);
 
     crDmpStrF(pRec->pDumper, "PROGRAM ctx(%d) id(%d) hwid(%d) status(%d) shaders(%d):", ctx->id, id, hwid, linkStatus, cShaders);
+
+    crRecDumpLog(pRec, hwid);
 
     GLhandleARB *pShaders = (GLhandleARB*)crCalloc(cShaders * sizeof (*pShaders));
     if (!pShaders)
@@ -1585,7 +1622,7 @@ DECLCALLBACK(void) crDmpDumpImgDmlBreak(struct CR_DUMPER * pDumper, CR_BLITTER_I
 
 DECLCALLBACK(void) crDmpDumpStrDbgPrint(struct CR_DUMPER * pDumper, const char*pszStr)
 {
-    OutputDebugStringA(pszStr);
+    crDmpPrint("%s\n", pszStr);
 }
 #endif
 
