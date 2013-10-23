@@ -1113,7 +1113,7 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      */
     PTMTIMER pTimer;
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2mThrottleTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Throttle Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1125,7 +1125,7 @@ int PS2MConstruct(PPS2M pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      * Create the command delay timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2mDelayTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PS2M Delay Timer", &pTimer);
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2M Delay Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 
