@@ -234,7 +234,7 @@ void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
     setImageRef(m_image);
 #endif
 
-    if (remind)
+    if (remind && m_pMachineView->uisession()->isGuestAdditionsActive())
         popupCenter().remindAboutWrongColorDepth(m_pMachineView->machineWindow(),
                                                       aEvent->bitsPerPixel(), 32);
     else
