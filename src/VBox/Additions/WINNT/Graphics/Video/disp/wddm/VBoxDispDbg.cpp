@@ -84,13 +84,18 @@ static void vboxDispLogDbgFormatStringV(char * szBuffer, uint32_t cbBuffer, cons
 LONG g_VBoxVDbgFIsDwm = -1;
 
 DWORD g_VBoxVDbgPid = 0;
+
+DWORD g_VBoxVDbgFLogRel = 1;
+# if !defined(VBOXWDDMDISP_DEBUG)
+DWORD g_VBoxVDbgFLog = 0;
+# else
+DWORD g_VBoxVDbgFLog = 1;
+# endif
+DWORD g_VBoxVDbgFLogFlow = 0;
+
 #endif
 
 #ifdef VBOXWDDMDISP_DEBUG
-
-DWORD g_VBoxVDbgFLogRel = 1;
-DWORD g_VBoxVDbgFLog = 1;
-DWORD g_VBoxVDbgFLogFlow = 0;
 
 # ifndef IN_VBOXCRHGSMI
 #define VBOXWDDMDISP_DEBUG_DUMP_DEFAULT 0
