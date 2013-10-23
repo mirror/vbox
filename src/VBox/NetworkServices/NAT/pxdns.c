@@ -33,6 +33,8 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+#include "winutils.h"
+
 #include "proxy.h"
 #include "proxy_pollmgr.h"
 
@@ -40,11 +42,23 @@
 #include "lwip/tcpip.h"
 #include "lwip/udp.h"
 
+#ifndef RT_OS_WINDOWS
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
+#else
+#include "winpoll.h"
+#endif
 
 #include <string.h>
+
+
+union sockaddr_inet {
+    struct sockaddr sa;
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
+};
 
 
 struct request;
@@ -54,18 +68,20 @@ struct request;
  * DNS Proxy
  */
 struct pxdns {
-    struct pollmgr_handler pmhdl;
+    SOCKET sock4;
+    SOCKET sock6;
 
-    struct udp_pcb *pcb4;       /* lwIP doesn't support listening for */
-    struct udp_pcb *pcb6;       /*  both IPv4 and IPv6 on single pcb. */
+    struct pollmgr_handler pmhdl4;
+    struct pollmgr_handler pmhdl6;
 
-    SOCKET sock;
+    struct udp_pcb *pcb4;
+    struct udp_pcb *pcb6;
+
+    size_t generation;
+    size_t nresolvers;
+    union sockaddr_inet *resolvers;
 
     u16_t id;
-
-    /* XXX: TODO: support multiple, support IPv6 */
-    struct sockaddr_in resolver_sin;
-    socklen_t resolver_sinlen;
 
     sys_mutex_t lock;
 
@@ -91,10 +107,14 @@ struct request {
     u16_t id;
 
     /**
-     * XXX: TODO: to test rexmit code, rexmit to the same resolver
-     * multiple times; to be replaced with trying the next resolver.
+     * pxdns::generation used for this request
      */
-    size_t rexmit_count;
+    size_t generation;
+
+    /**
+     * Current index into pxdns::resolvers
+     */
+    size_t residx;
 
     /**
      * PCB from which we have received this request.  lwIP doesn't
@@ -142,6 +162,9 @@ struct request {
 };
 
 
+static void pxdns_create_resolver_sockaddrs(struct pxdns *pxdns,
+                                            const char **nameservers);
+
 static void pxdns_recv4(void *arg, struct udp_pcb *pcb, struct pbuf *p,
                         ip_addr_t *addr, u16_t port);
 static void pxdns_recv6(void *arg, struct udp_pcb *pcb, struct pbuf *p,
@@ -175,9 +198,13 @@ pxdns_init(struct netif *proxy_netif)
 
     LWIP_UNUSED_ARG(proxy_netif);
 
-    pxdns->pmhdl.callback = pxdns_pmgr_pump;
-    pxdns->pmhdl.data = (void *)pxdns;
-    pxdns->pmhdl.slot = -1;
+    pxdns->pmhdl4.callback = pxdns_pmgr_pump;
+    pxdns->pmhdl4.data = (void *)pxdns;
+    pxdns->pmhdl4.slot = -1;
+
+    pxdns->pmhdl6.callback = pxdns_pmgr_pump;
+    pxdns->pmhdl6.data = (void *)pxdns;
+    pxdns->pmhdl6.slot = -1;
 
     pxdns->pcb4 = udp_new();
     if (pxdns->pcb4 == NULL) {
@@ -196,7 +223,7 @@ pxdns_init(struct netif *proxy_netif)
         goto err_cleanup_pcb;
     }
 
-    error = udp_bind_ip6(pxdns->pcb4, IP6_ADDR_ANY, 53);
+    error = udp_bind_ip6(pxdns->pcb6, IP6_ADDR_ANY, 53);
     if (error != ERR_OK) {
         goto err_cleanup_pcb;
     }
@@ -204,26 +231,31 @@ pxdns_init(struct netif *proxy_netif)
     udp_recv(pxdns->pcb4, pxdns_recv4, pxdns);
     udp_recv_ip6(pxdns->pcb6, pxdns_recv6, pxdns);
 
-    pxdns->sock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (pxdns->sock == INVALID_SOCKET) {
+    pxdns->sock4 = socket(AF_INET, SOCK_DGRAM, 0);
+    if (pxdns->sock4 == INVALID_SOCKET) {
         goto err_cleanup_pcb;
     }
 
-    /* XXX: TODO: support multiple, support IPv6 */
-    pxdns->resolver_sin.sin_family = AF_INET;
-    pxdns->resolver_sin.sin_addr.s_addr = PP_HTONL(0x7f000001); /* XXX */
-    pxdns->resolver_sin.sin_port = PP_HTONS(53);
-#if HAVE_SA_LEN
-    pxdns->resolver_sin.sin_len =
-#endif
-        pxdns->resolver_sinlen = sizeof(pxdns->resolver_sin);
+    pxdns->sock6 = socket(AF_INET6, SOCK_DGRAM, 0);
+    if (pxdns->sock6 == INVALID_SOCKET) {
+        /* it's ok if the host doesn't support IPv6 */
+        /* XXX: TODO: log */
+    }
+
+    pxdns->generation = 0;
+    pxdns->nresolvers = 0;
+    pxdns->resolvers = NULL;
+    pxdns_create_resolver_sockaddrs(pxdns, g_proxy_options->nameservers);
 
     sys_mutex_new(&pxdns->lock);
 
     pxdns->timeout_slot = 0;
 
-    /* XXX: assumes pollmgr thread is not running yet */
-    pollmgr_add(&pxdns->pmhdl, pxdns->sock, POLLIN);
+    /* NB: assumes pollmgr thread is not running yet */
+    pollmgr_add(&pxdns->pmhdl4, pxdns->sock4, POLLIN);
+    if (pxdns->sock6 != INVALID_SOCKET) {
+        pollmgr_add(&pxdns->pmhdl6, pxdns->sock6, POLLIN);
+    }
 
     sys_timeout(1 * 1000, pxdns_timer, pxdns);
 
@@ -240,6 +272,125 @@ pxdns_init(struct netif *proxy_netif)
     }
 
     return error;
+}
+
+
+/**
+ * lwIP thread callback to set the new list of nameservers.
+ */
+void
+pxdns_set_nameservers(void *arg)
+{
+    const char **nameservers = (const char **)arg;
+
+    if (g_proxy_options->nameservers != NULL) {
+        RTMemFree(g_proxy_options->nameservers);
+    }
+    g_proxy_options->nameservers = nameservers;
+
+    pxdns_create_resolver_sockaddrs(&g_pxdns, nameservers);
+}
+
+
+/**
+ * Use this list of nameservers to resolve guest requests.
+ *
+ * Runs on lwIP thread, so no new queries or retramsmits compete with
+ * it for the use of the existing list of resolvers (to be replaced).
+ */
+static void
+pxdns_create_resolver_sockaddrs(struct pxdns *pxdns, const char **nameservers)
+{
+    /*
+     * XXX: TODO: Windows supports getaddrinfo(), including execution
+     * on older version of Windows where runtime tricks hide the gory
+     * compatibility details.
+     *
+     * http://msdn.microsoft.com/en-us/library/windows/desktop/ms738520%28v=vs.85%29.aspx
+     */
+#ifndef RT_OS_WINDOWS
+    struct addrinfo hints;
+#endif
+    union sockaddr_inet *resolvers;
+    size_t nnames, nresolvers;
+    const char **p;
+    int status;
+
+    resolvers = NULL;
+    nresolvers = 0;
+
+    if (nameservers == NULL) {
+        goto update_resolvers;
+    }
+
+    nnames = 0;
+    for (p = nameservers; *p != NULL; ++p) {
+        ++nnames;
+    }
+
+    if (nnames == 0) {
+        goto update_resolvers;
+    }
+
+    resolvers = (union sockaddr_inet *)calloc(sizeof(resolvers[0]), nnames);
+    if (resolvers == NULL) {
+        nresolvers = 0;
+        goto update_resolvers;
+    }
+
+#ifndef RT_OS_WINDOWS
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
+
+    for (p = nameservers; *p != NULL; ++p) {
+        const char *name = *p;
+        struct addrinfo *ai;
+        status = getaddrinfo(name, /* "domain" */ "53", &hints, &ai);
+        if (status != 0) {
+            /* XXX: log failed resolution */
+            continue;
+        }
+
+        if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6) {
+            /* XXX: log unsupported address family */
+            freeaddrinfo(ai);
+            continue;
+        }
+
+        if (ai->ai_addrlen > sizeof(resolvers[nresolvers])) {
+            /* XXX: log */
+            freeaddrinfo(ai);
+            continue;
+        }
+
+        if (ai->ai_family == AF_INET6 && pxdns->sock6 == INVALID_SOCKET) {
+            /* no IPv6 support on the host, can't use this resolver */
+            freeaddrinfo(ai);
+            continue;
+        }
+
+        memcpy(&resolvers[nresolvers], ai->ai_addr, ai->ai_addrlen);
+        freeaddrinfo(ai);
+        ++nresolvers;
+    }
+#endif  /* RT_OS_WINDOWS */
+
+    if (nresolvers == 0) {
+        if (resolvers != NULL) {
+            free(resolvers);
+        }
+        resolvers = NULL;
+    }
+
+  update_resolvers:
+    ++pxdns->generation;
+    if (pxdns->resolvers != NULL) {
+        free(pxdns->resolvers);
+    }
+    pxdns->resolvers = resolvers;
+    pxdns->nresolvers = nresolvers;
 }
 
 
@@ -446,8 +597,15 @@ pxdns_query(struct pxdns *pxdns, struct udp_pcb *pcb, struct pbuf *p,
     u16_t client_id;
     int sent;
 
+    if (pxdns->nresolvers == 0) {
+        /* nothing we can do */
+        pbuf_free(p);
+        return;
+    }
+
     req = calloc(1, sizeof(struct request) - 1 + p->tot_len);
     if (req == NULL) {
+        pbuf_free(p);
         return;
     }
 
@@ -465,9 +623,11 @@ pxdns_query(struct pxdns *pxdns, struct udp_pcb *pcb, struct pbuf *p,
     req->id = pxdns->id++;
     memcpy(req->data, &req->id, sizeof(u16_t));
 
-    /* XXX */
-    req->rexmit_count = 1;
+    /* resolver to forward to */
+    req->generation = pxdns->generation;
+    req->residx = 0;
 
+    /* prepare for relaying the reply back to guest */
     req->msg_reply.type = TCPIP_MSG_CALLBACK_STATIC;
     req->msg_reply.sem = NULL;
     req->msg_reply.msg.cb.function = pxdns_pcb_reply;
@@ -479,7 +639,7 @@ pxdns_query(struct pxdns *pxdns, struct udp_pcb *pcb, struct pbuf *p,
     pxdns_request_register(pxdns, req);
 
     sent = pxdns_forward_outbound(pxdns, req);
-    while (!sent) {
+    if (!sent) {
         sent = pxdns_rexmit(pxdns, req);
     }
     if (!sent) {
@@ -489,45 +649,87 @@ pxdns_query(struct pxdns *pxdns, struct udp_pcb *pcb, struct pbuf *p,
 }
 
 
+/**
+ * Forward request to the req::residx resolver in the pxdns::resolvers
+ * array of upstream resolvers.
+ *
+ * Returns 1 on success, 0 on failure.
+ */
 static int
 pxdns_forward_outbound(struct pxdns *pxdns, struct request *req)
 {
+    union sockaddr_inet *resolver;
     ssize_t nsent;
 
-    DPRINTF2(("%s: req %p\n", __func__, (void *)req));
+    DPRINTF2(("%s: req %p: sending to resolver #%lu\n",
+              __func__, (void *)req, (unsigned long)req->residx));
 
-    nsent = sendto(pxdns->sock, req->data, req->size, 0,
-                   (struct sockaddr *)&pxdns->resolver_sin,
-                   pxdns->resolver_sinlen);
+    LWIP_ASSERT1(req->generation == pxdns->generation);
+    LWIP_ASSERT1(req->residx < pxdns->nresolvers);
+    resolver = &pxdns->resolvers[req->residx];
+
+    if (resolver->sa.sa_family == AF_INET) {
+        nsent = sendto(pxdns->sock4, req->data, req->size, 0,
+                       &resolver->sa, sizeof(resolver->sin));
+        
+    }
+    else if (resolver->sa.sa_family == AF_INET6) {
+        if (pxdns->sock6 != INVALID_SOCKET) {
+            nsent = sendto(pxdns->sock6, req->data, req->size, 0,
+                           &resolver->sa, sizeof(resolver->sin6));
+        }
+        else {
+            /* shouldn't happen, we should have weeded out IPv6 resolvers */
+            return 0;
+        }
+    }
+    else {
+        /* shouldn't happen, we should have weeded out unsupported families */
+        return 0;
+    }
 
     if ((size_t)nsent == req->size) {
         return 1; /* sent */
     }
 
     if (nsent < 0) {
-        perror("dnsproxy");
+        DPRINTF2(("%s: send: errno %d\n", __func__, errno));
     }
-    else if ((size_t)nsent != req->size) {
-        DPRINTF(("%s: sent only %lu of %lu\n",
-                 __func__, (unsigned long)nsent, (unsigned long)req->size));
+    else {
+        DPRINTF2(("%s: sent only %lu of %lu\n",
+                  __func__, (unsigned long)nsent, (unsigned long)req->size));
     }
     return 0; /* not sent, caller will retry as necessary */
 }
 
 
+/**
+ * Forward request to the next resolver in the pxdns::resolvers array
+ * of upstream resolvers if there are any left.
+ */
 static int
 pxdns_rexmit(struct pxdns *pxdns, struct request *req)
 {
-    DPRINTF2(("%s: req %p: rexmit count %lu\n",
-              __func__, (void *)req, (unsigned long)req->rexmit_count));
+    int sent;
 
-    /* XXX: TODO: use the next resolver instead */
-    if (req->rexmit_count == 0) {
+    if (/* __predict_false */ req->generation != pxdns->generation) {
+        DPRINTF2(("%s: req %p: generation %lu != pxdns generation %lu\n",
+                  __func__, (void *)req,
+                  (unsigned long)req->generation,
+                  (unsigned long)pxdns->generation));
         return 0;
     }
-    --req->rexmit_count;
 
-    return pxdns_forward_outbound(pxdns, req);
+    LWIP_ASSERT1(req->residx < pxdns->nresolvers);
+    do {
+        if (++req->residx == pxdns->nresolvers) {
+            return 0;
+        }
+
+        sent = pxdns_forward_outbound(pxdns, req);
+    } while (!sent);
+
+    return 1;
 }
 
 
@@ -541,9 +743,8 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     u16_t id;
 
     pxdns = (struct pxdns *)handler->data;
-    LWIP_ASSERT1(handler == &pxdns->pmhdl);
-    LWIP_ASSERT1(fd = pxdns->sock);
-    LWIP_UNUSED_ARG(fd);
+    LWIP_ASSERT1(handler == &pxdns->pmhdl4 || handler == &pxdns->pmhdl6);
+    LWIP_ASSERT1(fd == (handler == &pxdns->pmhdl4 ? pxdns->sock4 : pxdns->sock6));
 
     if (revents & ~(POLLIN|POLLERR)) {
         DPRINTF0(("%s: unexpected revents 0x%x\n", __func__, revents));
@@ -555,15 +756,15 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         socklen_t optlen = (socklen_t)sizeof(sockerr);
         int status;
 
-        status = getsockopt(pxdns->sock, SOL_SOCKET,
+        status = getsockopt(fd, SOL_SOCKET,
                             SO_ERROR, &sockerr, &optlen);
         if (status < 0) {
             DPRINTF(("%s: sock %d: SO_ERROR failed with errno %d\n",
-                     __func__, pxdns->sock, errno));
+                     __func__, fd, errno));
         }
         else {
             DPRINTF(("%s: sock %d: errno %d\n",
-                     __func__, pxdns->sock, sockerr));
+                     __func__, fd, sockerr));
         }
     }
 
@@ -572,7 +773,7 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
     }
 
 
-    nread = recv(pxdns->sock, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
+    nread = recv(fd, pollmgr_udpbuf, sizeof(pollmgr_udpbuf), 0);
     if (nread < 0) {
         perror(__func__);
         return POLLIN;
@@ -585,6 +786,8 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         return POLLIN;
     }
 
+    /* XXX: shall we proxy back RCODE=Refused responses? */
+
     memcpy(&id, pollmgr_udpbuf, sizeof(id));
     req = pxdns_request_find(pxdns, id);
     if (req == NULL) {
@@ -593,8 +796,8 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         return POLLIN;
     }
 
-    DPRINTF2(("%s: reply for req=%p: client id %d -> id %d\n",
-              __func__, (void *)req, req->client_id, req->id));
+    DPRINTF2(("%s: reply for req=%p: id %d -> client id %d\n",
+              __func__, (void *)req, req->id, req->client_id));
 
     req->reply = pbuf_alloc(PBUF_RAW, nread, PBUF_RAM);
     if (req->reply == NULL) {
@@ -628,7 +831,7 @@ pxdns_pcb_reply(void *ctx)
     error = udp_sendto(req->pcb, req->reply,
                        ipX_2_ip(&req->client_addr), req->client_port);
     if (error != ERR_OK) {
-        DPRINTF(("%s: udp_sendto err %d\n",
+        DPRINTF(("%s: udp_sendto err %s\n",
                  __func__, proxy_lwip_strerr(error)));
     }
 

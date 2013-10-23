@@ -36,12 +36,13 @@ struct proxy_options {
     const struct sockaddr_in *src4;
     const struct sockaddr_in6 *src6;
     const struct ip4_lomap_desc *lomap_desc;
+    const char **nameservers;
 };
 
-extern volatile const struct proxy_options *g_proxy_options;
+extern volatile struct proxy_options *g_proxy_options;
 extern struct netif *g_proxy_netif;
 
-void proxy_init(struct netif *, const struct proxy_options *);
+void proxy_init(struct netif *, struct proxy_options *);
 SOCKET proxy_connected_socket(int, int, ipX_addr_t *, u16_t);
 SOCKET proxy_bound_socket(int, int, struct sockaddr *);
 void proxy_reset_socket(SOCKET);
@@ -67,6 +68,10 @@ void pxtcp_init(void);
 
 /* pxudp.c */
 void pxudp_init(void);
+
+/* pxdns.c */
+err_t pxdns_init(struct netif *);
+void pxdns_set_nameservers(void *);
 
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)

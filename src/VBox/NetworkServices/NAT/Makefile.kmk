@@ -57,6 +57,7 @@ VBoxNetLwipNAT_SOURCES += \
     pxremap.c \
     pxtcp.c \
     pxudp.c \
+    pxdns.c \
     fwtcp.c \
     fwudp.c \
     portfwd.c \

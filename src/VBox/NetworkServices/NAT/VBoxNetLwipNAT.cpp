@@ -192,6 +192,8 @@ class VBoxNetLwipNAT: public VBoxNetBaseService
 
     STDMETHOD(HandleEvent)(VBoxEventType_T aEventType, IEvent *pEvent);
 
+    const char **getHostNameservers();
+
     RTSEMEVENT hSemSVC;
     /* Only for debug needs, by default NAT service should load rules from SVC
      * on startup, and then on sync them on events.
@@ -374,6 +376,21 @@ STDMETHODIMP VBoxNetLwipNAT::HandleEvent(VBoxEventType_T aEventType,
             name.setNull();
             strHostAddr.setNull();
             strGuestAddr.setNull();
+            break;
+        }
+
+        case VBoxEventType_OnHostNameResolutionConfigurationChange:
+        {
+            const char **ppcszNameServers = getHostNameservers();
+            err_t error;
+
+            error = tcpip_callback_with_block(pxdns_set_nameservers,
+                                              ppcszNameServers,
+                                              /* :block */ 0);
+            if (error != ERR_OK && ppcszNameServers != NULL)
+            {
+                RTMemFree(ppcszNameServers);
+            }
             break;
         }
     }
@@ -764,6 +781,7 @@ VBoxNetLwipNAT::VBoxNetLwipNAT()
     m_src4.sin_len = sizeof(m_src4);
     m_src6.sin6_len = sizeof(m_src6);
 #endif
+    m_ProxyOptions.nameservers = NULL;
 
     m_LwipNetIf.name[0] = 'N';
     m_LwipNetIf.name[1] = 'T';
@@ -1042,6 +1060,8 @@ int VBoxNetLwipNAT::init()
         m_ProxyOptions.tftp_root = pszStrTemp;
     }
 
+    m_ProxyOptions.nameservers = getHostNameservers();
+
     /* end of COM initialization */
 
     rc = RTSemEventCreate(&hSemSVC);
@@ -1066,6 +1086,56 @@ int VBoxNetLwipNAT::init()
 
     LogFlowFuncLeaveRC(rc);
     return rc;
+}
+
+
+const char **VBoxNetLwipNAT::getHostNameservers()
+{
+    HRESULT hrc;
+
+    if (m_host.isNull())
+    {
+        return NULL;
+    }
+
+    com::SafeArray<BSTR> aNameServers;
+    hrc = m_host->COMGETTER(NameServers)(ComSafeArrayAsOutParam(aNameServers));
+    if (FAILED(hrc))
+    {
+        return NULL;
+    }
+
+    const size_t cNameServers = aNameServers.size();
+    if (cNameServers == 0)
+    {
+        return NULL;
+    }
+
+    const char **ppcszNameServers =
+        (const char **)RTMemAllocZ(sizeof(char *) * (cNameServers + 1));
+    if (ppcszNameServers == NULL)
+    {
+        return NULL;
+    }
+
+    size_t idxLast = 0;
+    for (size_t i = 0; i < cNameServers; ++i)
+    {
+        com::Utf8Str strNameServer(aNameServers[i]);
+        ppcszNameServers[idxLast] = RTStrDup(strNameServer.c_str());
+        if (ppcszNameServers[idxLast] != NULL)
+        {
+            ++idxLast;
+        }
+    }
+
+    if (idxLast == 0)
+    {
+        RTMemFree(ppcszNameServers);
+        return NULL;
+    }
+
+    return ppcszNameServers;
 }
 
 
