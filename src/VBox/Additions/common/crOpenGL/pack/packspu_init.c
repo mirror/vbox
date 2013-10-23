@@ -50,6 +50,10 @@ packSPUInit( int id, SPU *child, SPU *self,
     pack_spu.bRunningUnderWDDM = !!GetModuleHandle(VBOX_MODNAME_DISPD3D);
 #endif
 
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    memset(&pack_spu.Dumper, 0, sizeof (pack_spu.Dumper));
+#endif
+
     if (!CRPACKSPU_IS_WDDM_CRHGSMI())
     {
         /* This connects to the server, sets up the packer, etc. */
@@ -75,7 +79,12 @@ packSPUInit( int id, SPU *child, SPU *self,
 static void
 packSPUSelfDispatch(SPUDispatchTable *self)
 {
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    crSPUInitDispatchTable( &(pack_spu.self) );
+    crSPUCopyDispatchTable( &(pack_spu.self), self );
+#else
     (void)self;
+#endif
 }
 
 static int

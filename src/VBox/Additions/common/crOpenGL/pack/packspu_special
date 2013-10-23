@@ -129,3 +129,4 @@ GenBuffersARB
 DeleteBuffersARB
 StringMarkerGREMEDY
 GenTextures
+CompileShader

@@ -19,6 +19,9 @@
 #include "cr_spu.h"
 #include "cr_threads.h"
 #include "state/cr_client.h"
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+# include "cr_dump.h"
+#endif
 
 typedef struct thread_info_t ThreadInfo;
 typedef struct context_info_t ContextInfo;
@@ -68,6 +71,13 @@ typedef struct {
 
 #if defined(WINDOWS) && defined(VBOX_WITH_WDDM)
     bool bRunningUnderWDDM;
+#endif
+
+#ifdef VBOX_WITH_CRPACKSPU_DUMPER
+    SPUDispatchTable self;
+
+    CR_RECORDER Recorder;
+    CR_DBGPRINT_DUMPER Dumper;
 #endif
 
     int numContexts;
