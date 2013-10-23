@@ -6,8 +6,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#else
-# include <ws2ipdef.h>
 #endif
 
 #include "lwip/ip_addr.h"
