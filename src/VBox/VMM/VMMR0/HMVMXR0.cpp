@@ -8430,7 +8430,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 #ifdef VBOX_STRICT
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY, &u32Val);
         AssertRCBreak(rc);
-        Assert(u32Val == pVCpu->hm.s.vmx.u32ProcCtls);
+        Assert(u32Val == pVCpu->hm.s.vmx.u32EntryCtls);
 #endif
         bool const fLongModeGuest = RT_BOOL(pVCpu->hm.s.vmx.u32EntryCtls & VMX_VMCS_CTRL_ENTRY_IA32E_MODE_GUEST);
 
@@ -10078,6 +10078,10 @@ HMVMX_EXIT_DECL hmR0VmxExitIoInstr(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIE
             pMixedCtx->rip += cbInstr;
             VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RIP);
         }
+
+        /* INS & OUTS with REP prefix modify RFLAGS. */
+        if (fIOString)
+            VMCPU_HMCF_SET(pVCpu, HM_CHANGED_GUEST_RFLAGS);
 
         /*
          * If any I/O breakpoints are armed, we need to check if one triggered
