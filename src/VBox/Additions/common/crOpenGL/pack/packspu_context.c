@@ -192,7 +192,6 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
     ThreadInfo *curThread = thread;
     int writeback = 1;
     GLint serverCtx = (GLint) -1;
-    int slot;
 
     CRASSERT(!curThread == !curPacker);
     CRASSERT(!curThread || !curPacker || curThread->packer == curPacker);
@@ -209,7 +208,7 @@ packspu_VBoxConChromiumParameteriCR(GLint con, GLenum param, GLint value)
         if (!con)
         {
             crError("connection should be specified!");
-            return -1;
+            return;
         }
         thread = GET_THREAD_VAL_ID(con);
     }
