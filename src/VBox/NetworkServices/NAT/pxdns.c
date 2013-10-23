@@ -48,6 +48,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #else
+#include <ws2tcpip.h>           /* XXX: stopgap */
 #include "winpoll.h"
 #endif
 
