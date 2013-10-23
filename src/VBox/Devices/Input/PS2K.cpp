@@ -1462,7 +1462,7 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      */
     PTMTIMER pTimer;
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_REAL, ps2kTypematicTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Typematic Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1474,7 +1474,7 @@ int PS2KConstruct(PPS2K pThis, PPDMDEVINS pDevIns, void *pParent, int iInstance)
      * Create the command delay timer.
      */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ps2kDelayTimer, pThis,
-                                TMTIMER_FLAGS_NO_CRIT_SECT, "PS2K Delay Timer", &pTimer);
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "PS2K Delay Timer", &pTimer);
     if (RT_FAILURE(rc))
         return rc;
 
