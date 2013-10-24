@@ -1823,6 +1823,7 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
             break;
     }
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH));
+    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN));
 }
 
 
