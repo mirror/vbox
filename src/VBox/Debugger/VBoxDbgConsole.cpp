@@ -29,7 +29,6 @@
 #include <QHBoxLayout>
 #include <QAction>
 #include <QContextMenuEvent>
-#include <QMenu>
 
 #include <VBox/dbg.h>
 #include <VBox/vmm/cfgm.h>
@@ -83,7 +82,17 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
     Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::black));
     setPalette(Pal);
     setTextColor(QColor(qRgb(0, 0xe0, 0)));
-    m_fGreenOnBlack = true;
+
+#ifdef DEBUG_ramshankar
+    /* Solaris host (esp. S10) has illegible Courier font (bad aliasing). */
+    Font.setFamily("Monospace [Monotype]");
+    setFont(Font);
+
+    /* White on black while I'm at it. */
+    Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::white));
+    setPalette(Pal);
+    setTextColor(QColor(qRgb(0, 0, 0)));
+#endif
 
     NOREF(pszName);
 }
@@ -92,56 +101,6 @@ VBoxDbgConsoleOutput::VBoxDbgConsoleOutput(QWidget *pParent/* = NULL*/, const ch
 VBoxDbgConsoleOutput::~VBoxDbgConsoleOutput()
 {
     Assert(m_hGUIThread == RTThreadNativeSelf());
-}
-
-void
-VBoxDbgConsoleOutput::contextMenuEvent(QContextMenuEvent *pEvent)
-{
-    QMenu *pMenu = createStandardContextMenu();
-
-    QAction *pToggleAction = new QAction(tr("Toggle Theme"), this);
-    pMenu->addSeparator();
-    pMenu->addAction(pToggleAction);
-    connect(pToggleAction, SIGNAL(triggered()), this, SLOT(toggleTheme()));
-
-    pMenu->exec(pEvent->globalPos());
-    delete pMenu;
-}
-
-
-void
-VBoxDbgConsoleOutput::toggleTheme()
-{
-    QFont Font = font();
-    Font.setStyleHint(QFont::TypeWriter);
-    QPalette Pal(palette());
-
-    /* Don't switch fonts on Mac for now. Haven't tested it. */
-    if (m_fGreenOnBlack)
-    {
-        /* Black on White. */
-#ifndef Q_WS_MAC
-        Font.setFamily("Monospace [Monotype]");
-        setFont(Font);
-#endif
-        Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::white));
-        setPalette(Pal);
-        setTextColor(QColor(qRgb(0, 0, 0)));
-        m_fGreenOnBlack = false;
-    }
-    else
-    {
-        /* Green on Black */
-#ifndef Q_WS_MAC
-        Font.setFamily("Courier [Monotype]");
-        setFont(Font);
-#endif
-        QPalette Pal(palette());
-        Pal.setColor(QPalette::All, QPalette::Base, QColor(Qt::black));
-        setPalette(Pal);
-        setTextColor(QColor(qRgb(0, 0xe0, 0)));
-        m_fGreenOnBlack = true;
-    }
 }
 
 
