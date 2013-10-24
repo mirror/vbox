@@ -20,7 +20,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 # Include sub-makefiles.
 ifndef VBOX_ONLY_EXTPACKS
- include $(PATH_SUB_CURRENT)/Preload/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/tools/Makefile.kmk
 endif
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
