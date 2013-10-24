@@ -16,7 +16,7 @@
  */
 
 #include <iprt/assert.h>
-#include <iprt/err.h> 
+#include <iprt/err.h>
 #include <iprt/initterm.h>
 #include <iprt/file.h>
 #include <iprt/log.h>
@@ -56,7 +56,7 @@ class FileDescriptor
     }
 
     int fileDescriptor() const {return fd;}
-    
+
     protected:
     int fd;
 };
@@ -110,6 +110,7 @@ HostDnsServiceLinux::~HostDnsServiceLinux()
 
 int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser)
 {
+    NOREF(ThreadSelf);
     AutoNotify a;
     HostDnsServiceLinux *dns = static_cast<HostDnsServiceLinux *>(pvUser);
     AutoWatcher w(a, std::string(dns->resolvConf().c_str()));
@@ -119,7 +120,7 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
 
     FileDescriptor stopper0(g_DnsMonitorStop[0]);
     FileDescriptor stopper1(g_DnsMonitorStop[1]);
-    
+
     pollfd polls[2];
     RT_ZERO(polls);
 
@@ -136,14 +137,14 @@ int HostDnsServiceLinux::hostMonitoringRoutine(RTTHREAD ThreadSelf, void *pvUser
         rc = poll(polls, 2, -1);
         if (rc == -1)
             continue;
-        
-        AssertMsgReturn(   ((polls[0].revents & (POLLERR|POLLNVAL)) == 0) 
-                        && ((polls[1].revents & (POLLERR|POLLNVAL)) == 0), 
+
+        AssertMsgReturn(   ((polls[0].revents & (POLLERR|POLLNVAL)) == 0)
+                        && ((polls[1].revents & (POLLERR|POLLNVAL)) == 0),
                            ("Debug Me"), VERR_INTERNAL_ERROR);
-        
+
         if (polls[1].revents & POLLIN)
             return VINF_SUCCESS; /* time to shutdown */
-        
+
         if (polls[0].revents & POLLIN)
         {
             dns->readResolvConf();
