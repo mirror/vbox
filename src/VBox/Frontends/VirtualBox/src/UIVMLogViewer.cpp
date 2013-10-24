@@ -597,7 +597,7 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
             mBtnClose->animateClick();
             return;
         }
-        /* Precess Back key as switch to previous tab: */
+        /* Process Back key as switch to previous tab: */
         case Qt::Key_Back:
         {
             if (m_pViewerContainer->currentIndex() > 0)
@@ -607,7 +607,7 @@ void UIVMLogViewer::keyPressEvent(QKeyEvent *pEvent)
             }
             break;
         }
-        /* Precess Forward key as switch to next tab: */
+        /* Process Forward key as switch to next tab: */
         case Qt::Key_Forward:
         {
             if (m_pViewerContainer->currentIndex() < m_pViewerContainer->count())
