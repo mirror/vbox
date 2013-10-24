@@ -514,7 +514,8 @@ typedef struct HMCPU
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
     bool                        fUsingHyperDR7;
-    uint8_t                     abAlignment[1];
+    /** Whether to preload the guest-FPU state to avoid #NM VM-exit overhead. */
+    bool                        fUseGuestFpu;
 
     /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExits;
