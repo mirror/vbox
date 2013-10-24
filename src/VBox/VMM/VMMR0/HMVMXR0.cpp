@@ -1822,8 +1822,11 @@ DECLINLINE(void) hmR0VmxFlushTaggedTlb(PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
             AssertMsgFailed(("Invalid flush-tag function identifier\n"));
             break;
     }
-    Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_FLUSH));
+
+    /* VMCPU_FF_TLB_SHOOTDOWN is unused. */
     Assert(!VMCPU_FF_IS_PENDING(pVCpu, VMCPU_FF_TLB_SHOOTDOWN));
+
+    /* Don't assert that VMCPU_FF_TLB_FLUSH should no longer pending. It can be set by other EMTs. */
 }
 
 
