@@ -162,7 +162,7 @@ protected:
     void retranslateUi()
     {
         setName(QApplication::translate("UIActionPool", "Session I&nformation..."));
-        setStatusTip(QApplication::translate("UIActionPool", "Show Session Information Dialog"));
+        setStatusTip(QApplication::translate("UIActionPool", "Show Session Information Window"));
     }
 };
 
