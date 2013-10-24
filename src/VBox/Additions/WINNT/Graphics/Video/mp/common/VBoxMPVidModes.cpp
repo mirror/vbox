@@ -62,6 +62,10 @@ VBoxMPValidateVideoModeParamsGuest(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint3
 #ifndef VBOX_WITH_8BPP_MODES
             return FALSE;
 #else
+#ifdef VBOX_XPDM_MINIPORT
+            if (pExt->iDevice != 0) /* Secondary monitors do not support 8 bit */
+                return FALSE;
+#endif
             break;
 #endif
         default:
