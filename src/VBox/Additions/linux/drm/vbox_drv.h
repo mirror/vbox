@@ -50,6 +50,8 @@
 
 #include <VBox/VBoxVideoGuest.h>
 
+#include <iprt/log.h>
+
 #include "the-linux-kernel.h"
 
 #include <drm/drmP.h>
@@ -102,6 +104,7 @@ struct vbox_private {
 	uint64_t cursor_cache_gpu_addr;
 	struct ttm_bo_kmap_obj cache_kmap;
 	int next_cursor;
+	spinlock_t dev_lock;
 };
 
 int vbox_driver_load(struct drm_device *dev, unsigned long flags);
@@ -117,6 +120,7 @@ struct vbox_crtc {
 	struct drm_crtc base;
 	bool fBlanked;
 	unsigned crtc_id;
+	uint32_t offFB;
 	struct drm_gem_object *cursor_bo;
 	uint64_t cursor_addr;
 	int cursor_width, cursor_height;
@@ -130,7 +134,6 @@ struct vbox_encoder {
 struct vbox_framebuffer {
 	struct drm_framebuffer base;
 	struct drm_gem_object *obj;
-	uint64_t offBase;
 };
 
 struct vbox_fbdev {
@@ -141,7 +144,6 @@ struct vbox_fbdev {
 	int size;
 	struct ttm_bo_kmap_obj mapping;
 	int x1, y1, x2, y2; /* dirty rect */
-	spinlock_t dirty_lock;
 };
 
 #define to_vbox_crtc(x) container_of(x, struct vbox_crtc, base)
@@ -157,6 +159,10 @@ extern void vbox_mode_fini(struct drm_device *dev);
 #else
 # define DRM_MODE_FB_CMD drm_mode_fb_cmd2
 #endif
+
+void vbox_framebuffer_dirty_rectangles(struct drm_framebuffer *fb,
+                                       struct drm_clip_rect *pRects,
+                                       unsigned cRects);
 
 int vbox_framebuffer_init(struct drm_device *dev,
 			 struct vbox_framebuffer *vbox_fb,
