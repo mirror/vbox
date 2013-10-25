@@ -7278,7 +7278,7 @@ static void hmR0VmxClearEventVmcs(PVMCPU pVCpu)
     uint32_t u32EntryInfo;
     rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
     AssertRC(rc);
-    Assert(VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo));
+    Assert(VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo));
 #endif
 
     /* Clear the entry-interruption field (including the valid bit). */
@@ -7980,7 +7980,7 @@ static void hmR0VmxPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXT
     rc     |= hmR0VmxReadEntryIntInfoVmcs(pVmxTransient);
     AssertRC(rc);
     pVmxTransient->uExitReason    = (uint16_t)VMX_EXIT_REASON_BASIC(uExitReason);
-    pVmxTransient->fVMEntryFailed = !!VMX_ENTRY_INTERRUPTION_INFO_VALID(pVmxTransient->uEntryIntInfo);
+    pVmxTransient->fVMEntryFailed = VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(pVmxTransient->uEntryIntInfo);
 
     /* If the VMLAUNCH/VMRESUME failed, we can bail out early. This does -not- cover VMX_EXIT_ERR_*. */
     if (RT_UNLIKELY(rcVMRun != VINF_SUCCESS))
@@ -8498,7 +8498,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         uint32_t u32EntryInfo;
         rc = VMXReadVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, &u32EntryInfo);
         AssertRCBreak(rc);
-        if (   VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo)
+        if (   VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo)
             && VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
         {
             HMVMX_CHECK_BREAK(u32Eflags & X86_EFL_IF, VMX_IGS_RFLAGS_IF_INVALID);
@@ -8875,7 +8875,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
         HMVMX_CHECK_BREAK(   (u32Eflags & X86_EFL_IF)
                           || !(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_STI),
                           VMX_IGS_INTERRUPTIBILITY_STATE_STI_EFL_INVALID);
-        if (VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo))
+        if (VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo))
         {
             if (VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_EXT_INT)
             {
@@ -8898,7 +8898,7 @@ static uint32_t hmR0VmxCheckGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
                           || (u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_SMI),
                              VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
         if (   (pVCpu->hm.s.vmx.u32PinCtls & VMX_VMCS_CTRL_PIN_EXEC_VIRTUAL_NMI)
-            && VMX_ENTRY_INTERRUPTION_INFO_VALID(u32EntryInfo)
+            && VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(u32EntryInfo)
             && VMX_ENTRY_INTERRUPTION_INFO_TYPE(u32EntryInfo) == VMX_EXIT_INTERRUPTION_INFO_TYPE_NMI)
         {
             HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INTERRUPTIBILITY_STATE_BLOCK_NMI),
