@@ -3709,13 +3709,15 @@ static int hmR0VmxLoadSharedDebugState(PVMCPU pVCpu, PCPUMCTX pMixedCtx)
             }
             else
 #endif
-            if (CPUMIsGuestDebugStateActive(pVCpu))
+            if (!CPUMIsGuestDebugStateActive(pVCpu))
             {
                 CPUMR0LoadGuestDebugState(pVCpu, true /* include DR6 */);
                 Assert(CPUMIsGuestDebugStateActive(pVCpu));
                 Assert(!CPUMIsHyperDebugStateActive(pVCpu));
                 STAM_COUNTER_INC(&pVCpu->hm.s.StatDRxArmed);
             }
+            Assert(!fInterceptDB);
+            Assert(!fInterceptMovDRx);
         }
         /*
          * If no debugging enabled, we'll lazy load DR0-3.  Unlike on AMD-V, we
