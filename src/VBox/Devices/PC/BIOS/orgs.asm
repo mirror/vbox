@@ -126,6 +126,7 @@ extrn		_ata_detect:near
 extrn		_cdemu_init:near
 extrn		_keyboard_init:near
 extrn		_print_bios_banner:near
+extrn		_inv_op_handler:near
 
 
 ;; Symbols referenced from C code
@@ -380,6 +381,7 @@ memory_cleared:
 
 		;; set up various service vectors
 		;; TODO: This should use the table at FEF3h instead
+		SET_INT_VECTOR 06h, BIOSSEG, int06_handler
 		SET_INT_VECTOR 11h, BIOSSEG, int11_handler
 		SET_INT_VECTOR 12h, BIOSSEG, int12_handler
 		SET_INT_VECTOR 15h, BIOSSEG, int15_handler
@@ -976,6 +978,21 @@ int09_finish:
 		pop	ax
 		iret
 
+
+;; --------------------------------------------------------
+;; INT 06h handler - Invalid Opcode Exception
+;; --------------------------------------------------------
+
+int06_handler:
+		pusha
+		push	es
+		push	ds
+		C_SETUP
+		call	_inv_op_handler
+		pop	ds
+		pop	es
+		popa
+		iret
 
 ;; --------------------------------------------------------
 ;; INT 13h handler - Diskette service

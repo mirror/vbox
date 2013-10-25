@@ -52,6 +52,7 @@ ifdef VBOX_WITH_OPEN_WATCOM
  	disk.c \
  	serial.c \
  	system.c \
+ 	invop.c \
  	timepci.c \
  	ps2mouse.c \
  	parallel.c \

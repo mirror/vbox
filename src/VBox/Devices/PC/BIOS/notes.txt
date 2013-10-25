@@ -72,6 +72,13 @@
 - Plan 9 also runs 16-bit code with a 32-bit stack segment, except Plan 9
   thinks it counts as real mode. Same ENTER/LEAVE problem as above.
 
+- AIX 1.3 is a rare user of INT 15h/89h (switch to protected mode) service.
+
+- IBM OS/2 1.0/1.1 (but not other versions!) attempt to execute a 286 LOADALL
+  instruction. LOADALL must be emulated for OS/2 to work properly. HIMEM.SYS
+  version 2.03 and later also contains 286 LOADALL code but this will not be
+  executed on 386+ processors.
+
 
  Notes on BIOS implementation
  ----------------------------
