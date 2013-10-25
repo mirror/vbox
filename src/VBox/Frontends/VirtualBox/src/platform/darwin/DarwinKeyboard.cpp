@@ -312,6 +312,7 @@ typedef struct VBoxKbdState_t {
     VBoxLedState_t    LED;                  /** LED states */
     void             *pParentContainer;     /** A pointer to a VBoxHidsState_t instance where VBoxKbdState_t instance is stored */
     CFIndex           idxPosition;          /** Position in global storage (used to simplify CFArray navigation when removing detached device) */
+    uint64_t          cCapsLockTimeout;     /** KBD CAPS LOCK key hold timeout (some Apple keyboards only) */
 } VBoxKbdState_t;
 
 /* HID LEDs synchronization data: IOKit specific data. */
@@ -320,13 +321,13 @@ typedef struct VBoxHidsState_t {
     CFMutableArrayRef   pDeviceCollection;  /** This array consists of VBoxKbdState_t elements */
     VBoxLedState_t      guestState;         /** LED states that were stored during last broadcast and reflect a guest LED states */
 
+    CFMutableArrayRef   pFifoEventQueue;    /** This queue will be appended in IOKit input callback. Carbon input callback will extract data from it */
+    RTSEMMUTEX          fifoEventQueueLock; /** Lock for pFifoEventQueue */
+
     /* Carbon events data */
     CFMachPortRef       pTapRef;
     CFRunLoopSourceRef  pLoopSourceRef;
 } VBoxHidsState_t;
-
-/* A *sync* between IOKit and Carbon callbacks. */
-static VBoxKbdState_t *g_LastTouchedState;
 #endif /* !VBOX_WITH_KBD_LEDS_SYNC */
 
 /*******************************************************************************
@@ -1396,18 +1397,13 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     return rc2;
 }
 
-/** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
- * In the list below, devices that known to have such issues. If you want to add new device,
- * then add it here. Currently, we only filter devices by Vendor ID.
- * In future it might make sense to take Product ID into account as well. */
-static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
+/** Get HID Vendor ID */
+static uint32_t darwinHidVendorId(IOHIDDeviceRef pHidDeviceRef)
 {
-#ifndef VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
-    bool      fSupported = true;
     CFTypeRef pNumberRef;
     uint32_t  vendorId = 0;
 
-    AssertReturn(pHidDeviceRef, false);
+    AssertReturn(pHidDeviceRef, 0);
 
     pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
     if (pNumberRef)
@@ -1415,24 +1411,44 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
         if (CFGetTypeID(pNumberRef) == CFNumberGetTypeID())
         {
             if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &vendorId))
-            {
-                switch (vendorId)
-                {
-                    case 0x05D5: /** Genius (detected with GK-04008/C keyboard) */
-                        fSupported = false;
-                        break;
-                }
-
-                Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
-            }
+                return vendorId;
         }
     }
+
+    return 0;
+}
+
+/** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
+ * In the list below, devices that known to have such issues. If you want to add new device,
+ * then add it here. Currently, we only filter devices by Vendor ID.
+ * In future it might make sense to take Product ID into account as well. */
+static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
+{
+#ifndef VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
+    bool     fSupported = true;
+    uint32_t vendorId = darwinHidVendorId(pHidDeviceRef);
+
+    switch (vendorId)
+    {
+        case 0x05D5: /** Genius (detected with GK-04008/C keyboard) */
+            fSupported = false;
+            break;
+    }
+
+    Log2(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
 
     return fSupported;
 #else /* !VBOX_WITH_KBD_LEDS_SYNC_FILTERING */
     return true;
 #endif
 }
+
+typedef struct VBoxKbdEvent_t {
+    VBoxKbdState_t *pKbd;
+    uint32_t        iKeyCode;
+    uint64_t        tsKeyDown;
+    uint64_t        tsKeyUp;
+} VBoxKbdEvent_t;
 
 /** IOKit key press callback. Triggered before Carbon callback. We remember which keyboard produced a keypress here. */
 static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, IOHIDValueRef pValueRef)
@@ -1445,45 +1461,152 @@ static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, 
     IOHIDElementRef pElementRef = IOHIDValueGetElement(pValueRef);
     AssertReturnVoid(pElementRef);
 
-    if (IOHIDElementGetUsagePage(pElementRef) == kHIDPage_KeyboardOrKeypad)        /* Keyboard or keypad event */
-        if (IOHIDValueGetIntegerValue(pValueRef) == 1)                             /* key has been pressed down */
-            if (IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeyboardCapsLock || /* CapsLock key has been pressed */
-                IOHIDElementGetUsage(pElementRef) == kHIDUsage_KeypadNumLock)      /* ... or NumLock key has been pressed */
-            {
-                Log2(("A modifier key has been pressed\n"));
-                g_LastTouchedState = (VBoxKbdState_t *)pData;
-            }
+    uint32_t usage = IOHIDElementGetUsage(pElementRef);
 
+    if (IOHIDElementGetUsagePage(pElementRef) == kHIDPage_KeyboardOrKeypad)    /* Keyboard or keypad event */
+        if (usage == kHIDUsage_KeyboardCapsLock ||                             /* CapsLock key has been pressed */
+            usage == kHIDUsage_KeypadNumLock)                                  /* ... or NumLock key has been pressed */
+        {
+            VBoxKbdState_t *pKbd = (VBoxKbdState_t *)pData;
+
+            if (pKbd && pKbd->pParentContainer)
+            {
+                bool fKeyDown = (IOHIDValueGetIntegerValue(pValueRef) == 1);
+
+                VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer;
+                VBoxKbdEvent_t  *pEvent = NULL;;
+                CFIndex          iQueue = 0;
+
+                AssertReturnVoid(pHidState);
+
+                if (RT_FAILURE(RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT)))
+                    return ;
+
+                /* Allocate new event data on Key-Down, find a cached one on Key-Up */
+                if (fKeyDown)
+                    pEvent = (VBoxKbdEvent_t *)malloc(sizeof(VBoxKbdEvent_t));
+                else
+                {
+                    for (CFIndex i = 0; i < CFArrayGetCount(pHidState->pFifoEventQueue); i++)
+                    {
+                        VBoxKbdEvent_t *pCachedEvent = (VBoxKbdEvent_t *)CFArrayGetValueAtIndex(pHidState->pFifoEventQueue, i);
+                        if (pCachedEvent && pCachedEvent->pKbd == pKbd && pCachedEvent->iKeyCode == usage)
+                        {
+                            pEvent = pCachedEvent;
+                            iQueue = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (pEvent)
+                {
+                    if (usage == kHIDUsage_KeyboardCapsLock && pKbd->cCapsLockTimeout)
+                    {
+                        if (fKeyDown)
+                            pEvent->tsKeyDown = RTTimeSystemMilliTS();
+                        else
+                            pEvent->tsKeyUp = RTTimeSystemMilliTS();
+                    }
+
+                    if (fKeyDown)
+                    {
+                        Log2(("IOHID: KBD %d: Modifier Key-Down\n", (int)pKbd->idxPosition));
+
+                        pEvent->pKbd = pKbd;
+                        pEvent->iKeyCode = usage;
+                        pEvent->tsKeyUp = 0;
+
+                        /* Append FIFO event queue */
+                        CFArrayAppendValue(pHidState->pFifoEventQueue, (void *)pEvent);
+                    }
+                    else
+                    {
+                        uint64_t tsDiff = pEvent->tsKeyUp - pEvent->tsKeyDown;
+                        if (tsDiff < pKbd->cCapsLockTimeout)
+                        {
+                            free(pEvent);
+                            CFArrayRemoveValueAtIndex(pHidState->pFifoEventQueue, iQueue);
+                            Log2(("IOHID: KBD %d: Modifier Key-Up (Key-Down %llu ms ago). Apple keyboard, removed from queue\n", (int)pKbd->idxPosition, tsDiff));
+                        }
+                        else
+                            Log2(("IOHID: KBD %d: Modifier Key-Up (Key-Down %llu ms ago)\n", (int)pKbd->idxPosition, tsDiff));
+                    }
+                }
+                else
+                {
+                    if (fKeyDown)
+                        Log2(("IOHID: unable to find memory to queue KBD %d event\n", (int)pKbd->idxPosition));
+                    else
+                        Log2(("IOHID: unable to find KBD %d event in queue\n", (int)pKbd->idxPosition));
+                }
+
+                RTSemMutexRelease(pHidState->fifoEventQueueLock);
+            }
+            else
+                Log2(("IOHID: No KBD: A modifier key has been pressed\n"));
+        }
 }
 
 /** Carbon key press callback. Triggered after IOKit callback. We update keyboard (catched in darwinHidInputCallback()) internal state here. */
-static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGEventType type, CGEventRef pEventRef, void *unused1)
+static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGEventType unused1, CGEventRef pEventRef, void *pData)
 {
     (void)unused;
     (void)unused1;
-
-    /* Skip events we are not interested in. */
-    if (type != kCGEventKeyDown && type != kCGEventFlagsChanged)
-        return pEventRef;
 
     CGEventFlags fMask = CGEventGetFlags(pEventRef);
     bool         fCaps = (bool)(fMask & NX_ALPHASHIFTMASK);
     bool         fNum  = (bool)(fMask & NX_NUMERICPADMASK);
     CGKeyCode    key   = CGEventGetIntegerValueField(pEventRef, kCGKeyboardEventKeycode);
 
+    VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pData; AssertReturn(pHidState, pEventRef);
+    AssertReturn(pHidState, pEventRef);
+
+    if (RT_FAILURE(RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT)))
+        return pEventRef;
+
     if (key == kHIDUsage_KeyboardCapsLock ||
         key == kHIDUsage_KeypadNumLock)
     {
-        Log2(("carbon event: caps=%s, num=%s\n", VBOX_BOOL_TO_STR_STATE(fCaps), VBOX_BOOL_TO_STR_STATE(fNum)));
+        /* Extract last touched state from FIFO event queue */
+        VBoxKbdEvent_t *pEvent = NULL;
+        CFIndex         iEvent = 0;
 
-        VBoxKbdState_t  *pKbd = g_LastTouchedState;
-        if (pKbd)
+        /* Find last occured KBD event in queue (ignoring those events which not match CAPS LOCK timeout criteria). */
+        for (CFIndex i = 0; i < CFArrayGetCount(pHidState->pFifoEventQueue); i++)
         {
+            pEvent = (VBoxKbdEvent_t *)CFArrayGetValueAtIndex(pHidState->pFifoEventQueue, i);
+            if (!pEvent) continue;
+            if (!pEvent->pKbd) continue;
+
+            if (pEvent->iKeyCode == kHIDUsage_KeypadNumLock
+             || (pEvent->iKeyCode == kHIDUsage_KeyboardCapsLock &&
+                 (RTTimeSystemMilliTS() - pEvent->tsKeyDown) > pEvent->pKbd->cCapsLockTimeout))
+            {
+                /* Found one. Keep its index in queue in order to remove it later. */
+                iEvent = i;
+                Log2(("CARBON: Found event in queue: %d (KBD %d, tsKeyDown=%llu, pressed %llu ms ago)\n", (int)i, (int)pEvent->pKbd->idxPosition, pEvent->tsKeyDown, RTTimeSystemMilliTS() - pEvent->tsKeyDown));
+                break;
+            }
+            else
+                Log2(("CARBON: skip CAPS LOCK event %d (KBD %d) (tsKeyDown=%llu, pressed %llu ms ago)\n", (int)i, (int)pEvent->pKbd->idxPosition, pEvent->tsKeyDown, RTTimeSystemMilliTS() - pEvent->tsKeyDown));
+
+            pEvent = NULL;
+        }
+
+        if (pEvent)
+        {
+            VBoxKbdState_t *pKbd = pEvent->pKbd;
+
+            Log2(("CARBON: KBD %d: caps=%s, num=%s. tsKeyDown=%llu, tsKeyUp=%llu [tsDiff=%llu ms]. %d events in queue.\n",
+                (int)pKbd->idxPosition, VBOX_BOOL_TO_STR_STATE(fCaps), VBOX_BOOL_TO_STR_STATE(fNum),
+                pEvent->tsKeyDown, pEvent->tsKeyUp, pEvent->tsKeyUp - pEvent->tsKeyDown,
+                CFArrayGetCount(pHidState->pFifoEventQueue)));
+
             pKbd->LED.fCapsLockOn = fCaps;
             pKbd->LED.fNumLockOn  = fNum;
 
             /* Silently resync last touched KBD device */
-            VBoxHidsState_t *pHidState = (VBoxHidsState_t *)pKbd->pParentContainer;
             if (pHidState)
             {
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
@@ -1496,10 +1619,15 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
                 }
             }
 
-            /* Forget device */
-            g_LastTouchedState = NULL;
+            /* Forget event */
+            CFArrayRemoveValueAtIndex(pHidState->pFifoEventQueue, iEvent);
+            free(pEvent);
         }
+        else
+            Log2(("CARBON: No KBD to take care when modifier key has been pressed: caps=%s, num=%s\n", VBOX_BOOL_TO_STR_STATE(fCaps), VBOX_BOOL_TO_STR_STATE(fNum)));
     }
+
+    RTSemMutexRelease(pHidState->fifoEventQueueLock);
 
     return pEventRef;
 }
@@ -1516,8 +1644,14 @@ static void darwinHidRemovalCallback(void *pData, IOReturn unused, void *unused1
     AssertReturnVoid(pHidState->pDeviceCollection);
 
     Log2(("Forget KBD %d\n", (int)pKbd->idxPosition));
+
+    //if (RT_FAILURE(RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT)))
+    //    return ;
+
     CFArrayRemoveValueAtIndex(pHidState->pDeviceCollection, pKbd->idxPosition);
     free(pKbd);
+
+    //RTSemMutexRelease(pHidState->fifoEventQueueLock);
 }
 
 /* Check if we already cached given device */
@@ -1552,6 +1686,11 @@ static void darwinHidAddDevice(VBoxHidsState_t *pHidState, IOHIDDeviceRef pDevic
                 pKbd->pDevice = pDevice;
                 pKbd->pParentContainer = (void *)pHidState;
                 pKbd->idxPosition = CFArrayGetCount(pHidState->pDeviceCollection);
+
+                /* Some Apple keyboards have CAPS LOCK key timeout. According to corresponding
+                 * kext plist files, it is equals to 75 ms. For such devices we only add info into our FIFO event
+                 * queue if the time between Key-Down and Key-Up events >= 75 ms. */
+                pKbd->cCapsLockTimeout = (darwinHidVendorId(pKbd->pDevice) == kIOUSBVendorIDAppleComputer) ? 75 : 0;
 
                 CFDictionaryRef elementMatchingDict = darwinQueryLedElementMatchingDictionary();
                 if (elementMatchingDict)
@@ -1623,9 +1762,22 @@ static int darwinAddCarbonGlobalKeyPressHandler(VBoxHidsState_t *pHidState)
     CFMachPortRef pTapRef;
     CGEventMask   fMask = CGEventMaskBit(kCGEventFlagsChanged);
 
-    g_LastTouchedState = NULL;
+    AssertReturn(pHidState, kIOReturnError);
 
-    pTapRef = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, fMask, darwinCarbonGlobalKeyPressCallback, NULL);
+    /* Create FIFO event queue for keyboard events */
+    pHidState->pFifoEventQueue = CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
+    AssertReturn(pHidState->pFifoEventQueue, kIOReturnError);
+
+    /* Create Lock for FIFO event queue */
+    if (RT_FAILURE(RTSemMutexCreate(&pHidState->fifoEventQueueLock)))
+    {
+        Log2(("Unable to create Lock for FIFO event queue\n"));
+        CFRelease(pHidState->pFifoEventQueue);
+        pHidState->pFifoEventQueue = NULL;
+        return kIOReturnError;
+    }
+
+    pTapRef = CGEventTapCreate(kCGSessionEventTap, kCGTailAppendEventTap, 0, fMask, darwinCarbonGlobalKeyPressCallback, (void *)pHidState);
     if (pTapRef)
     {
         CFRunLoopSourceRef pLoopSourceRef;
@@ -1657,13 +1809,19 @@ static void darwinRemoveCarbonGlobalKeyPressHandler(VBoxHidsState_t *pHidState)
     AssertReturnVoid(pHidState);
     AssertReturnVoid(pHidState->pTapRef);
     AssertReturnVoid(pHidState->pLoopSourceRef);
-
-    g_LastTouchedState = NULL;
+    AssertReturnVoid(pHidState->pFifoEventQueue);
 
     CGEventTapEnable(pHidState->pTapRef, false);
     CFRunLoopRemoveSource(CFRunLoopGetCurrent(), pHidState->pLoopSourceRef, kCFRunLoopDefaultMode);
     CFRelease(pHidState->pLoopSourceRef);
     CFRelease(pHidState->pTapRef);
+
+    RTSemMutexRequest(pHidState->fifoEventQueueLock, RT_INDEFINITE_WAIT);
+    CFRelease(pHidState->pFifoEventQueue);
+    pHidState->pFifoEventQueue = NULL;
+    RTSemMutexRelease(pHidState->fifoEventQueueLock);
+
+    RTSemMutexDestroy(pHidState->fifoEventQueueLock);
 }
 #endif /* !VBOX_WITH_KBD_LEDS_SYNC */
 
