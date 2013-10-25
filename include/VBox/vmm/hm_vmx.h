@@ -1476,7 +1476,7 @@ typedef VMXMSRS *PVMXMSRS;
 /** @name VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO
  * @{
  */
-#define VMX_ENTRY_INTERRUPTION_INFO_VALID(a)                      ((a) & RT_BIT(31))
+#define VMX_ENTRY_INTERRUPTION_INFO_IS_VALID(a)                   RT_BOOL((a) & RT_BIT(31))
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT                    8
 #define VMX_ENTRY_INTERRUPTION_INFO_TYPE(a)                       ((a >> VMX_ENTRY_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 /** @} */
@@ -1489,13 +1489,13 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT                     8
 #define VMX_EXIT_INTERRUPTION_INFO_TYPE(a)                        (((a) >> VMX_EXIT_INTERRUPTION_INFO_TYPE_SHIFT) & 7)
 #define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID               RT_BIT(11)
-#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         ((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
+#define VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_IS_VALID(a)         RT_BOOL((a) & VMX_EXIT_INTERRUPTION_INFO_ERROR_CODE_VALID)
 #define VMX_EXIT_INTERRUPTION_INFO_NMI_UNBLOCK(a)                 ((a) & RT_BIT(12))
 #ifdef VBOX_WITH_OLD_VTX_CODE
 # define VMX_EXIT_INTERRUPTION_INFO_VALID_SHIFT                    31
 #endif
 #define VMX_EXIT_INTERRUPTION_INFO_VALID                          RT_BIT(31)
-#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    ((a) & RT_BIT(31))
+#define VMX_EXIT_INTERRUPTION_INFO_IS_VALID(a)                    RT_BOOL((a) & RT_BIT(31))
 /** Construct an irq event injection value from the exit interruption info value (same except that bit 12 is reserved). */
 #define VMX_VMCS_CTRL_ENTRY_IRQ_INFO_FROM_EXIT_INT_INFO(a)        ((a) & ~RT_BIT(12))
 /** @} */
@@ -1518,7 +1518,7 @@ typedef VMXMSRS *PVMXMSRS;
 #define VMX_IDT_VECTORING_INFO_TYPE_SHIFT                         8
 #define VMX_IDT_VECTORING_INFO_TYPE(a)                            (((a) >> VMX_IDT_VECTORING_INFO_TYPE_SHIFT) & 7)
 #define VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID                   RT_BIT(11)
-#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             ((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
+#define VMX_IDT_VECTORING_INFO_ERROR_CODE_IS_VALID(a)             RT_BOOL((a) & VMX_IDT_VECTORING_INFO_ERROR_CODE_VALID)
 #define VMX_IDT_VECTORING_INFO_VALID(a)                           ((a) & RT_BIT(31))
 #define VMX_ENTRY_INT_INFO_FROM_EXIT_IDT_INFO(a)                  ((a) & ~RT_BIT(12))
 /** @} */
