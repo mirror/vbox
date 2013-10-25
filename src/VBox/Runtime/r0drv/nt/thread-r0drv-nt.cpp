@@ -160,10 +160,14 @@ RTDECL(bool) RTThreadPreemptIsPending(RTTHREAD hThread)
 
 RTDECL(bool) RTThreadPreemptIsPendingTrusty(void)
 {
+#if 0 /** @todo RTThreadPreemptIsPending isn't good enough on w7 and possibly elsewhere. */
     /* RTThreadPreemptIsPending is only reliable if we've got both offsets and size. */
     return g_offrtNtPbQuantumEnd    != 0
         && g_cbrtNtPbQuantumEnd     != 0
         && g_offrtNtPbDpcQueueDepth != 0;
+#else
+    return false;
+#endif
 }
 
 
