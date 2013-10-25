@@ -2,7 +2,7 @@
 /** @file
  * Common GUI Library - Darwin Keyboard routines.
  *
- * @todo Move this up somewhere so that the two SDL GUIs can use parts of this code too (-HID crap).
+ * @todo Move this up somewhere so that the two SDL GUIs can use parts of this code too (-HID stuff).
  */
 
 /*
