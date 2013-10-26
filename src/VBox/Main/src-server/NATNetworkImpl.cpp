@@ -53,6 +53,9 @@ struct NATNetwork::Data
       , fIPv6Enabled(FALSE)
       , fAdvertiseDefaultIPv6Route(FALSE)
       , fNeedDhcpServer(FALSE)
+      , u32LoopbackIp6(0)
+      , offGateway(0)
+      , offDhcp(0)
     {
         IPv4Gateway.setNull();
         IPv4NetworkCidr.setNull();
