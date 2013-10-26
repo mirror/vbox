@@ -329,7 +329,9 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_13;
                 else if (ulMinor == 14)
                     m->sv = SettingsVersion_v1_14;
-                else if (ulMinor > 14)
+                else if (ulMinor == 15)
+                    m->sv = SettingsVersion_v1_15;
+                else if (ulMinor > 15)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -888,11 +890,15 @@ void ConfigFileBase::setVersionAttribute(xml::ElementNode &elm)
             pcszVersion = "1.14";
             break;
 
+        case SettingsVersion_v1_15:
+            pcszVersion = "1.15";
+            break;
+
         case SettingsVersion_Future:
             // can be set if this code runs on XML files that were created by a future version of VBox;
             // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.14";
-            m->sv = SettingsVersion_v1_14;
+            pcszVersion = "1.15";
+            m->sv = SettingsVersion_v1_15;
             break;
 
         default:
