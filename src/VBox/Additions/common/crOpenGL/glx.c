@@ -828,7 +828,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
 
         case GLX_DEPTH_SIZE:
             visBits |= CR_DEPTH_BIT;
-            *value = 16;
+            *value = 24;
             break;
 
         case GLX_STENCIL_SIZE:
@@ -967,7 +967,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetConfig)( Display *dpy, XVisualInfo *vis, int at
             break;
 
         case GLX_DEPTH_SIZE:
-            *value = 16;
+            *value = 24;
             break;
 
         case GLX_STENCIL_SIZE:
@@ -1499,7 +1499,7 @@ VBOXGLXTAG(glXChooseFBConfig)(Display *dpy, int screen, ATTRIB_TYPE *attrib_list
                 break;
 
             case GLX_DEPTH_SIZE:
-                if (attrib[1] > 16)
+                if (attrib[1] > 24)
                     goto err_exit;
                 attrib++;
                 break;
@@ -1859,7 +1859,7 @@ DECLEXPORT(int) VBOXGLXTAG(glXGetFBConfigAttrib)(Display *dpy, GLXFBConfig confi
             *value = 8;
             break;
         case GLX_DEPTH_SIZE:
-            *value = 16;
+            *value = 24;
             //crDebug("attribute=GLX_DEPTH_SIZE");
             break;
         case GLX_BIND_TO_MIPMAP_TEXTURE_EXT:
