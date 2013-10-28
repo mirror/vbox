@@ -432,7 +432,11 @@ QWidget* VBoxGlobal::activeMachineWindow()
  */
 bool VBoxGlobal::is3DAvailableWorker() const
 {
+#ifdef VBOX_WITH_CROGL
     bool fSupported = VBoxOglIs3DAccelerationSupported();
+#else
+    bool fSupported = false;
+#endif
     unconst(this)->m3DAvailable = fSupported;
     return fSupported;
 }
