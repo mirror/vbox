@@ -80,7 +80,7 @@ public:
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
     /* API: Guest screen size stuff: */
-    void maybeAdjustGuestScreenSize();
+    virtual void maybeAdjustGuestScreenSize();
 
     /* Wrapper to open Machine settings / Network page: */
     void openNetworkAdaptersDialog() { sltOpenNetworkAdaptersDialog(); }
