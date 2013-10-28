@@ -555,7 +555,7 @@
     </const>
 
     <const name="Future" value="99999">
-      <desc>Settings version greater than "1.13", written by a future VirtualBox version.</desc>
+      <desc>Settings version greater than "1.15", written by a future VirtualBox version.</desc>
     </const>
   </enum>
 
