@@ -39,7 +39,8 @@ protected:
     /* Check if this logic is available: */
     bool checkAvailability();
 
-    /* Multi-screen stuff: */
+    /* Helpers: Multi-screen stuff: */
+    void maybeAdjustGuestScreenSize();
     int hostScreenForGuestScreen(int iScreenId) const;
     bool hasHostScreenForGuestScreen(int iScreenId) const;
 

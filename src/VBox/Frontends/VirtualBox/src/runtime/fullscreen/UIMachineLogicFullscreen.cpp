@@ -78,6 +78,12 @@ bool UIMachineLogicFullscreen::checkAvailability()
     return true;
 }
 
+/** Adjusts guest screen count/size for the machine-logic we have. */
+void UIMachineLogicFullscreen::maybeAdjustGuestScreenSize()
+{
+    m_pScreenLayout->rebuild();
+}
+
 int UIMachineLogicFullscreen::hostScreenForGuestScreen(int iScreenId) const
 {
     return m_pScreenLayout->hostScreenForGuestScreen(iScreenId);
