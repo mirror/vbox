@@ -2607,9 +2607,8 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
         case HDA_SSM_VERSION:
             rc = SSMR3GetU32(pSSM, &cRegs); AssertRCReturn(rc, rc);
-            AssertLogRelMsgReturn(cRegs == RT_ELEMENTS(pThis->au32Regs),
-                                  ("cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->au32Regs)),
-                                  VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+            if (cRegs != RT_ELEMENTS(pThis->au32Regs))
+                LogRel(("hda: cRegs is %d, expected %d\n", cRegs, RT_ELEMENTS(pThis->au32Regs)));
             break;
 
         default:
@@ -2622,10 +2621,7 @@ static DECLCALLBACK(int) hdaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         SSMR3Skip(pSSM, sizeof(uint32_t) * (cRegs - RT_ELEMENTS(pThis->au32Regs)));
     }
     else
-    {
-        RT_ZERO(pThis->au32Regs);
         SSMR3GetMem(pSSM, pThis->au32Regs, sizeof(uint32_t) * cRegs);
-    }
 
     /*
      * Load HDA dma counters.
