@@ -44,6 +44,7 @@ UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     : m_pMachineView(pMachineView)
     , m_width(0), m_height(0)
     , m_fIsMarkedAsUnused(false)
+    , m_fIsAutoEnabled(false)
 #ifdef Q_OS_WIN
     , m_iRefCnt(0)
 #endif /* Q_OS_WIN */
@@ -81,6 +82,32 @@ void UIFrameBuffer::setMarkAsUnused(bool fIsMarkAsUnused)
     lock();
     m_fIsMarkedAsUnused = fIsMarkAsUnused;
     unlock();
+}
+
+/**
+ * Returns the framebuffer <b>auto-enabled</b> status.
+ * @returns @c true if guest-screen corresponding to this framebuffer was automatically enabled by
+            the auto-mount guest-screen auto-pilot, @c false otherwise.
+ * @note    <i>Auto-enabled</i> status means the framebuffer was automatically enabled by the multi-screen layout
+ *          and so have potentially incorrect guest size hint posted into guest event queue. Machine-view will try to
+ *          automatically adjust guest-screen size as soon as possible.
+ */
+bool UIFrameBuffer::isAutoEnabled() const
+{
+    return m_fIsAutoEnabled;
+}
+
+/**
+ * Sets the framebuffer <b>auto-enabled</b> status.
+ * @param fIsAutoEnabled determines whether guest-screen corresponding to this framebuffer
+ *        was automatically enabled by the auto-mount guest-screen auto-pilot.
+ * @note  <i>Auto-enabled</i> status means the framebuffer was automatically enabled by the multi-screen layout
+ *        and so have potentially incorrect guest size hint posted into guest event queue. Machine-view will try to
+ *        automatically adjust guest-screen size as soon as possible.
+ */
+void UIFrameBuffer::setAutoEnabled(bool fIsAutoEnabled)
+{
+    m_fIsAutoEnabled = fIsAutoEnabled;
 }
 
 STDMETHODIMP UIFrameBuffer::COMGETTER(Address) (BYTE **ppAddress)

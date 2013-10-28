@@ -106,6 +106,10 @@ public:
     /* API: [Un]used status stuff: */
     void setMarkAsUnused(bool fIsMarkAsUnused);
 
+    /* API: Auto-enabled stuff: */
+    bool isAutoEnabled() const;
+    void setAutoEnabled(bool fIsAutoEnabled);
+
     NS_DECL_ISUPPORTS
 
 #ifdef Q_OS_WIN
@@ -213,6 +217,7 @@ protected:
     QSize m_scaledSize;
     int64_t m_WinId;
     bool m_fIsMarkedAsUnused;
+    bool m_fIsAutoEnabled;
 
     /* To avoid a seamless flicker,
      * which caused by the latency between the

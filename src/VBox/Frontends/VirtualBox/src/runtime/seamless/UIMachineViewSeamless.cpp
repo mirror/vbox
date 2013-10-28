@@ -157,10 +157,14 @@ void UIMachineViewSeamless::cleanupSeamless()
 void UIMachineViewSeamless::maybeAdjustGuestScreenSize()
 {
     /* Check if we should adjust guest to new size: */
-    if ((int)frameBuffer()->width() != workingArea().size().width() ||
+    if (frameBuffer()->isAutoEnabled() ||
+        (int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
         if (uisession()->isGuestSupportsGraphics())
+        {
+            frameBuffer()->setAutoEnabled(false);
             sltPerformGuestResize(workingArea().size());
+        }
 }
 
 QRect UIMachineViewSeamless::workingArea() const
