@@ -1397,25 +1397,38 @@ static int darwinGetDeviceLedsState(IOHIDDeviceRef hidDevice, CFDictionaryRef el
     return rc2;
 }
 
-/** Get HID Vendor ID */
-static uint32_t darwinHidVendorId(IOHIDDeviceRef pHidDeviceRef)
+/** Get integer property of HID device */
+static uint32_t darwinQueryIntProperty(IOHIDDeviceRef pHidDeviceRef, CFStringRef pProperty)
 {
     CFTypeRef pNumberRef;
-    uint32_t  vendorId = 0;
+    uint32_t  value = 0;
 
     AssertReturn(pHidDeviceRef, 0);
+    AssertReturn(pProperty, 0);
 
-    pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
+    pNumberRef = IOHIDDeviceGetProperty(pHidDeviceRef, pProperty);
     if (pNumberRef)
     {
         if (CFGetTypeID(pNumberRef) == CFNumberGetTypeID())
         {
-            if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &vendorId))
-                return vendorId;
+            if (CFNumberGetValue((CFNumberRef)pNumberRef, kCFNumberSInt32Type, &value))
+                return value;
         }
     }
 
     return 0;
+}
+
+/** Get HID Vendor ID */
+static uint32_t darwinHidVendorId(IOHIDDeviceRef pHidDeviceRef)
+{
+    return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
+}
+
+/** Get HID Produce ID */
+static uint32_t darwinHidProductId(IOHIDDeviceRef pHidDeviceRef)
+{
+    return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDProductIDKey));
 }
 
 /** Some keyboard devices might freeze after LEDs manipulation. We filter out such devices here.
@@ -1427,15 +1440,20 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 #ifndef VBOX_WITHOUT_KBD_LEDS_SYNC_FILTERING
     bool     fSupported = true;
     uint32_t vendorId = darwinHidVendorId(pHidDeviceRef);
+    uint32_t productId = darwinHidProductId(pHidDeviceRef);
 
-    switch (vendorId)
+    if (vendorId == 0x05D5)      /* Genius */
     {
-        case 0x05D5: /** Genius (detected with GK-04008/C keyboard) */
+        if (productId == 0x8001) /* GK-04008/C keyboard */
             fSupported = false;
-            break;
+    }
+    else if (vendorId == 0x05AC) /* Apple */
+    {
+        if (productId == 0x0263) /* Apple Internal Keyboard */
+            fSupported = false;
     }
 
-    LogRel(("HID device Vendor ID 0x%X %s in the list of supported devices.\n", vendorId, (fSupported ? "is" : "is not")));
+    LogRel(("HID device [VendorID=0x%X, ProductId=0x%X] %s in the list of supported devices.\n", vendorId, productId, (fSupported ? "is" : "is not")));
 
     return fSupported;
 #else /* !VBOX_WITH_KBD_LEDS_SYNC_FILTERING */
@@ -2014,7 +2032,7 @@ void DarwinHidDevicesBroadcastLeds(void *pState, bool fNumLockOn, bool fCapsLock
             VBoxKbdState_t *pKbd;
             pKbd = (VBoxKbdState_t *)CFArrayGetValueAtIndex(pHidState->pDeviceCollection, i);
 
-            if (pKbd)
+            if (pKbd && darwinHidDeviceSupported(pKbd->pDevice))
             {
                 rc = darwinSetDeviceLedsState(pKbd->pDevice,
                                               elementMatchingDict,
