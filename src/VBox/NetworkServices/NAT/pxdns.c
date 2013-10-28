@@ -746,7 +746,7 @@ pxdns_pmgr_pump(struct pollmgr_handler *handler, SOCKET fd, int revents)
         int status;
 
         status = getsockopt(fd, SOL_SOCKET,
-                            SO_ERROR, &sockerr, &optlen);
+                            SO_ERROR, (char *)&sockerr, &optlen);
         if (status < 0) {
             DPRINTF(("%s: sock %d: SO_ERROR failed with errno %d\n",
                      __func__, fd, errno));
