@@ -302,16 +302,7 @@ pxdns_set_nameservers(void *arg)
 static void
 pxdns_create_resolver_sockaddrs(struct pxdns *pxdns, const char **nameservers)
 {
-    /*
-     * XXX: TODO: Windows supports getaddrinfo(), including execution
-     * on older version of Windows where runtime tricks hide the gory
-     * compatibility details.
-     *
-     * http://msdn.microsoft.com/en-us/library/windows/desktop/ms738520%28v=vs.85%29.aspx
-     */
-#ifndef RT_OS_WINDOWS
     struct addrinfo hints;
-#endif
     union sockaddr_inet *resolvers;
     size_t nnames, nresolvers;
     const char **p;
@@ -339,7 +330,6 @@ pxdns_create_resolver_sockaddrs(struct pxdns *pxdns, const char **nameservers)
         goto update_resolvers;
     }
 
-#ifndef RT_OS_WINDOWS
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_DGRAM;
@@ -376,7 +366,6 @@ pxdns_create_resolver_sockaddrs(struct pxdns *pxdns, const char **nameservers)
         freeaddrinfo(ai);
         ++nresolvers;
     }
-#endif  /* RT_OS_WINDOWS */
 
     if (nresolvers == 0) {
         if (resolvers != NULL) {
