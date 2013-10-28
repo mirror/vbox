@@ -584,7 +584,6 @@ pxdns_query(struct pxdns *pxdns, struct udp_pcb *pcb, struct pbuf *p,
             ipX_addr_t *addr, u16_t port)
 {
     struct request *req;
-    u16_t client_id;
     int sent;
 
     if (pxdns->nresolvers == 0) {
