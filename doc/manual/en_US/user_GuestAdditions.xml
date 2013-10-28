@@ -1547,8 +1547,7 @@ VirtualBox Command Line Management Interface Version $VBOX_VERSION_MAJOR.$VBOX_V
 (C) 2005-$VBOX_C_YEAR $VBOX_VENDOR
 All rights reserved.
 
-Value: Windows Vista Business Edition
-</screen></para>
+Value: Windows Vista Business Edition</screen></para>
 
     <para>To add or change guest properties from the guest, use the tool
     <computeroutput>VBoxControl</computeroutput>. This tool is included in the
