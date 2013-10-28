@@ -136,7 +136,6 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
     struct addrinfo hints;
     struct addrinfo *ai;
     int status;
-    void *src_addr, *dst_addr;
 
     LWIP_ASSERT1(sdom == PF_INET || sdom == PF_INET6);
     LWIP_ASSERT1(stype == SOCK_STREAM || stype == SOCK_DGRAM);
