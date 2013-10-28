@@ -1840,8 +1840,7 @@ rc = vbox-&gt;vtbl-&gt;LaunchVMProcess(
     sessionType,   /* arg 2 */
     env,           /* arg 3 */
     &amp;progress      /* Out   */
-);
-</screen>
+);</screen>
         </sect3>
 
         <sect3 id="c-attributes">
@@ -1867,8 +1866,7 @@ rc = vbox-&gt;vtbl-&gt;GetRevision(vbox, &amp;rev);
 if (NS_SUCCEEDED(rc))
 {
     printf("Revision: %u\n", (unsigned)rev);
-}
-</screen>
+}</screen>
 
           <para>All objects with their methods and attributes are documented
           in <xref linkend="sdkref_classes" />.</para>
@@ -1893,8 +1891,7 @@ if (NS_SUCCEEDED(rc))
             <title>Conversion of UTF-16 to and from UTF-8</title>
 
             <screen>int (*pfnUtf16ToUtf8)(const PRUnichar *pwszString, char **ppszString);
-int (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
-</screen>
+int (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);</screen>
           </sect4>
 
           <sect4>
@@ -1933,8 +1930,7 @@ int (*pfnUtf8ToUtf16)(const char *pszString, PRUnichar **ppwszString);
 if (atexit(g_pVBoxFuncs-&gt;pfnComUninitialize()) != 0) {
     fprintf(stderr, "failed to register g_pVBoxFuncs-&gt;pfnComUninitialize()\n");
     exit(EXIT_FAILURE);
-}
-</screen></para>
+}</screen></para>
 
           <para>Another idea would be to write your own <computeroutput>void
           myexit(int status)</computeroutput> function, calling

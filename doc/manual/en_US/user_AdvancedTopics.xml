@@ -1796,8 +1796,7 @@ VBoxManage setextradata "VM name"
     <para>Here is an example of how to use a VNIC template to configure a VLAN
     for VMs. Create a VirtualBox VNIC template, by executing as root:</para>
 
-    <screen>dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0
-</screen>
+    <screen>dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0</screen>
 
     <para>This will create a temporary VNIC over interface "nge0" with the
     VLAN ID 23. To create VNIC templates that are persistent across host
@@ -1812,8 +1811,7 @@ vboxvnic_template0 vnic 1500 up       --         nge0
 
 $ dladm show-vnic
 LINK         OVER         SPEED  MACADDRESS        MACADDRTYPE         VID
-vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23
-</screen></para>
+vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</screen></para>
 
     <para>Once the VNIC template is created, all VMs that need to be part of
     VLAN 23 over the physical interface "nge0" can use the same VNIC template.
@@ -3013,8 +3011,7 @@ alice = {
 
     <para>The expert storage management mode can be enabled per VM executing:</para>
 
-    <screen>VBoxManage setextradata "VM name" "VBoxInternal2/SilentReconfigureWhilePaused" 1
-</screen>
+    <screen>VBoxManage setextradata "VM name" "VBoxInternal2/SilentReconfigureWhilePaused" 1</screen>
 
     <para>Storage attachments can be reconfigured while the VM is paused afterwards using:</para>
     <screen>VBoxManage storageattach ...</screen>
