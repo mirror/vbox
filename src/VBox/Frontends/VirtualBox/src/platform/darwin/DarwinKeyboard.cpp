@@ -315,6 +315,14 @@ typedef struct VBoxKbdState_t {
     uint64_t          cCapsLockTimeout;     /** KBD CAPS LOCK key hold timeout (some Apple keyboards only) */
 } VBoxKbdState_t;
 
+/* A struct that used to pass input event info from IOKit callback to a Carbon one */
+typedef struct VBoxKbdEvent_t {
+    VBoxKbdState_t *pKbd;
+    uint32_t        iKeyCode;
+    uint64_t        tsKeyDown;
+    uint64_t        tsKeyUp;
+} VBoxKbdEvent_t;
+
 /* HID LEDs synchronization data: IOKit specific data. */
 typedef struct VBoxHidsState_t {
     IOHIDManagerRef     hidManagerRef;      /** IOKit HID manager reference */
@@ -1461,13 +1469,6 @@ static bool darwinHidDeviceSupported(IOHIDDeviceRef pHidDeviceRef)
 #endif
 }
 
-typedef struct VBoxKbdEvent_t {
-    VBoxKbdState_t *pKbd;
-    uint32_t        iKeyCode;
-    uint64_t        tsKeyDown;
-    uint64_t        tsKeyUp;
-} VBoxKbdEvent_t;
-
 /** IOKit key press callback. Triggered before Carbon callback. We remember which keyboard produced a keypress here. */
 static void darwinHidInputCallback(void *pData, IOReturn unused, void *unused1, IOHIDValueRef pValueRef)
 {
@@ -1598,8 +1599,7 @@ static CGEventRef darwinCarbonGlobalKeyPressCallback(CGEventTapProxy unused, CGE
             if (!pEvent->pKbd) continue;
 
             if (pEvent->iKeyCode == kHIDUsage_KeypadNumLock
-             || (pEvent->iKeyCode == kHIDUsage_KeyboardCapsLock &&
-                 (RTTimeSystemMilliTS() - pEvent->tsKeyDown) > pEvent->pKbd->cCapsLockTimeout))
+             || pEvent->iKeyCode == kHIDUsage_KeyboardCapsLock)
             {
                 /* Found one. Keep its index in queue in order to remove it later. */
                 iEvent = i;
