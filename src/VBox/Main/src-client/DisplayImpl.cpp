@@ -680,7 +680,7 @@ int Display::handleDisplayResize (unsigned uScreenId, uint32_t bpp, void *pvVRAM
 
     mLastAddress = pvVRAM;
     mLastBytesPerLine = cbLine;
-    mLastBitsPerPixel = bpp,
+    mLastBitsPerPixel = bpp;
     mLastWidth = w;
     mLastHeight = h;
     mLastFlags = flags;
