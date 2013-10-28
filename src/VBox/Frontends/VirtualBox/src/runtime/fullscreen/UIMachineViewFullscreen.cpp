@@ -139,10 +139,14 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 void UIMachineViewFullscreen::maybeAdjustGuestScreenSize()
 {
     /* Check if we should adjust guest to new size: */
-    if ((int)frameBuffer()->width() != workingArea().size().width() ||
+    if (frameBuffer()->isAutoEnabled() ||
+        (int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        {
+            frameBuffer()->setAutoEnabled(false);
             sltPerformGuestResize(workingArea().size());
+        }
 }
 
 QRect UIMachineViewFullscreen::workingArea() const
