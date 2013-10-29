@@ -113,6 +113,9 @@ extern const PDMDRVREG g_DrvAUDIO;
 extern const PDMDRVREG g_DrvACPI;
 extern const PDMDRVREG g_DrvAcpiCpu;
 extern const PDMDRVREG g_DrvVUSBRootHub;
+#ifdef VBOX_WITH_USB_VIDEO_IMPL
+extern const PDMDRVREG g_DrvHostWebcam;
+#endif
 extern const PDMDRVREG g_DrvChar;
 extern const PDMDRVREG g_DrvNamedPipe;
 extern const PDMDRVREG g_DrvRawFile;
@@ -133,6 +136,9 @@ extern const PDMUSBREG g_UsbMsd;
 extern const PDMUSBREG g_UsbHid;
 extern const PDMUSBREG g_UsbHidKbd;
 extern const PDMUSBREG g_UsbHidMou;
+#endif
+#ifdef VBOX_WITH_USB_VIDEO_IMPL
+extern const PDMUSBREG g_DevWebcam;
 #endif
 
 #ifdef VBOX_WITH_SCSI
