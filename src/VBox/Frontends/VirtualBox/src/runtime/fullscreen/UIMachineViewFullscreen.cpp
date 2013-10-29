@@ -142,7 +142,9 @@ void UIMachineViewFullscreen::maybeAdjustGuestScreenSize()
     if (frameBuffer()->isAutoEnabled() ||
         (int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        if (m_bIsGuestAutoresizeEnabled &&
+            uisession()->isGuestSupportsGraphics() &&
+            uisession()->isScreenVisible(screenId()))
         {
             frameBuffer()->setAutoEnabled(false);
             sltPerformGuestResize(workingArea().size());
