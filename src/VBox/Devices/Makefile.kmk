@@ -309,23 +309,21 @@ if !defined(VBOX_ONLY_EXTPACKS)         # Goes on almost to the end of the file.
   endif
 
   if defined(VBOX_WITH_USB_VIDEO_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-   VBoxDD_DEFS          += VBOX_WITH_USB_VIDEO_IMPL
-   VBoxDD_SOURCES       += \
+   if1of ($(KBUILD_TARGET), linux)
+    VBoxDD_DEFS          += VBOX_WITH_USB_VIDEO_IMPL
+    VBoxDD_SOURCES       += \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/UsbWebcam.cpp \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/UsbWebcamDesc.cpp \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/jpggen.cpp \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/DrvHostWebcam.cpp \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/JPEGEnc.cpp
-   $(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/JPEGEnc.cpp_INCS = \
+    $(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/JPEGEnc.cpp_INCS = \
 	$(PATH_ROOT)/src/libs/jpeg-8a
-   VBoxDD_SOURCES.linux += \
+    VBoxDD_SOURCES.linux += \
 	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/HostWebcam-v4l2.cpp
-   VBoxDD_SOURCES.win   += \
-	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/HostWebcam-win.cpp
-   VBoxDD_SOURCES.darwin+= \
-	$(PATH_ROOT)/src/VBox/ExtPacks/Puel/UsbWebcam/DrvHostWebcam/HostWebcam-darwin.cpp
-   VBoxDD_LIBS += \
+    VBoxDD_LIBS += \
 	$(PATH_STAGE_LIB)/VBox-libjpeg$(VBOX_SUFF_LIB)
+   endif
   endif
 
  endif # VBOX_WITH_USB
