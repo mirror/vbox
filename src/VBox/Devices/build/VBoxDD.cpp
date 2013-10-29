@@ -180,7 +180,6 @@ extern "C" DECLEXPORT(int) VBoxDevicesRegister(PPDMDEVREGCB pCallbacks, uint32_t
     if (RT_FAILURE(rc))
         return rc;
 #endif
-
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DevicePciRaw);
     if (RT_FAILURE(rc))
@@ -262,7 +261,7 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNetShaper);
     if (RT_FAILURE(rc))
         return rc;
-#endif /* VBOX_WITH_NETSHAPER */
+#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvAUDIO);
     if (RT_FAILURE(rc))
         return rc;
@@ -272,13 +271,16 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvAcpiCpu);
     if (RT_FAILURE(rc))
         return rc;
-
 #ifdef VBOX_WITH_VUSB
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvVUSBRootHub);
     if (RT_FAILURE(rc))
         return rc;
 #endif
-
+#ifdef VBOX_WITH_USB_VIDEO_IMPL
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostWebcam);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvNamedPipe);
     if (RT_FAILURE(rc))
         return rc;
@@ -288,38 +290,31 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvChar);
     if (RT_FAILURE(rc))
         return rc;
-
 #if defined(RT_OS_LINUX) || defined(VBOX_WITH_WIN_PARPORT_SUP)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostParallel);
     if (RT_FAILURE(rc))
         return rc;
 #endif
-
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS) || defined(RT_OS_FREEBSD)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvHostSerial);
     if (RT_FAILURE(rc))
         return rc;
 #endif
-
 #ifdef VBOX_WITH_SCSI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSI);
     if (RT_FAILURE(rc))
         return rc;
-
 # if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSIHost);
     if (RT_FAILURE(rc))
         return rc;
 # endif
-
 #endif
-
 #ifdef VBOX_WITH_DRV_DISK_INTEGRITY
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvDiskIntegrity);
     if (RT_FAILURE(rc))
         return rc;
 #endif
-
 #ifdef VBOX_WITH_PCI_PASSTHROUGH_IMPL
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvPciRaw);
     if (RT_FAILURE(rc))
@@ -345,20 +340,22 @@ extern "C" DECLEXPORT(int) VBoxUsbRegister(PCPDMUSBREGCB pCallbacks, uint32_t u3
     rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbDevProxy);
     if (RT_FAILURE(rc))
         return rc;
-
 # ifdef VBOX_WITH_SCSI
     rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbMsd);
     if (RT_FAILURE(rc))
         return rc;
 # endif
 #endif
-
 #ifdef VBOX_WITH_VUSB
     rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbHidKbd);
     if (RT_FAILURE(rc))
         return rc;
-
     rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbHidMou);
+    if (RT_FAILURE(rc))
+        return rc;
+#endif
+#ifdef VBOX_WITH_USB_VIDEO_IMPL
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_DevWebcam);
     if (RT_FAILURE(rc))
         return rc;
 #endif
