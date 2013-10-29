@@ -137,7 +137,7 @@ static RTEXITCODE gzipPushFlushAndClose(PRTVFSIOSTREAM phVfsSrc, PCRTGZIPCMDOPTS
     *phVfsSrc = NIL_RTVFSIOSTREAM;
 
     int rc = RTVfsIoStrmFlush(*phVfsDst);
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc) && rc != VERR_INVALID_PARAMETER)
         rcExit = RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to flush the output file: %Rrc", rc);
     RTVfsIoStrmRelease(*phVfsDst);
     *phVfsDst = NIL_RTVFSIOSTREAM;
@@ -207,8 +207,10 @@ static RTEXITCODE gzipSetupDecompressor(PRTVFSIOSTREAM phVfsSrc)
     /*
      * Attach the decompressor to the input stream.
      */
+    uint32_t fFlags = 0;
+    fFlags |= RTZIPGZIPDECOMP_F_ALLOW_ZLIB_HDR;
     RTVFSIOSTREAM hVfsGunzip;
-    int rc = RTZipGzipDecompressIoStream(*phVfsSrc, 0 /*fFlags*/, &hVfsGunzip);
+    int rc = RTZipGzipDecompressIoStream(*phVfsSrc, fFlags, &hVfsGunzip);
     if (RT_FAILURE(rc))
         return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTZipGzipDecompressIoStream failed: %Rrc", rc);
 
