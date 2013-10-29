@@ -160,7 +160,8 @@ void UIMachineViewSeamless::maybeAdjustGuestScreenSize()
     if (frameBuffer()->isAutoEnabled() ||
         (int)frameBuffer()->width() != workingArea().size().width() ||
         (int)frameBuffer()->height() != workingArea().size().height())
-        if (uisession()->isGuestSupportsGraphics())
+        if (uisession()->isGuestSupportsGraphics() &&
+            uisession()->isScreenVisible(screenId()))
         {
             frameBuffer()->setAutoEnabled(false);
             sltPerformGuestResize(workingArea().size());
