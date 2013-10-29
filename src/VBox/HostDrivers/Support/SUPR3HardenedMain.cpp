@@ -34,6 +34,7 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include <dlfcn.h>
+# include <unistd.h>
 
 #elif RT_OS_WINDOWS
 # include <Windows.h>
