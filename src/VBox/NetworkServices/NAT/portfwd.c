@@ -126,8 +126,6 @@ portfwd_pmgr_chan(struct pollmgr_handler *handler, SOCKET fd, int revents)
 }
 
 
-
-#ifndef RT_OS_WINDOWS
 int
 fwspec_set(struct fwspec *fwspec, int sdom, int stype,
            const char *src_addr_str, uint16_t src_port,
@@ -181,57 +179,6 @@ fwspec_set(struct fwspec *fwspec, int sdom, int stype,
 
     return 0;
 }
-#else  /* RT_OS_WINDOWS */
-/**
- * Windows only provides inet_pton() since Vista, but XP already has
- * WSAStringToAddressA() that does what we want (NB: its AddressString
- * argument is not declared const).
- */
-int
-fwspec_set(struct fwspec *fwspec, int sdom, int stype,
-           const char *src_addr_str, uint16_t src_port,
-           const char *dst_addr_str, uint16_t dst_port)
-{
-    int saf;
-    int socklen;
-    int status;
-
-    LWIP_ASSERT1(sdom == PF_INET || sdom == PF_INET6);
-    LWIP_ASSERT1(stype == SOCK_STREAM || stype == SOCK_DGRAM);
-
-    fwspec->sdom = sdom;
-    fwspec->stype = stype;
-
-    saf = (sdom == PF_INET) ? AF_INET : AF_INET6;
-
-    fwspec->src.sa.sa_family = saf;
-    socklen = sizeof(fwspec->src);
-    status = WSAStringToAddressA((char *)src_addr_str, saf, NULL,
-                                  &fwspec->src.sa, &socklen);
-    if (status == SOCKET_ERROR) {
-        return -1;
-    }
-
-    fwspec->dst.sa.sa_family = saf;
-    socklen = sizeof(fwspec->dst);
-    status = WSAStringToAddressA((char *)dst_addr_str, saf, NULL,
-                                &fwspec->dst.sa, &socklen);
-    if (status == SOCKET_ERROR) {
-        return -1;
-    }
-
-    if (sdom == PF_INET) {
-        fwspec->src.sin.sin_port = htons(src_port);
-        fwspec->dst.sin.sin_port = htons(dst_port); 
-    }
-    else { /* PF_INET6 */
-        fwspec->src.sin6.sin6_port = htons(src_port);
-        fwspec->dst.sin6.sin6_port = htons(dst_port); 
-    }
-
-    return 0;
-}
-#endif /* RT_OS_WINDOWS */
 
 
 int
