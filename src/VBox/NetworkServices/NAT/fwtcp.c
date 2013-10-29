@@ -124,7 +124,7 @@ fwtcp_del(struct fwspec *fwspec)
     fwtcp->pmhdl.slot = -1;
 
     closesocket(fwtcp->sock);
-    fwtcp->sock = -1;
+    fwtcp->sock = INVALID_SOCKET;
 
     /* let pending msg_connect be processed before we delete fwtcp */
     proxy_lwip_post(&fwtcp->msg_delete);
