@@ -357,6 +357,7 @@ EXPORTS
     VMR3Save
     VMR3SetCpuExecutionCap
     VMR3SetError
+    VMR3SetPowerOffInsteadOfReset
     VMR3Suspend
     VMR3Teleport
     VMR3AtStateDeregister
