@@ -120,7 +120,7 @@ pollmgr_init(void)
     pollmgr.nfds = POLLMGR_SLOT_STATIC_COUNT;
 
     for (i = 0; i < pollmgr.capacity; ++i) {
-        pollmgr.fds[i].fd = -1;
+        pollmgr.fds[i].fd = INVALID_SOCKET;
         pollmgr.fds[i].events = 0;
         pollmgr.fds[i].revents = 0;
     }
@@ -199,7 +199,7 @@ pollmgr_add(struct pollmgr_handler *handler, SOCKET fd, int events)
         pollmgr.capacity = newcap;
 
         for (i = pollmgr.nfds; i < newcap; ++i) {
-            newfds[i].fd = -1;
+            newfds[i].fd = INVALID_SOCKET;
             newfds[i].events = 0;
             newfds[i].revents = 0;
             newhdls[i] = NULL;
