@@ -346,6 +346,27 @@ public:
                 break;
             }
 
+            case VBoxEventType_OnExtraDataChanged:
+            {
+                ComPtr<IExtraDataChangedEvent> pEDCEv = aEvent;
+                Bstr strMachineId;
+                Bstr strKey;
+                Bstr strVal;
+                HRESULT hrc = S_OK;
+
+                hrc = pEDCEv->COMGETTER(MachineId)(strMachineId.asOutParam());
+                if (FAILED(hrc)) break;
+
+                hrc = pEDCEv->COMGETTER(Key)(strKey.asOutParam());
+                if (FAILED(hrc)) break;
+
+                hrc = pEDCEv->COMGETTER(Value)(strVal.asOutParam());
+                if (FAILED(hrc)) break;
+
+                mConsole->onExtraDataChange(strMachineId.raw(), strKey.raw(), strVal.raw());
+                break;
+            }
+
             default:
               AssertFailed();
         }
@@ -573,6 +594,7 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
             com::SafeArray<VBoxEventType_T> eventTypes;
             eventTypes.push_back(VBoxEventType_OnNATRedirect);
             eventTypes.push_back(VBoxEventType_OnHostPCIDevicePlug);
+            eventTypes.push_back(VBoxEventType_OnExtraDataChanged);
             rc = pES->RegisterListener(aVmListener, ComSafeArrayAsInParam(eventTypes), true);
             AssertComRC(rc);
         }
@@ -5353,6 +5375,48 @@ HRESULT Console::onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOO
 
     LogFlowThisFunc(("Leaving rc=%#x\n", rc));
     return rc;
+}
+
+HRESULT Console::onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR aVal)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    if (!aMachineId)
+        return S_OK;
+
+    HRESULT hrc = S_OK;
+    Bstr idMachine(aMachineId);
+    Bstr idSelf;
+    hrc = mMachine->COMGETTER(Id)(idSelf.asOutParam());
+    if (   FAILED(hrc)
+        || idMachine != idSelf)
+        return hrc;
+
+    /* don't do anything if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        Bstr strKey(aKey);
+        Bstr strVal(aVal);
+
+        if (strKey == "VBoxInternal2/TurnResetIntoPowerOff")
+        {
+            int vrc = VMR3SetPowerOffInsteadOfReset(ptrVM.rawUVM(), strVal == "1");
+            AssertRC(vrc);
+        }
+
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(hrc))
+        fireExtraDataChangedEvent(mEventSource, aMachineId, aKey, aVal);
+
+    LogFlowThisFunc(("Leaving hrc=%#x\n", hrc));
+    return hrc;
 }
 
 /**
