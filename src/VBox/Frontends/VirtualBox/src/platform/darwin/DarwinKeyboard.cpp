@@ -1433,7 +1433,7 @@ static uint32_t darwinHidVendorId(IOHIDDeviceRef pHidDeviceRef)
     return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDVendorIDKey));
 }
 
-/** Get HID Produce ID */
+/** Get HID Product ID */
 static uint32_t darwinHidProductId(IOHIDDeviceRef pHidDeviceRef)
 {
     return darwinQueryIntProperty(pHidDeviceRef, CFSTR(kIOHIDProductIDKey));
@@ -1963,7 +1963,6 @@ int DarwinHidDevicesApplyAndReleaseLedsState(void *pState)
                 }
 
                 IOHIDDeviceUnscheduleFromRunLoop(pKbd->pDevice, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-                IOHIDDeviceRegisterInputValueCallback(pKbd->pDevice, NULL, NULL);
 
                 LogRel(("Restored LEDs for KBD %d (%p): fNumLockOn=%s, fCapsLockOn=%s, fScrollLockOn=%s\n",
                      (int)i, pKbd, VBOX_BOOL_TO_STR_STATE(pKbd->LED.fNumLockOn), VBOX_BOOL_TO_STR_STATE(pKbd->LED.fCapsLockOn),
