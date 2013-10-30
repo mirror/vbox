@@ -1665,13 +1665,6 @@ RuntimeR0_SOURCES += \
 	common/math/gcc/udivdi3.c \
 	common/math/gcc/umoddi3.c \
 	common/math/gcc/xordi3.c
-#
-# actually it's for clang 
- if $(VBOX_XCODE_VERSION) >= 5
-  RuntimeR0_SOURCES.darwin += r0drv/darwin/bzero-r0drv-darwin.cpp
- endif
-
-
 endif
 
 #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
