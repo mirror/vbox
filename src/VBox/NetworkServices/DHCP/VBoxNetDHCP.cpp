@@ -523,6 +523,12 @@ int VBoxNetDhcp::init()
                                                             LowerAddress,
                                                             UpperAddress);
 
+        com::Bstr bstr;
+        hrc = virtualbox->COMGETTER(HomeFolder)(bstr.asOutParam());
+        std::string strXmlLeaseFile(com::Utf8StrFmt("%ls%c%s.leases",
+                                                    bstr.raw(), RTPATH_DELIMITER, m_Network.c_str()).c_str());
+        confManager->loadFromFile(strXmlLeaseFile);
+
     } /* if(m_fIgnoreCmdLineParameters) */
     else
     {
