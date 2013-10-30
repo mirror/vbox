@@ -165,19 +165,139 @@ struct ConfigurationManager::Data
 
     std::string          m_domainName;
     VecClient            m_clients;
-    
+    std::string          m_leaseStorageFilename;
     bool                 fFileExists;
 };
     
 ConfigurationManager *ConfigurationManager::getConfigurationManager()
 {
     if (!g_ConfigurationManager)
+
+
     {
         g_ConfigurationManager = new ConfigurationManager();
         g_ConfigurationManager->init();
     }
 
     return g_ConfigurationManager;
+}
+
+
+const std::string tagXMLLeases = "Leases";
+const std::string tagXMLLeasesAttributeVersion = "version";
+const std::string tagXMLLeasesVersion_1_0 = "1.0";
+const std::string tagXMLLease = "Lease";
+const std::string tagXMLLeaseAttributeMac = "mac";
+const std::string tagXMLLeaseAttributeNetwork = "network";
+const std::string tagXMLLeaseAddress = "Address";
+const std::string tagXMLAddressAttributeValue = "value";
+const std::string tagXMLLeaseTime = "Time";
+const std::string tagXMLTimeAttributeIssued = "issued";
+const std::string tagXMLTimeAttributeExpiration = "expiration";
+const std::string tagXMLLeaseOptions = "Options";
+
+/**
+ * <Leases version="1.0">
+ *   <Lease mac="" network=""/>
+ *    <Address value=""/>
+ *    <Time issued="" expiration=""/>
+ *    <options>
+ *      <option name="" type=""/>
+ *      </option>
+ *    </options>
+ *   </Lease>
+ * </Leases>
+ */
+int ConfigurationManager::loadFromFile(const std::string& leaseStorageFileName)
+{
+    m->m_leaseStorageFilename = leaseStorageFileName;
+    
+    xml::XmlFileParser parser;
+    xml::Document doc;
+
+    try {
+        parser.read(m->m_leaseStorageFilename.c_str(), doc);
+    }
+    catch (...)
+    {
+        return VINF_SUCCESS;
+    }
+
+    /* XML parsing */
+    xml::ElementNode *root = doc.getRootElement();
+
+    if (!root || !root->nameEquals(tagXMLLeases.c_str()))
+    {
+        m->fFileExists = false;
+        return VERR_NOT_FOUND;
+    }
+
+    com::Utf8Str version;
+    if (root)
+        root->getAttributeValue(tagXMLLeasesAttributeVersion.c_str(), version);
+
+    /* XXX: version check */
+    xml::NodesLoop leases(*root);
+
+    bool valueExists;
+    const xml::ElementNode *lease;
+    while ((lease = leases.forAllNodes()))
+    {
+        if (!lease->nameEquals(tagXMLLease.c_str()))
+            continue;
+        
+        ClientData *data = new ClientData();
+        Lease l(data);
+        if (l.fromXML(lease)) 
+        {
+
+            m->m_allocations.insert(MapLease2Ip4AddressPair(l, l.getAddress()));
+
+
+            NetworkConfigEntity *pNetCfg = NULL;
+            Client c(data);
+            int rc = g_RootConfig->match(c, (BaseConfigEntity **)&pNetCfg);
+            Assert(rc >= 0 && pNetCfg);
+
+            l.setConfig(pNetCfg);
+
+            m->m_clients.push_back(c);
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+int ConfigurationManager::saveToFile()
+{
+    if (m->m_leaseStorageFilename.empty())
+        return VINF_SUCCESS;
+
+    xml::Document doc;
+
+    xml::ElementNode *root = doc.createRootElement(tagXMLLeases.c_str());
+    if (!root)
+        return VERR_INTERNAL_ERROR;
+    
+    root->setAttribute(tagXMLLeasesAttributeVersion.c_str(), tagXMLLeasesVersion_1_0.c_str());
+
+    for(MapLease2Ip4AddressConstIterator it = m->m_allocations.begin();
+        it != m->m_allocations.end(); ++it)
+    {
+        xml::ElementNode *lease = root->createChild(tagXMLLease.c_str());
+        if (!it->first.toXML(lease))
+        {
+            /* XXX: todo logging + error handling */
+        }
+    }
+
+    try {
+        xml::XmlFileWriter writer(doc);
+        writer.write(m->m_leaseStorageFilename.c_str(), true);
+    } catch(...){}
+
+    return VINF_SUCCESS;
 }
 
 
@@ -383,8 +503,11 @@ int ConfigurationManager::commitLease4Client(Client& client)
     l.setExpiration(pCfg->expirationPeriod());
     l.phaseStart(RTTimeMilliTS());
 
+    saveToFile();
+
     return VINF_SUCCESS;
 }
+
 
 int ConfigurationManager::expireLease4Client(Client& client)
 {
@@ -1066,6 +1189,75 @@ MapOptionId2RawOption& Lease::options()
 
 
 Lease::Lease(ClientData *pd):m(SharedPtr<ClientData>(pd)){}
+
+
+bool Lease::toXML(xml::ElementNode *node) const
+{
+    bool valueAddition = node->setAttribute(tagXMLLeaseAttributeMac.c_str(), com::Utf8StrFmt("%RTmac", &m->m_mac));
+    if (!valueAddition) return false;
+
+    valueAddition = node->setAttribute(tagXMLLeaseAttributeNetwork.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_network));
+    if (!valueAddition) return false;
+
+    xml::ElementNode *address = node->createChild(tagXMLLeaseAddress.c_str()); 
+    if (!address) return false;
+
+    valueAddition = address->setAttribute(tagXMLAddressAttributeValue.c_str(), com::Utf8StrFmt("%RTnaipv4", m->m_address));
+    if (!valueAddition) return false;
+
+    xml::ElementNode *time = node->createChild(tagXMLLeaseTime.c_str()); 
+    if (!time) return false;
+
+    valueAddition = time->setAttribute(tagXMLTimeAttributeIssued.c_str(), 
+                                       m->u64TimestampLeasingStarted);
+    if (!valueAddition) return false;
+
+    valueAddition = time->setAttribute(tagXMLTimeAttributeExpiration.c_str(), 
+                                       m->u32LeaseExpirationPeriod);
+    if (!valueAddition) return false;
+
+    return true;
+}
+
+
+bool Lease::fromXML(const xml::ElementNode *node)
+{
+    com::Utf8Str mac;
+    bool valueExists = node->getAttributeValue(tagXMLLeaseAttributeMac.c_str(), mac);
+    if (!valueExists) return false;
+    int rc = RTNetStrToMacAddr(mac.c_str(), &m->m_mac);
+    if (RT_FAILURE(rc)) return false;
+
+    com::Utf8Str network;
+    valueExists = node->getAttributeValue(tagXMLLeaseAttributeNetwork.c_str(), network);
+    if (!valueExists) return false;
+    rc = RTNetStrToIPv4Addr(network.c_str(), &m->m_network);
+    if (RT_FAILURE(rc)) return false;
+
+    /* Address */
+    const xml::ElementNode *address = node->findChildElement(tagXMLLeaseAddress.c_str());
+    if (!address) return false;
+    com::Utf8Str addressValue;
+    valueExists = address->getAttributeValue(tagXMLAddressAttributeValue.c_str(), addressValue);
+    if (!valueExists) return false;
+    rc = RTNetStrToIPv4Addr(addressValue.c_str(), &m->m_address);
+    
+    /* Time */
+    const xml::ElementNode *time = node->findChildElement(tagXMLLeaseTime.c_str());
+    if (!time) return false;
+
+    valueExists = time->getAttributeValue(tagXMLTimeAttributeIssued.c_str(), 
+                                          &m->u64TimestampLeasingStarted);
+    if (!valueExists) return false;
+    m->fBinding = false;
+    
+    valueExists = time->getAttributeValue(tagXMLTimeAttributeExpiration.c_str(), 
+                                          &m->u32LeaseExpirationPeriod);
+    if (!valueExists) return false;
+
+    m->fHasLease = true;
+    return true;
+}
 
 
 const Lease Lease::NullLease;
