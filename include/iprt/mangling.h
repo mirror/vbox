@@ -960,6 +960,7 @@
 # define RTNetIPv6PseudoChecksumEx                      RT_MANGLER(RTNetIPv6PseudoChecksumEx)
 # define RTNetTCPChecksum                               RT_MANGLER(RTNetTCPChecksum)
 # define RTNetUDPChecksum                               RT_MANGLER(RTNetUDPChecksum)
+# define RTNetStrToMacAddr                              RT_MANGLER(RTNetStrToMacAddr)
 # define RTNetIsIPv4AddrStr                             RT_MANGLER(RTNetIsIPv4AddrStr)
 # define RTNetStrToIPv4Addr                             RT_MANGLER(RTNetStrToIPv4Addr)
 # define RTNetIsIPv6AddrStr                             RT_MANGLER(RTNetIsIPv6AddrStr)

@@ -39,6 +39,19 @@ RT_C_DECLS_BEGIN
  */
 
 /**
+ * Converts an stringified Ethernet MAC address into the RTMAC representation.
+ *
+ * @todo This should be move to some generic part of the runtime.
+ *
+ * @returns VINF_SUCCESS on success, VERR_GETOPT_INVALID_ARGUMENT_FORMAT on
+ *          failure.
+ *
+ * @param   pszValue        The value to convert.
+ * @param   pAddr           Where to store the result.
+ */
+RTDECL(int) RTNetStrToMacAddr(const char *pszAddr, PRTMAC pMacAddr);
+
+/**
  * IPv4 address.
  */
 typedef RTUINT32U RTNETADDRIPV4;
