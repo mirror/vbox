@@ -379,7 +379,6 @@ proxy_bound_socket(int sdom, int stype, struct sockaddr *src_addr)
 void
 proxy_reset_socket(SOCKET s)
 {
-    int rc;
     struct linger linger;
 
     linger.l_onoff = 1;
@@ -392,11 +391,9 @@ proxy_reset_socket(SOCKET s)
      * http://msdn.microsoft.com/en-us/library/windows/desktop/ms738547%28v=vs.85%29.aspx
      * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4468997
      */
-    rc = setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&linger, sizeof(linger));
-    AssertReturnVoid(rc != SOCKET_ERROR);
-
-    rc = closesocket(s);
-    AssertReturnVoid(rc != SOCKET_ERROR);
+    setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&linger, sizeof(linger));
+    
+    closesocket(s);
 }
 
 
