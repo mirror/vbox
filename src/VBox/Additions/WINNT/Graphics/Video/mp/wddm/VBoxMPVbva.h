@@ -21,11 +21,7 @@
 
 typedef struct VBOXVBVAINFO
 {
-    VBOXVIDEOOFFSET offVBVA;
-    uint32_t cbVBVA;
-    VBVABUFFER *pVBVA;
-    BOOL  fHwBufferOverflow;
-    VBVARECORD *pRecord;
+    VBVABUFFERCONTEXT Vbva;
     D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId;
     KSPIN_LOCK Lock;
 } VBOXVBVAINFO;
@@ -36,15 +32,13 @@ int vboxVbvaDestroy(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva);
 int vboxVbvaCreate(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva, ULONG offBuffer, ULONG cbBuffer, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId);
 int vboxVbvaReportCmdOffset(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva, uint32_t offCmd);
 int vboxVbvaReportDirtyRect(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_SOURCE *pSrc, RECT *pRectOrig);
-BOOL vboxVbvaBufferBeginUpdate(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva);
-void vboxVbvaBufferEndUpdate(PVBOXMP_DEVEXT pDevExt, VBOXVBVAINFO *pVbva);
 
 #define VBOXVBVA_OP(_op, _pdext, _psrc, _arg) \
         do { \
-            if (vboxVbvaBufferBeginUpdate(_pdext, &(_psrc)->Vbva)) \
+            if (VBoxVBVABufferBeginUpdate(&(_psrc)->Vbva.Vbva, &VBoxCommonFromDeviceExt(_pdext)->guestCtx)) \
             { \
                 vboxVbva##_op(_pdext, _psrc, _arg); \
-                vboxVbvaBufferEndUpdate(_pdext, &(_psrc)->Vbva); \
+                VBoxVBVABufferEndUpdate(&(_psrc)->Vbva.Vbva); \
             } \
         } while (0)
 

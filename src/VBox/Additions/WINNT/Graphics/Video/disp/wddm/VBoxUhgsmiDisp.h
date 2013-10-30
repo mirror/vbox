@@ -28,9 +28,7 @@ typedef struct VBOXUHGSMI_PRIVATE_D3D
     struct VBOXWDDMDISP_DEVICE *pDevice;
 } VBOXUHGSMI_PRIVATE_D3D, *PVBOXUHGSMI_PRIVATE_D3D;
 
-#if 0
 void vboxUhgsmiD3DInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, struct VBOXWDDMDISP_DEVICE *pDevice);
-#endif
 
 void vboxUhgsmiD3DEscInit(PVBOXUHGSMI_PRIVATE_D3D pHgsmi, struct VBOXWDDMDISP_DEVICE *pDevice);
 

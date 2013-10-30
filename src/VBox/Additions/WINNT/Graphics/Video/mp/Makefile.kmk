@@ -117,6 +117,7 @@ ifdef VBOX_WITH_WDDM
  	common/VBoxMPHGSMI.cpp \
  	common/VBoxMPVidModes.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/HGSMIBase.cpp \
+ 	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp \
  	$(PATH_ROOT)/src/VBox/GuestHost/OpenGL/util/vreg.cpp
  if defined(VBOX_WITH_CROGL)

@@ -1421,6 +1421,7 @@ typedef enum
     VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_BEGIN,
     VBOXVDMACMD_CHROMIUM_CTL_TYPE_SAVESTATE_END,
     VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRHGSMI_SETUP_COMPLETION,
+    VBOXVDMACMD_CHROMIUM_CTL_TYPE_CRCONNECT,
     VBOXVDMACMD_CHROMIUM_CTL_TYPE_SIZEHACK = 0xfffffffe
 } VBOXVDMACMD_CHROMIUM_CTL_TYPE;
 
@@ -1441,6 +1442,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
     uint64_t cbVRam;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
 
+
 typedef struct PDMIDISPLAYVBVACALLBACKS *HCRHGSMICMDCOMPLETION;
 typedef DECLCALLBACK(int) FNCRHGSMICMDCOMPLETION(HCRHGSMICMDCOMPLETION hCompletion, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
 typedef FNCRHGSMICMDCOMPLETION *PFNCRHGSMICMDCOMPLETION;
@@ -1451,7 +1453,97 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION
     HCRHGSMICMDCOMPLETION hCompletion;
     PFNCRHGSMICMDCOMPLETION pfnCompletion;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP_COMPLETION;
+
+typedef struct VBOXCRCON_SERVER *HVBOXCRCON_SERVER;
+typedef struct PDMIDISPLAYVBVACALLBACKS* HVBOXCRCON_CLIENT;
+
+typedef struct VBOXCRCON_3DRGN_CLIENT* HVBOXCRCON_3DRGN_CLIENT;
+typedef struct VBOXCRCON_3DRGN_ASYNCCLIENT* HVBOXCRCON_3DRGN_ASYNCCLIENT;
+
+/* server callbacks */
+/* submit chromium cmd */
+typedef DECLCALLBACK(int) FNVBOXCRCON_SVR_CRCMD(HVBOXCRCON_SERVER hServer, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd);
+typedef FNVBOXCRCON_SVR_CRCMD *PFNVBOXCRCON_SVR_CRCMD;
+
+/* submit chromium control cmd */
+typedef DECLCALLBACK(int) FNVBOXCRCON_SVR_CRCTL(HVBOXCRCON_SERVER hServer, PVBOXVDMACMD_CHROMIUM_CTL pCtl, uint32_t cbCmd);
+typedef FNVBOXCRCON_SVR_CRCTL *PFNVBOXCRCON_SVR_CRCTL;
+
+/* request 3D data.
+ * The protocol is the following:
+ * 1. if there is no 3D data displayed on screen, returns VINF_EOF immediately w/o calling any PFNVBOXCRCON_3DRGN_XXX callbacks
+ * 2. otherwise calls PFNVBOXCRCON_3DRGN_ONSUBMIT, submits the "regions get" request to the CrOpenGL server to process it asynchronously and returns VINF_SUCCESS
+ * 2.a on "regions get" request processing calls PFNVBOXCRCON_3DRGN_BEGIN,
+ * 2.b then PFNVBOXCRCON_3DRGN_REPORT zero or more times for each 3D region,
+ * 2.c and then PFNVBOXCRCON_3DRGN_END
+ * 3. returns VERR_XXX code on failure
+ * */
+typedef DECLCALLBACK(int) FNVBOXCRCON_SVR_3DRGN_GET(HVBOXCRCON_SERVER hServer, HVBOXCRCON_3DRGN_CLIENT hRgnClient, uint32_t idScreen);
+typedef FNVBOXCRCON_SVR_3DRGN_GET *PFNVBOXCRCON_SVR_3DRGN_GET;
+
+/* 3D Regions Client callbacks */
+/* called from the PFNVBOXCRCON_SVR_3DRGN_GET callback in case server has 3D data and is going to process the request asynchronously,
+ * see comments for PFNVBOXCRCON_SVR_3DRGN_GET above */
+typedef DECLCALLBACK(int) FNVBOXCRCON_3DRGN_ONSUBMIT(HVBOXCRCON_3DRGN_CLIENT hRgnClient, uint32_t idScreen, HVBOXCRCON_3DRGN_ASYNCCLIENT *phRgnAsyncClient);
+typedef FNVBOXCRCON_3DRGN_ONSUBMIT *PFNVBOXCRCON_3DRGN_ONSUBMIT;
+
+/* called from the "regions get" command processing thread, to indicate that the "regions get" is started.
+ * see comments for PFNVBOXCRCON_SVR_3DRGN_GET above */
+typedef DECLCALLBACK(int) FNVBOXCRCON_3DRGN_BEGIN(HVBOXCRCON_3DRGN_ASYNCCLIENT hRgnAsyncClient, uint32_t idScreen);
+typedef FNVBOXCRCON_3DRGN_BEGIN *PFNVBOXCRCON_3DRGN_BEGIN;
+
+/* called from the "regions get" command processing thread, to report a 3D region.
+ * see comments for PFNVBOXCRCON_SVR_3DRGN_GET above */
+typedef DECLCALLBACK(int) FNVBOXCRCON_3DRGN_REPORT(HVBOXCRCON_3DRGN_ASYNCCLIENT hRgnAsyncClient, uint32_t idScreen, void *pvData, uint32_t cbStride, const RTRECT *pRect);
+typedef FNVBOXCRCON_3DRGN_REPORT *PFNVBOXCRCON_3DRGN_REPORT;
+
+/* called from the "regions get" command processing thread, to indicate that the "regions get" is completed.
+ * see comments for PFNVBOXCRCON_SVR_3DRGN_GET above */
+typedef DECLCALLBACK(int) FNVBOXCRCON_3DRGN_END(HVBOXCRCON_3DRGN_ASYNCCLIENT hRgnAsyncClient, uint32_t idScreen);
+typedef FNVBOXCRCON_3DRGN_END *PFNVBOXCRCON_3DRGN_END;
+
+
+/* client callbacks */
+/* complete chromium cmd */
+typedef DECLCALLBACK(int) FNVBOXCRCON_CLT_CRCTL_COMPLETE(HVBOXCRCON_CLIENT hClient, PVBOXVDMACMD_CHROMIUM_CTL pCtl, int rc);
+typedef FNVBOXCRCON_CLT_CRCTL_COMPLETE *PFNVBOXCRCON_CLT_CRCTL_COMPLETE;
+
+/* complete chromium control cmd */
+typedef DECLCALLBACK(int) FNVBOXCRCON_CLT_CRCMD_COMPLETE(HVBOXCRCON_CLIENT hClient, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc);
+typedef FNVBOXCRCON_CLT_CRCMD_COMPLETE *PFNVBOXCRCON_CLT_CRCMD_COMPLETE;
+
+typedef struct VBOXCRCON_SERVER_CALLBACKS
+{
+    HVBOXCRCON_SERVER hServer;
+    PFNVBOXCRCON_SVR_CRCMD pfnCrCmd;
+    PFNVBOXCRCON_SVR_CRCTL pfnCrCtl;
+    PFNVBOXCRCON_SVR_3DRGN_GET pfn3DRgnGet;
+} VBOXCRCON_SERVER_CALLBACKS, *PVBOXCRCON_SERVER_CALLBACKS;
+
+typedef struct VBOXCRCON_CLIENT_CALLBACKS
+{
+    HVBOXCRCON_CLIENT hClient;
+    PFNVBOXCRCON_CLT_CRCMD_COMPLETE pfnCrCmdComplete;
+    PFNVBOXCRCON_CLT_CRCTL_COMPLETE pfnCrCtlComplete;
+    PFNVBOXCRCON_3DRGN_ONSUBMIT pfn3DRgnOnSubmit;
+    PFNVBOXCRCON_3DRGN_BEGIN pfn3DRgnBegin;
+    PFNVBOXCRCON_3DRGN_REPORT pfn3DRgnReport;
+    PFNVBOXCRCON_3DRGN_END pfn3DRgnEnd;
+} VBOXCRCON_CLIENT_CALLBACKS, *PVBOXCRCON_CLIENT_CALLBACKS;
+
+/* issued by Main to establish connection between Main and CrOpenGL service */
+typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
+{
+    VBOXVDMACMD_CHROMIUM_CTL Hdr;
+    /*input (filled by Client) :*/
+    /*class VMMDev*/void *pVMMDev;
+    VBOXCRCON_CLIENT_CALLBACKS ClientCallbacks;
+    /*output (filled by Server) :*/
+    VBOXCRCON_SERVER_CALLBACKS ServerCallbacks;
+} VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT, *PVBOXVDMACMD_CHROMIUM_CTL_CRCONNECT;
+
 # pragma pack()
+
 #endif
 
 #ifdef VBOXVDMA_WITH_VBVA

@@ -207,11 +207,11 @@ DECLINLINE(ULONG) vboxWddmVramCpuVisibleSize(PVBOXMP_DEVEXT pDevExt)
 {
 #ifdef VBOXWDDM_RENDER_FROM_SHADOW
     /* all memory layout info should be initialized */
-    Assert(pDevExt->aSources[0].Vbva.offVBVA);
+    Assert(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer);
     /* page aligned */
-    Assert(!(pDevExt->aSources[0].Vbva.offVBVA & 0xfff));
+    Assert(!(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer & 0xfff));
 
-    return (ULONG)(pDevExt->aSources[0].Vbva.offVBVA & ~0xfffULL);
+    return (ULONG)(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer & ~0xfffULL);
 #else
     /* all memory layout info should be initialized */
     Assert(pDevExt->u.primary.Vdma.CmdHeap.Heap.area.offBase);
