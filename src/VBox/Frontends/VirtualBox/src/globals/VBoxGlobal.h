@@ -49,6 +49,7 @@ class UIMachine;
 class CMachine;
 class CMedium;
 class CUSBDevice;
+class CHostVideoInputDevice;
 class QSpinBox;
 class UIMediumEnumerator;
 class UIMedium;
@@ -231,6 +232,7 @@ public:
     QString details (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDevice &aDevice) const;
     QString toolTip (const CUSBDeviceFilter &aFilter) const;
+    QString toolTip(const CHostVideoInputDevice &webcam) const;
 
     QString detailsReport (const CMachine &aMachine, bool aWithLinks);
 

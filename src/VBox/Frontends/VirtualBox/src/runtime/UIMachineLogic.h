@@ -203,7 +203,9 @@ private slots:
     void sltMountStorageMedium();
     void sltMountRecentStorageMedium();
     void sltPrepareUSBMenu();
+    void sltPrepareWebCamMenu();
     void sltAttachUSBDevice();
+    void sltAttachWebCamDevice();
     void sltPrepareSharedClipboardMenu();
     void sltChangeSharedClipboardType(QAction *pAction);
     void sltPrepareDragAndDropMenu();

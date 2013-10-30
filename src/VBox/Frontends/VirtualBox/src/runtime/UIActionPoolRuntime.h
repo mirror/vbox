@@ -57,6 +57,7 @@ enum UIActionIndexRuntime
     UIActionIndexRuntime_Menu_OpticalDevices,
     UIActionIndexRuntime_Menu_FloppyDevices,
     UIActionIndexRuntime_Menu_USBDevices,
+    UIActionIndexRuntime_Menu_WebCams,
     UIActionIndexRuntime_Menu_SharedClipboard,
     UIActionIndexRuntime_Menu_DragAndDrop,
     UIActionIndexRuntime_Menu_Network,

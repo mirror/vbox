@@ -729,6 +729,27 @@ protected:
     }
 };
 
+class UIActionMenuWebCams : public UIActionMenu
+{
+    Q_OBJECT;
+
+public:
+
+    UIActionMenuWebCams(UIActionPool *pParent)
+        : UIActionMenu(pParent, ":/web_camera_16px.png", ":/web_camera_disabled_16px.png")
+    {
+        qobject_cast<UIMenu*>(menu())->setShowToolTips(true);
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setName(QApplication::translate("UIActionPool", "&Webcams"));
+    }
+};
+
 class UIActionMenuSharedClipboard : public UIActionMenu
 {
     Q_OBJECT;
@@ -1276,6 +1297,9 @@ void UIActionPoolRuntime::createMenus()
     if (m_pool[UIActionIndexRuntime_Menu_USBDevices])
         delete m_pool[UIActionIndexRuntime_Menu_USBDevices];
     m_pool[UIActionIndexRuntime_Menu_USBDevices] = new UIActionMenuUSBDevices(this);
+    if (m_pool[UIActionIndexRuntime_Menu_WebCams])
+        delete m_pool[UIActionIndexRuntime_Menu_WebCams];
+    m_pool[UIActionIndexRuntime_Menu_WebCams] = new UIActionMenuWebCams(this);
     if (m_pool[UIActionIndexRuntime_Menu_SharedClipboard])
         delete m_pool[UIActionIndexRuntime_Menu_SharedClipboard];
     m_pool[UIActionIndexRuntime_Menu_SharedClipboard] = new UIActionMenuSharedClipboard(this);

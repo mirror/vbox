@@ -71,6 +71,8 @@
 #include "CUSBDevice.h"
 #include "CVRDEServer.h"
 #include "CSystemProperties.h"
+#include "CHostVideoInputDevice.h"
+#include "CEmulatedUSB.h"
 #ifdef Q_WS_MAC
 # include "CGuest.h"
 #endif /* Q_WS_MAC */
@@ -129,6 +131,18 @@ struct USBTarget
     QString id;
 };
 Q_DECLARE_METATYPE(USBTarget);
+
+/** Describes enumerated webcam item. */
+struct WebCamTarget
+{
+    WebCamTarget() : attach(false), name(QString()), path(QString()) {}
+    WebCamTarget(bool fAttach, const QString &strName, const QString &strPath)
+        : attach(fAttach), name(strName), path(strPath) {}
+    bool attach;
+    QString name;
+    QString path;
+};
+Q_DECLARE_METATYPE(WebCamTarget);
 
 /* static */
 UIMachineLogic* UIMachineLogic::create(QObject *pParent,
@@ -785,6 +799,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_OpticalDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_FloppyDevices));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices));
+    m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_WebCams));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop));
     m_pRunningOrPausedActions->addAction(gActionPool->action(UIActionIndexRuntime_Menu_Network));
@@ -846,6 +861,8 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltPrepareStorageMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_USBDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareUSBMenu()));
+    connect(gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareWebCamMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_SharedClipboard)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedClipboardMenu()));
     connect(gActionPool->action(UIActionIndexRuntime_Menu_DragAndDrop)->menu(), SIGNAL(aboutToShow()),
@@ -1833,6 +1850,65 @@ void UIMachineLogic::sltPrepareUSBMenu()
     }
 }
 
+/**
+ * Prepares menu content when user hovers <b>Webcam</b> submenu of the <b>Devices</b> menu.
+ * @note If host currently have no webcams attached there will be just one dummy action
+ *       called <i>No Webcams Connected</i>. Otherwise there will be actions corresponding
+ *       to existing webcams allowing user to attach/detach them within the guest.
+ * @note In order to enumerate webcams GUI assigns #WebCamTarget object as internal data
+ *       for each the enumerated webcam menu action. Corresponding #sltAttachWebCamDevice
+ *       slot will be called on action triggering. It will parse assigned #WebCamTarget data.
+ */
+void UIMachineLogic::sltPrepareWebCamMenu()
+{
+    /* Get and check the sender menu object: */
+    QMenu *pMenu = qobject_cast<QMenu*>(sender());
+    QMenu *pWebCamMenu = gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->menu();
+    AssertReturnVoid(pMenu == pWebCamMenu); Q_UNUSED(pWebCamMenu);
+
+    /* Clear menu initially: */
+    pMenu->clear();
+
+    /* Get current host: */
+    const CHost &host = vboxGlobal().host();
+
+    /* Get host webcams list: */
+    const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices();
+
+    /* If webcam list is empty: */
+    if (webcams.isEmpty())
+    {
+        /* Add only one - "empty" action: */
+        QAction *pEmptyMenuAction = new QAction(pMenu);
+        pEmptyMenuAction->setEnabled(false);
+        pEmptyMenuAction->setText(tr("No Webcams Connected"));
+        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
+        pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/vm_delete_16px.png", ":/vm_delete_disabled_16px.png")); // TODO: Change icon!
+        pMenu->addAction(pEmptyMenuAction);
+    }
+    /* If webcam list is NOT empty: */
+    else
+    {
+        /* Populate menu with host webcams: */
+        const QVector<QString> &attachedWebcamPaths = session().GetConsole().GetEmulatedUSB().GetWebcams();
+        foreach (const CHostVideoInputDevice &webcam, webcams)
+        {
+            /* Get webcam data: */
+            const QString &strWebcamName = webcam.GetName();
+            const QString &strWebcamPath = webcam.GetPath();
+
+            /* Create/configure webcam action: */
+            QAction *pAttachWebcamAction = new QAction(strWebcamName, pMenu);
+            pAttachWebcamAction->setToolTip(vboxGlobal().toolTip(webcam));
+            pAttachWebcamAction->setCheckable(true);
+            pAttachWebcamAction->setChecked(attachedWebcamPaths.contains(strWebcamPath));
+            pAttachWebcamAction->setData(QVariant::fromValue(WebCamTarget(!pAttachWebcamAction->isChecked(), strWebcamName, strWebcamPath)));
+            connect(pAttachWebcamAction, SIGNAL(triggered(bool)), this, SLOT(sltAttachWebCamDevice()));
+            pMenu->addAction(pAttachWebcamAction);
+        }
+    }
+}
+
 void UIMachineLogic::sltAttachUSBDevice()
 {
     /* Get and check sender action object: */
@@ -1876,6 +1952,45 @@ void UIMachineLogic::sltAttachUSBDevice()
             /* Show a message about procedure failure: */
             msgCenter().cannotDetachUSBDevice(console, vboxGlobal().details(device));
         }
+    }
+}
+
+/**
+ * Attaches/detaches webcam within the guest.
+ * @note In order to attach/detach webcams #sltPrepareWebCamMenu assigns #WebCamTarget object
+ *       as internal data for each the enumerated webcam menu action. Corresponding data
+ *       will be parsed here resulting in device attaching/detaching.
+ */
+void UIMachineLogic::sltAttachWebCamDevice()
+{
+    /* Get and check sender action object: */
+    QAction *pAction = qobject_cast<QAction*>(sender());
+    AssertReturnVoid(pAction);
+
+    /* Get operation target: */
+    WebCamTarget target = pAction->data().value<WebCamTarget>();
+
+    /* Get current emulated USB: */
+    const CConsole &console = session().GetConsole();
+    CEmulatedUSB dispatcher = console.GetEmulatedUSB();
+
+    /* Attach webcam device: */
+    if (target.attach)
+    {
+        /* Try to attach corresponding device: */
+        dispatcher.WebcamAttach(target.path, "");
+        /* Check if dispatcher is OK: */
+        if (!dispatcher.isOk())
+            msgCenter().cannotAttachWebCam(dispatcher, target.name, console.GetMachine().GetName());
+    }
+    /* Detach webcam device: */
+    else
+    {
+        /* Try to detach corresponding device: */
+        dispatcher.WebcamDetach(target.path);
+        /* Check if dispatcher is OK: */
+        if (!dispatcher.isOk())
+            msgCenter().cannotDetachWebCam(dispatcher, target.name, console.GetMachine().GetName());
     }
 }
 
