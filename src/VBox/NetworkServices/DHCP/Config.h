@@ -9,12 +9,6 @@
 #include <iprt/asm-math.h>
 #include <iprt/cpp/utils.h>
 
-typedef std::vector<RTMAC> MacAddressContainer;
-typedef MacAddressContainer::iterator MacAddressIterator;
-
-typedef std::vector<RTNETADDRIPV4> Ipv4AddressContainer;
-typedef Ipv4AddressContainer::iterator Ipv4AddressIterator;
-typedef Ipv4AddressContainer::const_iterator Ipv4AddressConstIterator;
 
 static bool operator <(const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
 {
@@ -30,24 +24,24 @@ static bool operator > (const RTNETADDRIPV4& a, const RTNETADDRIPV4& b)
 class RawOption
 {
 public:
+    RawOption()
+    {
+        RT_ZERO(*this);
+    }
     uint8_t u8OptId;
     uint8_t cbRawOpt;
     uint8_t au8RawOpt[255];
 };
 
-
+class ClientData;
 class Client;
 class Lease;
 class BaseConfigEntity;
 
-
 class NetworkConfigEntity;
 class HostConfigEntity;
 class ClientMatchCriteria;
-
-typedef std::map<Lease *, RTNETADDRIPV4> MapLease2Ip4Address;
-typedef MapLease2Ip4Address::iterator MapLease2Ip4AddressIterator;
-typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
+class ConfigurationManager;
 
 /*
  * it's a basic representation of
@@ -60,33 +54,102 @@ typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
  */
 class Client
 {
+    friend class Lease;
+    friend class ConfigurationManager;
+
     public:
+    Client();
+    void initWithMac(const RTMAC& mac);
+    bool operator== (const RTMAC& mac) const;
+    const RTMAC& getMacAddress() const;
 
-    /* XXX: Option 60 and 61 */
-    Client(const RTMAC& mac);
-
-    bool operator== (const RTMAC& mac) const
-    {
-        return (  m_mac.au16[0] == mac.au16[0]
-                && m_mac.au16[1] == mac.au16[1]
-                && m_mac.au16[2] == mac.au16[2]);
-    }
     /** Dumps client query */
     void dump();
 
-    /* XXX! private: */
+    Lease lease();
+    const Lease lease() const; 
 
-    RTMAC m_mac;
-    Lease *m_lease;
+    public:
+    static const Client NullClient;
 
-    /* XXX: should be in lease */
-    std::vector<RawOption> rawOptions;
+    private:
+    Client(ClientData *);
+    SharedPtr<ClientData> m;
 };
 
 
-typedef std::vector<Client*> VecClient;
+bool operator== (const Lease&, const Lease&);
+bool operator!= (const Lease&, const Lease&);
+bool operator< (const Lease&, const Lease&);
+
+
+typedef std::map<uint8_t, RawOption> MapOptionId2RawOption;
+typedef MapOptionId2RawOption::iterator MapOptionId2RawOptionIterator;
+typedef MapOptionId2RawOption::const_iterator MapOptionId2RawOptionConstIterator;
+typedef MapOptionId2RawOption::value_type MapOptionId2RawOptionValue;
+
+namespace xml {
+    class ElementNode;
+}
+
+class Lease
+{
+    friend class Client;
+    friend bool operator== (const Lease&, const Lease&);
+    //friend int ConfigurationManager::loadFromFile(const std::string&);
+    friend class ConfigurationManager;
+
+    public:
+    Lease();
+    Lease(const Client&);
+
+    bool isExpired() const;
+    void expire();
+
+    /* Depending on phase *Expiration and phaseStart initialize different values. */
+    void bindingPhase(bool);
+    void phaseStart(uint64_t u64Start);
+    bool isInBindingPhase() const;
+    /* returns 0 if in binding state */
+    uint64_t issued() const; 
+
+    void setExpiration(uint32_t);
+    uint32_t getExpiration() const;
+
+    RTNETADDRIPV4 getAddress() const;
+    void setAddress(RTNETADDRIPV4);
+
+    const NetworkConfigEntity *getConfig() const;
+    void setConfig(NetworkConfigEntity *);
+
+    const MapOptionId2RawOption& options() const;
+    MapOptionId2RawOption& options();
+
+
+    public:
+    static const Lease NullLease;
+
+    private:
+    Lease(ClientData *);
+    SharedPtr<ClientData> m;
+};
+
+
+typedef std::vector<Client> VecClient;
 typedef VecClient::iterator VecClientIterator;
 typedef VecClient::const_iterator VecClientConstIterator;
+
+typedef std::vector<RTMAC> MacAddressContainer;
+typedef MacAddressContainer::iterator MacAddressIterator;
+
+typedef std::vector<RTNETADDRIPV4> Ipv4AddressContainer;
+typedef Ipv4AddressContainer::iterator Ipv4AddressIterator;
+typedef Ipv4AddressContainer::const_iterator Ipv4AddressConstIterator;
+
+typedef std::map<Lease, RTNETADDRIPV4> MapLease2Ip4Address;
+typedef MapLease2Ip4Address::iterator MapLease2Ip4AddressIterator;
+typedef MapLease2Ip4Address::const_iterator MapLease2Ip4AddressConstIterator;
+typedef MapLease2Ip4Address::value_type MapLease2Ip4AddressPair;
 
 
 /**
@@ -129,6 +192,7 @@ public:
     {
         return (m_left->check(client) && m_right->check(client));
     }
+
 private:
     ClientMatchCriteria* m_left;
     ClientMatchCriteria* m_right;
@@ -155,6 +219,7 @@ public:
     {
         return (client == m_mac);
     }
+
 private:
     RTMAC m_mac;
 };
@@ -184,7 +249,7 @@ class ClientIdentifierMatchCriteria: ClientMatchCriteria{};
 
 class BaseConfigEntity
 {
-public:
+    public:
     BaseConfigEntity(const ClientMatchCriteria *criteria = NULL,
       int matchingLevel = 0)
       : m_criteria(criteria),
@@ -201,7 +266,7 @@ public:
     virtual int match(Client& client, BaseConfigEntity **cfg);
     virtual uint32_t expirationPeriod() const = 0;
 
-protected:
+    protected:
     const ClientMatchCriteria *m_criteria;
     int m_MatchLevel;
     std::vector<BaseConfigEntity *> m_children;
@@ -210,20 +275,17 @@ protected:
 
 class NullConfigEntity: public BaseConfigEntity
 {
-public:
+    public:
     NullConfigEntity(){}
     virtual ~NullConfigEntity(){}
-    int add(BaseConfigEntity *) const
-    {
-        return 0;
-    }
+    int add(BaseConfigEntity *) const { return 0;}
     virtual uint32_t expirationPeriod() const {return 0;}
 };
 
 
 class ConfigEntity: public BaseConfigEntity
 {
-public:
+    public:
     /* range */
     /* match conditions */
     ConfigEntity(std::string& name,
@@ -319,12 +381,6 @@ public:
     {
         /* upper addr == lower addr */
     }
-
-    virtual int match(const Client& client) const
-    {
-        return (m_criteria->check(client) ? 10 : 0);
-    }
-
 };
 
 class RootConfigEntity: public NetworkConfigEntity
@@ -367,25 +423,25 @@ public:
     /**
      *
      */
-    Client* getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg);
+    Client getClientByDhcpPacket(const RTNETBOOTP *pDhcpMsg, size_t cbDhcpMsg);
 
     /**
      * XXX: it's could be done on DHCPOFFER or on DHCPACK (rfc2131 gives freedom here
      * 3.1.2, what is strict that allocation should do address check before real
      * allocation)...
      */
-    Lease* allocateLease4Client(Client *client, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg);
+    Lease allocateLease4Client(const Client& client, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg);
 
     /**
      * We call this before DHCPACK sent and after DHCPREQUEST received ...
      * when requested configuration is acceptable.
      */
-    int commitLease4Client(Client *client);
+    int commitLease4Client(Client& client);
 
     /**
      * Expires client lease.
      */
-    int expireLease4Client(Client *client);
+    int expireLease4Client(Client& client);
 
     static int findOption(uint8_t uOption, PCRTNETBOOTP pDhcpMsg, size_t cbDhcpMsg, RawOption& opt);
 
@@ -403,9 +459,16 @@ public:
     const Ipv4AddressContainer& getAddressList(uint8_t u8OptId);
 
 private:
-    ConfigurationManager(){}
-    virtual ~ConfigurationManager(){}
-    bool isAddressTaken(const RTNETADDRIPV4& addr, Lease** ppLease = NULL);
+    ConfigurationManager():m(NULL){}
+    void init();
+
+    ~ConfigurationManager();
+    bool isAddressTaken(const RTNETADDRIPV4& addr, Lease& lease);
+    bool isAddressTaken(const RTNETADDRIPV4& addr)
+    {
+        Lease ignore;
+        return isAddressTaken(addr, ignore);
+    }
 
 public:
     /* nulls */
@@ -413,18 +476,8 @@ public:
     const std::string    m_noString;
 
 private:
-    MapLease2Ip4Address m_allocations;
-    /**
-     * Here we can store expired Leases to do not re-allocate them latter.
-     */
-
-    /* XXX: MapLease2Ip4Address m_freed; */
-    /* XXX: more universal storages are required. */
-    Ipv4AddressContainer m_nameservers;
-    Ipv4AddressContainer m_routers;
-
-    std::string          m_domainName;
-    VecClient m_clients;
+    struct Data;
+    Data *m;
 };
 
 
@@ -433,9 +486,9 @@ class NetworkManager
 public:
     static NetworkManager *getNetworkManager();
 
-    int offer4Client(Client* lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
-    int ack(Client *lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
-    int nak(Client *lease, uint32_t u32Xid);
+    int offer4Client(const Client& lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
+    int ack(const Client& lease, uint32_t u32Xid, uint8_t *pu8ReqList, int cReqList);
+    int nak(const Client& lease, uint32_t u32Xid);
 
     const RTNETADDRIPV4& getOurAddress(){ return m_OurAddress;}
     const RTNETADDRIPV4& getOurNetmask(){ return m_OurNetmask;}
@@ -454,9 +507,9 @@ private:
     NetworkManager(){}
     virtual ~NetworkManager(){}
 
-    int prepareReplyPacket4Client(Client *client, uint32_t u32Xid);
-    int doReply(Client *client);
-    int processParameterReqList(Client *client, uint8_t *pu8ReqList, int cReqList);
+    int prepareReplyPacket4Client(const Client& client, uint32_t u32Xid);
+    int doReply(const Client& client, const std::vector<RawOption>& extra);
+    int processParameterReqList(const Client& client, uint8_t *pu8ReqList, int cReqList);
 
     union {
         RTNETBOOTP BootPHeader;
@@ -468,41 +521,6 @@ private:
     RTNETADDRIPV4 m_OurNetmask;
     RTMAC m_OurMac;
 };
-
-
-
-class Lease
-{
-public:
-    Lease():m(NULL){};
-    ~Lease();
-    void init();
-
-    bool isExpired() const;
-
-    /* Depending on phase *Expiration and phaseStart initialize different values. */
-    void bindingPhase(bool);
-    void phaseStart(uint64_t u64Start);
-    bool isInBindingPhase() const;
-
-    void setExpiration(uint32_t);
-    uint32_t getExpiration() const;
-
-    RTNETADDRIPV4 getAddress() const;
-    void setAddress(RTNETADDRIPV4);
-
-    const NetworkConfigEntity *getConfig() const;
-    void setConfig(NetworkConfigEntity *);
-   
-    Client *getClient() const;
-    void setClient(Client *);
-
-    private:
-    class Data;
-    
-    Data *m;
-};
-
 
 
 
