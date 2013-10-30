@@ -63,6 +63,7 @@
 #include "CExtPackFile.h"
 #include "CHostNetworkInterface.h"
 #include "CVRDEServer.h"
+#include "CEmulatedUSB.h"
 #ifdef VBOX_WITH_DRAG_AND_DROP
 # include "CGuest.h"
 #endif /* VBOX_WITH_DRAG_AND_DROP */
@@ -1931,6 +1932,22 @@ void UIMessageCenter::cannotDetachUSBDevice(const CVirtualBoxErrorInfo &errorInf
           tr("Failed to detach the USB device <b>%1</b> from the virtual machine <b>%2</b>.")
              .arg(strDevice, strMachineName),
           formatErrorInfo(errorInfo));
+}
+
+void UIMessageCenter::cannotAttachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to attach the webcam <b>%1</b> to the virtual machine <b>%2</b>.")
+             .arg(strWebCamName, strMachineName),
+          formatErrorInfo(dispatcher));
+}
+
+void UIMessageCenter::cannotDetachWebCam(const CEmulatedUSB &dispatcher, const QString &strWebCamName, const QString &strMachineName) const
+{
+    error(0, MessageType_Error,
+          tr("Failed to detach the webcam <b>%1</b> from the virtual machine <b>%2</b>.")
+             .arg(strWebCamName, strMachineName),
+          formatErrorInfo(dispatcher));
 }
 
 void UIMessageCenter::cannotToggleVRDEServer(const CVRDEServer &server, const QString &strMachineName, bool fEnable)
