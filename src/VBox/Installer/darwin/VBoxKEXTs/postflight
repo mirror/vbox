@@ -29,6 +29,17 @@ if [ -d /Library/StartupItems/VirtualBox/ ]; then
 fi
 
 #
+# Make sure old kernel extensions are gone (moved to "/Library/Application Support/VirtualBox/" with 4.3).
+#
+rm -Rfv \
+    "/Library/Extensions/VBoxDrv.kext/" \
+    "/Library/Extensions/VBoxNetFlt.kext/" \
+    "/Library/Extensions/VBoxNetAdp.kext/" \
+    "/Library/Extensions/VBoxUSB.kext/" \
+    "/Library/Extensions/VBoxDrvTiger.kext/" \
+    "/Library/Extensions/VBoxUSBTiger.kext/"
+
+#
 # Install the launchd script.
 #
 rm -vf "/Library/LaunchDaemons/org.virtualbox.startup.plist"
