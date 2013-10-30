@@ -1084,10 +1084,6 @@ QString VBoxGlobal::toolTip(const CHostVideoInputDevice &webcam) const
 {
     QStringList records;
 
-    QString strAlias = webcam.GetAlias();
-    if (!strAlias.isEmpty())
-        records << tr("<nobr>Alias: %1</nobr>", "webcam tooltip").arg(strAlias);
-
     QString strName = webcam.GetName();
     if (!strName.isEmpty())
         records << tr("<nobr>Name: %1</nobr>", "webcam tooltip").arg(strName);

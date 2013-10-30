@@ -1470,8 +1470,9 @@ void UISession::reinitMenuPool()
     /* WebCams stuff: */
     {
         /* Check whether there is an accessible video input devices pool: */
-        const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices();
-        bool fWebCamsEnabled = host.isOk(); Q_UNUSED(webcams);
+        const CHostVideoInputDeviceVector &webcams = host.GetVideoInputDevices(); Q_UNUSED(webcams);
+        ULONG cOhciCtls = machine.GetUSBControllerCountByType(KUSBControllerType_OHCI);
+        bool fWebCamsEnabled = host.isOk() && cOhciCtls && machine.GetUSBProxyAvailable();
 
         /* Show/Hide WebCams menu depending on ExtPack availability: */
         gActionPool->action(UIActionIndexRuntime_Menu_WebCams)->setVisible(fWebCamsEnabled);
