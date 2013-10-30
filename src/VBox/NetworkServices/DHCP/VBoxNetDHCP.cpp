@@ -55,6 +55,7 @@
 
 
 #include "../NetLib/VBoxNetLib.h"
+#include "../NetLib/shared_ptr.h"
 
 #include <vector>
 #include <list>
@@ -469,6 +470,7 @@ int VBoxNetDhcp::init()
 
 
         }
+        
     }
 
     NetworkManager *netManager = NetworkManager::getNetworkManager();
@@ -724,20 +726,20 @@ bool VBoxNetDhcp::handleDhcpReqDiscover(PCRTNETBOOTP pDhcpMsg, size_t cb)
         memset(&opt, 0, sizeof(RawOption));
         /* 1. Find client */
         ConfigurationManager *confManager = ConfigurationManager::getConfigurationManager();
-        Client *client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
+        Client client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
 
         /* 2. Find/Bind lease for client */
-        Lease *lease = confManager->allocateLease4Client(client, pDhcpMsg, cb);
-        AssertPtrReturn(lease, VINF_SUCCESS);
+        Lease lease = confManager->allocateLease4Client(client, pDhcpMsg, cb);
+        AssertReturn(lease != Lease::NullLease, VINF_SUCCESS);
 
         int rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
 
         /* 3. Send of offer */
         NetworkManager *networkManager = NetworkManager::getNetworkManager();
 
-        lease->bindingPhase(true);
-        lease->phaseStart(RTTimeMilliTS());
-        lease->setExpiration(300); /* 3 min. */
+        lease.bindingPhase(true);
+        lease.phaseStart(RTTimeMilliTS());
+        lease.setExpiration(300); /* 3 min. */
         networkManager->offer4Client(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
     } /* end of if(!m_DhcpServer.isNull()) */
 
@@ -759,30 +761,35 @@ bool VBoxNetDhcp::handleDhcpReqRequest(PCRTNETBOOTP pDhcpMsg, size_t cb)
     NetworkManager *networkManager = NetworkManager::getNetworkManager();
 
     /* 1. find client */
-    Client *client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
+    Client client = confManager->getClientByDhcpPacket(pDhcpMsg, cb);
 
     /* 2. find bound lease */
-    if (client->m_lease)
+    Lease l = client.lease();
+    if (l != Lease::NullLease)
     {
 
-        if (client->m_lease->isExpired())
+        if (l.isExpired())
         {
             /* send client to INIT state */
+            Client c(client);
             networkManager->nak(client, pDhcpMsg->bp_xid);
-            confManager->expireLease4Client(client);
+            confManager->expireLease4Client(c);
             return true;
         }
-        /* XXX: Validate request */
-        RawOption opt;
-        memset((void *)&opt, 0, sizeof(RawOption));
+        else {
+            /* XXX: Validate request */
+            RawOption opt;
+            RT_ZERO(opt);
 
-        int rc = confManager->commitLease4Client(client);
-        AssertRCReturn(rc, false);
+            Client c(client);
+            int rc = confManager->commitLease4Client(c);
+            AssertRCReturn(rc, false);
 
-        rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
-        AssertRCReturn(rc, false);
+            rc = ConfigurationManager::extractRequestList(pDhcpMsg, cb, opt);
+            AssertRCReturn(rc, false);
 
-        networkManager->ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
+            networkManager->ack(client, pDhcpMsg->bp_xid, opt.au8RawOpt, opt.cbRawOpt);
+        }
     }
     else
     {
