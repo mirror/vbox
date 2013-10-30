@@ -906,6 +906,11 @@ void BIOSCALL int13_diskette_function(disk_regs_t r)
         // set up floppy controller for transfer
         floppy_prepare_controller(drive);
 
+        // send seek command to controller
+        outb(0x03f5, 0x0f); // 0f: seek
+        outb(0x03f5, (head << 2) | drive); // HD DR1 DR2
+        outb(0x03f5, track);
+
         // send format-track command (6 bytes) to controller
         outb(0x03f5, 0x4d); // 4d: format track
         outb(0x03f5, (head << 2) | drive); // HD DR1 DR2
