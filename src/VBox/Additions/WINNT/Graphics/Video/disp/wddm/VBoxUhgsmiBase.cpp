@@ -32,7 +32,7 @@ DECLCALLBACK(int) vboxUhgsmiBaseEscBufferUnlock(PVBOXUHGSMI_BUFFER pBuf)
 
 int vboxUhgsmiBaseBufferTerm(PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE pBuffer)
 {
-    PVBOXUHGSMI_PRIVATE_BASE pPrivate = VBOXUHGSMIBASE_GET(pBuffer->PrivateBase.pHgsmi);
+    PVBOXUHGSMI_PRIVATE_BASE pPrivate = VBOXUHGSMIBASE_GET(pBuffer->BasePrivate.pHgsmi);
     VBOXDISPIFESCAPE_UHGSMI_DEALLOCATE DeallocInfo = {0};
     DeallocInfo.EscapeHdr.escapeCode = VBOXESC_UHGSMI_DEALLOCATE;
     DeallocInfo.hAlloc = pBuffer->Alloc.hAlloc;
@@ -97,12 +97,12 @@ int vboxUhgsmiKmtEscBufferInit(PVBOXUHGSMI_PRIVATE_BASE pPrivate, PVBOXUHGSMI_BU
 
     pBuffer->Alloc = AllocInfo.Alloc;
     Assert(pBuffer->Alloc.pvData);
-    pBuffer->PrivateBase.pHgsmi = pPrivate;
-    pBuffer->PrivateBase.Base.pfnLock = vboxUhgsmiBaseEscBufferLock;
-    pBuffer->PrivateBase.Base.pfnUnlock = vboxUhgsmiBaseEscBufferUnlock;
-    pBuffer->PrivateBase.Base.pfnDestroy = pfnDestroy;
-    pBuffer->PrivateBase.Base.fType = fUhgsmiType;
-    pBuffer->PrivateBase.Base.cbBuffer = AllocInfo.Alloc.cbData;
+    pBuffer->BasePrivate.pHgsmi = pPrivate;
+    pBuffer->BasePrivate.Base.pfnLock = vboxUhgsmiBaseEscBufferLock;
+    pBuffer->BasePrivate.Base.pfnUnlock = vboxUhgsmiBaseEscBufferUnlock;
+    pBuffer->BasePrivate.Base.pfnDestroy = pfnDestroy;
+    pBuffer->BasePrivate.Base.fType = fUhgsmiType;
+    pBuffer->BasePrivate.Base.cbBuffer = AllocInfo.Alloc.cbData;
     pBuffer->hSynch = hSynch;
     return VINF_SUCCESS;
 }
@@ -136,7 +136,7 @@ DECLCALLBACK(int) vboxUhgsmiBaseEscBufferCreate(PVBOXUHGSMI pHgsmi, uint32_t cbB
     int rc = vboxUhgsmiKmtEscBufferInit(pPrivate, pBuffer, cbBuf, fUhgsmiType, vboxUhgsmiBaseEscBufferDestroy);
     if (RT_SUCCESS(rc))
     {
-        *ppBuf = &pBuffer->PrivateBase.Base;
+        *ppBuf = &pBuffer->BasePrivate.Base;
         return VINF_SUCCESS;
     }
 
@@ -181,7 +181,7 @@ DECLCALLBACK(int) vboxUhgsmiBaseEscBufferSubmit(PVBOXUHGSMI pHgsmi, PVBOXUHGSMI_
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pSubmInfo->Info.offData = 0;
-            pSubmInfo->Info.cbData = pBuf->PrivateBase.Base.cbBuffer;
+            pSubmInfo->Info.cbData = pBuf->BasePrivate.Base.cbBuffer;
         }
         else
         {

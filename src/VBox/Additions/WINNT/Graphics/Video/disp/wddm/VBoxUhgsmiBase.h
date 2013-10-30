@@ -67,14 +67,14 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_BASE
 
 typedef struct VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE
 {
-    VBOXUHGSMI_BUFFER_PRIVATE_BASE PrivateBase;
+    VBOXUHGSMI_BUFFER_PRIVATE_BASE BasePrivate;
     VBOXVIDEOCM_UM_ALLOC Alloc;
     HANDLE hSynch;
 } VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE;
 
 typedef struct VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE
 {
-    VBOXUHGSMI_BUFFER_PRIVATE_BASE PrivateBase;
+    VBOXUHGSMI_BUFFER_PRIVATE_BASE BasePrivate;
     D3DKMT_HANDLE hAllocation;
     UINT aLockPageIndices[1];
 } VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE, *PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE;
@@ -83,13 +83,14 @@ typedef struct VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE
 #define VBOXUHGSMIBASE_GET(_p) VBOXUHGSMIBASE_GET_PRIVATE(_p, VBOXUHGSMI_PRIVATE_BASE)
 #define VBOXUHGSMIBASE_GET_BUFFER(_p) VBOXUHGSMIBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_BASE)
 
-#define VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, PrivateBase.Base)))
+#define VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, _t) ((_t*)(((uint8_t*)_p) - RT_OFFSETOF(_t, BasePrivate.Base)))
 #define VBOXUHGSMIESCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_ESC_BASE)
 #define VBOXUHGSMDXALLOCBASE_GET_BUFFER(_p) VBOXUHGSMIPRIVATEBASE_GET_PRIVATE(_p, VBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE)
 
-DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags,
-                                    D3DDDICB_LOCKFLAGS *pfFlags, UINT *pNumPages, UINT* pPages)
+DECLINLINE(int) vboxUhgsmiBaseDxLockData(PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pPrivate, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags,
+                                    D3DDDICB_LOCKFLAGS *pfFlags, UINT *pNumPages)
 {
+    PVBOXUHGSMI_BUFFER pBuf = &pPrivate->BasePrivate.Base;
     D3DDDICB_LOCKFLAGS fLockFlags;
     fLockFlags.Value = 0;
     if (fFlags.bLockEntire)
@@ -126,7 +127,7 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
             *pNumPages = cPages;
             for (UINT i = 0, j = iFirstPage; i < cPages; ++i, ++j)
             {
-                pPages[i] = j;
+                pPrivate->aLockPageIndices[i] = j;
             }
         }
 
@@ -140,8 +141,7 @@ DECLINLINE(int) vboxUhgsmiBaseLockData(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock
     return VINF_SUCCESS;
 }
 
-#if 0
-DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
+DECLINLINE(int) vboxUhgsmiBaseDxDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32_t cBuffers,
         VOID* pCommandBuffer, UINT *pCommandBufferSize,
         D3DDDI_ALLOCATIONLIST *pAllocationList, UINT AllocationListSize,
         D3DDDI_PATCHLOCATIONLIST *pPatchLocationList, UINT PatchLocationListSize)
@@ -169,7 +169,7 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
     for (uint32_t i = 0; i < cBuffers; ++i)
     {
         PVBOXUHGSMI_BUFFER_SUBMIT pBufInfo = &aBuffers[i];
-        PVBOXUHGSMI_BUFFER_PRIVATE_BASE pBuffer = VBOXUHGSMIBASE_GET_BUFFER(pBufInfo->pBuf);
+        PVBOXUHGSMI_BUFFER_PRIVATE_DX_ALLOC_BASE pBuffer = VBOXUHGSMDXALLOCBASE_GET_BUFFER(pBufInfo->pBuf);
 
         memset(pAllocationList, 0, sizeof (D3DDDI_ALLOCATIONLIST));
         pAllocationList->hAllocation = pBuffer->hAllocation;
@@ -180,7 +180,7 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
         if (pBufInfo->fFlags.bEntireBuffer)
         {
             pBufSubmInfo->offData = 0;
-            pBufSubmInfo->cbData = pBuffer->Base.cbBuffer;
+            pBufSubmInfo->cbData = pBuffer->BasePrivate.Base.cbBuffer;
         }
         else
         {
@@ -194,7 +194,6 @@ DECLINLINE(int) vboxUhgsmiBaseDmaFill(PVBOXUHGSMI_BUFFER_SUBMIT aBuffers, uint32
 
     return VINF_SUCCESS;
 }
-#endif
 
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferLock(PVBOXUHGSMI_BUFFER pBuf, uint32_t offLock, uint32_t cbLock, VBOXUHGSMI_BUFFER_LOCK_FLAGS fFlags, void**pvLock);
 DECLCALLBACK(int) vboxUhgsmiBaseEscBufferUnlock(PVBOXUHGSMI_BUFFER pBuf);
