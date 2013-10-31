@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>Show Session Information Dialog</source>
-        <translation>顯示工作階段資訊視窗</translation>
+        <translation type="obsolete">顯示工作階段資訊視窗</translation>
     </message>
     <message>
         <source>&amp;Pause</source>
@@ -264,11 +264,11 @@
     </message>
     <message>
         <source>&amp;Install Guest Additions...</source>
-        <translation>安裝 Guest Additions(&amp;I)...</translation>
+        <translation type="obsolete">安裝 Guest Additions(&amp;I)...</translation>
     </message>
     <message>
         <source>Mount the Guest Additions installation image</source>
-        <translation>掛載 Guest Additions 安裝映像</translation>
+        <translation type="obsolete">掛載 Guest Additions 安裝映像</translation>
     </message>
     <message>
         <source>De&amp;bug</source>
@@ -707,6 +707,22 @@
     <message>
         <source>Popup Menu</source>
         <translation>Popup Menu</translation>
+    </message>
+    <message>
+        <source>Show Session Information Window</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Webcams</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Insert Guest Additions CD image...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert the Guest Additions disk file into the virtual drive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2245,6 +2261,14 @@
         <source>Select a filename for the screenshot ...</source>
         <translation>選取快照的檔案名稱 ...</translation>
     </message>
+    <message>
+        <source>No Webcams Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No supported webcams connected to the host PC</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>UIMachineSettingsAudio</name>
@@ -2903,7 +2927,7 @@
     </message>
     <message>
         <source>Dialog</source>
-        <translation>Dialog</translation>
+        <translation type="obsolete">Dialog</translation>
     </message>
     <message>
         <source>Folder Path:</source>
@@ -3324,6 +3348,10 @@
     <message>
         <source>The machine currently has more storage controllers assigned than a %1 chipset supports. Please change the chipset type on the System settings page or reduce the number of the following storage controllers on the Storage settings page: %2</source>
         <translation>機器目前指派超過 %1 晶片組所支援的存放控制器。 請在 [系統] 設定頁中變更晶片組類型或在 [存放] 設定頁中減少以下存放控制器的數量: %2。</translation>
+    </message>
+    <message>
+        <source>Add USB Controller</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -3987,7 +4015,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window is optimized to work in &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode but the virtual display is currently set to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Please open the display properties dialog of the guest OS and select a &lt;b&gt;%3&amp;nbsp;bit&lt;/b&gt; color mode, if it is available, for best possible performance of the virtual video subsystem.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;. Some operating systems, like OS/2, may actually work in 32&amp;nbsp;bit mode but report it as 24&amp;nbsp;bit (16 million colors). You may try to select a different color mode to see if this message disappears or you can simply disable the message now if you are sure the required color mode (%4&amp;nbsp;bit) is not available in the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器視窗最佳化在 &lt;b&gt;%1&amp;nbsp;位元&lt;/b&gt; 的色彩模式中工作，但是目前虛擬顯示設定為 &lt;b&gt;%2&amp;nbsp;位元&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;如果可用，請開啟客體作業系統的顯示內容對話方塊，並且選取 &lt;b&gt;%3&amp;nbsp;位元&lt;/b&gt; 的色彩模式，作為虛擬視訊子系統的最佳效能。&lt;/p&gt;&lt;p&gt;&lt;b&gt;請注意&lt;/b&gt;，某些像是 OS/2 的作業系統，可能實際上作用於 32&amp;nbsp;位元模式，卻回報為 24&amp;nbsp;位元 (16 萬色) 。 您可以試著選取不同的色彩模式來查看這個訊息是否消失，如果您確定所要求的色彩模式 (%4&amp;nbsp;位元) 在客體作業系統中不可用，您可以現在簡單的停用訊息。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;虛擬機器視窗最佳化在 &lt;b&gt;%1&amp;nbsp;位元&lt;/b&gt; 的色彩模式中工作，但是目前虛擬顯示設定為 &lt;b&gt;%2&amp;nbsp;位元&lt;/b&gt;。&lt;/p&gt;&lt;p&gt;如果可用，請開啟客體作業系統的顯示內容對話方塊，並且選取 &lt;b&gt;%3&amp;nbsp;位元&lt;/b&gt; 的色彩模式，作為虛擬視訊子系統的最佳效能。&lt;/p&gt;&lt;p&gt;&lt;b&gt;請注意&lt;/b&gt;，某些像是 OS/2 的作業系統，可能實際上作用於 32&amp;nbsp;位元模式，卻回報為 24&amp;nbsp;位元 (16 萬色) 。 您可以試著選取不同的色彩模式來查看這個訊息是否消失，如果您確定所要求的色彩模式 (%4&amp;nbsp;位元) 在客體作業系統中不可用，您可以現在簡單的停用訊息。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Failed to open the license file &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;. Check file permissions.</source>
@@ -4017,7 +4045,7 @@
     <message>
         <source>Mount</source>
         <comment>additions</comment>
-        <translation>掛載</translation>
+        <translation type="obsolete">掛載</translation>
     </message>
     <message>
         <source>&lt;p&gt;The host key is currently defined as &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4336,7 +4364,7 @@
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Install Guest Additions&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VirtualBox Guest Additions 似乎在這部虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器內使用共用資料夾，如果是未安裝請安裝 Guest Additions ，或如果是未正常動作則重新安裝，從&lt;b&gt;裝置&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
+        <translation type="obsolete">&lt;p&gt;VirtualBox Guest Additions 似乎在這部虛擬機器不可使用，因此共用資料夾無法使用。 若要在虛擬機器內使用共用資料夾，如果是未安裝請安裝 Guest Additions ，或如果是未正常動作則重新安裝，從&lt;b&gt;裝置&lt;/b&gt;功能表選取&lt;b&gt;安裝 Guest Additions&lt;/b&gt;。 如果已安裝但機器尚未完全啟動，則共用資料夾將在啟動後可以使用。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -4791,6 +4819,27 @@
     <message>
         <source>&lt;p&gt;Do you want to remove the NAT network &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;If this network is in use by one or more virtual machine network adapters these adapters will no longer be usable until you correct their settings by either choosing a different network name or a different adapter attachment type.&lt;/p&gt;</source>
         <translation>&lt;p&gt;您確定要移除 NAT 網路 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 嗎?&lt;/nobr&gt;&lt;/p&gt;&lt;p&gt;如果一個或數個虛擬機器網路卡正在使用此網路，除非選擇不同的網路名稱或以不同的網路卡附加類型來修正其設定，否則這些網路卡將不再能使用。&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Insert</source>
+        <comment>additions</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -5987,7 +6036,7 @@
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this dialog again.</source>
-        <translation>接受變更並重新開啟這個對話方塊後，將顯示實際的預設路徑值。</translation>
+        <translation type="obsolete">接受變更並重新開啟這個對話方塊後，將顯示實際的預設路徑值。</translation>
     </message>
     <message>
         <source>&lt;not selected&gt;</source>
@@ -6032,6 +6081,10 @@
     <message>
         <source>Please type the file path here.</source>
         <translation>請在此輸入檔案路徑。</translation>
+    </message>
+    <message>
+        <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -7376,6 +7429,16 @@
     <message>
         <source>You can create or add disk image files in the virtual machine settings.</source>
         <translation>您可以使用虛擬機器設定建立或加入磁碟映像檔案。</translation>
+    </message>
+    <message>
+        <source>USB</source>
+        <comment>StorageControllerType</comment>
+        <translation type="unfinished">USB</translation>
+    </message>
+    <message>
+        <source>USB Port %1</source>
+        <comment>StorageSlot</comment>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
