@@ -948,19 +948,19 @@
     </message>
     <message>
         <source>Show Session Information Window</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать диалог информации о сессии</translation>
     </message>
     <message>
         <source>&amp;Webcams</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Веб-камеры</translation>
     </message>
     <message>
         <source>&amp;Insert Guest Additions CD image...</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;Подключить образ диска Дополнений гостевой ОС...</translation>
     </message>
     <message>
         <source>Insert the Guest Additions disk file into the virtual drive</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключить установочный образ диска c пакетом Дополнений гостевой ОС</translation>
     </message>
 </context>
 <context>
@@ -4496,11 +4496,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>No Webcams Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет подсоединённых веб-камер</translation>
     </message>
     <message>
         <source>No supported webcams connected to the host PC</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет поддерживаемых веб-камер, подсоединённых к хосту</translation>
     </message>
 </context>
 <context>
@@ -6233,7 +6233,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Add USB Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Добавить USB контроллер</translation>
     </message>
 </context>
 <context>
@@ -8414,24 +8414,24 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to attach the webcam &lt;b&gt;%1&lt;/b&gt; to the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось подсоединить веб-камеру &lt;b&gt;%1&lt;/b&gt; к виртуальной машине &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>Failed to detach the webcam &lt;b&gt;%1&lt;/b&gt; from the virtual machine &lt;b&gt;%2&lt;/b&gt;.</source>
-        <translation type="unfinished"></translation>
+        <translation>Не удалось отсоединить веб-камеру &lt;b&gt;%1&lt;/b&gt; от виртуальной машины &lt;b&gt;%2&lt;/b&gt;.</translation>
     </message>
     <message>
         <source>&lt;p&gt;The VirtualBox Guest Additions do not appear to be available on this virtual machine, and shared folders cannot be used without them. To use shared folders inside the virtual machine, please install the Guest Additions if they are not installed, or re-install them if they are not working correctly, by selecting &lt;b&gt;Insert Guest Additions CD image&lt;/b&gt; from the &lt;b&gt;Devices&lt;/b&gt; menu. If they are installed but the machine is not yet fully started then shared folders will be available once it is.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;По всей видимости, дополнения гостевой ОС недоступны данной виртуальной машине. Чтобы использовать общие папки внутри виртуальной машины, установите дополнения гостевой ОС, выбрав &lt;b&gt;Подключить образ диска Дополнений гостевой ОС...&lt;/b&gt; из меню &lt;b&gt;Устройства&lt;/b&gt;. Если дополнения установлены, но машина ещё не полностью загружена, они будут доступны на момент полной загрузки машины.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Insert</source>
         <comment>additions</comment>
-        <translation type="unfinished"></translation>
+        <translation>Подключить</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual screen is currently set to a &lt;b&gt;%1&amp;nbsp;bit&lt;/b&gt; color mode. For better performance please change this to &lt;b&gt;%2&amp;nbsp;bit&lt;/b&gt;. This can usually be done from the &lt;b&gt;Display&lt;/b&gt; section of the guest operating system&apos;s Control Panel or System Settings.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;p&gt;Виртуальный экран настроен на использование глубины цвета &lt;b&gt;%1&amp;nbsp;бит&lt;/b&gt;. Для достижения наилучшей производительности измените этот атрибут на &lt;b&gt;%2&amp;nbsp;бит&lt;/b&gt;. Обычно это можно сделать из диалога настройки&lt;b&gt;Параметров экрана&lt;/b&gt; панели управления гостевой операционной системы.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -11260,7 +11260,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The actual default path value will be displayed after accepting the changes and opening this window again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Фактическая папка по умолчанию будет показана после принятия изменений и повторного открытия этого окна.</translation>
     </message>
 </context>
 <context>
@@ -13116,12 +13116,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished">USB</translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>USB Port %1</source>
         <comment>StorageSlot</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB порт %1</translation>
     </message>
 </context>
 <context>
