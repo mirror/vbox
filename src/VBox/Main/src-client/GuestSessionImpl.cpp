@@ -113,7 +113,7 @@ public:
             case VBoxEventType_OnGuestSessionStateChanged:
             {
                 Assert(!mSession.isNull());
-                int rc2 = mSession->signalWaitEvents(aType, aEvent);
+                int rc2 = mSession->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
                 LogFlowFunc(("Signalling events of type=%ld, session=%p resulted in rc=%Rrc\n",
                              aType, mSession, rc2));
@@ -288,7 +288,7 @@ void GuestSession::uninit(void)
     for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
          itDirs != mData.mDirectories.end(); ++itDirs)
     {
-        (*itDirs)->Release();
+        itDirs->second->Release();
     }
     mData.mDirectories.clear();
 
@@ -664,7 +664,7 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
@@ -701,87 +701,59 @@ int GuestSession::closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuest
     return vrc;
 }
 
-int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
+int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode,
+                                          uint32_t uFlags, int *pGuestRc)
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
-         itDirs != mData.mDirectories.end(); ++itDirs)
-    {
-        if (pDirectory == (*itDirs))
-        {
-            Bstr strName;
-            HRESULT hr = (*itDirs)->COMGETTER(DirectoryName)(strName.asOutParam());
-            ComAssertComRC(hr);
-
-            Assert(mData.mDirectories.size());
-            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
-                         Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1));
-
-            mData.mDirectories.erase(itDirs);
-            return VINF_SUCCESS;
-        }
-    }
-
-    return VERR_NOT_FOUND;
-}
-
-int GuestSession::directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc)
-{
-    /* pGuestRc is optional. */
-
     LogFlowThisFunc(("strPath=%s, uMode=%x, uFlags=%x\n",
                      strPath.c_str(), uMode, uFlags));
+
+    int vrc = VINF_SUCCESS;
 
     GuestProcessStartupInfo procInfo;
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKDIR);
     procInfo.mFlags   = ProcessCreateFlag_Hidden;
 
-    int vrc = VINF_SUCCESS;
-
-    /* Construct arguments. */
-    if (uFlags & DirectoryCreateFlag_Parents)
-        procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
-    if (uMode)
+    try
     {
-        procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
-
-        char szMode[16];
-        if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
+        /* Construct arguments. */
+        if (uFlags & DirectoryCreateFlag_Parents)
+            procInfo.mArguments.push_back(Utf8Str("--parents")); /* We also want to create the parent directories. */
+        if (uMode)
         {
-            procInfo.mArguments.push_back(Utf8Str(szMode));
+            procInfo.mArguments.push_back(Utf8Str("--mode")); /* Set the creation mode. */
+
+            char szMode[16];
+            if (RTStrPrintf(szMode, sizeof(szMode), "%o", uMode))
+            {
+                procInfo.mArguments.push_back(Utf8Str(szMode));
+            }
+            else
+                vrc = VERR_BUFFER_OVERFLOW;
         }
-        else
-            vrc = VERR_BUFFER_OVERFLOW;
+        procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
     }
-    procInfo.mArguments.push_back(strPath); /* The directory we want to create. */
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
 
     if (RT_SUCCESS(vrc))
-    {
-        int guestRc;
-        GuestProcessTool procTool;
-        vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
-        if (RT_SUCCESS(vrc))
-        {
-            if (RT_SUCCESS(guestRc))
-                vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
-        }
-
-        if (RT_SUCCESS(vrc))
-        {
-            if (RT_SUCCESS(guestRc))
-                guestRc = procTool.TerminatedOk(NULL /* Exit code */);
-        }
-
-        if (   vrc == VERR_GSTCTL_GUEST_ERROR
-            && pGuestRc)
-        {
-            *pGuestRc = guestRc;
-        }
-    }
+        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+inline bool GuestSession::directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir)
+{
+    SessionDirectories::const_iterator it = mData.mDirectories.find(uDirID);
+    if (it != mData.mDirectories.end())
+    {
+        if (pDir)
+            *pDir = it->second;
+        return true;
+    }
+    return false;
 }
 
 int GuestSession::directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc)
@@ -799,72 +771,229 @@ int GuestSession::directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjD
     return vrc;
 }
 
-int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
-                                           bool fDirectory, const Utf8Str &strName, int *pGuestRc)
+int GuestSession::directoryRemoveFromList(GuestDirectory *pDirectory)
 {
-    GuestProcessStartupInfo procInfo;
-    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
-    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
-    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-    if (fDirectory)
-        procInfo.mArguments.push_back(Utf8Str("-d"));
-    if (strPath.length()) /* Otherwise use /tmp or equivalent. */
-    {
-        procInfo.mArguments.push_back(Utf8Str("-t"));
-        procInfo.mArguments.push_back(strPath);
-    }
-    procInfo.mArguments.push_back(strTemplate);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    GuestProcessTool procTool; int guestRc;
-    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
+    for (SessionDirectories::iterator itDirs = mData.mDirectories.begin();
+         itDirs != mData.mDirectories.end(); ++itDirs)
+    {
+        if (pDirectory == itDirs->second)
+        {
+            Bstr strName;
+            HRESULT hr = itDirs->second->COMGETTER(DirectoryName)(strName.asOutParam());
+            ComAssertComRC(hr);
+
+            Assert(mData.mDirectories.size());
+            LogFlowFunc(("Removing directory \"%s\" (Session: %RU32) (now total %ld directories)\n",
+                         Utf8Str(strName).c_str(), mData.mSession.mID, mData.mDirectories.size() - 1));
+
+            mData.mDirectories.erase(itDirs);
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
+
+int GuestSession::directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags,
+                                          int *pGuestRc)
+{
+    AssertReturn(!(uFlags & ~DIRREMOVE_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    LogFlowThisFunc(("strPath=%s, uFlags=0x%x\n", strPath.c_str(), uFlags));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    GuestWaitEvent *pEvent = NULL;
+    int vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */,
+                                &pEvent);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Prepare HGCM call. */
+    VBOXHGCMSVCPARM paParms[8];
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+    paParms[i++].setPointer((void*)strPath.c_str(),
+                            (ULONG)strPath.length() + 1);
+    paParms[i++].setUInt32(uFlags);
+
+    alock.release(); /* Drop write lock before sending. */
+
+    vrc = sendCommand(HOST_DIR_REMOVE, i, paParms);
     if (RT_SUCCESS(vrc))
     {
-        if (RT_SUCCESS(guestRc))
-            vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
+        vrc = pEvent->Wait(30 * 1000);
+        if (   vrc == VERR_GSTCTL_GUEST_ERROR
+            && pGuestRc)
+            *pGuestRc = pEvent->GuestResult();
     }
 
-    if (RT_SUCCESS(vrc))
-    {
-        if (RT_SUCCESS(guestRc))
-            guestRc = procTool.TerminatedOk(NULL /* Exit code */);
-    }
-
-    if (   vrc == VERR_GSTCTL_GUEST_ERROR
-        && pGuestRc)
-    {
-        *pGuestRc = guestRc;
-    }
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestSession::directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter,
-                                        uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory)
+int GuestSession::objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath,
+                                           bool fDirectory, const Utf8Str &strName, int *pGuestRc)
+{
+    LogFlowThisFunc(("strTemplate=%s, strPath=%s, fDirectory=%RTbool, strName=%s\n",
+                     strTemplate.c_str(), strPath.c_str(), fDirectory, strName.c_str()));
+
+    int vrc = VINF_SUCCESS;
+
+    GuestProcessStartupInfo procInfo;
+    procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_MKTEMP);
+    procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
+
+    try
+    {
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        if (fDirectory)
+            procInfo.mArguments.push_back(Utf8Str("-d"));
+        if (strPath.length()) /* Otherwise use /tmp or equivalent. */
+        {
+            procInfo.mArguments.push_back(Utf8Str("-t"));
+            procInfo.mArguments.push_back(strPath);
+        }
+        procInfo.mArguments.push_back(strTemplate);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(vrc))
+        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestSession::directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo,
+                                        ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s, strPath=%s, uFlags=%x\n",
-                     strPath.c_str(), strFilter.c_str(), uFlags));
+                     openInfo.mPath.c_str(), openInfo.mFilter.c_str(), openInfo.mFlags));
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = VERR_MAX_PROCS_REACHED;
+    if (mData.mNumObjects >= VBOX_GUESTCTRL_MAX_OBJECTS)
+        return rc;
+
+    /* Create a new (host-based) directory ID and assign it. */
+    uint32_t uNewDirID = 0;
+    ULONG uTries = 0;
+
+    for (;;)
+    {
+        /* Is the directory ID already used? */
+        if (!directoryExists(uNewDirID, NULL /* pDirectory */))
+        {
+            /* Callback with context ID was not found. This means
+             * we can use this context ID for our new callback we want
+             * to add below. */
+            rc = VINF_SUCCESS;
+            break;
+        }
+        uNewDirID++;
+        if (uNewDirID == VBOX_GUESTCTRL_MAX_OBJECTS)
+            uNewDirID = 0;
+
+        if (++uTries == UINT32_MAX)
+            break; /* Don't try too hard. */
+    }
+
+    if (RT_FAILURE(rc))
+        return rc;
 
     /* Create the directory object. */
     HRESULT hr = pDirectory.createObject();
     if (FAILED(hr))
         return VERR_COM_UNEXPECTED;
 
-    int vrc = pDirectory->init(this /* Parent */,
-                               strPath, strFilter, uFlags);
+    Console *pConsole = mParent->getConsole();
+    AssertPtr(pConsole);
+
+    int vrc = pDirectory->init(pConsole, this /* Parent */,
+                               uNewDirID, openInfo);
     if (RT_FAILURE(vrc))
         return vrc;
 
-    /* Add the created directory to our vector. */
-    mData.mDirectories.push_back(pDirectory);
+    /*
+     * Since this is a synchronous guest call we have to
+     * register the file object first, releasing the session's
+     * lock and then proceed with the actual opening command
+     * -- otherwise the file's opening callback would hang
+     * because the session's lock still is in place.
+     */
+    try
+    {
+        /* Add the created directory to our map. */
+        mData.mDirectories[uNewDirID] = pDirectory;
+        mData.mNumObjects++;
+        Assert(mData.mNumObjects <= VBOX_GUESTCTRL_MAX_OBJECTS);
 
-    LogFlowFunc(("Added new directory \"%s\" (Session: %RU32)\n",
-                 strPath.c_str(), mData.mSession.mID));
+        LogFlowFunc(("Added new guest directory \"%s\" (Session: %RU32) (now total %ld dirs, %ld objects)\n",
+                     openInfo.mPath.c_str(), mData.mSession.mID, mData.mFiles.size(), mData.mNumObjects));
+
+        alock.release(); /* Release lock before firing off event. */
+
+        /** @todo Fire off a VBoxEventType_OnGuestDirectoryRegistered event? */
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = VERR_NO_MEMORY;
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Nothing further to do here yet. */
+        if (pGuestRc)
+            *pGuestRc = VINF_SUCCESS;
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
+}
+
+int GuestSession::dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+{
+    LogFlowFunc(("pCtxCb=%p, pSvcCb=%p\n", pCtxCb, pSvcCb));
+
+    AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+    if (pSvcCb->mParms < 3)
+        return VERR_INVALID_PARAMETER;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    uint32_t uDirID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
+#ifdef DEBUG
+    LogFlowFunc(("uDirID=%RU32 (%RU32 total)\n",
+                 uDirID, mData.mFiles.size()));
+#endif
+    int rc;
+    SessionDirectories::const_iterator itDir
+        = mData.mDirectories.find(uDirID);
+    if (itDir != mData.mDirectories.end())
+    {
+        ComObjPtr<GuestDirectory> pDirectory(itDir->second);
+        Assert(!pDirectory.isNull());
+
+        alock.release();
+
+        rc = pDirectory->callbackDispatcher(pCtxCb, pSvcCb);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int GuestSession::dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
@@ -895,6 +1024,55 @@ int GuestSession::dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLH
     }
     else
         rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+int GuestSession::dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+{
+    LogFlowFunc(("pCtxCb=%p, pSvcCb=%p\n", pCtxCb, pSvcCb));
+
+    AssertPtrReturn(pCtxCb, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+    int rc;
+    uint32_t uObjectID = VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCtxCb->uContextID);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* Since we don't know which type the object is, we need to through all
+     * all objects. */
+    /** @todo Speed this up by adding an object type to the callback context! */
+    SessionProcesses::const_iterator itProc = mData.mProcesses.find(uObjectID);
+    if (itProc == mData.mProcesses.end())
+    {
+        SessionFiles::const_iterator itFile = mData.mFiles.find(uObjectID);
+        if (itFile != mData.mFiles.end())
+        {
+            alock.release();
+
+            rc = dispatchToFile(pCtxCb, pSvcCb);
+        }
+        else
+        {
+            SessionDirectories::const_iterator itDir = mData.mDirectories.find(uObjectID);
+            if (itDir != mData.mDirectories.end())
+            {
+                alock.release();
+
+                rc = dispatchToDirectory(pCtxCb, pSvcCb);
+            }
+            else
+                rc = VERR_NOT_FOUND;
+        }
+    }
+    else
+    {
+        alock.release();
+
+        rc = dispatchToProcess(pCtxCb, pSvcCb);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -948,14 +1126,14 @@ int GuestSession::dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLH
                      mData.mSession.mID, pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
 #endif
 
-    int rc = VINF_SUCCESS;
+    int rc;
     switch (pCbCtx->uFunction)
     {
         case GUEST_DISCONNECTED:
             /** @todo Handle closing all guest objects. */
             break;
 
-        case GUEST_SESSION_NOTIFY:
+        case GUEST_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
         {
             rc = onSessionStatusChange(pCbCtx, pSvcCb);
             break;
@@ -1023,36 +1201,35 @@ int GuestSession::fileRemoveFromList(GuestFile *pFile)
 
 int GuestSession::fileRemoveInternal(const Utf8Str &strPath, int *pGuestRc)
 {
+    LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
+
+    int vrc = VINF_SUCCESS;
+
     GuestProcessStartupInfo procInfo;
     GuestProcessStream      streamOut;
 
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_RM);
     procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
-    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-    procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
 
-    GuestProcessTool procTool; int guestRc;
-    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
-    if (RT_SUCCESS(vrc))
-        vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
-
-    if (RT_SUCCESS(vrc))
+    try
     {
-        if (RT_SUCCESS(guestRc))
-            guestRc = procTool.TerminatedOk(NULL /* Exit code */);
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back(strPath); /* The file we want to remove. */
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
     }
 
-    if (   vrc == VERR_GSTCTL_GUEST_ERROR
-        && pGuestRc)
-    {
-        *pGuestRc = guestRc;
-    }
+    if (RT_SUCCESS(vrc))
+        vrc = GuestProcessTool::Run(this, procInfo, pGuestRc);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
 }
 
-int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<GuestFile> &pFile, int *pGuestRc)
+int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo,
+                                   ComObjPtr<GuestFile> &pFile, int *pGuestRc)
 {
     LogFlowThisFunc(("strPath=%s, strOpenMode=%s, strDisposition=%s, uCreationMode=%x, uOffset=%RU64\n",
                      openInfo.mFileName.c_str(), openInfo.mOpenMode.c_str(), openInfo.mDisposition.c_str(),
@@ -1079,7 +1256,7 @@ int GuestSession::fileOpenInternal(const GuestFileOpenInfo &openInfo, ComObjPtr<
     for (;;)
     {
         /* Is the file ID already used? */
-        if (!fileExists(uNewFileID, NULL /* pProgress */))
+        if (!fileExists(uNewFileID, NULL /* pFile */))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -1184,36 +1361,36 @@ int GuestSession::fsQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &ob
 {
     LogFlowThisFunc(("strPath=%s\n", strPath.c_str()));
 
+    int vrc = VINF_SUCCESS;
+
     /** @todo Merge this with IGuestFile::queryInfo(). */
     GuestProcessStartupInfo procInfo;
     procInfo.mCommand = Utf8Str(VBOXSERVICE_TOOL_STAT);
     procInfo.mFlags   = ProcessCreateFlag_WaitForStdOut;
 
-    /* Construct arguments. */
-    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-    procInfo.mArguments.push_back(strPath);
-
-    GuestProcessTool procTool; int guestRc;
-    int vrc = procTool.Init(this, procInfo, false /* Async */, &guestRc);
-    if (RT_SUCCESS(vrc))
-        vrc = procTool.Wait(GUESTPROCESSTOOL_FLAG_NONE, &guestRc);
-    if (RT_SUCCESS(vrc))
+    try
     {
-        guestRc = procTool.TerminatedOk(NULL /* Exit code */);
-        if (RT_SUCCESS(guestRc))
-        {
-            GuestProcessStreamBlock curBlock;
-            vrc = procTool.GetCurrentBlock(OUTPUT_HANDLE_ID_STDOUT,  curBlock);
-            /** @todo Check for more / validate blocks! */
-            if (RT_SUCCESS(vrc))
-                vrc = objData.FromStat(curBlock);
-        }
+        /* Construct arguments. */
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        procInfo.mArguments.push_back(strPath);
+    }
+    catch (std::bad_alloc)
+    {
+        vrc = VERR_NO_MEMORY;
     }
 
-    if (   vrc == VERR_GSTCTL_GUEST_ERROR
-        && pGuestRc)
+    int guestRc; GuestCtrlStreamObjects stdOut;
+    if (RT_SUCCESS(vrc))
+        vrc = GuestProcessTool::RunEx(this, procInfo,
+                                      &stdOut, 1 /* cStrmOutObjects */,
+                                      &guestRc);
+    if (   RT_SUCCESS(vrc)
+        && RT_SUCCESS(guestRc))
     {
-        *pGuestRc = guestRc;
+        if (!stdOut.empty())
+            vrc = objData.FromStat(stdOut.at(0));
+        else
+            vrc = VERR_NO_DATA;
     }
 
     LogFlowFuncLeaveRC(vrc);
@@ -1402,11 +1579,12 @@ int GuestSession::startSessionInternal(int *pGuestRc)
 
     /* Set current session status. */
     mData.mStatus = GuestSessionStatus_Starting;
+    mData.mRC = VINF_SUCCESS; /* Clear previous error, if any. */
 
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
@@ -1439,9 +1617,22 @@ int GuestSession::startSessionInternal(int *pGuestRc)
 
     vrc = sendCommand(HOST_SESSION_CREATE, i, paParms);
     if (RT_SUCCESS(vrc))
+    {
         vrc = waitForStatusChange(pEvent, GuestSessionWaitForFlag_Start,
                                   30 * 1000 /* 30s timeout */,
                                   NULL /* Session status */, pGuestRc);
+    }
+    else
+    {
+        /*
+         * Unable to start guest session - update its current state.
+         * Since there is no (official API) way to recover a failed guest session
+         * this also marks the end state. Internally just calling this
+         * same function again will work though.
+         */
+        mData.mStatus = GuestSessionStatus_Error;
+        mData.mRC = vrc;
+    }
 
     unregisterWaitEvent(pEvent);
 
@@ -1497,6 +1688,49 @@ DECLCALLBACK(int) GuestSession::startSessionThread(RTTHREAD Thread, void *pvUser
 
     int vrc = pSession->startSessionInternal(NULL /* Guest rc, ignored */);
     /* Nothing to do here anymore. */
+
+    LogFlowFuncLeaveRC(vrc);
+    return vrc;
+}
+
+int GuestSession::pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest,
+                                     uint32_t uFlags, int *pGuestRc)
+{
+    AssertReturn(!(uFlags & ~PATHRENAME_FLAG_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    LogFlowThisFunc(("strSource=%s, strDest=%s, uFlags=0x%x\n",
+                     strSource.c_str(), strDest.c_str(), uFlags));
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    GuestWaitEvent *pEvent = NULL;
+    int vrc = registerWaitEvent(mData.mSession.mID, 0 /* Object ID */,
+                                &pEvent);
+    if (RT_FAILURE(vrc))
+        return vrc;
+
+    /* Prepare HGCM call. */
+    VBOXHGCMSVCPARM paParms[8];
+    int i = 0;
+    paParms[i++].setUInt32(pEvent->ContextID());
+    paParms[i++].setPointer((void*)strSource.c_str(),
+                            (ULONG)strSource.length() + 1);
+    paParms[i++].setPointer((void*)strDest.c_str(),
+                            (ULONG)strDest.length() + 1);
+    paParms[i++].setUInt32(uFlags);
+
+    alock.release(); /* Drop write lock before sending. */
+
+    vrc = sendCommand(HOST_PATH_RENAME, i, paParms);
+    if (RT_SUCCESS(vrc))
+    {
+        vrc = pEvent->Wait(30 * 1000);
+        if (   vrc == VERR_GSTCTL_GUEST_ERROR
+            && pGuestRc)
+            *pGuestRc = pEvent->GuestResult();
+    }
+
+    unregisterWaitEvent(pEvent);
 
     LogFlowFuncLeaveRC(vrc);
     return vrc;
@@ -1624,7 +1858,7 @@ int GuestSession::processCreateExInteral(GuestProcessStartupInfo &procInfo, ComO
     for (;;)
     {
         /* Is the context ID already used? */
-        if (!processExists(uNewProcessID, NULL /* pProgress */))
+        if (!processExists(uNewProcessID, NULL /* pProcess */))
         {
             /* Callback with context ID was not found. This means
              * we can use this context ID for our new callback we want
@@ -1987,7 +2221,7 @@ int GuestSession::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, GuestSessionWai
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestSessionStateChanged);
@@ -2109,6 +2343,9 @@ STDMETHODIMP GuestSession::Close(void)
 
     /* Remove ourselves from the session list. */
     int rc2 = mParent->sessionRemove(this);
+    if (rc2 == VERR_NOT_FOUND) /* Not finding the session anymore isn't critical. */
+        rc2 = VINF_SUCCESS;
+
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2417,8 +2654,13 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
 
     HRESULT hr = S_OK;
 
-    ComObjPtr <GuestDirectory> pDirectory;
-    int rc = directoryOpenInternal(Utf8Str(aPath), Utf8Str(aFilter), fFlags, pDirectory);
+    GuestDirectoryOpenInfo openInfo;
+    openInfo.mPath = Utf8Str(aPath);
+    openInfo.mFilter = Utf8Str(aFilter);
+    openInfo.mFlags = fFlags;
+
+    ComObjPtr <GuestDirectory> pDirectory; int guestRc;
+    int rc = directoryOpenInternal(openInfo, pDirectory, &guestRc);
     if (RT_SUCCESS(rc))
     {
         /* Return directory object to the caller. */
@@ -2432,6 +2674,10 @@ STDMETHODIMP GuestSession::DirectoryOpen(IN_BSTR aPath, IN_BSTR aFilter, ComSafe
                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed; invalid parameters given",
                                                    Utf8Str(aPath).c_str()));
                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = GuestDirectory::setErrorExternal(this, guestRc);
+                break;
 
             default:
                hr = setError(VBOX_E_IPRT_ERROR, tr("Opening directory \"%s\" failed: %Rrc"),
@@ -2510,10 +2756,42 @@ STDMETHODIMP GuestSession::DirectoryRemove(IN_BSTR aPath)
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to remove specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    /* No flags; only remove the directory when empty. */
+    uint32_t uFlags = 0;
+
+    int guestRc;
+    int vrc = directoryRemoveInternal(Utf8Str(aPath), uFlags, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Handling removing guest directories not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = GuestDirectory::setErrorExternal(this, guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Removing guest directory \"%s\" failed: %Rrc"),
+                              Utf8Str(aPath).c_str(), vrc);
+                break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2524,10 +2802,63 @@ STDMETHODIMP GuestSession::DirectoryRemoveRecursive(IN_BSTR aPath, ComSafeArrayI
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aPath) == NULL || *(aPath) == '\0'))
+        return setError(E_INVALIDARG, tr("No directory to remove recursively specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    ComObjPtr<Progress> pProgress;
+    hr = pProgress.createObject();
+    if (SUCCEEDED(hr))
+        hr = pProgress->init(static_cast<IGuestSession *>(this),
+                             Bstr(tr("Removing guest directory")).raw(),
+                             TRUE /*aCancelable*/);
+    if (FAILED(hr))
+        return hr;
+
+    /* Note: At the moment we don't supply progress information while
+     *       deleting a guest directory recursively. So just complete
+     *       the progress object right now. */
+     /** @todo Implement progress reporting on guest directory deletion! */
+    hr = pProgress->notifyComplete(S_OK);
+    if (FAILED(hr))
+        return hr;
+
+    /* Remove the directory + all its contents. */
+    uint32_t uFlags = DIRREMOVE_FLAG_RECURSIVE
+                    | DIRREMOVE_FLAG_CONTENT_AND_DIR;
+    int guestRc;
+    int vrc = directoryRemoveInternal(Utf8Str(aPath), uFlags, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Handling removing guest directories recursively not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = GuestFile::setErrorExternal(this, guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Recursively removing guest directory \"%s\" failed: %Rrc"),
+                              Utf8Str(aPath).c_str(), vrc);
+                break;
+        }
+    }
+    else
+    {
+        pProgress.queryInterfaceTo(aProgress);
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2538,10 +2869,46 @@ STDMETHODIMP GuestSession::DirectoryRename(IN_BSTR aSource, IN_BSTR aDest, ComSa
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aSource) == NULL || *(aSource) == '\0'))
+        return setError(E_INVALIDARG, tr("No source directory to rename specified"));
+
+    if (RT_UNLIKELY((aDest) == NULL || *(aDest) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination directory to rename the source to specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    /* No flags; only remove the directory when empty. */
+    uint32_t uFlags = 0;
+
+    int guestRc;
+    int vrc = pathRenameInternal(Utf8Str(aSource), Utf8Str(aDest), uFlags, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Handling renaming guest directories not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Renaming guest directory failed: %Rrc"), guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest directory \"%s\" failed: %Rrc"),
+                              Utf8Str(aSource).c_str(), vrc);
+                break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
@@ -2929,10 +3296,47 @@ STDMETHODIMP GuestSession::FileRename(IN_BSTR aSource, IN_BSTR aDest, ComSafeArr
 #else
     LogFlowThisFuncEnter();
 
+    if (RT_UNLIKELY((aSource) == NULL || *(aSource) == '\0'))
+        return setError(E_INVALIDARG, tr("No source file to rename specified"));
+
+    if (RT_UNLIKELY((aDest) == NULL || *(aDest) == '\0'))
+        return setError(E_INVALIDARG, tr("No destination file to rename the source to specified"));
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    ReturnComNotImplemented();
+    HRESULT hr = isReadyExternal();
+    if (FAILED(hr))
+        return hr;
+
+    /* No flags; only remove the directory when empty. */
+    uint32_t uFlags = 0;
+
+    int guestRc;
+    int vrc = pathRenameInternal(Utf8Str(aSource), Utf8Str(aDest), uFlags, &guestRc);
+    if (RT_FAILURE(vrc))
+    {
+        switch (vrc)
+        {
+            case VERR_NOT_SUPPORTED:
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Handling renaming guest files not supported by installed Guest Additions"));
+                break;
+
+            case VERR_GSTCTL_GUEST_ERROR:
+                /** @todo Proper guestRc to text translation needed. */
+                hr = setError(VBOX_E_IPRT_ERROR,
+                              tr("Renaming guest file failed: %Rrc"), guestRc);
+                break;
+
+            default:
+                hr = setError(VBOX_E_IPRT_ERROR, tr("Renaming guest file \"%s\" failed: %Rrc"),
+                              Utf8Str(aSource).c_str(), vrc);
+                break;
+        }
+    }
+
+    return hr;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -296,10 +296,6 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
                     rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
                     break;
 
-                case GUEST_SESSION_NOTIFY:
-                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
-                    break;
-
                 case GUEST_EXEC_STATUS:
                 case GUEST_EXEC_OUTPUT:
                 case GUEST_EXEC_INPUT_STATUS:
@@ -311,8 +307,22 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
                     rc = pSession->dispatchToFile(pCtxCb, pSvcCb);
                     break;
 
+                case GUEST_SESSION_NOTIFY:
+                    rc = pSession->dispatchToThis(pCtxCb, pSvcCb);
+                    break;
+
                 default:
-                    rc = VERR_NOT_SUPPORTED;
+                    rc = pSession->dispatchToObject(pCtxCb, pSvcCb);
+                    if (rc == VERR_NOT_FOUND)
+                    {
+                        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+                        rc = pSession->dispatchGeneric(pCtxCb, pSvcCb);
+                    }
+#ifndef DEBUG_andy
+                    if (rc == VERR_NOT_IMPLEMENTED)
+                        AssertMsgFailed(("Received not handled function %RU32\n", pCtxCb->uFunction));
+#endif
                     break;
             }
         }
@@ -322,12 +332,14 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 int Guest::sessionRemove(GuestSession *pSession)
 {
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
+
     LogFlowThisFuncEnter();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -363,7 +375,7 @@ int Guest::sessionRemove(GuestSession *pSession)
         itSessions++;
     }
 
-    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -444,7 +456,7 @@ int Guest::sessionCreate(const GuestSessionStartupInfo &ssInfo,
         rc = rc2;
     }
 
-    LogFlowThisFunc(("Returning rc=%Rrc\n", rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

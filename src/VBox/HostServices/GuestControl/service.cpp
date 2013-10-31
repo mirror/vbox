@@ -387,6 +387,9 @@ typedef struct HostCommand
          * the client does not provide yet? */
         if (mParmCount > pConnection->mNumParms)
         {
+            LogFlowFunc(("pHostCmd=%p requires %RU32 parms, only got %RU32 from client\n",
+                         this, mParmCount, pConnection->mNumParms));
+
             /*
             * So this call apparently failed because the guest wanted to peek
             * how much parameters it has to supply in order to successfully retrieve
@@ -765,6 +768,7 @@ typedef struct ClientState
         LogFlowFunc(("[Client %RU32] Cancelling waiting with %Rrc, isPending=%RTbool, pendingNumParms=%RU32, flags=%x\n",
                      mID, rcPending, mIsPending, mPendingCon.mNumParms, mFlags));
 
+        int rc;
         if (   mIsPending
             && mPendingCon.mNumParms >= 2)
         {
@@ -775,9 +779,15 @@ typedef struct ClientState
             mSvcHelpers->pfnCallComplete(mPendingCon.mHandle, rcPending);
 
             mIsPending = false;
-        }
 
-        return VINF_SUCCESS;
+            rc = VINF_SUCCESS;
+        }
+        else if (mPendingCon.mNumParms < 2)
+            rc = VERR_BUFFER_OVERFLOW;
+        else /** @todo Enqueue command instead of dropping? */
+            rc = VERR_WRONG_ORDER;
+
+        return rc;
     }
 
     int SendReply(const ClientConnection *pConnection,
@@ -1014,6 +1024,7 @@ private:
     int hostProcessCommand(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int sessionClose(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int uninit(void);
 };
 
@@ -1305,7 +1316,7 @@ int Service::hostCallback(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM p
 }
 
 /**
- * Processes a command receiveed from the host side and re-routes it to
+ * Processes a command received from the host side and re-routes it to
  * a connect client on the guest.
  *
  * @return  IPRT status code.
@@ -1452,6 +1463,15 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     break;
 
                 /*
+                 * The guest wants to close specific guest session. This is handy for
+                 * shutting down dedicated guest session processes from another process.
+                 */
+                case GUEST_SESSION_CLOSE:
+                    LogFlowFunc(("[Client %RU32] GUEST_SESSION_CLOSE\n", u32ClientID));
+                    rc = sessionClose(u32ClientID, callHandle, cParms, paParms);
+                    break;
+
+                /*
                  * For all other regular commands we call our hostCallback
                  * function. If the current command does not support notifications,
                  * notifyHost will return VERR_NOT_SUPPORTED.
@@ -1518,6 +1538,35 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
         rc = VERR_NO_MEMORY;
     }
 
+    return rc;
+}
+
+/**
+ * Client asks another client (guest) session to close.
+ *
+ * @return  IPRT status code.
+ * @param   u32ClientID                 The client's ID.
+ * @param   callHandle                  The client's call handle.
+ * @param   cParms                      Number of parameters.
+ * @param   paParms                     Array of parameters.
+ */
+int Service::sessionClose(uint32_t u32ClientID, VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    if (cParms < 2)
+        return VERR_INVALID_PARAMETER;
+
+    uint32_t uContextID, uFlags;
+    int rc = paParms[0].getUInt32(&uContextID);
+    if (RT_SUCCESS(rc))
+        rc = paParms[1].getUInt32(&uFlags);
+
+    uint32_t uSessionID = VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(uContextID);
+
+    if (RT_SUCCESS(rc))
+        rc = hostProcessCommand(HOST_SESSION_CLOSE, cParms, paParms);
+
+    LogFlowFunc(("Closing guest session ID=%RU32 (from client ID=%RU32) returned with rc=%Rrc\n",
+                 uSessionID, u32ClientID, rc));
     return rc;
 }
 

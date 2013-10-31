@@ -81,7 +81,7 @@ public:
     int startProcess(uint32_t uTimeoutMS, int *pGuestRc);
     int startProcessAsync(void);
     int terminateProcess(uint32_t uTimeoutMS, int *pGuestRc);
-    static ProcessWaitResult_T waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T procStatus, uint32_t uProcFlags, uint32_t uProtocol);
+    static ProcessWaitResult_T waitFlagsToResultEx(uint32_t fWaitFlags, ProcessStatus_T oldStatus, ProcessStatus_T newStatus, uint32_t uProcFlags, uint32_t uProtocol);
     ProcessWaitResult_T waitFlagsToResult(uint32_t fWaitFlags);
     int waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS, ProcessWaitResult_T &waitResult, int *pGuestRc);
     int waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, uint32_t uTimeoutMS, ProcessInputStatus_T *pInputStatus, uint32_t *pcbProcessed);
@@ -134,9 +134,11 @@ private:
 /**
  * Guest process tool flags.
  */
-/** No flags specified. */
+/** No flags specified; wait until process terminates.
+ *  The maximum waiting time is set in the process' startup
+ *  info. */
 #define GUESTPROCESSTOOL_FLAG_NONE            0
-/** Run until next stream block from stdout has been
+/** Wait until next stream block from stdout has been
  *  read in completely, then return.
  */
 #define GUESTPROCESSTOOL_FLAG_STDOUT_BLOCK    RT_BIT(0)
@@ -168,13 +170,18 @@ public:
 
     bool IsRunning(void);
 
+    static int Run(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, int *pGuestRc);
+
+    static int RunEx(GuestSession *pGuestSession, const GuestProcessStartupInfo &startupInfo, GuestCtrlStreamObjects *pStrmOutObjects,
+                     uint32_t cStrmOutObjects, int *pGuestRc);
+
     int TerminatedOk(LONG *pExitCode);
 
     int Terminate(uint32_t uTimeoutMS, int *pGuestRc);
 
 protected:
 
-    GuestSession               *pSession;
+    ComObjPtr<GuestSession>     pSession;
     ComObjPtr<GuestProcess>     pProcess;
     GuestProcessStartupInfo     mStartupInfo;
     GuestProcessStream          mStdOut;

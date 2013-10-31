@@ -187,6 +187,44 @@ VBGLR3DECL(int) VbglR3GuestCtrlMsgFilterUnset(uint32_t uClientId)
 }
 
 
+VBGLR3DECL(int) VbglR3GuestCtrlMsgReply(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                        int rc)
+{
+    return VbglR3GuestCtrlMsgReplyEx(pCtx, rc, 0 /* uType */,
+                                     NULL /* pvPayload */, 0 /* cbPayload */);
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlMsgReplyEx(PVBGLR3GUESTCTRLCMDCTX pCtx,
+                                          int rc, uint32_t uType,
+                                          void *pvPayload, uint32_t cbPayload)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    /* Everything else is optional. */
+
+    HGCMMsgCmdReply Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_MSG_REPLY;
+    Msg.hdr.cParms      = 4;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.rc, (uint32_t)rc); /* int vs. uint32_t */
+    VbglHGCMParmUInt32Set(&Msg.type, uType);
+    VbglHGCMParmPtrSet(&Msg.payload, pvPayload, cbPayload);
+
+    int rc2 = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc3 = Msg.hdr.result;
+        if (RT_FAILURE(rc3))
+            rc2 = rc3;
+    }
+    return rc2;
+}
+
+
 /**
  * Tells the host service to skip the current message returned by
  * VbglR3GuestCtrlMsgWaitFor().
@@ -236,6 +274,40 @@ VBGLR3DECL(int) VbglR3GuestCtrlCancelPendingWaits(uint32_t uClientId)
         if (RT_FAILURE(rc2))
             rc = rc2;
     }
+    return rc;
+}
+
+
+/**
+ * Asks a specific guest session to close.
+ *
+ * @return  IPRT status code.
+ * @param   pCtx                    Host context.
+ ** @todo Docs!
+ */
+VBGLR3DECL(int) VbglR3GuestCtrlSessionClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint32_t uFlags)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 2, VERR_INVALID_PARAMETER);
+
+    HGCMMsgSessionClose Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_SESSION_CLOSE;
+    Msg.hdr.cParms      = pCtx->uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, pCtx->uContextID);
+    VbglHGCMParmUInt32Set(&Msg.flags, uFlags);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+            rc = rc2;
+    }
+
     return rc;
 }
 
@@ -373,6 +445,50 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
 }
 
 
+VBGLR3DECL(int) VbglR3GuestCtrlPathGetRename(PVBGLR3GUESTCTRLCMDCTX     pCtx,
+                                             char     *pszSource,       uint32_t cbSource,
+                                             char     *pszDest,         uint32_t cbDest,
+                                             uint32_t *puFlags)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 4, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(pszSource, VERR_INVALID_POINTER);
+    AssertReturn(cbSource, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszDest, VERR_INVALID_POINTER);
+    AssertReturn(cbDest, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+
+    HGCMMsgPathRename Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_MSG_WAIT;
+    Msg.hdr.cParms      = pCtx->uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmPtrSet(&Msg.source, pszSource, cbSource);
+    VbglHGCMParmPtrSet(&Msg.dest, pszDest, cbDest);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(puFlags);
+        }
+    }
+    return rc;
+}
+
+
 /**
  * Allocates and gets host data, based on the message id.
  *
@@ -382,7 +498,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlSessionGetClose(PVBGLR3GUESTCTRLCMDCTX pCtx, uint
  ** @todo Docs!
  ** @todo Move the parameters in an own struct!
  */
-VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX   pCtx,
+VBGLR3DECL(int) VbglR3GuestCtrlProcGetStart(PVBGLR3GUESTCTRLCMDCTX    pCtx,
                                             char     *pszCmd,         uint32_t  cbCmd,
                                             uint32_t *puFlags,
                                             char     *pszArgs,        uint32_t  cbArgs,     uint32_t *pcArgs,
@@ -571,6 +687,46 @@ VBGLR3DECL(int) VbglR3GuestCtrlProcGetInput(PVBGLR3GUESTCTRLCMDCTX  pCtx,
             Msg.pid.GetUInt32(puPID);
             Msg.flags.GetUInt32(puFlags);
             Msg.size.GetUInt32(pcbSize);
+        }
+    }
+    return rc;
+}
+
+
+VBGLR3DECL(int) VbglR3GuestCtrlDirGetRemove(PVBGLR3GUESTCTRLCMDCTX     pCtx,
+                                            char     *pszPath,         uint32_t cbPath,
+                                            uint32_t *puFlags)
+{
+    AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
+    AssertReturn(pCtx->uNumParms == 3, VERR_INVALID_PARAMETER);
+
+    AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
+    AssertReturn(cbPath, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(puFlags, VERR_INVALID_POINTER);
+
+    HGCMMsgDirRemove Msg;
+
+    Msg.hdr.result      = VERR_WRONG_ORDER;
+    Msg.hdr.u32ClientID = pCtx->uClientID;
+    Msg.hdr.u32Function = GUEST_MSG_WAIT;
+    Msg.hdr.cParms      = pCtx->uNumParms;
+
+    VbglHGCMParmUInt32Set(&Msg.context, 0);
+    VbglHGCMParmPtrSet(&Msg.path, pszPath, cbPath);
+    VbglHGCMParmUInt32Set(&Msg.flags, 0);
+
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
+    if (RT_SUCCESS(rc))
+    {
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.context.GetUInt32(&pCtx->uContextID);
+            Msg.flags.GetUInt32(puFlags);
         }
     }
     return rc;

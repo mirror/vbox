@@ -29,6 +29,7 @@ class GuestSession;
  */
 class ATL_NO_VTABLE GuestDirectory :
     public VirtualBoxBase,
+    public GuestObject,
     VBOX_SCRIPTABLE_IMPL(IGuestDirectory)
 {
 public:
@@ -43,7 +44,7 @@ public:
     END_COM_MAP()
     DECLARE_EMPTY_CTOR_DTOR(GuestDirectory)
 
-    int     init(GuestSession *aSession, const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags);
+    int     init(Console *pConsole, GuestSession *pSession, ULONG uDirID, const GuestDirectoryOpenInfo &openInfo);
     void    uninit(void);
     HRESULT FinalConstruct(void);
     void    FinalRelease(void);
@@ -60,6 +61,9 @@ public:
 public:
     /** @name Public internal methods.
      * @{ */
+    int            callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    static Utf8Str guestErrorToString(int guestRc);
+    static HRESULT setErrorExternal(VirtualBoxBase *pInterface, int guestRc);
     /** @}  */
 
 private:
@@ -70,10 +74,10 @@ private:
 
     struct Data
     {
-        GuestSession              *mSession;
-        Utf8Str                    mName;
-        Utf8Str                    mFilter;
-        uint32_t                   mFlags;
+        /** The directory's open info. */
+        GuestDirectoryOpenInfo     mOpenInfo;
+        /** The directory's ID. */
+        uint32_t                   mID;
         GuestProcessTool           mProcessTool;
     } mData;
 };

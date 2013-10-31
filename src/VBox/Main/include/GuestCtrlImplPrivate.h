@@ -104,6 +104,21 @@ protected:
 
 
 /**
+ * Structure for keeping all the relevant guest directory
+ * information around.
+ */
+struct GuestDirectoryOpenInfo
+{
+    /** The directory path. */
+    Utf8Str                 mPath;
+    /** Then open filter. */
+    Utf8Str                 mFilter;
+    /** Opening flags. */
+    uint32_t                mFlags;
+};
+
+
+/**
  * Structure for keeping all the relevant guest file
  * information around.
  */
@@ -312,9 +327,9 @@ public:
     void Dump(const char *pszFile);
 #endif
 
-    uint32_t GetOffset();
+    uint32_t GetOffset() { return m_cbOffset; }
 
-    uint32_t GetSize();
+    size_t GetSize() { return m_cbSize; }
 
     int ParseBlock(GuestProcessStreamBlock &streamBlock);
 
@@ -323,7 +338,7 @@ protected:
     /** Currently allocated size of internal stream buffer. */
     uint32_t m_cbAllocated;
     /** Currently used size of allocated internal stream buffer. */
-    uint32_t m_cbSize;
+    size_t m_cbSize;
     /** Current offset within the internal stream buffer. */
     uint32_t m_cbOffset;
     /** Internal stream buffer. */
@@ -377,40 +392,187 @@ public:
     ULONG   uFlags;
 };
 
-class GuestWaitEvent
+class GuestWaitEventPayload
 {
 
 public:
 
-    GuestWaitEvent(uint32_t mCID, const std::list<VBoxEventType_T> &lstEvents);
-    virtual ~GuestWaitEvent(void);
+    GuestWaitEventPayload(void)
+        : uType(0),
+          cbData(0),
+          pvData(NULL) { }
+
+    GuestWaitEventPayload(uint32_t uTypePayload,
+                          const void *pvPayload, uint32_t cbPayload)
+    {
+        if (cbPayload)
+        {
+            pvData = RTMemAlloc(cbPayload);
+            if (pvData)
+            {
+                uType = uTypePayload;
+
+                memcpy(pvData, pvPayload, cbPayload);
+                cbData = cbPayload;
+            }
+            else /* Throw IPRT error. */
+                throw VERR_NO_MEMORY;
+        }
+        else
+        {
+            uType = uTypePayload;
+
+            pvData = NULL;
+            cbData = 0;
+        }
+    }
+
+    virtual ~GuestWaitEventPayload(void)
+    {
+        Clear();
+    }
+
+    GuestWaitEventPayload& operator=(const GuestWaitEventPayload &that)
+    {
+        CopyFromDeep(that);
+        return *this;
+    }
 
 public:
 
-    uint32_t                         ContextID(void) { return mCID; };
-    const ComPtr<IEvent>             Event(void) { return mEvent; };
-    const std::list<VBoxEventType_T> Types(void) { return mEventTypes; };
-    size_t                           TypeCount(void) { return mEventTypes.size(); }
-    virtual int                      Signal(IEvent *pEvent);
-    int                              Wait(RTMSINTERVAL uTimeoutMS);
+    void Clear(void)
+    {
+        if (pvData)
+        {
+            RTMemFree(pvData);
+            cbData = 0;
+        }
+        uType = 0;
+    }
+
+    int CopyFromDeep(const GuestWaitEventPayload &payload)
+    {
+        Clear();
+
+        int rc;
+        if (payload.cbData)
+        {
+            Assert(payload.cbData);
+            pvData = RTMemAlloc(payload.cbData);
+            if (pvData)
+            {
+                memcpy(pvData, payload.pvData, payload.cbData);
+                cbData = payload.cbData;
+                uType = payload.uType;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VINF_SUCCESS;
+
+        return rc;
+    }
+
+    const void* Raw(void) const { return pvData; }
+
+    size_t Size(void) const { return cbData; }
+
+    uint32_t Type(void) const { return uType; }
+
+    void* MutableRaw(void) { return pvData; }
+
+protected:
+
+    /** Type of payload. */
+    uint32_t uType;
+    /** Size (in bytes) of payload. */
+    uint32_t cbData;
+    /** Pointer to actual payload data. */
+    void *pvData;
+};
+
+class GuestWaitEventBase
+{
+
+protected:
+
+    GuestWaitEventBase(void);
+    virtual ~GuestWaitEventBase(void);
+
+public:
+
+    uint32_t                        ContextID(void) { return mCID; };
+    int                             GuestResult(void) { return mGuestRc; }
+    int                             Result(void) { return mRc; }
+    GuestWaitEventPayload &         Payload(void) { return mPayload; }
+    int                             SignalInternal(int rc, int guestRc, const GuestWaitEventPayload *pPayload);
+    int                             Wait(RTMSINTERVAL uTimeoutMS);
+
+protected:
+
+    int             Init(uint32_t uCID);
 
 protected:
 
     /* Shutdown indicator. */
-    bool                       fAborted;
+    bool                       mfAborted;
     /* Associated context ID (CID). */
     uint32_t                   mCID;
-    /** List of event types this event should
-     *  be signalled on. */
-    std::list<VBoxEventType_T> mEventTypes;
     /** The event semaphore for triggering
      *  the actual event. */
     RTSEMEVENT                 mEventSem;
-    /** Pointer to the actual event. */
+    /** The event's overall result. If
+     *  set to VERR_GSTCTL_GUEST_ERROR,
+     *  mGuestRc will contain the actual
+     *  error code from the guest side. */
+    int                        mRc;
+    /** The event'S overall result from the
+     *  guest side. If used, mRc must be
+     *  set to VERR_GSTCTL_GUEST_ERROR. */
+    int                        mGuestRc;
+    /** The event's payload data. Optional. */
+    GuestWaitEventPayload      mPayload;
+};
+
+/** List of public guest event types. */
+typedef std::list < VBoxEventType_T > GuestEventTypes;
+
+class GuestWaitEvent : public GuestWaitEventBase
+{
+
+public:
+
+    GuestWaitEvent(uint32_t uCID);
+    GuestWaitEvent(uint32_t uCID, const GuestEventTypes &lstEvents);
+    virtual ~GuestWaitEvent(void);
+
+public:
+
+    int                              Cancel(void);
+    const ComPtr<IEvent>             Event(void) { return mEvent; }
+    int                              SignalExternal(IEvent *pEvent);
+    const GuestEventTypes            Types(void) { return mEventTypes; }
+    size_t                           TypeCount(void) { return mEventTypes.size(); }
+
+protected:
+
+    int                              Init(uint32_t uCID);
+
+protected:
+
+    /** List of public event types this event should
+     *  be signalled on. Optional. */
+    GuestEventTypes            mEventTypes;
+    /** Pointer to the actual public event, if any. */
     ComPtr<IEvent>             mEvent;
 };
-typedef std::list < GuestWaitEvent* > GuestWaitEvents;
-typedef std::map < VBoxEventType_T, GuestWaitEvents > GuestWaitEventTypes;
+/** Map of pointers to guest events. The primary key
+ *  contains the context ID. */
+typedef std::map < uint32_t, GuestWaitEvent* > GuestWaitEvents;
+/** Map of wait events per public guest event. Nice for
+ *  faster lookups when signalling a whole event group. */
+typedef std::map < VBoxEventType_T, GuestWaitEvents > GuestEventGroup;
 
 class GuestBase
 {
@@ -422,16 +584,23 @@ public:
 
 public:
 
-    /** For external event listeners. */
-    int signalWaitEvents(VBoxEventType_T aType, IEvent *aEvent);
-
+    /** Signals a wait event using a public guest event; also used for
+     *  for external event listeners. */
+    int signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent);
+    /** Signals a wait event using a guest rc. */
+    int signalWaitEventInternal(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, int guestRc, const GuestWaitEventPayload *pPayload);
+    /** Signals a wait event without letting public guest events know,
+     *  extended director's cut version. */
+    int signalWaitEventInternalEx(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, int rc, int guestRc, const GuestWaitEventPayload *pPayload);
 public:
 
     int baseInit(void);
     void baseUninit(void);
     int cancelWaitEvents(void);
+    int dispatchGeneric(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32_t *puContextID);
-    int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
+    int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, GuestWaitEvent **ppEvent);
+    int registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID, const GuestEventTypes &lstEvents, GuestWaitEvent **ppEvent);
     void unregisterWaitEvent(GuestWaitEvent *pEvent);
     int waitForEvent(GuestWaitEvent *pEvent, uint32_t uTimeoutMS, VBoxEventType_T *pType, IEvent **ppEvent);
 
@@ -447,8 +616,10 @@ protected:
     ComPtr<IEventListener>   mLocalListener;
     /** Critical section for wait events access. */
     RTCRITSECT               mWaitEventCritSect;
-    /** Map of internal events to wait for. */
-    GuestWaitEventTypes      mWaitEvents;
+    /** Map of registered wait events per event group. */
+    GuestEventGroup          mWaitEventGroups;
+    /** Map of registered wait events. */
+    GuestWaitEvents          mWaitEvents;
 };
 
 /**
@@ -475,7 +646,7 @@ protected:
 protected:
 
     int bindToSession(Console *pConsole, GuestSession *pSession, uint32_t uObjectID);
-    int registerWaitEvent(const std::list<VBoxEventType_T> &lstEvents, GuestWaitEvent **ppEvent);
+    int registerWaitEvent(const GuestEventTypes &lstEvents, GuestWaitEvent **ppEvent);
     int sendCommand(uint32_t uFunction, uint32_t uParms, PVBOXHGCMSVCPARM paParms);
 
 protected:

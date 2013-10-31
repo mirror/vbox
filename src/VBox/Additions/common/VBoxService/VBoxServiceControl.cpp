@@ -267,7 +267,8 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                      *
                      * The global session object then acts as a host for all
                      * started guest processes which bring all their
-                     * credentials with them with the actual execution call.
+                     * credentials with them with the actual guest process
+                     * execution call.
                      */
                     if (ctxHost.uProtocol == 1)
                     {
@@ -406,8 +407,8 @@ static DECLCALLBACK(void) VBoxServiceControlStop(void)
         RTSemEventMultiSignal(g_hControlEvent);
 
     /*
-     * Ask the host service to cancel all pending requests so that we can
-     * shutdown properly here.
+     * Ask the host service to cancel all pending requests for the main
+     * control thread so that we can shutdown properly here.
      */
     if (g_uControlSvcClientID)
     {

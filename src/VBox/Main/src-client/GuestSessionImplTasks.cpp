@@ -626,8 +626,8 @@ int SessionTaskCopyFrom::Run(void)
         else
         {
             GuestProcessStartupInfo procInfo;
-            procInfo.mName    = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" from guest to the host to \"%s\" (%RI64 bytes)"),
-                                                            mSource.c_str(), mDest.c_str(), objData.mObjectSize);
+            procInfo.mName      = Utf8StrFmt(GuestSession::tr("Copying file \"%s\" from guest to the host to \"%s\" (%RI64 bytes)"),
+                                                              mSource.c_str(), mDest.c_str(), objData.mObjectSize);
             procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_CAT);
             procInfo.mFlags     = ProcessCreateFlag_Hidden | ProcessCreateFlag_WaitForStdOut;
 

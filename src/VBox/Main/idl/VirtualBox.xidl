@@ -10590,10 +10590,6 @@
     <method name="directoryRemove">
       <desc>
         Removes a guest directory if not empty.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Full path of directory to remove.</desc>
@@ -10603,10 +10599,6 @@
     <method name="directoryRemoveRecursive">
       <desc>
         Removes a guest directory recursively.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="path" type="wstring" dir="in">
         <desc>Full path of directory to remove recursively.</desc>
@@ -10615,17 +10607,14 @@
         <desc>Remove flags; see <link to="DirectoryRemoveRecFlag"/> for more information.</desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
-        <desc>Progress object to track the operation completion.</desc>
+        <desc>Progress object to track the operation completion. This is not implemented
+          yet and therefore this method call will block until deletion is completed.</desc>
       </param>
     </method>
 
     <method name="directoryRename">
       <desc>
         Renames a directory on the guest.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Source directory to rename.</desc>
@@ -10939,10 +10928,6 @@
     <method name="fileRename">
       <desc>
         Renames a file on the guest.
-
-        <result name="E_NOTIMPL">
-          The method is not implemented yet.
-        </result>
       </desc>
       <param name="source" type="wstring" dir="in">
         <desc>Source file to rename.</desc>
