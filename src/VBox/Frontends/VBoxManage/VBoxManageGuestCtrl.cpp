@@ -862,8 +862,9 @@ static RTEXITCODE ctrlInitVM(HandlerArg *pArg,
                         pCtx->iArgc++;
 #ifdef DEBUG_andy
                         RTPrintf("\targv[%d]=%s\n", i, pArg->argv[i]);
-                    }
 #endif
+                    }
+
                     iArgIdx = GetState.iNext;
                 }
 
