@@ -315,7 +315,7 @@ int Guest::dispatchToSession(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTC
                     rc = pSession->dispatchToObject(pCtxCb, pSvcCb);
                     if (rc == VERR_NOT_FOUND)
                     {
-                        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+                        alock.acquire();
 
                         rc = pSession->dispatchGeneric(pCtxCb, pSvcCb);
                     }
