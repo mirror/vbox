@@ -458,6 +458,8 @@ int main()
         "foo10",
         "--",
         "--optwithstring",
+        "-s",
+        "-i",
         "foo11",
         "foo12",
 
@@ -510,6 +512,8 @@ int main()
     CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo9");
     CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo10");
     CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "--optwithstring");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "-s");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "-i");
     CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo11");
     CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo12");
 
