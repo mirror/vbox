@@ -52,18 +52,4 @@ VBoxNetDHCP_LIBS = \
 	$(LIB_RUNTIME)
 VBoxNetDHCP_LDFLAGS.win = /SUBSYSTEM:windows
 
-ifeq ($(USERNAME),vvl)
-PROGRAMS += tstDhcpConfig
-
-#
-# VBOXMAINCLIENT here only to use DhcpOpt_T type.
-tstDhcpConfig_TEMPLATE = VBOXMAINCLIENTEXE
-#XXX: enable condtionally if user is vvl
-#tstDhcpConfig_INSTTYPE = none
-tstDhcpConfig_SOURCES = test/tstDhcpConfig.cpp \
-	Config.cpp
-endif
-
-
 include $(FILE_KBUILD_SUB_FOOTER)
-
