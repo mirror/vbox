@@ -1086,11 +1086,11 @@ QString VBoxGlobal::toolTip(const CHostVideoInputDevice &webcam) const
 
     QString strName = webcam.GetName();
     if (!strName.isEmpty())
-        records << tr("<nobr>Name: %1</nobr>", "webcam tooltip").arg(strName);
+        records << strName;
 
     QString strPath = webcam.GetPath();
     if (!strPath.isEmpty())
-        records << tr("<nobr>Path: %1</nobr>", "webcam tooltip").arg(strPath);
+        records << strPath;
 
     return records.join("<br>");
 }

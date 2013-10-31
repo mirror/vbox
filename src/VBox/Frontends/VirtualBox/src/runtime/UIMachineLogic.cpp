@@ -1882,7 +1882,7 @@ void UIMachineLogic::sltPrepareWebCamMenu()
         QAction *pEmptyMenuAction = new QAction(pMenu);
         pEmptyMenuAction->setEnabled(false);
         pEmptyMenuAction->setText(tr("No Webcams Connected"));
-        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
+        pEmptyMenuAction->setToolTip(tr("No supported webcams connected to the host PC"));
         pEmptyMenuAction->setIcon(UIIconPool::iconSet(":/vm_delete_16px.png", ":/vm_delete_disabled_16px.png")); // TODO: Change icon!
         pMenu->addAction(pEmptyMenuAction);
     }
