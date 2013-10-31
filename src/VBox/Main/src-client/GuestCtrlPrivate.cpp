@@ -1059,13 +1059,13 @@ void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
             GuestWaitEvents::iterator itCurEvent = mWaitEventGroups[(*itEvents)].begin();
             while (itCurEvent != mWaitEventGroups[(*itEvents)].end())
             {
-             if (itCurEvent->second == pEvent)
-             {
-                 itCurEvent = mWaitEventGroups[(*itEvents)].erase(itCurEvent);
-                 break;
-             }
-             else
-                 itCurEvent++;
+                if (itCurEvent->second == pEvent)
+                {
+                    mWaitEventGroups[(*itEvents)].erase(itCurEvent);
+                    break;
+                }
+                else
+                    itCurEvent++;
             }
         }
 
@@ -1178,9 +1178,9 @@ int GuestObject::sendCommand(uint32_t uFunction,
 }
 
 GuestWaitEventBase::GuestWaitEventBase(void)
-    : mCID(0),
+    : mfAborted(false),
+      mCID(0),
       mEventSem(NIL_RTSEMEVENT),
-      mfAborted(false),
       mRc(VINF_SUCCESS),
       mGuestRc(VINF_SUCCESS)
 {

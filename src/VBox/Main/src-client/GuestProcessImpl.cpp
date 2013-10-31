@@ -118,7 +118,7 @@ public:
                 int rc2 = mProcess->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG
                 LogFlowThisFunc(("Signalling events of type=%ld, process=%p resulted in rc=%Rrc\n",
-                                 aType, mProcess, rc2));
+                                 aType, &mProcess, rc2));
 #endif
                 break;
             }
