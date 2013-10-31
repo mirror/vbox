@@ -76,7 +76,7 @@ public:
             case VBoxEventType_OnGuestFileWrite:
             {
                 Assert(!mFile.isNull());
-                int rc2 = mFile->signalWaitEvents(aType, aEvent);
+                int rc2 = mFile->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG_andy
                 LogFlowFunc(("Signalling events of type=%ld, file=%p resulted in rc=%Rrc\n",
                              aType, mFile, rc2));
@@ -410,11 +410,11 @@ STDMETHODIMP GuestFile::COMGETTER(Status)(FileStatus_T *aStatus)
 
 int GuestFile::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
 {
-#ifdef DEBUG
+    AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
     LogFlowThisFunc(("strName=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
                      mData.mOpenInfo.mFileName.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
-#endif
-    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
 
     int vrc;
     switch (pCbCtx->uFunction)
@@ -446,7 +446,7 @@ int GuestFile::closeFile(int *pGuestRc)
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -538,6 +538,10 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
         int rc2 = setFileStatus(FileStatus_Error, guestRc);
         AssertRC(rc2);
 
+        rc2 = signalWaitEventInternal(pCbCtx,
+                                      guestRc, NULL /* pPayload */);
+        AssertRC(rc2);
+
         return VINF_SUCCESS; /* Report to the guest. */
     }
 
@@ -547,6 +551,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
         {
             int rc2 = setFileStatus(FileStatus_Error, guestRc);
             AssertRC(rc2);
+
             break;
         }
 
@@ -560,7 +565,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
                     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
                     AssertMsg(mData.mID == VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID),
                               ("File ID %RU32 does not match context ID %RU32\n", mData.mID,
-                               VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
+                              VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(pCbCtx->uContextID)));
 
                     /* Set the initial offset. On the guest the whole opening operation
                      * would fail if an initial seek isn't possible. */
@@ -569,8 +574,7 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
 
                 /* Set the process status. */
                 int rc2 = setFileStatus(FileStatus_Open, guestRc);
-                if (RT_SUCCESS(vrc))
-                    vrc = rc2;
+                AssertRC(rc2);
             }
             else
                 vrc = VERR_NOT_SUPPORTED;
@@ -677,6 +681,13 @@ int GuestFile::onFileNotify(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCA
             break;
     }
 
+    if (RT_SUCCESS(vrc))
+    {
+        GuestWaitEventPayload payload(dataCb.uType, &dataCb, sizeof(dataCb));
+        int rc2 = signalWaitEventInternal(pCbCtx, guestRc, &payload);
+        AssertRC(rc2);
+    }
+
     LogFlowThisFunc(("uType=%RU32, guestRc=%Rrc\n",
                      dataCb.uType, dataCb.rc));
 
@@ -707,7 +718,7 @@ int GuestFile::openFile(uint32_t uTimeoutMS, int *pGuestRc)
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -764,7 +775,7 @@ int GuestFile::readData(uint32_t uSize, uint32_t uTimeoutMS,
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -819,7 +830,7 @@ int GuestFile::readDataAt(uint64_t uOffset, uint32_t uSize, uint32_t uTimeoutMS,
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -875,7 +886,7 @@ int GuestFile::seekAt(int64_t iOffset, GUEST_FILE_SEEKTYPE eSeekType,
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -969,69 +980,49 @@ int GuestFile::waitForOffsetChange(GuestWaitEvent *pEvent,
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    VBoxEventType_T evtType;
-    ComPtr<IEvent> pIEvent;
     int vrc = waitForEvent(pEvent, uTimeoutMS,
-                           &evtType, pIEvent.asOutParam());
+                           NULL /* Event type */, NULL /* IEvent */);
     if (RT_SUCCESS(vrc))
     {
-        if (evtType == VBoxEventType_OnGuestFileOffsetChanged)
-        {
-            if (puOffset)
-            {
-                ComPtr<IGuestFileOffsetChangedEvent> pFileEvent = pIEvent;
-                Assert(!pFileEvent.isNull());
+        Assert(pEvent->Payload().Size() == sizeof(CALLBACKDATA_FILE_NOTIFY));
+        const PCALLBACKDATA_FILE_NOTIFY pvCbData =
+            (PCALLBACKDATA_FILE_NOTIFY)pEvent->Payload().Raw();
+        Assert(pvCbData->uType == GUEST_FILE_NOTIFYTYPE_SEEK);
 
-                HRESULT hr = pFileEvent->COMGETTER(Offset)((LONG64*)puOffset);
-                ComAssertComRC(hr);
-            }
-        }
-        else
-            vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+        if (puOffset)
+            *puOffset = pvCbData->u.seek.uOffActual;
     }
 
     return vrc;
 }
 
 int GuestFile::waitForRead(GuestWaitEvent *pEvent,
-                           uint32_t uTimeoutMS, void *pvData, size_t cbData, uint32_t *pcbRead)
+                           uint32_t uTimeoutMS,
+                           void *pvData, size_t cbData, uint32_t *pcbRead)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    VBoxEventType_T evtType;
-    ComPtr<IEvent> pIEvent;
     int vrc = waitForEvent(pEvent, uTimeoutMS,
-                           &evtType, pIEvent.asOutParam());
+                           NULL /* Event type */, NULL /* IEvent */);
     if (RT_SUCCESS(vrc))
     {
-        if (evtType == VBoxEventType_OnGuestFileRead)
-        {
-            ComPtr<IGuestFileReadEvent> pFileEvent = pIEvent;
-            Assert(!pFileEvent.isNull());
+        Assert(pEvent->Payload().Size() == sizeof(CALLBACKDATA_FILE_NOTIFY));
+        const PCALLBACKDATA_FILE_NOTIFY pvCbData =
+            (PCALLBACKDATA_FILE_NOTIFY)pEvent->Payload().Raw();
+        Assert(pvCbData->uType == GUEST_FILE_NOTIFYTYPE_READ);
 
-            HRESULT hr;
-            if (pvData)
-            {
-                com::SafeArray <BYTE> data;
-                hr = pFileEvent->COMGETTER(Data)(ComSafeArrayAsOutParam(data));
-                ComAssertComRC(hr);
-                size_t cbRead = data.size();
-                if (   cbRead
-                    && cbRead <= cbData)
-                {
-                    memcpy(pvData, data.raw(), data.size());
-                }
-                else
-                    vrc = VERR_BUFFER_OVERFLOW;
-            }
-            if (pcbRead)
-            {
-                hr = pFileEvent->COMGETTER(Processed)((ULONG*)pcbRead);
-                ComAssertComRC(hr);
-            }
+        uint32_t cbRead = pvCbData->u.read.cbData;
+        if (   cbRead
+            && cbRead <= cbData)
+        {
+            memcpy(pvData,
+                   pvCbData->u.read.pvData, cbRead);
         }
         else
-            vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+            vrc = VERR_BUFFER_OVERFLOW;
+
+        if (pcbRead)
+            *pcbRead = cbRead;
     }
 
     return vrc;
@@ -1041,41 +1032,20 @@ int GuestFile::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutMS,
                                    FileStatus_T *pFileStatus, int *pGuestRc)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
-    /* pFileStatus is optional. */
 
-    VBoxEventType_T evtType;
-    ComPtr<IEvent> pIEvent;
     int vrc = waitForEvent(pEvent, uTimeoutMS,
-                           &evtType, pIEvent.asOutParam());
+                           NULL /* Event type */, NULL /* IEvent */);
     if (RT_SUCCESS(vrc))
     {
-        Assert(evtType == VBoxEventType_OnGuestFileStateChanged);
-        ComPtr<IGuestFileStateChangedEvent> pFileEvent = pIEvent;
-        Assert(!pFileEvent.isNull());
+        Assert(pEvent->Payload().Size() == sizeof(CALLBACKDATA_FILE_NOTIFY));
+        const PCALLBACKDATA_FILE_NOTIFY pvCbData =
+            (PCALLBACKDATA_FILE_NOTIFY)pEvent->Payload().Raw();
+        /* Note: pvCbData->uType can be different types. */;
 
-        HRESULT hr;
-        if (pFileStatus)
-        {
-            hr = pFileEvent->COMGETTER(Status)(pFileStatus);
-            ComAssertComRC(hr);
-        }
 
-        ComPtr<IVirtualBoxErrorInfo> errorInfo;
-        hr = pFileEvent->COMGETTER(Error)(errorInfo.asOutParam());
-        ComAssertComRC(hr);
-
-        LONG lGuestRc;
-        hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
-        ComAssertComRC(hr);
-
-        LogFlowThisFunc(("resultDetail=%RI32 (rc=%Rrc)\n",
-                         lGuestRc, lGuestRc));
-
-        if (RT_FAILURE((int)lGuestRc))
-            vrc = VERR_GSTCTL_GUEST_ERROR;
 
         if (pGuestRc)
-            *pGuestRc = (int)lGuestRc;
+            *pGuestRc = pvCbData->rc; /* int vs. uint32_t */
     }
 
     return vrc;
@@ -1086,25 +1056,17 @@ int GuestFile::waitForWrite(GuestWaitEvent *pEvent,
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    VBoxEventType_T evtType;
-    ComPtr<IEvent> pIEvent;
     int vrc = waitForEvent(pEvent, uTimeoutMS,
-                           &evtType, pIEvent.asOutParam());
+                           NULL /* Event type */, NULL /* IEvent */);
     if (RT_SUCCESS(vrc))
     {
-        if (evtType == VBoxEventType_OnGuestFileWrite)
-        {
-            if (pcbWritten)
-            {
-                ComPtr<IGuestFileWriteEvent> pFileEvent = pIEvent;
-                Assert(!pFileEvent.isNull());
+        Assert(pEvent->Payload().Size() == sizeof(CALLBACKDATA_FILE_NOTIFY));
+        const PCALLBACKDATA_FILE_NOTIFY pvCbData =
+            (PCALLBACKDATA_FILE_NOTIFY)pEvent->Payload().Raw();
+        Assert(pvCbData->uType == GUEST_FILE_NOTIFYTYPE_WRITE);
 
-                HRESULT hr = pFileEvent->COMGETTER(Processed)((ULONG*)pcbWritten);
-                ComAssertComRC(hr);
-            }
-        }
-        else
-            vrc = VWRN_GSTCTL_OBJECTSTATE_CHANGED;
+        if (pcbWritten)
+            *pcbWritten = pvCbData->u.write.cbWritten;
     }
 
     return vrc;
@@ -1124,7 +1086,7 @@ int GuestFile::writeData(uint32_t uTimeoutMS, void *pvData, uint32_t cbData,
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);
@@ -1183,7 +1145,7 @@ int GuestFile::writeDataAt(uint64_t uOffset, uint32_t uTimeoutMS,
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
-    std::list < VBoxEventType_T > eventTypes;
+    GuestEventTypes eventTypes;
     try
     {
         eventTypes.push_back(VBoxEventType_OnGuestFileStateChanged);

@@ -215,12 +215,16 @@ static void VBoxServiceLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmP
 
 /**
  * Creates the default release logger outputting to the specified file.
+ * Pass NULL for disabled logging.
  *
  * @return  IPRT status code.
  * @param   pszLogFile              Filename for log output.  Optional.
  */
 int VBoxServiceLogCreate(const char *pszLogFile)
 {
+    if (!pszLogFile) /* No logging wanted? Take a shortcut. */
+        return VINF_SUCCESS;
+
     /* Create release logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME_PROG;

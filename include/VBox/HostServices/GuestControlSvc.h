@@ -120,6 +120,19 @@ enum eProcessStatus
 #define SESSIONCREATIONFLAG_NONE            0x0
 
 /**
+ * Guest directory removement flags.
+ * Essentially using what IPRT's RTDIRRMREC_F_
+ * defines have to offer.
+ */
+#define DIRREMOVE_FLAG_RECURSIVE            RT_BIT(0)
+/** Delete the content of the directory and the directory itself. */
+#define DIRREMOVE_FLAG_CONTENT_AND_DIR      RT_BIT(1)
+/** Only delete the content of the directory, omit the directory it self. */
+#define DIRREMOVE_FLAG_CONTENT_ONLY         RT_BIT(2)
+/** Mask of valid flags. */
+#define DIRREMOVE_FLAG_VALID_MASK           UINT32_C(0x00000003)
+
+/**
  * Guest process creation flags.
  * Note: Has to match Main's ProcessCreateFlag_* flags!
  */
@@ -139,6 +152,20 @@ enum eProcessStatus
 #define OUTPUT_HANDLE_ID_STDOUT_DEPRECATED  0 /* Needed for VBox hosts < 4.1.0. */
 #define OUTPUT_HANDLE_ID_STDOUT             1
 #define OUTPUT_HANDLE_ID_STDERR             2
+
+/**
+ * Guest path rename flags.
+ * Essentially using what IPRT's RTPATHRENAME_FLAGS_
+ * defines have to offer.
+ */
+/** Do not replace anything. */
+#define PATHRENAME_FLAG_NO_REPLACE          UINT32_C(0)
+/** This will replace attempt any target which isn't a directory. */
+#define PATHRENAME_FLAG_REPLACE             RT_BIT(0)
+/** Don't allow symbolic links as part of the path. */
+#define PATHRENAME_FLAG_NO_SYMLINKS         RT_BIT(1)
+/** Mask of valid flags. */
+#define PATHRENAME_FLAG_VALID_MASK          UINT32_C(0x00000002)
 
 /**
  * Defines for guest process array lengths.
@@ -202,7 +229,9 @@ typedef struct VBoxGuestCtrlHostCallback
     VBoxGuestCtrlHostCallback(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
                                 : mParms(cParms), mpaParms(paParms) { }
 
+    /** Number of HGCM parameters. */
     uint32_t mParms;
+    /** Actual HGCM parameters. */
     PVBOXHGCMSVCPARM mpaParms;
 
 } VBOXGUESTCTRLHOSTCALLBACK, *PVBOXGUESTCTRLHOSTCALLBACK;
@@ -283,14 +312,20 @@ enum eHostFn
     /**
      * Gets the current file position of an opened guest file.
      */
-    HOST_FILE_TELL = 271
+    HOST_FILE_TELL = 271,
+    /**
+     * Removes a directory on the guest.
+     */
+    HOST_DIR_REMOVE = 320,
+    /**
+     * Renames a path on the guest.
+     */
+    HOST_PATH_RENAME = 330
 };
 
 /**
  * The service functions which are called by guest. The numbers may not change,
  * so we hardcode them.
- *
- * Note: Callbacks start at 100. See CALLBACKTYPE enum.
  */
 enum eGuestFn
 {
@@ -327,9 +362,23 @@ enum eGuestFn
      */
     GUEST_MSG_SKIP = 10,
     /**
+     * General reply to a host message. Only contains basic data
+     * along with a simple payload.
+     */
+    GUEST_MSG_REPLY = 11,
+    /**
+     * General message for updating a pending progress for
+     * a long task.
+     */
+    GUEST_MSG_PROGRESS_UPDATE = 12,
+    /**
      * Guest reports back a guest session status.
      */
     GUEST_SESSION_NOTIFY = 20,
+    /**
+     * Guest wants to close a specific guest session.
+     */
+    GUEST_SESSION_CLOSE = 21,
     /**
      * Guests sends output from an executed process.
      */
@@ -349,6 +398,10 @@ enum eGuestFn
      * transmitting the data.
      */
     GUEST_EXEC_IO_NOTIFY = 210,
+    /**
+     * Guest notifies the host about some directory event.
+     */
+    GUEST_DIR_NOTIFY = 230,
     /**
      * Guest notifies the host about some file event.
      */
@@ -378,6 +431,27 @@ enum GUEST_SESSION_NOTIFYTYPE
     GUEST_SESSION_NOTIFYTYPE_TOA = 60,
     /** Service/OS is stopping, process was killed. */
     GUEST_SESSION_NOTIFYTYPE_DWN = 150
+};
+
+/**
+ * Guest directory notification types.
+ * @sa HGCMMsgDirNotify.
+ */
+enum GUEST_DIR_NOTIFYTYPE
+{
+    GUEST_DIR_NOTIFYTYPE_UNKNOWN = 0,
+    /** Something went wrong (see rc). */
+    GUEST_DIR_NOTIFYTYPE_ERROR = 1,
+    /** Guest directory opened. */
+    GUEST_DIR_NOTIFYTYPE_OPEN = 10,
+    /** Guest directory closed. */
+    GUEST_DIR_NOTIFYTYPE_CLOSE = 20,
+    /** Information about an open guest directory. */
+    GUEST_DIR_NOTIFYTYPE_INFO = 40,
+    /** Guest directory created. */
+    GUEST_DIR_NOTIFYTYPE_CREATE = 70,
+    /** Guest directory deleted. */
+    GUEST_DIR_NOTIFYTYPE_REMOVE = 80
 };
 
 /**
@@ -420,7 +494,6 @@ enum GUEST_FILE_SEEKTYPE
 typedef struct HGCMMsgCmdWaitFor
 {
     VBoxGuestHGCMCallInfo hdr;
-
     /**
      * The returned command the host wants to
      * run on the guest.
@@ -428,7 +501,6 @@ typedef struct HGCMMsgCmdWaitFor
     HGCMFunctionParameter msg;       /* OUT uint32_t */
     /** Number of parameters the message needs. */
     HGCMFunctionParameter num_parms; /* OUT uint32_t */
-
 } HGCMMsgCmdWaitFor;
 
 /**
@@ -440,7 +512,6 @@ typedef struct HGCMMsgCmdWaitFor
 typedef struct HGCMMsgCmdFilterSet
 {
     VBoxGuestHGCMCallInfo hdr;
-
     /** Value to filter for after filter mask
      *  was applied. */
     HGCMFunctionParameter value;         /* IN uint32_t */
@@ -450,7 +521,6 @@ typedef struct HGCMMsgCmdFilterSet
     HGCMFunctionParameter mask_remove;   /* IN uint32_t */
     /** Filter flags; currently unused. */
     HGCMFunctionParameter flags;         /* IN uint32_t */
-
 } HGCMMsgCmdFilterSet;
 
 /**
@@ -460,7 +530,6 @@ typedef struct HGCMMsgCmdFilterSet
 typedef struct HGCMMsgCmdFilterUnset
 {
     VBoxGuestHGCMCallInfo hdr;
-
     /** Unset flags; currently unused. */
     HGCMFunctionParameter flags;    /* IN uint32_t */
 } HGCMMsgCmdFilterUnset;
@@ -473,7 +542,6 @@ typedef struct HGCMMsgCmdFilterUnset
 typedef struct HGCMMsgCmdSkip
 {
     VBoxGuestHGCMCallInfo hdr;
-
     /** Skip flags; currently unused. */
     HGCMFunctionParameter flags;    /* IN uint32_t */
 } HGCMMsgCmdSkip;
@@ -486,6 +554,19 @@ typedef struct HGCMMsgCancelPendingWaits
 {
     VBoxGuestHGCMCallInfo hdr;
 } HGCMMsgCancelPendingWaits;
+
+typedef struct HGCMMsgCmdReply
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Message type. */
+    HGCMFunctionParameter type;
+    /** IPRT result of overall operation. */
+    HGCMFunctionParameter rc;
+    /** Optional payload to this reply. */
+    HGCMFunctionParameter payload;
+} HGCMMsgCmdReply;
 
 /**
  * Creates a guest session.
@@ -534,6 +615,19 @@ typedef struct HGCMMsgSessionNotify
     HGCMFunctionParameter result;
 } HGCMMsgSessionNotify;
 
+typedef struct HGCMMsgPathRename
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+    /** Source to rename. */
+    HGCMFunctionParameter source;
+    /** Destination to rename source to. */
+    HGCMFunctionParameter dest;
+    /** UInt32: Rename flags. */
+    HGCMFunctionParameter flags;
+} HGCMMsgPathRename;
+
 /**
  * Executes a command inside the guest.
  */
@@ -574,7 +668,7 @@ typedef struct HGCMMsgProcExec
         } v1;
         struct
         {
-            /** Timeout (in msec) which either specifies the
+            /** Timeout (in ms) which either specifies the
              *  overall lifetime of the process or how long it
              *  can take to bring the process up and running -
              *  (depends on the IGuest::ProcessCreateFlag_*). */
@@ -587,7 +681,6 @@ typedef struct HGCMMsgProcExec
             HGCMFunctionParameter affinity;
         } v2;
     } u;
-
 } HGCMMsgProcExec;
 
 /**
@@ -606,7 +699,6 @@ typedef struct HGCMMsgProcInput
     HGCMFunctionParameter data;
     /** Actual size of data (in bytes). */
     HGCMFunctionParameter size;
-
 } HGCMMsgProcInput;
 
 /**
@@ -626,7 +718,6 @@ typedef struct HGCMMsgProcOutput
     HGCMFunctionParameter flags;
     /** Data buffer. */
     HGCMFunctionParameter data;
-
 } HGCMMsgProcOutput;
 
 /**
@@ -645,7 +736,6 @@ typedef struct HGCMMsgProcStatus
     HGCMFunctionParameter flags;
     /** Optional data buffer (not used atm). */
     HGCMFunctionParameter data;
-
 } HGCMMsgProcStatus;
 
 /**
@@ -664,7 +754,6 @@ typedef struct HGCMMsgProcStatusInput
     HGCMFunctionParameter flags;
     /** Data written. */
     HGCMFunctionParameter written;
-
 } HGCMMsgProcStatusInput;
 
 /*
@@ -681,7 +770,6 @@ typedef struct HGCMMsgProcTerminate
     HGCMFunctionParameter context;
     /** The process ID (PID). */
     HGCMFunctionParameter pid;
-
 } HGCMMsgProcTerminate;
 
 /**
@@ -698,8 +786,18 @@ typedef struct HGCMMsgProcWaitFor
     HGCMFunctionParameter flags;
     /** Timeout (in ms). */
     HGCMFunctionParameter timeout;
-
 } HGCMMsgProcWaitFor;
+
+typedef struct HGCMMsgDirRemove
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** UInt32: Context ID. */
+    HGCMFunctionParameter context;
+    /** Directory to remove. */
+    HGCMFunctionParameter path;
+    /** UInt32: Removement flags. */
+    HGCMFunctionParameter flags;
+} HGCMMsgDirRemove;
 
 /**
  * Opens a guest file.
@@ -721,7 +819,6 @@ typedef struct HGCMMsgFileOpen
     HGCMFunctionParameter creationmode;
     /** UInt64: Initial offset. */
     HGCMFunctionParameter offset;
-
 } HGCMMsgFileOpen;
 
 /**
@@ -734,7 +831,6 @@ typedef struct HGCMMsgFileClose
     HGCMFunctionParameter context;
     /** File handle to close. */
     HGCMFunctionParameter handle;
-
 } HGCMMsgFileClose;
 
 /**
@@ -749,7 +845,6 @@ typedef struct HGCMMsgFileRead
     HGCMFunctionParameter handle;
     /** Size (in bytes) to read. */
     HGCMFunctionParameter size;
-
 } HGCMMsgFileRead;
 
 /**
@@ -766,7 +861,6 @@ typedef struct HGCMMsgFileReadAt
     HGCMFunctionParameter offset;
     /** Actual size of data (in bytes). */
     HGCMFunctionParameter size;
-
 } HGCMMsgFileReadAt;
 
 /**
@@ -783,7 +877,6 @@ typedef struct HGCMMsgFileWrite
     HGCMFunctionParameter size;
     /** Data buffer to write to the file. */
     HGCMFunctionParameter data;
-
 } HGCMMsgFileWrite;
 
 /**
@@ -802,7 +895,6 @@ typedef struct HGCMMsgFileWriteAt
     HGCMFunctionParameter size;
     /** Data buffer to write to the file. */
     HGCMFunctionParameter data;
-
 } HGCMMsgFileWriteAt;
 
 /**
@@ -819,7 +911,6 @@ typedef struct HGCMMsgFileSeek
     HGCMFunctionParameter method;
     /** The seeking offset. */
     HGCMFunctionParameter offset;
-
 } HGCMMsgFileSeek;
 
 /**
@@ -832,7 +923,6 @@ typedef struct HGCMMsgFileTell
     HGCMFunctionParameter context;
     /** File handle to get the current position for. */
     HGCMFunctionParameter handle;
-
 } HGCMMsgFileTell;
 
 /******************************************************************************
@@ -876,8 +966,38 @@ typedef struct HGCMReplyFileNotify
             HGCMFunctionParameter offset;
         } tell;
     } u;
-
 } HGCMReplyFileNotify;
+
+typedef struct HGCMReplyDirNotify
+{
+    VBoxGuestHGCMCallInfo hdr;
+    /** Context ID. */
+    HGCMFunctionParameter context;
+    /** Notification type. */
+    HGCMFunctionParameter type;
+    /** IPRT result of overall operation. */
+    HGCMFunctionParameter rc;
+    union
+    {
+        struct
+        {
+            /** Directory information. */
+            HGCMFunctionParameter objInfo;
+        } info;
+        struct
+        {
+            /** Guest directory handle. */
+            HGCMFunctionParameter handle;
+        } open;
+        struct
+        {
+            /** Current read directory entry. */
+            HGCMFunctionParameter entry;
+            /** Extended entry object information. Optional. */
+            HGCMFunctionParameter objInfo;
+        } read;
+    } u;
+} HGCMReplyDirNotify;
 
 #pragma pack ()
 
@@ -907,6 +1027,20 @@ typedef struct CALLBACKDATA_CLIENT_DISCONNECTED
     /** Callback data header. */
     CALLBACKDATA_HEADER hdr;
 } CALLBACKDATA_CLIENT_DISCONNECTED, *PCALLBACKDATA_CLIENT_DISCONNECTED;
+
+typedef struct CALLBACKDATA_MSG_REPLY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type. */
+    uint32_t uType;
+    /** Notification result. Note: int vs. uint32! */
+    uint32_t rc;
+    /** Pointer to optional payload. */
+    void *pvPayload;
+    /** Payload size (in bytes). */
+    uint32_t cbPayload;
+} CALLBACKDATA_MSG_REPLY, *PCALLBACKDATA_MSG_REPLY;
 
 typedef struct CALLBACKDATA_SESSION_NOTIFY
 {
@@ -963,6 +1097,46 @@ typedef struct CALLBACKDATA_PROC_INPUT
     /** Size (in bytes) of processed input data. */
     uint32_t uProcessed;
 } CALLBACKDATA_PROC_INPUT, *PCALLBACKDATA_PROC_INPUT;
+
+/**
+ * General guest directory notification callback.
+ */
+typedef struct CALLBACKDATA_DIR_NOTIFY
+{
+    /** Callback data header. */
+    CALLBACKDATA_HEADER hdr;
+    /** Notification type. */
+    uint32_t uType;
+    /** IPRT result of overall operation. */
+    uint32_t rc;
+    union
+    {
+        struct
+        {
+            /** Size (in bytes) of directory information. */
+            uint32_t cbObjInfo;
+            /** Pointer to directory information. */
+            void *pvObjInfo;
+        } info;
+        struct
+        {
+            /** Guest directory handle. */
+            uint32_t uHandle;
+        } open;
+        /** Note: Close does not have any additional data (yet). */
+        struct
+        {
+            /** Size (in bytes) of directory entry information. */
+            uint32_t cbEntry;
+            /** Pointer to directory entry information. */
+            void *pvEntry;
+            /** Size (in bytes) of directory entry object information. */
+            uint32_t cbObjInfo;
+            /** Pointer to directory entry object information. */
+            void *pvObjInfo;
+        } read;
+    } u;
+} CALLBACKDATA_DIR_NOTIFY, *PCALLBACKDATA_DIR_NOTIFY;
 
 /**
  * General guest file notification callback.

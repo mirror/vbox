@@ -326,7 +326,8 @@ public:
 
 private:
 
-    typedef std::vector <ComObjPtr<GuestDirectory> > SessionDirectories;
+    /** Map of guest directories. The key specifies the internal directory ID. */
+    typedef std::map <uint32_t, ComObjPtr<GuestDirectory> > SessionDirectories;
     /** Map of guest files. The key specifies the internal file ID. */
     typedef std::map <uint32_t, ComObjPtr<GuestFile> > SessionFiles;
     /** Map of guest processes. The key specifies the internal process number.
@@ -337,12 +338,16 @@ public:
     /** @name Public internal methods.
      * @{ */
     int                     closeSession(uint32_t uFlags, uint32_t uTimeoutMS, int *pGuestRc);
+    inline bool             directoryExists(uint32_t uDirID, ComObjPtr<GuestDirectory> *pDir);
     int                     directoryRemoveFromList(GuestDirectory *pDirectory);
+    int                     directoryRemoveInternal(const Utf8Str &strPath, uint32_t uFlags, int *pGuestRc);
     int                     directoryCreateInternal(const Utf8Str &strPath, uint32_t uMode, uint32_t uFlags, int *pGuestRc);
     int                     objectCreateTempInternal(const Utf8Str &strTemplate, const Utf8Str &strPath, bool fDirectory, const Utf8Str &strName, int *pGuestRc);
-    int                     directoryOpenInternal(const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags, ComObjPtr<GuestDirectory> &pDirectory);
+    int                     directoryOpenInternal(const GuestDirectoryOpenInfo &openInfo, ComObjPtr<GuestDirectory> &pDirectory, int *pGuestRc);
     int                     directoryQueryInfoInternal(const Utf8Str &strPath, GuestFsObjData &objData, int *pGuestRc);
+    int                     dispatchToDirectory(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     dispatchToFile(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
+    int                     dispatchToObject(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     dispatchToProcess(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     int                     dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCtxCb, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb);
     inline bool             fileExists(uint32_t uFileID, ComObjPtr<GuestFile> *pFile);
@@ -366,6 +371,7 @@ public:
                             startSessionThread(RTTHREAD Thread, void *pvUser);
     Guest                  *getParent(void) { return mParent; }
     uint32_t                getProtocolVersion(void) { return mData.mProtocolVersion; }
+    int                     pathRenameInternal(const Utf8Str &strSource, const Utf8Str &strDest, uint32_t uFlags, int *pGuestRc);
     int                     processRemoveFromList(GuestProcess *pProcess);
     int                     processCreateExInteral(GuestProcessStartupInfo &procInfo, ComObjPtr<GuestProcess> &pProgress);
     inline bool             processExists(uint32_t uProcessID, ComObjPtr<GuestProcess> *pProcess);

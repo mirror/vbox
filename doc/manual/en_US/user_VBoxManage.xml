@@ -3161,6 +3161,234 @@ Value: 2006.01.01</screen>
         </listitem>
 
         <listitem>
+          <para><emphasis role="bold"><computeroutput>removedirectory</computeroutput></emphasis>,
+          which allows deletion of guest directories (only with installed Guest
+          Additions 4.3.2 and later).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removedir[ectory]|rmdir
+            &lt;guest directory&gt;... --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
+            [--recursive|-R|-r] [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>directory to remove on guest</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Absolute path of directory/directories to remove on
+                  guest, e.g. <computeroutput>D:\Foo\Bar</computeroutput>. The
+                  specified user must have appropriate rights to delete the
+                  specified guest directories.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--recursive</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Remove directories and their contents recursively.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>removefile</computeroutput></emphasis>,
+          which allows deletion of guest files (only with installed Guest
+          Additions 4.3.2 and later).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; removefile|rm
+            &lt;guest file&gt;... --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
+            [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>file to remove on guest</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Absolute path of a file/files to remove on
+                  guest, e.g. <computeroutput>D:\Foo\Bar\text.txt</computeroutput>. The
+                  specified user must have appropriate rights to delete the
+                  specified guest files.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>ren[ame]|mv</computeroutput></emphasis>,
+          which allows renaming of guest files and/or directories (only with installed Guest
+          Additions 4.3.2 and later).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|vmname&gt; ren[ame]|mv
+            &lt;source&gt;... &lt;dest&gt; --username &lt;name&gt;
+            [--passwordfile &lt;file&gt; | --password &lt;password&gt;]
+            [--verbose]</screen>
+
+          <para>where the parameters mean: <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|vmname</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>The VM UUID or VM name. Mandatory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>source</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Absolute path of one or more source(s) to move to
+                  destination. If more than one source is specified, destination
+                  must be an existing directory on the guest. The specified user
+                  must have appropriate rights to access source and destination
+                  files and directories.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>dest</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Absolute path of the destination to move the source(s)
+                  to. This can be a directory or a file, depending if one or more
+                  sources have been specified. The specified user
+                  must have appropriate rights to access the destination
+                  file and directory.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;name&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Name of the user the copy process should run under.
+                  This user must exist on the guest OS.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;file&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified to be read from
+                  the given file. If not given, an empty password is
+                  assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;password&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Password of the user account specified with
+                  <computeroutput>--username</computeroutput>. If not given,
+                  an empty password is assumed.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Tells VBoxManage to be more verbose.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
           <para><emphasis role="bold"><computeroutput>createtemporary</computeroutput></emphasis>,
           which allows
           copying files from the host to the guest (only with installed Guest

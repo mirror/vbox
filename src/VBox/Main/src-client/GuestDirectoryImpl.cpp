@@ -58,54 +58,72 @@ void GuestDirectory::FinalRelease(void)
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-int GuestDirectory::init(GuestSession *aSession,
-                         const Utf8Str &strPath, const Utf8Str &strFilter, uint32_t uFlags)
+int GuestDirectory::init(Console *pConsole, GuestSession *pSession,
+                         ULONG uDirID, const GuestDirectoryOpenInfo &openInfo)
 {
-    LogFlowThisFunc(("strPath=%s, strFilter=%s, uFlags=%x\n",
-                     strPath.c_str(), strFilter.c_str(), uFlags));
+    LogFlowThisFunc(("pConsole=%p, pSession=%p, uDirID=%RU32, strPath=%s, strFilter=%s, uFlags=%x\n",
+                     pConsole, pSession, uDirID, openInfo.mPath.c_str(), openInfo.mFilter.c_str(),
+                     openInfo.mFlags));
+
+    AssertPtrReturn(pConsole, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSession, VERR_INVALID_POINTER);
 
     /* Enclose the state transition NotReady->InInit->Ready. */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    mData.mSession = aSession;
-    mData.mName    = strPath;
-    mData.mFilter  = strFilter;
-    mData.mFlags   = uFlags;
+#ifndef VBOX_WITH_GUEST_CONTROL
+    autoInitSpan.setSucceeded();
+    return VINF_SUCCESS;
+#else
+    int vrc = bindToSession(pConsole, pSession, uDirID /* Object ID */);
+    if (RT_SUCCESS(vrc))
+    {
+        mSession = pSession;
 
-    /* Start the directory process on the guest. */
-    GuestProcessStartupInfo procInfo;
-    procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\"", strPath.c_str()));
-    procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_LS);
-    procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
-    procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
+        mData.mID = uDirID;
+        mData.mOpenInfo = openInfo;
+    }
 
-    procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
-    /* We want the long output format which contains all the object details. */
-    procInfo.mArguments.push_back(Utf8Str("-l"));
+    if (RT_SUCCESS(vrc))
+    {
+        /* Start the directory process on the guest. */
+        GuestProcessStartupInfo procInfo;
+        procInfo.mName      = Utf8StrFmt(tr("Reading directory \"%s\"", openInfo.mPath.c_str()));
+        procInfo.mCommand   = Utf8Str(VBOXSERVICE_TOOL_LS);
+        procInfo.mTimeoutMS = 5 * 60 * 1000; /* 5 minutes timeout. */
+        procInfo.mFlags     = ProcessCreateFlag_WaitForStdOut;
+
+        procInfo.mArguments.push_back(Utf8Str("--machinereadable"));
+        /* We want the long output format which contains all the object details. */
+        procInfo.mArguments.push_back(Utf8Str("-l"));
 #if 0 /* Flags are not supported yet. */
-    if (uFlags & DirectoryOpenFlag_NoSymlinks)
-        procInfo.mArguments.push_back(Utf8Str("--nosymlinks")); /** @todo What does GNU here? */
+        if (uFlags & DirectoryOpenFlag_NoSymlinks)
+            procInfo.mArguments.push_back(Utf8Str("--nosymlinks")); /** @todo What does GNU here? */
 #endif
-    /** @todo Recursion support? */
-    procInfo.mArguments.push_back(strPath); /* The directory we want to open. */
+        /** @todo Recursion support? */
+        procInfo.mArguments.push_back(openInfo.mPath); /* The directory we want to open. */
 
-    /*
-     * Start the process asynchronously and keep it around so that we can use
-     * it later in subsequent read() calls.
-     * Note: No guest rc available because operation is asynchronous.
-     */
-    int rc = mData.mProcessTool.Init(mData.mSession, procInfo,
-                                     true /* Async */, NULL /* Guest rc */);
-    if (RT_SUCCESS(rc))
+        /*
+         * Start the process asynchronously and keep it around so that we can use
+         * it later in subsequent read() calls.
+         * Note: No guest rc available because operation is asynchronous.
+         */
+        vrc = mData.mProcessTool.Init(mSession, procInfo,
+                                      true /* Async */, NULL /* Guest rc */);
+    }
+
+    if (RT_SUCCESS(vrc))
     {
         /* Confirm a successful initialization when it's the case. */
         autoInitSpan.setSucceeded();
-        return rc;
+        return vrc;
     }
+    else
+        autoInitSpan.setFailed();
 
-    autoInitSpan.setFailed();
-    return rc;
+    return vrc;
+#endif /* VBOX_WITH_GUEST_CONTROL */
 }
 
 /**
@@ -138,7 +156,7 @@ STDMETHODIMP GuestDirectory::COMGETTER(DirectoryName)(BSTR *aName)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mName.cloneTo(aName);
+    mData.mOpenInfo.mPath.cloneTo(aName);
 
     return S_OK;
 }
@@ -154,13 +172,89 @@ STDMETHODIMP GuestDirectory::COMGETTER(Filter)(BSTR *aFilter)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mData.mFilter.cloneTo(aFilter);
+    mData.mOpenInfo.mFilter.cloneTo(aFilter);
 
     return S_OK;
 }
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
+
+int GuestDirectory::callbackDispatcher(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLHOSTCALLBACK pSvcCb)
+{
+    AssertPtrReturn(pCbCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSvcCb, VERR_INVALID_POINTER);
+
+    LogFlowThisFunc(("strPath=%s, uContextID=%RU32, uFunction=%RU32, pSvcCb=%p\n",
+                     mData.mOpenInfo.mPath.c_str(), pCbCtx->uContextID, pCbCtx->uFunction, pSvcCb));
+
+    int vrc;
+    switch (pCbCtx->uFunction)
+    {
+        case GUEST_DIR_NOTIFY:
+        {
+            int idx = 1; /* Current parameter index. */
+            CALLBACKDATA_DIR_NOTIFY dataCb;
+            /* pSvcCb->mpaParms[0] always contains the context ID. */
+            pSvcCb->mpaParms[idx++].getUInt32(&dataCb.uType);
+            pSvcCb->mpaParms[idx++].getUInt32(&dataCb.rc);
+
+            int guestRc = (int)dataCb.rc; /* uint32_t vs. int. */
+
+            LogFlowFunc(("uType=%RU32, guestRc=%Rrc\n",
+                         dataCb.uType, guestRc));
+
+            switch (dataCb.uType)
+            {
+                /* Nothing here yet, nothing to dispatch further. */
+
+                default:
+                    vrc = VERR_NOT_SUPPORTED;
+                    break;
+            }
+            break;
+        }
+
+        default:
+            /* Silently ignore not implemented functions. */
+            vrc = VERR_NOT_SUPPORTED;
+            break;
+    }
+
+#ifdef DEBUG
+    LogFlowFuncLeaveRC(vrc);
+#endif
+    return vrc;
+}
+
+/* static */
+Utf8Str GuestDirectory::guestErrorToString(int guestRc)
+{
+    Utf8Str strError;
+
+    /** @todo pData->u32Flags: int vs. uint32 -- IPRT errors are *negative* !!! */
+    switch (guestRc)
+    {
+        case VERR_DIR_NOT_EMPTY:
+            strError += Utf8StrFmt("Directoy is not empty");
+            break;
+
+        default:
+            strError += Utf8StrFmt("%Rrc", guestRc);
+            break;
+    }
+
+    return strError;
+}
+
+/* static */
+HRESULT GuestDirectory::setErrorExternal(VirtualBoxBase *pInterface, int guestRc)
+{
+    AssertPtr(pInterface);
+    AssertMsg(RT_FAILURE(guestRc), ("Guest rc does not indicate a failure when setting error\n"));
+
+    return pInterface->setError(VBOX_E_IPRT_ERROR, GuestDirectory::guestErrorToString(guestRc).c_str());
+}
 
 // implementation of public methods
 /////////////////////////////////////////////////////////////////////////////
@@ -175,8 +269,8 @@ STDMETHODIMP GuestDirectory::Close(void)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AssertPtr(mData.mSession);
-    int rc = mData.mSession->directoryRemoveFromList(this);
+    AssertPtr(mSession);
+    int rc = mSession->directoryRemoveFromList(this);
     AssertRC(rc);
 
     HRESULT hr = S_OK;
@@ -187,7 +281,7 @@ STDMETHODIMP GuestDirectory::Close(void)
     {
         switch (rc)
         {
-           case VERR_GSTCTL_GUEST_ERROR:
+            case VERR_GSTCTL_GUEST_ERROR:
                 hr = GuestProcess::setErrorExternal(this, guestRc);
                 break;
 
@@ -199,7 +293,7 @@ STDMETHODIMP GuestDirectory::Close(void)
             default:
                 hr = setError(VBOX_E_IPRT_ERROR,
                               tr("Terminating open guest directory \"%s\" failed: %Rrc"),
-                              mData.mName.c_str(), rc);
+                              mData.mOpenInfo.mPath.c_str(), rc);
                 break;
         }
     }
@@ -292,23 +386,23 @@ STDMETHODIMP GuestDirectory::Read(IFsObjInfo **aInfo)
 
             case VERR_ACCESS_DENIED:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Unable to read / access denied"),
-                              mData.mName.c_str());
+                              mData.mOpenInfo.mPath.c_str());
                 break;
 
             case VERR_PATH_NOT_FOUND:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Reading directory \"%s\" failed: Path not found"),
-                              mData.mName.c_str());
+                              mData.mOpenInfo.mPath.c_str());
                 break;
 
             case VERR_NO_MORE_FILES:
                 /* See SDK reference. */
                 hr = setError(VBOX_E_OBJECT_NOT_FOUND, tr("No more entries for directory \"%s\""),
-                              mData.mName.c_str());
+                              mData.mOpenInfo.mPath.c_str());
                 break;
 
             default:
                 hr = setError(VBOX_E_IPRT_ERROR, tr("Error while reading directory \"%s\": %Rrc\n"),
-                              mData.mName.c_str(), rc);
+                              mData.mOpenInfo.mPath.c_str(), rc);
                 break;
         }
     }

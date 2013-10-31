@@ -524,6 +524,9 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
     rc = VbglR3GuestCtrlProcCbStatus(&ctxStart,
                                      pProcess->uPID, PROC_STS_STARTED, 0 /* u32Flags */,
                                      NULL /* pvData */, 0 /* cbData */);
+    if (RT_FAILURE(rc))
+        VBoxServiceError("[PID %RU32]: Error reporting starting status to host, rc=%Rrc\n",
+                         pProcess->uPID, rc);
 
     /*
      * Process input, output, the test pipe and client requests.
@@ -575,11 +578,10 @@ static int gstcntlProcessProcLoop(PVBOXSERVICECTRLPROCESS pProcess)
                                          abBuf, sizeof(abBuf), &cbIgnore);
                         if (RT_FAILURE(rc2))
                             VBoxServiceError("Draining IPC notification pipe failed with rc=%Rrc\n", rc2);
-#ifdef DEBUG
+
+                        /* Process all pending requests. */
                         VBoxServiceVerbose(4, "[PID %RU32]: Processing pending requests ...\n",
                                            pProcess->uPID);
-#endif
-                        /* Process all pending requests. */
                         Assert(pProcess->hReqQueue != NIL_RTREQQUEUE);
                         rc2 = RTReqQueueProcess(pProcess->hReqQueue,
                                                 0 /* Only process all pending requests, don't wait for new ones */);
