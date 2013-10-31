@@ -1485,6 +1485,8 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
             /** @todo virtualize DEBUGCTL and relatives */
             break;
 
+        case 0x1db:  /* quick fix for winxp64. */
+            break;
 
         /*
          * Intel specifics MSRs:
@@ -1534,6 +1536,19 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
         case MSR_K8_SYSCFG:      /** @todo can be written, but we ignore that for now. */
         case MSR_K8_INT_PENDING: /** @todo can be written, but we ignore that for now. */
         case MSR_K8_NB_CFG:      /** @todo can be written; the apicid swapping might be used and would need saving, but probably unnecessary. */
+        case 0xc0011029:        /* quick fix for FreeBSd 9.1. */
+        case 0xc0010042:        /* quick fix for something. */
+        case 0xc001102a:        /* quick fix for w2k8 + opposition. */
+        case 0xc0011004:        /* quick fix for the opposition. */
+        case 0xc0011005:        /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL0:   /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL1:   /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL2:   /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL3:   /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR0:   /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR1:   /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR2:   /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR3:   /* quick fix for the opposition. */
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
                 Log(("CPUM: MSR %#x is AMD, the virtual CPU isn't an Intel one -> #GP\n", idMsr));
