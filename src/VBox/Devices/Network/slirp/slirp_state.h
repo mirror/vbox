@@ -285,6 +285,8 @@ typedef struct NATState
     struct libalias *proxy_alias;
     struct libalias *dns_alias;
     LIST_HEAD(handler_chain, proto_handler) handler_chain;
+    /** Critical R/W section to protect the handler chain list. */
+    RTCRITSECTRW CsRwHandlerChain;
     struct port_forward_rule_list port_forward_rule_head;
     int cRedirectionsActive;
     int cRedirectionsStored;
