@@ -114,10 +114,26 @@ _handler_chain_destroy(void)
 
 #else /* VBOX */
 # define LIBALIAS_WLOCK_ASSERT() ;
-# define LIBALIAS_RLOCK() ;
-# define LIBALIAS_RUNLOCK() ;
-# define LIBALIAS_WLOCK() ;
-# define LIBALIAS_WUNLOCK() ;
+# define LIBALIAS_RLOCK() \
+    do { \
+        int rc = RTCritSectRwEnterShared(&pData->CsRwHandlerChain); \
+        AssertRC(rc); \
+    } while (0)
+# define LIBALIAS_RUNLOCK() \
+    do { \
+        int rc = RTCritSectRwLeaveShared(&pData->CsRwHandlerChain); \
+        AssertRC(rc); \
+    } while (0)
+# define LIBALIAS_WLOCK() \
+    do { \
+        int rc = RTCritSectRwEnterExcl(&pData->CsRwHandlerChain); \
+        AssertRC(rc); \
+    } while (0)
+# define LIBALIAS_WUNLOCK() \
+    do { \
+        int rc = RTCritSectRwLeaveExcl(&pData->CsRwHandlerChain); \
+        AssertRC(rc); \
+    } while (0)
 # define _handler_chain_init() ;
 # define _handler_chain_destroy() ;
 #endif

@@ -308,6 +308,10 @@ int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
     pData->pvUser = pvUser;
     pData->netmask = u32Netmask;
 
+    rc = RTCritSectRwInit(&pData->CsRwHandlerChain);
+    if (RT_FAILURE(rc))
+        return rc;
+
     /* sockets & TCP defaults */
     pData->socket_rcv = 64 * _1K;
     pData->socket_snd = 64 * _1K;
@@ -554,6 +558,7 @@ void slirp_term(PNATState pData)
          "\n"));
 #endif
 #endif
+    RTCritSectRwDelete(&pData->CsRwHandlerChain);
     RTMemFree(pData);
 }
 
