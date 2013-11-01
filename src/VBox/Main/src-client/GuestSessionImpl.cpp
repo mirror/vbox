@@ -1131,6 +1131,7 @@ int GuestSession::dispatchToThis(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXGUESTCTRLH
     {
         case GUEST_DISCONNECTED:
             /** @todo Handle closing all guest objects. */
+            rc = VERR_INTERNAL_ERROR;
             break;
 
         case GUEST_SESSION_NOTIFY: /* Guest Additions >= 4.3.0. */
