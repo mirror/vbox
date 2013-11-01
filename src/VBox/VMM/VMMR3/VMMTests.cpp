@@ -145,7 +145,9 @@ static int vmmR3DoMsrQuickReport(PVM pVM)
     int rc  = vmmR3ReportMsrRange(pVM, 0x00000000, 0x00042000, NULL, &cMsrsFound);
     int rc2 = vmmR3ReportMsrRange(pVM, 0x40000000, 0x00012000, NULL, &cMsrsFound);
     int rc3 = vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, NULL, &cMsrsFound);
-    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, NULL, &cMsrsFound);
+    /* for some reason this crashes two AMD testboxes */
+//    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, NULL, &cMsrsFound);
+    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00010000, NULL, &cMsrsFound);
     if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
         rc = rc2;
     if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
