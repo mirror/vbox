@@ -232,9 +232,10 @@ ENDPROC vmmGCTestTrap0e
 GLOBALNAME vmmRCSafeMsrRead
     push    ebp
     mov     ebp, esp
-    pushad
+    pushf
+    cli
 
-    mov     ecx, [ebp + 8]              ; the MSR to read.
+    mov     ecx, [ebp + 8]              ; The MSR to read.
     mov     eax, 0deadbeefh
     mov     edx, 0deadbeefh
 
@@ -245,17 +246,49 @@ TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
     mov     [ecx], eax
     mov     [ecx + 4], edx
 
-    popad
+    popf
     mov     eax, 1
     leave
     ret
 
 .trapped:
-    popad
+    popf
     mov     eax, 0
     leave
     ret
 ENDPROC vmmRCSafeMsrRead
+
+
+;;
+; Safely writes an MSR.
+; @returns  boolean
+; @param    uMsr        The MSR to red.
+; @param    u64Value    The value to write.
+;
+GLOBALNAME vmmRCSafeMsrWrite
+    push    ebp
+    mov     ebp, esp
+    pushf
+    cli
+
+    mov     ecx, [ebp + 8]              ; The MSR to write to.
+    mov     eax, [ebp + 12]             ; The value to write.
+    mov     edx, [ebp + 16]
+
+TRPM_GP_HANDLER NAME(TRPMRCTrapHyperHandlerSetEIP), .trapped
+    wrmsr
+
+    popf
+    mov     eax, 1
+    leave
+    ret
+
+.trapped:
+    popf
+    mov     eax, 0
+    leave
+    ret
+ENDPROC vmmRCSafeMsrWrite
 
 
 
