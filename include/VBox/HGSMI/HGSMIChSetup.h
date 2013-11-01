@@ -44,9 +44,9 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 
 /* HGSMI setup and configuration data structures. */
 /* host->guest commands pending, should be accessed under FIFO lock only */
-#define HGSMIHOSTFLAGS_COMMANDS_PENDING 0x1
+#define HGSMIHOSTFLAGS_COMMANDS_PENDING    0x1
 /* IRQ is fired, should be accessed under VGAState::lock only  */
-#define HGSMIHOSTFLAGS_IRQ              0x2
+#define HGSMIHOSTFLAGS_IRQ                 0x2
 #ifdef VBOX_WITH_WDDM
 /* one or more guest commands is completed, should be accessed under FIFO lock only */
 # define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED 0x4

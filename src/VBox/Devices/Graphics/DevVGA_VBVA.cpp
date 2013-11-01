@@ -1990,6 +1990,14 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
             pCaps->rc = VINF_SUCCESS;
         } break;
 #endif
+
+        case VBVA_CMDVDMA_ENABLE:
+        case VBVA_CMDVBVA_SUBMIT:
+        case VBVA_CMDVBVA_FLUSH:
+        {
+            /* implement */
+        } break;
+
         case VBVA_SCANLINE_CFG:
         {
             if (cbBuffer < sizeof (VBVASCANLINECFG))
