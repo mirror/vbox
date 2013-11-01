@@ -85,6 +85,10 @@ public:
     QString versionString() const { return mVerString; }
     bool isBeta() const;
 
+#ifdef Q_WS_MAC
+    static MacOSXRelease osRelease();
+#endif /* Q_WS_MAC */
+
     CVirtualBox virtualBox() const { return mVBox; }
     CHost host() const { return mHost; }
 

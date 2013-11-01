@@ -208,6 +208,18 @@ namespace UIDefs
 }
 using namespace UIDefs /* globally */;
 
+#ifdef Q_WS_MAC
+/** Known MacOS X releases. */
+enum MacOSXRelease
+{
+    MacOSXRelease_Unknown,
+    MacOSXRelease_SnowLeopard,
+    MacOSXRelease_Lion,
+    MacOSXRelease_MountainLion,
+    MacOSXRelease_Mavericks
+};
+#endif /* Q_WS_MAC */
+
 struct StorageSlot
 {
     StorageSlot() : bus(KStorageBus_Null), port(0), device(0) {}
