@@ -1991,7 +1991,7 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
         } break;
 #endif
 
-        case VBVA_CMDVDMA_ENABLE:
+        case VBVA_CMDVBVA_ENABLE:
         case VBVA_CMDVBVA_SUBMIT:
         case VBVA_CMDVBVA_FLUSH:
         {
