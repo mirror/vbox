@@ -454,7 +454,7 @@ public:
     {
         Clear();
 
-        int rc;
+        int rc = VINF_SUCCESS;
         if (payload.cbData)
         {
             Assert(payload.cbData);
@@ -468,8 +468,6 @@ public:
             else
                 rc = VERR_NO_MEMORY;
         }
-        else
-            rc = VINF_SUCCESS;
 
         return rc;
     }
