@@ -358,11 +358,16 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char ** /*envp*/)
         sigaction(SIGUSR1, &sa, NULL);
 #endif
 
-#ifdef QT_MAC_USE_COCOA
+#ifdef Q_WS_MAC
+        /* Mavericks font fix: */
+        if (VBoxGlobal::osRelease() == MacOSXRelease_Mavericks)
+            QFont::insertSubstitution(".Lucida Grande UI", "Lucida Grande");
+# ifdef QT_MAC_USE_COCOA
         /* Instantiate our NSApplication derivative before QApplication
          * forces NSApplication to be instantiated. */
         UICocoaApplication::instance();
-#endif /* QT_MAC_USE_COCOA */
+# endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
 
         /* Install Qt console message handler: */
         qInstallMsgHandler(QtMessageOutput);
