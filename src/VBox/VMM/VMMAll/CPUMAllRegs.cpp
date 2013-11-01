@@ -1112,6 +1112,7 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
          * The BIOS_SIGN_ID MSR and MSR_IA32_MCP_CAP et al exist on AMD64 as
          * well, at least bulldozer have them.  Windows 7 is querying them.
          * XP has been observed querying MSR_IA32_MC0_CTL.
+         * XP64 has been observed querying MSR_P4_LASTBRANCH_0 (also on AMD).
          */
         case MSR_IA32_BIOS_SIGN_ID:         /* fam/mod >= 6_01 */
         case MSR_IA32_MCG_CAP:              /* fam/mod >= 6_01 */
@@ -1119,6 +1120,10 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         /*case MSR_IA32_MCG_CTRL:       - indicated as not present in CAP */
         case MSR_IA32_MC0_CTL:
         case MSR_IA32_MC0_STATUS:
+        case MSR_P4_LASTBRANCH_0:
+        case MSR_P4_LASTBRANCH_1:
+        case MSR_P4_LASTBRANCH_2:
+        case MSR_P4_LASTBRANCH_3:
             *puValue = 0;
             break;
 
@@ -1129,10 +1134,6 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_P5_MC_ADDR:
         case MSR_P5_MC_TYPE:
         case MSR_P4_LASTBRANCH_TOS: /** @todo Are these branch regs still here on more recent CPUs? The documentation doesn't mention them for several archs. */
-        case MSR_P4_LASTBRANCH_0:
-        case MSR_P4_LASTBRANCH_1:
-        case MSR_P4_LASTBRANCH_2:
-        case MSR_P4_LASTBRANCH_3:
         case MSR_IA32_PERFEVTSEL0:          /* NetWare 6.5 wants the these four. (Bet on AMD as well.) */
         case MSR_IA32_PERFEVTSEL1:
         case MSR_IA32_PMC0:
@@ -1288,7 +1289,7 @@ VMMDECL(int) CPUMQueryGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
  */
 VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 {
-    LogFlow(("CPUSetGuestMsr: %#x <- %#llx\n", idMsr, uValue));
+    LogFlow(("CPUMSetGuestMsr: %#x <- %#llx\n", idMsr, uValue));
 
     /*
      * If we don't indicate MSR support in the CPUID feature bits, indicate
@@ -1483,9 +1484,6 @@ VMMDECL(int) CPUMSetGuestMsr(PVMCPU pVCpu, uint32_t idMsr, uint64_t uValue)
 
         case MSR_IA32_DEBUGCTL:
             /** @todo virtualize DEBUGCTL and relatives */
-            break;
-
-        case 0x1db:  /* quick fix for winxp64. */
             break;
 
         /*
