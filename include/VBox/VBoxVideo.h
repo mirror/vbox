@@ -852,6 +852,9 @@ typedef struct VBVABUFFER
 #define VBVA_INFO_CAPS   12 /* informs host about HGSMI caps. see VBVACAPS below */
 #define VBVA_SCANLINE_CFG    13 /* configures scanline, see VBVASCANLINECFG below */
 #define VBVA_SCANLINE_INFO   14 /* requests scanline info, see VBVASCANLINEINFO below */
+#define VBVA_CMDVBVA_ENABLE  15 /* enables command ring buffer VBVA */
+#define VBVA_CMDVBVA_SUBMIT  16 /* inform host about VBVA Command submission */
+#define VBVA_CMDVBVA_FLUSH   17 /* inform host about VBVA Command submission */
 
 /* host->guest commands */
 #define VBVAHG_EVENT              1
@@ -944,6 +947,20 @@ typedef struct VBVAFLUSH
     uint32_t u32Reserved;
 
 } VBVAFLUSH;
+
+typedef struct VBVACMDVBVASUBMIT
+{
+    uint32_t u32Reserved;
+} VBVACMDVBVASUBMIT;
+
+/* flush is requested because due to guest command buffer overflow */
+#define VBVACMDVBVAFLUSH_F_GUEST_BUFFER_OVERFLOW 1
+
+typedef struct VBVACMDVBVAFLUSH
+{
+    uint32_t u32Flags;
+} VBVACMDVBVAFLUSH;
+
 
 /* VBVAINFOSCREEN::u8Flags */
 #define VBVA_SCREEN_F_NONE     0x0000
@@ -1541,6 +1558,42 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
     /*output (filled by Server) :*/
     VBOXCRCON_SERVER_CALLBACKS ServerCallbacks;
 } VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT, *PVBOXVDMACMD_CHROMIUM_CTL_CRCONNECT;
+
+/* ring command buffer dr */
+#define VBOXCMDVBVA_STATE_SUBMITTED   1
+#define VBOXCMDVBVA_STATE_CANCELLED   2
+#define VBOXCMDVBVA_STATE_IN_PROGRESS 3
+/* the "completed" state is signalled via the ring buffer values */
+
+/* CrHgsmi command */
+#define VBOXCMDVBVA_OPTYPE_CRCMD 1
+/* blit command (e.g. shadow to primary) */
+#define VBOXCMDVBVA_OPTYPE_BLT   2
+/* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
+#define VBOXCMDVBVA_OPTYPE_NOP   0x80
+
+/* trying to make the header as small as possible,
+ * we'd have pretty few op codes actually, so 8bit is quite enough,
+ * we will be able to extend it in any way. */
+typedef struct VBOXCMDVBVA_HDR
+{
+    /* one VBOXCMDVBVA_OPTYPE_XXX, ecxept NOP, see comments above */
+    uint8_t u8OpCode;
+    /* reserved, must be null */
+    uint8_t u8Reserved;
+    /* one of VBOXCMDVBVA_STATE_XXX*/
+    volatile uint8_t u8State;
+    /* result, 0 on success, otherwise contains the failure code TBD */
+    int8_t u8Result;
+    /* DXGK DDI fence ID */
+    uint32_t u32FenceID;
+} VBOXCMDVBVA_HDR;
+
+typedef struct VBOXCMDVBVA_CRCMD
+{
+    VBOXCMDVBVA_HDR Hdr;
+    VBOXVIDEOOFFSET offCmd;
+} VBOXCMDVBVA_CRCMD;
 
 # pragma pack()
 
