@@ -12210,7 +12210,11 @@
 
     <method name="createSession">
       <desc>
-        Creates a new guest session for controlling the guest.
+        Creates a new guest session for controlling the guest. The new session
+        will be started asynchronously, meaning on return of this function it is
+        not guaranteed that the guest session is in a started and/or usable state.
+        To wait for successful startup, use the <link to="IGuestSession::waitFor"/>
+        call.
 
         A guest session represents one impersonated user account on the guest, so
         every operation will use the same credentials specified when creating
