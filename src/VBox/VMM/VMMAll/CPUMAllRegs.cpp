@@ -1208,6 +1208,19 @@ static int cpumQueryGuestMsrInt(PVMCPU pVCpu, uint32_t idMsr, uint64_t *puValue)
         case MSR_K8_NB_CFG:             /* (All known values are 0 on reset.) */
         case MSR_K8_HWCR:               /* Very interesting bits here. :) */
         case MSR_K8_VM_CR:              /* Windows 8 */
+        case 0xc0011029:                /* quick fix for FreeBSd 9.1. */
+        case 0xc0010042:                /* quick fix for something. */
+        case 0xc001102a:                /* quick fix for w2k8 + opposition. */
+        case 0xc0011004:                /* quick fix for the opposition. */
+        case 0xc0011005:                /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL0:           /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL1:           /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL2:           /* quick fix for the opposition. */
+        case MSR_K7_EVNTSEL3:           /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR0:           /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR1:           /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR2:           /* quick fix for the opposition. */
+        case MSR_K7_PERFCTR3:           /* quick fix for the opposition. */
             *puValue = 0;
             if (CPUMGetGuestCpuVendor(pVCpu->CTX_SUFF(pVM)) != CPUMCPUVENDOR_AMD)
             {
