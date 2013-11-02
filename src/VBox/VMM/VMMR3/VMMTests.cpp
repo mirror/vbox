@@ -100,14 +100,15 @@ static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM
                 if (paResults[i].uValue == 0)
                 {
                     if (pReportStrm)
-                        RTStrmPrintf(pReportStrm, "%#010llx = 0\n", paResults[i].uMsr);
+                        RTStrmPrintf(pReportStrm,
+                                     "    MVO(%#010llx, \"MSR\", UINT64_C(%#018llx)),\n", paResults[i].uMsr, paResults[i].uValue);
                     RTPrintf("%#010llx = 0\n", paResults[i].uMsr);
                 }
                 else
                 {
                     if (pReportStrm)
-                        RTStrmPrintf(pReportStrm, "%#010llx = %#010x`%08x\n", paResults[i].uMsr,
-                                     (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
+                        RTStrmPrintf(pReportStrm,
+                                     "    MVO(%#010llx, \"MSR\", UINT64_C(%#018llx)),\n", paResults[i].uMsr, paResults[i].uValue);
                     RTPrintf("%#010llx = %#010x`%08x\n", paResults[i].uMsr,
                              (uint32_t)(paResults[i].uValue >> 32), (uint32_t)paResults[i].uValue);
                 }
@@ -132,28 +133,41 @@ static int vmmR3ReportMsrRange(PVM pVM, uint32_t uMsr, uint64_t cMsrs, PRTSTREAM
  * Produces a quick report of MSRs.
  *
  * @returns VBox status code.
- * @param   pVM     Pointer to the cross context VM structure.
+ * @param   pVM             Pointer to the cross context VM structure.
+ * @param   pReportStrm     Pointer to the report output stream. Optional.
+ * @param   fWithCpuId      Whether CPUID should be included.
  */
-static int vmmR3DoMsrQuickReport(PVM pVM)
+static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId)
 {
     uint64_t uTsStart = RTTimeNanoTS();
     RTPrintf("=== MSR Quick Report Start ===\n");
     RTStrmFlush(g_pStdOut);
-    DBGFR3InfoStdErr(pVM->pUVM, "cpuid", "verbose");
-    RTPrintf("\n");
+    if (fWithCpuId)
+    {
+        DBGFR3InfoStdErr(pVM->pUVM, "cpuid", "verbose");
+        RTPrintf("\n");
+    }
+    if (pReportStrm)
+        RTStrmPrintf(pReportStrm, "\n\n{\n");
     uint32_t cMsrsFound = 0;
-    int rc  = vmmR3ReportMsrRange(pVM, 0x00000000, 0x00042000, NULL, &cMsrsFound);
-    int rc2 = vmmR3ReportMsrRange(pVM, 0x40000000, 0x00012000, NULL, &cMsrsFound);
-    int rc3 = vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, NULL, &cMsrsFound);
-    /* for some reason this crashes two AMD testboxes */
-//    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, NULL, &cMsrsFound);
-    int rc4 = vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00010000, NULL, &cMsrsFound);
-    if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
-        rc = rc2;
-    if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
-        rc = rc3;
-    if (RT_FAILURE(rc4) && RT_SUCCESS(rc))
-        rc = rc4;
+    int aRc[] =
+    {
+        vmmR3ReportMsrRange(pVM, 0x00000000, 0x00042000, pReportStrm, &cMsrsFound),
+        vmmR3ReportMsrRange(pVM, 0x10000000, 0x00001000, pReportStrm, &cMsrsFound),
+        vmmR3ReportMsrRange(pVM, 0x20000000, 0x00001000, pReportStrm, &cMsrsFound),
+        vmmR3ReportMsrRange(pVM, 0x40000000, 0x00012000, pReportStrm, &cMsrsFound),
+        vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, pReportStrm, &cMsrsFound),
+        vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, pReportStrm, &cMsrsFound),
+    };
+    int rc = VINF_SUCCESS;
+    for (unsigned i = 0; i < RT_ELEMENTS(aRc); i++)
+        if (RT_FAILURE(aRc[i]))
+        {
+            rc = aRc[i];
+            break;
+        }
+    if (pReportStrm)
+        RTStrmPrintf(pReportStrm, "}; /* %u (%#x) MSRs; rc=%Rrc */\n", cMsrsFound, cMsrsFound, rc);
     RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
     RTPrintf("=== MSR Quick Report End (rc=%Rrc, %'llu ns) ===\n", rc, RTTimeNanoTS() - uTsStart);
     return rc;
@@ -579,7 +593,7 @@ VMMR3DECL(int) VMMDoTest(PVM pVM)
         /*
          * A quick MSR report.
          */
-        vmmR3DoMsrQuickReport(pVM);
+        vmmR3DoMsrQuickReport(pVM, NULL, true);
     }
     else
         AssertMsgFailed(("Failed to resolved VMMGC.gc::VMMGCEntry(), rc=%Rrc\n", rc));
@@ -767,7 +781,7 @@ static DECLCALLBACK(void) vmmDoPrintfToStream(PCDBGFINFOHLP pHlp, const char *ps
  * @returns VBox status code.
  * @param   pVM         The VM handle.
  */
-VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
+VMMR3DECL(int) VMMDoBruteForceMsrs(PVM pVM)
 {
 #ifdef VBOX_WITH_RAW_MODE
     PRTSTREAM pOutStrm;
@@ -791,6 +805,96 @@ VMMDECL(int) VMMDoBruteForceMsrs(PVM pVM)
 
         RTStrmClose(pOutStrm);
     }
+    return rc;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/**
+ * Uses raw-mode to query all known MSRS on the real hardware.
+ *
+ * This generates a known-msr-report.txt file (appending, no overwriting) as
+ * well as writing the values and process to stdout.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ */
+VMMR3DECL(int) VMMDoKnownMsrs(PVM pVM)
+{
+#ifdef VBOX_WITH_RAW_MODE
+    PRTSTREAM pOutStrm;
+    int rc = RTStrmOpen("known-msr-report.txt", "a", &pOutStrm);
+    if (RT_SUCCESS(rc))
+    {
+        vmmR3DoMsrQuickReport(pVM, pOutStrm, false);
+        RTStrmClose(pOutStrm);
+    }
+    return rc;
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
+}
+
+
+/**
+ * MSR experimentation.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ */
+VMMR3DECL(int) VMMDoMsrExperiments(PVM pVM)
+{
+#ifdef VBOX_WITH_RAW_MODE
+    /*
+     * Preps.
+     */
+    RTRCPTR RCPtrEP;
+    int rc = PDMR3LdrGetSymbolRC(pVM, VMMGC_MAIN_MODULE_NAME, "VMMRCTestTestWriteMsr", &RCPtrEP);
+    AssertMsgRCReturn(rc, ("Failed to resolved VMMRC.rc::VMMRCEntry(), rc=%Rrc\n", rc), rc);
+
+    uint64_t *pauValues;
+    rc = MMHyperAlloc(pVM, 2 * sizeof(uint64_t), 0, MM_TAG_VMM, (void **)&pauValues);
+    AssertMsgRCReturn(rc, ("Error allocating %#x bytes off the hyper heap: %Rrc\n", 2 * sizeof(uint64_t), rc), rc);
+    RTRCPTR RCPtrValues = MMHyperR3ToRC(pVM, pauValues);
+
+    /*
+     * Do the experiments.
+     */
+    uint32_t uMsr   = 0xc0011011;
+    uint64_t uValue = 0x10000;
+#if 0
+    rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                     RCPtrValues, RCPtrValues + sizeof(uint64_t));
+    RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
+             uMsr, pauValues[0], uValue, pauValues[1], rc);
+#endif
+    for (uint32_t i = 0; i <= 63; i++)
+    {
+        uValue = RT_BIT_64(i);
+        rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                         RCPtrValues, RCPtrValues + sizeof(uint64_t));
+        RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
+                 uMsr, pauValues[0], uValue, pauValues[1], rc);
+    }
+
+    uValue = 0;
+    rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                     RCPtrValues, RCPtrValues + sizeof(uint64_t));
+    RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
+             uMsr, pauValues[0], uValue, pauValues[1], rc);
+
+    uValue = UINT64_MAX;
+    rc = VMMR3CallRC(pVM, RCPtrEP, 6, pVM->pVMRC, uMsr, RT_LODWORD(uValue), RT_HIDWORD(uValue),
+                     RCPtrValues, RCPtrValues + sizeof(uint64_t));
+    RTPrintf("uMsr=%#010x before=%#018llx written=%#018llx after=%#018llx rc=%Rrc\n",
+             uMsr, pauValues[0], uValue, pauValues[1], rc);
+
+    /*
+     * Cleanups.
+     */
+    MMHyperFree(pVM, pauValues);
     return rc;
 #else
     return VERR_NOT_SUPPORTED;
