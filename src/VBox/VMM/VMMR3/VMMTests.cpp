@@ -159,10 +159,11 @@ static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId
         vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, pReportStrm, &cMsrsFound),
 //        vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, pReportStrm, &cMsrsFound),
 //        vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00010000, pReportStrm, &cMsrsFound),
-RTStrmFlush(g_pStdOut); RTThreadSleep(16000);
-        vmmR3ReportMsrRange(pVM, 0xc0010000, 0x00001000, pReportStrm, &cMsrsFound),
-RTStrmFlush(g_pStdOut);
+        RTStrmFlush(g_pStdOut) ? VINF_SUCCESS : VINF_SUCCESS,
+        RTThreadSleep(16000),
+        vmmR3ReportMsrRange(pVM, 0xc0010000, 0x00001000, pReportStrm, &cMsrsFound)
     };
+RTStrmFlush(g_pStdOut);
     int rc = VINF_SUCCESS;
     for (unsigned i = 0; i < RT_ELEMENTS(aRc); i++)
         if (RT_FAILURE(aRc[i]))
