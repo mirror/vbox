@@ -157,9 +157,9 @@ static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId
         { 0x20000000, 0x00001000 },
         { 0x40000000, 0x00012000 },
         { 0x80000000, 0x00012000 },
-//        { 0xc0000000, 0x00102000 },
-//        { 0xc0000000, 0x00010000 },
-        { 0xc0000000, 0x00001000 },
+//   Need 0xc0000000..0xc001106f (at least), but trouble on solaris w/ 10h and 0fh family cpus:
+//      { 0xc0000000, 0x00022000 },
+        { 0xc0000000, 0x00010000 },
         { 0xc0010000, 0x00001000 },
     };
     uint32_t cMsrsFound = 0;
