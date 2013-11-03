@@ -149,28 +149,31 @@ static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId
     }
     if (pReportStrm)
         RTStrmPrintf(pReportStrm, "\n\n{\n");
-    uint32_t cMsrsFound = 0;
-    int aRc[] =
+
+    static struct { uint32_t uFirst, cMsrs; } const s_aRanges[] =
     {
-        vmmR3ReportMsrRange(pVM, 0x00000000, 0x00042000, pReportStrm, &cMsrsFound),
-        vmmR3ReportMsrRange(pVM, 0x10000000, 0x00001000, pReportStrm, &cMsrsFound),
-        vmmR3ReportMsrRange(pVM, 0x20000000, 0x00001000, pReportStrm, &cMsrsFound),
-        vmmR3ReportMsrRange(pVM, 0x40000000, 0x00012000, pReportStrm, &cMsrsFound),
-        vmmR3ReportMsrRange(pVM, 0x80000000, 0x00012000, pReportStrm, &cMsrsFound),
-//        vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00102000, pReportStrm, &cMsrsFound),
-//        vmmR3ReportMsrRange(pVM, 0xc0000000, 0x00010000, pReportStrm, &cMsrsFound),
-        RTStrmFlush(g_pStdOut) ? VINF_SUCCESS : VINF_SUCCESS,
-        RTThreadSleep(16000),
-        vmmR3ReportMsrRange(pVM, 0xc0010000, 0x00001000, pReportStrm, &cMsrsFound)
+        { 0x00000000, 0x00042000 },
+        { 0x10000000, 0x00001000 },
+        { 0x20000000, 0x00001000 },
+        { 0x40000000, 0x00012000 },
+        { 0x80000000, 0x00012000 },
+//        { 0xc0000000, 0x00102000 },
+//        { 0xc0000000, 0x00010000 },
+        { 0xc0000000, 0x00001000 },
+        { 0xc0010000, 0x00002000 },
     };
-RTStrmFlush(g_pStdOut);
+    uint32_t cMsrsFound = 0;
     int rc = VINF_SUCCESS;
-    for (unsigned i = 0; i < RT_ELEMENTS(aRc); i++)
-        if (RT_FAILURE(aRc[i]))
-        {
-            rc = aRc[i];
-            break;
-        }
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aRanges) && RT_SUCCESS(rc); i++)
+    {
+if (i >= 4)
+{
+RTStrmFlush(g_pStdOut);
+RTThreadSleep(25);
+}
+        rc = vmmR3ReportMsrRange(pVM, s_aRanges[i].uFirst, s_aRanges[i].cMsrs, pReportStrm, &cMsrsFound);
+    }
+
     if (pReportStrm)
         RTStrmPrintf(pReportStrm, "}; /* %u (%#x) MSRs; rc=%Rrc */\n", cMsrsFound, cMsrsFound, rc);
     RTPrintf("Total %u (%#x) MSRs\n", cMsrsFound, cMsrsFound);
