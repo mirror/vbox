@@ -1518,7 +1518,8 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
         if (pTmp == pIoCtxRc)
         {
             /* The given I/O context was processed, pass the return code to the caller. */
-            if (rcTmp == VINF_VD_ASYNC_IO_FINISHED)
+            if (   rcTmp == VINF_VD_ASYNC_IO_FINISHED
+                && (pTmp->fFlags & VDIOCTX_FLAGS_SYNC))
                 rc = pTmp->rcReq;
             else
                 rc = rcTmp;
