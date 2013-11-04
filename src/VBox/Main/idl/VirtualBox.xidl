@@ -14729,6 +14729,18 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </method>
 
+    <method name="releaseKeys">
+      <desc>Causes the virtual keyboard to release any keys which are
+      currently pressed. Useful when host and guest keyboard may be out
+      of sync.
+
+        <result name="VBOX_E_IPRT_ERROR">
+          Could not release some or all keys.
+        </result>
+
+      </desc>
+    </method>
+
     <attribute name="eventSource" type="IEventSource" readonly="yes">
       <desc>
         Event source for keyboard events.
