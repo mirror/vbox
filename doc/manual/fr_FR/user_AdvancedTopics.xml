@@ -914,8 +914,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
       </note>
 
       <para>Il faut utiliser l'outil en ligne de commandes VBoxManage pour
-      activer le passthrough webcam. A ce jour, certaines commandes ne sont
-      pas supportées sur to% les hôtes ; merci de voir les
+      activer le passthrough webcam. Merci de voir les
       sections ci-dessous spécifiques aux hôtes pour des détails complémentaires.
       Les commandes suivantes sont disponibles :
         <itemizedlist>
@@ -931,8 +930,31 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
             l'hôte. 
           </para></listitem>
           <listitem><para>Connecter une webcam à une VM en fonction :
-            <screen>VBoxManage controlvm "nom VM" webcam attach [chemin_hôte_|alias]</screen>
-            Ceci connectera une webcam à l'invité.
+            <screen>VBoxManage controlvm "nom VM" webcam attach [chemin_hôte_|alias [paramètres]]</screen>
+            Ceci connectera une webcam à l'invité. Le paramètre
+            <computeroutput>settings</computeroutput> est une chaîne 
+            <computeroutput>Paramètre1=Valer1;Paramètre2=Valeur2</computeroutput>, qui
+            permet de configurer la webcam émulée. Les paramètres suivants
+            sont supportés :
+            <itemizedlist>
+              <listitem>
+                <computeroutput>MaxFramerate</computeroutput> La vitesse maximale
+                d'envoi des plans graphiques à l'invité. Une vitesse élevée
+                demande beaucoup de puissance de processeur. Donc, parfois, il
+                vaut mieux mettre une limite plus basse. Par défaut, il n'y a
+                aucune limite et l'invité peut utiliser tous les ratios graphiques
+                supportés par la webcam de l'hôte.
+              </listitem>
+              <listitem>
+                <computeroutput>MaxPayloadTransferSize</computeroutput> Combien d'octets
+                à la fois peut envoyer la webcam à l'invité. La valeur par défaut
+                est de 3060 octets, ce qu'utilisent certaines 
+                webcams. Des valeurs supérieures réduisent légèrement la charge du
+                processeur si l'invité peut utiliser des tampons plus gros. Cependant,
+                il se pourrait qu'un <computeroutput>MaxPayloadTransferSize</computeroutput>
+                ne soit pas supporté par certains invités.
+              </listitem>
+            </itemizedlist>
           </para></listitem>
           <listitem><para>Déconnecter une webcam d'une VM en fonction :
             <screen>VBoxManage controlvm "nom VM" webcam detach [chemin_hôte|alias]</screen>
@@ -949,8 +971,6 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <sect2>
       <title>Hôtes Windows</title>
 
-      <para>Toutes les commandes de VBoxManage sont implémentées.</para>
-
       <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée est
       automatiquement déconnectée de l'invité.</para>
     </sect2>
@@ -958,7 +978,7 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <sect2>
       <title>Hôtes Mac OS X</title>
 
-      <para><computeroutput>VBoxManage list webcams</computeroutput> n'est pa´; enc*¨;e implémentée.</para>
+      <para>OS X version 10.7 ou supérieur est requis.</para>
 
       <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée
       reste connectée à l'invité et vous devez la déconnecter à la main en
@@ -968,16 +988,16 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
     <sect2>
       <title>Hôtes Linux</title>
 
-      <para><computeroutput>VBoxManage list webcams</computeroutput> n'est pas encore
-      implémentée.</para>
-
-      <para>Les alias ne fonctionnent pas. Le chemin de l'hôte de la webcam tel 
-      que <computeroutput>/dev/video0</computeroutput> doit être utilisé dans les
-      commandes attach et detach.</para>
-
-      <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée reste connectée
-      à l'invité et il faut la déconnecter à la main en utilisant la commande
+      <para>Quand on déconnecte la webcam de l'hôte, la webcam émulée n'est automatiquement
+      déconnectée de de l'invité que si la webcam est en train de transmettre
+      de l'image. Si la webcam est inactive, vous devrez la déconnecter à la
+      main en utilisant la commande
       <computeroutput>VBoxManage controlvm "nom VM" webcam detach ...</computeroutput>.</para>
+
+      <para>Les aliases <computeroutput>.0</computeroutput> et
+      <computeroutput>.1</computeroutput> sont associés à <computeroutput>/dev/video0</computeroutput>
+      l'alias <computeroutput>.2</computeroutput> est associé à
+      <computeroutput>/dev/video1</computeroutput> et ainsi de suite.</para>
     </sect2>
   </sect1>
 
@@ -1854,8 +1874,7 @@ VBoxManage setextradata "nom VM"
     configurer un VLAN pour des VMs. Créez un échantillon VNIC de VirtualBox en
     exécutant, en tant qu'administrateur&#xA0;:</para>
 
-    <screen>dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0
-</screen>
+    <screen>dladm create-vnic -t -l nge0 -v 23 vboxvnic_template0</screen>
 
     <para>Cela créera un VNIC temporaire par l'interface "nge0" avec l'ID de VLAN
     23. Pour créer des échantillons VNIC résistant aux redémarrages de l'hôte,
@@ -1870,8 +1889,7 @@ vboxvnic_template0 vnic 1500 up       --         nge0
 
 $ dladm show-vnic
 LINK         OVER         SPEED  MACADDRESS        MACADDRTYPE         VID
-vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23
-</screen></para>
+vboxvnic_template0 nge0   1000   2:8:20:25:12:75   random              23</screen></para>
 
     <para>Une fois que l'échantillon VNIC est créé, toutes les VMs ayant besoin
     de faire partie du VLAN 23 par l'interface physique "nge0" pourront utiliser
@@ -3122,8 +3140,7 @@ alice = {
     <para>Vous pouvez activer le mode de gestion experte du stockage pour chaque
     VM en exécuting :</para>
 
-    <screen>VBoxManage setextradata "nom VM" "VBoxInternal2/SilentReconfigureWhilePaused" 1
-</screen>
+    <screen>VBoxManage setextradata "nom VM" "VBoxInternal2/SilentReconfigureWhilePaused" 1</screen>
 
     <para>Vous pouvez reconfigurer les  connexions de supports de stockage pendant
     que la VM est en pause en utilisant :</para>

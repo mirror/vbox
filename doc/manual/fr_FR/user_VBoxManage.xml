@@ -84,8 +84,7 @@ All rights reserved.
 
 Virtual machine 'SUSE 10.2' is created.
 UUID: c89fc351-8ec6-4f02-a048-57f4d25288e5
-Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'
-</screen>
+Settings file: '/home/nomutilisateur/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.xml'</screen>
 
         <para>Comme vous pouvez le voir dans la sortie ci-dessus, une nouvelle 
         machine virtuelle a été créée avec le nouvel UUID et un nouveau fichier
@@ -366,8 +365,7 @@ USB Device Filters:
 Shared folders:
 &lt;none&gt;
 
-Statistics update:  disabled
-</screen></para>
+Statistics update:  disabled</screen></para>
   </sect1>
 
   <sect1 id="vboxmanage-registervm">
@@ -1721,8 +1719,7 @@ Virtual system 0:
                             [--username &lt;username&gt;]
                             [--password &lt;password&gt;]
                             [--initiator &lt;initiator&gt;]
-                            [--intnet]
-</screen>
+                            [--intnet]</screen>
 
     <para>Un certain nombre de paramètres sont requis classiquement&#xA0;; ceux
     à la fin de la liste ne sont requis que pour les cibles iSCSI (voir ci-dessous).</para>
