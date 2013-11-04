@@ -314,8 +314,8 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
                 break;
             }
             else
-                LogRelFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
-                            pThis, rc));
+                LogFunc(("Session %p: Waiting for session data failed with rc=%Rrc\n",
+                         pThis, rc));
         }
         else
         {
@@ -385,8 +385,8 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
         }
     }
 
-    LogRelFunc(("Session %p: Handler ended with rc=%Rrc\n",
-                pThis, rc));
+    LogFunc(("Session %p: Handler ended with rc=%Rrc\n",
+             pThis, rc));
 
     /*
      * Clean up the session.
