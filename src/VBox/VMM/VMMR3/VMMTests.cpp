@@ -161,6 +161,7 @@ static int vmmR3DoMsrQuickReport(PVM pVM, PRTSTREAM pReportStrm, bool fWithCpuId
 //      { 0xc0000000, 0x00022000 },
         { 0xc0000000, 0x00010000 },
         { 0xc0010000, 0x00001040 },
+        { 0xc0011040, 0x00000040 }, /* should cause trouble... */
     };
     uint32_t cMsrsFound = 0;
     int rc = VINF_SUCCESS;
