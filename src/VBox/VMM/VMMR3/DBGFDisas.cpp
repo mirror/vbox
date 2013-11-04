@@ -354,7 +354,10 @@ static DECLCALLBACK(int) dbgfR3DisasGetSymbol(PCDISCPUSTATE pCpu, uint32_t u32Se
              && DIS_FMT_SEL_GET_REG(u32Sel) == DISSELREG_SS
              && pSelInfo->GCPtrBase == 0
              && pSelInfo->cbLimit   >= UINT32_MAX
-             && PATMIsPatchGCAddr(pState->pVM, pState->Cpu.uInstrAddr))
+#ifdef VBOX_WITH_RAW_MODE
+             && PATMIsPatchGCAddr(pState->pVM, pState->Cpu.uInstrAddr)
+#endif
+             )
     {
         DBGFR3AddrFromFlat(pState->pVM->pUVM, &Addr, uAddress);
         rc = VINF_SUCCESS;
