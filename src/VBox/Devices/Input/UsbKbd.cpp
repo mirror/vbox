@@ -924,6 +924,9 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
     return NULL;
 }
 
+/* See the PS2K device. */
+#define KRSP_BAT_FAIL       0xFC    /* Also a 'release keys' signal. */
+
 /**
  * Keyboard event handler.
  *
@@ -941,60 +944,71 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
 
     RTCritSectEnter(&pThis->CritSect);
 
-    pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
-
-    if (pThis->XlatState == SS_IDLE)
+    if (RT_UNLIKELY(u8KeyCode == KRSP_BAT_FAIL))
     {
-        /* The usage code is valid. */
-        fKeyDown = !(u32Usage & 0x80000000);
-        u8HidCode = u32Usage & 0xFF;
-        AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+        /* Clear all currently depressed and unreported keys. */
+        RT_ZERO(pThis->abDepressedKeys);
+        RT_ZERO(pThis->abUnreportedKeys);
+        usbHidSendReport(pThis);
+    }
+    else
+    {
 
-        LogFlowFunc(("key %s: 0x%x->0x%x\n",
-                        fKeyDown ? "down" : "up", u8KeyCode, u8HidCode));
+        pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
 
-        if (fKeyDown)
+        if (pThis->XlatState == SS_IDLE)
         {
-            /* Due to host key repeat, we can get key events for keys which are
-             * already depressed. */
-            if (!pThis->abDepressedKeys[u8HidCode])
+            /* The usage code is valid. */
+            fKeyDown = !(u32Usage & 0x80000000);
+            u8HidCode = u32Usage & 0xFF;
+            AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+
+            LogFlowFunc(("key %s: 0x%x->0x%x\n",
+                            fKeyDown ? "down" : "up", u8KeyCode, u8HidCode));
+
+            if (fKeyDown)
             {
-                pThis->abUnreportedKeys[u8HidCode] = 1;
-
-                /* If a non-modifier key is being marked as unreported, also set
-                 * all currently depressed modifer keys as unreported. This avoids
-                 * problems where a simulated key sequence is sent too fast and
-                 * by the time the key is reported, some previously reported
-                 * modifiers are already released. This helps ensure that the guest
-                 * sees the entire modifier(s)+key sequence in a single report.
-                 */
-                if (!usbHidUsageCodeIsModifier(u8HidCode))
+                /* Due to host key repeat, we can get key events for keys which are
+                 * already depressed. */
+                if (!pThis->abDepressedKeys[u8HidCode])
                 {
-                    int     iModKey;
+                    pThis->abUnreportedKeys[u8HidCode] = 1;
 
-                    for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
-                        if (pThis->abDepressedKeys[iModKey])
-                            pThis->abUnreportedKeys[iModKey] = 1;
+                    /* If a non-modifier key is being marked as unreported, also set
+                     * all currently depressed modifer keys as unreported. This avoids
+                     * problems where a simulated key sequence is sent too fast and
+                     * by the time the key is reported, some previously reported
+                     * modifiers are already released. This helps ensure that the guest
+                     * sees the entire modifier(s)+key sequence in a single report.
+                     */
+                    if (!usbHidUsageCodeIsModifier(u8HidCode))
+                    {
+                        int     iModKey;
+
+                        for (iModKey = USBHID_MODIFIER_FIRST; iModKey <= USBHID_MODIFIER_LAST; ++iModKey)
+                            if (pThis->abDepressedKeys[iModKey])
+                                pThis->abUnreportedKeys[iModKey] = 1;
+                    }
                 }
+                else
+                    fHaveEvent = false;
+                pThis->abDepressedKeys[u8HidCode] = 1;
             }
             else
-                fHaveEvent = false;
-            pThis->abDepressedKeys[u8HidCode] = 1;
-        }
-        else
-        {
-            /* For stupid Korean keyboards, we have to fake a key up/down sequence
-             * because they only send break codes for Hangul/Hanja keys.
-             */
-            if (u8HidCode == 0x90 || u8HidCode == 0x91)
-                pThis->abUnreportedKeys[u8HidCode] = 1;
-            pThis->abDepressedKeys[u8HidCode] = 0;
-        }
+            {
+                /* For stupid Korean keyboards, we have to fake a key up/down sequence
+                 * because they only send break codes for Hangul/Hanja keys.
+                 */
+                if (u8HidCode == 0x90 || u8HidCode == 0x91)
+                    pThis->abUnreportedKeys[u8HidCode] = 1;
+                pThis->abDepressedKeys[u8HidCode] = 0;
+            }
 
 
-        /* Send a report if the host is already waiting for it. */
-        if (fHaveEvent)
-            usbHidSendReport(pThis);
+            /* Send a report if the host is already waiting for it. */
+            if (fHaveEvent)
+                usbHidSendReport(pThis);
+        }
     }
 
     RTCritSectLeave(&pThis->CritSect);
