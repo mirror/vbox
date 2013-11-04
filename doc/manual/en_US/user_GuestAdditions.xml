@@ -231,7 +231,7 @@
         <title>Installation</title>
 
         <para>In the "Devices" menu in the virtual machine's menu bar,
-        VirtualBox has a handy menu item named "Install guest additions",
+        VirtualBox has a handy menu item named "Insert Guest Additions CD image",
         which mounts the Guest Additions ISO file inside your virtual machine.
         A Windows guest should then automatically start the Guest Additions
         installer, which installs the Guest Additions into your Windows
