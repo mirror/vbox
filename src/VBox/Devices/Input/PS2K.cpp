@@ -74,7 +74,7 @@
 #define KRSP_ID1            0xAB
 #define KRSP_ID2            0x83
 #define KRSP_BAT_OK         0xAA
-#define KRSP_BAT_FAIL       0xFC
+#define KRSP_BAT_FAIL       0xFC    /* Also a 'release keys' signal. */
 #define KRSP_ECHO           0xEE
 #define KRSP_ACK            0xFA
 #define KRSP_RESEND         0xFE
@@ -1140,6 +1140,25 @@ static DECLCALLBACK(void) ps2kDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     KBCUpdateInterrupts(pThis->pParent);
 }
 
+/* Release any and all currently depressed keys. Used whenever the guest keyboard
+ * is likely to be out of sync with the host, such as when loading a saved state
+ * or resuming a suspended host.
+ */
+static void ps2kReleaseKeys(PPS2K pThis)
+{
+    LogFlowFunc(("Releasing keys...\n"));
+    LogRel(("Releasing keys...\n"));
+
+    for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
+        if (pThis->abDepressedKeys[uKey])
+        {
+            LogRel(("Releasing key %02X\n", uKey));
+            psk2ProcessKeyEvent(pThis, uKey, false /* key up */);
+            pThis->abDepressedKeys[uKey] = 0;
+        }
+    LogFlowFunc(("Done releasing keys\n"));
+}
+
 
 /**
  * Debug device info handler. Prints basic keyboard state.
@@ -1239,17 +1258,34 @@ static DECLCALLBACK(int) ps2kPutEventWrapper(PPDMIKEYBOARDPORT pInterface, uint8
 {
     PPS2K       pThis = RT_FROM_MEMBER(pInterface, PS2K, Keyboard.IPort);
     uint32_t    u32Usage = 0;
+    int         rc;
 
     LogFlowFunc(("key code %02X\n", u8KeyCode));
-    pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
 
-    if (pThis->XlatState == SS_IDLE)
+    /* The 'BAT fail' scancode is reused as a signal to release keys. No actual
+     * key is allowed to use this scancode.
+     */
+    if (RT_UNLIKELY(u8KeyCode == KRSP_BAT_FAIL))
     {
-        /* Stupid Korean key hack: convert a lone break key into a press/release sequence. */
-        if (u32Usage == 0x80000090 || u32Usage == 0x80000091)
-            ps2kPutEventWorker(pThis, u32Usage & ~0x80000000);
+        rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
+        AssertReleaseRC(rc);
 
-        ps2kPutEventWorker(pThis, u32Usage);
+        ps2kReleaseKeys(pThis);
+
+        PDMCritSectLeave(pThis->pCritSectR3);
+    }
+    else
+    {
+        pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
+
+        if (pThis->XlatState == SS_IDLE)
+        {
+            /* Stupid Korean key hack: convert a lone break key into a press/release sequence. */
+            if (u32Usage == 0x80000090 || u32Usage == 0x80000091)
+                ps2kPutEventWorker(pThis, u32Usage & ~0x80000000);
+
+            ps2kPutEventWorker(pThis, u32Usage);
+        }
     }
 
     return VINF_SUCCESS;
@@ -1340,9 +1376,9 @@ void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM)
 
     SSMR3PutU32(pSSM, cPressed);
 
-    for (unsigned i = 0; i < sizeof(pThis->abDepressedKeys); ++i)
-        if (pThis->abDepressedKeys[i])
-            SSMR3PutU8(pSSM, pThis->abDepressedKeys[i]);
+    for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
+        if (pThis->abDepressedKeys[uKey])
+            SSMR3PutU8(pSSM, uKey);
 
     /* Save the typematic settings for Scan Set 3. */
     SSMR3PutU32(pSSM, cbTMSSize);
@@ -1388,11 +1424,16 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     rc = SSMR3GetU32(pSSM, &cPressed);
     AssertRCReturn(rc, rc);
 
-    while (cPressed--)
+    /* If any keys were down, load and then release them. */
+    if (cPressed)
     {
-        rc = SSMR3GetU8(pSSM, &u8);
-        AssertRCReturn(rc, rc);
-        psk2ProcessKeyEvent(pThis, u8, false /* key up */);
+        for (unsigned i = 0; i < cPressed; ++i)
+        {
+            rc = SSMR3GetU8(pSSM, &u8);
+            AssertRCReturn(rc, rc);
+            pThis->abDepressedKeys[u8] = 1;
+        }
+        ps2kReleaseKeys(pThis);
     }
 
     /* Load typematic settings for Scan Set 3. */
