@@ -385,7 +385,8 @@ static DECLCALLBACK(int) vboxIPCSessionThread(RTTHREAD hThread, void *pvSession)
         }
     }
 
-    LogRelFunc(("Session %p: Handler ended with rc=%Rrc\n", rc));
+    LogRelFunc(("Session %p: Handler ended with rc=%Rrc\n",
+                pThis, rc));
 
     /*
      * Clean up the session.
