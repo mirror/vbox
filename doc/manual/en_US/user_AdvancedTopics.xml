@@ -873,7 +873,11 @@ VBoxManage controlvm "VM name" unplugcpu 3</screen></para>
         linkend="intro-installing" /> for more information.</para>
       </note>
 
-      <para>The VBoxManage command line tool must be used to enable webcam passthrough.
+      <para>The host webcam can be attached to the VM using "Devices" menu in the VM menu bar.
+      The "Webcams" menu contains a list of available video input devices on the host.
+      Clicking on a webcam name attaches or detaches the corresponding host device.</para>
+
+      <para>The VBoxManage command line tool can be used to enable webcam passthrough.
       Please see the host-specific sections below for additional details.
       The following commands are available:
         <itemizedlist>
