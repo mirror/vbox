@@ -260,11 +260,6 @@ struct VBOXHDD
     PVDCACHE               pCache;
     /** Pointer to the discard state if any. */
     PVDDISCARDSTATE        pDiscard;
-
-    /** Event semaphore for synchronous I/O. */
-    RTSEMEVENT             hEventSemSyncIo;
-    /** Status code of the last synchronous I/O request. */
-    int                    rcSync;
 };
 
 # define VD_IS_LOCKED(a_pDisk) \
@@ -1160,6 +1155,35 @@ DECLINLINE(PVDIOCTX) vdIoCtxRootAlloc(PVBOXHDD pDisk, VDIOCTXTXDIR enmTxDir,
     return pIoCtx;
 }
 
+DECLINLINE(void) vdIoCtxDiscardInit(PVDIOCTX pIoCtx, PVBOXHDD pDisk, PCRTRANGE paRanges,
+                                    unsigned cRanges, PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
+                                    void *pvUser1, void *pvUser2, void *pvAllocation,
+                                    PFNVDIOCTXTRANSFER pfnIoCtxTransfer, uint32_t fFlags)
+{
+    pIoCtx->pIoCtxNext                = NULL;
+    pIoCtx->pDisk                     = pDisk;
+    pIoCtx->enmTxDir                  = VDIOCTXTXDIR_DISCARD;
+    pIoCtx->cDataTransfersPending     = 0;
+    pIoCtx->cMetaTransfersPending     = 0;
+    pIoCtx->fComplete                 = false;
+    pIoCtx->fFlags                    = fFlags;
+    pIoCtx->pvAllocation              = pvAllocation;
+    pIoCtx->pfnIoCtxTransfer          = pfnIoCtxTransfer;
+    pIoCtx->pfnIoCtxTransferNext      = NULL;
+    pIoCtx->rcReq                     = VINF_SUCCESS;
+    pIoCtx->Req.Discard.paRanges      = paRanges;
+    pIoCtx->Req.Discard.cRanges       = cRanges;
+    pIoCtx->Req.Discard.idxRange      = 0;
+    pIoCtx->Req.Discard.cbDiscardLeft = 0;
+    pIoCtx->Req.Discard.offCur        = 0;
+    pIoCtx->Req.Discard.cbThisDiscard = 0;
+
+    pIoCtx->pIoCtxParent          = NULL;
+    pIoCtx->Type.Root.pfnComplete = pfnComplete;
+    pIoCtx->Type.Root.pvUser1     = pvUser1;
+    pIoCtx->Type.Root.pvUser2     = pvUser2;
+}
+
 DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
                                          unsigned cRanges,
                                          PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
@@ -1173,28 +1197,8 @@ DECLINLINE(PVDIOCTX) vdIoCtxDiscardAlloc(PVBOXHDD pDisk, PCRTRANGE paRanges,
     pIoCtx = (PVDIOCTX)RTMemCacheAlloc(pDisk->hMemCacheIoCtx);
     if (RT_LIKELY(pIoCtx))
     {
-        pIoCtx->pIoCtxNext                = NULL;
-        pIoCtx->pDisk                     = pDisk;
-        pIoCtx->enmTxDir                  = VDIOCTXTXDIR_DISCARD;
-        pIoCtx->cDataTransfersPending     = 0;
-        pIoCtx->cMetaTransfersPending     = 0;
-        pIoCtx->fComplete                 = false;
-        pIoCtx->fFlags                    = fFlags;
-        pIoCtx->pvAllocation              = pvAllocation;
-        pIoCtx->pfnIoCtxTransfer          = pfnIoCtxTransfer;
-        pIoCtx->pfnIoCtxTransferNext      = NULL;
-        pIoCtx->rcReq                     = VINF_SUCCESS;
-        pIoCtx->Req.Discard.paRanges      = paRanges;
-        pIoCtx->Req.Discard.cRanges       = cRanges;
-        pIoCtx->Req.Discard.idxRange      = 0;
-        pIoCtx->Req.Discard.cbDiscardLeft = 0;
-        pIoCtx->Req.Discard.offCur        = 0;
-        pIoCtx->Req.Discard.cbThisDiscard = 0;
-
-        pIoCtx->pIoCtxParent          = NULL;
-        pIoCtx->Type.Root.pfnComplete = pfnComplete;
-        pIoCtx->Type.Root.pvUser1     = pvUser1;
-        pIoCtx->Type.Root.pvUser2     = pvUser2;
+        vdIoCtxDiscardInit(pIoCtx, pDisk, paRanges, cRanges, pfnComplete, pvUser1,
+                           pvUser2, pvAllocation, pfnIoCtxTransfer, fFlags);
     }
 
     LogFlow(("Allocated discard I/O context %#p\n", pIoCtx));
@@ -1436,18 +1440,15 @@ static int vdIoCtxProcessLocked(PVDIOCTX pIoCtx)
     {
         ASMAtomicCmpXchgS32(&pIoCtx->rcReq, rc, VINF_SUCCESS);
 
-        if (rc != VERR_DISK_FULL)
-        {
-            /*
-             * The I/O context completed if we have an error and there is no data
-             * or meta data transfer pending.
-             */
-            if (   !pIoCtx->cMetaTransfersPending
-                && !pIoCtx->cDataTransfersPending)
-                rc = VINF_VD_ASYNC_IO_FINISHED;
-            else
-                rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
-        }
+        /*
+         * The I/O context completed if we have an error and there is no data
+         * or meta data transfer pending.
+         */
+        if (   !pIoCtx->cMetaTransfersPending
+            && !pIoCtx->cDataTransfersPending)
+            rc = VINF_VD_ASYNC_IO_FINISHED;
+        else
+            rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
     }
 
 out:
@@ -1461,7 +1462,8 @@ out:
 /**
  * Processes the list of waiting I/O contexts.
  *
- * @returns VBox status code.
+ * @returns VBox status code, only valid if pIoCtxRc is not NULL, treat as void
+ *          function otherwise.
  * @param   pDisk    The disk structure.
  * @param   pIoCtxRc An I/O context handle which waits on the list. When processed
  *                   The status code is returned. NULL if there is no I/O context
@@ -1469,7 +1471,7 @@ out:
  */
 static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
 {
-    int rc = VINF_SUCCESS;
+    int rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
     LogFlowFunc(("pDisk=%#p pIoCtxRc=%#p\n", pDisk, pIoCtxRc));
 
@@ -1516,7 +1518,10 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
         if (pTmp == pIoCtxRc)
         {
             /* The given I/O context was processed, pass the return code to the caller. */
-            rc = rcTmp;
+            if (rcTmp == VINF_VD_ASYNC_IO_FINISHED)
+                rc = pTmp->rcReq;
+            else
+                rc = rcTmp;
         }
         else if (   rcTmp == VINF_VD_ASYNC_IO_FINISHED
                  && ASMAtomicCmpXchgBool(&pTmp->fComplete, true, false))
@@ -1529,15 +1534,6 @@ static int vdDiskProcessWaitingIoCtx(PVBOXHDD pDisk, PVDIOCTX pIoCtxRc)
             vdIoCtxFree(pDisk, pTmp);
         }
     }
-
-    /*
-     * vdIoCtxProcessLocked() never returns VINF_SUCCESS.
-     * If the status code is still set and a valid I/O context was given
-     * it was not found on the list (another thread cleared it already).
-     * Return I/O in progress status code in that case.
-     */
-    if (rc == VINF_SUCCESS && pIoCtxRc)
-        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
 
     LogFlowFunc(("returns rc=%Rrc\n", rc));
     return rc;
@@ -1636,16 +1632,17 @@ static int vdIoCtxProcessTryLockDefer(PVDIOCTX pIoCtx)
  * for it to complete.
  *
  * @returns VBox status code of the completed request.
- * @param   pIoCtx    The sync I/O context.
+ * @param   pIoCtx            The sync I/O context.
+ * @param   hEventComplete    Event sempahore to wait on for completion.
  */
-static int vdIoCtxProcessSync(PVDIOCTX pIoCtx)
+static int vdIoCtxProcessSync(PVDIOCTX pIoCtx, RTSEMEVENT hEventComplete)
 {
     int rc = VINF_SUCCESS;
     PVBOXHDD pDisk = pIoCtx->pDisk;
 
     LogFlowFunc(("pIoCtx=%p\n", pIoCtx));
 
-    AssertMsg(pIoCtx->fFlags & VDIOCTX_FLAGS_SYNC,
+    AssertMsg(pIoCtx->fFlags & (VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE),
               ("I/O context is not marked as synchronous\n"));
 
     rc = vdIoCtxProcessTryLockDefer(pIoCtx);
@@ -1654,16 +1651,12 @@ static int vdIoCtxProcessSync(PVDIOCTX pIoCtx)
 
     if (rc == VERR_VD_ASYNC_IO_IN_PROGRESS)
     {
-        rc = RTSemEventWait(pDisk->hEventSemSyncIo, RT_INDEFINITE_WAIT);
+        rc = RTSemEventWait(hEventComplete, RT_INDEFINITE_WAIT);
         AssertRC(rc);
+    }
 
-        rc = pDisk->rcSync;
-    }
-    else /* Success or error. */
-    {
-        rc = pIoCtx->rcReq;
-        vdIoCtxFree(pDisk, pIoCtx);
-    }
+    rc = pIoCtx->rcReq;
+    vdIoCtxFree(pDisk, pIoCtx);
 
     return rc;
 }
@@ -1952,10 +1945,16 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
                           uint64_t uOffset, void *pvBuf, size_t cbRead,
                           bool fZeroFreeBlocks, bool fUpdateCache, unsigned cImagesRead)
 {
+    int rc = VINF_SUCCESS;
     uint32_t fFlags = VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
     RTSGSEG Segment;
     RTSGBUF SgBuf;
     VDIOCTX IoCtx;
+    RTSEMEVENT hEventComplete = NIL_RTSEMEVENT;
+
+    rc = RTSemEventCreate(&hEventComplete);
+    if (RT_FAILURE(rc))
+        return rc;
 
     if (fZeroFreeBlocks)
         fFlags |= VDIOCTX_FLAGS_ZERO_FREE_BLOCKS;
@@ -1972,8 +1971,11 @@ static int vdReadHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParent
     IoCtx.Req.Io.cImagesRead = cImagesRead;
     IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
     IoCtx.Type.Root.pvUser1     = pDisk;
-    IoCtx.Type.Root.pvUser2     = NULL;
-    return vdIoCtxProcessSync(&IoCtx);
+    IoCtx.Type.Root.pvUser2     = hEventComplete;
+    rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
+
+    RTSemEventDestroy(hEventComplete);
+    return rc;
 }
 
 /**
@@ -2044,9 +2046,15 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
                            const void *pvBuf, size_t cbWrite,
                            uint32_t fFlags, unsigned cImagesRead)
 {
+    int rc = VINF_SUCCESS;
     RTSGSEG Segment;
     RTSGBUF SgBuf;
     VDIOCTX IoCtx;
+    RTSEMEVENT hEventComplete = NIL_RTSEMEVENT;
+
+    rc = RTSemEventCreate(&hEventComplete);
+    if (RT_FAILURE(rc))
+        return rc;
 
     fFlags |= VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE;
 
@@ -2061,8 +2069,11 @@ static int vdWriteHelperEx(PVBOXHDD pDisk, PVDIMAGE pImage,
     IoCtx.pIoCtxParent          = NULL;
     IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
     IoCtx.Type.Root.pvUser1     = pDisk;
-    IoCtx.Type.Root.pvUser2     = NULL;
-    return vdIoCtxProcessSync(&IoCtx);
+    IoCtx.Type.Root.pvUser2     = hEventComplete;
+    rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
+
+    RTSemEventDestroy(hEventComplete);
+    return rc;
 }
 
 /**
@@ -2709,11 +2720,10 @@ static int vdWriteHelperAsync(PVDIOCTX pIoCtx)
                     LogFlow(("Child write request completed\n"));
                     Assert(pIoCtx->Req.Io.cbTransferLeft >= cbThisWrite);
                     Assert(cbThisWrite == (uint32_t)cbThisWrite);
+                    rc = pIoCtxWrite->rcReq;
                     ASMAtomicSubU32(&pIoCtx->Req.Io.cbTransferLeft, (uint32_t)cbThisWrite);
                     vdIoCtxUnlockDisk(pDisk, pIoCtx, false /* fProcessDeferredReqs*/ );
                     vdIoCtxFree(pDisk, pIoCtxWrite);
-
-                    rc = VINF_SUCCESS;
                 }
                 else
                 {
@@ -4983,9 +4993,9 @@ static void vdIfIoIntCallbacksSetup(PVDINTERFACEIOINT pIfIoInt)
 static DECLCALLBACK(void) vdIoCtxSyncComplete(void *pvUser1, void *pvUser2, int rcReq)
 {
     PVBOXHDD pDisk = (PVBOXHDD)pvUser1;
+    RTSEMEVENT hEvent = (RTSEMEVENT)pvUser2;
 
-    pDisk->rcSync = rcReq;
-    RTSemEventSignal(pDisk->hEventSemSyncIo);
+    RTSemEventSignal(hEvent);
 }
 
 /**
@@ -5181,13 +5191,8 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
             pDisk->pIoCtxLockOwner         = NULL;
             pDisk->pIoCtxHead              = NULL;
             pDisk->fLocked                 = false;
-            pDisk->hEventSemSyncIo         = NIL_RTSEMEVENT;
             pDisk->hMemCacheIoCtx          = NIL_RTMEMCACHE;
             pDisk->hMemCacheIoTask         = NIL_RTMEMCACHE;
-
-            rc = RTSemEventCreate(&pDisk->hEventSemSyncIo);
-            if (RT_FAILURE(rc))
-                break;
 
             /* Create the I/O ctx cache */
             rc = RTMemCacheCreate(&pDisk->hMemCacheIoCtx, sizeof(VDIOCTX), 0, UINT32_MAX,
@@ -5216,8 +5221,6 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, VDTYPE enmType, PVBOXHDD *pp
     if (   RT_FAILURE(rc)
         && pDisk)
     {
-        if (pDisk->hEventSemSyncIo != NIL_RTSEMEVENT)
-            RTSemEventDestroy(pDisk->hEventSemSyncIo);
         if (pDisk->hMemCacheIoCtx != NIL_RTMEMCACHE)
             RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
         if (pDisk->hMemCacheIoTask != NIL_RTMEMCACHE)
@@ -5249,7 +5252,6 @@ VBOXDDU_DECL(int) VDDestroy(PVBOXHDD pDisk)
         rc = VDCloseAll(pDisk);
         RTMemCacheDestroy(pDisk->hMemCacheIoCtx);
         RTMemCacheDestroy(pDisk->hMemCacheIoTask);
-        RTSemEventDestroy(pDisk->hEventSemSyncIo);
         RTMemFree(pDisk);
     } while (0);
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -8134,19 +8136,22 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
-        PVDIOCTX pIoCtx = vdIoCtxRootAlloc(pDisk, VDIOCTXTXDIR_FLUSH, 0,
-                                           0, pDisk->pLast, NULL,
-                                           vdIoCtxSyncComplete, pDisk, NULL,
-                                           NULL, vdFlushHelperAsync,
-                                           VDIOCTX_FLAGS_SYNC);
+        VDIOCTX IoCtx;
+        RTSEMEVENT hEventComplete = NIL_RTSEMEVENT;
 
-        if (!pIoCtx)
-        {
-            rc = VERR_NO_MEMORY;
+        rc = RTSemEventCreate(&hEventComplete);
+        if (RT_FAILURE(rc))
             break;
-        }
 
-        rc = vdIoCtxProcessSync(pIoCtx);
+        vdIoCtxInit(&IoCtx, pDisk, VDIOCTXTXDIR_FLUSH, 0, 0, pImage, NULL,
+                    NULL, vdFlushHelperAsync, VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE);
+
+        IoCtx.Type.Root.pfnComplete = vdIoCtxSyncComplete;
+        IoCtx.Type.Root.pvUser1     = pDisk;
+        IoCtx.Type.Root.pvUser2     = hEventComplete;
+        rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
+
+        RTSemEventDestroy(hEventComplete);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
@@ -9500,17 +9505,19 @@ VBOXDDU_DECL(int) VDDiscardRanges(PVBOXHDD pDisk, PCRTRANGE paRanges, unsigned c
                            ("Discarding not supported\n"),
                            rc = VERR_NOT_SUPPORTED);
 
-        PVDIOCTX pIoCtx = vdIoCtxDiscardAlloc(pDisk, paRanges, cRanges,
-                                              vdIoCtxSyncComplete, pDisk, NULL, NULL,
-                                              vdDiscardHelperAsync,
-                                              VDIOCTX_FLAGS_SYNC);
-        if (!pIoCtx)
-        {
-            rc = VERR_NO_MEMORY;
-            break;
-        }
+        VDIOCTX IoCtx;
+        RTSEMEVENT hEventComplete = NIL_RTSEMEVENT;
 
-        rc = vdIoCtxProcessSync(pIoCtx);
+        rc = RTSemEventCreate(&hEventComplete);
+        if (RT_FAILURE(rc))
+            break;
+
+        vdIoCtxDiscardInit(&IoCtx, pDisk, paRanges, cRanges,
+                           vdIoCtxSyncComplete, pDisk, hEventComplete, NULL,
+                           vdDiscardHelperAsync, VDIOCTX_FLAGS_SYNC | VDIOCTX_FLAGS_DONT_FREE);
+        rc = vdIoCtxProcessSync(&IoCtx, hEventComplete);
+
+        RTSemEventDestroy(hEventComplete);
     } while (0);
 
     if (RT_UNLIKELY(fLockWrite))
