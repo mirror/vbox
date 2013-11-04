@@ -73,6 +73,7 @@ public:
     STDMETHOD(PutScancodes)(ComSafeArrayIn(LONG, scancodes),
                             ULONG *codesStored);
     STDMETHOD(PutCAD)();
+    STDMETHOD(ReleaseKeys)();
 
     STDMETHOD(COMGETTER(EventSource))(IEventSource ** aEventSource);
 

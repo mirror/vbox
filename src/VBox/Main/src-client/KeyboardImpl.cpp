@@ -254,6 +254,19 @@ STDMETHODIMP Keyboard::PutCAD()
     return PutScancodes(ComSafeArrayAsInParam(cadSequence), NULL);
 }
 
+/**
+ * Releases all currently held keys in the virtual keyboard.
+ *
+ * @returns COM status code
+ *
+ */
+STDMETHODIMP Keyboard::ReleaseKeys()
+{
+    com::SafeArray<LONG> scancodes(1);
+    scancodes[0] = 0xFC;    /* Magic scancode, see PS/2 and USB keyboard devices. */
+    return PutScancodes(ComSafeArrayAsInParam(scancodes), NULL);
+}
+
 STDMETHODIMP Keyboard::COMGETTER(EventSource)(IEventSource ** aEventSource)
 {
     CheckComArgOutPointerValid(aEventSource);
