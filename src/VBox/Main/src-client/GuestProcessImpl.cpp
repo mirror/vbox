@@ -278,10 +278,13 @@ void GuestProcess::uninit(void)
 #ifdef VBOX_WITH_GUEST_CONTROL
     baseUninit();
 
-    mEventSource->UnregisterListener(mLocalListener);
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
 
-    mLocalListener.setNull();
-    unconst(mEventSource).setNull();
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
+    }
 #endif
 
     LogFlowThisFunc(("Returning rc=%Rrc, guestRc=%Rrc\n",

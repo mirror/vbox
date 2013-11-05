@@ -66,7 +66,7 @@ using namespace com;
 static volatile bool         g_fGuestCtrlCanceled = false;
 /** Our global session object which is also used in the
  *  signal handler to abort operations properly. */
-static ComPtr<IGuestSession> g_pGuestSession;
+static ComPtr<IGuestSession> g_pGuestSession = NULL;
 
 /**
  * Listener declarations.
@@ -699,9 +699,9 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
                 RTPrintf("Guest session detached\n");
 
             pCtx->pGuestSession.setNull();
-            g_pGuestSession.setNull();
         }
 
+        g_pGuestSession.setNull();
         if (pCtx->handlerArg.session)
             CHECK_ERROR(pCtx->handlerArg.session, UnlockMachine());
 
@@ -710,6 +710,7 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
     for (int i = 0; i < pCtx->iArgc; i++)
         RTStrFree(pCtx->ppaArgv[i]);
     RTMemFree(pCtx->ppaArgv);
+    pCtx->iArgc = 0;
 }
 
 /**

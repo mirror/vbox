@@ -144,7 +144,7 @@ DEFINE_EMPTY_CTOR_DTOR(GuestSession)
 
 HRESULT GuestSession::FinalConstruct(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
     return BaseFinalConstruct();
 }
 
@@ -314,9 +314,13 @@ void GuestSession::uninit(void)
 
     baseUninit();
 
-    mEventSource->UnregisterListener(mLocalListener);
-    unconst(mEventSource).setNull();
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
 
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
+    }
 #endif /* VBOX_WITH_GUEST_CONTROL */
     LogFlowFuncLeaveRC(rc);
 }

@@ -158,7 +158,7 @@ void Guest::uninit()
     {
 #ifdef DEBUG
         ULONG cRefs = itSessions->second->AddRef();
-        LogFlowThisFunc(("pSession=%p, cRefs=%RU32\n", (GuestSession *)itSessions->second, cRefs > 0 ? cRefs - 1 : 0));
+        LogFlowThisFunc(("sessionID=%RU32, cRefs=%RU32\n", itSessions->first, cRefs > 1 ? cRefs - 1 : 0));
         itSessions->second->Release();
 #endif
         itSessions->second->uninit();
