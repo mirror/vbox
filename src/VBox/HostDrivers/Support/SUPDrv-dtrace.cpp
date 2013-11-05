@@ -1093,9 +1093,8 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
         if (!ulAddr)
         {
             SUPR0Printf("supdrvDTraceInit: Failed to resolved '%s' (i=%u).\n", s_aDTraceFunctions[i].pszName, i);
-            break;
+            return NULL;
         }
-        SUPR0Printf("supdrvDTraceInit: '%s' -> %lx.\n", s_aDTraceFunctions[i].pszName, ulAddr);
         *s_aDTraceFunctions[i].ppfn = (PFNRT)ulAddr;
 # endif
     }
@@ -1104,6 +1103,8 @@ const SUPDRVTRACERREG * VBOXCALL supdrvDTraceInit(void)
     RTR0DbgKrnlInfoRelease(hKrnlInfo);
     if (RT_FAILURE(rc))
         return NULL;
+# else
+    /** @todo grab a reference to the dtrace module... */
 # endif
 #endif
 
