@@ -107,7 +107,7 @@ DEFINE_EMPTY_CTOR_DTOR(GuestFile)
 
 HRESULT GuestFile::FinalConstruct(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
     return BaseFinalConstruct();
 }
 
@@ -224,7 +224,7 @@ int GuestFile::init(Console *pConsole, GuestSession *pSession,
  */
 void GuestFile::uninit(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogFlowThisFuncEnter();
 
     /* Enclose the state transition Ready->InUninit->NotReady. */
     AutoUninitSpan autoUninitSpan(this);
@@ -234,8 +234,13 @@ void GuestFile::uninit(void)
 #ifdef VBOX_WITH_GUEST_CONTROL
     baseUninit();
 
-    mEventSource->UnregisterListener(mLocalListener);
-    unconst(mEventSource).setNull();
+    if (!mEventSource.isNull())
+    {
+        mEventSource->UnregisterListener(mLocalListener);
+
+        mLocalListener.setNull();
+        unconst(mEventSource).setNull();
+    }
 #endif
 
     LogFlowThisFuncLeave();
