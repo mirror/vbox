@@ -155,7 +155,7 @@ OBJS += math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
 	math/gcc/qdivrem.o \
 	math/gcc/udivdi3.o \
-        math/gcc/divdi3.o \
+	math/gcc/divdi3.o \
 	math/gcc/umoddi3.o
 endif
 ifeq ($(BUILD_TARGET_ARCH),amd64)
@@ -241,6 +241,9 @@ ifndef INCL
  endif
  INCL    += $(addprefix -I$(KBUILD_EXTMOD),/ /include /r0drv/linux)
  INCL    += $(addprefix -I$(KBUILD_EXTMOD)/vboxdrv,/ /include /r0drv/linux)
+ ifdef VBOX_WITH_NATIVE_DTRACE
+  INCL   += -I/usr/include/linux -I/usr/include
+ endif
  export INCL
 endif
 ifneq ($(wildcard $(KBUILD_EXTMOD)/vboxdrv),)
