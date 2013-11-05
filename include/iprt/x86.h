@@ -1302,6 +1302,10 @@ typedef X86PGPAEUINT const *PCX86PGPAEUINT;
 /** The 4MB page base mask for virtual addresses - 32bit version. */
 #define X86_PAGE_4M_BASE_MASK_32            0xffc00000U
 
+/**
+ * Check if the given address is canonical.
+ */
+#define X86_IS_CANONICAL(a_u64Addr)         ((uint64_t)(a_u64Addr) + UINT64_C(0x800000000000) < UINT64_C(0x1000000000000))
 
 
 /** @name Page Table Entry
