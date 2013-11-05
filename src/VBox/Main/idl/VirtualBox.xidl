@@ -14683,7 +14683,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IKeyboard" extends="$unknown"
-    uuid="f6916ec5-a881-4237-898f-7de58cf88672"
+    uuid="71aa2898-28bd-43fe-8c98-e53321451db7"
     wsmap="managed"
     >
     <desc>
