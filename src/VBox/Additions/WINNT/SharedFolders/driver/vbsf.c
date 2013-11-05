@@ -1049,6 +1049,62 @@ NTSTATUS VBoxMRxDevFcbXXXControlFile(IN OUT PRX_CONTEXT RxContext)
     return Status;
 }
 
+static NTSTATUS vbsfVerifyConnectionName(PUNICODE_STRING ConnectionName)
+{
+    /* Check that the connection name is valid:
+     * "\Device\VBoxMiniRdr\;X:\vboxsvr\sf"
+     */
+    NTSTATUS Status = STATUS_BAD_NETWORK_NAME;
+
+    ULONG i;
+    PWCHAR pwc;
+    PWCHAR pwc1;
+
+    static PWCHAR spwszPrefix = L"\\Device\\VBoxMiniRdr\\;";
+
+    /* Unicode chars in the string. */
+    ULONG cConnectionName = ConnectionName->Length / sizeof(WCHAR);
+    ULONG cRemainingName;
+
+    /* Check that the name starts with correct prefix. */
+    pwc1 = &spwszPrefix[0];
+    pwc = ConnectionName->Buffer;
+    for (i = 0; i < cConnectionName; i++, pwc1++, pwc++)
+    {
+        if (*pwc1 == 0 || *pwc == 0 || *pwc1 != *pwc)
+        {
+            break;
+        }
+    }
+
+    cRemainingName = cConnectionName - i;
+
+    Log(("VBOXSF: vbsfVerifyConnectionName: prefix %d remaining %d [%.*ls]\n",
+         *pwc1 == 0, cRemainingName, cRemainingName, &ConnectionName->Buffer[i]));
+
+    if (*pwc1 == 0)
+    {
+        /* pwc should point to a drive letter followed by ':\' that is at least 3 chars more. */
+        if (cRemainingName >= 3)
+        {
+           if (   pwc[0] >= L'A' && pwc[0] <= L'Z'
+               && pwc[1] == L':')
+           {
+               pwc += 2;
+               cRemainingName -= 2;
+
+               /* @todo should also check that the drive letter corresponds to the name. */
+               if (vboxIsPrefixOK(pwc, cRemainingName * sizeof (WCHAR)))
+               {
+                   Status = STATUS_SUCCESS;
+               }
+           }
+        }
+    }
+
+    return Status;
+}
+
 static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName)
 {
     NTSTATUS Status;
@@ -1060,24 +1116,29 @@ static HANDLE vbsfOpenConnectionHandle(PUNICODE_STRING ConnectionName)
     Log(("VBOXSF: vbsfOpenConnectionHandle: ConnectionName = %.*ls\n",
          ConnectionName->Length / sizeof(WCHAR), ConnectionName->Buffer));
 
-    /* Have to create a OBJ_KERNEL_HANDLE. Otherwise the driver verifier on Windows 7 bugchecks. */
-    InitializeObjectAttributes(&ObjectAttributes,
-                               ConnectionName,
-                               OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
-                               NULL,
-                               NULL);
+    Status = vbsfVerifyConnectionName(ConnectionName);
 
-    Status = ZwCreateFile(&Handle,
-                          SYNCHRONIZE,
-                          &ObjectAttributes,
-                          &IoStatusBlock,
-                          NULL,
-                          FILE_ATTRIBUTE_NORMAL,
-                          FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                          FILE_OPEN_IF,
-                          FILE_CREATE_TREE_CONNECTION | FILE_SYNCHRONOUS_IO_NONALERT,
-                          NULL,
-                          0);
+    if (NT_SUCCESS(Status))
+    {
+        /* Have to create a OBJ_KERNEL_HANDLE. Otherwise the driver verifier on Windows 7 bugchecks. */
+        InitializeObjectAttributes(&ObjectAttributes,
+                                   ConnectionName,
+                                   OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE,
+                                   NULL,
+                                   NULL);
+
+        Status = ZwCreateFile(&Handle,
+                              SYNCHRONIZE,
+                              &ObjectAttributes,
+                              &IoStatusBlock,
+                              NULL,
+                              FILE_ATTRIBUTE_NORMAL,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                              FILE_OPEN_IF,
+                              FILE_CREATE_TREE_CONNECTION | FILE_SYNCHRONOUS_IO_NONALERT,
+                              NULL,
+                              0);
+    }
 
     if (   Status != STATUS_SUCCESS
         || Handle == INVALID_HANDLE_VALUE)
@@ -1265,8 +1326,9 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
         if (NT_SUCCESS(Status))
         {
             PFOBX Fobx = (PFOBX)pFileObject->FsContext2;
+            Log(("VBOXSF: vbsfDeleteConnection: Fobx %p\n", Fobx));
 
-            if (NodeType(Fobx) == RDBSS_NTC_V_NETROOT)
+            if (Fobx && NodeType(Fobx) == RDBSS_NTC_V_NETROOT)
             {
                 PV_NET_ROOT VNetRoot = (PV_NET_ROOT)Fobx;
 
@@ -1328,6 +1390,9 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
                     }
 
                     ExReleaseFastMutex(&pDeviceExtension->mtxLocalCon);
+
+                    Log(("VBOXSF: vbsfDeleteConnection: deleted index 0x%x\n",
+                         idx));
                 }
             }
         }
@@ -1338,6 +1403,7 @@ NTSTATUS vbsfDeleteConnection(IN PRX_CONTEXT RxContext, OUT PBOOLEAN PostToFsp)
         }
     }
 
+    Log(("VBOXSF: vbsfDeleteConnection: Status 0x%08X\n", Status));
     return Status;
 }
 
