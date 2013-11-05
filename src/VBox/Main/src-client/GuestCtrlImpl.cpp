@@ -129,7 +129,7 @@ STDMETHODIMP Guest::UpdateGuestAdditions(IN_BSTR aSource, ComSafeArrayIn(IN_BSTR
     uint32_t fFlags = AdditionsUpdateFlag_None;
     if (aFlags)
     {
-        com::SafeArray<CopyFileFlag_T> flags(ComSafeArrayInArg(aFlags));
+        com::SafeArray<AdditionsUpdateFlag_T> flags(ComSafeArrayInArg(aFlags));
         for (size_t i = 0; i < flags.size(); i++)
             fFlags |= flags[i];
     }
