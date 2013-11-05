@@ -9991,13 +9991,16 @@
       <desc>No flag set.</desc>
     </const>
     <const name="Recursive"             value="1">
-      <desc>Copy directories recursively.</desc>
+      <desc>Copy directories recursively.
+        This flag is not implemented yet.</desc>
     </const>
     <const name="Update"                value="2">
-      <desc>Only copy when the source file is newer than the destination file or when the destination file is missing.</desc>
+      <desc>Only copy when the source file is newer than the destination file
+        or when the destination file is missing. This flag is not implemented
+        yet.</desc>
     </const>
     <const name="FollowLinks"           value="4">
-      <desc>Follow symbolic links.</desc>
+      <desc>Follow symbolic links. This flag is not implemented yet.</desc>
     </const>
   </enum>
 
