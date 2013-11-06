@@ -695,7 +695,8 @@ static void ctrlUninitVM(PGCTLCMDCTX pCtx, uint32_t uFlags)
                 /* Keep going - don't break here. Try to unlock the
                  * machine down below. */
             }
-            else if (pCtx->fVerbose)
+            else if (   (pCtx->uFlags & CTLCMDCTX_FLAGS_SESSION_DETACH)
+                     && pCtx->fVerbose)
                 RTPrintf("Guest session detached\n");
 
             pCtx->pGuestSession.setNull();
