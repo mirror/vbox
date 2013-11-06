@@ -1549,7 +1549,7 @@ pxtcp_pcb_forward_outbound(struct pxtcp *pxtcp, struct pbuf *p)
         }
         if (qoff > 0) {
             /* advance payload pointer past the forwarded part */
-          pbuf_header(q, -(s16_t)qoff);
+            pbuf_header(q, -(s16_t)qoff);
         }
         pxtcp->unsent = q;
 
