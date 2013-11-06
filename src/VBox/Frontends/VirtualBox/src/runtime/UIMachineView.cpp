@@ -218,66 +218,59 @@ void UIMachineView::sltHandleRequestResize(int iPixelFormat, uchar *pVRAM,
                                            int iBitsPerPixel, int iBytesPerLine,
                                            int iWidth, int iHeight)
 {
+    // TODO: Move to appropriate place!
     /* Some situations require frame-buffer resize-events to be ignored at all,
      * leaving machine-window, machine-view and frame-buffer sizes preserved: */
     if (uisession()->isGuestResizeIgnored())
         return;
 
-    /* If only the pitch has changed (or nothing at all!) we only update the
-     * frame-buffer and don't touch the window.  This prevents unwanted resizes
-     * when entering or exiting fullscreen on X.Org guests and when
-     * re-attaching the frame-buffer on a view switch. */
-    bool fResize =    (ulong)iWidth != frameBuffer()->width()
-                   || (ulong)iHeight != frameBuffer()->height();
-
     /* If machine-window is visible: */
     if (uisession()->isScreenVisible(m_uScreenId))
     {
-        /* Apply current window size to frame-buffer: */
+        // TODO: Move to appropriate place!
+        /* Adjust 'scale' mode for current machine-view size: */
         if (visualStateType() == UIVisualStateType_Scale)
             frameBuffer()->setScaledSize(size());
 
-        /* Compose guest resize-event: */
-        UIResizeEvent resizeEvent(iPixelFormat, pVRAM,
-                                  iBitsPerPixel, iBytesPerLine,
-                                  iWidth, iHeight);
+        /* Is there a proposal for frame-buffer resize? */
+        bool fResizeProposed = (ulong)iWidth != frameBuffer()->width() ||
+                               (ulong)iHeight != frameBuffer()->height();
 
-        /* Perform frame-buffer resize if parent window is visible: */
+        /* Perform frame-buffer mode-change: */
+        UIResizeEvent resizeEvent(iPixelFormat, pVRAM, iBitsPerPixel, iBytesPerLine, iWidth, iHeight);
         frameBuffer()->resizeEvent(&resizeEvent);
-    }
 
-    /* If resize actually happens and machine-window is visible: */
-    if (fResize && uisession()->isScreenVisible(m_uScreenId))
-    {
-        /* Scale-mode doesn't need this: */
-        if (visualStateType() != UIVisualStateType_Scale)
+        /* Was framebuffer actually resized? */
+        if (fResizeProposed)
         {
-            /* Reapply maximum size restriction for machine-view: */
-            setMaximumSize(sizeHint());
+            /* Scale-mode doesn't need this.. */
+            if (visualStateType() != UIVisualStateType_Scale)
+            {
+                /* Adjust maximum-size restriction for machine-view: */
+                setMaximumSize(sizeHint());
 
-            /* Disable the resize hint override hack: */
-            m_sizeHintOverride = QSize(-1, -1);
+                /* Disable the resize hint override hack: */
+                m_sizeHintOverride = QSize(-1, -1);
 
-            /* Perform machine-view resize: */
-            resize(iWidth, iHeight);
-        }
+                /* Force machine-window update own layout: */
+                QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
 
-        /* Let our toplevel widget calculate its sizeHint properly: */
-        QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
+                /* Update machine-view sliders: */
+                updateSliders();
+
+                /* By some reason Win host forgets to update machine-window central-widget
+                 * after main-layout was updated, let's do it for all the hosts: */
+                machineWindow()->centralWidget()->update();
+
+                /* Normalize machine-window geometry: */
+                if (visualStateType() == UIVisualStateType_Normal)
+                    machineWindow()->normalizeGeometry(true /* adjust position */);
+            }
 
 #ifdef Q_WS_MAC
-        machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
+            /* Update MacOS X dock icon size: */
+            machineLogic()->updateDockIconSize(screenId(), iWidth, iHeight);
 #endif /* Q_WS_MAC */
-
-        /* Scale-mode doesn't need this: */
-        if (visualStateType() != UIVisualStateType_Scale)
-        {
-            /* Update machine-view sliders: */
-            updateSliders();
-
-            /* Normalize machine-window geometry: */
-            if (visualStateType() == UIVisualStateType_Normal)
-                machineWindow()->normalizeGeometry(true /* adjust position */);
         }
     }
 
