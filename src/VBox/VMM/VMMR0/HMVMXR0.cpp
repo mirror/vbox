@@ -8986,12 +8986,9 @@ HMVMX_EXIT_DECL hmR0VmxExitExtInt(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS();
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitExtInt);
-    /* 32-bit Windows hosts (4 cores) has trouble with this; causes higher interrupt latency. */
-#if HC_ARCH_BITS == 64
-    Assert(ASMIntAreEnabled());
-    if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUsePreemptTimer)
+    /* Windows hosts (32-bit and 64-bit) have DPC latency issues. See @bugref{6853}. */
+    if (VMMR0ThreadCtxHooksAreRegistered(pVCpu))
         return VINF_SUCCESS;
-#endif
     return VINF_EM_RAW_INTERRUPT;
 }
 
