@@ -10380,6 +10380,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
      */
     rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
+    rc |= hmR0VmxSaveGuestDR7(pVCpu, pMixedCtx);
     AssertRCReturn(rc, rc);
     Log4(("CS:RIP=%04x:%#RX64\n", pMixedCtx->cs.Sel, pMixedCtx->rip));
 
