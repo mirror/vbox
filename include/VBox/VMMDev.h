@@ -116,7 +116,8 @@ RT_C_DECLS_BEGIN
 
 /** Maximum request packet size. */
 #define VMMDEV_MAX_VMMDEVREQ_SIZE           _1M
-#define VMMDEV_MAX_VMMDEV_PARMS             1024
+/** Maximum number of HGCM parameters. */
+#define VMMDEV_MAX_HGCM_PARMS               1024
 
 /**
  * VMMDev request types.
