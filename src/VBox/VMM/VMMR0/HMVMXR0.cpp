@@ -10376,7 +10376,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRx(PVMCPU pVCpu, PCPUMCTX pMixedCtx, PVMXTRANSIEN
 
     /*
      * EMInterpretDRx[Write|Read]() calls CPUMIsGuestIn64BitCode() which requires EFER, CS. EFER is always up-to-date, see
-     * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update only the segment registers from the CPU.
+     * hmR0VmxSaveGuestAutoLoadStoreMsrs(). Update the segment registers and DR7 from the CPU.
      */
     rc  = hmR0VmxReadExitQualificationVmcs(pVCpu, pVmxTransient);
     rc |= hmR0VmxSaveGuestSegmentRegs(pVCpu, pMixedCtx);
