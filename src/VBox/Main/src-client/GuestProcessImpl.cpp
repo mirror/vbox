@@ -1423,6 +1423,10 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
 
     alock.release(); /* Release lock before waiting. */
 
+    /* Adjust timeout. Passing 0 means RT_INDEFINITE_WAIT. */
+    if (!uTimeoutMS)
+        uTimeoutMS = RT_INDEFINITE_WAIT;
+
     int vrc;
 
     GuestWaitEvent *pEvent = NULL;
