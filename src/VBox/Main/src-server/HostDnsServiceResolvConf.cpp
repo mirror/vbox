@@ -22,7 +22,6 @@ typedef int socklen_t;
 #include <VBox/log.h>
 
 #include <string>
-#include <vector>
 
 #include "HostDnsService.h"
 
@@ -34,12 +33,10 @@ struct HostDnsServiceResolvConf::Data
     std::string resolvConfFilename;
 };
 
-
-const std::string& HostDnsServiceResolvConf::resolvConf()
+const std::string &HostDnsServiceResolvConf::resolvConf()
 {
     return m->resolvConfFilename;
 }
-
 
 static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
 {
@@ -68,12 +65,14 @@ static int fileGets(RTFILE File, void *pvBuf, size_t cbBufSize, size_t *pcbRead)
     return rc;
 }
 
-
 HostDnsServiceResolvConf::~HostDnsServiceResolvConf()
 {
-    if (m) delete m;
+    if (m)
+    {
+        delete m;
+        m = NULL;
+    }
 }
-
 
 HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
 {
@@ -84,7 +83,6 @@ HRESULT HostDnsServiceResolvConf::init(const char *aResolvConfFileName)
 
     return S_OK;
 }
-
 
 HRESULT HostDnsServiceResolvConf::readResolvConf()
 {
@@ -121,7 +119,8 @@ HRESULT HostDnsServiceResolvConf::readResolvConf()
 
             cNameserversFound++;
         }
-        if ((!strncmp(buff, "domain", 6) || !strncmp(buff, "search", 6)))
+        if (   !strncmp(buff, "domain", 6) 
+            || !strncmp(buff, "search", 6))
         {
             char *tok;
             char *saveptr;

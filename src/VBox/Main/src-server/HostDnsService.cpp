@@ -28,7 +28,6 @@
 
 #include <algorithm>
 #include <string>
-#include <vector>
 #include "HostDnsService.h"
 
 
@@ -36,29 +35,35 @@ static HostDnsMonitor *g_monitor;
 
 
 /* Lockee */
-Lockee::Lockee(){ RTCritSectInit(&mLock);}
+Lockee::Lockee()
+{
+    RTCritSectInit(&mLock);
+}
 
+Lockee::~Lockee()
+{
+    RTCritSectDelete(&mLock);
+}
 
-Lockee::~Lockee(){RTCritSectDelete(&mLock);}
-
-
-const RTCRITSECT* Lockee::lock() const {return &mLock;}
+const RTCRITSECT* Lockee::lock() const
+{
+    return &mLock;
+}
 
 /* ALock */
-ALock::ALock(const Lockee *l):lck(l) 
+ALock::ALock(const Lockee *aLockee)
+  : lockee(aLockee)
 {
-    RTCritSectEnter(const_cast<PRTCRITSECT>(lck->lock()));
+    RTCritSectEnter(const_cast<PRTCRITSECT>(lockee->lock()));
 }
 
 ALock::~ALock()
 {
-    RTCritSectLeave(const_cast<PRTCRITSECT>(lck->lock()));
+    RTCritSectLeave(const_cast<PRTCRITSECT>(lockee->lock()));
 }
 
-
-
-inline static void detachVectorOfString(const std::vector<std::string>& v, 
-                                           ComSafeArrayOut(BSTR, aBstrArray))
+inline static void detachVectorOfString(const std::vector<std::string>& v,
+                                        ComSafeArrayOut(BSTR, aBstrArray))
 {
     com::SafeArray<BSTR> aBstr(v.size());
 
@@ -72,80 +77,93 @@ inline static void detachVectorOfString(const std::vector<std::string>& v,
     aBstr.detachTo(ComSafeArrayOutArg(aBstrArray));
 }
 
-
 struct HostDnsMonitor::Data
 {
-    std::vector<HostDnsMonitorProxy> proxies;
+    std::vector<PCHostDnsMonitorProxy> proxies;
     HostDnsInformation info;
 };
 
-
 struct HostDnsMonitorProxy::Data
 {
-    Data(const HostDnsMonitor* mon, const VirtualBox* vbox):
-      info(NULL), virtualbox(vbox), monitor(mon), fModified(true){}
+    Data(const HostDnsMonitor *aMonitor, const VirtualBox *aParent)
+      : info(NULL)
+      , virtualbox(aParent)
+      , monitor(aMonitor)
+      , fModified(true)
+    {}
 
-    virtual ~Data() {if (info) delete info;}
+    virtual ~Data()
+    {
+        if (info)
+        {
+            delete info;
+            info = NULL;
+        }
+    }
 
     HostDnsInformation *info;
     const VirtualBox *virtualbox;
-    const HostDnsMonitor* monitor;
+    const HostDnsMonitor *monitor;
     bool fModified;
 };
 
 
-HostDnsMonitor::HostDnsMonitor():m(NULL){}
+HostDnsMonitor::HostDnsMonitor()
+  : m(NULL)
+{
+}
 
+HostDnsMonitor::~HostDnsMonitor()
+{
+    if (m)
+    {
+        delete m;
+        m = NULL;
+    }
+}
 
-HostDnsMonitor::~HostDnsMonitor(){if (m) delete m;}
-
-
-const HostDnsMonitor* HostDnsMonitor::getHostDnsMonitor()
+const HostDnsMonitor *HostDnsMonitor::getHostDnsMonitor()
 {
     /* XXX: Moved initialization from HostImpl.cpp */
     if (!g_monitor)
     {
-        g_monitor = 
 # if defined (RT_OS_DARWIN)
-          new HostDnsServiceDarwin();
+        g_monitor = new HostDnsServiceDarwin();
 # elif defined(RT_OS_WINDOWS)
-          new HostDnsServiceWin();
+        g_monitor = new HostDnsServiceWin();
 # elif defined(RT_OS_LINUX)
-          new HostDnsServiceLinux();
+        g_monitor = new HostDnsServiceLinux();
 # elif defined(RT_OS_SOLARIS)
-          new HostDnsServiceSolaris();
+        g_monitor =  new HostDnsServiceSolaris();
 # elif defined(RT_OS_OS2)
-          new HostDnsServiceOs2();
+        g_monitor = new HostDnsServiceOs2();
 # else
-          new HostDnsService();
+        g_monitor = new HostDnsService();
 # endif
-          g_monitor->init();
+        g_monitor->init();
     }
+
     return g_monitor;
 }
 
-
-void HostDnsMonitor::addMonitorProxy(const HostDnsMonitorProxy& proxy) const
+void HostDnsMonitor::addMonitorProxy(PCHostDnsMonitorProxy proxy) const
 {
     ALock l(this);
     m->proxies.push_back(proxy);
-
-    proxy.notify();
+    proxy->notify();
 }
 
-
-void HostDnsMonitor::releaseMonitorProxy(const HostDnsMonitorProxy& proxy) const
+void HostDnsMonitor::releaseMonitorProxy(PCHostDnsMonitorProxy proxy) const
 {
     ALock l(this);
-    std::vector<HostDnsMonitorProxy>::iterator it;
+    std::vector<PCHostDnsMonitorProxy>::iterator it;
     it = std::find(m->proxies.begin(), m->proxies.end(), proxy);
 
     if (it == m->proxies.end())
         return;
-    
+
     m->proxies.erase(it);
 }
-
 
 void HostDnsMonitor::shutdown()
 {
@@ -156,28 +174,24 @@ void HostDnsMonitor::shutdown()
     }
 }
 
-
-const HostDnsInformation& HostDnsMonitor::getInfo() const
+const HostDnsInformation &HostDnsMonitor::getInfo() const
 {
     return m->info;
 }
 
-
 void HostDnsMonitor::notifyAll() const
 {
     ALock l(this);
-    std::vector<HostDnsMonitorProxy>::const_iterator it;
+    std::vector<PCHostDnsMonitorProxy>::const_iterator it;
     for (it = m->proxies.begin(); it != m->proxies.end(); ++it)
-        it->notify();
+        (*it)->notify();
 }
 
-
-void HostDnsMonitor::setInfo(const HostDnsInformation& info)
+void HostDnsMonitor::setInfo(const HostDnsInformation &info)
 {
     ALock l(this);
     m->info = info;
 }
-
 
 HRESULT HostDnsMonitor::init()
 {
@@ -185,26 +199,30 @@ HRESULT HostDnsMonitor::init()
     return S_OK;
 }
 
+
 /* HostDnsMonitorProxy */
-HostDnsMonitorProxy::HostDnsMonitorProxy():m(NULL){}
+HostDnsMonitorProxy::HostDnsMonitorProxy()
+  : m(NULL)
+{
+}
 
 HostDnsMonitorProxy::~HostDnsMonitorProxy()
 {
-    if (m && m->monitor)
+    if (m)
     {
-        m->monitor->releaseMonitorProxy(*this);
+        if (m->monitor)
+            m->monitor->releaseMonitorProxy(this);
         delete m;
+        m = NULL;
     }
 }
 
-
-void HostDnsMonitorProxy::init(const HostDnsMonitor* mon, const VirtualBox* aParent)
+void HostDnsMonitorProxy::init(const HostDnsMonitor *mon, const VirtualBox* aParent)
 {
     m = new HostDnsMonitorProxy::Data(mon, aParent);
-    m->monitor->addMonitorProxy(*this);
+    m->monitor->addMonitorProxy(this);
     updateInfo();
 }
-
 
 void HostDnsMonitorProxy::notify() const
 {
@@ -212,8 +230,7 @@ void HostDnsMonitorProxy::notify() const
     const_cast<VirtualBox *>(m->virtualbox)->onHostNameResolutionConfigurationChange();
 }
 
-
-STDMETHODIMP HostDnsMonitorProxy::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
+HRESULT HostDnsMonitorProxy::GetNameServers(ComSafeArrayOut(BSTR, aNameServers))
 {
     AssertReturn(m && m->info, E_FAIL);
     ALock l(this);
@@ -226,8 +243,7 @@ STDMETHODIMP HostDnsMonitorProxy::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, a
     return S_OK;
 }
 
-
-STDMETHODIMP HostDnsMonitorProxy::COMGETTER(DomainName)(BSTR *aDomainName)
+HRESULT HostDnsMonitorProxy::GetDomainName(BSTR *aDomainName)
 {
     AssertReturn(m && m->info, E_FAIL);
     ALock l(this);
@@ -240,8 +256,7 @@ STDMETHODIMP HostDnsMonitorProxy::COMGETTER(DomainName)(BSTR *aDomainName)
     return S_OK;
 }
 
-
-STDMETHODIMP HostDnsMonitorProxy::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSearchStrings))
+HRESULT HostDnsMonitorProxy::GetSearchStrings(ComSafeArrayOut(BSTR, aSearchStrings))
 {
     AssertReturn(m && m->info, E_FAIL);
     ALock l(this);
@@ -254,29 +269,25 @@ STDMETHODIMP HostDnsMonitorProxy::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR,
     return S_OK;
 }
 
-
-bool HostDnsMonitorProxy::operator==(const HostDnsMonitorProxy& rhs)
+bool HostDnsMonitorProxy::operator==(PCHostDnsMonitorProxy& rhs)
 {
-    if (!m || rhs.m) return false;
-    
+    if (!m || !rhs->m)
+        return false;
+
     /**
      * we've assigned to the same instance of VirtualBox.
      */
-    return m->virtualbox == rhs.m->virtualbox;
+    return m->virtualbox == rhs->m->virtualbox;
 }
 
 void HostDnsMonitorProxy::updateInfo()
 {
-    HostDnsInformation *i = new HostDnsInformation(m->monitor->getInfo());
+    HostDnsInformation *info = new HostDnsInformation(m->monitor->getInfo());
     HostDnsInformation *old = m->info;
 
+    m->info = info;
     if (old)
-    {
-        m->info = i;
         delete old;
-    }
-    else
-        m->info = i;
-    
+
     m->fModified = false;
 }
