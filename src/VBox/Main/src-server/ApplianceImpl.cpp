@@ -1558,8 +1558,8 @@ std::list<VirtualSystemDescriptionEntry*> VirtualSystemDescription::findByType(V
 }
 
 /**
- * Private method; delete all records from the list 
- * m->llDescriptions that match the given type. 
+ * Private method; delete all records from the list
+ * m->llDescriptions that match the given type.
  * @param aType
  * @return
  */
