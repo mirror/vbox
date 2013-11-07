@@ -832,7 +832,7 @@ STDMETHODIMP Host::COMGETTER(NameServers)(ComSafeArrayOut(BSTR, aNameServers))
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return m->hostDnsMonitorProxy.COMGETTER(NameServers)(ComSafeArrayOutArg(aNameServers));
+    return m->hostDnsMonitorProxy.GetNameServers(ComSafeArrayOutArg(aNameServers));
 }
 
 
@@ -847,7 +847,7 @@ STDMETHODIMP Host::COMGETTER(DomainName)(BSTR *aDomainName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return m->hostDnsMonitorProxy.COMGETTER(DomainName)(aDomainName);
+    return m->hostDnsMonitorProxy.GetDomainName(aDomainName);
 }
 
 
@@ -863,7 +863,7 @@ STDMETHODIMP Host::COMGETTER(SearchStrings)(ComSafeArrayOut(BSTR, aSearchStrings
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    return m->hostDnsMonitorProxy.COMGETTER(SearchStrings)(ComSafeArrayOutArg(aSearchStrings));
+    return m->hostDnsMonitorProxy.GetSearchStrings(ComSafeArrayOutArg(aSearchStrings));
 }
 
 
