@@ -227,7 +227,7 @@ struct Host::Data
 
     HostPowerService        *pHostPowerService;
     /** Host's DNS informaton fetching */
-    HostDnsMonitorProxy         hostDnsMonitorProxy;
+    HostDnsMonitorProxy     hostDnsMonitorProxy;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
