@@ -945,6 +945,10 @@ QWidget *VirtualSystemDelegate::createEditor(QWidget *pParent, const QStyleOptio
     ModelItem *item = static_cast<ModelItem*>(index.internalPointer());
     QWidget *editor = item->createEditor(pParent, styleOption, index);
 
+    /* Allow UILineTextEdit to commit data early: */
+    if (editor && qobject_cast<UILineTextEdit*>(editor))
+        connect(editor, SIGNAL(sigFinished(QWidget*)), this, SIGNAL(commitData(QWidget*)));
+
     if (editor == NULL)
         return QItemDelegate::createEditor(pParent, styleOption, index);
     else

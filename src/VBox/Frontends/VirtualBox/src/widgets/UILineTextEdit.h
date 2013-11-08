@@ -63,6 +63,11 @@ class UILineTextEdit: public QIWithRetranslateUI<QPushButton>
 {
     Q_OBJECT;
 
+signals:
+
+    /* Notifier: Editing stuff: */
+    void sigFinished(QWidget *pThis);
+
 public:
     UILineTextEdit(QWidget *pParent = NULL);
 
