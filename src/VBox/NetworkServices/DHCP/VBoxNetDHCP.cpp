@@ -968,10 +968,10 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
      * Try connect the server to the network.
      */
     rc = pDhcp->tryGoOnline();
-    if (rc)
+    if (RT_FAILURE(rc))
     {
         delete pDhcp;
-        return rc;
+        return 1;
     }
 
     /*
@@ -982,7 +982,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
     g_pDhcp = NULL;
     delete pDhcp;
 
-    return rc;
+    return 0;
 }
 
 

@@ -259,7 +259,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     {
         m_pSession = NIL_RTR0PTR;
         LogRel(("VBoxNetBaseService: SUPR3Init -> %Rrc\n", rc));
-        return 1;
+        return rc;
     }
 
     char szPath[RTPATH_MAX];
@@ -267,14 +267,14 @@ int VBoxNetBaseService::tryGoOnline(void)
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxNetBaseService: RTPathExecDir -> %Rrc\n", rc));
-        return 1;
+        return rc;
     }
 
     rc = SUPR3LoadVMM(strcat(szPath, "/VMMR0.r0"));
     if (RT_FAILURE(rc))
     {
         LogRel(("VBoxNetBaseService: SUPR3LoadVMM(\"%s\") -> %Rrc\n", szPath, rc));
-        return 1;
+        return rc;
     }
 
     /*
@@ -303,7 +303,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     if (RT_FAILURE(rc))
     {
         Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_OPEN,) failed, rc=%Rrc\n", rc));
-        goto bad;
+        return rc;
     }
     m_hIf = OpenReq.hIf;
     Log2(("successfully opened/created \"%s\" - hIf=%#x\n", OpenReq.szNetwork, m_hIf));
@@ -322,7 +322,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     if (RT_FAILURE(rc))
     {
         Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_GET_BUFFER_PTRS,) failed, rc=%Rrc\n", rc));
-        goto bad;
+        return rc;
     }
     pBuf = GetBufferPtrsReq.pRing3Buf;
     Log2(("pBuf=%p cbBuf=%d cbSend=%d cbRecv=%d\n",
@@ -345,9 +345,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     /* bail out */
     Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc));
 
-    return 0;
-    bad:
-        return 1;
+    return VINF_SUCCESS;
 }
 
 

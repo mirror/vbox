@@ -1070,7 +1070,12 @@ int VBoxNetLwipNAT::init()
     rc = RTReqQueueCreate(&hReqIntNet);
     AssertRCReturn(rc, rc);
 
-    g_pLwipNat->tryGoOnline();
+    rc = g_pLwipNat->tryGoOnline();
+    if (RT_FAILURE(rc))
+    {
+        return rc;
+    }
+
     vboxLwipCoreInitialize(VBoxNetLwipNAT::onLwipTcpIpInit, this);
 
     rc = RTThreadCreate(&g_pLwipNat->hThrIntNetRecv, /* thread handle*/
