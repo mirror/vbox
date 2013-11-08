@@ -1229,16 +1229,18 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     Log2(("NAT: initialization\n"));
     int rc = g_pLwipNat->parseArgs(argc - 1, argv + 1);
-    AssertRC(rc);
+    rc = (rc == 0) ? VINF_SUCCESS : VERR_GENERAL_FAILURE; /* XXX: FIXME */
 
-
-    if (!rc)
+    if (RT_SUCCESS(rc))
     {
-
-        g_pLwipNat->init();
-        g_pLwipNat->run();
-
+        rc = g_pLwipNat->init();
     }
+
+    if (RT_SUCCESS(rc))
+    {
+        g_pLwipNat->run();
+    }
+
     delete g_pLwipNat;
     return 0;
 }
