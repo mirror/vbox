@@ -487,7 +487,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_CMOV      RT_BIT(15)
 /** Bit 16 - PAT - Page Attribute Table. */
 #define X86_CPUID_FEATURE_EDX_PAT       RT_BIT(16)
-/** Bit 17 - PSE-36 - 36-bit Page Size Extention. */
+/** Bit 17 - PSE-36 - 36-bit Page Size Extension. */
 #define X86_CPUID_FEATURE_EDX_PSE36     RT_BIT(17)
 /** Bit 18 - PSN - Processor Serial Number. */
 #define X86_CPUID_FEATURE_EDX_PSN       RT_BIT(18)
