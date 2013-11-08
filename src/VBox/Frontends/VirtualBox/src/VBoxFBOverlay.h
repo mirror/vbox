@@ -1815,7 +1815,7 @@ public:
         int rc;
         T::lock();
         /* Make sure frame-buffer is used: */
-        if (m_fIsMarkedAsUnused)
+        if (T::m_fIsMarkedAsUnused)
         {
             LogRel2(("ProcessVHWACommand: Postponed!\n"));
             /* Unlock access to frame-buffer: */
@@ -1845,7 +1845,7 @@ public:
         HRESULT hr = S_OK;
         T::lock();
         /* Make sure frame-buffer is used: */
-        if (m_fIsMarkedAsUnused)
+        if (T::m_fIsMarkedAsUnused)
         {
             LogRel2(("NotifyUpdate: Ignored!\n"));
             mOverlay.onNotifyUpdateIgnore (aX, aY, aW, aH);
