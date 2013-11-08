@@ -629,6 +629,13 @@ static int vbvaMousePointerShape (PVGASTATE pVGAState, VBVACONTEXT *pCtx, const 
 
     if (fShape)
     {
+         if (pShape->u32Width > 8192 || pShape->u32Height > 8192)
+         {
+             Log(("vbvaMousePointerShape: unsupported size %ux%u\n",
+                   pShape->u32Width, pShape->u32Height));
+             return VERR_INVALID_PARAMETER;
+         }
+
          cbPointerData = ((((pShape->u32Width + 7) / 8) * pShape->u32Height + 3) & ~3)
                          + pShape->u32Width * 4 * pShape->u32Height;
     }
