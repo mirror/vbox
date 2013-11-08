@@ -5090,7 +5090,7 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::getCmd()
 
     if (mbResetting)
     {
-        RTCritSectEnter(&mCritSect);
+        RTCritSectLeave(&mCritSect);
         return NULL;
     }
 
