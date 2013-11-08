@@ -1039,18 +1039,11 @@ int HGSMIHostCommandProcessAndFreeAsynch (PHGSMIINSTANCE pIns,
 {
     LogFlowFunc(("pIns = %p, pvMem = %p\n", pIns, pvMem));
 
-    VM_ASSERT_OTHER_THREAD(pIns->pVM);
-
 #if 0
     void *pvContext = NULL;
 #endif
 
     HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&pIns->hostHeap, pvMem);
-
-//    /* Have to forward to EMT because FIFO processing is there. */
-//    int rc = VMR3ReqCallVoid (pIns->pVM, &pReq, RT_INDEFINITE_WAIT,
-//                              (PFNRT) hgsmiHostCommandProcess,
-//                              3, pIns, offBuffer, &pvContext);
 
     int rc = hgsmiHostCommandProcess (pIns, offBuffer,
 #if 0
