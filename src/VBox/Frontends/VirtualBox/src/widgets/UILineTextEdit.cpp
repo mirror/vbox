@@ -118,6 +118,10 @@ void UILineTextEdit::edit()
     UITextEditor te(this);
     te.setText(m_strText);
     if (te.exec() == QDialog::Accepted)
+    {
         m_strText = te.text();
+        /* Notify listener(s) about we finished: */
+        emit sigFinished(this);
+    }
 }
 
