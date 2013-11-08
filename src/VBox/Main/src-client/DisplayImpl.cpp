@@ -3809,48 +3809,42 @@ DECLCALLBACK(void) Display::displayProcessDisplayDataCallback(PPDMIDISPLAYCONNEC
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
-void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
+#ifndef S_FALSE
+# define S_FALSE ((HRESULT)1L)
+#endif
+
+int Display::handleVHWACommandProcess(PVBOXVHWACMD pCommand)
 {
     unsigned id = (unsigned)pCommand->iDisplay;
     int rc = VINF_SUCCESS;
-    if (id < mcMonitors)
-    {
-        IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
-#ifdef DEBUG_misha
-        Assert (pFramebuffer);
-#endif
+    if (id >= mcMonitors)
+        return VERR_INVALID_PARAMETER;
 
-        if (pFramebuffer != NULL)
-        {
-            HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
-            if (FAILED(hr))
-            {
-                rc = (hr == E_NOTIMPL) ? VERR_NOT_IMPLEMENTED : VERR_GENERAL_FAILURE;
-            }
-        }
-        else
-        {
-            rc = VERR_NOT_IMPLEMENTED;
-        }
-    }
-    else
-    {
-        rc = VERR_INVALID_PARAMETER;
-    }
+    ComPtr<IFramebuffer> pFramebuffer;
+    AutoReadLock arlock(this COMMA_LOCKVAL_SRC_POS);
+    pFramebuffer = maFramebuffers[id].pFramebuffer;
+    arlock.release();
 
-    if (RT_FAILURE(rc))
-    {
-        /* tell the guest the command is complete */
-        pCommand->Flags &= (~VBOXVHWACMD_FLAG_HG_ASYNCH);
-        pCommand->rc = rc;
-    }
+    if (pFramebuffer == NULL)
+        return VERR_INVALID_STATE; /* notify we can not handle request atm */
+
+    HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
+    if (hr == S_FALSE)
+        return VINF_SUCCESS;
+    else if (SUCCEEDED(hr))
+        return VINF_CALLBACK_RETURN;
+    else if (hr == E_ACCESSDENIED)
+        return VERR_INVALID_STATE; /* notify we can not handle request atm */
+    else if (hr == E_NOTIMPL)
+        return VERR_NOT_IMPLEMENTED;
+    return VERR_GENERAL_FAILURE;
 }
 
-DECLCALLBACK(void) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
+DECLCALLBACK(int) Display::displayVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVHWACMD pCommand)
 {
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
 
-    pDrv->pDisplay->handleVHWACommandProcess(pInterface, pCommand);
+    return pDrv->pDisplay->handleVHWACommandProcess(pCommand);
 }
 #endif
 

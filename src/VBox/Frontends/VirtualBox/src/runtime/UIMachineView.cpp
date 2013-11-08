@@ -618,6 +618,11 @@ void UIMachineView::cleanupFrameBuffer()
     /* Process pending framebuffer events: */
     QApplication::sendPostedEvents(this, QEvent::MetaCall);
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    if (m_fAccelerate2DVideo)
+        QApplication::sendPostedEvents(this, VHWACommandProcessType);
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+
     /* Temporarily detach the framebuffer from IDisplay before detaching
      * from view in order to respect the thread synchonisation logic (see UIFrameBuffer.h).
      * Note: VBOX_WITH_CROGL additionally requires us to call SetFramebuffer
