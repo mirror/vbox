@@ -345,6 +345,7 @@ int VBoxNetBaseService::tryGoOnline(void)
     /* bail out */
     Log2(("VBoxNetBaseService: SUPR3CallVMMR0Ex(,VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE,) failed, rc=%Rrc\n", rc));
 
+    /* ignore this error */
     return VINF_SUCCESS;
 }
 
