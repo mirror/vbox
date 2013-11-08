@@ -51,9 +51,10 @@ typedef struct DRVKBDQUEUE
     PDMIKEYBOARDPORT            IPort;
     /** The queue handle. */
     PPDMQUEUE                   pQueue;
-    /** Discard input when this flag is set.
-     * We only accept input when the VM is running. */
+    /** Discard input when this flag is set. */
     bool                        fInactive;
+    /** When VM is suspended, queue full errors are not fatal. */
+    bool                        fSuspended;
 } DRVKBDQUEUE, *PDRVKBDQUEUE;
 
 
@@ -105,6 +106,7 @@ static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, con
 static DECLCALLBACK(int) drvKbdQueuePutEvent(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode)
 {
     PDRVKBDQUEUE pDrv = IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface);
+    /* Ignore any attempt to send events if queue is inactive. */
     if (pDrv->fInactive)
         return VINF_SUCCESS;
 
@@ -115,7 +117,8 @@ static DECLCALLBACK(int) drvKbdQueuePutEvent(PPDMIKEYBOARDPORT pInterface, uint8
         PDMQueueInsert(pDrv->pQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
-    AssertMsgFailed(("drvKbdQueuePutEvent: Queue is full!!!!\n"));
+    if (!pDrv->fSuspended)
+        AssertMsgFailed(("drvKbdQueuePutEvent: Queue is full!!!!\n"));
     return VERR_PDM_NO_QUEUE_ITEMS;
 }
 
@@ -208,7 +211,7 @@ static DECLCALLBACK(void)  drvKbdQueueReset(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 {
     PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pThis->fInactive = true;
+    pThis->fSuspended = true;
 }
 
 
@@ -221,7 +224,7 @@ static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
 {
     PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    pThis->fInactive = false;
+    pThis->fSuspended = false;
 }
 
 
@@ -258,6 +261,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * Init basic data members and interfaces.
      */
     pDrv->fInactive                         = true;
+    pDrv->fSuspended                        = false;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvKbdQueueQueryInterface;
     /* IKeyboardConnector. */
