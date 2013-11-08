@@ -1676,6 +1676,10 @@ public:
     void onNotifyUpdateIgnore (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH)
     {
+        Q_UNUSED(aX);
+        Q_UNUSED(aY);
+        Q_UNUSED(aW);
+        Q_UNUSED(aH);
         /* @todo: we actually should not miss notify updates, since we need to update the texture on it */
     }
 
