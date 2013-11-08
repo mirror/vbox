@@ -4669,10 +4669,19 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
     AssertMsgReturn(enmState > PDMNETWORKLINKSTATE_INVALID && enmState <= PDMNETWORKLINKSTATE_DOWN_RESUME,
                     ("Invalid link state: enmState=%d\n", enmState), VERR_INVALID_PARAMETER);
 
+    if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
+    {
+        pcnetTempLinkDown(pThis);
+        /*
+         * Note that we do not notify the driver about the link state change because
+         * the change is only temporary and can be disregarded from the driver's
+         * point of view (see @bugref{7057}).
+         */
+        return VINF_SUCCESS;
+    }
     /* has the state changed? */
-    fLinkUp = enmState == PDMNETWORKLINKSTATE_UP || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME;
-    if (   pThis->fLinkUp != fLinkUp
-        || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
+    fLinkUp = enmState == PDMNETWORKLINKSTATE_UP;
+    if (pThis->fLinkUp != fLinkUp)
     {
         pThis->fLinkUp = fLinkUp;
         if (fLinkUp)
@@ -4694,16 +4703,7 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
         }
         Assert(!PDMCritSectIsOwner(&pThis->CritSect));
         if (pThis->pDrvR3)
-        {
-            /*
-             * Send a UP link state to the driver below if the network adapter is only
-             * temproarily disconnected due to resume event.
-             */
-            if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
-                pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_UP);
-            else
-                pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
-        }
+            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
     }
     return VINF_SUCCESS;
 }
