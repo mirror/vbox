@@ -4420,10 +4420,7 @@ void VBoxQGLOverlay::onResizeEventPostprocess (const VBoxFBSizeInfo &re, const Q
         mNeedOverlayRepaint = vboxSynchGl();
 
         if (!mOverlayImage.hasSurfaces())
-        {
-            Assert(0);
             vboxSetGlOn(false);
-        }
     }
     else
         Assert(!mOverlayImage.hasSurfaces());
@@ -5186,6 +5183,12 @@ void VBoxVHWACommandElementProcessor::reset(CDisplay *pDisplay)
         RTListNodeRemove(&pCur->ListNode);
         g_VBoxCmdEntriesCache.free(pCur);
     }
+
+    RTCritSectEnter(&mCritSect);
+
+    mbResetting = false;
+
+    RTCritSectLeave(&mCritSect);
 }
 
 #define VBOXVHWACOMMANDELEMENTLISTBEGIN_MAGIC 0x89abcdef
