@@ -835,6 +835,19 @@ static int vmmdevReqHandler_SetMouseStatus(PVMMDEV pThis, VMMDevRequestHeader *p
     return VINF_SUCCESS;
 }
 
+static int vmmdevVerifyPointerShape(VMMDevReqMousePointer *pReq)
+{
+    /* Should be enough for most mouse pointers. */
+    if (pReq->width > 8192 || pReq->height > 8192)
+        return VERR_INVALID_PARAMETER;
+
+    uint32_t cbShape = (pReq->width + 7) / 8 * pReq->height; /* size of the AND mask */
+    cbShape = ((cbShape + 3) & ~3) + pReq->width * 4 * pReq->height; /* + gap + size of the XOR mask */
+    if (RT_UOFFSETOF(VMMDevReqMousePointer, pointerData) + cbShape > pReq->header.size)
+        return VERR_INVALID_PARAMETER;
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Handles VMMDevReq_SetPointerShape.
@@ -870,6 +883,10 @@ static int vmmdevReqHandler_SetPointerShape(PVMMDEV pThis, VMMDevRequestHeader *
     /* forward call to driver */
     if (fShape)
     {
+        int rc = vmmdevVerifyPointerShape(pReq);
+        if (RT_FAILURE(rc))
+            return rc;
+
         pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
                                            fVisible,
                                            fAlpha,
