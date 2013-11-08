@@ -157,7 +157,7 @@ _attach_handler(PNATState pData, struct proto_handler *p)
 _attach_handler(struct proto_handler *p)
 #endif
 {
-    struct proto_handler *b = NULL;
+    struct proto_handler *b = NULL, *handler_chain_tail = NULL;
 
     LIBALIAS_WLOCK_ASSERT();
     LIST_FOREACH(b, &handler_chain, entries) {
@@ -169,10 +169,14 @@ _attach_handler(struct proto_handler *p)
             LIST_INSERT_BEFORE(b, p, entries);
             return (0);
         }
+
+        /* If the conditions above do not work, we should keep the last
+         * element of the list in order to insert *p right after it. */
+        handler_chain_tail = b;
     }
     /* End of list or found right position, inserts here. */
-    if (b)
-        LIST_INSERT_AFTER(b, p, entries);
+    if (handler_chain_tail)
+        LIST_INSERT_AFTER(handler_chain_tail, p, entries);
     else
         LIST_INSERT_HEAD(&handler_chain, p, entries);
     return (0);
