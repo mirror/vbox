@@ -461,6 +461,7 @@ static DECLCALLBACK(int) vnetIoCb_Reset(void *pvState)
         STATUS = VNET_S_LINK_UP;
     else
         STATUS = 0;
+    Log(("%s vnetIoCb_Reset: Link is %s\n", INSTANCE(pThis), pThis->fCableConnected ? "up" : "down"));
 
     /*
      * By default we pass all packets up since the older guests cannot control
@@ -500,6 +501,31 @@ static void vnetWakeupReceive(PPDMDEVINS pDevIns)
 
 
 /**
+ * Takes down the link temporarily if it's current status is up.
+ *
+ * This is used during restore and when replumbing the network link.
+ *
+ * The temporary link outage is supposed to indicate to the OS that all network
+ * connections have been lost and that it for instance is appropriate to
+ * renegotiate any DHCP lease.
+ *
+ * @param  pThis        The Virtual I/O network device state.
+ */
+static void vnetTempLinkDown(PVNETSTATE pThis)
+{
+    if (STATUS & VNET_S_LINK_UP)
+    {
+        STATUS &= ~VNET_S_LINK_UP;
+        vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
+        /* Restore the link back in 5 seconds. */
+        int rc = TMTimerSetMillies(pThis->pLinkUpTimer, pThis->cMsLinkUpDelay);
+        AssertRC(rc);
+        Log(("%s vnetTempLinkDown: Link is down temporarily\n", INSTANCE(pThis)));
+    }
+}
+
+
+/**
  * @callback_method_impl{FNTMTIMERDEV, Link Up Timer handler.}
  */
 static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
@@ -513,6 +539,9 @@ static DECLCALLBACK(void) vnetLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
     vnetWakeupReceive(pDevIns);
     vnetCsLeave(pThis);
+    Log(("%s vnetLinkUpTimer: Link is up\n", INSTANCE(pThis)));
+    if (pThis->pDrv)
+        pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, PDMNETWORKLINKSTATE_UP);
 }
 
 
@@ -997,10 +1026,23 @@ static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
 {
     PVNETSTATE pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkConfig);
     bool fOldUp = !!(STATUS & VNET_S_LINK_UP);
-    bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME;
+    bool fNewUp = enmState == PDMNETWORKLINKSTATE_UP;
 
-    if (   fNewUp != fOldUp
-        || enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
+    Log(("%s vnetSetLinkState: enmState=%d\n", INSTANCE(pThis), enmState));
+    if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
+    {
+        if (fOldUp)
+        {
+            /*
+             * We bother to bring the link down only if it was up previously. The UP link state
+             * notification will be sent when the link actually goes up in vnetLinkUpTimer().
+             */
+            vnetTempLinkDown(pThis);
+            if (pThis->pDrv)
+                pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
+        }
+    }
+    else if (fNewUp != fOldUp)
     {
         if (fNewUp)
         {
@@ -1010,21 +1052,14 @@ static DECLCALLBACK(int) vnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETW
         }
         else
         {
+            /* The link was brought down explicitly, make sure it won't come up by timer.  */
+            TMTimerStop(pThis->pLinkUpTimer);
             Log(("%s Link is down\n", INSTANCE(pThis)));
             STATUS &= ~VNET_S_LINK_UP;
             vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
         }
         if (pThis->pDrv)
-        {
-            /*
-             * Send a UP link state to the driver below if the network adapter is only
-             * temproarily disconnected due to resume event.
-             */
-            if (enmState == PDMNETWORKLINKSTATE_DOWN_RESUME)
-                pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, PDMNETWORKLINKSTATE_UP);
-            else
-                pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
-        }
+            pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
     }
     return VINF_SUCCESS;
 }
@@ -1646,30 +1681,6 @@ static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         return rc;
     vnetCsRxLeave(pThis);
     return VINF_SUCCESS;
-}
-
-
-/**
- * Takes down the link temporarily if it's current status is up.
- *
- * This is used during restore and when replumbing the network link.
- *
- * The temporary link outage is supposed to indicate to the OS that all network
- * connections have been lost and that it for instance is appropriate to
- * renegotiate any DHCP lease.
- *
- * @param  pThis        The Virtual I/O network device state.
- */
-static void vnetTempLinkDown(PVNETSTATE pThis)
-{
-    if (STATUS & VNET_S_LINK_UP)
-    {
-        STATUS &= ~VNET_S_LINK_UP;
-        vpciRaiseInterrupt(&pThis->VPCI, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
-        /* Restore the link back in 5 seconds. */
-        int rc = TMTimerSetMillies(pThis->pLinkUpTimer, pThis->cMsLinkUpDelay);
-        AssertRC(rc);
-    }
 }
 
 
