@@ -66,11 +66,11 @@ DWORD APIENTRY VBoxDispDDCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSu
             {
                 if(pBody->u.out.ErrInfo)
                 {
+                    WARN(("pBody->u.out.ErrInfo = %#x", pBody->u.out.ErrInfo));
                     lpCanCreateSurface->ddRVal = DDERR_GENERIC;
                 }
                 else
                 {
-                    WARN(("pBody->u.out.ErrInfo = %#x", pBody->u.out.ErrInfo));
                     lpCanCreateSurface->ddRVal = DD_OK;
                 }
             }
@@ -274,8 +274,9 @@ DWORD APIENTRY VBoxDispDDDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
                 memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_DESTROY));
                 pBody->u.in.hSurf = pDesc->hHostHandle;
 
-                /* we're not interested in completion, just send the command */
-                VBoxDispVHWACommandSubmitAsynchAndComplete(pDev, pCmd);
+                VBoxDispVHWACommandSubmit(pDev, pCmd);
+
+                VBoxDispVHWACommandRelease(pDev, pCmd);
 
                 VBoxDispVHWASurfDescFree(pDesc);
 

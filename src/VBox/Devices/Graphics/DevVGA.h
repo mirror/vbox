@@ -64,6 +64,8 @@
 #endif /* VBOX_WITH_HGSMI */
 #include "DevVGASavedState.h"
 
+# include <iprt/list.h>
+
 #define MSR_COLOR_EMULATION 0x01
 #define MSR_PAGE_SELECT     0x20
 
@@ -193,6 +195,16 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 
 #ifdef VBOX_WITH_VDMA
 typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
+#endif
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+#define VBOX_VHWA_MAX_PENDING_COMMANDS 1000
+
+typedef struct _VBOX_VHWA_PENDINGCMD
+{
+    RTLISTNODE Node;
+    PVBOXVHWACMD pCommand;
+} VBOX_VHWA_PENDINGCMD;
 #endif
 
 typedef struct VGAState {
@@ -419,6 +431,21 @@ typedef struct VGAState {
     uint8_t                     Padding10[14];
 #  endif
 # endif /* VBOX_WITH_HGSMI */
+
+    struct {
+        uint32_t cPending;
+        uint32_t Padding1;
+        union
+        {
+            RTLISTNODE PendingList;
+            /* make sure the structure sized cross different contexts correctly */
+            struct
+            {
+                R3PTRTYPE(void *) dummy1;
+                R3PTRTYPE(void *) dummy2;
+            } dummy;
+        };
+    } pendingVhwaCommands;
 #endif /* VBOX */
 } VGAState;
 #ifdef VBOX
@@ -494,6 +521,8 @@ uint32_t HGSMIReset (PHGSMIINSTANCE pIns);
 int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd);
 int vbvaVHWAConstruct (PVGASTATE pVGAState);
 int vbvaVHWAReset (PVGASTATE pVGAState);
+
+void vbvaTimerCb(PVGASTATE pVGAState);
 
 int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 int vboxVBVASaveStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
