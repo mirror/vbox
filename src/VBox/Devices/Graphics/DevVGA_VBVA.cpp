@@ -817,7 +817,7 @@ static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
 
-    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
 
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
@@ -830,7 +830,7 @@ static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->lock);
+    PDMCritSectLeave(&pVGAState->CritSect);
 }
 
 static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
@@ -840,7 +840,7 @@ static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
 
-    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
 
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
@@ -849,7 +849,7 @@ static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->lock);
+    PDMCritSectLeave(&pVGAState->CritSect);
 }
 
 static void vbvaVHWACommandPend(PVGASTATE pVGAState, PVBOXVHWACMD pCommand)
@@ -863,15 +863,15 @@ static void vbvaVHWACommandPend(PVGASTATE pVGAState, PVBOXVHWACMD pCommand)
         {
             pCommand->Flags |= VBOXVHWACMD_FLAG_HG_ASYNCH;
             pPend->pCommand = pCommand;
-            PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+            PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
             if (ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending) < VBOX_VHWA_MAX_PENDING_COMMANDS)
             {
                 RTListAppend(&pVGAState->pendingVhwaCommands.PendingList, &pPend->Node);
                 ASMAtomicIncU32(&pVGAState->pendingVhwaCommands.cPending);
-                PDMCritSectLeave(&pVGAState->lock);
+                PDMCritSectLeave(&pVGAState->CritSect);
                 return;
             }
-            PDMCritSectLeave(&pVGAState->lock);
+            PDMCritSectLeave(&pVGAState->CritSect);
             LogRel(("Pending command count has reached its threshold.. completing them all.."));
             RTMemFree(pPend);
         }
@@ -993,13 +993,13 @@ static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
 
-    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+    PDMCritSectEnter(&pVGAState->CritSect, VERR_SEM_BUSY);
 
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         if (!vbvaVHWACommandSubmit(pVGAState, pIter->pCommand, true))
         {
-            PDMCritSectLeave(&pVGAState->lock);
+            PDMCritSectLeave(&pVGAState->CritSect);
             return false; /* the command should be pended still */
         }
 
@@ -1009,7 +1009,7 @@ static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
         RTMemFree(pIter);
     }
 
-    PDMCritSectLeave(&pVGAState->lock);
+    PDMCritSectLeave(&pVGAState->CritSect);
 
     return true;
 }
