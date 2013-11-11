@@ -1312,15 +1312,6 @@ typedef struct PDMAPICHLPRC
     DECLRCCALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
     /**
-     * Modifies APIC-related bits in the CPUID feature mask.
-     *
-     * @param   pDevIns         Device instance of the APIC.
-     * @param   enmVersion      Supported APIC version.
-     * @todo    We don't need this in RC and R0 context, remove.
-     */
-    DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
-
-    /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
@@ -1353,7 +1344,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 2, 0)
+#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 3, 0)
 
 
 /**
@@ -1392,15 +1383,6 @@ typedef struct PDMAPICHLPR0
     DECLR0CALLBACKMEMBER(uint32_t, pfnCalcIrqTag,(PPDMDEVINS pDevIns, uint8_t u8Level));
 
     /**
-     * Modifies APIC-related bits in the CPUID feature mask.
-     *
-     * @param   pDevIns         Device instance of the APIC.
-     * @param   enmVersion      Supported APIC version.
-     * @todo    We don't need this in RC and R0 context, remove.
-     */
-    DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
-
-    /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
@@ -1433,7 +1415,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 2, 0)
+#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 3, 0)
 
 /**
  * APIC R3 helpers.
