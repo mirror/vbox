@@ -316,10 +316,15 @@ int SessionTaskCopyTo::Run(void)
 
     /* Startup process. */
     ComObjPtr<GuestProcess> pProcess; int guestRc;
-    rc = pSession->processCreateExInteral(procInfo, pProcess);
     if (RT_SUCCESS(rc))
+        rc = pSession->processCreateExInteral(procInfo, pProcess);
+    if (RT_SUCCESS(rc))
+    {
+        Assert(!pProcess.isNull());
         rc = pProcess->startProcess(30 * 1000 /* 30s timeout */,
                                     &guestRc);
+    }
+
     if (RT_FAILURE(rc))
     {
         switch (rc)
@@ -771,7 +776,7 @@ int SessionTaskCopyFrom::Run(void)
                         /* If nothing was transfered but the file size was > 0 then "vbox_cat" wasn't able to write
                          * to the destination -> access denied. */
                         setProgressErrorMsg(VBOX_E_IPRT_ERROR,
-                                            Utf8StrFmt(GuestSession::tr("Access denied when copying file \"%s\" to \"%s\""),
+                                            Utf8StrFmt(GuestSession::tr("Unable to write \"%s\" to \"%s\": Access denied"),
                                             mSource.c_str(), mDest.c_str()));
                         rc = VERR_GENERAL_FAILURE; /* Fudge. */
                     }

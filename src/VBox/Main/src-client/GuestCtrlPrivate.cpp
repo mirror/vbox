@@ -906,8 +906,10 @@ int GuestBase::generateContextID(uint32_t uSessionID, uint32_t uObjectID, uint32
 
     *puContextID = uNewContextID;
 
+#if 0
     LogFlowThisFunc(("mNextContextID=%RU32, uSessionID=%RU32, uObjectID=%RU32, uCount=%RU32, uNewContextID=%RU32\n",
                      mNextContextID, uSessionID, uObjectID, uCount, uNewContextID));
+#endif
     return VINF_SUCCESS;
 }
 
@@ -936,6 +938,8 @@ int GuestBase::registerWaitEvent(uint32_t uSessionID, uint32_t uObjectID,
         {
             GuestWaitEvent *pEvent = new GuestWaitEvent(uContextID, lstEvents);
             AssertPtr(pEvent);
+
+            LogFlowThisFunc(("New event=%p, CID=%RU32\n", pEvent, uContextID));
 
             /* Insert event into matching event group. This is for faster per-group
              * lookup of all events later. */
@@ -974,14 +978,14 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
 #endif
     if (RT_SUCCESS(rc))
     {
-        GuestEventGroup::iterator itGroups = mWaitEventGroups.find(aType);
-        if (itGroups != mWaitEventGroups.end())
+        GuestEventGroup::iterator itGroup = mWaitEventGroups.find(aType);
+        if (itGroup != mWaitEventGroups.end())
         {
-            for (GuestWaitEvents::iterator itEvents = itGroups->second.begin();
-                 itEvents != itGroups->second.end(); itEvents++)
+            GuestWaitEvents::iterator itEvents = itGroup->second.begin();
+            while (itEvents != itGroup->second.end())
             {
 #ifdef DEBUG
-                LogFlowThisFunc(("Signalling event=%p, type=%ld (CID %RU32: Sesion=%RU32, Object=%RU32, Count=%RU32) ...\n",
+                LogFlowThisFunc(("Signalling event=%p, type=%ld (CID %RU32: Session=%RU32, Object=%RU32, Count=%RU32) ...\n",
                                  itEvents->second, aType, itEvents->first,
                                  VBOX_GUESTCTRL_CONTEXTID_GET_SESSION(itEvents->first),
                                  VBOX_GUESTCTRL_CONTEXTID_GET_OBJECT(itEvents->first),
@@ -992,6 +996,39 @@ int GuestBase::signalWaitEvent(VBoxEventType_T aType, IEvent *aEvent)
                 int rc2 = itEvents->second->SignalExternal(aEvent);
                 if (RT_SUCCESS(rc))
                     rc = rc2;
+
+                if (RT_SUCCESS(rc2))
+                {
+                    /* Remove the event from all other event groups (except the
+                     * original one!) because it was signalled. */
+                    AssertPtr(itEvents->second);
+                    const GuestEventTypes evTypes = itEvents->second->Types();
+                    for (GuestEventTypes::const_iterator itType = evTypes.begin();
+                         itType != evTypes.end(); itType++)
+                    {
+                        if ((*itType) != aType) /* Only remove all other groups. */
+                        {
+                            /* Get current event group. */
+                            GuestEventGroup::iterator evGroup = mWaitEventGroups.find((*itType));
+                            Assert(evGroup != mWaitEventGroups.end());
+
+                            /* Lookup event in event group. */
+                            GuestWaitEvents::iterator evEvent = evGroup->second.find(itEvents->first /* Context ID */);
+                            Assert(evEvent != evGroup->second.end());
+
+                            LogFlowThisFunc(("Removing event=%p (type %ld)\n", evEvent->second, (*itType)));
+                            evGroup->second.erase(evEvent);
+
+                            LogFlowThisFunc(("%zu events for type=%ld left\n",
+                                             evGroup->second.size(), aType));
+                        }
+                    }
+
+                    /* Remove the event from the passed-in event group. */
+                    itGroup->second.erase(itEvents++);
+                }
+                else
+                    itEvents++;
 #ifdef DEBUG
                 cEvents++;
 #endif
@@ -1051,6 +1088,8 @@ void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
     int rc = RTCritSectEnter(&mWaitEventCritSect);
     if (RT_SUCCESS(rc))
     {
+        LogFlowThisFunc(("pEvent=%p\n", pEvent));
+
         const GuestEventTypes lstTypes = pEvent->Types();
         for (GuestEventTypes::const_iterator itEvents = lstTypes.begin();
              itEvents != lstTypes.end(); itEvents++)
@@ -1061,7 +1100,7 @@ void GuestBase::unregisterWaitEvent(GuestWaitEvent *pEvent)
             {
                 if (itCurEvent->second == pEvent)
                 {
-                    mWaitEventGroups[(*itEvents)].erase(itCurEvent);
+                    mWaitEventGroups[(*itEvents)].erase(itCurEvent++);
                     break;
                 }
                 else
@@ -1200,7 +1239,8 @@ int GuestWaitEventBase::Init(uint32_t uCID)
 int GuestWaitEventBase::SignalInternal(int rc, int guestRc,
                                        const GuestWaitEventPayload *pPayload)
 {
-    AssertReturn(!mfAborted, VERR_CANCELLED);
+    if (ASMAtomicReadBool(&mfAborted))
+        return VERR_CANCELLED;
 
 #ifdef VBOX_STRICT
     if (rc == VERR_GSTCTL_GUEST_ERROR)
@@ -1281,6 +1321,9 @@ int GuestWaitEvent::Cancel(void)
     AssertReturn(!mfAborted, VERR_CANCELLED);
     ASMAtomicWriteBool(&mfAborted, true);
 
+#ifdef DEBUG_andy
+    LogFlowThisFunc(("Cancelling %p ...\n"));
+#endif
     return RTSemEventSignal(mEventSem);
 }
 

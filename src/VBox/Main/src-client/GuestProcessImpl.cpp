@@ -117,7 +117,7 @@ public:
                 Assert(!mProcess.isNull());
                 int rc2 = mProcess->signalWaitEvent(aType, aEvent);
 #ifdef DEBUG
-                LogFlowThisFunc(("Signalling events of type=%ld, process=%p resulted in rc=%Rrc\n",
+                LogFlowThisFunc(("Signalling events of type=%ld, pProcess=%p resulted in rc=%Rrc\n",
                                  aType, &mProcess, rc2));
 #endif
                 break;
@@ -1237,7 +1237,8 @@ int GuestProcess::terminateProcess(uint32_t uTimeoutMS, int *pGuestRc)
 
     if (mData.mStatus != ProcessStatus_Started)
     {
-        LogFlowThisFunc(("Process not started (yet), nothing to terminate\n"));
+        LogFlowThisFunc(("Process not started state (state is %ld), skipping termination\n",
+                         mData.mStatus));
         return VINF_SUCCESS; /* Nothing to do (anymore). */
     }
 
@@ -1297,57 +1298,60 @@ ProcessWaitResult_T GuestProcess::waitFlagsToResultEx(uint32_t fWaitFlags,
         case ProcessStatus_TerminatedNormally:
         case ProcessStatus_TerminatedSignal:
         case ProcessStatus_TerminatedAbnormally:
-            waitResult = ProcessWaitResult_Terminate;
-            break;
         case ProcessStatus_Down:
+            /* Nothing to wait for anymore. */
             waitResult = ProcessWaitResult_Terminate;
             break;
 
         case ProcessStatus_TimedOutKilled:
-            /* Fall through is intentional. */
         case ProcessStatus_TimedOutAbnormally:
+            /* Dito. */
             waitResult = ProcessWaitResult_Timeout;
             break;
 
-        case ProcessStatus_Error:
-            waitResult = ProcessWaitResult_Error;
-            break;
-
         case ProcessStatus_Started:
-        {
             switch (oldStatus)
             {
+                case ProcessStatus_Undefined:
                 case ProcessStatus_Starting:
+                    /* Also wait for process start. */
                     if (fWaitFlags & ProcessWaitForFlag_Start)
-                    {
                         waitResult = ProcessWaitResult_Start;
-                    }
                     else
                     {
                         /*
-                         * If ProcessCreateFlag_WaitForProcessStartOnly was specified on process creation the
-                         * caller is not interested in getting further process statuses -- so just don't notify
-                         * anything here anymore and return.
-                         */
+                             * If ProcessCreateFlag_WaitForProcessStartOnly was specified on process creation the
+                             * caller is not interested in getting further process statuses -- so just don't notify
+                             * anything here anymore and return.
+                             */
                         if (uProcFlags & ProcessCreateFlag_WaitForProcessStartOnly)
                             waitResult = ProcessWaitResult_Start;
                     }
                     break;
 
+                case ProcessStatus_Started:
+                    /* Only wait for process start. */
+                    if (fWaitFlags == ProcessWaitForFlag_Start)
+                        waitResult = ProcessWaitResult_Start;
+                    break;
+
                 default:
-                    /* No result available (yet). */
+                    AssertMsgFailed(("Unhandled old status %ld before new status 'started'\n",
+                                     oldStatus));
+                    waitResult = ProcessWaitResult_Start;
                     break;
             }
             break;
-        }
+
+        case ProcessStatus_Error:
+            /* Nothing to wait for anymore. */
+            waitResult = ProcessWaitResult_Error;
+            break;
 
         case ProcessStatus_Undefined:
         case ProcessStatus_Starting:
-            /* No result available yet. */
-            break;
-
-        default:
-            AssertMsgFailed(("Unhandled process status %ld\n", newStatus));
+            /* No result available yet, leave wait
+             * flags untouched. */
             break;
     }
 
@@ -1408,6 +1412,7 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
         AssertMsg(RT_FAILURE(mData.mLastError), ("No error rc (%Rrc) set when guest process indicated an error\n", mData.mLastError));
         if (pGuestRc)
             *pGuestRc = mData.mLastError; /* Return last set error. */
+        LogFlowThisFunc(("Process is in error state (guestRc=%Rrc)\n", mData.mLastError));
         return VERR_GSTCTL_GUEST_ERROR;
     }
 
@@ -1418,10 +1423,9 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
     {
         if (pGuestRc)
             *pGuestRc = mData.mLastError; /* Return last set error (if any). */
+        LogFlowThisFunc(("Nothing to wait for (guestRc=%Rrc)\n", mData.mLastError));
         return RT_SUCCESS(mData.mLastError) ? VINF_SUCCESS : VERR_GSTCTL_GUEST_ERROR;
     }
-
-    alock.release(); /* Release lock before waiting. */
 
     /* Adjust timeout. Passing 0 means RT_INDEFINITE_WAIT. */
     if (!uTimeoutMS)
@@ -1444,6 +1448,8 @@ int GuestProcess::waitFor(uint32_t fWaitFlags, ULONG uTimeoutMS,
 
     if (RT_FAILURE(vrc))
         return vrc;
+
+    alock.release(); /* Release lock before waiting. */
 
     /*
      * Do the actual waiting.
@@ -1498,7 +1504,7 @@ int GuestProcess::waitForInputNotify(GuestWaitEvent *pEvent, uint32_t uHandle, u
     VBoxEventType_T evtType;
     ComPtr<IEvent> pIEvent;
     int vrc = waitForEvent(pEvent, uTimeoutMS,
-                                 &evtType, pIEvent.asOutParam());
+                           &evtType, pIEvent.asOutParam());
     if (RT_SUCCESS(vrc))
     {
         if (evtType == VBoxEventType_OnGuestProcessInputNotify)
@@ -1544,7 +1550,7 @@ int GuestProcess::waitForOutput(GuestWaitEvent *pEvent, uint32_t uHandle, uint32
     do
     {
         vrc = waitForEvent(pEvent, uTimeoutMS,
-                                 &evtType, pIEvent.asOutParam());
+                           &evtType, pIEvent.asOutParam());
         if (RT_SUCCESS(vrc))
         {
             if (evtType == VBoxEventType_OnGuestProcessOutput)
@@ -1639,7 +1645,7 @@ int GuestProcess::waitForStatusChange(GuestWaitEvent *pEvent, uint32_t uTimeoutM
         hr = errorInfo->COMGETTER(ResultDetail)(&lGuestRc);
         ComAssertComRC(hr);
 
-        LogFlowThisFunc(("procStatus=%RU32, resultDetail=%RI32 (rc=%Rrc)\n",
+        LogFlowThisFunc(("Got procStatus=%RU32, guestRc=%RI32 (%Rrc)\n",
                          procStatus, lGuestRc, lGuestRc));
 
         if (RT_FAILURE((int)lGuestRc))
@@ -1771,6 +1777,8 @@ STDMETHODIMP GuestProcess::Read(ULONG aHandle, ULONG aToRead, ULONG aTimeoutMS, 
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else
+    LogFlowThisFuncEnter();
+
     if (aToRead == 0)
         return setError(E_INVALIDARG, tr("The size to read is zero"));
     CheckComArgOutSafeArrayPointerValid(aData);
