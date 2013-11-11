@@ -606,8 +606,6 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
                 pApic->spurious_vec &= ~APIC_SV_ENABLE;
                 /* Clear any pending APIC interrupt action flag. */
                 apicCpuClearInterrupt(pDev, pApic);
-                /** @todo: why do we do that? */
-                pDev->CTX_SUFF(pApicHlp)->pfnChangeFeature(pDevIns, PDMAPICVERSION_NONE);
                 break;
             }
             case PDMAPICVERSION_APIC:
