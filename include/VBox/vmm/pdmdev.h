@@ -1316,6 +1316,7 @@ typedef struct PDMAPICHLPRC
      *
      * @param   pDevIns         Device instance of the APIC.
      * @param   enmVersion      Supported APIC version.
+     * @todo    We don't need this in RC and R0 context, remove.
      */
     DECLRCCALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
@@ -1395,6 +1396,7 @@ typedef struct PDMAPICHLPR0
      *
      * @param   pDevIns         Device instance of the APIC.
      * @param   enmVersion      Supported APIC version.
+     * @todo    We don't need this in RC and R0 context, remove.
      */
     DECLR0CALLBACKMEMBER(void, pfnChangeFeature,(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion));
 
