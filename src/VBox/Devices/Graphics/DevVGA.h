@@ -433,7 +433,7 @@ typedef struct VGAState {
 # endif /* VBOX_WITH_HGSMI */
 
     struct {
-        uint32_t cPending;
+        volatile uint32_t cPending;
         uint32_t Padding1;
         union
         {

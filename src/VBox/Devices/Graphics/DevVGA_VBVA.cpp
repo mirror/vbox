@@ -812,10 +812,13 @@ static void vbvaVHWACommandComplete(PVGASTATE pVGAState, PVBOXVHWACMD pCommand, 
 
 static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
 {
-    if (!pVGAState->pendingVhwaCommands.cPending)
+    if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return;
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
+
+    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         pIter->pCommand->rc = rc;
@@ -823,47 +826,60 @@ static void vbvaVHWACommandCompleteAllPending(PVGASTATE pVGAState, int rc)
 
         /* the command is submitted/processed, remove from the pend list */
         RTListNodeRemove(&pIter->Node);
-        --pVGAState->pendingVhwaCommands.cPending;
+        ASMAtomicDecU32(&pVGAState->pendingVhwaCommands.cPending);
         RTMemFree(pIter);
     }
+
+    PDMCritSectLeave(&pVGAState->lock);
 }
 
-static void vbvaVHWACommandCClearAllPending(PVGASTATE pVGAState)
+static void vbvaVHWACommandClearAllPending(PVGASTATE pVGAState)
 {
-    if (!pVGAState->pendingVhwaCommands.cPending)
+    if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return;
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
+
+    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         RTListNodeRemove(&pIter->Node);
-        --pVGAState->pendingVhwaCommands.cPending;
+        ASMAtomicDecU32(&pVGAState->pendingVhwaCommands.cPending);
         RTMemFree(pIter);
     }
+
+    PDMCritSectLeave(&pVGAState->lock);
 }
 
 static void vbvaVHWACommandPend(PVGASTATE pVGAState, PVBOXVHWACMD pCommand)
 {
     int rc = VERR_BUFFER_OVERFLOW;
 
-    if (pVGAState->pendingVhwaCommands.cPending < VBOX_VHWA_MAX_PENDING_COMMANDS)
+    if (ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending) < VBOX_VHWA_MAX_PENDING_COMMANDS)
     {
         VBOX_VHWA_PENDINGCMD *pPend = (VBOX_VHWA_PENDINGCMD*)RTMemAlloc(sizeof (*pPend));
         if (pPend)
         {
             pCommand->Flags |= VBOXVHWACMD_FLAG_HG_ASYNCH;
             pPend->pCommand = pCommand;
-            RTListAppend(&pVGAState->pendingVhwaCommands.PendingList, &pPend->Node);
-            ++pVGAState->pendingVhwaCommands.cPending;
-            return;
+            PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+            if (ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending) < VBOX_VHWA_MAX_PENDING_COMMANDS)
+            {
+                RTListAppend(&pVGAState->pendingVhwaCommands.PendingList, &pPend->Node);
+                ASMAtomicIncU32(&pVGAState->pendingVhwaCommands.cPending);
+                PDMCritSectLeave(&pVGAState->lock);
+                return;
+            }
+            PDMCritSectLeave(&pVGAState->lock);
+            LogRel(("Pending command count has reached its threshold.. completing them all.."));
+            RTMemFree(pPend);
         }
         else
             rc = VERR_NO_MEMORY;
     }
     else
-    {
         LogRel(("Pending command count has reached its threshold, completing them all.."));
-    }
 
     vbvaVHWACommandCompleteAllPending(pVGAState, rc);
 
@@ -972,20 +988,28 @@ static bool vbvaVHWACommandSubmit(PVGASTATE pVGAState, PVBOXVHWACMD pCommand, bo
 
 static bool vbvaVHWACheckPendingCommands(PVGASTATE pVGAState)
 {
-    if (!pVGAState->pendingVhwaCommands.cPending)
+    if (!ASMAtomicUoReadU32(&pVGAState->pendingVhwaCommands.cPending))
         return true;
 
     VBOX_VHWA_PENDINGCMD *pIter, *pNext;
+
+    PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
+
     RTListForEachSafe(&pVGAState->pendingVhwaCommands.PendingList, pIter, pNext, VBOX_VHWA_PENDINGCMD, Node)
     {
         if (!vbvaVHWACommandSubmit(pVGAState, pIter->pCommand, true))
+        {
+            PDMCritSectLeave(&pVGAState->lock);
             return false; /* the command should be pended still */
+        }
 
         /* the command is submitted/processed, remove from the pend list */
         RTListNodeRemove(&pIter->Node);
-        --pVGAState->pendingVhwaCommands.cPending;
+        ASMAtomicDecU32(&pVGAState->pendingVhwaCommands.cPending);
         RTMemFree(pIter);
     }
+
+    PDMCritSectLeave(&pVGAState->lock);
 
     return true;
 }
@@ -1044,6 +1068,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
 {
     pVGAState->pendingVhwaCommands.cPending = 0;
     RTListInit(&pVGAState->pendingVhwaCommands.PendingList);
+
     VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_CONSTRUCT, 0, sizeof(VBOXVHWACMD_HH_CONSTRUCT));
     Assert(pCmd);
     if(pCmd)
@@ -1097,7 +1122,7 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
 
 int vbvaVHWAReset (PVGASTATE pVGAState)
 {
-    vbvaVHWACommandCClearAllPending(pVGAState);
+    vbvaVHWACommandClearAllPending(pVGAState);
 
     /* ensure we have all pending cmds processed and h->g cmds disabled */
     VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_RESET, 0, 0);
