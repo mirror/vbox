@@ -283,7 +283,7 @@ typedef struct APICState
     LogApicId               id;
     /* Physical APIC id - not visible to user, constant */
     PhysApicId              phys_id;
-    /** @todo: is it logical or physical? Not really used anyway now. */
+    /** @todo is it logical or physical? Not really used anyway now. */
     PhysApicId              arb_id;
     uint32_t                spurious_vec;
     uint8_t                 log_dest;
@@ -492,7 +492,7 @@ DECLINLINE(uint32_t) getApicEnableBits(APICDeviceInfo *pDev)
         case PDMAPICVERSION_APIC:
             return MSR_IA32_APICBASE_ENABLE;
         case PDMAPICVERSION_X2APIC:
-            return MSR_IA32_APICBASE_ENABLE | MSR_IA32_APICBASE_X2ENABLE ;
+            return MSR_IA32_APICBASE_ENABLE | MSR_IA32_APICBASE_X2ENABLE;
         default:
             AssertMsgFailed(("Unsupported APIC version %d\n", pDev->enmVersion));
             return 0;
@@ -587,7 +587,7 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
     APICState *pApic = apicGetStateById(pDev, idCpu);
     Log(("apicSetBase: %016RX64\n", val));
 
-    /** @todo: do we need to lock here ? */
+    /** @todo do we need to lock here ? */
     /* APIC_LOCK_VOID(pDev, VERR_INTERNAL_ERROR); */
     /** @todo If this change is valid immediately, then we should change the MMIO registration! */
     /* We cannot change if this CPU is BSP or not by writing to MSR - it's hardwired */
@@ -609,10 +609,12 @@ PDMBOTHCBDECL(void) apicSetBase(PPDMDEVINS pDevIns, VMCPUID idCpu, uint64_t val)
                 break;
             }
             case PDMAPICVERSION_APIC:
-                /** @todo: map MMIO ranges, if needed */
+                /** @todo map MMIO ranges, if needed */
                 break;
             case PDMAPICVERSION_X2APIC:
-                /** @todo: unmap MMIO ranges of this APIC, according to the spec */
+                /** @todo unmap MMIO ranges of this APIC, according to the spec.  This is how
+                 *       real hw works! (Remember the problem disabling NMI watchdog timers in
+                 *       the world switchers when host used x2apic?)! */
                 break;
             default:
                 break;
@@ -1852,8 +1854,8 @@ PDMBOTHCBDECL(int) apicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     Log(("CPU%d: apicMMIOWrite at %RGp\n", pApic->phys_id, GCPhysAddr));
     Assert(cb == 4);
 
-    /** @todo: add LAPIC range validity checks (multiple LAPICs can theoretically have
-     *         different physical addresses, see @bugref{3092}) */
+    /** @todo add LAPIC range validity checks (multiple LAPICs can theoretically
+     *        have different physical addresses, see @bugref{3092}) */
 
     STAM_COUNTER_INC(&CTXSUFF(pDev->StatMMIOWrite));
     /* Note! It does its own locking. */
@@ -2047,7 +2049,7 @@ static DECLCALLBACK(int) apicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     /* config */
     apicR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
 
-    /* save all APICs data */ /** @todo: is it correct? */
+    /* save all APICs data */ /** @todo is it correct? */
     APIC_FOREACH_BEGIN(pDev);
         apic_save(pSSM, pCurApic);
     APIC_FOREACH_END();
@@ -2089,7 +2091,7 @@ static DECLCALLBACK(int) apicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
-    /* load all APICs data */ /** @todo: is it correct? */
+    /* load all APICs data */ /** @todo is it correct? */
     APIC_LOCK(pDev, VERR_INTERNAL_ERROR_3);
 
     int rc = VINF_SUCCESS;
@@ -2133,8 +2135,8 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
         /* Clear any pending APIC interrupt action flag. */
         apicCpuClearInterrupt(pDev, pApic);
     }
-    /** @todo r=bird: Why is this done everytime, while the constructor first
-     *        checks the CPUID?  Who is right? */
+
+    LogRel(("DevAPIC: Re-activating Local APIC\n"));
     pDev->pApicHlpR3->pfnChangeFeature(pDev->pDevInsR3, pDev->enmVersion);
 
     APIC_UNLOCK(pDev);
@@ -2230,7 +2232,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pDev->pDevInsRC  = PDMDEVINS_2_RCPTR(pDevIns);
     pDev->cCpus      = cCpus;
     pDev->fIoApic    = fIoApic;
-    /* Use PDMAPICVERSION_X2APIC to activate x2APIC mode */
+    /** @todo Finish X2APIC implementation.  Must, among other things, set
+     *        PDMAPICVERSION_X2APIC here when X2APIC is configured. */
     pDev->enmVersion = PDMAPICVERSION_APIC;
 
     /* Disable locking in this device. */
@@ -2322,28 +2325,13 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * The CPUID feature bit.
      */
-    /** @todo r=bird: See remark in the apicR3Reset. */
-    uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
-    PDMDevHlpGetCpuId(pDevIns, 0, &u32Eax, &u32Ebx, &u32Ecx, &u32Edx);
-    if (u32Eax >= 1)
-    {
-        if (   fIoApic                       /* If IOAPIC is enabled, enable Local APIC in any case */
-            || (   u32Ebx == X86_CPUID_VENDOR_INTEL_EBX
-                && u32Ecx == X86_CPUID_VENDOR_INTEL_ECX
-                && u32Edx == X86_CPUID_VENDOR_INTEL_EDX /* GenuineIntel */)
-            || (   u32Ebx == X86_CPUID_VENDOR_AMD_EBX
-                && u32Ecx == X86_CPUID_VENDOR_AMD_ECX
-                && u32Edx == X86_CPUID_VENDOR_AMD_EDX   /* AuthenticAMD */))
-        {
-            LogRel(("Activating Local APIC\n"));
-            pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmVersion);
-        }
-    }
+    LogRel(("DevAPIC: Activating Local APIC\n"));
+    pDev->pApicHlpR3->pfnChangeFeature(pDevIns, pDev->enmVersion);
 
     /*
      * Register the MMIO range.
      */
-    /** @todo: shall reregister, if base changes. */
+    /** @todo shall reregister, if base changes. */
     uint32_t ApicBase = pDev->paLapicsR3[0].apicbase & ~0xfff;
     rc = PDMDevHlpMMIORegister(pDevIns, ApicBase, 0x1000, pDev,
                                IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
