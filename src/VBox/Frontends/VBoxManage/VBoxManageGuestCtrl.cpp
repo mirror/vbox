@@ -558,6 +558,34 @@ static int ctrlExecProcessStatusToExitCode(ProcessStatus_T enmStatus, ULONG uExi
     return vrc;
 }
 
+const char *ctrlProcessWaitResultToText(ProcessWaitResult_T enmWaitResult)
+{
+    switch (enmWaitResult)
+    {
+        case ProcessWaitResult_Start:
+            return "started";
+        case ProcessWaitResult_Terminate:
+            return "terminated";
+        case ProcessWaitResult_Status:
+            return "status changed";
+        case ProcessWaitResult_Error:
+            return "error";
+        case ProcessWaitResult_Timeout:
+            return "timed out";
+        case ProcessWaitResult_StdIn:
+            return "stdin ready";
+        case ProcessWaitResult_StdOut:
+            return "data on stdout";
+        case ProcessWaitResult_StdErr:
+            return "data on stderr";
+        case ProcessWaitResult_WaitFlagNotSupported:
+            return "waiting flag not supported";
+        default:
+            break;
+    }
+    return "unknown";
+}
+
 /**
  * Translates a guest session status to a human readable
  * string.
@@ -1253,9 +1281,9 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
             if (pCtx->fVerbose)
             {
                 if (cMsTimeout == 0)
-                    RTPrintf("Waiting for guest process to start ...\n");
+                    RTPrintf("Starting guest process ...\n");
                 else
-                    RTPrintf("Waiting for guest process to start (within %ums)\n", cMsTimeout);
+                    RTPrintf("Starting guest process (within %ums)\n", cMsTimeout);
             }
 
             /*
@@ -1266,10 +1294,33 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                                                                  ComSafeArrayAsInParam(aArgs),
                                                                  ComSafeArrayAsInParam(aEnv),
                                                                  ComSafeArrayAsInParam(aCreateFlags),
-                                                                 cMsTimeout,
+                                                                 ctrlExecGetRemainingTime(u64StartMS, cMsTimeout),
                                                                  pProcess.asOutParam()));
 
-            /** @todo does this need signal handling? there's no progress object etc etc */
+            /*
+             * Explicitly wait for the guest process to be in a started
+             * state.
+             */
+            com::SafeArray<ProcessWaitForFlag_T> aWaitStartFlags;
+            aWaitStartFlags.push_back(ProcessWaitForFlag_Start);
+            ProcessWaitResult_T waitResult;
+            CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitStartFlags),
+                                                     ctrlExecGetRemainingTime(u64StartMS, cMsTimeout), &waitResult));
+            bool fCompleted = false;
+
+            ULONG uPID = 0;
+            CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
+            if (!fDetached && pCtx->fVerbose)
+            {
+                RTPrintf("Process '%s' (PID %RU32) started\n",
+                         strCmd.c_str(), uPID);
+            }
+            else if (fDetached) /** @todo Introduce a --quiet option for not printing this. */
+            {
+                /* Just print plain PID to make it easier for scripts
+                 * invoking VBoxManage. */
+                RTPrintf("[%RU32 - Session %RU32]\n", uPID, pCtx->uSessionID);
+            }
 
             vrc = RTStrmSetMode(g_pStdOut, 1 /* Binary mode */, -1 /* Code set, unchanged */);
             if (RT_FAILURE(vrc))
@@ -1279,35 +1330,21 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                 RTMsgError("Unable to set stderr's binary mode, rc=%Rrc\n", vrc);
 
             /* Wait for process to exit ... */
-            RTMSINTERVAL cMsTimeLeft = 1;
+            RTMSINTERVAL cMsTimeLeft = 1; /* Will be calculated. */
             bool fReadStdOut, fReadStdErr;
             fReadStdOut = fReadStdErr = false;
 
-            bool fCompleted = false;
-            while (!fCompleted && cMsTimeLeft != 0)
+            while (   !fCompleted
+                   && !fDetached
+                   && cMsTimeLeft != 0)
             {
                 cMsTimeLeft = ctrlExecGetRemainingTime(u64StartMS, cMsTimeout);
-                ProcessWaitResult_T waitResult;
                 CHECK_ERROR_BREAK(pProcess, WaitForArray(ComSafeArrayAsInParam(aWaitFlags),
                                                          cMsTimeLeft, &waitResult));
                 switch (waitResult)
                 {
                     case ProcessWaitResult_Start:
                     {
-                        ULONG uPID = 0;
-                        CHECK_ERROR_BREAK(pProcess, COMGETTER(PID)(&uPID));
-                        if (pCtx->fVerbose)
-                        {
-                            RTPrintf("Process '%s' (PID %RU32) started\n",
-                                     strCmd.c_str(), uPID);
-                        }
-                        else /** @todo Introduce a --quiet option for not printing this. */
-                        {
-                            /* Just print plain PID to make it easier for scripts
-                             * invoking VBoxManage. */
-                            RTPrintf("%RU32, session ID %RU32\n", uPID, pCtx->uSessionID);
-                        }
-
                         /* We're done here if we don't want to wait for termination. */
                         if (fDetached)
                             fCompleted = true;
@@ -1321,7 +1358,9 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
                         fReadStdErr = true;
                         break;
                     case ProcessWaitResult_Terminate:
-                        /* Process terminated, we're done */
+                        if (pCtx->fVerbose)
+                            RTPrintf("Process terminated\n");
+                        /* Process terminated, we're done. */
                         fCompleted = true;
                         break;
                     case ProcessWaitResult_WaitFlagNotSupported:
@@ -1371,33 +1410,39 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
 
             } /* while */
 
-            /* Report status back to the user. */
-            if (   fCompleted
-                && !g_fGuestCtrlCanceled)
+            if (!fDetached)
             {
-                ProcessStatus_T procStatus;
-                CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&procStatus));
-                if (   procStatus == ProcessStatus_TerminatedNormally
-                    || procStatus == ProcessStatus_TerminatedAbnormally
-                    || procStatus == ProcessStatus_TerminatedSignal)
+                /* Report status back to the user. */
+                if (   fCompleted
+                    && !g_fGuestCtrlCanceled)
                 {
-                    LONG exitCode;
-                    CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&exitCode));
-                    if (pCtx->fVerbose)
-                        RTPrintf("Exit code=%u (Status=%u [%s])\n",
-                                 exitCode, procStatus, ctrlProcessStatusToText(procStatus));
 
-                    rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
+                    {
+                        ProcessStatus_T procStatus;
+                        CHECK_ERROR_BREAK(pProcess, COMGETTER(Status)(&procStatus));
+                        if (   procStatus == ProcessStatus_TerminatedNormally
+                            || procStatus == ProcessStatus_TerminatedAbnormally
+                            || procStatus == ProcessStatus_TerminatedSignal)
+                        {
+                            LONG exitCode;
+                            CHECK_ERROR_BREAK(pProcess, COMGETTER(ExitCode)(&exitCode));
+                            if (pCtx->fVerbose)
+                                RTPrintf("Exit code=%u (Status=%u [%s])\n",
+                                         exitCode, procStatus, ctrlProcessStatusToText(procStatus));
+
+                            rcExit = (RTEXITCODE)ctrlExecProcessStatusToExitCode(procStatus, exitCode);
+                        }
+                        else if (pCtx->fVerbose)
+                            RTPrintf("Process now is in status [%s]\n", ctrlProcessStatusToText(procStatus));
+                    }
                 }
-                else if (pCtx->fVerbose)
-                    RTPrintf("Process now is in status [%s]\n", ctrlProcessStatusToText(procStatus));
-            }
-            else
-            {
-                if (pCtx->fVerbose)
-                    RTPrintf("Process execution aborted!\n");
+                else
+                {
+                    if (pCtx->fVerbose)
+                        RTPrintf("Process execution aborted!\n");
 
-                rcExit = (RTEXITCODE)EXITCODEEXEC_TERM_ABEND;
+                    rcExit = (RTEXITCODE)EXITCODEEXEC_TERM_ABEND;
+                }
             }
 
         } while (0);
@@ -1407,6 +1452,11 @@ static DECLCALLBACK(RTEXITCODE) handleCtrlProcessExec(PGCTLCMDCTX pCtx)
         rc = E_OUTOFMEMORY;
     }
 
+    /*
+     * Decide what to do with the guest session. If we started a
+     * detached guest process (that is, without waiting for it to exit),
+     * don't close the guest session it is part of.
+     */
     bool fCloseSession = false;
     if (SUCCEEDED(rc))
     {
