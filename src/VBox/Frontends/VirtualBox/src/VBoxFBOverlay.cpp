@@ -5142,7 +5142,7 @@ void VBoxVHWACommandElementProcessor::reset(CDisplay *pDisplay)
         for(;;)
         {
             RTCritSectLeave(&mCritSect);
-            RTThreadSleep(2000); /* 2 ms */
+            RTThreadSleep(2); /* 2 ms */
             RTCritSectEnter(&mCritSect);
             /* it is assumed no one sends any new commands while reset is in progress */
             if(!mpCurCmd)
@@ -5319,7 +5319,7 @@ void VBoxVHWACommandElementProcessor::lock()
         for(;;)
         {
             RTCritSectLeave(&mCritSect);
-            RTThreadSleep(2000); /* 2 ms */
+            RTThreadSleep(2); /* 2 ms */
             RTCritSectEnter(&mCritSect);
             /* it is assumed no one sends any new commands while reset is in progress */
             if(!mpCurCmd)
