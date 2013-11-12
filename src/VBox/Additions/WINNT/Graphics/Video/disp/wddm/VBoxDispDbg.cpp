@@ -319,6 +319,8 @@ static DECLCALLBACK(void) vboxVDbgRcRectContentsDumperCb(PVBOXVDBG_DUMP_INFO pIn
             Assert(hr == S_OK);
         }
     }
+
+    pSurf->Release();
 }
 
 VOID vboxVDbgDoDumpRcRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc,

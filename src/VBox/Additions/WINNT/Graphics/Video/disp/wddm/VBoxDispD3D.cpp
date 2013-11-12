@@ -4248,6 +4248,7 @@ static HRESULT APIENTRY vboxWddmDDevCreateResource(HANDLE hDevice, D3DDDIARG_CRE
                             WARN(("pfnVBoxWineExD3DSurf9GetHostId failed, hr 0x%x", hr));
                             break;
                         }
+                        pSurfIf->Release();
                     }
                     else
                     {
@@ -4530,6 +4531,7 @@ static HRESULT APIENTRY vboxWddmDDevPresent(HANDLE hDevice, CONST D3DDDIARG_PRES
             if (SUCCEEDED(hr))
             {
                 pAdapter->D3D.D3D.pfnVBoxWineExD3DSurf9SyncToHost(pSrcSurfIf);
+                pSrcSurfIf->Release();
             }
             else
             {

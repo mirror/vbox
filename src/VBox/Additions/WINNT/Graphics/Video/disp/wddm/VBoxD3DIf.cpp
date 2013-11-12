@@ -974,12 +974,12 @@ IUnknown* vboxD3DIfCreateSharedPrimary(PVBOXWDDMDISP_ALLOCATION pAlloc)
         {
             Assert(hostID == usedHostId);
         }
-
-        pSurfIf->Release();
-        pSurfIf = NULL;
     }
     else
         WARN(("pfnVBoxWineExD3DSurf9GetHostId failed, hr 0x%x", hr));
+
+    pSurfIf->Release();
+    pSurfIf = NULL;
 
     return pAlloc->pD3DIf;
 }
