@@ -2460,22 +2460,14 @@ void Appliance::importOneDiskImage(const ovf::DiskImage &di,
                 else
                 {
                     /* We need a proper source format description */
-                    ComObjPtr<MediumFormat> srcFormat;
                     /* Which format to use? */
-                    Utf8Str strSrcFormat = "VDI";
+                    Utf8Str strSrcFormat = typeOfVirtualDiskFormatFromURI(di.strFormat);
 
-                    std::set<Utf8Str> listURIs = Appliance::URIFromTypeOfVirtualDiskFormat("VMDK");
-                    std::set<Utf8Str>::const_iterator itr = listURIs.find(di.strFormat);
-
-                    if (itr != listURIs.end())
-                    {
-                        strSrcFormat = "VMDK";
-                    }
-
-                    srcFormat = pSysProps->mediumFormat(strSrcFormat);
+                    ComObjPtr<MediumFormat> srcFormat = pSysProps->mediumFormat(strSrcFormat);
                     if (srcFormat.isNull())
                         throw setError(VBOX_E_NOT_SUPPORTED,
-                                       tr("Could not find a valid medium format for the source disk '%s'"),
+                                       tr("Could not find a valid medium format for the source disk '%s' "
+                                          "Check correctness of the image format URL in the OVF description file."),
                                        RTPathFilename(strSourceOVF.c_str()));
 
                     /* Clone the source disk image */
