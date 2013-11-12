@@ -940,6 +940,7 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         if (!pDisplay)
         {
             crWarning("crServerDisplayGet Failed");
+            CrDemEntryRelease(pEntry);
             return;
         }
     }
@@ -967,13 +968,15 @@ crServerDispatchVBoxTexPresent(GLuint texture, GLuint cfg, GLint xPos, GLint yPo
         if (!RT_SUCCESS(rc))
         {
             crWarning("CrDpEntryRegionsAdd Failed rc %d", rc);
+            /* no need to release anything, as CrDpEntryRegionsAdd would do everything for us as needed */
 //            if (pEntry)
 //                CrDemEntryRelease(pEntry);
-            return;
         }
     }
     else
     {
+        if (pEntry)
+            CrDemEntryRelease(pEntry);
         CrDpRegionsClear(pDisplay);
     }
 
