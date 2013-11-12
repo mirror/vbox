@@ -56,10 +56,10 @@ HRESULT HostDnsServiceWin::updateInfo()
     regIndex = 0;
     do {
         CHAR keyName[256];
-        DWORD cbKeyName = 256;
+        DWORD cbKeyName = sizeof(keyName);
         DWORD keyType = 0;
         BYTE keyData[1024];
-        DWORD cbKeyData = 1024;
+        DWORD cbKeyData = sizeof(keyData);
 
         hrc = RegEnumValueA(g_hKeyTcpipParameters, regIndex, keyName, &cbKeyName, 0,
                             &keyType, keyData, &cbKeyData);
@@ -68,29 +68,29 @@ HRESULT HostDnsServiceWin::updateInfo()
         {
             if (   RTStrICmp("Domain", keyName) == 0
                 && cbKeyData > 1
-                && cbKeyData < 256)
+                && cbKeyData < sizeof(abDomain))
                 memcpy(abDomain, keyData, cbKeyData);
 
             else if (   RTStrICmp("DhcpDomain", keyName) == 0
                      && cbKeyData > 1
                      && abDomain[0] == 0
-                     && cbKeyData < 256)
+                     && cbKeyData < sizeof(abDomain))
                 memcpy(abDomain, keyData, cbKeyData);
 
             else if (   RTStrICmp("NameServer", keyName) == 0
                      && cbKeyData > 1
-                     && cbKeyData < 256)
+                     && cbKeyData < sizeof(abNameServers))
                 memcpy(abNameServers, keyData, cbKeyData);
 
             else if (   RTStrICmp("DhcpNameServer", keyName) == 0
                      && cbKeyData > 1
                      && abNameServers[0] == 0
-                     && cbKeyData < 256)
+                     && cbKeyData < sizeof(abNameServers))
                 memcpy(abNameServers, keyData, cbKeyData);
 
             else if (   RTStrICmp("SearchList", keyName) == 0
                      && cbKeyData > 1
-                     && cbKeyData < 256)
+                     && cbKeyData < sizeof(abSearchList))
               memcpy(abSearchList, keyData, cbKeyData);
         }
         regIndex++;
@@ -129,7 +129,7 @@ void HostDnsServiceWin::strList2List(std::vector<std::string>& lst, char *strLst
         next = RTStrStr(current, " ");
 
         if (next)
-          strncpy(address, current, next - current);
+          strncpy(address, current, RT_MIN(sizeof(address)-1, next - current));
         else
           strcpy(address, current);
 
