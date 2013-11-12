@@ -49,6 +49,10 @@ HRESULT HostDnsServiceWin::updateInfo()
     BYTE abNameServers[256];
     BYTE abSearchList[256];
 
+    RT_ZERO(abDomain);
+    RT_ZERO(abNameServers);
+    RT_ZERO(abSearchList);
+
     regIndex = 0;
     do {
         CHAR keyName[256];
