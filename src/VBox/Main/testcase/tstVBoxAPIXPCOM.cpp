@@ -166,7 +166,7 @@ void listVMs(IVirtualBox *virtualBox)
                     nsXPIDLString typeId;
                     machine->GetOSTypeId(getter_Copies(typeId));
                     IGuestOSType *osType = nsnull;
-                    virtualBox->GetGuestOSType (typeId.get(), &osType);
+                    virtualBox->GetGuestOSType(typeId.get(), &osType);
                     nsXPIDLString osName;
                     osType->GetDescription(getter_Copies(osName));
                     char *osNameAscii = ToNewCString(osName);
@@ -234,7 +234,7 @@ void createVM(IVirtualBox *virtualBox)
     }
     else
     {
-        machine->SetOSTypeId (NS_LITERAL_STRING("Windows2000").get());
+        machine->SetOSTypeId(NS_LITERAL_STRING("Windows2000").get());
     }
 
     /*
@@ -263,16 +263,16 @@ void createVM(IVirtualBox *virtualBox)
     nsCOMPtr<IMachine> sessionMachine;
     {
         nsCOMPtr<nsIComponentManager> manager;
-        rc = NS_GetComponentManager (getter_AddRefs (manager));
+        rc = NS_GetComponentManager(getter_AddRefs(manager));
         if (NS_FAILED(rc))
         {
             RTPrintf("Error: could not get component manager! rc=%Rhrc\n", rc);
             return;
         }
-        rc = manager->CreateInstanceByContractID (NS_SESSION_CONTRACTID,
-                                                  nsnull,
-                                                  NS_GET_IID(ISession),
-                                                  getter_AddRefs(session));
+        rc = manager->CreateInstanceByContractID(NS_SESSION_CONTRACTID,
+                                                 nsnull,
+                                                 NS_GET_IID(ISession),
+                                                 getter_AddRefs(session));
         if (NS_FAILED(rc))
         {
             RTPrintf("Error, could not instantiate session object! rc=%Rhrc\n", rc);
@@ -317,7 +317,7 @@ void createVM(IVirtualBox *virtualBox)
          * because none of its properties has been set so far. Let's continue creating
          * a dynamically expanding image.
          */
-        nsCOMPtr <IProgress> progress;
+        nsCOMPtr<IProgress> progress;
         com::SafeArray<MediumVariant_T> mediumVariant;
         mediumVariant.push_back(MediumVariant_Standard);
         rc = hardDisk->CreateBaseStorage(100,                                // size in megabytes
@@ -395,7 +395,7 @@ void createVM(IVirtualBox *virtualBox)
             /*
              * Last step: tell the VM to boot from the CD.
              */
-            rc = sessionMachine->SetBootOrder (1, DeviceType::DVD);
+            rc = sessionMachine->SetBootOrder(1, DeviceType::DVD);
             if (NS_FAILED(rc))
             {
                 RTPrintf("Could not set boot device! rc=%Rhrc\n", rc);
@@ -504,7 +504,7 @@ int main(int argc, char *argv[])
          * operations so it doesn't run the event loop.
          */
         nsCOMPtr<nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ(getter_AddRefs (eventQ));
+        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
         if (NS_FAILED(rc))
         {
             RTPrintf("Error: could not get main event queue! rc=%Rhrc\n", rc);
@@ -520,7 +520,7 @@ int main(int argc, char *argv[])
          * counting and freeing.
          */
         nsCOMPtr<nsIComponentManager> manager;
-        rc = NS_GetComponentManager (getter_AddRefs (manager));
+        rc = NS_GetComponentManager(getter_AddRefs(manager));
         if (NS_FAILED(rc))
         {
             RTPrintf("Error: could not get component manager! rc=%Rhrc\n", rc);
@@ -528,10 +528,10 @@ int main(int argc, char *argv[])
         }
 
         nsCOMPtr<IVirtualBox> virtualBox;
-        rc = manager->CreateInstanceByContractID (NS_VIRTUALBOX_CONTRACTID,
-                                                  nsnull,
-                                                  NS_GET_IID(IVirtualBox),
-                                                  getter_AddRefs(virtualBox));
+        rc = manager->CreateInstanceByContractID(NS_VIRTUALBOX_CONTRACTID,
+                                                 nsnull,
+                                                 NS_GET_IID(IVirtualBox),
+                                                 getter_AddRefs(virtualBox));
         if (NS_FAILED(rc))
         {
             RTPrintf("Error, could not instantiate VirtualBox object! rc=%Rhrc\n", rc);
@@ -606,48 +606,48 @@ void printErrorInfo()
 {
     nsresult rc;
 
-    nsCOMPtr <nsIExceptionService> es;
-    es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+    nsCOMPtr<nsIExceptionService> es;
+    es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
     if (NS_SUCCEEDED(rc))
     {
-        nsCOMPtr <nsIExceptionManager> em;
-        rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+        nsCOMPtr<nsIExceptionManager> em;
+        rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
         if (NS_SUCCEEDED(rc))
         {
             nsCOMPtr<nsIException> ex;
-            rc = em->GetCurrentException (getter_AddRefs (ex));
+            rc = em->GetCurrentException(getter_AddRefs(ex));
             if (NS_SUCCEEDED(rc) && ex)
             {
-                nsCOMPtr <IVirtualBoxErrorInfo> info;
+                nsCOMPtr<IVirtualBoxErrorInfo> info;
                 info = do_QueryInterface(ex, &rc);
                 if (NS_SUCCEEDED(rc) && info)
                 {
                     /* got extended error info */
-                    RTPrintf ("Extended error info (IVirtualBoxErrorInfo):\n");
+                    RTPrintf("Extended error info (IVirtualBoxErrorInfo):\n");
                     PRInt32 resultCode = NS_OK;
-                    info->GetResultCode (&resultCode);
-                    RTPrintf ("  resultCode=%08X\n", resultCode);
+                    info->GetResultCode(&resultCode);
+                    RTPrintf("  resultCode=%08X\n", resultCode);
                     nsXPIDLString component;
-                    info->GetComponent (getter_Copies (component));
-                    RTPrintf ("  component=%s\n", NS_ConvertUTF16toUTF8(component).get());
+                    info->GetComponent(getter_Copies(component));
+                    RTPrintf("  component=%s\n", NS_ConvertUTF16toUTF8(component).get());
                     nsXPIDLString text;
-                    info->GetText (getter_Copies (text));
-                    RTPrintf ("  text=%s\n", NS_ConvertUTF16toUTF8(text).get());
+                    info->GetText(getter_Copies(text));
+                    RTPrintf("  text=%s\n", NS_ConvertUTF16toUTF8(text).get());
                 }
                 else
                 {
                     /* got basic error info */
-                    RTPrintf ("Basic error info (nsIException):\n");
+                    RTPrintf("Basic error info (nsIException):\n");
                     nsresult resultCode = NS_OK;
-                    ex->GetResult (&resultCode);
-                    RTPrintf ("  resultCode=%08X\n", resultCode);
+                    ex->GetResult(&resultCode);
+                    RTPrintf("  resultCode=%08X\n", resultCode);
                     nsXPIDLCString message;
-                    ex->GetMessage (getter_Copies (message));
-                    RTPrintf ("  message=%s\n", message.get());
+                    ex->GetMessage(getter_Copies(message));
+                    RTPrintf("  message=%s\n", message.get());
                 }
 
                 /* reset the exception to NULL to indicate we've processed it */
-                em->SetCurrentException (NULL);
+                em->SetCurrentException(NULL);
 
                 rc = NS_OK;
             }
