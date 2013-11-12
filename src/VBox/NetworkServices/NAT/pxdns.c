@@ -93,6 +93,7 @@ struct pxdns {
 
 #define TIMEOUT 5
     size_t timeout_slot;
+    u32_t timeout_mask;
     struct request *timeout_list[TIMEOUT];
 
 #define HASHSIZE 10
@@ -142,6 +143,11 @@ struct request {
      */
     struct request **pprev_timeout;
     struct request *next_timeout;
+
+    /**
+     * Slot in pxdns::timeout_list
+     */
+    size_t timeout_slot;
 
     /**
      * Pbuf with reply received on pollmgr thread.
@@ -251,14 +257,13 @@ pxdns_init(struct netif *proxy_netif)
     sys_mutex_new(&pxdns->lock);
 
     pxdns->timeout_slot = 0;
+    pxdns->timeout_mask = 0;
 
     /* NB: assumes pollmgr thread is not running yet */
     pollmgr_add(&pxdns->pmhdl4, pxdns->sock4, POLLIN);
     if (pxdns->sock6 != INVALID_SOCKET) {
         pollmgr_add(&pxdns->pmhdl6, pxdns->sock6, POLLIN);
     }
-
-    sys_timeout(1 * 1000, pxdns_timer, pxdns);
 
     return ERR_OK;
 
@@ -417,14 +422,23 @@ static void
 pxdns_timeout_add(struct pxdns *pxdns, struct request *req)
 {
     struct request **chain;
+    u32_t omask;
 
     LWIP_ASSERT1(req->pprev_timeout == NULL);
-    chain = &pxdns->timeout_list[pxdns->timeout_slot];
+
+    req->timeout_slot = pxdns->timeout_slot;
+    chain = &pxdns->timeout_list[req->timeout_slot];
     if ((req->next_timeout = *chain) != NULL) {
         (*chain)->pprev_timeout = &req->next_timeout;
     }
     *chain = req;
     req->pprev_timeout = chain;
+
+    omask = pxdns->timeout_mask;
+    pxdns->timeout_mask |= 1U << req->timeout_slot;
+    if (omask == 0) {
+        sys_timeout(1 * 1000, pxdns_timer, pxdns);
+    }
 }
 
 
@@ -447,6 +461,7 @@ static void
 pxdns_timeout_del(struct pxdns *pxdns, struct request *req)
 {
     LWIP_ASSERT1(req->pprev_timeout != NULL);
+    LWIP_ASSERT1(req->timeout_slot < TIMEOUT);
 
     if (req->next_timeout != NULL) {
         req->next_timeout->pprev_timeout = req->pprev_timeout;
@@ -454,6 +469,11 @@ pxdns_timeout_del(struct pxdns *pxdns, struct request *req)
     *req->pprev_timeout = req->next_timeout;
     req->pprev_timeout = NULL;
     req->next_timeout = NULL;
+
+    if (pxdns->timeout_list[req->timeout_slot] == NULL) {
+        pxdns->timeout_mask &= ~(1U << req->timeout_slot);
+        /* may be on pollmgr thread so no sys_untimeout */
+    }
 }
 
 
@@ -525,6 +545,7 @@ pxdns_timer(void *arg)
 {
     struct pxdns *pxdns = (struct pxdns *)arg;
     struct request **chain, *req;
+    u32_t mask;
 
     sys_mutex_lock(&pxdns->lock);
 
@@ -556,9 +577,19 @@ pxdns_timer(void *arg)
         pxdns_request_free(expired);
     }
 
+    if (pxdns->timeout_list[pxdns->timeout_slot] == NULL) {
+        pxdns->timeout_mask &= ~(1U << pxdns->timeout_slot);
+    }
+    else {
+        pxdns->timeout_mask |= 1U << pxdns->timeout_slot;
+    }
+    mask = pxdns->timeout_mask;
+
     sys_mutex_unlock(&pxdns->lock);
 
-    sys_timeout(1 * 1000, pxdns_timer, pxdns);
+    if (mask != 0) {
+        sys_timeout(1 * 1000, pxdns_timer, pxdns);
+    }
 }
 
 
