@@ -29,14 +29,13 @@ typedef bool(*PFNVIDEOIRQSYNC)(void *);
 bool VBoxMPCmnSyncToVideoIRQ(PVBOXMP_COMMON pCommon, PFNVIDEOIRQSYNC pfnSync, void *pvUser);
 
 /* Video modes related */
-#define VBOXMP_MAX_VIDEO_MODES 128
 void VBoxMPCmnInitCustomVideoModes(PVBOXMP_DEVEXT pExt);
 VIDEO_MODE_INFORMATION* VBoxMPCmnGetCustomVideoModeInfo(ULONG ulIndex);
 
 #ifdef VBOX_XPDM_MINIPORT
-VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(ULONG ulIndex);
+VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(PVBOXMP_DEVEXT pExt, ULONG ulIndex);
 VIDEO_MODE_INFORMATION* VBoxMPXpdmCurrentVideoMode(PVBOXMP_DEVEXT pExt);
-ULONG VBoxMPXpdmGetVideoModesCount();
+ULONG VBoxMPXpdmGetVideoModesCount(PVBOXMP_DEVEXT pExt);
 void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt);
 #endif
 

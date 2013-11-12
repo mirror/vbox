@@ -32,17 +32,6 @@ extern "C" int __cdecl swprintf(wchar_t *, const wchar_t *, ...);
 /* Custom video modes which are being read from registry at driver startup. */
 static VIDEO_MODE_INFORMATION g_CustomVideoModes[VBOX_VIDEO_MAX_SCREENS] = { 0 };
 
-#ifdef VBOX_XPDM_MINIPORT
-/* Standart video modes list.
- * Additional space is reserved for custom video modes for VBOX_VIDEO_MAX_SCREENS guest monitors.
- * The custom video mode index is alternating for each mode set and 2 indexes are needed for each custom mode.
- */
-static VIDEO_MODE_INFORMATION g_VideoModes[VBOXMP_MAX_VIDEO_MODES + VBOX_VIDEO_MAX_SCREENS * 2] = { 0 };
-
-/* Number of available video modes, set by VBoxMPCmnBuildVideoModesTable. */
-static uint32_t g_NumVideoModes = 0;
-#endif
-
 static BOOLEAN
 VBoxMPValidateVideoModeParamsGuest(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, uint32_t xres, uint32_t yres, uint32_t bpp)
 {
@@ -217,9 +206,9 @@ VIDEO_MODE_INFORMATION *VBoxMPCmnGetCustomVideoModeInfo(ULONG ulIndex)
 }
 
 #ifdef VBOX_XPDM_MINIPORT
-VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(ULONG ulIndex)
+VIDEO_MODE_INFORMATION* VBoxMPCmnGetVideoModeInfo(PVBOXMP_DEVEXT pExt, ULONG ulIndex)
 {
-    return (ulIndex<RT_ELEMENTS(g_VideoModes)) ? &g_VideoModes[ulIndex] : NULL;
+    return (ulIndex<RT_ELEMENTS(pExt->aVideoModes)) ? &pExt->aVideoModes[ulIndex] : NULL;
 }
 #endif
 
@@ -727,12 +716,12 @@ static void VBoxMPRegSaveModeInfo(PVBOXMP_DEVEXT pExt, uint32_t iDisplay, PVIDEO
 #ifdef VBOX_XPDM_MINIPORT
 VIDEO_MODE_INFORMATION* VBoxMPXpdmCurrentVideoMode(PVBOXMP_DEVEXT pExt)
 {
-    return VBoxMPCmnGetVideoModeInfo(pExt->CurrentMode - 1);
+    return VBoxMPCmnGetVideoModeInfo(pExt, pExt->CurrentMode - 1);
 }
 
-ULONG VBoxMPXpdmGetVideoModesCount()
+ULONG VBoxMPXpdmGetVideoModesCount(PVBOXMP_DEVEXT pExt)
 {
-    return g_NumVideoModes;
+    return pExt->cVideoModes;
 }
 
 /* Makes a table of video modes consisting of:
@@ -751,7 +740,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
      * Up to VBOXMP_MAX_VIDEO_MODES elements can be used, the rest is reserved
      * for custom mode alternating indexes.
      */
-    cStandartModes = VBoxMPFillModesTable(pExt, pExt->iDevice, g_VideoModes, VBOXMP_MAX_VIDEO_MODES, NULL);
+    cStandartModes = VBoxMPFillModesTable(pExt, pExt->iDevice, pExt->aVideoModes, VBOXMP_MAX_VIDEO_MODES, NULL);
 
     /* Add custom modes for all displays to the table */
     cCustomModes = VBoxCommonFromDeviceExt(pExt)->cDisplays;
@@ -771,32 +760,32 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
             uint32_t iStandardMode = iModeBase + (bAlternativeIndex? 0: 1);
 
             /* Fill the special mode. */
-            memcpy(&g_VideoModes[iSpecialMode], &g_CustomVideoModes[i], sizeof(VIDEO_MODE_INFORMATION));
-            g_VideoModes[iSpecialMode].ModeIndex = iSpecialMode + 1;
+            memcpy(&pDisplayExt->aVideoModes[iSpecialMode], &g_CustomVideoModes[i], sizeof(VIDEO_MODE_INFORMATION));
+            pDisplayExt->aVideoModes[iSpecialMode].ModeIndex = iSpecialMode + 1;
 
             /* Wipe the other entry so it is not selected. */
-            memcpy(&g_VideoModes[iStandardMode], &g_VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
-            g_VideoModes[iStandardMode].ModeIndex = iStandardMode + 1;
+            memcpy(&pDisplayExt->aVideoModes[iStandardMode], &pDisplayExt->aVideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
+            pDisplayExt->aVideoModes[iStandardMode].ModeIndex = iStandardMode + 1;
 
             pDisplayExt = pDisplayExt->pNext;
         }
         else
         {
             /* Should not happen, but better to fallback than to crash. */
-            memcpy(&g_VideoModes[iModeBase], &g_CustomVideoModes[i], sizeof(VIDEO_MODE_INFORMATION));
-            g_VideoModes[iModeBase].ModeIndex = iModeBase + 1;
+            memcpy(&pExt->aVideoModes[iModeBase], &g_CustomVideoModes[i], sizeof(VIDEO_MODE_INFORMATION));
+            pExt->aVideoModes[iModeBase].ModeIndex = iModeBase + 1;
 
-            g_VideoModes[iModeBase + 1] = g_VideoModes[iModeBase];
-            g_VideoModes[iModeBase + 1].ModeIndex += 1;
+            pExt->aVideoModes[iModeBase + 1] = pExt->aVideoModes[iModeBase];
+            pExt->aVideoModes[iModeBase + 1].ModeIndex += 1;
 
             iSpecialMode = iModeBase;
         }
 
         LOG(("added special mode[%d] %dx%d:%d for display %d\n",
              iSpecialMode,
-             g_VideoModes[iSpecialMode].VisScreenWidth,
-             g_VideoModes[iSpecialMode].VisScreenHeight,
-             g_VideoModes[iSpecialMode].BitsPerPlane,
+             pExt->aVideoModes[iSpecialMode].VisScreenWidth,
+             pExt->aVideoModes[iSpecialMode].VisScreenHeight,
+             pExt->aVideoModes[iSpecialMode].BitsPerPlane,
              i));
     }
 
@@ -821,7 +810,7 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
     }
 
     /* Update number of modes. Each display has 2 entries for alternating custom mode index. */
-    g_NumVideoModes = cStandartModes + cCustomModes * 2;
+    pExt->cVideoModes = cStandartModes + cCustomModes * 2;
 
     if (bHaveSpecial)
     {
@@ -872,14 +861,14 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
          * Note: Y offset isn't used for a host-supplied modes
          */
         specialMode.ModeIndex = iSpecialModeElement + 1;
-        memcpy(&g_VideoModes[iSpecialModeElement], &specialMode, sizeof(VIDEO_MODE_INFORMATION));
+        memcpy(&pExt->aVideoModes[iSpecialModeElement], &specialMode, sizeof(VIDEO_MODE_INFORMATION));
 
         /* Save special mode in the custom modes table */
         memcpy(&g_CustomVideoModes[pExt->iDevice], &specialMode, sizeof(VIDEO_MODE_INFORMATION));
 
         /* Wipe the old entry so the special mode will be found in the new positions. */
-        memcpy(&g_VideoModes[iSpecialModeElementOld], &g_VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
-        g_VideoModes[iSpecialModeElementOld].ModeIndex = iSpecialModeElementOld + 1;
+        memcpy(&pExt->aVideoModes[iSpecialModeElementOld], &pExt->aVideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
+        pExt->aVideoModes[iSpecialModeElementOld].ModeIndex = iSpecialModeElementOld + 1;
 
         /* Save special mode info to registry */
         VBoxMPRegSaveModeInfo(pExt, pExt->iDevice, &specialMode);
@@ -888,13 +877,13 @@ void VBoxMPXpdmBuildVideoModesTable(PVBOXMP_DEVEXT pExt)
 #if defined(LOG_ENABLED)
     do
     {
-        LOG(("Filled %d modes", g_NumVideoModes));
+        LOG(("Filled %d modes", pExt->cVideoModes));
 
-        for (uint32_t i=0; i<g_NumVideoModes; ++i)
+        for (uint32_t i=0; i < pExt->cVideoModes; ++i)
         {
             LOG(("Mode[%2d]: %4dx%4d:%2d (idx=%d)",
-                i, g_VideoModes[i].VisScreenWidth, g_VideoModes[i].VisScreenHeight,
-                g_VideoModes[i].BitsPerPlane, g_VideoModes[i].ModeIndex));
+                 i, pExt->aVideoModes[i].VisScreenWidth, pExt->aVideoModes[i].VisScreenHeight,
+                 pExt->aVideoModes[i].BitsPerPlane, pExt->aVideoModes[i].ModeIndex));
         }
     } while (0);
 #endif
