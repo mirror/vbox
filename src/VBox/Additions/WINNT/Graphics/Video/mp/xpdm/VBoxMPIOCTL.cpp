@@ -192,7 +192,7 @@ BOOLEAN VBoxMPSetCurrentMode(PVBOXMP_DEVEXT pExt, PVIDEO_MODE pMode, PSTATUS_BLO
         WARN(("ignoring set VIDEO_MODE_NO_ZERO_MEMORY or VIDEO_MODE_MAP_MEM_LINEAR"));
     }
 
-    pModeInfo = VBoxMPCmnGetVideoModeInfo(RequestedMode-1);
+    pModeInfo = VBoxMPCmnGetVideoModeInfo(pExt, RequestedMode-1);
     if (!pModeInfo)
     {
         pStatus->Status = ERROR_INVALID_PARAMETER;
@@ -249,7 +249,7 @@ BOOLEAN VBoxMPQueryNumAvailModes(PVBOXMP_DEVEXT pExt, PVIDEO_NUM_MODES pNumModes
 
     VBoxMPXpdmBuildVideoModesTable(pExt);
 
-    pNumModes->NumModes = VBoxMPXpdmGetVideoModesCount();
+    pNumModes->NumModes = VBoxMPXpdmGetVideoModesCount(pExt);
     pNumModes->ModeInformationLength = sizeof(VIDEO_MODE_INFORMATION);
     pStatus->Information = sizeof(VIDEO_NUM_MODES);
 
@@ -264,9 +264,9 @@ BOOLEAN VBoxMPQueryAvailModes(PVBOXMP_DEVEXT pExt, PVIDEO_MODE_INFORMATION pMode
 {
     LOGF_ENTER();
 
-    ULONG ulSize = VBoxMPXpdmGetVideoModesCount()*sizeof(VIDEO_MODE_INFORMATION);
+    ULONG ulSize = VBoxMPXpdmGetVideoModesCount(pExt)*sizeof(VIDEO_MODE_INFORMATION);
     pStatus->Information = ulSize;
-    VideoPortMoveMemory(pModes, VBoxMPCmnGetVideoModeInfo(0), ulSize);
+    VideoPortMoveMemory(pModes, VBoxMPCmnGetVideoModeInfo(pExt, 0), ulSize);
 
     LOGF_LEAVE();
     return TRUE;

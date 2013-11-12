@@ -27,6 +27,7 @@
 # include <ntddvdeo.h>
 # include <video.h>
 # include "common/xpdm/VBoxVideoPortAPI.h"
+#include <VBox/Hardware/VBoxVideoVBE.h>
 #endif
 
 #ifdef VBOX_WDDM_MINIPORT
@@ -36,6 +37,7 @@ extern DWORD g_VBoxDisplayOnly;
 # include "wddm/VBoxMPTypes.h"
 #endif
 
+#define VBOXMP_MAX_VIDEO_MODES 128
 typedef struct VBOXMP_COMMON
 {
     int cDisplays;                      /* Number of displays. */
@@ -76,7 +78,13 @@ typedef struct _VBOXMP_DEVEXT
    struct _VBOXMP_DEVEXT *pPrimary;            /* Pointer to the primary device extension. */
 
    ULONG iDevice;                              /* Device index: 0 for primary, otherwise a secondary device. */
-
+   /* Standart video modes list.
+    * Additional space is reserved for custom video modes for VBOX_VIDEO_MAX_SCREENS guest monitors.
+    * The custom video mode index is alternating for each mode set and 2 indexes are needed for each custom mode.
+    */
+   VIDEO_MODE_INFORMATION aVideoModes[VBOXMP_MAX_VIDEO_MODES + VBOX_VIDEO_MAX_SCREENS * 2];
+   /* Number of available video modes, set by VBoxMPCmnBuildVideoModesTable. */
+   uint32_t cVideoModes;
    ULONG CurrentMode;                          /* Saved information about video modes */
    ULONG CurrentModeWidth;
    ULONG CurrentModeHeight;

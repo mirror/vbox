@@ -309,7 +309,7 @@ VBoxDrvStartIO(PVOID HwDeviceExtension, PVIDEO_REQUEST_PACKET RequestPacket)
         {
             PVIDEO_MODE_INFORMATION pModes = (PVIDEO_MODE_INFORMATION) RequestPacket->OutputBuffer;
 
-            if (RequestPacket->OutputBufferLength < VBoxMPXpdmGetVideoModesCount()*sizeof(VIDEO_MODE_INFORMATION))
+            if (RequestPacket->OutputBufferLength < VBoxMPXpdmGetVideoModesCount(pExt)*sizeof(VIDEO_MODE_INFORMATION))
             {
                 pStatus->Status = ERROR_INSUFFICIENT_BUFFER;
                 break;
