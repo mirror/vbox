@@ -224,6 +224,7 @@ static DECLCALLBACK(void)  drvKbdQueueSuspend(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void)  drvKbdQueueResume(PPDMDRVINS pDrvIns)
 {
     PDRVKBDQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+    pThis->fInactive = false;
     pThis->fSuspended = false;
 }
 
