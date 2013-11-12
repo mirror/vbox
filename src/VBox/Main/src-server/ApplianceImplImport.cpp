@@ -2991,10 +2991,17 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
             if (FAILED(rc)) throw rc;
             stack.fSessionOpen = true;
 
+            /* get VM name from virtual system description. Only one record is possible (size of list is equal 1). */
+            std::list<VirtualSystemDescriptionEntry*> vmName = vsdescThis->findByType(VirtualSystemDescriptionType_Name);
+            std::list<VirtualSystemDescriptionEntry*>::iterator vmNameIt = vmName.begin();
+            VirtualSystemDescriptionEntry* vmNameEntry = *vmNameIt;
+
             ovf::DiskImagesMap::const_iterator oit = stack.mapDisks.begin();
             std::set<RTCString>  disksResolvedNames;
 
-            while(oit != stack.mapDisks.end())
+            uint32_t cImportedDisks = 0;
+
+            while(oit != stack.mapDisks.end() && cImportedDisks != avsdeHDs.size())
             {
                 ovf::DiskImage diCurrent = oit->second;
                 ovf::VirtualDisksMap::const_iterator itVDisk = vsysThis.mapVirtualDisks.begin();
@@ -3022,9 +3029,13 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                         }
                     }
                     if (!vsdeTargetHD)
-                        throw setError(E_FAIL,
-                                       tr("Internal inconsistency looking up disk image '%s'"),
-                                       diCurrent.strHref.c_str());
+                    {
+                        /* possible case if a disk image belongs to other virtual system (OVF package with multiple VMs inside) */
+                        LogWarning(("OVA/OVF import: Disk image %s was missed during import of VM %s\n",
+                                    oit->first.c_str(), vmNameEntry->strOvf.c_str()));
+                        ++oit;
+                        continue;
+                    }
 
                     //diCurrent.strDiskId contains the disk identifier (e.g. "vmdisk1"), which should exist
                     //in the virtual system's disks map under that ID and also in the global images map
@@ -3108,9 +3119,15 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                                     }
                                 }
                                 if (!vsdeTargetHD)
+                                {
+                                    /*
+                                     * in this case it's an error because something wrong with OVF description file.
+                                     * May be VB imports OVA package with wrong file sequence inside the archive.
+                                     */
                                     throw setError(E_FAIL,
                                                    tr("Internal inconsistency looking up disk image '%s'"),
                                                    diCurrent.strHref.c_str());
+                                }
 
                                 itVDisk = vsysThis.mapVirtualDisks.find(diCurrent.strDiskId);
                                 if (itVDisk == vsysThis.mapVirtualDisks.end())
@@ -3213,7 +3230,18 @@ void Appliance::importMachineGeneric(const ovf::VirtualSystem &vsysThis,
                 /* restore */
                 vsdeTargetHD->strVboxCurrent = savedVboxCurrent;
 
+                ++cImportedDisks;
+
             } // end while(oit != stack.mapDisks.end())
+
+            /*
+             * quantity of the imported disks isn't equal to the size of the avsdeHDs list.
+             */
+            if(cImportedDisks < avsdeHDs.size())
+            {
+                LogWarning(("Not all disk images were imported for VM %s. Check OVF description file.",
+                            vmNameEntry->strOvf.c_str()));
+            }
 
             // only now that we're done with all disks, close the session
             rc = stack.pSession->UnlockMachine();
@@ -3494,7 +3522,6 @@ void Appliance::importVBoxMachine(ComObjPtr<VirtualSystemDescription> &vsdescThi
                             oit->first.c_str(), vmNameEntry->strOvf.c_str()));
                 ++oit;
                 continue;
-
             }
         }
 
