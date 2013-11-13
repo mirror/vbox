@@ -1038,7 +1038,7 @@ int Console::configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
         /* /HM/xzy */
         PCFGMNODE pHM;
         InsertConfigNode(pRoot, "HM", &pHM);
-        InsertConfigInteger(pRoot, "HMForced", fHMForced);
+        InsertConfigInteger(pHM, "HMForced", fHMForced);
         if (fHMEnabled)
         {
             /* Indicate whether 64-bit guests are supported or not. */
