@@ -913,6 +913,12 @@ VBoxManage controlvm "nom VM" unplugcpu 3</screen></para>
         linkend="intro-installing" /> pour plus d'informations.</para>
       </note>
 
+      <para>Vous pouvez connecter la webcam de l'hôte à la VM en utilisant le
+      menu "Périphériques" dans la barre de menus de la VM.  Le menu "Webcams"
+      contient une liste des périphériques d'entrée vidéo disponibles sur l'hôte.
+      Un clic sur le nom d'une webcam connecte ou déconnecte le périphérique
+      de l'hôte correspondant.</para>
+
       <para>Il faut utiliser l'outil en ligne de commandes VBoxManage pour
       activer le passthrough webcam. Merci de voir les
       sections ci-dessous spécifiques aux hôtes pour des détails complémentaires.

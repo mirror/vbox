@@ -241,8 +241,8 @@
         <title>Installation</title>
 
         <para>Dans le menu "Périphériques" de la barre de menu de la machine
-        virtuelle, VirtualBox a un élément de menu tout prêt nommé "Installer
-        les suppléments invité", qui monte le fichier ISO des suppléments invité
+        virtuelle, VirtualBox a un élément de menu tout prêt nommé "Insérer l'image
+        du CD des suppléments invité", qui monte le fichier ISO des suppléments invité
         dans votre machine virtuelle. L'invité Windows devrait alors démarrer 
         automatiquement l'installeur des suppléments invité qui installe les
         suppléments invité dans votre invité Windows. Les autres systèmes 

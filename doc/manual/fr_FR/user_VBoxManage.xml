@@ -3193,6 +3193,235 @@ Value: 2006.01.01</screen>
             </glosslist></para>
         </listitem>
 
+     <listitem>
+          <para><emphasis role="bold"><computeroutput>removedirectory</computeroutput></emphasis>,
+          qui permet d'effacer des répertoires dans l'invité (seulement ceux où
+          sont installés les suppléments invité 4.3.2 et supérieur).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; removedir[ectory]|rmdir
+            &lt;répertoire invité&gt;... --username &lt;nom&gt;
+            [--passwordfile &lt;fichier&gt; | --password &lt;mot_de_passe&gt;]
+            [--recursive|-R|-r] [--verbose]</screen>
+
+          <para>où les paramètres signifient : <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>répertoire à supprimer dans l'invité</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Chemin absolu du/des répertoire(s) à supprimer sur 
+                  l'invité, par exemple <computeroutput>D:\Foo\Bar</computeroutput>.
+                  L'utilisateur spécifié doit avoir les bons droits pour effacer
+                  le(s) répertoire(s) de l'invité spécifié(s).</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;nom&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Nom d'utilisateur sous lequel devrait fonctionner le
+                  processus de copie. Cet utilisateur doit exister sur l'OS invité.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;fichier&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié qui lit le
+                 fichier donné. Si vous n'en mettez pas, on supposera un mot de
+                  passe vide.</para>
+             </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;mot_de_passe&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié par
+                 <computeroutput>--username</computeroutput>. Si vous n'en donnez pas, on supposera un mot de
+                  passe vide.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--recursive</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Supprime des répertoires et, récursivement, leur contenu.</para>
+            </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+                <glossdef>
+                  <para>Dit à VBoxManage d'être plus bavard.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>removefile</computeroutput></emphasis>,
+          qui permet d'effacer des fichiers sur l'invité (seulement là où sont
+          installés les suppléments invité 4.3.2 et supérieur).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; removefile|rm
+            &lt;fichier_d_invité&gt;... --username &lt;nom&gt;
+            [--passwordfile &lt;fichier&gt; | --password &lt;mot_de_passe&gt;]
+            [--verbose]</screen>
+
+          <para>où les paramètres signifient : <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>L'UUID ou le nom de la VM. Obligatoire.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>fichier à supprimer dans l'invité</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Chemin absolu du/des fichier(s) à supprimer sur
+                  l'invité, comme <computeroutput>D:\Foo\Bar\text.txt</computeroutput>.
+                  L'utilisateur spécifié doit avoir les bons droits pour effacer
+                  les fichiers spécifiés sur l'invité.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;nom&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Nom d'utilisateur sous lequel devrait fonctionner le
+                  processus de copie. Cet utilisateur doit exister sur l'OS invité.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;fichier&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié qui lit le
+                 fichier donné. Si vous n'en mettez pas, on supposera un mot de
+                  passe vide.</para>
+
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;mot_de_passe&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié avec
+                  <computeroutput>--username</computeroutput>. Si vous n'en
+                  donnez pas, un mot de passe vierge est supposé.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+             <glossdef>
+                  <para>Dit à VBoxManage d'être plus bavard.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
+        <listitem>
+          <para><emphasis role="bold"><computeroutput>ren[ame]|mv</computeroutput></emphasis>,
+          qui permet de renommer des fichiers (ou des répertoires) dans l'invité
+          (seulement là où sont installés les suppléments invité 4.3.2 et
+          supérieur).</para>
+
+          <screen>VBoxManage guestcontrol &lt;uuid|nomvm&gt; ren[ame]|mv
+            &lt;source&gt;... &lt;dest&gt; --username &lt;nom&gt;
+            [--passwordfile &lt;fichier&gt; | --password &lt;mot_de_passe&gt;]
+            [--verbose]</screen>
+
+          <para>où les paramètres signifient : <glosslist>
+              <glossentry>
+                <glossterm><computeroutput>uuid|nomvm</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>L'UUID ou le nom de la VM.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>source</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Chemin absolu d'une ou plusieurs sources à déplacer 
+                  quelque part. Si vous spécifiez plus d'une source, la destination
+                  doit être un répertoire existant sur la VM. L'utilisateur
+                  spécifié doit avoir les bons droits d'accès aux fichiers et
+                  aux répertoires sources et de destination.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>dest</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Chemin absolu de la destination où déplacer le/les
+                  source(s). Il peut s'agir d'un répertoire ou d'un fichier, selon
+                  que vous spécifiez une ou plusieurs sources. L'utilisateur 
+                  spécifié doit avoir les bons droits d'accès au fichier et au
+                  répertoire de.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--username &lt;nom&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Nom de l'utilisateur sous lequel fonctionne le processus
+                  de copie. Cet utilisateur doit exister sur l'OS invité.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--passwordfile &lt;fichier&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié d'où lire
+                  l'invité donné. Si vous n'en donnez pas, on suppose un mot de
+                  paasse vide.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--password &lt;mot_de_passe&gt;</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Mot de passe du compte utilisateur spécifié avec
+                  <computeroutput>--username</computeroutput>. Si vous n'en 
+                  donnez pas, on suppose un mot de passe vide.</para>
+                </glossdef>
+              </glossentry>
+
+              <glossentry>
+                <glossterm><computeroutput>--verbose</computeroutput></glossterm>
+
+                <glossdef>
+                  <para>Dit à VBoxManage d'être plus bavard.</para>
+                </glossdef>
+              </glossentry>
+            </glosslist></para>
+        </listitem>
+
         <listitem>
           <para><emphasis role="bold"><computeroutput>createtemporary</computeroutput></emphasis>,
           qui permet de copier des fichiers de l'hôte sur l'invité (seulement
