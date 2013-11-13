@@ -224,6 +224,8 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
     pMenu->addSeparator();
 #endif /* !Q_WS_MAC */
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Close));
+    if (m_pSession->isAllCloseActionsRestricted())
+        gActionPool->action(UIActionIndexRuntime_Simple_Close)->setEnabled(false);
 }
 
 void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
