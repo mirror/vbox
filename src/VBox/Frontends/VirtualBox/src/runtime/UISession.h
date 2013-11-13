@@ -104,6 +104,14 @@ public:
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
+    /** @name Application Close configuration stuff.
+     * @{ */
+    /** Returns default close action. */
+    MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
+    /** Returns merged restricted close actions. */
+    MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
+    /** @} */
+
     /** @name Snapshot Operations configuration stuff.
      * @{ */
     /** Returns whether we should allow snapshot operations. */
@@ -317,6 +325,14 @@ private:
     QList<QRect> m_screens;
     /** @} */
 #endif /* Q_WS_MAC */
+
+    /** @name Application Close configuration variables.
+     * @{ */
+    /** Default close action. */
+    MachineCloseAction m_defaultCloseAction;
+    /** Merged restricted close actions. */
+    MachineCloseAction m_restrictedCloseActions;
+    /** @} */
 
     /** @name Snapshot Operations configuration variables.
      * @{ */

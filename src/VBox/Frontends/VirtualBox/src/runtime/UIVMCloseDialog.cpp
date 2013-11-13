@@ -38,14 +38,17 @@
 # include "UIConverter.h"
 
 /* COM includes: */
+# include "CMachine.h"
 # include "CSession.h"
 # include "CConsole.h"
 # include "CSnapshot.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, const CMachine &machine, const CSession &session)
+UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine, const CSession &session)
     : QIWithRetranslateUI<QIDialog>(pParent)
+    , m_machine(machine)
+    , m_session(session)
     , m_fValid(false)
     , m_fIsACPIEnabled(false)
     , m_lastCloseAction(MachineCloseAction_Invalid)
@@ -54,10 +57,9 @@ UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, const CMachine &machine, cons
     prepare();
 
     /* Configure: */
-    setSizeGripEnabled(false);
-    configure(machine, session);
+    configure();
 
-    /* Retranslate finally: */
+    /* Retranslate: */
     retranslateUi();
 }
 
@@ -269,25 +271,24 @@ void UIVMCloseDialog::prepare()
         pMainLayout->addItem(pTopLayout);
         pMainLayout->addWidget(pButtonBox);
     }
+    /* Prepare size-grip token: */
+    setSizeGripEnabled(false);
 }
 
-void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session)
+void UIVMCloseDialog::configure()
 {
-    /* Assign machine: */
-    m_machine = machine;
-
-    /* Get machine-state: */
+    /* Get actual machine-state: */
     KMachineState machineState = m_machine.GetState();
 
     /* Assign pixmap: */
     setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_machine.GetOSTypeId()));
 
     /* Check which close-actions are resticted: */
-    QList<MachineCloseAction> restictedCloseActions = vboxGlobal().restrictedMachineCloseActions(m_machine);
-    bool fIsStateSavingAllowed = !restictedCloseActions.contains(MachineCloseAction_SaveState);
-    bool fIsACPIShutdownAllowed = !restictedCloseActions.contains(MachineCloseAction_Shutdown);
-    bool fIsPowerOffAllowed = !restictedCloseActions.contains(MachineCloseAction_PowerOff);
-    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedCloseActions.contains(MachineCloseAction_PowerOff_RestoringSnapshot);
+    MachineCloseAction restictedCloseActions = vboxGlobal().restrictedMachineCloseActions(m_machine);
+    bool fIsStateSavingAllowed = !(restictedCloseActions & MachineCloseAction_SaveState);
+    bool fIsACPIShutdownAllowed = !(restictedCloseActions & MachineCloseAction_Shutdown);
+    bool fIsPowerOffAllowed = !(restictedCloseActions & MachineCloseAction_PowerOff);
+    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !(restictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
 
     /* Make 'Save state' button visible/hidden depending on restriction: */
     setSaveButtonVisible(fIsStateSavingAllowed);
@@ -296,7 +297,7 @@ void UIVMCloseDialog::configure(const CMachine &machine, const CSession &session
     /* Make 'Shutdown button' visible/hidden depending on restriction: */
     setShutdownButtonVisible(fIsACPIShutdownAllowed);
     /* Make 'Shutdown button' enabled/disabled depending on ACPI-state & machine-state: */
-    m_fIsACPIEnabled = session.GetConsole().GetGuestEnteredACPIMode();
+    m_fIsACPIEnabled = m_session.GetConsole().GetGuestEnteredACPIMode();
     setShutdownButtonEnabled(m_fIsACPIEnabled && machineState != KMachineState_Stuck);
     /* Make 'Power off' button visible/hidden depending on restriction: */
     setPowerOffButtonVisible(fIsPowerOffAllowed);

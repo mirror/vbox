@@ -252,12 +252,15 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     if (!uisession()->isRunning() && !uisession()->isPaused() && !uisession()->isStuck())
         return;
 
+    /* Get machine: */
+    CMachine m = machine();
+
     /* If there is a close hook script defined: */
-    QString strScript = machine().GetExtraData(GUI_CloseActionHook);
+    QString strScript = m.GetExtraData(GUI_CloseActionHook);
     if (!strScript.isEmpty())
     {
         /* Execute asynchronously and leave: */
-        QProcess::startDetached(strScript, QStringList() << machine().GetId());
+        QProcess::startDetached(strScript, QStringList() << m.GetId());
         return;
     }
 
@@ -265,7 +268,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     MachineCloseAction closeAction = MachineCloseAction_Invalid;
 
     /* If there IS default close-action defined: */
-    QString strDefaultAction = machine().GetExtraData(GUI_DefaultCloseAction);
+    QString strDefaultAction = m.GetExtraData(GUI_DefaultCloseAction);
     if (!strDefaultAction.isEmpty())
     {
         /* Parse the close-action which was defined: */
@@ -278,7 +281,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         /* If the default-action is 'power-off',
          * we should check if its possible to discard machine-state: */
         if (closeAction == MachineCloseAction_PowerOff &&
-            machine().GetSnapshotCount() > 0)
+            m.GetSnapshotCount() > 0)
             closeAction = MachineCloseAction_PowerOff_RestoringSnapshot;
     }
 
@@ -287,7 +290,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     {
         /* Prepare close-dialog: */
         QWidget *pParentDlg = windowManager().realParentWindow(this);
-        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, machine(), session());
+        QPointer<UIVMCloseDialog> pCloseDlg = new UIVMCloseDialog(pParentDlg, m, session());
 
         /* Make sure close-dialog is valid: */
         if (pCloseDlg->isValid())

@@ -3532,6 +3532,12 @@ bool VBoxGlobal::shouldWeAllowSnapshotOperations(CMachine &machine,
     return !isApprovedByExtraData(machine, GUI_PreventSnapshotOperations);
 }
 
+/** Returns default machine close action for passed @a machine. */
+MachineCloseAction VBoxGlobal::defaultMachineCloseAction(CMachine &machine)
+{
+    return gpConverter->fromInternalString<MachineCloseAction>(machine.GetExtraData(GUI_DefaultCloseAction));
+}
+
 /* static */
 RuntimeMenuType VBoxGlobal::restrictedRuntimeMenuTypes(CMachine &machine)
 {
@@ -3589,11 +3595,11 @@ QList<IndicatorType> VBoxGlobal::restrictedStatusBarIndicators(CMachine &machine
     return result;
 }
 
-/* static */
-QList<MachineCloseAction> VBoxGlobal::restrictedMachineCloseActions(CMachine &machine)
+/** Returns merged restricted machine close actions for passed @a machine. */
+MachineCloseAction VBoxGlobal::restrictedMachineCloseActions(CMachine &machine)
 {
     /* Prepare result: */
-    QList<MachineCloseAction> result;
+    MachineCloseAction result = MachineCloseAction_Invalid;
     /* Load restricted machine-close-actions: */
     QString strList(machine.GetExtraData(GUI_RestrictedCloseActions));
     QStringList list = strList.split(',');
@@ -3602,7 +3608,7 @@ QList<MachineCloseAction> VBoxGlobal::restrictedMachineCloseActions(CMachine &ma
     {
         MachineCloseAction value = gpConverter->fromInternalString<MachineCloseAction>(strValue);
         if (value != MachineCloseAction_Invalid)
-            result << value;
+            result = static_cast<MachineCloseAction>(result | value);
     }
     /* Return result: */
     return result;
