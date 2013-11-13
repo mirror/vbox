@@ -1433,7 +1433,6 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
             AssertRCReturn(rc, rc);
             pThis->abDepressedKeys[u8] = 1;
         }
-        ps2kReleaseKeys(pThis);
     }
 
     /* Load typematic settings for Scan Set 3. */
@@ -1447,6 +1446,15 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     }
 
     return rc;
+}
+
+int PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM)
+{
+    /* This *must* be done after the inital load because it may trigger
+     * interrupts and change the interrupt controller state.
+     */
+    ps2kReleaseKeys(pThis);
+    return VINF_SUCCESS;
 }
 
 void PS2KReset(PPS2K pThis)
