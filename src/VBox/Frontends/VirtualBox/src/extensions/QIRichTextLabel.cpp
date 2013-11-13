@@ -32,13 +32,22 @@ QIRichTextLabel::QIRichTextLabel(QWidget *pParent)
 {
     /* Setup self: */
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
+
     /* Setup text-edit: */
     m_pTextEdit->setReadOnly(true);
     m_pTextEdit->setFocusPolicy(Qt::NoFocus);
     m_pTextEdit->setFrameShape(QFrame::NoFrame);
-    m_pTextEdit->viewport()->setAutoFillBackground(false);
     m_pTextEdit->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_pTextEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
+
+    /* Tune text-edit viewport palette: */
+    m_pTextEdit->viewport()->setAutoFillBackground(false);
+    QPalette pal = m_pTextEdit->viewport()->palette();
+    pal.setColor(QPalette::Active,   QPalette::Text, pal.color(QPalette::Active,   QPalette::WindowText));
+    pal.setColor(QPalette::Inactive, QPalette::Text, pal.color(QPalette::Inactive, QPalette::WindowText));
+    pal.setColor(QPalette::Disabled, QPalette::Text, pal.color(QPalette::Disabled, QPalette::WindowText));
+    m_pTextEdit->viewport()->setPalette(pal);
+
     /* Add into parent: */
     QVBoxLayout *pMainLayout = new QVBoxLayout(this);
     pMainLayout->setMargin(0);
