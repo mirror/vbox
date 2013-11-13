@@ -31,7 +31,10 @@
 
 /** @name Saved state version numbers.
  * @{ */
-#define PATM_SSM_VERSION                    55
+/** Uses normal structure serialization with markers and everything. */
+#define PATM_SSM_VERSION                    56
+/** Last version which saves structures as raw memory. */
+#define PATM_SSM_VERSION_MEM                55
 #define PATM_SSM_VERSION_FIXUP_HACK         54
 #define PATM_SSM_VERSION_FIXUP_HACK         54
 #define PATM_SSM_VERSION_VER16              53
