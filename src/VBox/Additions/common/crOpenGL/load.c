@@ -209,16 +209,19 @@ static void stubCheckWindowsState(void)
         return;
 #endif
 
+    /* Try to keep a consistent locking order. */
+    crHashtableLock(stub.windowTable);
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
     crLockMutex(&stub.mutex);
 #endif
 
     stubCheckWindowState(context->currentDrawable, GL_TRUE);
-    crHashtableWalk(stub.windowTable, stubCheckWindowsCB, context);
+    crHashtableWalkUnlocked(stub.windowTable, stubCheckWindowsCB, context);
 
 #if defined(CR_NEWWINTRACK) && !defined(WINDOWS)
     crUnlockMutex(&stub.mutex);
 #endif
+    crHashtableUnlock(stub.windowTable);
 }
 
 
@@ -891,9 +894,12 @@ static DECLCALLBACK(int) stubSyncThreadProc(RTTHREAD ThreadSelf, void *pvUser)
             }
         }
 #else
+        /* Try to keep a consistent locking order. */
+        crHashtableLock(stub.windowTable);
         crLockMutex(&stub.mutex);
-        crHashtableWalk(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
+        crHashtableWalkUnlocked(stub.windowTable, stubSyncTrCheckWindowsCB, NULL);
         crUnlockMutex(&stub.mutex);
+        crHashtableUnlock(stub.windowTable);
         RTThreadSleep(50);
 #endif
     }
