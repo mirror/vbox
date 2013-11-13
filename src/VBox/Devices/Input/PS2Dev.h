@@ -50,6 +50,7 @@ void PS2KReset(PPS2K pThis);
 void PS2KRelocate(PPS2K pThis, RTGCINTPTR offDelta, PPDMDEVINS pDevIns);
 void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM);
 int  PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion);
+int  PS2KLoadDone(PPS2K pThis, PSSMHANDLE pSSM);
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns);
 
