@@ -25,6 +25,7 @@
 #include "UIDefs.h"
 
 /* Forward declarations: */
+enum MachineCloseAction;
 class CMachine;
 class QLabel;
 class QRadioButton;
@@ -38,7 +39,8 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
 public:
 
     /* Constructor: */
-    UIVMCloseDialog(QWidget *pParent, CMachine &machine, bool fIsACPIEnabled);
+    UIVMCloseDialog(QWidget *pParent, CMachine &machine,
+                    bool fIsACPIEnabled, MachineCloseAction restictedCloseActions);
 
     /* API: Validation stuff: */
     bool isValid() const { return m_fValid; }
@@ -94,6 +96,7 @@ private:
 
     /* Variables: */
     CMachine &m_machine;
+    const MachineCloseAction m_restictedCloseActions;
     bool m_fIsACPIEnabled;
     bool m_fValid;
     QString m_strDiscardCheckBoxText;

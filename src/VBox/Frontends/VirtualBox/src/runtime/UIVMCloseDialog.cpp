@@ -45,9 +45,11 @@
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
-UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine, bool fIsACPIEnabled)
+UIVMCloseDialog::UIVMCloseDialog(QWidget *pParent, CMachine &machine,
+                                 bool fIsACPIEnabled, MachineCloseAction restictedCloseActions)
     : QIWithRetranslateUI<QIDialog>(pParent)
     , m_machine(machine)
+    , m_restictedCloseActions(restictedCloseActions)
     , m_fIsACPIEnabled(fIsACPIEnabled)
     , m_fValid(false)
     , m_lastCloseAction(MachineCloseAction_Invalid)
@@ -283,11 +285,10 @@ void UIVMCloseDialog::configure()
     setPixmap(vboxGlobal().vmGuestOSTypeIcon(m_machine.GetOSTypeId()));
 
     /* Check which close-actions are resticted: */
-    MachineCloseAction restictedCloseActions = vboxGlobal().restrictedMachineCloseActions(m_machine);
-    bool fIsStateSavingAllowed = !(restictedCloseActions & MachineCloseAction_SaveState);
-    bool fIsACPIShutdownAllowed = !(restictedCloseActions & MachineCloseAction_Shutdown);
-    bool fIsPowerOffAllowed = !(restictedCloseActions & MachineCloseAction_PowerOff);
-    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !(restictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
+    bool fIsStateSavingAllowed = !(m_restictedCloseActions & MachineCloseAction_SaveState);
+    bool fIsACPIShutdownAllowed = !(m_restictedCloseActions & MachineCloseAction_Shutdown);
+    bool fIsPowerOffAllowed = !(m_restictedCloseActions & MachineCloseAction_PowerOff);
+    bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !(m_restictedCloseActions & MachineCloseAction_PowerOff_RestoringSnapshot);
 
     /* Make 'Save state' button visible/hidden depending on restriction: */
     setSaveButtonVisible(fIsStateSavingAllowed);
