@@ -26,7 +26,6 @@
 
 /* Forward declarations: */
 class CMachine;
-class CSession;
 class QLabel;
 class QRadioButton;
 class QCheckBox;
@@ -39,7 +38,7 @@ class UIVMCloseDialog : public QIWithRetranslateUI<QIDialog>
 public:
 
     /* Constructor: */
-    UIVMCloseDialog(QWidget *pParent, CMachine &machine, const CSession &session);
+    UIVMCloseDialog(QWidget *pParent, CMachine &machine, bool fIsACPIEnabled);
 
     /* API: Validation stuff: */
     bool isValid() const { return m_fValid; }
@@ -95,9 +94,8 @@ private:
 
     /* Variables: */
     CMachine &m_machine;
-    const CSession &m_session;
-    bool m_fValid;
     bool m_fIsACPIEnabled;
+    bool m_fValid;
     QString m_strDiscardCheckBoxText;
     MachineCloseAction m_lastCloseAction;
 };
