@@ -358,10 +358,11 @@ public:
                                     bool fIncludingMachineGeneralCheck = false);
     static bool shouldWeAutoMountGuestScreens(CMachine &machine, bool fIncludingSanityCheck = true);
     static bool shouldWeAllowSnapshotOperations(CMachine &machine, bool fIncludingSanityCheck = true);
+    static MachineCloseAction defaultMachineCloseAction(CMachine &machine);
     static RuntimeMenuType restrictedRuntimeMenuTypes(CMachine &machine);
     static UIVisualStateType restrictedVisualStateTypes(CMachine &machine);
     static QList<IndicatorType> restrictedStatusBarIndicators(CMachine &machine);
-    static QList<MachineCloseAction> restrictedMachineCloseActions(CMachine &machine);
+    static MachineCloseAction restrictedMachineCloseActions(CMachine &machine);
     static QList<GlobalSettingsPageType> restrictedGlobalSettingsPages(CVirtualBox &vbox);
     static QList<MachineSettingsPageType> restrictedMachineSettingsPages(CMachine &machine);
 

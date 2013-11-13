@@ -131,6 +131,8 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 #ifdef Q_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif /* Q_WS_MAC */
+    , m_defaultCloseAction(MachineCloseAction_Invalid)
+    , m_restrictedCloseActions(MachineCloseAction_Invalid)
     , m_fSnapshotOperationsAllowed(true)
     /* Common flags: */
     , m_fIsFirstTimeStarted(false)
@@ -1085,6 +1087,10 @@ void UISession::loadSessionSettings()
         /* Should we allow reconfiguration? */
         m_fReconfigurable = VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
         updateSessionSettings();
+
+        /* What is the default close action and the restricted are? */
+        m_defaultCloseAction = vboxGlobal().defaultMachineCloseAction(machine);
+        m_restrictedCloseActions = vboxGlobal().restrictedMachineCloseActions(machine);
 
         /* Should we allow snapshot operations? */
         m_fSnapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(machine);

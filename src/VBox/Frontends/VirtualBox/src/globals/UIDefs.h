@@ -350,12 +350,12 @@ Q_DECLARE_METATYPE(IndicatorType);
 /* Machine close action: */
 enum MachineCloseAction
 {
-    MachineCloseAction_Invalid,
-    MachineCloseAction_SaveState,
-    MachineCloseAction_Shutdown,
-    MachineCloseAction_PowerOff,
-    MachineCloseAction_PowerOff_RestoringSnapshot,
-    MachineCloseAction_Max
+    MachineCloseAction_Invalid                    = 0,
+    MachineCloseAction_SaveState                  = RT_BIT(0),
+    MachineCloseAction_Shutdown                   = RT_BIT(1),
+    MachineCloseAction_PowerOff                   = RT_BIT(2),
+    MachineCloseAction_PowerOff_RestoringSnapshot = RT_BIT(3),
+    MachineCloseAction_All                        = 0xFF
 };
 Q_DECLARE_METATYPE(MachineCloseAction);
 
