@@ -1,8 +1,6 @@
 /* $Id$ */
 /** @file
- *
- * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineMenuBar class implementation
+ * VBox Qt GUI - UIMachineMenuBar class implementation.
  */
 
 /*
@@ -29,51 +27,62 @@
 #include "UIActionPoolRuntime.h"
 #include "VBoxGlobal.h"
 #include "UIMessageCenter.h"
-#include "UIExtraDataEventHandler.h"
 #include "UIImageTools.h"
 #include "UINetworkManager.h"
-#include "VBoxGlobal.h"
-#include "UISession.h"
 
 /* COM includes: */
 #include "CMachine.h"
 
-/* Helper QMenu reimplementation which allows
- * to highlight first menu item for popped up menu: */
+
+/**
+ * QMenu sub-class with extended functionality.
+ * Allows to highlight first menu item for popped up menu.
+ */
 class QIMenu : public QMenu
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructor. */
     QIMenu() : QMenu(0) {}
 
 private slots:
 
-    void sltSelectFirstAction()
+    /** Highlights first menu action for popped up menu. */
+    void sltHighlightFirstAction()
     {
 #ifdef Q_WS_WIN
         activateWindow();
-#endif
+#endif /* Q_WS_WIN */
         QMenu::focusNextChild();
     }
 };
 
+
+/**
+ * QMenuBar sub-class with extended functionality.
+ * Reflects BETA label when necessary.
+ */
 class UIMenuBar: public QMenuBar
 {
+    Q_OBJECT;
+
 public:
 
+    /** Constructor. */
     UIMenuBar(QWidget *pParent = 0)
-      : QMenuBar(pParent)
-      , m_fShowBetaLabel(false)
+        : QMenuBar(pParent)
+        , m_fShowBetaLabel(false)
     {
-        /* Check for beta versions */
+        /* Check for beta versions: */
         if (vboxGlobal().isBeta())
             m_fShowBetaLabel = true;
     }
 
 protected:
 
+    /** Paint-event reimplementation. */
     void paintEvent(QPaintEvent *pEvent)
     {
         QMenuBar::paintEvent(pEvent);
@@ -95,15 +104,13 @@ protected:
 
 private:
 
-    /* Private member vars */
+    /** Reflects whether we should show BETA label or not. */
     bool m_fShowBetaLabel;
 };
 
-UIMachineMenuBar::UIMachineMenuBar(UISession *pSession, const CMachine &machine)
-    /* On the Mac we add some items only the first time, cause otherwise they
-     * will be merged more than once to the application menu by Qt. */
+
+UIMachineMenuBar::UIMachineMenuBar(UISession *pSession)
     : m_pSession(pSession)
-    , m_machine(machine)
 {
 }
 
@@ -166,8 +173,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(RuntimeMenuType fOptions /* = Ru
     /* Debug submenu: */
     if (fOptions & RuntimeMenuType_Debug)
     {
-        CMachine machine; /** @todo we should try get the machine here. But we'll
-                           *        probably be fine with the cached values. */
+        CMachine machine = m_pSession->session().GetMachine();
         if (vboxGlobal().isDebuggerEnabled(machine))
         {
             QMenu *pMenuDebug = gActionPool->action(UIActionIndexRuntime_Menu_Debug)->menu();
@@ -175,7 +181,7 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(RuntimeMenuType fOptions /* = Ru
             preparedSubMenus << pMenuDebug;
         }
     }
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     /* Help submenu: */
     if (fOptions & RuntimeMenuType_Help)
@@ -197,7 +203,7 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
 
     /* Machine submenu: */
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_SettingsDialog));
-    if (vboxGlobal().shouldWeAllowSnapshotOperations(m_machine))
+    if (m_pSession->isSnapshotOperationsAllowed())
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot));
     else
         gActionPool->action(UIActionIndexRuntime_Simple_TakeSnapshot)->setEnabled(false);
@@ -209,7 +215,7 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu)
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TypeCAD));
 #ifdef Q_WS_X11
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_TypeCABS));
-#endif
+#endif /* Q_WS_X11 */
     pMenu->addSeparator();
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Pause));
     pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Simple_Reset));
@@ -227,9 +233,9 @@ void UIMachineMenuBar::prepareMenuView(QMenu *pMenu)
         return;
 
     /* View submenu: */
-    bool fIsAllowedFullscreen = uisession()->isVisualStateAllowedFullscreen();
-    bool fIsAllowedSeamless = uisession()->isVisualStateAllowedSeamless();
-    bool fIsAllowedScale = uisession()->isVisualStateAllowedScale();
+    bool fIsAllowedFullscreen = m_pSession->isVisualStateAllowedFullscreen();
+    bool fIsAllowedSeamless = m_pSession->isVisualStateAllowedSeamless();
+    bool fIsAllowedScale = m_pSession->isVisualStateAllowedScale();
     gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen)->setEnabled(fIsAllowedFullscreen);
     if (fIsAllowedFullscreen)
         pMenu->addAction(gActionPool->action(UIActionIndexRuntime_Toggle_Fullscreen));
