@@ -166,11 +166,11 @@ HRESULT HostDnsServiceLinux::init(const char *aResolvConfFileName)
     HRESULT hrc = HostDnsServiceResolvConf::init(aResolvConfFileName);
     AssertComRCReturnRC(hrc);
 
-    int rc = RTThreadCreate(&g_DnsMonitoringThread, HostDnsServiceLinux::hostMonitoringRoutine,
-                            this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
+    rc = RTSemEventCreate(&g_DnsInitEvent);
     AssertRCReturn(rc, E_FAIL);
 
-    rc = RTSemEventCreate(&g_DnsInitEvent);
+    int rc = RTThreadCreate(&g_DnsMonitoringThread, HostDnsServiceLinux::hostMonitoringRoutine,
+                            this, 128 * _1K, RTTHREADTYPE_IO, 0, "dns-monitor");
     AssertRCReturn(rc, E_FAIL);
 
     RTSemEventWait(g_DnsInitEvent, RT_INDEFINITE_WAIT);
