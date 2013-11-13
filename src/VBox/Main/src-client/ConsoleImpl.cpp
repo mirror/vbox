@@ -5382,7 +5382,8 @@ HRESULT Console::onExtraDataChange(IN_BSTR aMachineId, IN_BSTR aKey, IN_BSTR aVa
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturnRC(autoCaller.rc());
+    if (FAILED(autoCaller.rc()))
+        return autoCaller.rc();
 
     if (!aMachineId)
         return S_OK;
