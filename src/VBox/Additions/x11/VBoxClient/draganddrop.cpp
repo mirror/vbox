@@ -1727,7 +1727,12 @@ int DragAndDropService::x11DragAndDropTerm()
     }
 
     /* We cannot signal the m_hHGCMThread as it is most likely waiting in vbglR3DoIOCtl() */
+    /** @todo r=michael Don't we have a mechanism for cancelling HGCM calls
+     *                  though? */
     /* Wait for our event threads to stop. */
+    /** @todo r=michael This routine is generally called on the X11 thread,
+     *                  protected by a mutex, so the following thread wait
+     *                  makes us hang forever. */
     if (m_hX11Thread)
         RTThreadWait(m_hX11Thread, RT_INDEFINITE_WAIT, NULL);
     /* Cleanup */
