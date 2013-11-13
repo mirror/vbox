@@ -104,6 +104,12 @@ public:
     QMenuBar* newMenuBar(RuntimeMenuType fOptions = RuntimeMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
+    /** @name Snapshot Operations configuration stuff.
+     * @{ */
+    /** Returns whether we should allow snapshot operations. */
+    bool isSnapshotOperationsAllowed() const { return m_fSnapshotOperationsAllowed; }
+    /** @} */
+
     /* API: Visual-state stuff: */
     bool isVisualStateAllowedFullscreen() const;
     bool isVisualStateAllowedSeamless() const;
@@ -297,9 +303,11 @@ private:
     KMachineState m_machineStatePrevious;
     KMachineState m_machineState;
     QCursor m_cursor;
+
 #if defined(Q_WS_WIN)
     HCURSOR m_alphaCursor;
 #endif
+
 #ifdef Q_WS_MAC
     /** @name MacOS X: Display reconfiguration variables.
      * @{ */
@@ -309,6 +317,12 @@ private:
     QList<QRect> m_screens;
     /** @} */
 #endif /* Q_WS_MAC */
+
+    /** @name Snapshot Operations configuration variables.
+     * @{ */
+    /** Determines whether we should allow snapshot operations. */
+    bool m_fSnapshotOperationsAllowed;
+    /** @} */
 
     /* Common flags: */
     bool m_fIsFirstTimeStarted : 1;

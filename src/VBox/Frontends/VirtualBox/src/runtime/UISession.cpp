@@ -131,6 +131,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
 #ifdef Q_WS_MAC
     , m_pWatchdogDisplayChange(0)
 #endif /* Q_WS_MAC */
+    , m_fSnapshotOperationsAllowed(true)
     /* Common flags: */
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRuntimeMediumsChanging(false)
@@ -1053,7 +1054,7 @@ void UISession::prepareFramebuffers()
 
 void UISession::prepareMenuPool()
 {
-    m_pMenuPool = new UIMachineMenuBar(this, session().GetMachine());
+    m_pMenuPool = new UIMachineMenuBar(this);
 }
 
 void UISession::loadSessionSettings()
@@ -1084,6 +1085,9 @@ void UISession::loadSessionSettings()
         /* Should we allow reconfiguration? */
         m_fReconfigurable = VBoxGlobal::shouldWeAllowMachineReconfiguration(machine);
         updateSessionSettings();
+
+        /* Should we allow snapshot operations? */
+        m_fSnapshotOperationsAllowed = vboxGlobal().shouldWeAllowSnapshotOperations(machine);
 
 #if 0 /* Disabled for now! */
 # ifdef Q_WS_WIN
