@@ -110,6 +110,8 @@ public:
     MachineCloseAction defaultCloseAction() const { return m_defaultCloseAction; }
     /** Returns merged restricted close actions. */
     MachineCloseAction restrictedCloseActions() const { return m_restrictedCloseActions; }
+    /** Returns whether all the close actions are restricted. */
+    bool isAllCloseActionsRestricted() const { return m_fAllCloseActionsRestricted; }
     /** @} */
 
     /** @name Snapshot Operations configuration stuff.
@@ -332,6 +334,8 @@ private:
     MachineCloseAction m_defaultCloseAction;
     /** Merged restricted close actions. */
     MachineCloseAction m_restrictedCloseActions;
+    /** Determines whether all the close actions are restricted. */
+    bool m_fAllCloseActionsRestricted;
     /** @} */
 
     /** @name Snapshot Operations configuration variables.
