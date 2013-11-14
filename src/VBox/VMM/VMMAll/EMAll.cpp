@@ -189,6 +189,7 @@ VMM_INT_DECL(int) EMMonitorWaitPrepare(PVMCPU pVCpu, uint64_t rax, uint64_t rcx,
     pVCpu->em.s.MWait.uMonitorRDX = rdx;
     pVCpu->em.s.MWait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
     /** @todo Make use of GCPhys. */
+    NOREF(GCPhys);
     /** @todo Complete MONITOR implementation.  */
     return VINF_SUCCESS;
 }
@@ -418,6 +419,7 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
 
 DECLINLINE(int) emDisCoreOne(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, RTGCUINTPTR InstrGC, uint32_t *pOpsize)
 {
+    NOREF(pVM);
     return DISInstrWithReader(InstrGC, (DISCPUMODE)pDis->uCpuMode, emReadBytes, pVCpu, pDis, pOpsize);
 }
 
@@ -471,6 +473,7 @@ VMM_INT_DECL(int) EMInterpretDisasCurrent(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
 VMM_INT_DECL(int) EMInterpretDisasOneEx(PVM pVM, PVMCPU pVCpu, RTGCUINTPTR GCPtrInstr, PCCPUMCTXCORE pCtxCore,
                                         PDISCPUSTATE pDis, unsigned *pcbInstr)
 {
+    NOREF(pVM);
     Assert(pCtxCore == CPUMGetGuestCtxCore(pVCpu));
     DISCPUMODE enmCpuMode = CPUMGetGuestDisMode(pVCpu);
     /** @todo Deal with too long instruction (=> \#GP), opcode read errors (=>
@@ -3351,6 +3354,7 @@ static int emInterpretLmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
  */
 static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
+    NOREF(pvFault); NOREF(pcbSize);
     DISQPVPARAMVAL param1;
     uint64_t    cr0 = CPUMGetGuestCR0(pVCpu);
 
