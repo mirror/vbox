@@ -102,7 +102,7 @@ typedef struct CRVBOXHGSMI_CMDDATA {
     char         *pWriteback;
     unsigned int *pcbWriteback;
     unsigned int cbWriteback;
-    bool fCompleteNeeded;
+    uint8_t fCompleteNeeded;
 } CRVBOXHGSMI_CMDDATA, *PCRVBOXHGSMI_CMDDATA;
 
 #ifdef DEBUG
