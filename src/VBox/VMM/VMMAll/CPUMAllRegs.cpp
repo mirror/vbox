@@ -1942,6 +1942,7 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
                 break;
         }
 
+        NOREF(type);
         *pEax |= ((cores - 1) << 26)        |
                  ((sharing - 1) << 14)      |
                  (level << 5)               |

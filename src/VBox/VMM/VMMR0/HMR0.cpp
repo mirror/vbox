@@ -230,12 +230,6 @@ static DECLCALLBACK(int) hmR0DummyEnter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO 
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyLeave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
-    return VINF_SUCCESS;
-}
-
 static DECLCALLBACK(void) hmR0DummyThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
 {
     NOREF(enmEvent); NOREF(pVCpu); NOREF(fGlobalInit);
@@ -281,12 +275,6 @@ static DECLCALLBACK(int) hmR0DummyRunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX p
 static DECLCALLBACK(int) hmR0DummySaveHostState(PVM pVM, PVMCPU pVCpu)
 {
     NOREF(pVM); NOREF(pVCpu);
-    return VINF_SUCCESS;
-}
-
-static DECLCALLBACK(int) hmR0DummyLoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
-{
-    NOREF(pVM); NOREF(pVCpu); NOREF(pCtx);
     return VINF_SUCCESS;
 }
 
@@ -1341,7 +1329,6 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVM pVM)
     RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
     RTThreadPreemptDisable(&PreemptState);
     RTCPUID          idCpu  = RTMpCpuId();
-    PHMGLOBALCPUINFO pCpu   = &g_HvmR0.aCpuInfo[idCpu];
 
     /* Enable VT-x or AMD-V if local init is required. */
     int rc;
@@ -1459,6 +1446,7 @@ VMMR0_INT_DECL(int) HMR0Enter(PVM pVM, PVMCPU pVCpu)
 VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPU pVCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    VMCPU_ASSERT_EMT_RETURN(pVCpu, VERR_HM_WRONG_CPU_1);
 
     RTCPUID          idCpu = RTMpCpuId();
     PHMGLOBALCPUINFO pCpu  = &g_HvmR0.aCpuInfo[idCpu];
@@ -1693,6 +1681,8 @@ VMMR0_INT_DECL(void) HMR0SavePendingIOPortWrite(PVMCPU pVCpu, RTGCPTR GCPtrRip, 
  */
 VMMR0_INT_DECL(int) HMR0EnterSwitcher(PVM pVM, VMMSWITCHER enmSwitcher, bool *pfVTxDisabled)
 {
+    NOREF(pVM);
+
     Assert(!(ASMGetFlags() & X86_EFL_IF) || !RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     *pfVTxDisabled = false;

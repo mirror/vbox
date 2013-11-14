@@ -126,6 +126,8 @@ VMMR0_INT_DECL(int) CPUMR0ModuleTerm(void)
  */
 static DECLCALLBACK(void) cpumR0CheckCpuid(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    NOREF(idCpu); NOREF(pvUser2);
+
     struct
     {
         uint32_t uLeave; /* leave to check */
@@ -351,6 +353,7 @@ VMMR0_INT_DECL(int) CPUMR0Trap07Handler(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
+
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 #if HC_ARCH_BITS == 32 && defined(VBOX_WITH_64_BITS_GUESTS) && !defined(VBOX_WITH_HYBRID_32BIT_KERNEL)
     if (CPUMIsGuestInLongModeEx(pCtx))
@@ -366,6 +369,7 @@ VMMR0_INT_DECL(int) CPUMR0LoadGuestFPU(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     else
 #endif
     {
+        NOREF(pCtx);
         Assert(!(pVCpu->cpum.s.fUseFlags & CPUM_USED_MANUAL_XMM_RESTORE));
         /** @todo Move the FFXR handling down into
          *        cpumR0SaveHostRestoreGuestFPUState to optimize the
@@ -791,6 +795,8 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuProber(RTCPUID idCpu, void *pvUse
  */
 static DECLCALLBACK(void) cpumR0MapLocalApicCpuChecker(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
+    NOREF(pvUser1); NOREF(pvUser2);
+
     int iCpu = RTMpCpuIdToSetIndex(idCpu);
     AssertReturnVoid(iCpu >= 0 && (unsigned)iCpu < RT_ELEMENTS(g_aLApics));
     if (!g_aLApics[iCpu].fEnabled)
