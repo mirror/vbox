@@ -239,7 +239,14 @@
 
 {\fontsize{16pt}{20pt}\selectfont\rmfamily%
 \begin{center}
-\docbooktitleedition
+</xsl:text>
+    <xsl:if test="//bookinfo/othercredit">
+      <xsl:text>\docbookbookinfoothercreditcontrib{}: \docbookbookinfoothercreditfirstname{} \docbookbookinfoothercreditsurname
+
+\vspace{8mm}
+</xsl:text>
+    </xsl:if>
+    <xsl:text>\docbooktitleedition
 
 \vspace{2mm}
 
@@ -367,6 +374,36 @@
     <xsl:choose>
       <xsl:when test="name(..)='copyright'">
         <xsl:text>\newcommand\docbookbookinfocopyrightholder{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}&#x0a;</xsl:text>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="firstname">
+    <xsl:choose>
+      <xsl:when test="name(..)='othercredit'">
+        <xsl:text>\newcommand\docbookbookinfoothercreditfirstname{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}&#x0a;</xsl:text>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="surname">
+    <xsl:choose>
+      <xsl:when test="name(..)='othercredit'">
+        <xsl:text>\newcommand\docbookbookinfoothercreditsurname{</xsl:text>
+        <xsl:apply-templates />
+        <xsl:text>}&#x0a;</xsl:text>
+      </xsl:when>
+    </xsl:choose>
+  </xsl:template>
+
+  <xsl:template match="contrib">
+    <xsl:choose>
+      <xsl:when test="name(..)='othercredit'">
+        <xsl:text>\newcommand\docbookbookinfoothercreditcontrib{</xsl:text>
         <xsl:apply-templates />
         <xsl:text>}&#x0a;</xsl:text>
       </xsl:when>
