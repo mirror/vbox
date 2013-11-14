@@ -87,6 +87,7 @@ unlink
 unsetenv
 utimes
 vfprintf
+__vfprintf_chk
 write
 xf86AddEnabledDevice
 xf86AddInputDriver
