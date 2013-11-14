@@ -226,6 +226,7 @@ static PFNDISPARSE const g_apfnCalcSize[IDX_ParseMax] =
 static DECLCALLBACK(int) disReadBytesDefault(PDISSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
 {
 #ifdef IN_RING0
+    NOREF(cbMinRead);
     AssertMsgFailed(("disReadWord with no read callback in ring 0!!\n"));
     RT_BZERO(&pDis->abInstr[offInstr], cbMaxRead);
     pDis->cbCachedInstr = offInstr + cbMaxRead;
@@ -805,8 +806,6 @@ static size_t ParseSIB_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis
 static void disasmModRMReg(unsigned idx, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam, int fRegAddr)
 {
     NOREF(pOp); NOREF(pDis);
-
-    unsigned mod     = pDis->ModRM.Bits.Mod;
 
     unsigned type    = OP_PARM_VTYPE(pParam->fParam);
     unsigned subtype = OP_PARM_VSUBTYPE(pParam->fParam);
@@ -1562,6 +1561,7 @@ static size_t ParseImmVRel_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 //*****************************************************************************
 static size_t ParseImmAddr(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
+    NOREF(pOp);
     if (pDis->uAddrMode == DISCPUMODE_32BIT)
     {
         if (OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p)
@@ -1644,6 +1644,7 @@ static size_t ParseImmAddr_SizeOnly(size_t offInstr, PCDISOPCODE pOp, PDISSTATE 
 //*****************************************************************************
 static size_t ParseImmAddrF(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
+    NOREF(pOp);
     // immediate far pointers - only 16:16 or 16:32; determined by operand, *not* address size!
     Assert(pDis->uOpMode == DISCPUMODE_16BIT || pDis->uOpMode == DISCPUMODE_32BIT);
     Assert(OP_PARM_VSUBTYPE(pParam->fParam) == OP_PARM_p);
@@ -1881,6 +1882,7 @@ static size_t ParseYb(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPA
 //*****************************************************************************
 static size_t ParseInvOpModRm(size_t offInstr, PCDISOPCODE pOp, PDISSTATE pDis, PDISOPPARAM pParam)
 {
+    NOREF(pOp); NOREF(pDis); NOREF(pParam);
     /* This is used to avoid a bunch of special hacks to get the ModRM byte
        included when encountering invalid opcodes in groups. */
     return offInstr + 1;

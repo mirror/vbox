@@ -2379,6 +2379,8 @@ static void intnetR0TrunkIfSnoopAddr(PINTNETNETWORK pNetwork, PCINTNETSG pSG, ui
  */
 static void intnetR0IfSnoopIPv6SourceAddr(PINTNETIF pIf, PCRTNETIPV6 pIpHdr, uint32_t cbPacket, bool fGso)
 {
+    NOREF(fGso);
+
     /*
      * Check the header size first to prevent access invalid data.
      */
@@ -2936,6 +2938,8 @@ static void intnetR0TrunkIfSend(PINTNETTRUNKIF pThis, PINTNETNETWORK pNetwork, P
  */
 static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
+    NOREF(pNetwork);
+
     if (RT_BE2H_U16(pEthHdr->EtherType) != RTNET_ETHERTYPE_IPV6)
         return false;
     /*
@@ -2957,8 +2961,6 @@ static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINT
             return false;
         pIPv6 = (PRTNETIPV6)bTmp;
     }
-
-    PCRTNETNDP pNd  = (PCRTNETNDP) (pIPv6 + 1);
 
     /* Check IPv6 destination address if it is a multicast address. */
     static uint8_t auSolicitedNodeMulticastPrefix[] =
@@ -3001,6 +3003,8 @@ static bool intnetR0NetworkDetectAndFixNdBroadcast(PINTNETNETWORK pNetwork, PINT
  */
 static void intnetR0NetworkSnoopNAFromWire(PINTNETNETWORK pNetwork, PINTNETSG pSG, PRTNETETHERHDR pEthHdr)
 {
+    NOREF(pEthHdr);
+
     /*
      * Check the minimum size and get a linear copy of the thing to work on,
      * using the temporary buffer if necessary.

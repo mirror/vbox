@@ -888,7 +888,6 @@ DECLEXPORT(int) TSTRTR0TimerSrvReqHandler(PSUPDRVSESSION pSession, uint32_t uOpe
                 RTThreadSleep(2);
 
             RTR0TESTR0_CHECK_RC_BREAK(RTTimerStop(pTimer), VINF_SUCCESS);
-            uint64_t    cNsElapsedX = RTTimeNanoTS() - uStartNsTS;
 
             /*
              * Process the result.
