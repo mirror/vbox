@@ -12,6 +12,12 @@
 
     <corpauthor>$VBOX_VENDOR</corpauthor>
 
+    <othercredit class="translator">
+      <contrib>Traducteur</contrib>
+      <firstname>Jean-Philippe</firstname>
+      <surname>Mengual</surname>
+    </othercredit>
+
     <address>http://www.virtualbox.org</address>
 
     <copyright>
