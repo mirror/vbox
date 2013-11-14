@@ -25,6 +25,8 @@
 #include "HGSMI/SHGSMIHost.h"
 #include "HGSMI/HGSMIHostHlp.h"
 
+#include <VBox/VBoxVideo3D.h>
+
 #ifdef VBOX_VDMA_WITH_WORKERTHREAD
 typedef enum
 {
@@ -205,6 +207,11 @@ static int vboxVDMACrCtlPost(PVGASTATE pVGAState, PVBOXVDMACMD_CHROMIUM_CTL pCmd
     return rc;
 }
 
+static DECLCALLBACK(int) vboxVDMACrCmdCltCmdGet(HVBOXCRCMDCLT hClt, PVBOXCMDVBVA_HDR *ppNextCmd, uint32_t *pcbNextCmd)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 {
     PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pCmd;
@@ -212,9 +219,13 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
                                                                           sizeof (*pCmd));
     if (pCmd)
     {
+        VBOXCRCMD_CLTINFO CltInfo;
+        CltInfo.hClient = pVdma;
+        CltInfo.pfnCmdGet = vboxVDMACrCmdCltCmdGet;
         PVGASTATE pVGAState = pVdma->pVGAState;
         pCmd->pvVRamBase = pVGAState->vram_ptrR3;
         pCmd->cbVRam = pVGAState->vram_size;
+        pCmd->pCrCmdClientInfo = &CltInfo;
         int rc = vboxVDMACrCtlPost(pVGAState, &pCmd->Hdr, sizeof (*pCmd));
         Assert(RT_SUCCESS(rc) || rc == VERR_NOT_SUPPORTED);
         if (RT_SUCCESS(rc))

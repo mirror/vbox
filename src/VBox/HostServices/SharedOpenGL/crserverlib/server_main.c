@@ -3055,7 +3055,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
  *
  * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
  * */
-int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
+static int32_t crVBoxServerCrHgsmiCmdProcess(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, bool fCompleteNeeded)
 {
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
@@ -3069,6 +3069,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     if (!g_pvVRamBase)
     {
         crWarning("g_pvVRamBase is not initialized");
+        if (!fCompleteNeeded)
+            return VERR_INVALID_STATE;
+
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_STATE);
         return VINF_SUCCESS;
     }
@@ -3076,6 +3079,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     if (!cBuffers)
     {
         crWarning("zero buffers passed in!");
+        if (!fCompleteNeeded)
+            return VERR_INVALID_PARAMETER;
+
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
     }
@@ -3087,6 +3093,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     if (!pHdr)
     {
         crWarning("invalid header buffer!");
+        if (!fCompleteNeeded)
+            return VERR_INVALID_PARAMETER;
+
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
     }
@@ -3094,6 +3103,9 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     if (cbHdr < sizeof (*pHdr))
     {
         crWarning("invalid header buffer size!");
+        if (!fCompleteNeeded)
+            return VERR_INVALID_PARAMETER;
+
         crServerCrHgsmiCmdComplete(pCmd, VERR_INVALID_PARAMETER);
         return VINF_SUCCESS;
     }
@@ -3143,7 +3155,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
-                CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr);
+                CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, fCompleteNeeded);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
                 return rc;
@@ -3198,7 +3210,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
-                CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr);
+                CRVBOXHGSMI_CMDDATA_SET(&pClient->conn->CmdData, pCmd, pHdr, fCompleteNeeded);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
                 return rc;
@@ -3254,6 +3266,10 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
                 /* the read command is never pended, complete it right away */
                 pHdr->result = rc;
+
+                if (!fCompleteNeeded)
+                    return VINF_SUCCESS;
+
                 crServerCrHgsmiCmdComplete(pCmd, VINF_SUCCESS);
                 return VINF_SUCCESS;
             }
@@ -3318,7 +3334,7 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
 
                 pClient->conn->pBuffer = pBuffer;
                 pClient->conn->cbBuffer = cbBuffer;
-                CRVBOXHGSMI_CMDDATA_SETWB(&pClient->conn->CmdData, pCmd, pHdr, pWriteback, cbWriteback, &pFnCmd->cbWriteback);
+                CRVBOXHGSMI_CMDDATA_SETWB(&pClient->conn->CmdData, pCmd, pHdr, pWriteback, cbWriteback, &pFnCmd->cbWriteback, fCompleteNeeded);
                 rc = crVBoxServerInternalClientWriteRead(pClient);
                 CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(&pClient->conn->CmdData);
                 return rc;
@@ -3355,8 +3371,17 @@ int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t c
     /* we can be on fail only here */
     CRASSERT(RT_FAILURE(rc));
     pHdr->result = rc;
+
+    if (!fCompleteNeeded)
+        return rc;
+
     crServerCrHgsmiCmdComplete(pCmd, VINF_SUCCESS);
     return rc;
+}
+
+int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
+{
+    return crVBoxServerCrHgsmiCmdProcess(pCmd, true);
 }
 
 int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl)
@@ -3370,6 +3395,7 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
             PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP pSetup = (PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP)pCtl;
             g_pvVRamBase = (uint8_t*)pSetup->pvVRamBase;
             g_cbVRam = pSetup->cbVRam;
+            cr_server.CltInfo = *pSetup->pCrCmdClientInfo;
             rc = VINF_SUCCESS;
             break;
         }
@@ -3397,5 +3423,57 @@ int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t c
      * E.g. ctl commands can be both Hgcm Host synchronous commands that do not require completion at all,
      * or Hgcm Host Fast Call commands that do require completion. All this details are hidden here */
     return rc;
+}
+
+static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
+{
+    switch (pCmd->u8OpCode)
+    {
+        case VBOXCMDVBVA_OPTYPE_CRCMD:
+        {
+            VBOXCMDVBVA_CRCMD *pCrCmdDr = (VBOXCMDVBVA_CRCMD*)pCmd;
+            VBOXCMDVBVAOFFSET offCmd = pCrCmdDr->offCmd;
+            if (offCmd < g_cbVRam && offCmd + cbCmd < g_cbVRam)
+            {
+                VBOXVDMACMD_CHROMIUM_CMD *pCrCmd = (VBOXVDMACMD_CHROMIUM_CMD*)(g_pvVRamBase + offCmd);
+                crVBoxServerCrHgsmiCmdProcess(pCrCmd, false);
+                /* success */
+                pCmd->i8Result = 0;
+            }
+            else
+            {
+                crWarning("incorrect command info!");
+                pCmd->i8Result = -1;
+            }
+            break;
+        }
+        default:
+            crWarning("unsupported command");
+            pCmd->i8Result = -1;
+    }
+    return VINF_SUCCESS;
+}
+
+int32_t crVBoxServerCrCmdNotifyCmds()
+{
+    PVBOXCMDVBVA_HDR pCmd = NULL;
+    uint32_t cbCmd;
+
+    for (;;)
+    {
+        int rc = cr_server.CltInfo.pfnCmdGet(cr_server.CltInfo.hClient, &pCmd, &cbCmd);
+        if (rc == VINF_EOF)
+            return VINF_SUCCESS;
+        if (!RT_SUCCESS(rc))
+            return rc;
+
+        rc = crVBoxServerCrCmdProcess(pCmd, cbCmd);
+        if (!RT_SUCCESS(rc))
+            return rc;
+    }
+
+    /* should not be here! */
+    AssertFailed();
+    return VERR_INTERNAL_ERROR;
 }
 #endif

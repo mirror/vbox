@@ -47,7 +47,7 @@ DECLINLINE(void) crServerCrHgsmiCmdComplete(struct VBOXVDMACMD_CHROMIUM_CMD *pCm
     } while (0)
 
 #define VBOXCRHGSMI_CMD_CHECK_COMPLETE(_pData, _rc) do { \
-        if (CRVBOXHGSMI_CMDDATA_IS_SET(_pData)) { \
+        if (CRVBOXHGSMI_CMDDATA_IS_COMPLETE_NEEDED(_pData) && CRVBOXHGSMI_CMDDATA_IS_SET(_pData)) { \
             VBOXCRHGSMI_CMD_COMPLETE(_pData, _rc); \
         } \
     } while (0)
