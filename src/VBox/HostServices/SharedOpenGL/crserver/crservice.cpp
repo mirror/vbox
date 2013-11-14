@@ -952,6 +952,10 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
     switch (u32Function)
     {
+        case SHCRGL_HOST_FN_CRCMD_NOTIFY_CMDS:
+        {
+            rc = crVBoxServerCrCmdNotifyCmds();
+        } break;
 #ifdef VBOX_WITH_CRHGSMI
         case SHCRGL_HOST_FN_CRHGSMI_CMD:
         {

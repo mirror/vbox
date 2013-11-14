@@ -749,6 +749,15 @@ typedef struct PDMIDISPLAYCONNECTOR
      * @param   pCmd                Video HW Acceleration Command to be processed.
      * @thread  The emulation thread.
      */
+    DECLR3CALLBACKMEMBER(int, pfnCrCmdNotifyCmds, (PPDMIDISPLAYCONNECTOR pInterface));
+
+    /**
+     * Process the guest chromium command.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   pCmd                Video HW Acceleration Command to be processed.
+     * @thread  The emulation thread.
+     */
     DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess, (PPDMIDISPLAYCONNECTOR pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, uint32_t cbCmd));
 
     /**

@@ -1457,6 +1457,7 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP
         uint64_t uAlignment;
     };
     uint64_t cbVRam;
+    struct VBOXCRCMD_CLTINFO *pCrCmdClientInfo;
 } VBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP, *PVBOXVDMACMD_CHROMIUM_CTL_CRHGSMI_SETUP;
 
 
@@ -1566,11 +1567,28 @@ typedef struct VBOXVDMACMD_CHROMIUM_CTL_CRCONNECT
 /* the "completed" state is signalled via the ring buffer values */
 
 /* CrHgsmi command */
-#define VBOXCMDVBVA_OPTYPE_CRCMD 1
-/* blit command (e.g. shadow to primary) */
-#define VBOXCMDVBVA_OPTYPE_BLT   2
+#define VBOXCMDVBVA_OPTYPE_CRCMD                        1
+/* special case for blitting to primary */
+#define VBOXCMDVBVA_OPTYPE_BLT_TOPRIMARY                2
+/* blit command that does blitting of allocations identified by VRAM offset or host id
+ * for VRAM-offset ones the size and format are same as primary */
+#define VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID       3
+/* allocation paging transfer request */
+#define VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER              4
+/* allocation paging fill request */
+#define VBOXCMDVBVA_OPTYPE_PAGING_FILL                  5
 /* nop - is a one-bit command. The buffer size to skip is determined by VBVA buffer size */
-#define VBOXCMDVBVA_OPTYPE_NOP   0x80
+#define VBOXCMDVBVA_OPTYPE_NOP                          0x80
+
+/* u8Flags flags */
+/* source allocation is specified with the host id. if not set - source allocation is specified with VRAM offset */
+#define VBOXCMDVBVA_OPF_ALLOC_SRCID                     0x80
+/* destination allocation is specified with the host id. if not set - destination allocation is specified with VRAM offset */
+#define VBOXCMDVBVA_OPF_ALLOC_DSTID                     0x40
+
+/* transfer from RAM to Allocation */
+#define VBOXCMDVBVA_OPF_PAGING_TRANSFER_IN              0x20
+
 
 /* trying to make the header as small as possible,
  * we'd have pretty few op codes actually, so 8bit is quite enough,
@@ -1579,21 +1597,85 @@ typedef struct VBOXCMDVBVA_HDR
 {
     /* one VBOXCMDVBVA_OPTYPE_XXX, ecxept NOP, see comments above */
     uint8_t u8OpCode;
-    /* reserved, must be null */
-    uint8_t u8Reserved;
+    /* command-specific
+     * VBOXCMDVBVA_OPTYPE_CRCMD - must be null
+     * VBOXCMDVBVA_OPTYPE_BLT_TOPRIMARY - OR-ed VBOXCMDVBVA_OPF_ALLOC_XXX flags
+     * VBOXCMDVBVA_OPTYPE_BLT_OFFPRIMSZFMT_OR_ID - OR-ed VBOXCMDVBVA_OPF_ALLOC_XXX flags
+     * VBOXCMDVBVA_OPTYPE_NOP - must be null */
+    uint8_t u8Flags;
     /* one of VBOXCMDVBVA_STATE_XXX*/
     volatile uint8_t u8State;
-    /* result, 0 on success, otherwise contains the failure code TBD */
-    int8_t u8Result;
+    union
+    {
+        /* result, 0 on success, otherwise contains the failure code TBD */
+        int8_t i8Result;
+        uint8_t u8PrimaryID;
+    };
     /* DXGK DDI fence ID */
     uint32_t u32FenceID;
 } VBOXCMDVBVA_HDR;
 
+typedef uint32_t VBOXCMDVBVAOFFSET;
+typedef uint64_t VBOXCMDVBVAPHADDR;
+
 typedef struct VBOXCMDVBVA_CRCMD
 {
     VBOXCMDVBVA_HDR Hdr;
-    VBOXVIDEOOFFSET offCmd;
+    VBOXCMDVBVAOFFSET offCmd;
 } VBOXCMDVBVA_CRCMD;
+
+typedef struct VBOXCMDVBVA_ALLOCINFO
+{
+    union
+    {
+        VBOXCMDVBVAOFFSET offVRAM;
+        uint32_t id;
+    };
+} VBOXCMDVBVA_ALLOCINFO;
+
+typedef struct VBOXCMDVBVA_RECT
+{
+   /** Coordinates of affected rectangle. */
+   int16_t x;
+   int16_t y;
+   uint16_t w;
+   uint16_t h;
+} VBOXCMDVBVA_RECT;
+
+typedef struct VBOXCMDVBVA_BLT_TOPRIMARY
+{
+    VBOXCMDVBVA_HDR Hdr;
+    VBOXCMDVBVA_ALLOCINFO src;
+    /* the rects count is determined from the command size */
+    VBOXCMDVBVA_RECT aRects[1];
+} VBOXCMDVBVA_BLT_TOPRIMARY;
+
+typedef struct VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID
+{
+    VBOXCMDVBVA_HDR Hdr;
+    VBOXCMDVBVA_ALLOCINFO src;
+    VBOXCMDVBVA_ALLOCINFO dst;
+    /* the rects count is determined from the command size */
+    VBOXCMDVBVA_RECT aRects[1];
+} VBOXCMDVBVA_BLT_OFFPRIMSZFMT_OR_ID;
+
+typedef struct VBOXCMDVBVA_PAGING_TRANSFER
+{
+    VBOXCMDVBVA_HDR Hdr;
+    VBOXCMDVBVAPHADDR Addr;
+    /* for now can only contain offVRAM.
+     * paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
+    VBOXCMDVBVA_ALLOCINFO Alloc;
+} VBOXCMDVBVA_PAGING_TRANSFER;
+
+typedef struct VBOXCMDVBVA_PAGING_FILL
+{
+    VBOXCMDVBVA_HDR Hdr;
+    uint32_t cbFill;
+    uint32_t Pattern;
+    /* paging transfer can NOT be initiated for allocations having host 3D object (hostID) associated */
+    VBOXCMDVBVAOFFSET offVRAM;
+} VBOXCMDVBVA_PAGING_FILL;
 
 # pragma pack()
 

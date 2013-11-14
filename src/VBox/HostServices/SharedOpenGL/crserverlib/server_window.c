@@ -317,25 +317,6 @@ crServerDispatchWindowCreateEx(const char *dpyName, GLint visBits, GLint preload
     return windowID;
 }
 
-static bool crServerVBoxTranslateIntersectRect(CRMuralInfo *mural, const RTRECT *pSrcRect, PRTRECT pDstRect)
-{
-    int32_t xLeft = RT_MAX(mural->gX, pSrcRect->xRight);
-    int32_t yTop = RT_MAX(mural->gY, pSrcRect->yBottom);
-    int32_t xRight = RT_MIN(mural->gX + mural->width, pSrcRect->xLeft);
-    int32_t yBottom = RT_MIN(mural->gY + mural->height, pSrcRect->yTop);
-
-    if (xLeft < xRight && yTop < yBottom)
-    {
-        pDstRect->xLeft = xLeft;
-        pDstRect->yTop = yTop;
-        pDstRect->xRight = xRight;
-        pDstRect->yBottom = yBottom;
-        return true;
-    }
-
-    return false;
-}
-
 static void crServerVBoxRootVrTranslateForMural(CRMuralInfo *mural)
 {
     int32_t dx = cr_server.RootVrCurPoint.x - mural->gX;

@@ -102,6 +102,7 @@ typedef struct CRVBOXHGSMI_CMDDATA {
     char         *pWriteback;
     unsigned int *pcbWriteback;
     unsigned int cbWriteback;
+    bool fCompleteNeeded;
 } CRVBOXHGSMI_CMDDATA, *PCRVBOXHGSMI_CMDDATA;
 
 #ifdef DEBUG
@@ -139,6 +140,7 @@ typedef struct CRVBOXHGSMI_CMDDATA {
 # define CRVBOXHGSMI_CMDDATA_ASSERT_ISSETWB(_pData)  do { } while (0)
 #endif
 
+#define CRVBOXHGSMI_CMDDATA_IS_COMPLETE_NEEDED(_pData) (!!(_pData)->fCompleteNeeded)
 #define CRVBOXHGSMI_CMDDATA_IS_SET(_pData) (!!(_pData)->pCmd)
 #define CRVBOXHGSMI_CMDDATA_IS_SETWB(_pData) (!!(_pData)->pWriteback)
 
@@ -148,15 +150,16 @@ typedef struct CRVBOXHGSMI_CMDDATA {
         CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
     } while (0)
 
-#define CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr) do { \
+#define CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fCompleteNeeded) do { \
         CRVBOXHGSMI_CMDDATA_ASSERT_CLEANED(_pData); \
         (_pData)->pCmd = (_pCmd); \
         (_pData)->pCmdRc = &(_pHdr)->result; \
+        (_pData)->fCompleteNeeded = _fCompleteNeeded; \
         CRVBOXHGSMI_CMDDATA_ASSERT_CONSISTENT(_pData); \
     } while (0)
 
-#define CRVBOXHGSMI_CMDDATA_SETWB(_pData, _pCmd, _pHdr, _pWb, _cbWb, _pcbWb) do { \
-        CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr); \
+#define CRVBOXHGSMI_CMDDATA_SETWB(_pData, _pCmd, _pHdr, _pWb, _cbWb, _pcbWb, _fCompleteNeeded) do { \
+        CRVBOXHGSMI_CMDDATA_SET(_pData, _pCmd, _pHdr, _fCompleteNeeded); \
         (_pData)->pWriteback = (_pWb); \
         (_pData)->pcbWriteback = (_pcbWb); \
         (_pData)->cbWriteback = (_cbWb); \
