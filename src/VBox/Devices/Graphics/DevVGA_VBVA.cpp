@@ -940,7 +940,6 @@ static int vbvaVHWACommandLoadPending(PVGASTATE pVGAState, PSSMHANDLE pSSM, uint
 static bool vbvaVHWACommandSubmit(PVGASTATE pVGAState, PVBOXVHWACMD pCommand, bool fAsyncCommand)
 {
     unsigned id = (unsigned)pCommand->iDisplay;
-    int rc = VINF_SUCCESS;
     bool fPend = false;
 
     if (pVGAState->pDrv->pfnVHWACommandProcess)
