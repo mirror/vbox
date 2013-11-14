@@ -4457,6 +4457,8 @@ FNIEMOP_DEF_1(iemOpCommonBit_Ev_Gv, PCIEMOPBINSIZES, pImpl)
             fAccess = IEM_ACCESS_DATA_R;
         }
 
+        NOREF(fAccess);
+
         /** @todo test negative bit offsets! */
         switch (pIemCpu->enmEffOpSize)
         {

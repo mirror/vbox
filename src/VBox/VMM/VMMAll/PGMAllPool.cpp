@@ -824,7 +824,7 @@ DECLINLINE(bool) pgmPoolMonitorIsReused(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pReg
 static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPage, PDISCPUSTATE pDis,
                                      PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault)
 {
-    NOREF(GCPhysFault);
+    NOREF(pVM); NOREF(GCPhysFault);
 
     /*
      * First, do the flushing.
@@ -964,6 +964,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
                                            PCPUMCTXCORE pRegFrame, RTGCPHYS GCPhysFault, RTGCPTR pvFault, bool *pfReused)
 {
     Log3(("pgmPoolAccessHandlerSimple\n"));
+    NOREF(pVM);
     NOREF(pfReused); /* initialized by caller */
 
     /*
