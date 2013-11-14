@@ -3055,7 +3055,7 @@ DECLEXPORT(int32_t) crVBoxServerSetScreenViewport(int sIndex, int32_t x, int32_t
  *
  * NOTE: it is ALWAYS responsibility of the crVBoxServerCrHgsmiCmd to complete the command!
  * */
-static int32_t crVBoxServerCrHgsmiCmdProcess(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, bool fCompleteNeeded)
+static int32_t crVBoxServerCrHgsmiCmdProcess(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint8_t fCompleteNeeded)
 {
     int32_t rc;
     uint32_t cBuffers = pCmd->cBuffers;
@@ -3381,7 +3381,7 @@ static int32_t crVBoxServerCrHgsmiCmdProcess(struct VBOXVDMACMD_CHROMIUM_CMD *pC
 
 int32_t crVBoxServerCrHgsmiCmd(struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, uint32_t cbCmd)
 {
-    return crVBoxServerCrHgsmiCmdProcess(pCmd, true);
+    return crVBoxServerCrHgsmiCmdProcess(pCmd, GL_TRUE);
 }
 
 int32_t crVBoxServerCrHgsmiCtl(struct VBOXVDMACMD_CHROMIUM_CTL *pCtl, uint32_t cbCtl)
@@ -3436,7 +3436,7 @@ static int32_t crVBoxServerCrCmdProcess(PVBOXCMDVBVA_HDR pCmd, uint32_t cbCmd)
             if (offCmd < g_cbVRam && offCmd + cbCmd < g_cbVRam)
             {
                 VBOXVDMACMD_CHROMIUM_CMD *pCrCmd = (VBOXVDMACMD_CHROMIUM_CMD*)(g_pvVRamBase + offCmd);
-                crVBoxServerCrHgsmiCmdProcess(pCrCmd, false);
+                crVBoxServerCrHgsmiCmdProcess(pCrCmd, GL_FALSE);
                 /* success */
                 pCmd->i8Result = 0;
             }
