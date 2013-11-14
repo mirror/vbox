@@ -9650,7 +9650,7 @@ DECL_FORCE_INLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPU pVCpu, PIEMCPU pIemCpu, b
 # ifdef LOG_ENABLED
             iemLogCurInstr(IEMCPU_TO_VMCPU(pIemCpu), pIemCpu->CTX_SUFF(pCtx), false);
 # endif
-            b; IEM_OPCODE_GET_NEXT_U8(&b);
+            IEM_OPCODE_GET_NEXT_U8(&b);
             rcStrict = FNIEMOP_CALL(g_apfnOneByteMap[b]);
             if (rcStrict == VINF_SUCCESS)
                 pIemCpu->cInstructions++;
