@@ -7,6 +7,7 @@
 #ifndef CR_PROTOCOL_H
 #define CR_PROTOCOL_H
 
+#include <iprt/types.h>
 #include <iprt/cdefs.h>
 #ifdef DEBUG_misha
 #include "cr_error.h"
@@ -102,7 +103,7 @@ typedef struct CRVBOXHGSMI_CMDDATA {
     char         *pWriteback;
     unsigned int *pcbWriteback;
     unsigned int cbWriteback;
-    uint8_t fCompleteNeeded;
+    bool fCompleteNeeded;
 } CRVBOXHGSMI_CMDDATA, *PCRVBOXHGSMI_CMDDATA;
 
 #ifdef DEBUG
