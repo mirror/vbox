@@ -608,6 +608,7 @@ VMM_INT_DECL(void) SELMLoadHiddenSelectorReg(PVMCPU pVCpu, PCCPUMCTX pCtx, PCPUM
 DECLINLINE(int) selmValidateAndConvertCSAddrRealMode(PVMCPU pVCpu, RTSEL SelCS, PCCPUMSELREGHID pSReg, RTGCPTR Addr,
                                                      PRTGCPTR ppvFlat)
 {
+    NOREF(pVCpu);
     RTGCUINTPTR uFlat = Addr & 0xffff;
     if (!pSReg || !CPUMSELREG_ARE_HIDDEN_PARTS_VALID(pVCpu, pSReg))
         uFlat += (RTGCUINTPTR)SelCS << 4;

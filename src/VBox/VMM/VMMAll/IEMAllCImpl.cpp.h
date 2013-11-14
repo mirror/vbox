@@ -617,7 +617,6 @@ IEM_CIMPL_DEF_1(iemCImpl_pushf, IEMMODE, enmEffOpSize)
 IEM_CIMPL_DEF_1(iemCImpl_popf, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
-    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
     uint32_t const  fEflOld = IEMMISC_GET_EFL(pIemCpu, pCtx);
     VBOXSTRICTRC    rcStrict;
     uint32_t        fEflNew;
@@ -2045,7 +2044,6 @@ IEM_CIMPL_DEF_2(iemCImpl_int, uint8_t, u8Int, bool, fIsBpInstr)
 IEM_CIMPL_DEF_1(iemCImpl_iret_real_v8086, IEMMODE, enmEffOpSize)
 {
     PCPUMCTX  pCtx  = pIemCpu->CTX_SUFF(pCtx);
-    PVMCPU    pVCpu = IEMCPU_TO_VMCPU(pIemCpu);
     X86EFLAGS Efl;
     Efl.u = IEMMISC_GET_EFL(pIemCpu, pCtx);
     NOREF(cbInstr);
@@ -4880,7 +4878,6 @@ IEM_CIMPL_DEF_1(iemCImpl_out_DX_eAX, uint8_t, cbReg)
 IEM_CIMPL_DEF_0(iemCImpl_cli)
 {
     PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
-    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
     uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
     uint32_t const  fEflOld = fEfl;
     if (pCtx->cr0 & X86_CR0_PE)
@@ -4923,7 +4920,6 @@ IEM_CIMPL_DEF_0(iemCImpl_cli)
 IEM_CIMPL_DEF_0(iemCImpl_sti)
 {
     PCPUMCTX        pCtx    = pIemCpu->CTX_SUFF(pCtx);
-    PVMCPU          pVCpu   = IEMCPU_TO_VMCPU(pIemCpu);
     uint32_t        fEfl    = IEMMISC_GET_EFL(pIemCpu, pCtx);
     uint32_t const  fEflOld = fEfl;
 
@@ -5849,6 +5845,8 @@ IEM_CIMPL_DEF_3(iemCImpl_fcomi_fucomi, uint8_t, iStReg, PFNIEMAIMPLFPUR80EFL, pf
     if ((pCtx->fpu.FTW & (RT_BIT(iReg1) | RT_BIT(iReg2))) == (RT_BIT(iReg1) | RT_BIT(iReg2)))
     {
         uint32_t u32Eflags = pfnAImpl(&pCtx->fpu, &u16Fsw, &pCtx->fpu.aRegs[0].r80, &pCtx->fpu.aRegs[iStReg].r80);
+        NOREF(u32Eflags);
+
         pCtx->fpu.FSW &= ~X86_FSW_C1;
         pCtx->fpu.FSW |= u16Fsw & ~X86_FSW_TOP_MASK;
         if (   !(u16Fsw & X86_FSW_IE)
