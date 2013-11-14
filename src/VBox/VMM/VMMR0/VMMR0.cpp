@@ -227,6 +227,7 @@ DECLEXPORT(int) ModuleInit(void *hMod)
  */
 DECLEXPORT(void) ModuleTerm(void *hMod)
 {
+    NOREF(hMod);
     LogFlow(("ModuleTerm:\n"));
 
     /*

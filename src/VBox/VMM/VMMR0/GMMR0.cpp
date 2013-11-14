@@ -4779,6 +4779,8 @@ static int gmmR0SharedModuleCheckPageFirstTime(PGMM pGMM, PGVM pGVM, PGMMSHAREDM
                                                unsigned idxRegion, unsigned idxPage,
                                                PGMMSHAREDPAGEDESC pPageDesc, PGMMSHAREDREGIONDESC pGlobalRegion)
 {
+    NOREF(pModule);
+
     /* Easy case: just change the internal page type. */
     PGMMPAGE pPage = gmmR0GetPage(pGMM, pPageDesc->idPage);
     AssertMsgReturn(pPage, ("idPage=%#x (GCPhys=%RGp HCPhys=%RHp idxRegion=%#x idxPage=%#x) #1\n",
@@ -5387,6 +5389,7 @@ GMMR0DECL(int) GMMR0QueryStatisticsReq(PVM pVM, PGMMQUERYSTATISTICSSREQ pReq)
  */
 GMMR0DECL(int) GMMR0ResetStatistics(PCGMMSTATS pStats, PSUPDRVSESSION pSession, PVM pVM)
 {
+    NOREF(pStats); NOREF(pSession); NOREF(pVM);
     /* Currently nothing we can reset at the moment. */
     return VINF_SUCCESS;
 }

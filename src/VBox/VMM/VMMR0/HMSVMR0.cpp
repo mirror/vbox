@@ -1413,8 +1413,8 @@ static void hmR0SvmLoadSharedDebugState(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX p
         fInterceptMovDRx = true; /* Need clean DR6, no guest mess. */
     }
 
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
-    if (fStepping || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
+    if (   fStepping
+        || (CPUMGetHyperDR7(pVCpu) & X86_DR7_ENABLED_MASK))
     {
         /*
          * Use the combined guest and host DRx values found in the hypervisor
@@ -1672,6 +1672,8 @@ VMMR0DECL(int) SVMR0Enter(PVM pVM, PVMCPU pVCpu, PHMGLOBALCPUINFO pCpu)
  */
 VMMR0DECL(void) SVMR0ThreadCtxCallback(RTTHREADCTXEVENT enmEvent, PVMCPU pVCpu, bool fGlobalInit)
 {
+    NOREF(fGlobalInit);
+
     switch (enmEvent)
     {
         case RTTHREADCTXEVENT_PREEMPTING:
@@ -2093,6 +2095,8 @@ static int hmR0SvmLongJmpToRing3(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
  */
 DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPU pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
 {
+    NOREF(enmOperation);
+
     /* VMMRZCallRing3() already makes sure we never get called as a result of an longjmp due to an assertion, */
     Assert(pVCpu);
     Assert(pvUser);
@@ -2250,6 +2254,8 @@ DECLINLINE(void) hmR0SvmSetPendingEvent(PVMCPU pVCpu, PSVMEVENT pEvent, RTGCUINT
  */
 DECLINLINE(void) hmR0SvmInjectEventVmcb(PVMCPU pVCpu, PSVMVMCB pVmcb, PCPUMCTX pCtx, PSVMEVENT pEvent)
 {
+    NOREF(pCtx);
+
     pVmcb->ctrl.EventInject.u = pEvent->u;
     STAM_COUNTER_INC(&pVCpu->hm.s.paStatInjectedIrqsR0[pEvent->n.u8Vector & MASK_INJECT_IRQ_STAT]);
 
@@ -3096,9 +3102,8 @@ static void hmR0SvmPostRunGuest(PVM pVM, PVMCPU pVCpu, PCPUMCTX pMixedCtx, PSVMT
  * @returns VBox status code.
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
- * @param   pCtx        Pointer to the guest-CPU context.
  */
-static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
+static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
@@ -3166,9 +3171,8 @@ static int hmR0SvmRunGuestCodeNormal(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMV
  * @param   pVM         Pointer to the VM.
  * @param   pVCpu       Pointer to the VMCPU.
  * @param   pCtx        Pointer to the guest-CPU context.
- * @param   pVmcb       Pointer to the VM control block.
  */
-static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, PSVMVMCB pVmcb)
+static int hmR0SvmRunGuestCodeStep(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     SVMTRANSIENT SvmTransient;
     SvmTransient.fUpdateTscOffsetting = true;
@@ -3273,11 +3277,10 @@ VMMR0DECL(int) SVMR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, pCtx);
 
     int rc;
-    PSVMVMCB pVmcb = (PSVMVMCB)pVCpu->hm.s.svm.pvVmcb;
     if (!pVCpu->hm.s.fSingleInstruction && !DBGFIsStepping(pVCpu))
-        rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx, pVmcb);
+        rc = hmR0SvmRunGuestCodeNormal(pVM, pVCpu, pCtx);
     else
-        rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx, pVmcb);
+        rc = hmR0SvmRunGuestCodeStep(pVM, pVCpu, pCtx);
 
     if (rc == VERR_EM_INTERPRETER)
         rc = VINF_EM_RAW_EMULATE_INSTR;
